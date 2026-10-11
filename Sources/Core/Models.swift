@@ -146,6 +146,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case stripe, paddle, stock, watchlist, shopify
     case photos, screenshots, downloads, fileShelf = "file-shelf"
     case clipboard, colorPicker = "color-picker", converter
+    case capture, emoji, search
 }
 
 /// What a widget opens when its card is clicked.

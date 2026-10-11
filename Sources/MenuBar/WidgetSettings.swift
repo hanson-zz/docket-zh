@@ -318,6 +318,8 @@ struct WidgetSettingsSections: View {
         "folder": "文件夹",
         "interval": "切换间隔",
         "shuffle": "随机顺序",
+        "emoji": "常用表情",
+        "engine": "搜索引擎",
     ]
 
     static func label(_ key: String) -> String {
@@ -388,6 +390,7 @@ struct WidgetSettingsSections: View {
         "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
         "notes.color": PaperColor.picker.map { (docketColourName($0.rawValue), $0.rawValue) },
+        "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

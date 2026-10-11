@@ -190,6 +190,20 @@ public enum WidgetCatalog {
         // menus can follow the category; see ConverterState.
         Entry(kind: .converter, name: "单位换算", category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .capture, name: "截图工具", category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .emoji, name: "表情符号", category: .tools,
+              defaults: c(["emoji": .list(["😂", "✨", "✅", "🔥", "🥹", "🙏", "💡", "🚀", "❤️"]
+                                            .map { .string($0) })]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .search, name: "搜索", category: .tools,
+              defaults: c(["layout": .string("web"), "engine": .string("bing")]),
+              variants: [("网页搜索", ["layout": .string("web")]),
+                         ("查找文件", ["layout": .string("files")])],
+              supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -222,7 +236,7 @@ public enum WidgetCatalog {
             nil
         // A photo or a file is its own colour; a tint behind it competes.
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
-             .colorPicker, .converter:
+             .colorPicker, .converter, .capture, .emoji, .search:
             nil
         }
     }
@@ -262,6 +276,9 @@ public enum WidgetCatalog {
         case (.music, "previous"), (.music, "next"), (.music, "backward"),
              (.music, "forward"), (.music, "skip"):
             !config.bool("mini")
+        // Finding files asks Spotlight, not a search engine.
+        case (.search, "engine"):
+            config.string("layout", default: "web") == "web"
         default:
             true
         }
@@ -328,12 +345,16 @@ public enum WidgetCatalog {
             .app(bundleID: "com.apple.finder")
         case .colorPicker:
             .app(bundleID: "com.apple.DigitalColorMeter")
+        // The card around the three buttons opens the system's own
+        // Screenshot app, where recording and the timer are.
+        case .capture:
+            .app(bundleID: "com.apple.screenshot.launcher")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter:
+             .clipboard, .converter, .emoji, .search:
             nil
         }
     }
@@ -438,6 +459,9 @@ public enum WidgetCatalog {
         case .clipboard: return CGSize(width: 196, height: 62)
         case .colorPicker: return CGSize(width: 136, height: 62)
         case .converter: return CGSize(width: 188, height: 62)
+        case .capture: return CGSize(width: 136, height: 62)
+        case .emoji: return CGSize(width: 160, height: 62)
+        case .search: return CGSize(width: 220, height: 62)
         }
     }
 
@@ -500,6 +524,10 @@ public enum WidgetCatalog {
             return cfg.string("layout", default: "standard") == "wide" ? 112 : 76
         case .colorPicker, .converter:
             return 84
+        case .capture:
+            return 112
+        case .emoji:
+            return 132
         default:
             return 76
         }

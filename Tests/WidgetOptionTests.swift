@@ -88,6 +88,8 @@ final class WidgetOptionTests: XCTestCase {
             .watchlist: ["symbols"],
             .weather: ["city", "fahrenheit"],
             .photos: ["folder", "interval", "shuffle"],
+            .emoji: ["emoji"],
+            .search: ["engine"],
         ]
 
         for kind in WidgetKind.allCases {
@@ -236,6 +238,7 @@ final class OptionApplicabilityTests: XCTestCase {
     private static let conditional: Set<String> = [
         "system.chart",
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
+        "search.engine",
     ]
 
     /// Everything else is unconditional, and a rule added carelessly would

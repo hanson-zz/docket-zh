@@ -546,7 +546,8 @@ final class WidgetConfigurationTests: XCTestCase {
     /// has somewhere else to send the click: `.music` opens a detail panel,
     /// and the other two are self-contained readouts.
     func testEveryOtherCatalogEntryHasADestination() {
-        let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter]
+        let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter,
+                                          .emoji, .search]
         for entry in WidgetCatalog.entries where !selfDriven.contains(entry.kind) {
             XCTAssertNotNil(WidgetCatalog.openTarget(entry.kind),
                             "\(entry.kind) is in the library but opens nothing")

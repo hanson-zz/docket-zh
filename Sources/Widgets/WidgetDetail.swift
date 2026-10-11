@@ -357,6 +357,10 @@ enum WidgetDetail {
         // nothing a panel could honestly show.
         case .aiUsage:
             false
+        // Every control these have is already on the card; a panel would
+        // only repeat the buttons.
+        case .capture, .emoji:
+            false
         default:
             true
         }
@@ -379,7 +383,7 @@ enum WidgetDetail {
         case .weather: 340
         case .music: 330
         case .photos, .screenshots: 340
-        case .downloads, .fileShelf, .clipboard, .converter: 320
+        case .downloads, .fileShelf, .clipboard, .converter, .search: 320
         default: 300
         }
     }

@@ -204,3 +204,32 @@ final class FileListingTests: XCTestCase {
         }
     }
 }
+
+final class SearchQueryTests: XCTestCase {
+    func testAQueryBecomesASearchURL() {
+        XCTAssertEqual(SearchEngine.bing.url(for: "swift ui")?.absoluteString,
+                       "https://www.bing.com/search?q=swift%20ui")
+        XCTAssertEqual(SearchEngine.baidu.url(for: "天气")?.absoluteString,
+                       "https://www.baidu.com/s?wd=%E5%A4%A9%E6%B0%94")
+    }
+
+    func testReservedCharactersAreEscaped() {
+        XCTAssertEqual(SearchEngine.google.url(for: "a&b=c")?.absoluteString,
+                       "https://www.google.com/search?q=a%26b%3Dc")
+    }
+
+    func testABlankQueryOpensNothing() {
+        XCTAssertNil(SearchEngine.bing.url(for: "   "))
+    }
+
+    func testAnAddressOpensAsItself() {
+        XCTAssertEqual(SearchEngine.bing.url(for: "https://example.com/x")?.absoluteString,
+                       "https://example.com/x")
+    }
+
+    func testTheEngineOptionOnlyAppliesToWebSearch() {
+        XCTAssertTrue(WidgetCatalog.applies("engine", to: WidgetConfig(), kind: .search))
+        XCTAssertFalse(WidgetCatalog.applies("engine", to: WidgetConfig(["layout": .string("files")]),
+                                             kind: .search))
+    }
+}
