@@ -43,6 +43,48 @@ jobs:
           system_profiler SPDisplaysDataType || true
           sw_vers
 
+      # The runner boots at 1024x768 at 1x, which crops a whole shelf and
+      # leaves every image soft. displayplacer lists the modes the virtual
+      # display offers; a scaled (HiDPI) mode at least 1440 points wide is
+      # preferred, then the widest plain one. Allowed to fail: the capture
+      # still runs at whatever the display is.
+      - name: Larger display
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+        run: |
+          brew install --quiet displayplacer || exit 0
+          displayplacer list | tee "$RUNNER_TEMP/displays.txt" || exit 0
+          choice=$(python3 - "$RUNNER_TEMP/displays.txt" <<'PY'
+          import re, sys
+          text = open(sys.argv[1]).read()
+          ident = re.search(r"Persistent screen id: (\S+)", text)
+          modes = re.findall(r"mode (\d+): res:(\d+)x(\d+).*?scaling:(on|off)", text)
+          if not ident or not modes:
+              sys.exit(0)
+          def score(m):
+              n, w, h, scaled = int(m[0]), int(m[1]), int(m[2]), m[3] == "on"
+              # Fits in a 4K virtual framebuffer when doubled.
+              hidpi = scaled and 1440 <= w <= 1920
+              return (hidpi, w if hidpi else 0, w * h)
+          best = max(modes, key=score)
+          print(f"id:{ident.group(1)} mode:{best[0]}")
+          PY
+          )
+          echo "choosing: $choice"
+          [ -n "$choice" ] && displayplacer "$choice" || true
+          sleep 3
+          system_profiler SPDisplaysDataType | grep -i -E "resolution|retina|ui looks" || true
+
+      # Chinese system language, region and time zone, so dates, times and
+      # file sizes the widgets format come out the way a reader of this
+      # fork sees them. Read by the Shots process when it launches.
+      - name: Chinese locale
+        run: |
+          defaults write -g AppleLanguages -array zh-Hans
+          defaults write -g AppleLocale -string zh_CN
+          sudo systemsetup -settimezone Asia/Shanghai >/dev/null 2>&1 || true
+
       # Screen Recording is granted per client in TCC. A runner is a throwaway
       # machine, so the grant is written straight into both databases for the
       # processes that end up asking: the shell running the script, the
