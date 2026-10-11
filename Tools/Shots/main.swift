@@ -79,6 +79,9 @@ private struct Shot {
     /// Run before the window is built, for a panel whose data lives outside
     /// its config: a service to point at a city, a fetch to wait out.
     var prepare: @MainActor () async -> Void = {}
+    /// Extra time on screen before the capture, for a panel that loads
+    /// thumbnails after it appears.
+    var linger: Duration = .zero
 }
 
 /// - Parameter since: when this run began. The stopwatch and the countdown are
@@ -186,6 +189,64 @@ private func shots(since started: Date) -> [Shot] {
                               ["started": .number(started.timeIntervalSince1970)]),
              isPreview: false, source: .live),
 
+        // Live: the frame reads a folder of pictures the tool drew itself, so
+        // the image is the widget reading real files without them being
+        // anybody's photographs. See Fixtures.
+        Shot(name: "photos",
+             instance: widget(.photos, ["folder": .string(Fixtures.pictures.path)]),
+             isPreview: false, source: .live,
+             prepare: {
+                 Fixtures.makePictures()
+                 await startFeed(.pictures(Fixtures.pictures.path))
+             },
+             linger: .seconds(3)),
+
+        // Live: three files made for the purpose, held the way a drop holds
+        // them, by path.
+        Shot(name: "file-shelf",
+             instance: widget(.fileShelf,
+                              ["files": .list(Fixtures.makeShelfFiles().map { WidgetConfig.Value.string($0) })]),
+             isPreview: false, source: .live, linger: .seconds(2)),
+
+        // Live on a disposable machine, which gets Docket's own screenshots
+        // and a few made-up downloads written into its real folders; sample
+        // anywhere else, because those folders are somebody's.
+        Shot(name: "screenshots", instance: widget(.screenshots),
+             isPreview: !Fixtures.disposable,
+             source: Fixtures.disposable ? .live : .sample,
+             prepare: {
+                 Fixtures.makeScreenshots()
+                 if Fixtures.disposable { await startFeed(.screenshots) }
+             },
+             linger: .seconds(3)),
+
+        Shot(name: "downloads", instance: widget(.downloads),
+             isPreview: !Fixtures.disposable,
+             source: Fixtures.disposable ? .live : .sample,
+             prepare: {
+                 Fixtures.makeDownloads()
+                 if Fixtures.disposable { await startFeed(.downloads) }
+             },
+             linger: .seconds(2)),
+
+        // Live on a disposable machine, where the tool copies four lines and
+        // the history records them; anywhere else the panel's empty state,
+        // since filling it would overwrite what the person last copied.
+        Shot(name: "clipboard", instance: widget(.clipboard),
+             isPreview: !Fixtures.disposable,
+             source: Fixtures.disposable ? .live : .empty,
+             prepare: Fixtures.fillClipboard),
+
+        // Sample: the four colours the library shows. A live picker needs a
+        // person to click somewhere on the screen.
+        Shot(name: "color-picker", instance: widget(.colorPicker),
+             isPreview: true, source: .sample),
+
+        // Live: the conversion is arithmetic, and the panel opens on its own
+        // default units and value.
+        Shot(name: "converter", instance: widget(.converter),
+             isPreview: false, source: .live),
+
         // Live, and deliberately last of the panels: the graph is drawn from
         // `SystemMetrics`' rolling buffer, which has no `isPreview` stand-in -
         // the only way to show it is to let the sampler fill, which it has
@@ -207,6 +268,18 @@ private func widget(_ kind: WidgetKind,
                     _ values: [String: WidgetConfig.Value] = [:]) -> WidgetInstance {
     WidgetCatalog.make(kind, overrides: values)
         ?? WidgetInstance(kind: kind, config: WidgetConfig(values))
+}
+
+/// Starts a folder feed and waits for its first listing, so the panel opens
+/// on files rather than on "reading".
+@MainActor
+private func startFeed(_ source: FolderFeed.Source) async {
+    let feed = FolderFeed.shared(source)
+    feed.start()
+    feed.refresh(force: true)
+    for _ in 0..<20 where feed.loadedAt == nil || feed.files.isEmpty {
+        try? await Task.sleep(for: .milliseconds(250))
+    }
 }
 
 /// Starts a focus session the way the panel's own Start button does.
@@ -362,7 +435,8 @@ private let shelfScale: Double = 0.5
 /// system Dock would fill the shelf with their pinned apps, and running apps
 /// would add whatever they happen to have open.
 @MainActor
-private func makeShelfState() -> AppState? {
+private func makeShelfState(widgets: [WidgetInstance], apps: [String],
+                            sample: Bool) -> AppState? {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
         .appending(path: "docket-shots-\(UUID().uuidString)", directoryHint: .isDirectory)
     guard (try? FileManager.default.createDirectory(at: directory,
@@ -376,16 +450,10 @@ private func makeShelfState() -> AppState? {
     // Widgets first, then the apps, which is the order the shelf is built for:
     // it puts the size grip on the seam between the two, where the shelf keeps
     // it, so the image carries the handle the shelf is actually resized by.
-    for instance in [widget(.clock),
-                     widget(.world, ["zone": .string("Asia/Tokyo"),
-                                     "city": .string("Tokyo")]),
-                     widget(.system, ["metrics": .list([.string("cpu"),
-                                                        .string("memory")])]),
-                     widget(.notes, ["text": .string("Renew the domain")])] {
+    for instance in widgets {
         profile.items.append(.widget(instance))
     }
-    for bundleID in ["com.apple.finder", "com.apple.Safari", "com.apple.mail",
-                     "com.apple.Terminal", "com.apple.systempreferences"] {
+    for bundleID in apps {
         // Skipped rather than drawn dead: an app that is genuinely not
         // installed has no icon to show, and the shelf would render it as a
         // repairable gap, which is not what this image is about.
@@ -404,6 +472,7 @@ private func makeShelfState() -> AppState? {
     shelf.state.customDock.position = .bottom
     shelf.state.customDock.followSystemDock = false
     shelf.state.customDock.showRunningApps = false
+    shelf.showsSampleData = sample
     return shelf
 }
 
@@ -561,7 +630,7 @@ private func run() async {
     for shot in shots(since: started) where only?.contains(shot.name) ?? true {
         await shot.prepare()
         guard let window = makePanel(shot, on: screen) else { continue }
-        try? await Task.sleep(for: settle)
+        try? await Task.sleep(for: settle + shot.linger)
         let carryOn = capture(shot.name, window.frame, shot.source, on: screen)
         window.orderOut(nil)
         guard carryOn else {
@@ -572,8 +641,8 @@ private func run() async {
 
     // Last, so every service the shelf's tiles read - the metrics sampler
     // above all - has been running for the whole session by the time it draws.
-    if only?.contains("shelf-showcase") ?? true {
-        await captureShelf(on: screen)
+    for shelf in shelves() where only?.contains(shelf.name) ?? true {
+        await captureShelf(shelf, on: screen)
     }
 
     backdrop.orderOut(nil)
@@ -581,9 +650,68 @@ private func run() async {
     exit(0)
 }
 
+/// One shelf to photograph.
+private struct ShelfShot {
+    var name: String
+    var widgets: [WidgetInstance]
+    var apps: [String] = []
+    /// Every tile drawn from its own sample values, as the widget library
+    /// draws it. The shelves by category use it: calendar, reminders and music
+    /// read things this tool has no consent for, and the rest would otherwise
+    /// photograph whoever runs it.
+    var sample: Bool
+}
+
+/// The showcase, which reads live, and then one shelf per group the README
+/// introduces, drawn from sample values.
 @MainActor
-private func captureShelf(on screen: NSScreen) async {
-    guard let shelf = makeShelfState() else { return }
+private func shelves() -> [ShelfShot] {
+    [
+        ShelfShot(name: "shelf-showcase",
+                  widgets: [widget(.clock),
+                            widget(.world, ["zone": .string("Asia/Tokyo"),
+                                            "city": .string("Tokyo")]),
+                            widget(.system, ["metrics": .list([.string("cpu"),
+                                                               .string("memory")])]),
+                            widget(.notes, ["text": .string("Renew the domain")])],
+                  apps: ["com.apple.finder", "com.apple.Safari", "com.apple.mail",
+                         "com.apple.Terminal", "com.apple.systempreferences"],
+                  sample: false),
+        // 应用、文件和快速访问
+        ShelfShot(name: "shelf-files",
+                  widgets: [widget(.downloads), widget(.screenshots), widget(.fileShelf),
+                            widget(.search), widget(.airdrop)],
+                  apps: ["com.apple.finder", "com.apple.Safari", "com.apple.Notes"],
+                  sample: true),
+        // 生产力和日常专注
+        ShelfShot(name: "shelf-productivity",
+                  widgets: [widget(.calendar), widget(.reminders), widget(.timer),
+                            widget(.hydration), widget(.notes, ["text": .string("周五前提交报告")])],
+                  sample: true),
+        // Mac 控制和系统工具
+        ShelfShot(name: "shelf-system",
+                  widgets: [widget(.music), widget(.volume), widget(.toggles),
+                            widget(.system), widget(.battery)],
+                  sample: true),
+        // 实用小工具
+        ShelfShot(name: "shelf-tools",
+                  widgets: [widget(.clipboard), widget(.converter), widget(.emoji),
+                            widget(.weather), widget(.world, ["zone": .string("Asia/Tokyo"),
+                                                              "city": .string("东京")])],
+                  sample: true),
+        // 图片与截图
+        ShelfShot(name: "shelf-images",
+                  widgets: [widget(.photos, ["layout": .string("wide")]), widget(.screenshots),
+                            widget(.capture), widget(.colorPicker)],
+                  apps: ["com.apple.Preview", "com.apple.Photos"],
+                  sample: true),
+    ]
+}
+
+@MainActor
+private func captureShelf(_ shot: ShelfShot, on screen: NSScreen) async {
+    guard let shelf = makeShelfState(widgets: shot.widgets, apps: shot.apps,
+                                     sample: shot.sample) else { return }
     guard let (window, hosting) = makeWindow(DockShelfView().environment(shelf),
                                              shadow: false, on: screen) else {
         log("shelf: measured empty, skipping")
@@ -599,8 +727,8 @@ private func captureShelf(on screen: NSScreen) async {
 
     // No canvas: the shelf is a long strip, and squaring it off would be
     // mostly empty space either side of it.
-    _ = capture("shelf-showcase", plateRect(of: window, shelf: shelf), .live,
-                on: screen, uniform: false)
+    _ = capture(shot.name, plateRect(of: window, shelf: shelf),
+                shot.sample ? .sample : .live, on: screen, uniform: false)
     window.orderOut(nil)
 }
 

@@ -1,0 +1,124 @@
+name: Screenshots
+
+# Photographs the README's images on a GitHub macOS runner, with the same
+# scripts/capture-shots.sh anyone can run on their own Mac, and uploads them
+# as an artifact to be looked at before anything is committed. Run by hand:
+# nothing here should change what main publishes on its own.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma separated shot names to retake (empty: all)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shots
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    name: Capture screenshots
+    # The same image the main CI builds on: macOS 26 is the deployment target.
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+        run: brew install --quiet xcodegen
+
+      - name: Generate the project
+        run: xcodegen generate
+
+      - name: Display
+        run: |
+          system_profiler SPDisplaysDataType || true
+          sw_vers
+
+      # Screen Recording is granted per client in TCC. A runner is a throwaway
+      # machine, so the grant is written straight into both databases for the
+      # processes that end up asking: the shell running the script, the
+      # screencapture tool and the runner's own agents. Either database may
+      # refuse a write (the system one is protected wherever SIP is on), which
+      # is why every insert is allowed to fail and the next step checks the
+      # result instead of trusting this one.
+      - name: Grant Screen Recording
+        run: |
+          grant() {
+            db="$1"; client="$2"; type="$3"
+            [ -f "$db" ] || return 0
+            $4 sqlite3 "$db" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, flags) VALUES ('kTCCServiceScreenCapture', '$client', $type, 2, 4, 1, 0);" \
+              && echo "granted $client in $db" || echo "could not write $db for $client"
+          }
+          user_db="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+          system_db="/Library/Application Support/com.apple.TCC/TCC.db"
+          clients="/bin/bash /bin/sh /bin/zsh /usr/sbin/screencapture /usr/bin/env"
+          for path in $(ls -d /Users/runner/actions-runner/*/bin/Runner.* /opt/runner/*/bin/Runner.* 2>/dev/null); do
+            clients="$clients $path"
+          done
+          for client in $clients; do
+            grant "$system_db" "$client" 1 sudo
+            grant "$user_db" "$client" 1 ""
+          done
+          for bundle in com.apple.Terminal com.apple.screencaptureui; do
+            grant "$system_db" "$bundle" 0 sudo
+            grant "$user_db" "$bundle" 0 ""
+          done
+          csrutil status || true
+          sudo sqlite3 "$system_db" "SELECT client, auth_value FROM access WHERE service='kTCCServiceScreenCapture';" || true
+
+      # A plain, neutral desktop. The Shots tool covers the display with its
+      # own backdrop while it captures, but anything that peeks out around it,
+      # a notification or the menu bar, should be plain too.
+      - name: Quiet desktop
+        run: |
+          defaults write com.apple.screencapture location "$HOME/Desktop"
+          mkdir -p "$HOME/Desktop" "$HOME/Downloads"
+          # Automation consent can leave osascript waiting forever, so it gets
+          # fifteen seconds and is then abandoned.
+          osascript -e 'tell application "System Events" to tell every desktop to set picture to "/System/Library/Desktop Pictures/Solid Colors/Silver.png"' &
+          sleep 15
+          kill %1 2>/dev/null || true
+
+      - name: Check that a capture is not blank
+        run: |
+          mkdir -p "$RUNNER_TEMP/check"
+          screencapture -x "$RUNNER_TEMP/check/fullscreen.png" || true
+          ls -la "$RUNNER_TEMP/check"
+          sips -g pixelWidth -g pixelHeight "$RUNNER_TEMP/check/fullscreen.png" || true
+
+      - name: Capture
+        env:
+          SHOTS_DISPOSABLE: "1"
+          SHOTS_ONLY: ${{ inputs.only }}
+        run: |
+          if [ -z "$SHOTS_ONLY" ]; then unset SHOTS_ONLY; fi
+          mkdir -p "$RUNNER_TEMP/shots"
+          SHOTS_OUT="$RUNNER_TEMP/shots" scripts/capture-shots.sh
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: |
+            ${{ runner.temp }}/shots
+            ${{ runner.temp }}/check
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Build log
+        if: failure()
+        run: |
+          for log in "${TMPDIR:-/tmp}"/docket-shots-build.log; do
+            [ -f "$log" ] && tail -200 "$log"
+          done
+          true

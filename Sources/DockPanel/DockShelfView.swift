@@ -745,7 +745,8 @@ struct DockShelfView: View {
                            scale: scale,
                            position: position,
                            isRunning: isRunning(entry.item),
-                           now: app.now) { menu(for: entry) }
+                           now: app.now,
+                           isPreview: app.showsSampleData) { menu(for: entry) }
             .equatable()
             // Only widgets read this. An icon already answers the pointer by
             // magnifying, and a second affordance on top would be noise.
@@ -1403,6 +1404,8 @@ private struct TileContent<Menu: View>: View, Equatable {
     var position: DockPosition
     var isRunning: Bool
     var now: Date
+    /// Sample values instead of live ones; see `AppState.showsSampleData`.
+    var isPreview = false
     /// Deliberately absent from `==`: a closure cannot be compared, and its
     /// captures are either value-stable (the entry) or references that stay
     /// current (AppState).
@@ -1427,7 +1430,8 @@ private struct TileContent<Menu: View>: View, Equatable {
     private var content: some View {
         if let widget = item.widget {
             ScaledWidgetTile(instance: widget,
-                             context: WidgetContext(position: position, now: now),
+                             context: WidgetContext(position: position, now: now,
+                                                    isPreview: isPreview),
                              scale: scale)
         } else {
             DockItemView(item: item, scale: scale, position: position,

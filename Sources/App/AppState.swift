@@ -71,6 +71,12 @@ public final class AppState {
     /// timer of their own - one timer for the whole shelf.
     public private(set) var now: Date = .now
 
+    /// Draws every widget from its own sample values, the ones the widget
+    /// library shows. Never persisted and never set by the app: it exists so
+    /// the screenshot tool can photograph a real shelf without it reading
+    /// whoever runs it, their calendar, their music or their files.
+    @ObservationIgnored public var showsSampleData = false
+
     /// Set when applying a macOS Dock layout fails, for the menu bar to surface.
     public private(set) var lastError: String?
     public private(set) var isApplying = false
