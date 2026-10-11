@@ -1,0 +1,6 @@
+/* 简体中文 InfoPlist 本地化（Docket 中文版） */
+"CFBundleDisplayName" = "Docket 中文版";
+"NSCalendarsFullAccessUsageDescription" = "Docket 会在程序坞小组件中显示你即将到来的日程。";
+"NSRemindersFullAccessUsageDescription" = "Docket 会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。";
+"NSAppleEventsUsageDescription" = "Docket 通过程序坞小组件控制音乐播放，并读取浏览器标签页中正在播放的媒体。";
+"NSLocationWhenInUseUsageDescription" = "Docket 会使用你的位置来显示天气小组件。";

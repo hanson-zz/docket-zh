@@ -1,5 +1,14 @@
 # Notice and attribution
 
+> **Docket 中文版（Chinese localization fork）：** 本仓库是
+> [Docket](https://github.com/nparashar150/dockset)（MIT 许可，版权归其原作者所有）的
+> **非官方简体中文本地化分支**，仅翻译了界面文字并调整了构建配置。本分支与 Dockset、
+> Docket 上游及其作者均**无任何关联**，也未获得其认可或赞助。This repository is an
+> unofficial Simplified Chinese localization fork of Docket
+> (https://github.com/nparashar150/dockset, MIT, © its author). It is not
+> affiliated with, endorsed by, or connected to Dockset or the upstream Docket
+> project.
+
 ## Dockset
 
 Docket exists because of [**Dockset**](https://dockset.app).

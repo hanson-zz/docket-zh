@@ -138,18 +138,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? await Task.sleep(for: .seconds(5))
             guard self != nil else { return }
             let alert = NSAlert()
-            alert.messageText = "Check for new versions of Docket?"
+            alert.messageText = "要检查 Docket 的新版本吗？"
             alert.informativeText = """
-                Docket can look for new releases once a day and tell you when \
-                one appears, in its menu bar item. Updates are never installed \
-                for you.
+                Docket 可以每天检查一次新版本，并在发现新版本时通过菜单栏项提示你。\
+                更新永远不会自动安装。
 
-                Checking asks GitHub for the latest version number, and \
-                nothing else is sent. You can change this in Settings.
+                检查时只会向 GitHub 查询最新版本号，不会发送其他任何信息。\
+                你可以在“设置”中更改此选项。
                 """
             alert.alertStyle = .informational
-            alert.addButton(withTitle: "Check for Updates")
-            alert.addButton(withTitle: "Don't Check")
+            alert.addButton(withTitle: "检查更新")
+            alert.addButton(withTitle: "不检查")
             NSApp.activate(ignoringOtherApps: true)
             let wanted = alert.runModal() == .alertFirstButtonReturn
             state.state.checkForUpdates = wanted

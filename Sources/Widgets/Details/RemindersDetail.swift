@@ -103,7 +103,7 @@ struct RemindersDetail: View {
                     .monospacedDigit()
                     .rollingValue(rows.count)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(rows.isEmpty ? "Nothing due today" : "due by tonight")
+                    Text(rows.isEmpty ? "今天没有到期事项" : "项今晚前到期")
                         .font(WidgetStyle.label(14))
                         .foregroundStyle(.white.opacity(0.85))
                     // Which list this is a view of, when it is not all of them
@@ -119,8 +119,8 @@ struct RemindersDetail: View {
             .lineLimit(1)
             if !rows.isEmpty {
                 HStack(spacing: 8) {
-                    StatChip(label: "Overdue", value: "\(overdue)")
-                    StatChip(label: "Today", value: "\(today)")
+                    StatChip(label: "已过期", value: "\(overdue)")
+                    StatChip(label: "今天", value: "\(today)")
                 }
             }
         }
@@ -142,10 +142,10 @@ struct RemindersDetail: View {
         let hidden = rows.count - shownOverdue.count - shownToday.count
 
         VStack(alignment: .leading, spacing: 12) {
-            section("Overdue", shownOverdue, tint: .white)
-            section("Today", shownToday, tint: .white.opacity(0.7))
+            section("已过期", shownOverdue, tint: .white)
+            section("今天", shownToday, tint: .white.opacity(0.7))
             if hidden > 0 {
-                Text("\(hidden) more in Reminders")
+                Text("“提醒事项”中还有 \(hidden) 项")
                     .font(WidgetStyle.caption(11))
                     .foregroundStyle(WidgetStyle.secondary)
             }
@@ -207,13 +207,13 @@ struct RemindersDetail: View {
     private func detail(_ item: DueReminder) -> String {
         let when = item.hasTime
             ? item.due.formatted(date: .omitted, time: .shortened)
-            : "All day"
+            : "全天"
         // The day only earns its place once the reminder is older than today;
         // everything here is due by tonight, so anything else is today's.
         let day = Calendar.current.isDateInToday(item.due)
             ? ""
             : item.due.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) + " "
-        return item.list.isEmpty ? day + when : "\(day)\(when), \(item.list)"
+        return item.list.isEmpty ? day + when : "\(day)\(when)，\(item.list)"
     }
 
     // MARK: No access
@@ -221,8 +221,8 @@ struct RemindersDetail: View {
     private var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(access == .notDetermined
-                 ? "Docket has not been given access to your reminders."
-                 : "Reminders access is off for Docket.")
+                 ? "Docket 尚未获得访问你提醒事项的权限。"
+                 : "Docket 的提醒事项访问权限已关闭。")
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(WidgetStyle.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -230,9 +230,9 @@ struct RemindersDetail: View {
             // prompt on screen, so the only button worth drawing is the one
             // that goes where the answer can be changed.
             if access == .notDetermined {
-                action("Allow Access") { request() }
+                action("允许访问") { request() }
             } else {
-                action("Open Settings") { openPrivacySettings() }
+                action("打开系统设置") { openPrivacySettings() }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -366,7 +366,7 @@ private struct DueReminder: Identifiable, Hashable, Sendable {
         let title = (reminder.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         // An untitled reminder is still a real reminder; Reminders.app shows
         // the row empty, which here would be a dot with nothing beside it.
-        self.title = title.isEmpty ? "New Reminder" : title
+        self.title = title.isEmpty ? "新提醒事项" : title
         self.due = due
         self.hasTime = components.hour != nil
         self.list = reminder.calendar?.title ?? ""

@@ -94,8 +94,8 @@ struct DockShelfView: View {
         /// actually do - a panel for a widget that has one, otherwise the app.
         var actionLabel: String {
             if let widget = item.widget, WidgetDetail.exists(for: widget.kind) {
-                "Show Details"
-            } else { "Open" }
+                "显示详情"
+            } else { "打开" }
         }
         /// Running-but-unpinned apps have no stored position to move, and
         /// neither does the Trash: it is pinned to the end the way the Dock
@@ -229,7 +229,7 @@ struct DockShelfView: View {
                                                icon: FolderIcon()),
                                  isRunningApp: false,
                                  isTrash: true,
-                                 label: "Trash"))
+                                 label: "废纸篓"))
         }
 
         // Rebuild slots with the separator and the grip in the right places.
@@ -1073,7 +1073,7 @@ struct DockShelfView: View {
         .buttonStyle(.plain)
         .opacity(disabled ? 0.25 : 0.7)
         .disabled(disabled)
-        .accessibilityLabel(back ? "Scroll back" : "Scroll forward")
+        .accessibilityLabel(back ? "向回滚动" : "向前滚动")
     }
 
     private func scrollLimit(_ s: Solved) -> CGFloat { max(0, s.restLength - maxLength) }
@@ -1119,8 +1119,8 @@ struct DockShelfView: View {
         .onHover { inside in
             withAnimation(.easeOut(duration: 0.14)) { addHovered = inside }
         }
-        .help("Add a widget")
-        .accessibilityLabel("Add a widget")
+        .help("添加小组件")
+        .accessibilityLabel("添加小组件")
     }
 
     private var grip: some View {
@@ -1158,8 +1158,8 @@ struct DockShelfView: View {
                         lastResizeDelta = nil
                     }
             )
-            .accessibilityLabel("Dock size")
-            .accessibilityValue("\(Int((scale * 100).rounded())) percent")
+            .accessibilityLabel("程序坞大小")
+            .accessibilityValue("百分之 \(Int((scale * 100).rounded()))")
             .accessibilityAdjustableAction { direction in
                 app.setScale(scale + (direction == .increment ? 0.05 : -0.05))
             }
@@ -1176,17 +1176,17 @@ struct DockShelfView: View {
     /// Space, and both are private to Apple - a menu item that silently does
     /// nothing is worse than one that is not there.
     private func menu(for entry: Entry) -> some View {
-        Menu("Options") {
+        Menu("选项") {
             if entry.isRunningApp {
-                Button("Keep in Dock") {
+                Button("在程序坞中保留") {
                     withAnimation(.snappy(duration: 0.2)) { app.addItem(entry.item) }
                 }
             } else {
-                Button("Remove from Dock", role: .destructive) { remove(entry) }
+                Button("从程序坞中移除", role: .destructive) { remove(entry) }
             }
             if let group = entry.item.group {
-                Button("Rename Group…") { rename(group) }
-                Menu("Tint") {
+                Button("重命名分组…") { rename(group) }
+                Menu("色调") {
                     ForEach(GroupTint.allCases, id: \.self) { tint in
                         Button(tint.title) {
                             var updated = group
@@ -1195,18 +1195,18 @@ struct DockShelfView: View {
                         }
                     }
                 }
-                Button("Ungroup") {
+                Button("取消分组") {
                     withAnimation(.snappy(duration: 0.22)) { app.ungroup(group.id) }
                 }
             }
             if entry.item.isWidget {
-                Button("Widget Settings…") {
+                Button("小组件设置…") {
                     SettingsWindow.shared.show(app: app, tab: "Widgets")
                 }
             }
             if let widget = entry.item.widget,
                WidgetCatalog.entry(widget.kind)?.supportsCompact == true {
-                Button(widget.expanded ? "Collapse" : "Expand") {
+                Button(widget.expanded ? "收起" : "展开") {
                     var updated = widget
                     updated.expanded.toggle()
                     withAnimation(.snappy(duration: 0.22)) { app.updateWidget(updated) }
@@ -1218,10 +1218,10 @@ struct DockShelfView: View {
             // is made to work at all, and hunting for it in Settings is a poor
             // route to the only thing that fixes an empty tile.
             if let widget = entry.item.widget, widget.kind == .weather {
-                Button("Set Location…") { setCity(widget) }
+                Button("设置位置…") { setCity(widget) }
             }
             if entry.item.fileRef != nil {
-                Button("Show in Finder") { AppCatalog.shared.reveal(entry.item) }
+                Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }
         }
         // Top level, not tucked under Options: grouping is a primary action
@@ -1235,7 +1235,7 @@ struct DockShelfView: View {
         if let widget = entry.item.widget,
            let catalog = WidgetCatalog.entry(widget.kind), !catalog.variants.isEmpty {
             Divider()
-            Menu("Style") {
+            Menu("样式") {
                 ForEach(catalog.variants.indices, id: \.self) { index in
                     let variant = catalog.variants[index]
                     Button(variant.title) {
@@ -1248,7 +1248,7 @@ struct DockShelfView: View {
         }
         if entry.canBeGrouped, !app.groups.isEmpty {
             Divider()
-            Menu("Add to Group") {
+            Menu("添加到分组") {
                 ForEach(app.groups) { target in
                     Button(target.name) {
                         withAnimation(.snappy(duration: 0.22)) {
@@ -1263,9 +1263,9 @@ struct DockShelfView: View {
             Divider()
             if case .app(_, let bundleID, _) = entry.item,
                AppCatalog.shared.isRunning(bundleID: bundleID) {
-                Button("Quit") { AppCatalog.shared.quit(bundleID: bundleID) }
+                Button("退出") { AppCatalog.shared.quit(bundleID: bundleID) }
             } else {
-                Button("Open") { open(entry) }
+                Button("打开") { open(entry) }
             }
         }
         // Spacers were implemented end to end - drawn, sized, labelled, and
@@ -1274,13 +1274,13 @@ struct DockShelfView: View {
         // spacer is about where it goes, so it is inserted next to the tile
         // that was clicked rather than appended to the end.
         Divider()
-        Menu("Add Spacer") {
-            Button("Small") { addSpacer(.small, after: entry) }
-            Button("Regular") { addSpacer(.regular, after: entry) }
+        Menu("添加间隔") {
+            Button("小") { addSpacer(.small, after: entry) }
+            Button("常规") { addSpacer(.regular, after: entry) }
         }
         Divider()
-        Button("Add Widget…") { LibraryWindow.shared.show(app: app) }
-        Button("Dock Settings…") { SettingsWindow.shared.show(app: app) }
+        Button("添加小组件…") { LibraryWindow.shared.show(app: app) }
+        Button("程序坞设置…") { SettingsWindow.shared.show(app: app) }
     }
 
     private func addSpacer(_ size: SpacerSize, after entry: Entry) {
@@ -1326,13 +1326,13 @@ struct DockShelfView: View {
         defer { NSApp.setActivationPolicy(policy) }
 
         let alert = NSAlert()
-        alert.messageText = "Weather Location"
-        alert.informativeText = "Leave empty to use your current location."
-        alert.addButton(withTitle: "Set")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = "天气位置"
+        alert.informativeText = "留空则使用你的当前位置。"
+        alert.addButton(withTitle: "设置")
+        alert.addButton(withTitle: "取消")
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         field.stringValue = widget.config.string("city")
-        field.placeholderString = "Current location"
+        field.placeholderString = "当前位置"
         alert.accessoryView = field
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -1350,10 +1350,10 @@ struct DockShelfView: View {
         defer { NSApp.setActivationPolicy(policy) }
 
         let alert = NSAlert()
-        alert.messageText = "Rename Group"
-        alert.informativeText = "This is the name shown when you hover the group."
-        alert.addButton(withTitle: "Rename")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = "重命名分组"
+        alert.informativeText = "这是指针悬停在分组上时显示的名称。"
+        alert.addButton(withTitle: "重命名")
+        alert.addButton(withTitle: "取消")
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         field.stringValue = group.name
         alert.accessoryView = field

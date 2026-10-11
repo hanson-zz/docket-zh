@@ -164,8 +164,8 @@ struct BatteryDetail: View {
     }
 
     private func caption(_ device: BatteryDevice) -> String {
-        guard device.present else { return "Not connected" }
-        return device.charging ? "Charging" : "On battery"
+        guard device.present else { return "未连接" }
+        return device.charging ? "正在充电" : "使用电池"
     }
 
     @ViewBuilder

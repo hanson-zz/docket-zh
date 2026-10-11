@@ -26,17 +26,17 @@ final class WidgetConfigurationTests: XCTestCase {
 
         XCTAssertEqual(plain.config.string("layout"), graphed.config.string("layout"),
                        "precondition: the two variants share a layout")
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: plain.config, kind: .system), "Numbers")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: plain.config, kind: .system), "数字")
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: graphed.config, kind: .system),
-                       "Numbers + graph")
+                       "数字 + 图表")
     }
 
     func testEverySystemVariantReportsItsOwnTitle() {
         let expected: [([String: WidgetConfig.Value], String)] = [
-            (["layout": .string("numbers"), "chart": .bool(false)], "Numbers"),
-            (["layout": .string("numbers"), "chart": .bool(true)], "Numbers + graph"),
-            (["layout": .string("rings")], "Rings"),
-            (["layout": .string("bars")], "Bars"),
+            (["layout": .string("numbers"), "chart": .bool(false)], "数字"),
+            (["layout": .string("numbers"), "chart": .bool(true)], "数字 + 图表"),
+            (["layout": .string("rings")], "圆环"),
+            (["layout": .string("bars")], "条形"),
         ]
         for (overrides, title) in expected {
             guard let instance = WidgetCatalog.make(.system, overrides: overrides) else {
@@ -58,7 +58,7 @@ final class WidgetConfigurationTests: XCTestCase {
                                                                      "chart": .bool(true)]) else {
             return XCTFail("system widget missing from catalog")
         }
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .system), "Rings")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .system), "圆环")
     }
 
     /// Unrelated user options must not disturb the style row.
@@ -72,7 +72,7 @@ final class WidgetConfigurationTests: XCTestCase {
                                                                        "city": .string("Oslo")]) else {
             return XCTFail("weather widget missing from catalog")
         }
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .weather), "Current")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .weather), "当前")
     }
 
     func testAConfigMatchingNoVariantReportsNone() {
@@ -121,7 +121,7 @@ final class WidgetConfigurationTests: XCTestCase {
         XCTAssertNil(WidgetCatalog.variantTitle(matching: old, kind: .system),
                      "an absent key cannot be treated as a match")
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: old.merging(defaults: entry.defaults),
-                                                  kind: .system), "Numbers")
+                                                  kind: .system), "数字")
     }
 
     /// Matching compares whole values, cases included.

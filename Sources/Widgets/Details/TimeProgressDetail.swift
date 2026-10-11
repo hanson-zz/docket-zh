@@ -43,7 +43,7 @@ struct TimeProgressDetail: View {
                                 .foregroundStyle(.white.opacity(0.7))
                         }
                         .monospacedDigit()
-                        Text("of \(shown.title(now)) gone")
+                        Text("\(shown.title(now)) 已过去")
                             .font(WidgetStyle.label(13))
                             .foregroundStyle(.white.opacity(0.75))
                     }
@@ -78,7 +78,7 @@ struct TimeProgressDetail: View {
                 line(span, now: now).contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Show \(span.spoken) on the tile")
+            .accessibilityLabel("在小组件上显示\(span.spoken)")
             .accessibilityAddTraits(span.rawValue == period ? [.isSelected] : [])
         }
     }
@@ -168,8 +168,8 @@ struct TimeProgressDetail: View {
             // Rounded up, so the last half-minute of the day reads "1m left"
             // rather than "0m left".
             let minutes = Int((max(0, end.timeIntervalSince(now)) / 60).rounded(.up))
-            return minutes >= 60 ? "\(minutes / 60)h \(minutes % 60)m left"
-                                 : "\(minutes)m left"
+            return minutes >= 60 ? "剩余 \(minutes / 60) 小时 \(minutes % 60) 分钟"
+                                 : "剩余 \(minutes) 分钟"
         case .month, .year:
             // Counted in calendar days from the start of today, so today
             // counts as a day you still have and a DST change cannot shave one
@@ -178,7 +178,7 @@ struct TimeProgressDetail: View {
             let days = calendar.dateComponents([.day],
                                                from: calendar.startOfDay(for: now),
                                                to: end).day ?? 0
-            return days == 1 ? "1 day left" : "\(days) days left"
+            return days == 1 ? "剩余 1 天" : "剩余 \(days) 天"
         }
     }
 
@@ -228,9 +228,9 @@ struct TimeProgressDetail: View {
         /// the row is actually about.
         var spoken: String {
             switch self {
-            case .day: "today"
-            case .month: "this month"
-            case .year: "this year"
+            case .day: "今天"
+            case .month: "本月"
+            case .year: "今年"
             }
         }
     }

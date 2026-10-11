@@ -44,7 +44,7 @@ struct AlarmDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(name.isEmpty ? "Alarm" : name)
+                    Text(name.isEmpty ? "闹钟" : name)
                         .font(WidgetStyle.label(14))
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
@@ -60,10 +60,10 @@ struct AlarmDetail: View {
                 .opacity(enabled ? 1 : 0.55)
 
                 HStack(spacing: 8) {
-                    StatChip(label: "Rings", value: dayLine(next, now: now))
+                    StatChip(label: "响铃时间", value: dayLine(next, now: now))
                     // A countdown to something that will not ring is a lie,
                     // so a silenced alarm says so instead.
-                    StatChip(label: "Countdown", value: enabled ? countdown(to: next, from: now) : "Silenced")
+                    StatChip(label: "倒计时", value: enabled ? countdown(to: next, from: now) : "已静音")
                 }
 
                 armSwitch(enabled)
@@ -84,7 +84,7 @@ struct AlarmDetail: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(enabled ? Self.orange : .white.opacity(0.6))
                     .frame(width: 20)
-                Text(enabled ? "On" : "Silenced")
+                Text(enabled ? "已开启" : "已静音")
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(.white)
                 Spacer(minLength: 8)
@@ -101,7 +101,7 @@ struct AlarmDetail: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(enabled ? "Silence alarm" : "Turn alarm on")
+        .accessibilityLabel(enabled ? "关闭闹钟" : "开启闹钟")
     }
 
     // MARK: Data
@@ -126,15 +126,15 @@ struct AlarmDetail: View {
     /// nothing else - but which of the two, and what date that is, is exactly
     /// what a 24-hour time on a card leaves you to work out.
     private func dayLine(_ date: Date, now: Date) -> String {
-        let day = Calendar.current.isDate(date, inSameDayAs: now) ? "Today" : "Tomorrow"
-        return "\(day), \(date.formatted(.dateTime.day().month(.abbreviated)))"
+        let day = Calendar.current.isDate(date, inSameDayAs: now) ? "今天" : "明天"
+        return "\(day)，\(date.formatted(.dateTime.day().month(.abbreviated)))"
     }
 
     private func countdown(to date: Date, from now: Date) -> String {
         let total = max(0, Int(date.timeIntervalSince(now)))
         let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
-        return h > 0 ? String(format: "in %dh %02dm %02ds", h, m, s)
-                     : String(format: "in %dm %02ds", m, s)
+        return h > 0 ? String(format: "%d 小时 %02d 分 %02d 秒后", h, m, s)
+                     : String(format: "%d 分 %02d 秒后", m, s)
     }
 
     // MARK: Actions

@@ -64,7 +64,7 @@ struct StickyNoteDetail: View {
                 // view down, so whichever of the two happens first, the words
                 // are already saved.
                 .onDisappear { commit() }
-                .accessibilityLabel("Note")
+                .accessibilityLabel("便签")
                 // The card forces the dark scheme; the caret has to be ink
                 // like the words, or it is white on paper.
                 .tint(Self.ink)

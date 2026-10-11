@@ -74,26 +74,26 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         let hasShelf = app.state.setup != .macOSDockOnly
         if hasShelf {
-            menu.addItem(layoutMenu(.customDock, title: "Shelf Layout"))
+            menu.addItem(layoutMenu(.customDock, title: "扩展栏布局"))
         }
-        menu.addItem(layoutMenu(.macOSDock, title: "Apple Dock Layout"))
+        menu.addItem(layoutMenu(.macOSDock, title: "系统程序坞布局"))
         menu.addItem(.separator())
 
         // Only when there is one. An always-present "you are up to date" line
         // is a permanent reminder of something nobody needs reminding of.
         if let update = UpdateService.shared.available {
-            let entry = item("Update to \(update.version)…", #selector(openUpdate))
+            let entry = item("更新到 \(update.version)…", #selector(openUpdate))
             entry.image = NSImage(systemSymbolName: "arrow.down.circle.fill",
                                   accessibilityDescription: nil)
             menu.addItem(entry)
             menu.addItem(.separator())
         }
         if hasShelf {
-            menu.addItem(item("Add Widget…", #selector(openLibrary)))
+            menu.addItem(item("添加小组件…", #selector(openLibrary)))
         }
-        menu.addItem(item("Settings…", #selector(openSettings), key: ","))
+        menu.addItem(item("设置…", #selector(openSettings), key: ","))
         menu.addItem(.separator())
-        menu.addItem(item("Quit Docket", #selector(quit), key: "q"))
+        menu.addItem(item("退出 Docket", #selector(quit), key: "q"))
     }
 
     @objc private func openUpdate() { UpdateService.shared.openReleasePage() }
@@ -116,13 +116,13 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
         if !profiles.isEmpty { submenu.addItem(.separator()) }
         if kind == .macOSDock {
-            submenu.addItem(item("Save Current Dock", #selector(captureDock)))
+            submenu.addItem(item("存储当前程序坞", #selector(captureDock)))
             if app.state.originalMacOSDock != nil {
-                submenu.addItem(item("Restore Original Dock", #selector(restoreDock)))
+                submenu.addItem(item("恢复原始程序坞", #selector(restoreDock)))
             }
             submenu.addItem(.separator())
         }
-        submenu.addItem(item("Edit Layouts…", #selector(openLayouts)))
+        submenu.addItem(item("编辑布局…", #selector(openLayouts)))
         parent.submenu = submenu
 
         // The layout in use, greyed at the trailing edge the way a menu shows

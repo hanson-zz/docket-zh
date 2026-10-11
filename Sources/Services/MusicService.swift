@@ -17,7 +17,7 @@ public enum MusicSource: String, Sendable, CaseIterable {
     var displayName: String {
         switch self {
         case .spotify: "Spotify"
-        case .appleMusic: "Music"
+        case .appleMusic: "音乐"
         }
     }
 }

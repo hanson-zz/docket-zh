@@ -116,8 +116,8 @@ extension GroupTint {
 
     var title: String {
         switch self {
-        case .none: "No tint"
-        default: rawValue.capitalized
+        case .none: "无色调"
+        default: docketColourName(rawValue)
         }
     }
 }

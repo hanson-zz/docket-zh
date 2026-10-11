@@ -23,15 +23,15 @@ public actor NativeDockAdapter {
         public var errorDescription: String? {
             switch self {
             case .readFailed:
-                "Couldn't read the current Dock layout."
+                "无法读取当前的程序坞布局。"
             case .writeFailed:
-                "Couldn't write the Dock layout."
+                "无法写入程序坞布局。"
             case .verificationFailed(let expected, let found):
-                "The Dock restarted with \(found) items instead of \(expected)."
+                "程序坞重启后有 \(found) 个项目，而不是预期的 \(expected) 个。"
             case .dockDidNotRestart:
-                "The Dock did not come back after being restarted."
+                "程序坞重启后没有恢复运行。"
             case .rolledBack(let reason):
-                "Couldn't apply that layout, so your previous Dock was restored. (\(reason))"
+                "无法应用该布局，已恢复你之前的程序坞。（\(reason)）"
             }
         }
     }

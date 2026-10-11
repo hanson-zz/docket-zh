@@ -38,7 +38,7 @@ final class WeatherService {
     static let shared = WeatherService()
 
     /// CC BY 4.0 requires this to be visible in the UI.
-    static let attribution = "Weather data from MET Norway"
+    static let attribution = "天气数据来自 MET Norway（挪威气象研究所）"
 
     /// MET blocks requests without a real identifier. Replace the contact
     /// with the shipping app's own before release.
@@ -171,22 +171,26 @@ final class WeatherService {
         return night ? "cloud.moon.fill" : "cloud.sun.fill"
     }
 
+    // 中文本地化分支：天气状况名称改为简体中文。键是 MET 的符号代码，保持不变。
     private static let conditionNames: [String: String] = [
-        "clearsky": "Clear", "fair": "Fair", "partlycloudy": "Partly Cloudy", "cloudy": "Cloudy",
-        "fog": "Fog", "rain": "Rain", "rainshowers": "Showers", "drizzle": "Drizzle",
-        "sleet": "Sleet", "sleetshowers": "Sleet", "snow": "Snow", "snowshowers": "Snow Showers",
+        "clearsky": "晴", "fair": "少云", "partlycloudy": "多云", "cloudy": "阴",
+        "fog": "雾", "rain": "雨", "rainshowers": "阵雨", "drizzle": "毛毛雨",
+        "sleet": "雨夹雪", "sleetshowers": "雨夹雪", "snow": "雪", "snowshowers": "阵雪",
     ]
+
+    /// MET 的强度前缀（light / heavy）对应的中文前缀。
+    private static let intensityNames: [String: String] = ["light": "小", "heavy": "大"]
 
     static func condition(for code: String) -> String {
         var base = String(code.split(separator: "_").first ?? "")
         var prefix = ""
         for intensity in ["light", "heavy"] where base.hasPrefix(intensity) {
-            prefix = intensity.capitalized + " "
+            prefix = intensityNames[intensity] ?? ""
             base.removeFirst(intensity.count)
         }
         var suffix = ""
         if base.hasSuffix("andthunder") {
-            suffix = " & Thunder"
+            suffix = "伴有雷暴"
             base.removeLast("andthunder".count)
         }
         return prefix + (conditionNames[base] ?? base.capitalized) + suffix

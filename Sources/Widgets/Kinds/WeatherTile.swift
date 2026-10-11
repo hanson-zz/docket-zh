@@ -10,7 +10,7 @@ struct WeatherTile: View {
     /// the tint is part of how it reads at a glance.
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "Partly Cloudy")
+                                           condition: "多云")
 
     private var layout: String { instance.config.string("layout", default: "current") }
     private var fahrenheit: Bool { instance.config.bool("fahrenheit") }
@@ -35,7 +35,7 @@ struct WeatherTile: View {
     private var placeCaption: String {
         if !city.isEmpty { return city }
         let service = LocationService.shared
-        return (service.denied || service.unavailable) ? "Set a city…" : "Locating…"
+        return (service.denied || service.unavailable) ? "设置城市…" : "正在定位…"
     }
 
     /// The library has no live data, so it shows the reference sample.
@@ -125,7 +125,7 @@ struct WeatherTile: View {
             HStack(spacing: 0) {
                 if let weather {
                     VStack(spacing: 1) {
-                        Text("Now")
+                        Text("现在")
                             .font(WidgetStyle.caption(10))
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
@@ -189,7 +189,7 @@ struct WeatherTile: View {
             }
             .accessibilityLabel(mm >= 0.05
                                 ? "\(mm.formatted(.number.precision(.fractionLength(1))))mm"
-                                : "no rain")
+                                : "无降水")
     }
 
     private static let rainBlue = Color(hex: "#5AC8FA")

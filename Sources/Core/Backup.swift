@@ -41,7 +41,7 @@ public enum Backup {
     /// A name that sorts and does not collide: "Docket Profiles 2026-09-27".
     public static func suggestedName(on date: Date = .now) -> String {
         let stamp = date.formatted(.iso8601.year().month().day().dateSeparator(.dash))
-        return "Docket Profiles \(stamp).\(fileExtension)"
+        return "Docket 布局 \(stamp).\(fileExtension)"
     }
 
     public static func encode(_ state: PersistedState) throws -> Data {
@@ -92,7 +92,7 @@ public enum Backup {
         public var errorDescription: String? {
             switch self {
             case .tooNew:
-                "This backup was written by a newer version of Docket."
+                "此备份由更新版本的 Docket 创建。"
             }
         }
     }

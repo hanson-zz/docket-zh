@@ -18,7 +18,7 @@ struct CountdownTile: View {
     var body: some View {
         let duration = max(0, instance.config.double("duration", default: 300))
         let name = instance.config.string("name")
-        let title = name.isEmpty ? "Countdown" : name
+        let title = name.isEmpty ? "倒计时" : name
 
         WidgetSurface {
             if context.position.isVertical {
@@ -63,7 +63,7 @@ struct CountdownTile: View {
     private func startButton(title: String, size: CGFloat) -> some View {
         TileGlyph(symbol: "play.fill", size: size,
                   action: context.isPreview ? nil : (start as () -> Void))
-            .accessibilityLabel("Start \(title)")
+            .accessibilityLabel("开始“\(title)”")
     }
 
     /// A countdown is running only while it carries a deadline; idle it shows

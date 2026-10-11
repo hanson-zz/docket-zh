@@ -466,7 +466,7 @@ public struct DockProfile: Codable, Hashable, Identifiable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         kind = try c.decode(ProfileKind.self, forKey: .kind)
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? "未命名"
         color = try c.decodeIfPresent(PaletteColor.self, forKey: .color) ?? .blue
         scale = try c.decodeIfPresent(Double.self, forKey: .scale) ?? Geometry.defaultScale
         shortcut = try c.decodeIfPresent(KeyCombo.self, forKey: .shortcut)
@@ -828,9 +828,9 @@ public enum TimerPhase: String, Codable, Sendable, CaseIterable {
 
     public var label: String {
         switch self {
-        case .focus: "Focus"
-        case .rest: "Break"
-        case .long: "Long break"
+        case .focus: "专注"
+        case .rest: "休息"
+        case .long: "长休息"
         }
     }
 }
@@ -963,3 +963,53 @@ extension TimerPhase: LenientChoice { public static var fallback: Self { .focus 
 // would be applied to the wrong surface, writing a shelf layout into Apple's
 // Dock. Losing the profile is the better failure, and it is one profile rather
 // than the file.
+
+// MARK: - 简体中文显示名称
+//
+// 中文本地化分支新增。原始值（rawValue）会被持久化或用作标识符，因此保持英文不变，
+// 界面上显示的名称统一从这里取。
+
+public extension DockPosition {
+    /// 界面上显示的屏幕边缘名称。
+    var displayName: String {
+        switch self {
+        case .left: "左侧"
+        case .bottom: "底部"
+        case .right: "右侧"
+        }
+    }
+}
+
+public extension WidgetCategory {
+    /// 小组件库侧边栏中显示的类别名称。
+    var displayName: String {
+        switch self {
+        case .clocks: "时钟"
+        case .reminders: "提醒"
+        case .calendar: "日历"
+        case .notes: "便签"
+        case .media: "媒体"
+        case .system: "系统"
+        case .weather: "天气"
+        case .business: "商业"
+        case .stocks: "股票"
+        }
+    }
+}
+
+/// 颜色原始值（如 "red"、"graphite"）对应的中文名称；未知值按原样首字母大写。
+public func docketColourName(_ raw: String) -> String {
+    switch raw {
+    case "red": "红色"
+    case "orange": "橙色"
+    case "yellow": "黄色"
+    case "green": "绿色"
+    case "teal": "青色"
+    case "blue": "蓝色"
+    case "indigo": "靛蓝色"
+    case "purple": "紫色"
+    case "pink": "粉色"
+    case "graphite": "石墨色"
+    default: raw.prefix(1).uppercased() + raw.dropFirst()
+    }
+}

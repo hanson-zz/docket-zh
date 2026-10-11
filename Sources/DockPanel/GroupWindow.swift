@@ -194,7 +194,7 @@ struct GroupSheet: View {
             // Editable in place. A group's name is the one thing you always
             // want to change right after making one, and burying it in a
             // submenu behind a modal is why it read as not being possible.
-            TextField("Name", text: $draft)
+            TextField("名称", text: $draft)
                 .textFieldStyle(.plain)
                 .multilineTextAlignment(.center)
                 .font(.system(size: 12, weight: .semibold))
@@ -400,7 +400,7 @@ private struct GroupSheetItem: View {
                 }
         )
         .contextMenu {
-            Button("Remove from Group") { remove() }
+            Button("从分组中移除") { remove() }
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(name)
@@ -424,6 +424,6 @@ private struct GroupSheetItem: View {
             return url.deletingPathExtension().lastPathComponent
         }
         if case .link(_, _, let title) = item { return title }
-        return "Item"
+        return "项目"
     }
 }

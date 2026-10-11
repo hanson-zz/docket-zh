@@ -267,7 +267,7 @@ struct StocksDetail: View {
             Text(symbol)
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
-            Text("No quote yet.")
+            Text("暂无报价。")
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(WidgetStyle.secondary)
         }
@@ -276,7 +276,7 @@ struct StocksDetail: View {
     private var staleNote: some View {
         HStack(spacing: 5) {
             Image(systemName: "exclamationmark.triangle")
-            Text("Last refresh failed - these are the previous good numbers.")
+            Text("上次刷新失败，以下为之前获取的有效数据。")
         }
         .font(WidgetStyle.caption(10))
         .foregroundStyle(WidgetStyle.secondary)

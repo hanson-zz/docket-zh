@@ -98,7 +98,7 @@ struct CalendarDetail: View {
     /// calendars fills the panel with events it did not ask about.
     private var picker: some View {
         Menu {
-            Button("All Calendars") { apply([]) }
+            Button("所有日历") { apply([]) }
             Divider()
             ForEach(calendars) { calendar in
                 Toggle(calendar.title, isOn: Binding(
@@ -106,7 +106,7 @@ struct CalendarDetail: View {
                     set: { _ in toggle(calendar) }))
             }
         } label: {
-            Text("Calendars…")
+            Text("日历…")
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
@@ -125,7 +125,7 @@ struct CalendarDetail: View {
         let allDay = showsAllDay ? events.filter(\.isAllDay) : []
 
         if timed.isEmpty, allDay.isEmpty {
-            Text("Nothing scheduled today.")
+            Text("今天没有日程。")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(.white.opacity(0.8))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -143,7 +143,7 @@ struct CalendarDetail: View {
                 // Below the timed events, not mixed into them: an all-day
                 // entry has no place in a list ordered by time.
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("ALL DAY")
+                    Text("全天")
                         .font(.system(size: 9, weight: .semibold))
                         .tracking(0.6)
                         .foregroundStyle(.white.opacity(0.6))
@@ -190,8 +190,8 @@ struct CalendarDetail: View {
     private var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(access == .notDetermined
-                 ? "Docket has not been given access to your calendar."
-                 : "Calendar access is off for Docket.")
+                 ? "Docket 尚未获得访问你日历的权限。"
+                 : "Docket 的日历访问权限已关闭。")
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)
@@ -199,9 +199,9 @@ struct CalendarDetail: View {
             // prompt on screen, so the only button worth drawing is the one
             // that goes where the answer can be changed.
             if access == .notDetermined {
-                action("Allow Access") { request() }
+                action("允许访问") { request() }
             } else {
-                action("Open Settings") { openPrivacySettings() }
+                action("打开系统设置") { openPrivacySettings() }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -344,7 +344,7 @@ private struct DayEvent: Identifiable, Hashable {
         // part of it or two occurrences on one day collide in the list.
         self.id = "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)"
         // An untitled event is a real event; the calendar apps call it this.
-        self.title = title.isEmpty ? "New Event" : title
+        self.title = title.isEmpty ? "新日程" : title
         self.start = start
         self.end = event.endDate ?? start
         self.isAllDay = event.isAllDay

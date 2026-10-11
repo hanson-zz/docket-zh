@@ -42,10 +42,10 @@ struct AirDropDetail: View {
             VStack(alignment: .leading, spacing: 14) {
                 state
                 HStack(spacing: 8) {
-                    button("Open AirDrop", fill: .white.opacity(0.24), label: .white, action: openWindow)
-                    button("Settings", fill: .white.opacity(0.14), label: .white, action: openSettings)
+                    button("打开隔空投送", fill: .white.opacity(0.24), label: .white, action: openWindow)
+                    button("设置", fill: .white.opacity(0.14), label: .white, action: openSettings)
                 }
-                Text("Nearby devices are listed only in Finder's AirDrop window, and the mode is changed in Control Centre or Settings.")
+                Text("附近的设备只会显示在访达的“隔空投送”窗口中，接收模式需在控制中心或系统设置中更改。")
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
@@ -91,10 +91,10 @@ struct AirDropDetail: View {
                         .foregroundStyle(.white)
                 }
             VStack(alignment: .leading, spacing: 2) {
-                Text(mode?.title ?? "Setting unavailable")
+                Text(mode?.title ?? "无法获取设置")
                     .font(WidgetStyle.label(18))
                     .foregroundStyle(WidgetStyle.primary)
-                Text(mode?.detail ?? "macOS is not reporting a discoverability mode.")
+                Text(mode?.detail ?? "macOS 未报告可被发现模式。")
                     .font(WidgetStyle.caption(12))
                     .foregroundStyle(.white.opacity(0.75))
                     .fixedSize(horizontal: false, vertical: true)
@@ -174,18 +174,18 @@ struct AirDropDetail: View {
 
         var title: String {
             switch self {
-            case .off: "Receiving Off"
-            case .contacts: "Contacts Only"
-            case .everyone: "Everyone"
+            case .off: "接收关闭"
+            case .contacts: "仅限联系人"
+            case .everyone: "所有人"
             }
         }
 
         /// Who can see this Mac, which is the question the mode answers.
         var detail: String {
             switch self {
-            case .off: "Nobody nearby can see this Mac."
-            case .contacts: "People in your contacts, signed in to iCloud."
-            case .everyone: "Anyone nearby can see this Mac."
+            case .off: "附近的人都看不到这台 Mac。"
+            case .contacts: "仅限你通讯录中已登录 iCloud 的联系人。"
+            case .everyone: "附近的任何人都能看到这台 Mac。"
             }
         }
 

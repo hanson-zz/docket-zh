@@ -130,8 +130,8 @@ public final class SystemDockSettings {
 
     /// One-line summary for the settings UI.
     public var summary: String {
-        let edge = position.rawValue.capitalized
-        let mag = magnification ? "magnification \(Int((magnificationPeak * 100).rounded()))%" : "no magnification"
-        return "\(edge) · \(Int(tileSize))pt icons · \(mag)"
+        let edge = position.displayName
+        let mag = magnification ? "放大 \(Int((magnificationPeak * 100).rounded()))%" : "不放大"
+        return "\(edge) · \(Int(tileSize))pt 图标 · \(mag)"
     }
 }

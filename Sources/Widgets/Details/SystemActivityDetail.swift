@@ -80,7 +80,7 @@ struct SystemActivityDetail: View {
     /// until it fills.
     private var span: String {
         let count = charted.map { samples($0).count }.max() ?? 0
-        return count >= SystemMetrics.historyLength ? "Last 60 seconds" : "Last \(count) seconds"
+        return count >= SystemMetrics.historyLength ? "最近 60 秒" : "最近 \(count) 秒"
     }
 
     private func samples(_ metric: Metric) -> [Double] {
@@ -130,7 +130,7 @@ struct SystemActivityDetail: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(metric.label)
-        .accessibilityValue("\(whole(value(metric))) percent")
+        .accessibilityValue("百分之 \(whole(value(metric)))")
     }
 
     @ViewBuilder
@@ -172,27 +172,27 @@ struct SystemActivityDetail: View {
             // span it actually has, which is shorter than a minute until the
             // history fills.
             let series = context.isPreview ? [] : SystemMetrics.shared.cpuHistory
-            guard !series.isEmpty else { return ("Average CPU", "-") }
+            guard !series.isEmpty else { return ("CPU 平均占用", "-") }
             let average = series.reduce(0, +) / Double(series.count)
-            return ("Average CPU", "\(whole(average))%")
+            return ("CPU 平均占用", "\(whole(average))%")
         case .memory:
             let total = Double(ProcessInfo.processInfo.physicalMemory)
             let gib = 1024.0 * 1024 * 1024
-            return ("Memory used",
+            return ("已用内存",
                     String(format: "%.1f / %.0f GiB", value(metric) * total / gib, total / gib))
         case .disk:
             // The percentage is the ring's job. This is the figure you
             // actually act on, off the same sample.
             let free = Double(SystemMetrics.shared.diskFree)
             let total = Double(SystemMetrics.shared.diskTotal)
-            guard !context.isPreview, total > 0 else { return ("Startup volume", "-") }
+            guard !context.isPreview, total > 0 else { return ("启动磁盘", "-") }
             let gib = 1024.0 * 1024 * 1024
-            return ("Startup volume free",
+            return ("启动磁盘可用空间",
                     String(format: "%.0f / %.0f GiB", free / gib, total / gib))
         case .battery:
             let mac = context.isPreview ? nil : BatteryMetrics.shared.device(.mac)
-            guard let mac, mac.present else { return ("Mac battery", "Not reported") }
-            return ("Mac battery", mac.charging ? "Charging" : "On battery")
+            guard let mac, mac.present else { return ("Mac 电池", "未报告") }
+            return ("Mac 电池", mac.charging ? "正在充电" : "使用电池")
         }
     }
 
@@ -232,9 +232,9 @@ struct SystemActivityDetail: View {
         var label: String {
             switch self {
             case .cpu: "CPU"
-            case .memory: "Memory"
-            case .disk: "Disk"
-            case .battery: "Battery"
+            case .memory: "内存"
+            case .disk: "磁盘"
+            case .battery: "电池"
             }
         }
 

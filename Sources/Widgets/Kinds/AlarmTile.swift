@@ -34,7 +34,7 @@ struct AlarmTile: View {
                                 .foregroundStyle(WidgetStyle.primary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.75)
-                            Text(name.isEmpty ? "Alarm" : name)
+                            Text(name.isEmpty ? "闹钟" : name)
                                 .font(WidgetStyle.caption(9))
                                 .foregroundStyle(WidgetStyle.secondary)
                                 .lineLimit(1)
@@ -55,7 +55,7 @@ struct AlarmTile: View {
                                     // left together only fitted by shrinking
                                     // to a size no other tile uses. The name
                                     // is in the panel.
-                                    caption: enabled ? countdownCaption(to: next) : "Off")
+                                    caption: enabled ? countdownCaption(to: next) : "已关闭")
                             .opacity(enabled ? 1 : 0.45)
                         Spacer(minLength: 0)
                     }
@@ -84,7 +84,7 @@ struct AlarmTile: View {
             action: context.isPreview ? nil : (toggle as () -> Void)
         )
         .accessibilityLabel(
-            "\(enabled ? "Turn off" : "Turn on") alarm at \(nextOccurrence.formatted(.dateTime.hour().minute()))"
+            "\(enabled ? "关闭" : "开启") \(nextOccurrence.formatted(.dateTime.hour().minute())) 的闹钟"
         )
     }
 
@@ -110,7 +110,7 @@ struct AlarmTile: View {
                 // still belongs to the shelf.
                 .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityLabel(
-                    "\(enabled ? "Turn off" : "Turn on") alarm at \(nextOccurrence.formatted(.dateTime.hour().minute()))"
+                    "\(enabled ? "关闭" : "开启") \(nextOccurrence.formatted(.dateTime.hour().minute())) 的闹钟"
                 )
         }
     }
@@ -141,6 +141,6 @@ struct AlarmTile: View {
     private func countdownCaption(to date: Date) -> String {
         let minutes = max(1, Int((date.timeIntervalSince(context.now) / 60).rounded(.up)))
         let (h, m) = (minutes / 60, minutes % 60)
-        return h > 0 ? "in \(h)h \(m)m" : "in \(m)m"
+        return h > 0 ? "\(h)小时\(m)分后" : "\(m)分钟后"
     }
 }

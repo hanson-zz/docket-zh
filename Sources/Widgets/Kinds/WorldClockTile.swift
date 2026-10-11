@@ -15,7 +15,7 @@ struct WorldClockTile: View {
         TimeZone(identifier: instance.config.string("zone", default: "Europe/London")) ?? .current
     }
 
-    private var city: String { instance.config.string("city", default: "London") }
+    private var city: String { instance.config.string("city", default: "伦敦") }
 
     var body: some View {
         let name = city
@@ -36,8 +36,8 @@ struct WorldClockTile: View {
     /// local one.
     static func dayHint(_ now: Date, zone: TimeZone) -> String? {
         switch dayOffset(now, zone: zone) {
-        case let days where days > 0: "Tomorrow"
-        case let days where days < 0: "Yesterday"
+        case let days where days > 0: "明天"
+        case let days where days < 0: "昨天"
         default: nil
         }
     }

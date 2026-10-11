@@ -27,7 +27,7 @@ struct StickyNoteTile: View {
         guard stored.isEmpty else { return stored }
         // An empty note on the shelf stays empty; the library needs something
         // to show.
-        return context.isPreview ? "Pick up coffee\nCall Alex" : ""
+        return context.isPreview ? "买咖啡\n给小王回电话" : ""
     }
 
     var body: some View {
@@ -60,7 +60,7 @@ struct StickyNoteTile: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 // No button trait: the note itself is read, not activated -
                 // writing is its own control and the card belongs to the shelf.
-                .accessibilityLabel("Note: \(stored)")
+                .accessibilityLabel("便签：\(stored)")
             }
         }
     }
@@ -86,6 +86,6 @@ struct StickyNoteTile: View {
         }
         .padding(.vertical, column ? 8 : 9)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityLabel("Empty note")
+        .accessibilityLabel("空白便签")
     }
 }

@@ -16,14 +16,14 @@ struct WidgetSettingsSections: View {
 
     var body: some View {
         if instances.isEmpty {
-            Section("Widgets") {
-                Label("No widgets on the Dock yet - add one with the + button at the end of it.",
+            Section("小组件") {
+                Label("程序坞上还没有小组件，点按末端的 + 按钮即可添加。",
                       systemImage: "square.grid.2x2")
                     .foregroundStyle(.secondary)
             }
         } else if configurable.isEmpty {
-            Section("Widgets") {
-                Label("The widgets on the Dock have no settings of their own.",
+            Section("小组件") {
+                Label("程序坞上的小组件没有可调整的设置。",
                       systemImage: "square.grid.2x2")
                     .foregroundStyle(.secondary)
             }
@@ -34,8 +34,8 @@ struct WidgetSettingsSections: View {
             // which put four widgets and twenty-odd controls in a column and
             // made finding the one you meant a hunt. The shelf is a row of
             // separate things and its settings should be too.
-            Section("Widgets") {
-                Picker("Widget", selection: Binding(
+            Section("小组件") {
+                Picker("小组件", selection: Binding(
                     get: { chosen?.instance.id },
                     set: { selection = $0 })) {
                     ForEach(configurable, id: \.instance.id) { pair in
@@ -137,7 +137,7 @@ struct WidgetSettingsSections: View {
     /// only by `chart`, so tagging by layout gave two rows the same tag and
     /// the picker could neither tell them apart nor show the right one.
     private func stylePicker(_ entry: WidgetCatalog.Entry, _ instance: WidgetInstance) -> some View {
-        Picker("Style", selection: Binding(
+        Picker("样式", selection: Binding(
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
@@ -257,7 +257,7 @@ struct WidgetSettingsSections: View {
                         .multilineTextAlignment(.leading)
                         .frame(width: 180)
                 }
-                .help("Separate with commas.")
+                .help("用逗号分隔。")
             }
 
         case .none:
@@ -285,16 +285,36 @@ struct WidgetSettingsSections: View {
     /// Deriving labels is still the rule, and this is the short list of keys
     /// the rule reads badly for.
     private static let labels: [String: String] = [
-        "fahrenheit": "Show temperature in Fahrenheit",
-        "city": "City",
-        "skip": "Skip by",
-        "mini": "Compact layout",
-        "chart": "Show the graph",
-        "expanded": "Wider tile",
-        "name": "Shortcut",
-        "text": "Note",
-        "zone": "Time zone",
-        "symbols": "Symbols",
+        "fahrenheit": "以华氏度显示温度",
+        "city": "城市",
+        "skip": "快进/快退秒数",
+        "mini": "紧凑布局",
+        "chart": "显示图表",
+        "expanded": "加宽显示",
+        "name": "名称",
+        "text": "便签内容",
+        "zone": "时区",
+        "symbols": "股票代码列表",
+        // 中文本地化分支：为其余选项补充中文标签，避免回退到英文键名。
+        "symbol": "股票代码",
+        "duration": "时长",
+        "presets": "预设时长",
+        "time": "时间",
+        "list": "列表",
+        "allDay": "显示全天日程",
+        "calendars": "日历",
+        "color": "颜色",
+        "period": "时段",
+        "display": "显示内容",
+        "previous": "显示“上一首”按钮",
+        "next": "显示“下一首”按钮",
+        "backward": "显示“后退”按钮",
+        "forward": "显示“快进”按钮",
+        "spotify": "Spotify",
+        "apple": "Apple 音乐",
+        "browsers": "浏览器标签页",
+        "devices": "设备",
+        "metrics": "读数",
     ]
 
     static func label(_ key: String) -> String {
@@ -303,16 +323,17 @@ struct WidgetSettingsSections: View {
 
     /// What a run of toggles is choosing between.
     private static let groupLabels: [String: String] = [
-        "metrics": "Readings to show",
-        "sources": "Players to watch",
+        "metrics": "要显示的读数",
+        "sources": "要读取的播放器",
+        "devices": "要显示的设备",
     ]
 
     static func groupLabel(_ key: String) -> String {
-        groupLabels[key] ?? "Show"
+        groupLabels[key] ?? "显示"
     }
 
     static func prompt(_ key: String) -> String {
-        key == "city" ? "Current location" : ""
+        key == "city" ? "当前位置" : ""
     }
 
     static func range(_ key: String) -> ClosedRange<Double> {
@@ -328,17 +349,17 @@ struct WidgetSettingsSections: View {
     }
 
     static func format(_ key: String, _ value: Double) -> String {
-        guard key == "duration" else { return "\(Int(value))s" }
+        guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
-        return minutes >= 60 ? "\(minutes / 60)h \(minutes % 60)m" : "\(minutes)m"
+        return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分钟" : "\(minutes) 分钟"
     }
 
     /// The fixed sets behind the list-valued options.
     static let choices: [String: [(title: String, value: String)]] = [
-        "metrics": [("CPU", "cpu"), ("Memory", "memory"),
-                    ("Disk", "disk"), ("Battery", "battery")],
-        "devices": [("This Mac", "mac"), ("AirPods", "pods"),
-                    ("AirPods Case", "case"), ("Keyboard", "keyboard")],
+        "metrics": [("CPU", "cpu"), ("内存", "memory"),
+                    ("磁盘", "disk"), ("电池", "battery")],
+        "devices": [("这台 Mac", "mac"), ("AirPods", "pods"),
+                    ("AirPods 充电盒", "case"), ("键盘", "keyboard")],
     ]
 
     /// String options that are really a choice from a fixed set.
@@ -356,9 +377,9 @@ struct WidgetSettingsSections: View {
     /// Only sets that were read out of the code that consumes them. A key
     /// missing here keeps its text field, which is the honest fallback.
     static let stringChoices: [String: [(title: String, value: String)]] = [
-        "network.display": [("Both", "both"), ("Download", "download"), ("Upload", "upload")],
-        "progress.period": [("Day", "day"), ("Month", "month"), ("Year", "year")],
-        "notes.color": PaperColor.picker.map { (optionLabel($0.rawValue), $0.rawValue) },
+        "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
+        "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
+        "notes.color": PaperColor.picker.map { (docketColourName($0.rawValue), $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

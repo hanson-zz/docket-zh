@@ -37,8 +37,14 @@ public final class UpdateService {
         Version(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
     }
 
+    /// 中文本地化分支：检查本分支自己的 Releases，而不是上游英文版的 Releases，
+    /// 否则会提示用户“更新”到英文版。发布前请把 hanson-zz/docket-zh
+    /// 改成本分支实际的 GitHub 仓库路径。占位符中的下划线在 GitHub 用户名里不合法，
+    /// 因此在替换之前请求只会返回 404，检查会静默失败，不会被他人抢注冒用。
+    nonisolated static let releasesRepository = "hanson-zz/docket-zh"
+
     private let endpoint = URL(string:
-        "https://api.github.com/repos/nparashar150/docket/releases/latest")!
+        "https://api.github.com/repos/\(UpdateService.releasesRepository)/releases/latest")!
     /// Saves bandwidth on a repeat check. Not quota: a 304 still counts
     /// against GitHub's 60 an hour, measured, whatever the docs suggest.
     @ObservationIgnored private var etag: String?
@@ -81,7 +87,7 @@ public final class UpdateService {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         // Identifies the app rather than looking like an anonymous scraper,
         // the same courtesy WeatherService already extends to MET Norway.
-        request.setValue("Docket/\(current?.description ?? "dev") (macOS; https://github.com/nparashar150/docket)",
+        request.setValue("Docket-zh/\(current?.description ?? "dev") (macOS; https://github.com/\(UpdateService.releasesRepository))",
                          forHTTPHeaderField: "User-Agent")
         if let etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
 

@@ -209,8 +209,8 @@ struct BatteryTile: View {
     }
 
     private func caption(_ reading: Reading) -> String {
-        guard reading.present else { return "Not connected" }
-        return reading.charging ? "Charging" : "On battery"
+        guard reading.present else { return "未连接" }
+        return reading.charging ? "正在充电" : "使用电池"
     }
 
     @ViewBuilder
@@ -247,10 +247,10 @@ extension BatteryDeviceKind {
     /// Spoken by the screen reader, since the gauge shows only a glyph.
     var name: String {
         switch self {
-        case .mac: "Battery"
+        case .mac: "电池"
         case .pods: "AirPods"
-        case .podsCase: "AirPods case"
-        case .keyboard: "Keyboard"
+        case .podsCase: "AirPods 充电盒"
+        case .keyboard: "键盘"
         }
     }
 

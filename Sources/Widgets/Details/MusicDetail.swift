@@ -146,7 +146,7 @@ struct MusicDetail: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
                 .clipped()
-                .accessibilityLabel("Artwork")
+                .accessibilityLabel("封面")
         } else if let tint {
             LinearGradient(colors: [Self.colour(tint.top), Self.colour(tint.bottom)],
                            startPoint: .top, endPoint: .bottom)
@@ -323,7 +323,7 @@ struct MusicDetail: View {
                 .offset(x: playing ? 0 : 1.5)
         }
         .buttonStyle(TransportButton(primary: true, ink: ink, compact: compact))
-        .accessibilityLabel(playing ? "Pause" : "Play")
+        .accessibilityLabel(playing ? "暂停" : "播放")
     }
 
     private func secondary(_ symbol: String, _ size: CGFloat,
@@ -347,7 +347,7 @@ struct MusicDetail: View {
             MusicService.shared.requestAutomationPermission()
             if browsersEnabled { BrowserMedia.shared.requestPermission() }
         } label: {
-            Text("Connect")
+            Text("连接")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
                 .padding(.horizontal, 18)
@@ -365,12 +365,12 @@ struct MusicDetail: View {
         let open = !context.isPreview && MusicService.shared.hasPlayer
         let setup = browserSetupHint
         return VStack(spacing: 4) {
-            Text(setup == nil ? (open ? "Not playing" : "Nothing to read")
-                              : "A tab has media Docket cannot read")
+            Text(setup == nil ? (open ? "未在播放" : "无可读取内容")
+                              : "有标签页正在播放 Docket 无法读取的媒体")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
-            Text(setup ?? (open ? "Start something in \(sourceNames)."
-                                : "Docket reads \(sourceNames), and video in a scriptable browser tab."))
+            Text(setup ?? (open ? "在\(sourceNames)中播放点什么吧。"
+                                : "Docket 可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(WidgetStyle.secondary)
         }
@@ -387,8 +387,8 @@ struct MusicDetail: View {
 
     private var sourceNames: String {
         let names = sources.map(\.displayName)
-        guard !names.isEmpty else { return "no sources" }
-        return names.count == 1 ? names[0] : names.joined(separator: " or ")
+        guard !names.isEmpty else { return "无来源" }
+        return names.count == 1 ? names[0] : names.joined(separator: "或")
     }
 }
 

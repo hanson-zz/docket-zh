@@ -32,8 +32,8 @@ struct ShortcutTile: View {
                 // and the one thing on the tile that acts.
                 HStack(spacing: 10) {
                     glyph(running: running, name: name, size: 12)
-                    TileReading(value: name.isEmpty ? "Choose" : name,
-                                caption: running ? "Running" : "Shortcut",
+                    TileReading(value: name.isEmpty ? "选择" : name,
+                                caption: running ? "正在运行" : "快捷指令",
                                 valueSize: 15)
                     Spacer(minLength: 0)
                 }
@@ -49,11 +49,11 @@ struct ShortcutTile: View {
         TileGlyph(symbol: running ? "stop.fill" : "play.fill",
                   size: size,
                   action: context.isPreview || name.isEmpty ? nil : { act(running: running, name: name) })
-            .accessibilityLabel(running ? "Stop \(name)" : name.isEmpty ? "No shortcut chosen" : "Run \(name)")
+            .accessibilityLabel(running ? "停止“\(name)”" : name.isEmpty ? "未选择快捷指令" : "运行“\(name)”")
     }
 
     private func caption(_ name: String, size: CGFloat) -> some View {
-        Text(name.isEmpty ? "Choose" : name)
+        Text(name.isEmpty ? "选择" : name)
             .font(WidgetStyle.label(size))
             .foregroundStyle(name.isEmpty ? WidgetStyle.secondary : WidgetStyle.primary)
             .lineLimit(1)
@@ -71,7 +71,7 @@ struct ShortcutTile: View {
     /// The library has no shortcut to point at and must not run one, so it
     /// shows a representative name instead of an empty card.
     private var resolvedName: String {
-        context.isPreview ? "Morning Routine" : instance.config.string("name")
+        context.isPreview ? "晨间例程" : instance.config.string("name")
     }
 
     private func isRunning(_ name: String) -> Bool {

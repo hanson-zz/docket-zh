@@ -105,10 +105,10 @@ struct WidgetLibraryView: View {
                 .padding(10)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
-                    row(.all, symbol: "square.grid.2x2", title: "All Widgets", enabled: true)
+                    row(.all, symbol: "square.grid.2x2", title: "所有小组件", enabled: true)
                     ForEach(WidgetCategory.ordered, id: \.self) { category in
                         row(.category(category), symbol: symbol(for: category),
-                            title: category.rawValue,
+                            title: category.displayName,
                             // Categories whose kinds all need permissions or
                             // network have nothing to show in this build.
                             enabled: libraryCards.contains { $0.category == category })
@@ -126,7 +126,7 @@ struct WidgetLibraryView: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search", text: $search)
+            TextField("搜索", text: $search)
                 .textFieldStyle(.plain)
                 .focused($focus, equals: .search)
                 .onKeyPress(.downArrow) {
@@ -145,7 +145,7 @@ struct WidgetLibraryView: View {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
+                .accessibilityLabel("清除搜索")
             }
         }
         .padding(.horizontal, 7)
@@ -181,8 +181,8 @@ struct WidgetLibraryView: View {
         // nothing about why: Business has no widgets built yet, Calendar and
         // Reminders have them but they are not finished. A row that is dim
         // for ever with no explanation reads as a fault in the app.
-        .help(enabled ? "" : "No widgets here yet.")
-        .accessibilityHint(enabled ? "" : "No widgets in this category yet.")
+        .help(enabled ? "" : "这里还没有小组件。")
+        .accessibilityHint(enabled ? "" : "此类别中还没有小组件。")
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
@@ -196,7 +196,7 @@ struct WidgetLibraryView: View {
                 Image(systemName: "square.grid.2x2")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
-                Text("Add Widget").font(.system(size: 14, weight: .semibold))
+                Text("添加小组件").font(.system(size: 14, weight: .semibold))
                 Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark")
@@ -206,7 +206,7 @@ struct WidgetLibraryView: View {
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close")
+                .accessibilityLabel("关闭")
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
@@ -223,7 +223,7 @@ struct WidgetLibraryView: View {
     private var empty: some View {
         VStack(spacing: 6) {
             Image(systemName: "magnifyingglass").font(.system(size: 22))
-            Text("No widgets match").font(.system(size: 13))
+            Text("没有匹配的小组件").font(.system(size: 13))
         }
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -274,7 +274,7 @@ struct WidgetLibraryView: View {
                         .background(Circle().fill(.quaternary))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Add \(card.title)")
+                .accessibilityLabel("添加“\(card.title)”")
             }
         }
         .padding(10)
@@ -299,7 +299,7 @@ struct WidgetLibraryView: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(card.name), \(card.title)")
-        .accessibilityHint("Adds this widget to the dock")
+        .accessibilityHint("将此小组件添加到程序坞")
     }
 
     // MARK: Data
@@ -308,7 +308,7 @@ struct WidgetLibraryView: View {
         let query = search.trimmingCharacters(in: .whitespaces)
         // Searching flattens the category grouping into one list.
         guard query.isEmpty else {
-            return [(title: "Results", cards: libraryCards.filter { $0.matches(query) })]
+            return [(title: "搜索结果", cards: libraryCards.filter { $0.matches(query) })]
         }
         let categories: [WidgetCategory] = {
             if case .category(let c) = selection { return [c] }
@@ -316,7 +316,7 @@ struct WidgetLibraryView: View {
         }()
         return categories.compactMap { category in
             let cards = libraryCards.filter { $0.category == category }
-            return cards.isEmpty ? nil : (title: category.rawValue, cards: cards)
+            return cards.isEmpty ? nil : (title: category.displayName, cards: cards)
         }
     }
 

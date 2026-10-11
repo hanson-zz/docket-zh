@@ -97,7 +97,7 @@ final class LibraryWindow: HostedWindow {
                 },
                 onClose: { [weak self] in self?.close() }
             ),
-            title: "Add Widget",
+            title: "添加小组件",
             size: NSSize(width: 760, height: 470),
             chromeless: true
         )
@@ -126,7 +126,7 @@ final class SettingsWindow: HostedWindow {
                 onRestore: { Self.restore(app) },
                 onCreateProfile: { kind in
                     app.createProfile(kind: kind,
-                                      named: kind == .customDock ? "New Shelf" : "New Dock")
+                                      named: kind == .customDock ? "新扩展栏" : "新程序坞")
                 },
                 onRenameProfile: { app.renameProfile($0, to: $1) },
                 onDuplicateProfile: { if let id = $0 { app.duplicateProfile(id) } },
@@ -135,7 +135,7 @@ final class SettingsWindow: HostedWindow {
                 onClearError: { app.clearError() },
                 onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } }
             ),
-            title: "Docket Settings",
+            title: "Docket 设置",
             // Taller and resizable, because the Widgets tab is not a fixed
             // form: it grows by one section per widget on the shelf. At the
             // old fixed 520x460 a shelf with four widgets showed two of them
@@ -159,14 +159,14 @@ final class SettingsWindow: HostedWindow {
         panel.nameFieldStringValue = Backup.suggestedName()
         panel.allowedContentTypes = []
         panel.canCreateDirectories = true
-        panel.message = "Save your profiles, their items and widget settings."
+        panel.message = "保存你的布局、其中的项目以及小组件设置。"
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
             try Backup.encode(app.state).write(to: url, options: .atomic)
         } catch {
-            report("Could not save the backup.", error)
+            report("无法保存备份。", error)
         }
     }
 
@@ -175,7 +175,7 @@ final class SettingsWindow: HostedWindow {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.message = "Choose a Docket profiles backup."
+        panel.message = "选择一个 Docket 布局备份文件。"
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
@@ -189,16 +189,16 @@ final class SettingsWindow: HostedWindow {
             let added = state.profiles.count - before
             let updated = payload.profiles.count - added
             let alert = NSAlert()
-            alert.messageText = "Restored \(payload.profiles.count) profile\(payload.profiles.count == 1 ? "" : "s")."
+            alert.messageText = "已恢复 \(payload.profiles.count) 个布局。"
             // Says what it did rather than just that it worked: a merge that
             // replaced something should not look identical to one that only
             // added.
             alert.informativeText = updated > 0
-                ? "\(added) added, \(updated) replaced from the backup."
-                : "\(added) added."
+                ? "从备份中新增 \(added) 个，替换 \(updated) 个。"
+                : "新增 \(added) 个。"
             alert.runModal()
         } catch {
-            report("Could not read that backup.", error)
+            report("无法读取该备份。", error)
         }
     }
 

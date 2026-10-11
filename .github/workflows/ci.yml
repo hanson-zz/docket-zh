@@ -137,14 +137,10 @@ jobs:
       - name: Generate the project
         run: xcodegen generate
 
-      # project.yml pins Manual signing against a real Apple Development
-      # certificate and team, because macOS will not attach permission grants
-      # to an ad-hoc identity - a developer building locally needs that. A
-      # runner has neither the certificate nor the team, so every build here
-      # overrides signing on the command line: ad-hoc identity, no team, and
-      # the hardened runtime off, since it is only meaningful alongside a real
-      # Developer ID and notarisation. Overriding here rather than editing
-      # project.yml leaves local builds signing with the real certificate.
+      # Chinese fork: project.yml already defaults to ad-hoc signing ("-"),
+      # no team and the hardened runtime off, so no certificate or secret is
+      # needed anywhere. The overrides below are kept so the build stays
+      # ad-hoc even if someone points project.yml at their own certificate.
       - name: Build the app
         run: |
           xcodebuild build \

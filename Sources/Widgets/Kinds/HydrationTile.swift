@@ -80,7 +80,7 @@ struct HydrationTile: View {
             } else {
                 HStack(spacing: 10) {
                     TileBadge { drop(size: 20) }
-                    TileReading(value: clock, caption: "Next drink")
+                    TileReading(value: clock, caption: "下次喝水")
                     Spacer(minLength: 0)
                     drinkButton(size: 12)
                 }
@@ -120,6 +120,6 @@ struct HydrationTile: View {
         TileGlyph(symbol: "plus", size: size, action: context.isPreview ? nil : {
             withAnimation(.snappy(duration: 0.35)) { drink() }
         })
-        .accessibilityLabel("Log a drink")
+        .accessibilityLabel("记录喝水")
     }
 }

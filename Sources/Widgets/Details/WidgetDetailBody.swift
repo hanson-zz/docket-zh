@@ -55,7 +55,7 @@ struct WidgetDetailBody: View {
             // Only `.aiUsage` reaches this now, and it is a stub: no tile,
             // no service, nothing to read. Better an honest line than a
             // panel that explains its own absence.
-            Text("No further detail for this widget.")
+            Text("此小组件没有更多详情。")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -8,7 +8,7 @@ import Foundation
 public struct Store: Sendable {
     public let url: URL
 
-    public init(bundleID: String = Bundle.main.bundleIdentifier ?? "com.namanparashar.plinth") {
+    public init(bundleID: String = Bundle.main.bundleIdentifier ?? "com.docket-zh.app") {
         let base = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appending(path: bundleID, directoryHint: .isDirectory)

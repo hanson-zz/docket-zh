@@ -148,7 +148,7 @@ struct WeatherDetail: View {
         let temperatures = hours.map(\.temperatureC)
         if let low = temperatures.min(), let high = temperatures.max() {
             HStack(spacing: 12) {
-                Text(hours.count == 1 ? "Next hour" : "Next \(hours.count) hours")
+                Text(hours.count == 1 ? "未来 1 小时" : "未来 \(hours.count) 小时")
                     .font(WidgetStyle.caption(12))
                     .foregroundStyle(WidgetStyle.secondary)
                 Spacer(minLength: 0)
@@ -169,12 +169,12 @@ struct WeatherDetail: View {
     /// the field that settles both.
     private var noPlace: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(locating ? "Locating…" : "No city set")
+            Text(locating ? "正在定位…" : "未设置城市")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
             Text(locating
-                 ? "Waiting on your location. Typing a city in Settings ▸ Widgets skips it."
-                 : "Type a city in Settings ▸ Widgets.")
+                 ? "正在等待获取你的位置。在“设置 ▸ 小组件”中输入城市即可跳过定位。"
+                 : "请在“设置 ▸ 小组件”中输入城市。")
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(WidgetStyle.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -199,7 +199,7 @@ struct WeatherDetail: View {
                 .foregroundStyle(WidgetStyle.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Text("No reading yet.")
+            Text("暂无数据。")
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(WidgetStyle.secondary)
         }
@@ -220,11 +220,11 @@ struct WeatherDetail: View {
     // The library has no live data. The tile's own sample is private to it,
     // and these numbers only have to agree with it by eye.
 
-    private static let sampleCity = "Oslo"
+    private static let sampleCity = "奥斯陆"
 
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "Partly Cloudy")
+                                           condition: "多云")
 
     private static func sampleHours(from date: Date) -> [WeatherHour] {
         let temperatures: [Double] = [18, 19, 19, 17, 16, 16, 15, 14]

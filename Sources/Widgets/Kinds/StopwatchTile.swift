@@ -75,7 +75,7 @@ struct StopwatchTile: View {
         HStack(spacing: 4) {
             TileGlyph(symbol: state.running ? "pause.fill" : "play.fill",
                       size: size, action: context.isPreview ? nil : (toggle as () -> Void))
-                .accessibilityLabel(state.running ? "Stop stopwatch" : "Start stopwatch")
+                .accessibilityLabel(state.running ? "停止秒表" : "启动秒表")
             // A run can only be cleared once it has stopped - which is also
             // the only moment this pair changes shape, since a reset that
             // appeared and vanished under the pointer as the seconds ran would
@@ -86,7 +86,7 @@ struct StopwatchTile: View {
                 TileGlyph(symbol: "arrow.counterclockwise", size: size,
                           tint: WidgetStyle.secondary,
                           action: context.isPreview ? nil : (reset as () -> Void))
-                    .accessibilityLabel("Reset stopwatch")
+                    .accessibilityLabel("重置秒表")
             }
         }
     }
@@ -124,11 +124,11 @@ struct StopwatchTile: View {
         let started = instance.config.double("started")
         let banked = instance.config.double("elapsed")
         if started > 0 {
-            return (banked + max(0, context.now.timeIntervalSince1970 - started), "Running", true)
+            return (banked + max(0, context.now.timeIntervalSince1970 - started), "正在计时", true)
         }
-        if banked > 0 { return (banked, "Paused", false) }
+        if banked > 0 { return (banked, "已暂停", false) }
         // The library has no running stopwatch, so show a plausible one.
-        return context.isPreview ? (83, "Paused", false) : (0, "Ready", false)
+        return context.isPreview ? (83, "已暂停", false) : (0, "就绪", false)
     }
 
     static func format(_ elapsed: TimeInterval) -> String {

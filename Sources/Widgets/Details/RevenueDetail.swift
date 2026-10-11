@@ -93,17 +93,17 @@ struct RevenueDetail: View {
             Image(systemName: "link.badge.plus")
                 .font(.system(size: 22, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
-            Text("Not connected")
+            Text("未连接")
                 .font(WidgetStyle.value(20))
                 .foregroundStyle(WidgetStyle.primary)
-            Text("Docket holds no \(provider) credentials, so there is no amount to show and no history to chart.")
+            Text("Docket 没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。")
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
             // Points at the panel's own settings button rather than repeating
             // it: the header already carries the only control that can reach
             // the widget's settings from here.
-            Label("Connect an account with the settings button at the top of this panel",
+            Label("使用此面板顶部的设置按钮连接账户",
                   systemImage: "slider.horizontal.3")
                 .font(WidgetStyle.label(11.5))
                 .foregroundStyle(.white)
@@ -123,7 +123,7 @@ struct RevenueDetail: View {
     /// without an account.
     private var about: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("About this metric")
+            Text("关于此指标")
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(WidgetStyle.primary)
             Text(explanation)
@@ -168,26 +168,26 @@ struct RevenueDetail: View {
     private var metricTitle: String {
         // Paddle calls its `revenue` "Net revenue"; every other raw value
         // means the same on whichever provider offers it.
-        if metric == "revenue", instance.kind == .paddle { return "Net revenue" }
+        if metric == "revenue", instance.kind == .paddle { return "净收入" }
         return switch metric {
-        case "revenue": "Revenue"
-        case "net": "Net revenue"
+        case "revenue": "收入"
+        case "net": "净收入"
         case "mrr": "MRR"
         case "arr": "ARR"
-        case "subscribers": "Subscribers"
+        case "subscribers": "订阅者"
         case "arpu": "ARPU"
-        case "sales": "Sales"
-        case "netSales": "Net sales"
-        case "orders": "Orders"
-        case "averageOrderValue": "Average order value"
-        case "returns": "Returns"
-        case "visitors": "Visitors"
-        case "sessions": "Sessions"
-        case "pageviews": "Pageviews"
-        case "conversionRate": "Conversion rate"
-        case "addedToCart": "Added to cart"
-        case "reachedCheckout": "Reached checkout"
-        case "completedCheckout": "Completed checkout"
+        case "sales": "销售额"
+        case "netSales": "净销售额"
+        case "orders": "订单"
+        case "averageOrderValue": "平均订单金额"
+        case "returns": "退货"
+        case "visitors": "访客"
+        case "sessions": "会话"
+        case "pageviews": "页面浏览量"
+        case "conversionRate": "转化率"
+        case "addedToCart": "加入购物车"
+        case "reachedCheckout": "进入结账"
+        case "completedCheckout": "完成结账"
         // A metric this build predates still deserves a readable name.
         default: WidgetCatalog.optionLabel(metric)
         }
@@ -215,42 +215,42 @@ struct RevenueDetail: View {
     }
 
     private var periodShort: String {
-        if isLevel { return instance.kind == .paddle ? "Latest" : "Now" }
+        if isLevel { return instance.kind == .paddle ? "最新" : "当前" }
         return switch period {
-        case "today": "Today"
-        case "week": "L7"
-        case "month": "MTD"
-        case "thirtyDays": "L30"
-        case "fourWeeks": "L4W"
-        case "sixtyDays": "L60"
-        case "ninetyDays": "L90"
-        case "sixMonths": "L6M"
-        case "twelveMonths": "L12M"
-        case "quarter": "QTD"
-        case "year": "YTD"
-        case "lastYear": "L365"
-        case "allTime": "All"
+        case "today": "今天"
+        case "week": "近7天"
+        case "month": "本月"
+        case "thirtyDays": "近30天"
+        case "fourWeeks": "近4周"
+        case "sixtyDays": "近60天"
+        case "ninetyDays": "近90天"
+        case "sixMonths": "近6月"
+        case "twelveMonths": "近12月"
+        case "quarter": "本季"
+        case "year": "本年"
+        case "lastYear": "近365天"
+        case "allTime": "全部"
         default: "-"
         }
     }
 
     private var periodName: String {
-        if isLevel { return instance.kind == .paddle ? "Latest reported" : "Current" }
+        if isLevel { return instance.kind == .paddle ? "最新报告" : "当前" }
         return switch period {
-        case "today": "Today"
-        case "week": "Last 7 days"
-        case "month": "Month to date"
-        case "thirtyDays": "Last 30 days"
-        case "fourWeeks": "Last 4 weeks"
-        case "sixtyDays": "Last 60 days"
-        case "ninetyDays": "Last 90 days"
-        case "sixMonths": "Last 6 months"
-        case "twelveMonths": "Last 12 months"
-        case "quarter": "Quarter to date"
-        case "year": "Year to date"
-        case "lastYear": "Last 365 days"
-        case "allTime": "All time"
-        default: "Custom period"
+        case "today": "今天"
+        case "week": "最近 7 天"
+        case "month": "本月至今"
+        case "thirtyDays": "最近 30 天"
+        case "fourWeeks": "最近 4 周"
+        case "sixtyDays": "最近 60 天"
+        case "ninetyDays": "最近 90 天"
+        case "sixMonths": "最近 6 个月"
+        case "twelveMonths": "最近 12 个月"
+        case "quarter": "本季度至今"
+        case "year": "本年至今"
+        case "lastYear": "最近 365 天"
+        case "allTime": "全部时间"
+        default: "自定义时段"
         }
     }
 
@@ -300,10 +300,10 @@ struct RevenueDetail: View {
     private var explanation: String {
         // Stripe and Paddle break today down by the hour; everything else,
         // Shopify included, is a point per day.
-        let grain = period == "today" && instance.kind != .shopify ? "hourly" : "daily"
+        let grain = period == "today" && instance.kind != .shopify ? "按小时统计的" : "按天统计的"
         let headline = isLevel
-            ? "\(metricTitle) is the latest point in the series rather than a total - the level as it stood at the last refresh."
-            : "\(metricTitle) totals every \(grain) point across \(periodName.lowercased())."
-        return headline + " A connected account refreshes every five minutes while the shelf is on screen."
+            ? "“\(metricTitle)”是序列中的最新数据点而非合计，即上次刷新时的水平。"
+            : "“\(metricTitle)”是\(periodName)内所有\(grain)数据点的合计。"
+        return headline + "扩展栏显示在屏幕上时，已连接的账户每五分钟刷新一次。"
     }
 }

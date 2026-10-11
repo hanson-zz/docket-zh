@@ -44,14 +44,14 @@ struct HydrationDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(left > 0 ? "NEXT DRINK AT" : "DUE NOW")
+                    Text(left > 0 ? "下次喝水时间" : "该喝水了")
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.8)
                         .foregroundStyle(.white.opacity(0.7))
                     // A time of day, which is the thing the tile's countdown is
                     // not: "2:49 PM" is a moment you can plan around, "17:22" is
                     // one you have to do arithmetic on.
-                    Text(left > 0 ? clock(now.addingTimeInterval(left)) : "Drink up")
+                    Text(left > 0 ? clock(now.addingTimeInterval(left)) : "喝口水吧")
                         .font(.system(size: 52, weight: .semibold, design: .rounded))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
@@ -64,8 +64,8 @@ struct HydrationDetail: View {
                 }
 
                 HStack(spacing: 8) {
-                    StatChip(label: "Last drink", value: lastDrinkLine(now: now))
-                    StatChip(label: "Every", value: interval)
+                    StatChip(label: "上次喝水", value: lastDrinkLine(now: now))
+                    StatChip(label: "间隔", value: interval)
                         .frame(width: 96)
                 }
 
@@ -85,7 +85,7 @@ struct HydrationDetail: View {
             // redraws this panel, so it is animated from here too.
             withAnimation(.snappy(duration: 0.35)) { drink() }
         } label: {
-            Label("Log a drink", systemImage: "drop.fill")
+            Label("记录喝水", systemImage: "drop.fill")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -94,7 +94,7 @@ struct HydrationDetail: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Log a drink")
+        .accessibilityLabel("记录喝水")
     }
 
     // MARK: Lines
@@ -104,11 +104,11 @@ struct HydrationDetail: View {
     /// stays there, which says a drink is due but never that it has been due
     /// for half an hour.
     private func headlineCaption(_ left: TimeInterval, now: Date) -> String {
-        guard left <= 0 else { return "\(docketClockString(left)) to go" }
+        guard left <= 0 else { return "还有 \(docketClockString(left))" }
         let last = instance.config.double("lastDrink")
-        guard !context.isPreview, last > 0 else { return "Due now" }
+        guard !context.isPreview, last > 0 else { return "该喝水了" }
         let over = now.timeIntervalSince1970 - last - duration
-        return over >= 60 ? "Overdue by \(spelled(over))" : "Due now"
+        return over >= 60 ? "已超时 \(spelled(over))" : "该喝水了"
     }
 
     /// The one fact only the stored timestamp holds. A widget that has never
@@ -116,11 +116,11 @@ struct HydrationDetail: View {
     /// date instead - so it says so rather than dressing the anchor up as one.
     private func lastDrinkLine(now: Date) -> String {
         let last = instance.config.double("lastDrink")
-        guard !context.isPreview, last > 0 else { return "Not logged yet" }
+        guard !context.isPreview, last > 0 else { return "尚未记录" }
         let date = Date(timeIntervalSince1970: last)
         let since = max(0, now.timeIntervalSince(date))
-        return since < 60 ? "\(clock(date)), just now"
-                          : "\(clock(date)), \(spelled(since)) ago"
+        return since < 60 ? "\(clock(date))，刚刚"
+                          : "\(clock(date))，\(spelled(since))前"
     }
 
     // MARK: Data

@@ -81,19 +81,17 @@ public enum StrutMode {
         if ProcessInfo.processInfo.environment["DOCKET_STRUT_CONSENT"] != nil { return true }
 
         let alert = NSAlert()
-        alert.messageText = "Let Docket manage your Dock?"
+        alert.messageText = "允许 Docket 管理你的程序坞吗？"
         alert.informativeText = """
-            Windows only stop at the shelf if the Dock reserves the space, and \
-            only the Dock can do that. Docket will move Apple's Dock to the \
-            \(edge.rawValue) edge, stop it hiding, and size it to match the \
-            shelf, then cover it.
+            只有程序坞预留了屏幕空间，窗口才会停在扩展栏边上，而这只有程序坞本身能做到。\
+            Docket 会把系统程序坞移到屏幕\(edge.displayName)，关闭其自动隐藏，\
+            将其大小调整为与扩展栏一致，然后用扩展栏覆盖它。
 
-            Your current Dock settings are saved and put back when you turn \
-            this off or quit.
+            你当前的程序坞设置会被保存，在关闭此功能或退出 Docket 时恢复。
             """
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Manage My Dock")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "管理我的程序坞")
+        alert.addButton(withTitle: "取消")
         // An accessory app has no windows of its own to be modal to, and the
         // alert has to come forward or it is answered blind.
         NSApp.activate(ignoringOtherApps: true)

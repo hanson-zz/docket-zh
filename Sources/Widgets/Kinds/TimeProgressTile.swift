@@ -204,7 +204,7 @@ struct TimeProgressTile: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Show the next period")
+            .accessibilityLabel("显示下一个时段")
         }
     }
 

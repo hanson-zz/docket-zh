@@ -50,17 +50,11 @@ jobs:
       - name: Generate the project
         run: xcodegen generate
 
-      # project.yml pins Manual signing against a real Apple Development
-      # certificate and team, because macOS will not attach permission grants
-      # to an ad-hoc identity - a developer building locally needs that. A
-      # runner has neither the certificate nor the team, so the release build
-      # overrides signing on the command line: ad-hoc identity ("-"), no team,
-      # and the hardened runtime off, since it is only meaningful alongside a
-      # real Developer ID and notarisation. Overriding here rather than
-      # editing project.yml leaves local builds signing with the real
-      # certificate. The release that comes out of this is unsigned in every
-      # sense that matters to Gatekeeper, which is what RELEASE_NOTES tells
-      # people to expect.
+      # Chinese fork: signing is ad-hoc ("-") with no team and the hardened
+      # runtime off, both in project.yml and in the overrides below, so this
+      # workflow needs no certificate and no secret beyond the default
+      # GITHUB_TOKEN. The release is unsigned in every sense that matters to
+      # Gatekeeper, which is what the release notes tell people to expect.
       #
       # MARKETING_VERSION comes from the tag rather than project.yml. The two
       # agree now that release-please updates project.yml as part of the
@@ -110,7 +104,7 @@ jobs:
         run: |
           ditto -c -k --keepParent \
             build/Build/Products/Release/Docket.app \
-            "Docket-${TAG}.zip"
+            "Docket-zh-${TAG}.zip"
 
       # A disk image as well as the zip, because it is what a Mac user expects
       # to download: it mounts, it shows the app beside an Applications alias,
@@ -124,10 +118,10 @@ jobs:
           ditto build/Build/Products/Release/Docket.app "$STAGE/Docket.app"
           ln -s /Applications "$STAGE/Applications"
           hdiutil create \
-            -volname "Docket" \
+            -volname "Docket-zh" \
             -srcfolder "$STAGE" \
             -ov -format UDZO \
-            "Docket-${TAG}.dmg"
+            "Docket-zh-${TAG}.dmg"
 
       # --clobber so a re-run after a build failure replaces the assets instead
       # of stopping on the ones the first attempt managed to upload.
@@ -136,8 +130,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$TAG" \
-            "Docket-${TAG}.dmg" \
-            "Docket-${TAG}.zip" \
+            "Docket-zh-${TAG}.dmg" \
+            "Docket-zh-${TAG}.zip" \
             --clobber
 
       # release-please writes the notes from the commits, which covers what
@@ -146,7 +140,7 @@ jobs:
       # permission for - is not derivable from a commit log and is the part
       # people actually need, so it gets appended from the template.
       #
-      # The template's placeholder section above "## Requirements" is skipped,
+      # The template's placeholder section above "## 系统要求" is skipped,
       # because there is nothing left for a person to fill in. That heading is
       # the coupling: rename it in the template and the footer quietly stops
       # appearing here.
@@ -154,9 +148,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          FOOTER="$(sed -n '/^## Requirements$/,$p' .github/RELEASE_NOTES_TEMPLATE.md)"
+          FOOTER="$(sed -n '/^## 系统要求$/,$p' .github/RELEASE_NOTES_TEMPLATE.md)"
           if [ -z "$FOOTER" ]; then
-            echo "::error::No '## Requirements' heading in .github/RELEASE_NOTES_TEMPLATE.md, so the install instructions are missing from this release."
+            echo "::error::No '## 系统要求' heading in .github/RELEASE_NOTES_TEMPLATE.md, so the install instructions are missing from this release."
             exit 1
           fi
           {

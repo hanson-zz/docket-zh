@@ -22,7 +22,7 @@ struct WorldClockDetail: View {
         TimeZone(identifier: instance.config.string("zone", default: "Europe/London")) ?? .current
     }
 
-    private var city: String { instance.config.string("city", default: "London") }
+    private var city: String { instance.config.string("city", default: "伦敦") }
 
     var body: some View {
         // Never `context.now`: the chrome assigns its root view once, so the
@@ -38,9 +38,9 @@ struct WorldClockDetail: View {
                         .padding(.top, 18)
 
                     HStack(spacing: 8) {
-                        StatChip(label: "Here", value: ClockFormat.time(now, zone: .current))
+                        StatChip(label: "此处", value: ClockFormat.time(now, zone: .current))
                             .frame(width: 88)
-                        StatChip(label: "Difference",
+                        StatChip(label: "时差",
                                  value: ClockPanelFormat.difference(zone, at: now))
                     }
 
@@ -107,12 +107,12 @@ struct WorldClockDetail: View {
                 }
             }
             HStack(spacing: 12) {
-                Text("Next 12 hours")
+                Text("未来 12 小时")
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(WidgetStyle.secondary)
                 Spacer(minLength: 0)
                 // Names the band rather than implying a sunrise, see below.
-                Text("Shaded 6am–6pm in \(city)")
+                Text("阴影为\(city)的早 6 点至晚 6 点")
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(WidgetStyle.secondary)
             }

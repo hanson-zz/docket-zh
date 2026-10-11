@@ -85,7 +85,7 @@ struct MusicTile: View {
     }
 
     private static let sample = Playing(native: NowPlaying(
-        title: "Daylight", artist: "Sample artist", album: "Sample album",
+        title: "日光", artist: "示例艺人", album: "示例专辑",
         duration: 240, elapsed: 74, isPlaying: true, artwork: nil, source: .spotify
     ))
 
@@ -136,7 +136,7 @@ struct MusicTile: View {
             if let playing, !context.isPreview {
                 TileGlyph(symbol: playing.isPlaying ? "pause.fill" : "play.fill",
                           size: side) { toggle(playing) }
-                    .accessibilityLabel(playing.isPlaying ? "Pause" : "Play")
+                    .accessibilityLabel(playing.isPlaying ? "暂停" : "播放")
             } else {
                 // Nothing playing is nothing to toggle, so the chip shows what
                 // it is and the whole of it opens the panel.
@@ -344,7 +344,7 @@ struct MusicTile: View {
             VStack(spacing: 2) {
                 Image(systemName: "music.note")
                     .font(.system(size: 14, weight: .medium))
-                Text("Connect")
+                Text("连接")
                     .font(WidgetStyle.label(11))
                     .lineLimit(1)
                     // A side shelf leaves 56pt inside the card, which the word
@@ -369,7 +369,7 @@ struct MusicTile: View {
         return VStack(spacing: 2) {
             Image(systemName: setup != nil ? "switch.2" : (open ? "music.note" : "music.note.list"))
                 .font(.system(size: 14, weight: .medium))
-            Text(setup ?? (open ? "Not playing" : sourceNames))
+            Text(setup ?? (open ? "未在播放" : sourceNames))
                 .font(WidgetStyle.caption(11))
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -377,8 +377,8 @@ struct MusicTile: View {
         }
         .foregroundStyle(subInk)
         .frame(maxWidth: .infinity)
-        .help(setup.map { "A browser tab has media, but Docket cannot read it. Turn on \($0)." }
-              ?? (open ? "Nothing is playing." : "Docket reads \(sourceNames), and video in a scriptable browser tab."))
+        .help(setup.map { "有浏览器标签页正在播放媒体，但 Docket 无法读取。请开启：\($0)。" }
+              ?? (open ? "当前没有播放内容。" : "Docket 可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
     }
 
     /// The menu item the user has to switch on, or nil when nothing is asking.
@@ -391,8 +391,8 @@ struct MusicTile: View {
     /// The players this widget is configured to read, e.g. "Spotify or Music".
     private var sourceNames: String {
         let names = sources.map(\.displayName)
-        guard !names.isEmpty else { return "No sources" }
-        return names.count == 1 ? names[0] : names.joined(separator: " or ")
+        guard !names.isEmpty else { return "无来源" }
+        return names.count == 1 ? names[0] : names.joined(separator: "或")
     }
 }
 
@@ -485,10 +485,10 @@ private struct Artwork: View {
                 .contentShape(.rect)
                 .onTapGesture(perform: onToggle)
                 .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(isPlaying ? "Pause" : "Play")
+                .accessibilityLabel(isPlaying ? "暂停" : "播放")
         } else {
             square(control: nil)
-                .accessibilityLabel("Artwork")
+                .accessibilityLabel("封面")
         }
     }
 

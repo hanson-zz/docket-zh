@@ -93,10 +93,10 @@ struct SettingsView: View {
     /// rows need no colour to be told apart, and the tiles made a small
     /// window read as a phone's settings screen.
     private static let sections: [(id: String, title: String, symbol: String)] = [
-        ("Shelf", "Shelf", "rectangle.bottomthird.inset.filled"),
-        ("Widgets", "Widgets", "square.grid.2x2"),
-        ("Layouts", "Layouts", "square.stack.3d.up"),
-        ("General", "General", "gearshape"),
+        ("Shelf", "扩展栏", "rectangle.bottomthird.inset.filled"),
+        ("Widgets", "小组件", "square.grid.2x2"),
+        ("Layouts", "布局", "square.stack.3d.up"),
+        ("General", "通用", "gearshape"),
     ]
 
     var body: some View {
@@ -123,7 +123,7 @@ struct SettingsView: View {
                 // stagger instead of swapping a finished pane for another
                 // finished pane.
                 .id(selection.current)
-                .navigationTitle(Self.sections.first { $0.id == selection.current }?.title ?? "Settings")
+                .navigationTitle(Self.sections.first { $0.id == selection.current }?.title ?? "设置")
         }
         // A minimum rather than a fixed size: the window is resizable, and a
         // hard frame here would win against it.
@@ -164,7 +164,7 @@ struct SettingsView: View {
 
             if state.setup == .macOSDockOnly {
                 Section {
-                    Text("The shelf is off. Apple's Dock layouts are under Layouts.")
+                    Text("扩展栏已关闭。系统程序坞的布局位于“布局”中。")
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -185,24 +185,24 @@ struct SettingsView: View {
     /// the rest.
     private var layouts: some View {
         Form {
-            layoutList(.customDock, title: "Shelf",
+            layoutList(.customDock, title: "扩展栏",
                        selection: $state.customDock.profileID, allowsNone: false)
                 .disabled(state.setup == .macOSDockOnly)
 
-            layoutList(.macOSDock, title: "Apple Dock",
+            layoutList(.macOSDock, title: "系统程序坞",
                        selection: $state.macOSDock.profileID, allowsNone: true)
 
             Section {
                 HStack {
-                    Button("Apply to Dock", action: onApplyMacOSProfile)
+                    Button("应用到程序坞", action: onApplyMacOSProfile)
                         .disabled(state.activeMacOSProfile == nil)
-                        .help("Write the selected layout to Apple's Dock.")
-                    Button("Save Current Dock", action: onCaptureCurrentDock)
-                        .help("Save Apple's Dock as it is right now as a new layout.")
+                        .help("将所选布局写入系统程序坞。")
+                    Button("存储当前程序坞", action: onCaptureCurrentDock)
+                        .help("将系统程序坞的当前状态存储为新布局。")
                     Spacer()
                     if state.originalMacOSDock != nil {
-                        Button("Restore Original", action: onRestoreOriginalDock)
-                            .help("Put Apple's Dock back the way it was before Docket first changed it.")
+                        Button("恢复原始状态", action: onRestoreOriginalDock)
+                            .help("将系统程序坞恢复到 Docket 首次修改之前的样子。")
                     }
                 }
 
@@ -218,7 +218,7 @@ struct SettingsView: View {
                             .font(.callout)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
-                        Button("Dismiss", action: onClearError)
+                        Button("忽略", action: onClearError)
                             .buttonStyle(.link)
                     }
                 }
@@ -226,14 +226,14 @@ struct SettingsView: View {
 
             Section {
                 HStack {
-                    Button("Back Up…", action: onBackUp)
+                    Button("备份…", action: onBackUp)
                         .disabled(state.profiles.isEmpty)
-                    Button("Restore…", action: onRestore)
+                    Button("恢复…", action: onRestore)
                 }
             } header: {
-                Text("Backup")
+                Text("备份")
             } footer: {
-                Text("A backup holds your layouts, their items and widget settings, not the apps or files they point to. Restoring adds to what you have rather than replacing it.")
+                Text("备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -249,7 +249,7 @@ struct SettingsView: View {
             // "None" is the documented "leave the live Dock completely alone"
             // state, which has to stay reachable after the first capture.
             if allowsNone {
-                LayoutRow(name: .constant("None"), editable: false,
+                LayoutRow(name: .constant("无"), editable: false,
                           active: selection.wrappedValue == nil,
                           onUse: { selection.wrappedValue = nil }) { EmptyView() }
             }
@@ -275,7 +275,7 @@ struct SettingsView: View {
                 Button {
                     onCreateProfile(kind)
                 } label: {
-                    Label("New Layout", systemImage: "plus")
+                    Label("新建布局", systemImage: "plus")
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
@@ -316,28 +316,28 @@ struct SettingsView: View {
                 .padding(.vertical, 2)
             }
 
-            Section("Menu Bar") {
+            Section("菜单栏") {
                 // Refused when there is no shelf, because the icon is then the
                 // only way into an app with no Dock tile and no window of its
                 // own. Disabled and explained rather than accepted and ignored.
-                Toggle("Show menu bar icon", isOn: $state.menuBar.showIcon)
+                Toggle("显示菜单栏图标", isOn: $state.menuBar.showIcon)
                     .disabled(state.setup == .macOSDockOnly)
                     .help(state.setup == .macOSDockOnly
-                          ? "With no shelf on screen, this is the only way to reach Docket."
-                          : "The shelf's own menu can still reach Settings with this off.")
-                Picker("Show next to it", selection: $state.menuBar.label) {
+                          ? "屏幕上没有扩展栏时，这是访问 Docket 的唯一途径。"
+                          : "关闭此项后，仍可通过扩展栏自身的菜单打开设置。")
+                Picker("在旁边显示", selection: $state.menuBar.label) {
                     ForEach(MenuBarLabelMode.allCases, id: \.self) { Text(title($0)).tag($0) }
                 }
             }
 
-            Section("Updates") {
+            Section("更新") {
                 // The consent alert promises this control exists, so it does.
                 // Binding through a default of false means a state file that
                 // predates the question reads as off rather than as answered.
-                Toggle("Check for new versions", isOn: Binding(
+                Toggle("检查新版本", isOn: Binding(
                     get: { state.checkForUpdates == true },
                     set: { state.checkForUpdates = $0 }))
-                    .help("Once a day, Docket asks GitHub for the latest version number and tells you in its menu bar item if it is newer. Nothing is installed for you, and nothing else is sent.")
+                    .help("Docket 每天向 GitHub 查询一次最新版本号，如果有更新版本，会在菜单栏项中提示你。不会自动安装任何内容，也不会发送其他任何信息。")
             }
 
             // About, folded in. A whole section in the sidebar for an icon and
@@ -351,7 +351,7 @@ struct SettingsView: View {
                         Text("Docket \(shortVersion)")
                             .font(.headline)
                             .monospacedDigit()
-                        Text("Everything stays on this Mac, in one file in Application Support. Nothing is synced.")
+                        Text("所有数据都保存在这台 Mac 上 Application Support 中的一个文件里，不会同步。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -381,9 +381,9 @@ struct SettingsView: View {
             Toggle(isOn: $state.customDock.followSystemDock) {
                 // What is being inherited, under the switch that inherits it,
                 // rather than in a row and a footnote of its own.
-                subtitled("Match Apple's Dock", state.customDock.followSystemDock
+                subtitled("与系统程序坞保持一致", state.customDock.followSystemDock
                           ? SystemDockSettings.shared.summary
-                          : "Place and size the shelf yourself.")
+                          : "自行设置扩展栏的位置和大小。")
             }
 
             // Hidden while the Dock dictates them, not greyed: following is
@@ -401,8 +401,8 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 2)
 
-                Picker("Display", selection: $state.customDock.displayID) {
-                    Text("Wherever the pointer is").tag(UInt32?.none)
+                Picker("显示器", selection: $state.customDock.displayID) {
+                    Text("指针所在的显示器").tag(UInt32?.none)
                     ForEach(NSScreen.screens, id: \.self) { screen in
                         if let id = screen.docketDisplayID {
                             Text(screen.localizedName).tag(UInt32?.some(id))
@@ -410,7 +410,7 @@ struct SettingsView: View {
                     }
                 }
 
-                LabeledContent("Size") {
+                LabeledContent("大小") {
                     HStack {
                         // Through setScale, not around it. Binding straight to
                         // the stored value skipped the override flag and never
@@ -429,14 +429,14 @@ struct SettingsView: View {
             // following, which used to set an override nothing could clear.
             if scaleOverridden {
                 LabeledContent {
-                    Button("Match", action: onResumeFollowingScale)
+                    Button("保持一致", action: onResumeFollowingScale)
                 } label: {
-                    subtitled("Size", "Set by hand. Everything else still follows the Dock.")
+                    subtitled("大小", "已手动设置。其他设置仍跟随程序坞。")
                 }
             }
         }
 
-        Section("Look") {
+        Section("外观") {
             // One choice, not a material and then a style of that material:
             // the three are what anyone is actually choosing between.
             // Drawn in the real materials over a scrap of wallpaper, because
@@ -451,30 +451,30 @@ struct SettingsView: View {
                 }
             }
             .padding(.vertical, 2)
-            .help("Reduce Transparency in Accessibility settings overrides Glass and Clear.")
+            .help("辅助功能设置中的“降低透明度”会覆盖“玻璃”和“透明”效果。")
 
             if !state.customDock.followSystemDock {
-                Toggle("Magnify under the pointer", isOn: $state.customDock.magnification)
+                Toggle("放大指针下方的项目", isOn: $state.customDock.magnification)
             }
         }
 
-        Section("Behaviour") {
+        Section("行为") {
             // While following, hiding comes from the Dock's own setting.
             if !state.customDock.followSystemDock {
-                Toggle("Hide until the pointer reaches the edge", isOn: $state.customDock.autoHide)
+                Toggle("隐藏，直到指针移到屏幕边缘", isOn: $state.customDock.autoHide)
             }
             // Only means anything while something is hiding.
             if state.customDock.followSystemDock || state.customDock.autoHide {
                 Toggle(isOn: $state.customDock.showHandleWhenHidden) {
-                    subtitled("Leave a sliver when hidden", "So you can see where it is.")
+                    subtitled("隐藏时保留一条细边", "便于看到它的位置。")
                 }
             }
             Toggle(isOn: $state.customDock.hideWhenMacOSDockAppears) {
-                subtitled("Make way for Apple's Dock",
-                          "When both are on one edge, reaching for one uncovers the other.")
+                subtitled("为系统程序坞让位",
+                          "两者位于同一边缘时，移向其中一个会让另一个显露出来。")
             }
             Toggle(isOn: $state.customDock.useAsDesktopWidget) {
-                subtitled("Stay behind windows", "Sit on the desktop like a widget.")
+                subtitled("置于窗口之后", "像桌面小组件一样停留在桌面上。")
             }
         }
 
@@ -497,9 +497,9 @@ struct SettingsView: View {
 
         var title: String {
             switch self {
-            case .frosted: "Frosted"
-            case .glass: "Glass"
-            case .clear: "Clear"
+            case .frosted: "磨砂"
+            case .glass: "玻璃"
+            case .clear: "透明"
             }
         }
     }
@@ -530,7 +530,7 @@ struct SettingsView: View {
     private func minutes(_ title: String, _ value: Binding<Int>,
                          in range: ClosedRange<Int>) -> some View {
         Stepper(value: value, in: range) {
-            LabeledContent(title) { Text("\(value.wrappedValue) min") }
+            LabeledContent(title) { Text("\(value.wrappedValue) 分钟") }
         }
     }
 
@@ -549,25 +549,25 @@ struct SettingsView: View {
         let items = activeItems
         Section {
             // What the shelf holds, beside the list of what it holds.
-            Toggle("Widgets only", isOn: $state.customDock.widgetsOnly)
+            Toggle("仅小组件", isOn: $state.customDock.widgetsOnly)
             // Both add apps, so neither is a question a widgets-only shelf
             // is asking.
             if !state.customDock.widgetsOnly {
-                Toggle("Show running apps", isOn: $state.customDock.showRunningApps)
-                Toggle("Show Trash", isOn: $state.customDock.showTrash)
+                Toggle("显示正在运行的应用", isOn: $state.customDock.showRunningApps)
+                Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
             }
             // Rearranging a mirrored app takes the list over, which is right,
             // but there has to be a way to give it back.
             if adoptedApps {
                 LabeledContent {
-                    Button("Mirror Again", action: onResumeMirroringApps)
+                    Button("重新同步", action: onResumeMirroringApps)
                 } label: {
-                    subtitled("Apps", "Your own order. The Dock's changes are not followed.")
+                    subtitled("应用", "使用你自己的排序，不再跟随程序坞的变化。")
                 }
             }
 
             if items.isEmpty {
-                Label("Nothing on the shelf yet.", systemImage: "tray")
+                Label("扩展栏上还没有任何项目。", systemImage: "tray")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
@@ -587,15 +587,15 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Take this off the shelf")
+                        .help("从扩展栏移除")
                     }
                     .staggered(index)
                 }
             }
         } header: {
-            Text("On the shelf")
+            Text("扩展栏上的项目")
         } footer: {
-            Text("Drag on the shelf itself to reorder, and add with the + at its end.")
+            Text("在扩展栏上直接拖动即可重新排序，点按末端的 + 可添加项目。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -645,21 +645,21 @@ struct SettingsView: View {
                     // watch the tile change. A Stepper with a title draws
                     // the title, never the value; the value has to be put
                     // there. Same shape the per-widget number controls use.
-                    minutes("Focus", $state.timer.work, in: 1...180)
-                    minutes("Break", $state.timer.rest, in: 1...60)
-                    minutes("Long break", $state.timer.longBreak, in: 1...180)
+                    minutes("专注", $state.timer.work, in: 1...180)
+                    minutes("休息", $state.timer.rest, in: 1...60)
+                    minutes("长休息", $state.timer.longBreak, in: 1...180)
                     Stepper(value: $state.timer.sessions, in: 1...12) {
-                        LabeledContent("Sessions before a long break") {
+                        LabeledContent("长休息前的专注次数") {
                             Text("\(state.timer.sessions)")
                         }
                     }
-                    LabeledContent("Colour") { swatches }
-                    Toggle("Alerts", isOn: $state.timer.alerts)
-                        .help("Notify when a focus session or break ends.")
+                    LabeledContent("颜色") { swatches }
+                    Toggle("提醒", isOn: $state.timer.alerts)
+                        .help("专注或休息结束时发出通知。")
                 } header: {
-                    Text("Focus Timer")
+                    Text("专注计时")
                 } footer: {
-                    Text("Every Focus Timer widget shares these settings - Docket treats them as one timer.")
+                    Text("所有专注计时小组件共用这些设置，Docket 将它们视为同一个计时器。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -684,7 +684,7 @@ struct SettingsView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(colour.rawValue.capitalized)
+                .accessibilityLabel(docketColourName(colour.rawValue))
             }
         }
     }
@@ -694,42 +694,42 @@ struct SettingsView: View {
 
 private func title(_ value: AppAppearance) -> String {
     switch value {
-    case .system: "System"
-    case .light: "Light"
-    case .dark: "Dark"
+    case .system: "跟随系统"
+    case .light: "浅色"
+    case .dark: "深色"
     }
 }
 
 private func title(_ value: DockSetup) -> String {
     switch value {
-    case .macOSDockOnly: "Apple Dock"
-    case .both: "Dock and Shelf"
-    case .customReplacement: "Shelf only"
+    case .macOSDockOnly: "系统程序坞"
+    case .both: "程序坞和扩展栏"
+    case .customReplacement: "仅扩展栏"
     }
 }
 
 private func detail(_ value: DockSetup) -> String {
     switch value {
-    case .macOSDockOnly: "Just Apple's Dock, with saved layouts."
-    case .both: "Apple's Dock for apps, a shelf of widgets on another edge."
-    case .customReplacement: "One shelf for apps and widgets. Apple's Dock stays hidden."
+    case .macOSDockOnly: "只使用系统程序坞，并可切换已存储的布局。"
+    case .both: "系统程序坞放应用，另一侧边缘放一条小组件扩展栏。"
+    case .customReplacement: "用一条扩展栏同时放应用和小组件，系统程序坞保持隐藏。"
     }
 }
 
 private func title(_ value: DockPosition) -> String {
     switch value {
-    case .left: "Left"
-    case .bottom: "Bottom"
-    case .right: "Right"
+    case .left: "左侧"
+    case .bottom: "底部"
+    case .right: "右侧"
     }
 }
 
 private func title(_ value: MenuBarLabelMode) -> String {
     switch value {
-    case .none: "Nothing"
-    case .native: "Apple Dock layout"
-    case .custom: "Shelf layout"
-    case .both: "Both layouts"
+    case .none: "不显示"
+    case .native: "系统程序坞布局"
+    case .custom: "扩展栏布局"
+    case .both: "两种布局"
     }
 }
 
@@ -940,14 +940,14 @@ private struct LayoutRow<Preview: View>: View {
                     .imageScale(.large)
             }
             .buttonStyle(.plain)
-            .help(active ? "In use" : "Use this layout")
-            .accessibilityLabel(active ? "In use" : "Use \(name)")
+            .help(active ? "使用中" : "使用此布局")
+            .accessibilityLabel(active ? "使用中" : "使用“\(name)”")
 
             if renaming {
                 // Unlabelled and leading: inside a form a titled field draws
                 // its title as a row label and pushes the name to the far
                 // edge, so every row read "Name ... Everyday".
-                TextField("Name", text: $name)
+                TextField("名称", text: $name)
                     .textFieldStyle(.plain)
                     .labelsHidden()
                     .multilineTextAlignment(.leading)
@@ -974,9 +974,9 @@ private struct LayoutRow<Preview: View>: View {
 
             if onDuplicate != nil || onDelete != nil {
                 Menu {
-                    if editable { Button("Rename") { renaming = true } }
-                    if let onDuplicate { Button("Duplicate", action: onDuplicate) }
-                    if let onDelete { Button("Delete", role: .destructive, action: onDelete) }
+                    if editable { Button("重命名") { renaming = true } }
+                    if let onDuplicate { Button("复制", action: onDuplicate) }
+                    if let onDelete { Button("删除", role: .destructive, action: onDelete) }
                 } label: {
                     Image(systemName: "ellipsis")
                 }

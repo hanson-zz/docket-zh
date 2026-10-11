@@ -113,7 +113,7 @@ struct SystemActivityTile: View {
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(metric.label)
-                .accessibilityValue("\(Int((value(metric) * 100).rounded())) percent")
+                .accessibilityValue("百分之 \(Int((value(metric) * 100).rounded()))")
             }
         }
     }
@@ -311,9 +311,9 @@ struct SystemActivityTile: View {
         var label: String {
             switch self {
             case .cpu: "CPU"
-            case .memory: "Memory"
-            case .disk: "Disk"
-            case .battery: "Battery"
+            case .memory: "内存"
+            case .disk: "磁盘"
+            case .battery: "电池"
             }
         }
 
@@ -321,9 +321,9 @@ struct SystemActivityTile: View {
         var short: String {
             switch self {
             case .cpu: "CPU"
-            case .memory: "MEM"
-            case .disk: "SSD"
-            case .battery: "BATT"
+            case .memory: "内存"
+            case .disk: "磁盘"
+            case .battery: "电池"
             }
         }
 

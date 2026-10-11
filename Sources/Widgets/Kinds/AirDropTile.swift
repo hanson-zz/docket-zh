@@ -21,7 +21,7 @@ struct AirDropTile: View {
                         .font(.system(size: column ? 15 : 16, weight: .medium))
                         .foregroundStyle(WidgetStyle.primary)
                 }
-                Text("AirDrop")
+                Text("隔空投送")
                     .font(.system(size: column ? 12 : 13, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
                     .lineLimit(1)

@@ -71,9 +71,9 @@ struct CountdownDetail: View {
                 HStack(spacing: 10) {
                     // Restarting in flight throws away time already run, which is
                     // why the tile keeps it off the card and the panel carries it.
-                    ClockPanelButton(title: running ? "Restart" : "Start",
+                    ClockPanelButton(title: running ? "重新开始" : "开始",
                                      fill: .white.opacity(0.24), ink: .white) { start(duration: total) }
-                    ClockPanelButton(title: "Cancel", fill: nil, action: cancel)
+                    ClockPanelButton(title: "取消", fill: nil, action: cancel)
                         .disabled(deadline == nil)
                         .opacity(deadline == nil ? 0.4 : 1)
                 }
@@ -98,7 +98,7 @@ struct CountdownDetail: View {
 
     private func preset(_ minutes: Int, active: Bool, now: Date) -> some View {
         Button { pick(minutes, now: now) } label: {
-            Text("\(minutes) min")
+            Text("\(minutes) 分钟")
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(.white.opacity(active ? 1 : 0.75))
                 .frame(maxWidth: .infinity)
@@ -107,7 +107,7 @@ struct CountdownDetail: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(minutes) minute countdown")
+        .accessibilityLabel("\(minutes) 分钟倒计时")
         .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 
@@ -116,13 +116,13 @@ struct CountdownDetail: View {
     /// it waits.
     private func caption(running: Bool, duration: TimeInterval) -> String {
         let name = instance.config.string("name")
-        let title = name.isEmpty ? "Countdown" : name
+        let title = name.isEmpty ? "倒计时" : name
         guard running, let deadline else {
             return "\(title) · \(Self.lengthLabel(duration))"
         }
         let ends = Date(timeIntervalSince1970: deadline)
             .formatted(.dateTime.hour().minute())
-        return "\(title) · ends \(ends)"
+        return "\(title) · \(ends) 结束"
     }
 
     // MARK: State

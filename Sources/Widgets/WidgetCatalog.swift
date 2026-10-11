@@ -31,104 +31,104 @@ public enum WidgetCatalog {
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
-        Entry(kind: .clock, name: "Clock", category: .clocks, defaults: c([:]),
+        Entry(kind: .clock, name: "时钟", category: .clocks, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .world, name: "World Clock", category: .clocks,
-              defaults: c(["city": .string("London"), "zone": .string("Europe/London")]),
+        Entry(kind: .world, name: "世界时钟", category: .clocks,
+              defaults: c(["city": .string("伦敦"), "zone": .string("Europe/London")]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .stopwatch, name: "Stopwatch", category: .clocks, defaults: c([:]),
+        Entry(kind: .stopwatch, name: "秒表", category: .clocks, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .timer, name: "Focus Timer", category: .clocks, defaults: c([:]),
+        Entry(kind: .timer, name: "专注计时", category: .clocks, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .progress, name: "Time Progress", category: .clocks,
+        Entry(kind: .progress, name: "时间进度", category: .clocks,
               defaults: c(["layout": .string("bars"), "period": .string("year")]),
-              variants: [("Bars", ["layout": .string("bars")]),
-                         ("Ring", ["layout": .string("ring")]),
-                         ("Percentage", ["layout": .string("percentage")])],
+              variants: [("进度条", ["layout": .string("bars")]),
+                         ("圆环", ["layout": .string("ring")]),
+                         ("百分比", ["layout": .string("percentage")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .countdown, name: "Countdown", category: .clocks,
+        Entry(kind: .countdown, name: "倒计时", category: .clocks,
               defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([])]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .alarm, name: "Alarm", category: .clocks,
-              defaults: c(["time": .string("14:30"), "name": .string("Call Alex")]),
+        Entry(kind: .alarm, name: "闹钟", category: .clocks,
+              defaults: c(["time": .string("14:30"), "name": .string("给小王回电话")]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .hydration, name: "Hydration", category: .reminders,
+        Entry(kind: .hydration, name: "喝水提醒", category: .reminders,
               defaults: c(["duration": .number(2700)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // No `showCallButton`: read by nothing. A join-call affordance needs
         // the event's conference URL and a row to put it in, neither of which
         // exists, so the switch promised something that was never built.
-        Entry(kind: .calendar, name: "Calendar", category: .calendar,
+        Entry(kind: .calendar, name: "日历", category: .calendar,
               defaults: c(["layout": .string("nextEvent"), "allDay": .bool(true),
                            "calendars": .list([])]),
-              variants: [("Next event", ["layout": .string("nextEvent")]),
-                         ("Date + next event", ["layout": .string("dateAndEvent")]),
-                         ("Date + agenda", ["layout": .string("agenda")]),
-                         ("Date", ["layout": .string("date")])],
+              variants: [("下一个日程", ["layout": .string("nextEvent")]),
+                         ("日期 + 下一个日程", ["layout": .string("dateAndEvent")]),
+                         ("日期 + 日程列表", ["layout": .string("agenda")]),
+                         ("日期", ["layout": .string("date")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .reminders, name: "Reminders", category: .reminders,
+        Entry(kind: .reminders, name: "提醒事项", category: .reminders,
               defaults: c(["layout": .string("list"), "list": .string("")]),
-              variants: [("List", ["layout": .string("list")]),
-                         ("Next reminder", ["layout": .string("next")]),
-                         ("Count", ["layout": .string("count")])],
+              variants: [("列表", ["layout": .string("list")]),
+                         ("下一个提醒", ["layout": .string("next")]),
+                         ("数量", ["layout": .string("count")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .notes, name: "Sticky Note", category: .notes,
+        Entry(kind: .notes, name: "便签", category: .notes,
               defaults: c(["text": .string(""), "color": .string("yellow")]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .music, name: "Now Playing", category: .media,
+        Entry(kind: .music, name: "正在播放", category: .media,
               defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),
                            "backward": .bool(false), "forward": .bool(false), "skip": .number(15),
                            "spotify": .bool(true), "apple": .bool(true),
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true)]),
-              variants: [("Full", ["mini": .bool(false)]), ("Mini", ["mini": .bool(true)])],
+              variants: [("完整", ["mini": .bool(false)]), ("迷你", ["mini": .bool(true)])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .battery, name: "Battery", category: .system,
+        Entry(kind: .battery, name: "电池", category: .system,
               defaults: c(["layout": .string("status"),
                            "devices": .list([.string("mac")])]),
-              variants: [("Status", ["layout": .string("status")]),
-                         ("Percentage ring", ["layout": .string("gauge")]),
-                         ("Icon only", ["layout": .string("icon")])],
+              variants: [("状态", ["layout": .string("status")]),
+                         ("百分比圆环", ["layout": .string("gauge")]),
+                         ("仅图标", ["layout": .string("icon")])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .system, name: "System Activity", category: .system,
+        Entry(kind: .system, name: "系统活动", category: .system,
               // No chart by default: the shipped design is clean numbers with
               // a coloured dot, and a sparkline behind them crowds a 62pt
               // strip. Offered as its own variant instead.
               defaults: c(["layout": .string("numbers"), "chart": .bool(false),
                            "metrics": .list([.string("cpu"), .string("memory")])]),
-              variants: [("Numbers", ["layout": .string("numbers"), "chart": .bool(false)]),
-                         ("Numbers + graph", ["layout": .string("numbers"), "chart": .bool(true)]),
-                         ("Rings", ["layout": .string("rings")]),
-                         ("Bars", ["layout": .string("bars")])],
+              variants: [("数字", ["layout": .string("numbers"), "chart": .bool(false)]),
+                         ("数字 + 图表", ["layout": .string("numbers"), "chart": .bool(true)]),
+                         ("圆环", ["layout": .string("rings")]),
+                         ("条形", ["layout": .string("bars")])],
               supportsCompact: true, selfContained: true),
 
         // No `popupChart`: it was read by nothing, and the detail panel it
         // presumably meant now exists and always draws its history.
-        Entry(kind: .network, name: "Network Activity", category: .system,
+        Entry(kind: .network, name: "网络活动", category: .system,
               defaults: c(["display": .string("both"), "chart": .bool(false)]),
-              variants: [("Numbers only", ["chart": .bool(false)]),
-                         ("With chart", ["chart": .bool(true)])],
+              variants: [("仅数字", ["chart": .bool(false)]),
+                         ("带图表", ["chart": .bool(true)])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .shortcut, name: "Shortcut", category: .system,
+        Entry(kind: .shortcut, name: "快捷指令", category: .system,
               defaults: c(["name": .string("")]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .airdrop, name: "AirDrop", category: .system, defaults: c([:]),
+        Entry(kind: .airdrop, name: "隔空投送", category: .system, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // `period`, `metric`, `reference` and `style` were offered here and
@@ -136,7 +136,7 @@ public enum WidgetCatalog {
         // DitherChart has no reference line and no styles, and no reader ever
         // asked for a metric. Every one of them persisted and changed nothing.
         // They come back with the code that honours them, not before.
-        Entry(kind: .stock, name: "Stock", category: .stocks,
+        Entry(kind: .stock, name: "股票", category: .stocks,
               defaults: c(["symbol": .string("AAPL"),
                            "symbols": .list([.string("AAPL")]),
                            "chart": .bool(true)]),
@@ -144,18 +144,18 @@ public enum WidgetCatalog {
 
         // No `chart` here, unlike Stock: this tile is a list of rows and has
         // never drawn one, so the switch had nothing to switch.
-        Entry(kind: .watchlist, name: "Watchlist", category: .stocks,
+        Entry(kind: .watchlist, name: "自选股", category: .stocks,
               defaults: c(["symbols": .list([.string("AAPL"), .string("MSFT"), .string("NVDA")])]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .weather, name: "Weather", category: .weather,
+        Entry(kind: .weather, name: "天气", category: .weather,
               // Empty city: use wherever the user actually is. "Oslo" is the
               // city in the reference screenshots, not a sane default.
               defaults: c(["layout": .string("current"), "fahrenheit": .bool(false),
                            "city": .string("")]),
-              variants: [("Current", ["layout": .string("current")]),
-                         ("Conditions", ["layout": .string("conditions")]),
-                         ("Hourly forecast", ["layout": .string("hourly")])],
+              variants: [("当前", ["layout": .string("current")]),
+                         ("天气状况", ["layout": .string("conditions")]),
+                         ("逐小时预报", ["layout": .string("hourly")])],
               supportsCompact: true, selfContained: true),
     ]
 

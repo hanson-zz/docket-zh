@@ -35,7 +35,7 @@ struct ClockDetail: View {
                     .padding(.top, 18)
 
                     HStack(spacing: 8) {
-                        StatChip(label: "Time zone",
+                        StatChip(label: "时区",
                                  value: ClockPanelFormat.zoneName(.current, at: now))
                         StatChip(label: "UTC", value: ClockPanelFormat.gmt(.current, at: now))
                             .frame(width: 92)
@@ -153,11 +153,11 @@ enum ClockPanelFormat {
     /// zones rarely change on the same weekend.
     static func difference(_ zone: TimeZone, at date: Date) -> String {
         let delta = zone.secondsFromGMT(for: date) - TimeZone.current.secondsFromGMT(for: date)
-        guard delta != 0 else { return "Same time as here" }
+        guard delta != 0 else { return "与此处时间相同" }
         let minutes = abs(delta) / 60
         var parts: [String] = []
-        if minutes / 60 > 0 { parts.append("\(minutes / 60) hour\(minutes / 60 == 1 ? "" : "s")") }
-        if minutes % 60 > 0 { parts.append("\(minutes % 60) min") }
-        return parts.joined(separator: " ") + (delta > 0 ? " ahead" : " behind")
+        if minutes / 60 > 0 { parts.append("\(minutes / 60) 小时") }
+        if minutes % 60 > 0 { parts.append("\(minutes % 60) 分钟") }
+        return (delta > 0 ? "比此处快 " : "比此处慢 ") + parts.joined(separator: " ")
     }
 }

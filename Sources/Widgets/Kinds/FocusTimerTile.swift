@@ -133,7 +133,7 @@ struct FocusTimerTile: View {
     private func toggleButton(running: Bool, size: CGFloat) -> some View {
         TileGlyph(symbol: running ? "pause.fill" : "play.fill", size: size,
                   action: context.isPreview ? nil : (toggle as () -> Void))
-            .accessibilityLabel(running ? "Pause focus timer" : "Start focus timer")
+            .accessibilityLabel(running ? "暂停专注计时" : "开始专注计时")
     }
 
     /// Pausing banks what is left instead of the deadline, so resuming carries

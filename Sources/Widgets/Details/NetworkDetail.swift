@@ -43,8 +43,8 @@ struct NetworkDetail: View {
 
     private var headline: some View {
         HStack(spacing: 12) {
-            if showsDownload { reading("arrow.down", "Download", download, Self.downTint) }
-            if showsUpload { reading("arrow.up", "Upload", upload, Self.upTint) }
+            if showsDownload { reading("arrow.down", "下载", download, Self.downTint) }
+            if showsUpload { reading("arrow.up", "上传", upload, Self.upTint) }
         }
     }
 
@@ -108,7 +108,7 @@ struct NetworkDetail: View {
             .padding(.top, 14)
             // Named with the span the buffer actually holds, which is under a
             // minute until it fills.
-            Text((window >= NetworkMetrics.historyLength ? "Last 60 seconds" : "Last \(window) seconds")
+            Text((window >= NetworkMetrics.historyLength ? "最近 60 秒" : "最近 \(window) 秒")
                     .uppercased())
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(0.6)
@@ -135,12 +135,12 @@ struct NetworkDetail: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
                             GridItem(.flexible(), spacing: 8)], spacing: 8) {
             if showsDownload {
-                StatChip(label: "Down average", value: text(average(downloadHistory)))
-                StatChip(label: "Down peak", value: text(peak(downloadHistory)))
+                StatChip(label: "下载平均", value: text(average(downloadHistory)))
+                StatChip(label: "下载峰值", value: text(peak(downloadHistory)))
             }
             if showsUpload {
-                StatChip(label: "Up average", value: text(average(uploadHistory)))
-                StatChip(label: "Up peak", value: text(peak(uploadHistory)))
+                StatChip(label: "上传平均", value: text(average(uploadHistory)))
+                StatChip(label: "上传峰值", value: text(peak(uploadHistory)))
             }
         }
     }

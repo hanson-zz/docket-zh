@@ -59,7 +59,7 @@ struct FocusTimerDetail: View {
                     // solid shape on the card is the one to press.
                     button(primaryTitle(state, left: left), fill: .white.opacity(0.24), label: .white,
                            action: { togglePrimary() })
-                    button("Reset", fill: nil, label: .white,
+                    button("重置", fill: nil, label: .white,
                            action: { reset() })
                         .disabled(untouched)
                         .opacity(untouched ? 0.4 : 1)
@@ -103,7 +103,7 @@ struct FocusTimerDetail: View {
 
     private func preset(_ minutes: Int, active: Bool, tint: Color) -> some View {
         Button { pick(minutes) } label: {
-            Text("\(minutes) min")
+            Text("\(minutes) 分钟")
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(.white.opacity(active ? 1 : 0.75))
                 .frame(maxWidth: .infinity)
@@ -112,7 +112,7 @@ struct FocusTimerDetail: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(minutes) minute session")
+        .accessibilityLabel("\(minutes) 分钟专注")
         .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 
@@ -120,15 +120,15 @@ struct FocusTimerDetail: View {
     /// stored figure rather than from one invented here.
     private func sessionLine(_ state: TimerState) -> String {
         let session = min(state.completed + 1, max(1, state.sessions))
-        return "\(state.phase.label) · Session \(session) of \(state.sessions)"
+        return "\(state.phase.label) · 第 \(session)/\(state.sessions) 轮"
     }
 
     /// A countdown at zero has nothing to resume, so it offers a fresh start -
     /// which is what pressing it then does.
     private func primaryTitle(_ state: TimerState, left: TimeInterval) -> String {
-        guard left > 0 else { return "Start" }
-        if state.paused != nil { return "Resume" }
-        return state.deadline == nil ? "Start" : "Pause"
+        guard left > 0 else { return "开始" }
+        if state.paused != nil { return "继续" }
+        return state.deadline == nil ? "开始" : "暂停"
     }
 
     // MARK: - Actions

@@ -1,6 +1,9 @@
 name: Docket
 options:
-  bundleIdPrefix: com.namanparashar
+  # 中文本地化分支：使用独立的 bundle ID 前缀，避免与上游 Docket 冲突。
+  bundleIdPrefix: com.docket-zh
+  # 开发语言设为简体中文，knownRegions 会包含 zh-Hans。
+  developmentLanguage: zh-Hans
   deploymentTarget:
     macOS: "26.0"
   createIntermediateGroups: true
@@ -13,15 +16,17 @@ settings:
     MARKETING_VERSION: "0.1.9" # x-release-please-version
     CURRENT_PROJECT_VERSION: "1"
     DEAD_CODE_STRIPPING: YES
-    ENABLE_HARDENED_RUNTIME: YES
-    # Manual, and a real identity rather than ad-hoc. macOS will not offer
-    # location consent to an ad-hoc signed app - the request returns with the
-    # status unchanged and no prompt at all - because there is no stable
-    # identity for the grant to be attached to. Automatic signing needs an
-    # Xcode account configured; manual only needs the certificate.
+    # 中文本地化分支：默认使用 ad-hoc 签名（"-"），不需要任何 Apple 开发者证书或团队，
+    # 任何人 clone 后都能直接构建。上游使用的个人证书和 DEVELOPMENT_TEAM 已移除。
+    # 硬化运行时只有配合真正的 Developer ID 和公证才有意义，因此与上游 CI/发布构建一样关闭。
+    #
+    # 已知限制（上游原注释）：macOS 不会向 ad-hoc 签名的应用弹出定位授权，
+    # 因为没有稳定的签名身份可供绑定授权。天气小组件请在“设置 ▸ 小组件”中手动输入城市。
+    # 如需定位授权，可在本地把 CODE_SIGN_IDENTITY 改为你自己的 Apple Development 证书，
+    # 并加上 DEVELOPMENT_TEAM。
+    ENABLE_HARDENED_RUNTIME: NO
     CODE_SIGN_STYLE: Manual
-    CODE_SIGN_IDENTITY: "Apple Development: nparashar150@gmail.com (WTSX2PXS5C)"
-    DEVELOPMENT_TEAM: DAK6X938S3
+    CODE_SIGN_IDENTITY: "-"
 
 targets:
   Docket:
@@ -30,14 +35,14 @@ targets:
     sources:
       - path: Sources
       - path: Resources/AppIcon.icon
+      # 中文本地化：zh-Hans.lproj/InfoPlist.strings（权限说明与显示名称）。
+      - path: Resources/Localization
     settings:
       base:
         PRODUCT_NAME: Docket
-        # Deliberately still the old name. macOS keys a saved setup's location
-        # in Application Support, and every permission the user has granted,
-        # to the bundle identifier. Renaming it would move the one and revoke
-        # the other, to change a string nobody ever sees.
-        PRODUCT_BUNDLE_IDENTIFIER: com.namanparashar.plinth
+        # 中文本地化分支使用独立的 bundle ID，与上游（com.namanparashar.plinth）
+        # 互不干扰：两者的设置文件和系统权限分开保存，可以同时安装。
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app
         INFOPLIST_FILE: Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Resources/Docket.entitlements
         ENABLE_APP_SANDBOX: NO
@@ -59,7 +64,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: Shots
-        PRODUCT_BUNDLE_IDENTIFIER: com.namanparashar.plinth.shots
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.shots
         CODE_SIGN_ENTITLEMENTS: Resources/Docket.entitlements
         ENABLE_APP_SANDBOX: NO
 
@@ -79,5 +84,5 @@ targets:
       - path: Sources/Services/PagePreview.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.namanparashar.plinth.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.tests
         GENERATE_INFOPLIST_FILE: YES

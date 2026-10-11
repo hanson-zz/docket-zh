@@ -64,9 +64,9 @@ struct StopwatchDetail: View {
                 .padding(.top, 6)
 
                 HStack(spacing: 10) {
-                    ClockPanelButton(title: running ? "Stop" : "Start",
+                    ClockPanelButton(title: running ? "停止" : "开始",
                                      fill: Self.orange, action: toggle)
-                    ClockPanelButton(title: "Reset", fill: nil, action: reset)
+                    ClockPanelButton(title: "重置", fill: nil, action: reset)
                         .disabled(untouched)
                         .opacity(untouched ? 0.4 : 1)
                 }
@@ -96,10 +96,10 @@ struct StopwatchDetail: View {
     /// after a stop says "Resumed", because `started` is then the resume
     /// rather than the beginning.
     private var caption: String {
-        guard running else { return banked > 0 ? "Paused" : "Ready" }
+        guard running else { return banked > 0 ? "已暂停" : "就绪" }
         let since = Date(timeIntervalSince1970: startedAt)
             .formatted(date: .omitted, time: .standard)
-        return (banked > 0 ? "Resumed " : "Started ") + since
+        return (banked > 0 ? "继续于 " : "开始于 ") + since
     }
 
     // MARK: Actions

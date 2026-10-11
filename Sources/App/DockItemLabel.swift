@@ -16,10 +16,10 @@ public extension DockItem {
                 ?? AppCatalog.shared.running.first { $0.id == bundleID }?.name
                 ?? bundleID
         case .folder(_, let ref, _), .file(_, let ref):
-            ref.resolve()?.lastPathComponent ?? "Missing item"
+            ref.resolve()?.lastPathComponent ?? "项目缺失"
         case .link(_, _, let title): title
         case .group(let group): group.name
-        case .spacer(_, let size): size == .small ? "Small spacer" : "Spacer"
+        case .spacer(_, let size): size == .small ? "小间隔" : "间隔"
         case .widget(let widget): WidgetCatalog.entry(widget.kind)?.name ?? widget.kind.rawValue
         }
     }
@@ -27,13 +27,13 @@ public extension DockItem {
     /// A word for what kind of thing this is, for a list that mixes them.
     var kindName: String {
         switch self {
-        case .app: "App"
-        case .folder: "Folder"
-        case .file: "File"
-        case .link: "Link"
-        case .spacer: "Spacer"
-        case .widget: "Widget"
-        case .group: "Group"
+        case .app: "应用"
+        case .folder: "文件夹"
+        case .file: "文件"
+        case .link: "链接"
+        case .spacer: "间隔"
+        case .widget: "小组件"
+        case .group: "分组"
         }
     }
 

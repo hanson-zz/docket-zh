@@ -152,7 +152,7 @@ struct StockTile: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Show next symbol")
+            .accessibilityLabel("显示下一只股票")
         } else {
             tickerText(size)
         }
