@@ -235,19 +235,29 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             return borrowedOrigin(for: size)
         }
 
+        let settings = app.state.customDock
+        let reserve = settings.reserveSystemDockSpace
         let visible = targetScreen.visibleFrame
-        let inset: CGFloat = 6 + systemDockClearance
+        let full = targetScreen.frame
+        // Without the reservation the shelf measures from the bezel, so a
+        // Dock that is not auto-hidden stops pushing it up. The top still
+        // comes from `visibleFrame`, because the menu bar owns that edge.
+        let bounds = reserve
+            ? visible
+            : CGRect(x: full.minX, y: full.minY, width: full.width, height: visible.maxY - full.minY)
+        let gap = CGFloat(min(max(settings.edgeGap, 0), 60))
+        let inset: CGFloat = gap + (reserve ? systemDockClearance : 0)
 
         let origin: CGPoint = switch app.effectivePosition {
-        case .bottom: CGPoint(x: visible.midX - size.width / 2, y: visible.minY + inset)
-        case .left: CGPoint(x: visible.minX + inset, y: visible.midY - size.height / 2)
-        case .right: CGPoint(x: visible.maxX - size.width - inset, y: visible.midY - size.height / 2)
+        case .bottom: CGPoint(x: bounds.midX - size.width / 2, y: bounds.minY + inset)
+        case .left: CGPoint(x: bounds.minX + inset, y: bounds.midY - size.height / 2)
+        case .right: CGPoint(x: bounds.maxX - size.width - inset, y: bounds.midY - size.height / 2)
         }
 
         // Never let the shelf hang off-screen at large scales on small displays.
         return CGPoint(
-            x: min(max(origin.x, visible.minX), max(visible.minX, visible.maxX - size.width)),
-            y: min(max(origin.y, visible.minY), max(visible.minY, visible.maxY - size.height))
+            x: min(max(origin.x, bounds.minX), max(bounds.minX, bounds.maxX - size.width)),
+            y: min(max(origin.y, bounds.minY), max(bounds.minY, bounds.maxY - size.height))
         )
     }
 

@@ -682,6 +682,17 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// before: Command-scroll was ignored, and a sideways swipe only scrolls
     /// a shelf that overflows, which keeps doing exactly that.
     public var switchLayoutsByGesture: Bool = true
+    /// Points between the shelf and the screen edge it sits on.
+    ///
+    /// Six was hard-coded, which is right beside Apple's Dock but reads as a
+    /// stray gap to anyone who wants the shelf flush with the bezel.
+    public var edgeGap: Double = 6
+    /// Keep clear of Apple's Dock when both are on the same edge.
+    ///
+    /// On by default so the two never stack. Turning it off lets the shelf
+    /// sit at the bezel and draw over the Dock, which is what people asking
+    /// for "flush" usually mean when they keep Apple's Dock on that edge.
+    public var reserveSystemDockSpace: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -712,6 +723,8 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         widgetsOnly = try c.decodeIfPresent(Bool.self, forKey: .widgetsOnly) ?? false
         magnification = try c.decodeIfPresent(Bool.self, forKey: .magnification) ?? true
         switchLayoutsByGesture = try c.decodeIfPresent(Bool.self, forKey: .switchLayoutsByGesture) ?? true
+        edgeGap = try c.decodeIfPresent(Double.self, forKey: .edgeGap) ?? 6
+        reserveSystemDockSpace = try c.decodeIfPresent(Bool.self, forKey: .reserveSystemDockSpace) ?? true
     }
 
     public init() {}

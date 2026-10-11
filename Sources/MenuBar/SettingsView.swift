@@ -499,6 +499,21 @@ struct SettingsView: View {
                     subtitled("隐藏时保留一条细边", "便于看到它的位置。")
                 }
             }
+            LabeledContent {
+                HStack {
+                    Slider(value: $state.customDock.edgeGap, in: 0...40, step: 1)
+                    Text("\(Int(state.customDock.edgeGap.rounded())) pt")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
+                }
+            } label: {
+                subtitled("距屏幕边缘", "扩展栏与所在屏幕边缘之间的距离，设为 0 即贴边。")
+            }
+            Toggle(isOn: $state.customDock.reserveSystemDockSpace) {
+                subtitled("为系统程序坞留出空间",
+                          "系统程序坞与扩展栏在同一边缘时，把扩展栏抬到程序坞之外。关闭后扩展栏会贴边并盖在系统程序坞上方。")
+            }
             Toggle(isOn: $state.customDock.hideWhenMacOSDockAppears) {
                 subtitled("为系统程序坞让位",
                           "两者位于同一边缘时，移向其中一个会让另一个显露出来。")
