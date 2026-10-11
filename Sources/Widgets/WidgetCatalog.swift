@@ -204,6 +204,9 @@ public enum WidgetCatalog {
               variants: [("网页搜索", ["layout": .string("web")]),
                          ("查找文件", ["layout": .string("files")])],
               supportsCompact: false, selfContained: true),
+
+        Entry(kind: .volume, name: "音量", category: .media, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -236,7 +239,7 @@ public enum WidgetCatalog {
             nil
         // A photo or a file is its own colour; a tint behind it competes.
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
-             .colorPicker, .converter, .capture, .emoji, .search:
+             .colorPicker, .converter, .capture, .emoji, .search, .volume:
             nil
         }
     }
@@ -349,6 +352,8 @@ public enum WidgetCatalog {
         // Screenshot app, where recording and the timer are.
         case .capture:
             .app(bundleID: "com.apple.screenshot.launcher")
+        case .volume:
+            .settings("com.apple.Sound-Settings.extension")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
@@ -462,6 +467,7 @@ public enum WidgetCatalog {
         case .capture: return CGSize(width: 136, height: 62)
         case .emoji: return CGSize(width: 160, height: 62)
         case .search: return CGSize(width: 220, height: 62)
+        case .volume: return CGSize(width: 200, height: 62)
         }
     }
 
