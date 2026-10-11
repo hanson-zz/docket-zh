@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/nparashar150/dockset/raw/main/docs/images/icon.png" alt="Docket 图标" width="128">
+<img src="docs/images/icon.png" alt="Docket 图标" width="128">
 
 # Docket 中文版
 
@@ -15,9 +15,9 @@
 
 <br>
 
-<img src="https://github.com/nparashar150/dockset/raw/main/docs/images/shelf.png" alt="Docket 扩展栏运行在屏幕底部：系统活动、逐小时天气、便签，然后是一排应用图标" width="100%">
+<img src="docs/images/zh/shelf-showcase.png" alt="Docket 中文版扩展栏：时钟、世界时钟、系统活动、便签，然后是一排应用图标" width="100%">
 
-<sub>截图来自上游英文版，界面布局与中文版一致。</sub>
+<sub>所有截图都是应用自己的界面，由仓库中的截图工具在 macOS 上实际拍摄（见文末“截图是怎么来的”）。</sub>
 
 </div>
 
@@ -32,18 +32,134 @@
   小组件卡片与详情面板、提示文字、弹窗、权限说明、空状态等；
 - 调整构建配置，让任何人 clone 后都能直接构建（ad-hoc 签名、独立的 bundle ID
   `com.docket-zh.app`，可与上游英文版同时安装）；
-- 新增三种切换布局的方式，见下方“新增功能”。
+- 新增十二种小组件（相册、最近截图、下载、文件暂存、剪贴板、取色器、单位换算、
+  截图工具、表情符号、搜索、音量、快速开关）和三种切换布局的方式，见下方“新增功能：更快地切换布局”。
 
-其余功能与上游保持一致：
+与上游一致的基础能力：
 
 - **跟随真实的程序坞**：大小、所在边缘、放大效果和自动隐藏都实时读取系统设置。
-- **二十种可用的小组件**：时钟、世界时钟、秒表、专注计时、时间进度、倒计时、闹钟、
-  喝水提醒、便签、日历、提醒事项、电池、系统活动、网络活动、隔空投送、股票、自选股、
-  天气、快捷指令、正在播放。点按小组件会打开详情面板。
 - **应用分组**：把一个图标拖到另一个图标上并停留，即可像 iOS 一样建立分组。
 - **布局**：可保存多套布局，并可写回系统程序坞（只改动 `persistent-apps`，带校验和回滚）。
+- **点按小组件会打开详情面板**，显示更多内容和操作。
 
-### 新增功能
+---
+
+## 小组件一览
+
+三十多种小组件，按用途分成五类。每一类都可以自由组合，放在同一条扩展栏上。
+
+<sub>下面每类第一张图是放着该类小组件的真实扩展栏，小组件显示的是小组件库自带的示例数据
+（日历、提醒事项、音乐等需要授权的内容不会读取拍摄机器上的真实数据）；详情面板截图中
+标注“示例数据”的同理，其余为拍摄时的实时读数。</sub>
+
+### 应用、文件和快速访问
+
+把常用应用、刚下载的文件和要来回拖动的文件都放在手边，不用再打开访达翻找。
+
+**包含：** 应用图标与分组、下载、文件暂存、搜索（网页搜索或查找文件）、隔空投送、快捷指令
+
+<img src="docs/images/zh/shelf-files.png" alt="扩展栏：下载、最近截图、文件暂存、搜索、隔空投送和应用图标" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/downloads.png" alt="下载详情面板：最近下载的五个文件" width="100%">
+      <p align="center"><sub>下载：最近下载的文件，点按打开，拖出即用</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/file-shelf.png" alt="文件暂存详情面板：暂存的三个文件" width="100%">
+      <p align="center"><sub>文件暂存：先把文件拖进来，稍后再拖出去</sub></p>
+    </td>
+  </tr>
+</table>
+
+### 生产力和日常专注
+
+把今天的日程、待办和专注节奏放在眼前，一眼就知道接下来要做什么。
+
+**包含：** 日历、提醒事项、专注计时（番茄钟）、喝水提醒、便签、时钟、世界时钟、秒表、倒计时、闹钟、时间进度
+
+<img src="docs/images/zh/shelf-productivity.png" alt="扩展栏：日历、提醒事项、专注计时、喝水提醒和便签" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/focus-timer.png" alt="专注计时详情面板：正在进行的专注时段" width="100%">
+      <p align="center"><sub>专注计时：专注、休息、长休息交替进行</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/time-progress.png" alt="时间进度详情面板：今天、本月和今年已过去的比例" width="100%">
+      <p align="center"><sub>时间进度：今天、本月、今年过去了多少</sub></p>
+    </td>
+  </tr>
+</table>
+
+### Mac 控制和系统工具
+
+不用打开控制中心或活动监视器，常用的开关和系统状态就在扩展栏上。
+
+**包含：** 正在播放（音乐）、音量、快速开关（暗色模式、锁屏、屏幕保护程序、清空废纸篓）、系统活动、网络活动、电池
+
+<img src="docs/images/zh/shelf-system.png" alt="扩展栏：正在播放、音量、快速开关、系统活动和电池" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/system-activity.png" alt="系统活动详情面板：CPU、内存和磁盘的最近一分钟曲线" width="100%">
+      <p align="center"><sub>系统活动：CPU、内存、磁盘的最近一分钟</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/battery.png" alt="电池详情面板：Mac 和配件的电量（示例数据）" width="100%">
+      <p align="center"><sub>电池：Mac 和配件的电量（示例数据）</sub></p>
+    </td>
+  </tr>
+</table>
+
+### 实用小工具
+
+一些随手就要用的小工具：找回刚才拷贝的内容、换算单位、插入表情、看看天气。
+
+**包含：** 剪贴板、单位换算、表情符号、天气、股票、自选股
+
+<img src="docs/images/zh/shelf-tools.png" alt="扩展栏：剪贴板、单位换算、表情符号、天气和世界时钟" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/clipboard.png" alt="剪贴板详情面板：最近拷贝的四条内容" width="100%">
+      <p align="center"><sub>剪贴板：最近拷贝的内容，点按即可重新拷贝</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/converter.png" alt="单位换算详情面板：1 英里换算成各种长度单位" width="100%">
+      <p align="center"><sub>单位换算：长度、重量、温度</sub></p>
+    </td>
+  </tr>
+</table>
+
+### 图片与截图
+
+看看喜欢的图片，随时截图，最近的截图和取到的颜色都能直接拖走或拷贝。
+
+**包含：** 相册、最近截图、截图工具、取色器
+
+<img src="docs/images/zh/shelf-images.png" alt="扩展栏：相册、最近截图、截图工具、取色器和应用图标" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/photos.png" alt="相册详情面板：文件夹中的六张图片" width="100%">
+      <p align="center"><sub>相册：轮播一个文件夹里的图片</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/screenshots.png" alt="最近截图详情面板：最新一张截图和更早的几张" width="100%">
+      <p align="center"><sub>最近截图：拷贝、显示、删除，或直接拖进聊天窗口</sub></p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 新增功能：更快地切换布局
 
 - **快捷键切换布局**：在 **设置 > 布局** 中，点按某个布局右侧的“录制快捷键”按钮，
   然后按下组合键（例如 `⌃⌥1`）即可为它设定全局快捷键；组合键须包含 ⌃、⌥ 或 ⌘ 之一，
@@ -58,17 +174,6 @@
   双指左右轻扫，即可在扩展栏布局之间循环切换，并短暂显示新布局的名称。
   一次手势只切换一步。扩展栏内容超出屏幕时，左右轻扫仍用于滚动扩展栏，
   不按 ⌘ 的普通滚动行为不变。可在 **设置 > 布局 > 切换布局** 中关闭。
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="https://github.com/nparashar150/dockset/raw/main/docs/images/shelf-showcase.png" alt="扩展栏近景" width="100%">
-    </td>
-    <td width="50%" valign="top">
-      <img src="https://github.com/nparashar150/dockset/raw/main/docs/images/settings-shelf.png" alt="扩展栏设置面板" width="100%">
-    </td>
-  </tr>
-</table>
 
 ---
 
@@ -126,16 +231,44 @@ xcodebuild -scheme DocketTests -configuration Debug test
 
 ---
 
+## 截图是怎么来的
+
+README 里的图片都由仓库自带的截图工具拍摄：`Tools/Shots` 把应用真实的扩展栏和详情面板
+放进屏幕上的真实窗口，`scripts/capture-shots.sh` 再用 `screencapture` 拍下来。
+不是设计稿，也没有手工修改过数字。每张图都会标明是实时读数（live）、
+小组件库的示例数据（sample）还是空状态（empty）。
+
+- 相册、文件暂存展示的图片和文件由截图工具当场生成，不会读取你自己的照片或文件；
+- 下载、最近截图、剪贴板只有在设置了 `SHOTS_DISPOSABLE=1` 的一次性机器上
+  （例如 GitHub Actions）才会写入示例文件并以实时状态拍摄，在你自己的 Mac 上会改用示例数据，
+  不会往你的“下载”、桌面或剪贴板里写任何东西。
+
+**在自己的 Mac 上重新拍摄：**
+
+1. 安装 Xcode 和 XcodeGen（`brew install xcodegen`），在仓库目录运行 `xcodegen generate`。
+2. 在 **系统设置 > 隐私与安全性 > 录屏与系统录音** 中允许你使用的终端应用（例如“终端”），
+   然后重新打开终端。
+3. 运行 `SHOTS_OUT=docs/images/zh scripts/capture-shots.sh`。拍摄需要几分钟，
+   期间屏幕会被一张背景盖住，请不要操作电脑，等它打印出汇总。
+4. 只想重拍其中几张时，可以加上 `SHOTS_ONLY=photos,shelf-files`。
+
+也可以在本仓库的 **Actions > Screenshots** 中手动运行工作流，在 GitHub 的 macOS
+虚拟机上拍摄，拍好的图片会作为构件（artifact）上传，下载后检查再提交。
+
+---
+
 ## 致谢
 
 - **[Docket](https://github.com/nparashar150/dockset)**：本分支的上游项目，MIT 许可，
-  版权归其原作者所有。所有功能和代码都来自上游，本分支只负责中文本地化。
+  版权归其原作者所有。扩展栏、小组件框架和大部分小组件都来自上游；本分支负责中文本地化，
+  并新增了上文列出的小组件和布局切换功能。
 - **[Dockset](https://dockset.app)**：Docket 的灵感来源，是由独立开发者打造的**原创付费应用**。
   如果你喜欢这个想法，想要打磨更完善、有售后支持的正式产品，请购买 Dockset，支持独立开发者。
 - 天气数据来自 **[MET Norway](https://api.met.no/)**，依 CC BY 4.0 许可使用。
 - 工程由 **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** 生成。
 
-本分支与 Dockset、Docket 上游及其作者均**无任何关联**，也未获得其认可或赞助。
+本分支与 Dockset、CoolDock、Docket 上游及其作者均**无任何关联**，也未获得其认可或赞助。
+README 的分类介绍方式参考了同类应用的常见写法，所有截图均为本应用自己的界面。
 完整的署名与商标说明见 [NOTICE.md](NOTICE.md)。
 
 ## 许可证
