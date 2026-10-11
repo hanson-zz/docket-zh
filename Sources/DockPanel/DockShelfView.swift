@@ -476,6 +476,11 @@ struct DockShelfView: View {
         .onChange(of: ScrollRelay.shared.tick) { _, _ in
             scroll = clampedScroll(scroll + ScrollRelay.shared.delta, solved)
         }
+        // The hosting view decides between scrolling and switching layouts
+        // before SwiftUI sees the event, so it needs this answer up front.
+        .onChange(of: isOverflowing(solved), initial: true) { _, now in
+            ScrollRelay.shared.isOverflowing = now
+        }
         .background(alignment: edgeAlignment) {
             MaterialBackground(material: settings.material,
                                glass: settings.glass,

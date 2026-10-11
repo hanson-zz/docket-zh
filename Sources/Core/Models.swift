@@ -408,7 +408,8 @@ public enum DockItem: Codable, Hashable, Identifiable, Sendable {
 
 public struct KeyCombo: Codable, Hashable, Sendable {
     public var keyCode: UInt32
-    /// Carbon modifier mask. Enforced to carry at least two modifiers.
+    /// Carbon modifier mask. Must include Control, Option or Command, see
+    /// `hasRequiredModifier`; Shift alone would claim ordinary typing.
     public var modifiers: UInt32
 
     public init(keyCode: UInt32, modifiers: UInt32) {
@@ -436,19 +437,16 @@ public struct DockProfile: Codable, Hashable, Identifiable, Sendable {
     public var items: [DockItem]
     /// Travels with a customDock profile; ignored for macOSDock profiles.
     public var scale: Double
-    /// Reserved, and read by nothing yet.
-    ///
-    /// Both are groundwork for switching profiles without the menu bar: a
-    /// global hotkey, and a Focus filter that changes the shelf when a Focus
-    /// turns on. They are carried through save, restore and duplicate so a
-    /// setup made today survives into the build that honours them, and
-    /// `duplicateProfile` deliberately drops the hotkey, since two profiles
-    /// must never claim one key combination.
-    ///
-    /// Kept rather than removed because the plan for them is written down and
-    /// the modelling is the cheap half. Anything else stored and unread has
-    /// been deleted rather than left to look like an oversight.
+    /// A global hotkey that switches to this profile, registered by
+    /// `HotKeyService`. Both duplicate paths drop it, since two profiles must
+    /// never claim one key combination.
     public var shortcut: KeyCombo?
+    /// Still reserved, and read by nothing.
+    ///
+    /// The Focus filter that does exist keeps its choice of layout inside
+    /// System Settings, as the filter's own parameter, so the profile has
+    /// nothing to remember about it. Kept so a file that already carries the
+    /// key decodes and saves unchanged.
     public var focusFilterID: String?
 
     /// Decodes item by item, dropping any it cannot read.
@@ -677,6 +675,13 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// On by default: a dock that does not magnify does not feel like
     /// the Dock, which is the entire reference point for this surface.
     public var magnification: Bool = true
+    /// Command-scroll, or a sideways two-finger swipe, over the shelf moves
+    /// to the next or previous shelf layout.
+    ///
+    /// On by default because neither gesture did anything on the shelf
+    /// before: Command-scroll was ignored, and a sideways swipe only scrolls
+    /// a shelf that overflows, which keeps doing exactly that.
+    public var switchLayoutsByGesture: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -706,6 +711,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         showTrash = try c.decodeIfPresent(Bool.self, forKey: .showTrash) ?? false
         widgetsOnly = try c.decodeIfPresent(Bool.self, forKey: .widgetsOnly) ?? false
         magnification = try c.decodeIfPresent(Bool.self, forKey: .magnification) ?? true
+        switchLayoutsByGesture = try c.decodeIfPresent(Bool.self, forKey: .switchLayoutsByGesture) ?? true
     }
 
     public init() {}
@@ -781,6 +787,9 @@ public struct PersistedState: Codable, Sendable {
     /// that someone ran it. Everything else that leaves the machine, weather
     /// and stock quotes, is there because the user added that widget.
     public var checkForUpdates: Bool?
+    /// Layouts to return to when the current Focus ends. Nil while no Focus
+    /// filter has switched anything.
+    public var focusRevert: FocusRevert?
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -804,6 +813,7 @@ public struct PersistedState: Codable, Sendable {
         originalMacOSDock = try c.decodeIfPresent([MacOSDockTile].self, forKey: .originalMacOSDock)
         borrowedDockPrefs = try c.decodeIfPresent(DockPrefs.self, forKey: .borrowedDockPrefs)
         checkForUpdates = try c.decodeIfPresent(Bool.self, forKey: .checkForUpdates)
+        focusRevert = try c.decodeIfPresent(FocusRevert.self, forKey: .focusRevert)
     }
 
     public init() {}

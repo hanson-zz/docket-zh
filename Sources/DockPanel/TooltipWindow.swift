@@ -135,6 +135,86 @@ final class TooltipWindow {
     }
 }
 
+/// The name of the layout a shelf gesture just switched to.
+///
+/// The hover label's capsule, in a panel of its own rather than through
+/// `TooltipWindow`: switching layout replaces the tiles under the pointer,
+/// and the hover label answers that by moving to, or hiding for, whatever is
+/// now there, which would take this name away the moment it appeared.
+@MainActor
+final class LayoutToast {
+    static let shared = LayoutToast()
+
+    private var panel: NSPanel?
+    private var hosting: NSHostingView<TooltipLabel>?
+    private var hideTask: Task<Void, Never>?
+
+    /// Long enough to read a short name, short enough to be gone before the
+    /// next swipe.
+    private let visibleFor: Duration = .seconds(1.2)
+
+    private init() {}
+
+    /// - Parameters:
+    ///   - shelf: the shelf panel's frame, in screen coordinates.
+    ///   - edge: which edge the shelf is on; the name sits on its open side.
+    func show(_ text: String, beside shelf: CGRect, edge: DockPosition) {
+        let panel = existingOrNew()
+        hosting?.rootView = TooltipLabel(text: text)
+        let size = hosting?.fittingSize ?? .zero
+        guard size.width > 1 else { return }
+
+        let gap: CGFloat = 4
+        let origin: CGPoint = switch edge {
+        case .bottom: CGPoint(x: shelf.midX - size.width / 2, y: shelf.maxY + gap)
+        case .left: CGPoint(x: shelf.maxX + gap, y: shelf.midY - size.height / 2)
+        case .right: CGPoint(x: shelf.minX - size.width - gap, y: shelf.midY - size.height / 2)
+        }
+        panel.setFrame(CGRect(origin: origin, size: size), display: false)
+        panel.alphaValue = 1
+        panel.orderFrontRegardless()
+
+        hideTask?.cancel()
+        hideTask = Task { [weak self, visibleFor] in
+            try? await Task.sleep(for: visibleFor)
+            guard !Task.isCancelled else { return }
+            self?.fadeOut()
+        }
+    }
+
+    private func fadeOut() {
+        guard let panel, panel.isVisible else { return }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            panel.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            MainActor.assumeIsolated {
+                // Unless another switch showed it again while this faded.
+                guard let self, let panel = self.panel, panel.alphaValue == 0 else { return }
+                panel.orderOut(nil)
+            }
+        }
+    }
+
+    private func existingOrNew() -> NSPanel {
+        if let panel { return panel }
+        let view = NSHostingView(rootView: TooltipLabel(text: ""))
+        let panel = NSPanel(contentRect: .zero,
+                            styleMask: [.borderless, .nonactivatingPanel],
+                            backing: .buffered, defer: false)
+        panel.contentView = view
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .statusBar
+        panel.ignoresMouseEvents = true
+        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+        self.panel = panel
+        self.hosting = view
+        return panel
+    }
+}
+
 /// Matched to the Dock's own label: a capsule, ~21pt tall, 13pt text, with a
 /// hairline rim and a thin material that lets the background read through.
 struct TooltipLabel: View {

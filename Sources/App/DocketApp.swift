@@ -55,6 +55,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TimerStateProvider.shared.onChange = { [state] timer in state.state.timer = timer }
         state.onTimerChanged = { timer in TimerStateProvider.shared.adopt(timer) }
 
+        // Layout hotkeys. Registered now and again whenever a layout gains,
+        // loses or changes its combination; the service ignores a list that
+        // has not changed, so the didSet that reports it can be generous.
+        HotKeyService.shared.onPress = { [state] id in
+            guard let profile = state.state.profile(id) else { return }
+            state.activate(profile)
+        }
+        state.onShortcutsChanged = { bindings in HotKeyService.shared.update(bindings) }
+        HotKeyService.shared.update(state.state.shortcutBindings)
+
+        // Before the shelf appears, so a Focus change the system delivered
+        // while launching picks the layout the shelf first shows.
+        LayoutIntentBridge.attach(state)
+
         applyAppearance()
         if state.state.setup != .macOSDockOnly {
             shelf.show()

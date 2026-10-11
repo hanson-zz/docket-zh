@@ -37,6 +37,12 @@ targets:
       - path: Resources/AppIcon.icon
       # 中文本地化：zh-Hans.lproj/InfoPlist.strings（权限说明与显示名称）。
       - path: Resources/Localization
+    # Linked explicitly rather than left to auto-linking. The Focus filter in
+    # Sources/App/LayoutIntents.swift only appears in System Settings if the
+    # build extracts its App Intents metadata, and a framework named here is
+    # one less thing for that step to infer.
+    dependencies:
+      - sdk: AppIntents.framework
     settings:
       base:
         PRODUCT_NAME: Docket
@@ -60,6 +66,9 @@ targets:
       - path: Sources
         excludes:
           - "App/DocketApp.swift"
+          # The Focus filter belongs to the app the system launches, not to a
+          # tool that renders screenshots, and only DocketApp.swift uses it.
+          - "App/LayoutIntents.swift"
       - path: Tools/Shots
     settings:
       base:

@@ -61,6 +61,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         let host = ScrollingHostingView(rootView: DockShelfView().environment(app))
         host.sizingOptions = [.intrinsicContentSize]
         host.onWantedSize = { [weak self] size in self?.resize(to: size) }
+        ScrollRelay.shared.onLayoutStep = { [weak self] step in self?.stepLayout(step) }
 
         let panel = NSPanel(contentRect: .zero,
                             styleMask: [.borderless, .nonactivatingPanel],
@@ -82,6 +83,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         self.panel = panel
         panel.orderFrontRegardless()
         refresh()
+    }
+
+    /// A shelf gesture asked for the next or previous layout.
+    ///
+    /// Announced with the new name because the shelf changes under the
+    /// pointer with nothing else to say which layout it became, and two
+    /// layouts can look alike at a glance.
+    private func stepLayout(_ step: Int) {
+        guard let profile = app.stepCustomLayout(by: step), let panel else { return }
+        LayoutToast.shared.show(profile.name, beside: panel.frame, edge: app.effectivePosition)
     }
 
     func hide() {
@@ -119,6 +130,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         guard let panel else { return show() }
         if !panel.isVisible { panel.orderFrontRegardless() }
         panel.level = level
+        ScrollRelay.shared.switchesLayouts = app.state.customDock.switchLayoutsByGesture
         if app.effectiveAutoHide {
             startPolling()
         } else {

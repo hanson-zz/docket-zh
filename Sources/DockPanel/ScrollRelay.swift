@@ -18,11 +18,31 @@ final class ScrollRelay {
     /// Bumped per event, so identical deltas still register as a change.
     private(set) var tick: Int = 0
 
+    /// Mirrors the "switch layouts with gestures" setting, written by the
+    /// panel's owner whenever the shelf's settings change.
+    @ObservationIgnored var switchesLayouts = true
+    /// Whether the shelf has anything to scroll. Written by the shelf view,
+    /// which is the only thing that knows; a sideways swipe stays a scroll
+    /// while there is something to scroll to.
+    @ObservationIgnored var isOverflowing = false
+    /// Asked to move one layout forward (+1) or back (-1).
+    @ObservationIgnored var onLayoutStep: (@MainActor (Int) -> Void)?
+    @ObservationIgnored private var layoutGesture = LayoutGesture()
+
     private init() {}
 
     func push(_ value: CGFloat) {
         delta = value
         tick &+= 1
+    }
+
+    func beginLayoutGesture() {
+        layoutGesture.begin()
+    }
+
+    func feedLayoutGesture(_ delta: CGFloat, precise: Bool, at time: TimeInterval) {
+        guard let step = layoutGesture.feed(Double(delta), precise: precise, at: time) else { return }
+        onLayoutStep?(step)
     }
 
     /// Points to move the shelf for one scroll event.
@@ -56,6 +76,7 @@ final class ScrollRelay {
 final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
 
     override func scrollWheel(with event: NSEvent) {
+        if switchedLayout(event) { return }
         let step = ScrollRelay.step(dx: event.scrollingDeltaX,
                                     dy: event.scrollingDeltaY,
                                     precise: event.hasPreciseScrollingDeltas)
@@ -64,6 +85,36 @@ final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
             return
         }
         ScrollRelay.shared.push(step)
+    }
+
+    /// Command-scroll, or a sideways swipe over a shelf with nothing to
+    /// scroll, changes layout instead of scrolling. Returns whether the event
+    /// was taken for that.
+    ///
+    /// Plain scrolling is untouched: without Command a vertical scroll, and
+    /// any scroll over an overflowing shelf, falls through to the code above.
+    private func switchedLayout(_ event: NSEvent) -> Bool {
+        let relay = ScrollRelay.shared
+        guard relay.switchesLayouts else { return false }
+        let dx = event.scrollingDeltaX
+        let dy = event.scrollingDeltaY
+        let precise = event.hasPreciseScrollingDeltas
+        let command = event.modifierFlags.contains(.command)
+        let sideways = precise && !relay.isOverflowing
+            && LayoutGesture.isSideways(dx: Double(dx), dy: Double(dy))
+        guard command || sideways else { return false }
+
+        if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
+            relay.beginLayoutGesture()
+        }
+        // The momentum tail is still swallowed, or the shelf behind would
+        // scroll on after the switch, but it never counts towards a step: the
+        // fingers have already decided.
+        if event.momentumPhase.isEmpty {
+            let delta = command ? (abs(dx) > abs(dy) ? dx : dy) : dx
+            relay.feedLayoutGesture(delta, precise: precise, at: event.timestamp)
+        }
+        return true
     }
 
     /// Keeps the panel the size SwiftUI wants.

@@ -26,8 +26,15 @@ public final class AppState {
             if state.customDock != oldValue.customDock || state.setup != oldValue.setup {
                 onShelfSettingsChanged?()
             }
-            if state.menuBar != oldValue.menuBar || state.setup != oldValue.setup {
+            // The label names the active layouts, and a hotkey, a Focus or a
+            // shelf gesture can now change them without the menu being open.
+            if state.menuBar != oldValue.menuBar || state.setup != oldValue.setup
+                || state.customDock.profileID != oldValue.customDock.profileID
+                || state.macOSDock.profileID != oldValue.macOSDock.profileID {
                 onMenuBarSettingsChanged?()
+            }
+            if state.shortcutBindings != oldValue.shortcutBindings {
+                onShortcutsChanged?(state.shortcutBindings)
             }
             if state.appearance != oldValue.appearance {
                 onAppearanceChanged?()
@@ -57,6 +64,8 @@ public final class AppState {
     /// The Focus Timer settings, which the widgets read through their own
     /// shared provider rather than from here.
     @ObservationIgnored public var onTimerChanged: (@MainActor (TimerState) -> Void)?
+    /// Layout hotkeys, for the service that registers them with the system.
+    @ObservationIgnored public var onShortcutsChanged: (@MainActor ([ShortcutBinding]) -> Void)?
 
     /// Ticks once a second. Widgets read this rather than each starting a
     /// timer of their own - one timer for the whole shelf.
@@ -178,6 +187,67 @@ public final class AppState {
         state.profiles.firstIndex { $0.id == id }
     }
 
+    // MARK: Switching
+
+    /// Makes a profile the live one for its surface, the way the menu does.
+    ///
+    /// For Apple's Dock that also means writing it, or a hotkey or Focus would
+    /// tick the layout in Settings while the Dock itself stayed as it was.
+    public func activate(_ profile: DockProfile) {
+        select(profile)
+        if profile.kind == .macOSDock {
+            Task { await applyMacOSProfile() }
+        }
+    }
+
+    /// Moves the shelf to the next or previous layout, wrapping.
+    ///
+    /// Returns the layout it moved to, or nil when there was nowhere to go,
+    /// so a caller only announces a change that happened.
+    @discardableResult
+    public func stepCustomLayout(by step: Int) -> DockProfile? {
+        let ids = state.profiles(of: .customDock).map(\.id)
+        let current = state.customDock.profileID
+        guard let next = LayoutCycle.neighbour(of: current, in: ids, step: step),
+              next != current, let profile = state.profile(next) else { return nil }
+        activate(profile)
+        return profile
+    }
+
+    /// A Focus filter reported its layout, or nil when the Focus ended.
+    ///
+    /// Entering records what each surface showed before, once; ending puts
+    /// back only the surfaces a Focus actually switched. A remembered layout
+    /// that has since been deleted is skipped rather than replaced with a
+    /// guess, except that Apple's Dock may honestly go back to "no layout".
+    public func focusChanged(to layoutID: UUID?) {
+        if let layoutID {
+            guard let profile = state.profile(layoutID) else { return }
+            var revert = state.focusRevert ?? FocusRevert()
+            let current = profile.kind == .customDock
+                ? state.customDock.profileID : state.macOSDock.profileID
+            revert.remember(profile.kind, current: current)
+            state.focusRevert = revert
+            activate(profile)
+            return
+        }
+
+        guard let revert = state.focusRevert else { return }
+        state.focusRevert = nil
+        if let saved = revert.customDock, let profile = state.profile(saved.profileID) {
+            activate(profile)
+        }
+        if let saved = revert.macOSDock {
+            if let profile = state.profile(saved.profileID) {
+                activate(profile)
+            } else {
+                // Leaves the Dock showing what the Focus wrote: "no layout"
+                // means Docket stops managing it, not that it undoes a write.
+                state.macOSDock.profileID = nil
+            }
+        }
+    }
+
     // MARK: Items
 
     /// Editing the list takes ownership of it first.
@@ -226,6 +296,7 @@ public final class AppState {
         var copy = state.profiles[index]
         copy.id = UUID()
         copy.name = uniqueName("\(copy.name) 副本")
+        copy.shortcut = nil          // two profiles must never claim one hotkey
         // Fresh identities throughout, or the copy and the original would
         // share item ids and editing one would move things on the other.
         copy.items = copy.items.map(Self.reidentified)

@@ -224,6 +224,8 @@ struct SettingsView: View {
                 }
             }
 
+            switching
+
             Section {
                 HStack {
                     Button("备份…", action: onBackUp)
@@ -239,6 +241,31 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// The three ways to change layout without opening the menu.
+    ///
+    /// The Focus part is a paragraph rather than a control because there is
+    /// nothing to set here: macOS keeps a Focus filter's choices in System
+    /// Settings, and this is the only place that can say so.
+    private var switching: some View {
+        Section {
+            Toggle(isOn: $state.customDock.switchLayoutsByGesture) {
+                subtitled("在扩展栏上用 ⌘ + 滚轮或双指左右轻扫切换布局",
+                          "指针位于扩展栏上时生效，在扩展栏布局之间循环切换。扩展栏内容超出屏幕时，左右轻扫仍用于滚动扩展栏。")
+            }
+            .disabled(state.setup == .macOSDockOnly)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("快捷键：点按布局右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
+                Text("专注模式：打开“系统设置 ▸ 专注模式”，选择一个专注模式，在“专注模式过滤条件”中点按“添加过滤条件”，选择 Docket 并挑选一个布局。该专注模式开启时会切换到这个布局，结束时恢复之前的布局。")
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        } header: {
+            Text("切换布局")
+        }
     }
 
     @ViewBuilder
@@ -266,6 +293,9 @@ struct SettingsView: View {
                     onDelete: kind == .customDock && mine.count <= 1
                         ? nil : { onDeleteProfile(profile.id) }) {
                     strip(profile.items)
+                    ShortcutRecorder(combo: profile.shortcut) { combo in
+                        state.assignShortcut(combo, to: profile.id)
+                    }
                 }
             }
         } header: {
@@ -985,5 +1015,118 @@ private struct LayoutRow<Preview: View>: View {
                 .fixedSize()
             }
         }
+    }
+}
+
+/// Records a layout's global shortcut: click, then press the combination.
+///
+/// A button that turns into a prompt, the way the shortcut fields in System
+/// Settings behave, rather than a text field: a field would show characters
+/// for the keys, and typing into it would be indistinguishable from naming
+/// the layout.
+private struct ShortcutRecorder: View {
+    let combo: KeyCombo?
+    let onChange: (KeyCombo?) -> Void
+
+    @State private var recorder = ShortcutKeyRecorder()
+
+    var body: some View {
+        Button {
+            if recorder.isRecording {
+                recorder.stop()
+            } else {
+                recorder.start(onChange)
+            }
+        } label: {
+            Text(title)
+                .font(.callout)
+                .monospacedDigit()
+                .foregroundStyle(recorder.isRecording || combo != nil ? Color.primary : Color.secondary)
+                .frame(minWidth: 72)
+        }
+        .controlSize(.small)
+        .help(recorder.isRecording
+              ? "按下组合键；按 Esc 取消，按删除键清除。"
+              : "点按以录制切换到此布局的快捷键。")
+        .accessibilityLabel(Text(spokenTitle))
+        // Leaving the pane mid-recording must not leave the hotkeys switched
+        // off, or every layout shortcut would stay dead until a relaunch.
+        .onDisappear { recorder.stop() }
+    }
+
+    private var spokenTitle: String {
+        guard let combo else { return "录制快捷键" }
+        return "快捷键 " + combo.displayString
+    }
+
+    private var title: String {
+        if recorder.isRecording {
+            return recorder.rejected ? "须含 ⌃⌥⌘" : "请按快捷键…"
+        }
+        return combo?.displayString ?? "录制快捷键"
+    }
+}
+
+/// The key monitor behind `ShortcutRecorder`.
+///
+/// A class because the monitor is a token that has to be removed later, and
+/// a view's state cannot hold a closure that outlives the view safely.
+@MainActor
+@Observable
+final class ShortcutKeyRecorder {
+    private(set) var isRecording = false
+    /// The last press lacked a required modifier, so the prompt says why
+    /// nothing happened.
+    private(set) var rejected = false
+    @ObservationIgnored private var monitor: Any?
+
+    func start(_ commit: @escaping (KeyCombo?) -> Void) {
+        stop()
+        isRecording = true
+        rejected = false
+        HotKeyService.shared.suspend()
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handle(event, commit)
+            // Swallowed, or the key would also reach whatever has focus.
+            return nil
+        }
+    }
+
+    func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        guard isRecording else { return }
+        isRecording = false
+        rejected = false
+        HotKeyService.shared.resume()
+    }
+
+    private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let bare = flags.intersection([.control, .option, .shift, .command]).isEmpty
+        let code = UInt32(event.keyCode)
+
+        if bare, code == KeyCombo.Key.escape {
+            stop()
+            return
+        }
+        if bare, code == KeyCombo.Key.delete || code == KeyCombo.Key.forwardDelete {
+            commit(nil)
+            stop()
+            return
+        }
+
+        let combo = KeyCombo(keyCode: code,
+                             modifiers: KeyCombo.modifiers(control: flags.contains(.control),
+                                                           option: flags.contains(.option),
+                                                           shift: flags.contains(.shift),
+                                                           command: flags.contains(.command)))
+        guard combo.hasRequiredModifier else {
+            rejected = true
+            NSSound.beep()
+            return
+        }
+        commit(combo)
+        stop()
     }
 }
