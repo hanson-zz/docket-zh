@@ -215,6 +215,10 @@ public enum WidgetCatalog {
         Entry(kind: .wallpaper, name: "壁纸切换", category: .media,
               defaults: c(["folder": .string(""), "allScreens": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // What Command-Tab lists: the regular apps that are open.
+        Entry(kind: .appSwitcher, name: "应用切换器", category: .system, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -248,6 +252,7 @@ public enum WidgetCatalog {
         // A photo or a file is its own colour; a tint behind it competes.
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
              .wallpaper,
+             .appSwitcher,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -370,7 +375,7 @@ public enum WidgetCatalog {
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .wallpaper, .search:
+             .clipboard, .converter, .emoji, .wallpaper, .appSwitcher, .search:
             nil
         }
     }
@@ -480,6 +485,7 @@ public enum WidgetCatalog {
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: 140, height: 62)
+        case .appSwitcher: return CGSize(width: 220, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)
         }
     }
@@ -547,6 +553,8 @@ public enum WidgetCatalog {
             return 112
         case .toggles:
             return 128
+        case .appSwitcher:
+            return 112
         case .wallpaper:
             return 112
         case .emoji:

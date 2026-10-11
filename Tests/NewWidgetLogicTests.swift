@@ -38,3 +38,25 @@ final class WallpaperCycleTests: XCTestCase {
         XCTAssertEqual(WallpaperCycle.index(after: 0, count: 3, step: .random, roll: .nan), 1)
     }
 }
+
+final class AppStripTests: XCTestCase {
+    func testEverythingShowsWhenItFits() {
+        XCTAssertEqual(AppStrip.fit(total: 4, capacity: 6), .init(shown: 4, overflow: 0))
+        XCTAssertEqual(AppStrip.fit(total: 6, capacity: 6), .init(shown: 6, overflow: 0))
+        XCTAssertEqual(AppStrip.fit(total: 0, capacity: 6), .init(shown: 0, overflow: 0))
+    }
+
+    /// The marker takes a slot of its own, so it never covers an icon.
+    func testTheLastSlotCountsTheRest() {
+        XCTAssertEqual(AppStrip.fit(total: 7, capacity: 6), .init(shown: 5, overflow: 2))
+        XCTAssertEqual(AppStrip.fit(total: 30, capacity: 6), .init(shown: 5, overflow: 25))
+        let fit = AppStrip.fit(total: 9, capacity: 6)
+        XCTAssertEqual(fit.shown + fit.overflow, 9)
+    }
+
+    func testTheFrontmostAppLeads() {
+        let apps = [("a", false), ("b", true), ("c", false)]
+        XCTAssertEqual(AppStrip.ordered(apps, isActive: { $0.1 }).map { $0.0 }, ["b", "a", "c"])
+        XCTAssertEqual(AppStrip.ordered([("x", false)], isActive: { $0.1 }).map { $0.0 }, ["x"])
+    }
+}

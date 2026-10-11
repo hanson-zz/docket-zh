@@ -67,6 +67,8 @@ struct WidgetDetailBody: View {
             ConverterDetail(instance: instance, context: context)
         case .search:
             SearchDetail(instance: instance, context: context)
+        case .appSwitcher:
+            AppSwitcherDetail(instance: instance, context: context)
         case .wallpaper:
             WallpaperDetail(instance: instance, context: context)
         default:
