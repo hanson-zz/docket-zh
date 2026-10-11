@@ -129,6 +129,8 @@ public struct WidgetSurface<Content: View>: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.widgetHovered) private var hovered
+    /// Set per widget from its context menu; see `WidgetPlate`.
+    @Environment(\.widgetPlateHidden) private var plateHidden
 
     /// A card is a *recess* in the plate, not something raised on top of it.
     ///
@@ -170,7 +172,9 @@ public struct WidgetSurface<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                    .fill(fill ?? cardFill)
+                    // Only the default card goes. A colour or a picture a
+                    // widget asked for (a note's paper, a cover) is content.
+                    .fill(fill ?? (plateHidden ? Color.clear : cardFill))
                     .overlay {
                         if let image {
                             Image(nsImage: image)
@@ -193,7 +197,10 @@ public struct WidgetSurface<Content: View>: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                    .strokeBorder(hovered ? hoverEdge : cardEdge, lineWidth: 1)
+                    .strokeBorder(plateHidden && fill == nil && image == nil
+                                      ? Color.clear
+                                      : (hovered ? hoverEdge : cardEdge),
+                                  lineWidth: 1)
             }
             .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous))
             // A transform rather than a layout change, and small.
@@ -233,6 +240,19 @@ public extension EnvironmentValues {
         get { self[WidgetHoveredKey.self] }
         set { self[WidgetHoveredKey.self] = newValue }
     }
+
+    var widgetPlateHidden: Bool {
+        get { self[WidgetPlateHiddenKey.self] }
+        set { self[WidgetPlateHiddenKey.self] = newValue }
+    }
+}
+
+/// Whether this widget draws without its card and edge.
+///
+/// Through the environment for the same reason as hover: `WidgetSurface` is
+/// the one place a card is drawn, so every widget honours it unedited.
+public struct WidgetPlateHiddenKey: EnvironmentKey {
+    public static let defaultValue = false
 }
 
 public extension View {

@@ -503,6 +503,15 @@ struct SettingsView: View {
         }
 
         Section("行为") {
+            Picker(selection: $state.customDock.overflow) {
+                Text("横向滚动").tag(ShelfOverflow.scroll)
+                Text("自动缩小").tag(ShelfOverflow.shrink)
+            } label: {
+                subtitled("放不下时",
+                          "自动缩小会把扩展栏整体缩小到能放下为止，最小为所选大小的一半；仍放不下时再滚动。")
+            }
+            .pickerStyle(.segmented)
+
             // While following, hiding comes from the Dock's own setting.
             if !state.customDock.followSystemDock {
                 Toggle("隐藏，直到指针移到屏幕边缘", isOn: $state.customDock.autoHide)

@@ -48,14 +48,17 @@ struct WidgetSettingsSections: View {
                 // Numbered only when there is more than one of a kind. Two
                 // Sticky Notes produced two headings both called "Sticky
                 // Note", with nothing to say which note each one edited.
-                Section(sectionTitle(for: pair)) {
-                    if !pair.entry.variants.isEmpty {
-                        stylePicker(pair.entry, pair.instance)
-                    }
-                    ForEach(options(for: pair.entry, pair.instance), id: \.self) { key in
-                        control(key, entry: pair.entry, instance: pair.instance)
+                if !pair.entry.variants.isEmpty || !options(for: pair.entry, pair.instance).isEmpty {
+                    Section(sectionTitle(for: pair)) {
+                        if !pair.entry.variants.isEmpty {
+                            stylePicker(pair.entry, pair.instance)
+                        }
+                        ForEach(options(for: pair.entry, pair.instance), id: \.self) { key in
+                            control(key, entry: pair.entry, instance: pair.instance)
+                        }
                     }
                 }
+                displaySection(pair.instance)
             }
         }
     }
@@ -92,8 +95,9 @@ struct WidgetSettingsSections: View {
     private var configurable: [(instance: WidgetInstance, entry: WidgetCatalog.Entry)] {
         instances.compactMap { instance in
             guard let entry = WidgetCatalog.entry(instance.kind) else { return nil }
-            let hasControls = !entry.variants.isEmpty || !options(for: entry, instance).isEmpty
-            return hasControls ? (instance, entry) : nil
+            // Every widget now has at least its display options, so every
+            // widget on the shelf is listed.
+            return (instance, entry)
         }
     }
 
@@ -126,6 +130,25 @@ struct WidgetSettingsSections: View {
                          _ instance: WidgetInstance) -> [String] {
         WidgetCatalog.configurableKeys(entry.kind).filter {
             WidgetCatalog.applies($0, to: instance.config, kind: entry.kind)
+        }
+    }
+
+    // MARK: Display
+
+    /// How the widget sits on the shelf, the same for every kind.
+    @ViewBuilder
+    private func displaySection(_ instance: WidgetInstance) -> some View {
+        Section("显示") {
+            Toggle(isOn: Binding(
+                get: { WidgetPlate.isHidden(instance.config) },
+                set: { on in write(instance) { $0.set(WidgetPlate.key, .bool(on)) } })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("隐藏背景和边框")
+                    Text("只去掉小组件自己的卡片，便签纸色和封面等内容保留。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 

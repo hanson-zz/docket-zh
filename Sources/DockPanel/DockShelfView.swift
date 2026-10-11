@@ -43,6 +43,12 @@ struct DockShelfView: View {
     /// the top and bottom of the display.
     @State private var screenSize: CGSize = .zero
     @State private var addHovered = false
+    /// The shrunk size, when shrinking to fit is on and needed.
+    ///
+    /// State rather than computed in `scale`, because finding it measures
+    /// the row at several sizes, and `scale` is read for every tile on every
+    /// pointer move. It is recomputed only when `FitKey` changes.
+    @State private var fitScale: Double?
     @State private var shelfWindow: NSWindow?
 
     /// Stable across solves: keying it on a fresh UUID would tell SwiftUI the
@@ -172,7 +178,14 @@ struct DockShelfView: View {
     private var settings: CustomDockSettings { app.state.customDock }
     private var position: DockPosition { app.effectivePosition }
     private var vertical: Bool { position.isVertical }
-    private var scale: Double { app.effectiveScale }
+    /// The size the user chose, by the slider, the grip or the Dock.
+    private var baseScale: Double { app.effectiveScale }
+    /// The size the shelf is drawn at: the chosen one, or smaller when
+    /// "自动缩小" is on and the chosen one does not fit. See `ShelfFit`.
+    private var scale: Double {
+        guard settings.overflow == .shrink, let fitScale, fitScale < baseScale else { return baseScale }
+        return fitScale
+    }
     private var magnifies: Bool { app.magnificationEnabled }
     private var chrome: Geometry.Chrome { Geometry.chrome(scale: scale) }
 
@@ -188,8 +201,10 @@ struct DockShelfView: View {
 
     // MARK: Solve
 
-    private func solve() -> Solved {
-        var result = Solved()
+    /// What the row holds, in order, with the separators and the grip.
+    /// Independent of size, so the fit can measure it at any scale.
+    private func buildSlots() -> [Slot] {
+        var slots: [Slot] = []
 
         // Read once: it is not stored, so each access rebuilds the array.
         //
@@ -207,7 +222,6 @@ struct DockShelfView: View {
         // itself.
         if settings.showRunningApps, !settings.widgetsOnly {
             let running = AppCatalog.shared.unpinned(from: items)
-            if !running.isEmpty { result.slots = entries.map(Slot.item) + [.separator] }
             for app in running {
                 guard let url = app.url else { continue }
                 let id = UUID.stable(from: app.id)
@@ -241,17 +255,71 @@ struct DockShelfView: View {
         // occupying width that the layout does not know about silently skews
         // every position after it.
         let lastWidget = entries.lastIndex { $0.item.isWidget }
-        result.slots = []
         for (index, entry) in entries.enumerated() {
             if entry.isRunningApp, index > 0, !entries[index - 1].isRunningApp {
-                result.slots.append(.separator)
+                slots.append(.separator)
             }
-            if entry.isTrash, index > 0 { result.slots.append(.separator) }
-            result.slots.append(.item(entry))
+            if entry.isTrash, index > 0 { slots.append(.separator) }
+            slots.append(.item(entry))
             if let lastWidget, index == lastWidget, index < entries.count - 1 {
-                result.slots.append(.grip)
+                slots.append(.grip)
             }
         }
+        return slots
+    }
+
+    /// The row's length at rest at a given scale, by the same sums as
+    /// `solve`: every slot, a gap before each but the first, the padding at
+    /// both ends and the add button.
+    private func restLength(_ slots: [Slot], at s: Double) -> CGFloat {
+        let chromeAt = Geometry.chrome(scale: s)
+        let geo = Geometry.iconGeometry(scale: s, vertical: vertical, hasWidgets: hasWidgets)
+        var total: CGFloat = 0
+        for (index, slot) in slots.enumerated() {
+            if index > 0 { total += chromeAt.itemGap }
+            switch slot {
+            case .separator: total += separatorExtent
+            case .grip: total += gripSlotExtent
+            case .item(let entry):
+                let size = baseSize(entry.item, scale: s, geometry: geo)
+                total += vertical ? size.height : size.width
+            }
+        }
+        return total + chromeAt.padding * 2 + chromeAt.itemGap + (vertical ? geo.height : geo.width)
+    }
+
+    /// Everything the fitted size depends on. When none of it changes the
+    /// last answer still holds.
+    private struct FitKey: Equatable {
+        var enabled: Bool
+        var base: Double
+        var length: CGFloat
+        var available: CGFloat
+    }
+
+    private func fitKey() -> FitKey {
+        guard settings.overflow == .shrink else {
+            return FitKey(enabled: false, base: baseScale, length: 0, available: 0)
+        }
+        return FitKey(enabled: true, base: baseScale,
+                      length: restLength(buildSlots(), at: baseScale), available: maxLength)
+    }
+
+    private func refit(_ key: FitKey) {
+        guard key.enabled, key.length > key.available else {
+            if fitScale != nil { fitScale = nil }
+            return
+        }
+        let slots = buildSlots()
+        let fitted = ShelfFit.fittedScale(base: key.base, available: Double(key.available)) {
+            Double(restLength(slots, at: $0))
+        }
+        fitScale = fitted < key.base ? fitted : nil
+    }
+
+    private func solve() -> Solved {
+        var result = Solved()
+        result.slots = buildSlots()
 
         result.lengths = result.slots.map { slot in
             switch slot {
@@ -340,10 +408,14 @@ struct DockShelfView: View {
     }
 
     private func baseSize(_ item: DockItem) -> CGSize {
+        baseSize(item, scale: scale, geometry: iconGeometry)
+    }
+
+    private func baseSize(_ item: DockItem, scale: Double,
+                          geometry geo: Geometry.IconGeometry) -> CGSize {
         if let widget = item.widget {
             return WidgetCatalog.tileSize(widget, position: position, scale: scale)
         }
-        let geo = iconGeometry
         if case .spacer(_, let size) = item {
             let full = vertical ? geo.height : geo.width
             let length = size == .small ? full / 2 : full
@@ -405,6 +477,7 @@ struct DockShelfView: View {
         .onReceive(NotificationCenter.default.publisher(
             for: NSApplication.didChangeScreenParametersNotification)) { _ in measureScreen() }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
+        .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
     }
 
     private func measureScreen() {
@@ -1161,7 +1234,7 @@ struct DockShelfView: View {
                         let step = delta - (lastResizeDelta ?? 0)
                         lastResizeDelta = delta
                         ShelfResize.isDragging = true
-                        app.setScale(Geometry.resizedScale(scale, delta: step,
+                        app.setScale(Geometry.resizedScale(baseScale, delta: step,
                                                            position: position,
                                                            hasWidgets: hasWidgets))
                     }
@@ -1171,9 +1244,9 @@ struct DockShelfView: View {
                     }
             )
             .accessibilityLabel("程序坞大小")
-            .accessibilityValue("百分之 \(Int((scale * 100).rounded()))")
+            .accessibilityValue("百分之 \(Int((baseScale * 100).rounded()))")
             .accessibilityAdjustableAction { direction in
-                app.setScale(scale + (direction == .increment ? 0.05 : -0.05))
+                app.setScale(baseScale + (direction == .increment ? 0.05 : -0.05))
             }
     }
 
@@ -1214,6 +1287,13 @@ struct DockShelfView: View {
             if entry.item.isWidget {
                 Button("小组件设置…") {
                     SettingsWindow.shared.show(app: app, tab: "Widgets")
+                }
+            }
+            if let widget = entry.item.widget {
+                Button(WidgetPlate.isHidden(widget.config) ? "显示背景和边框" : "隐藏背景和边框") {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        app.updateWidget(WidgetPlate.toggled(widget))
+                    }
                 }
             }
             if let widget = entry.item.widget,
@@ -1445,6 +1525,7 @@ private struct TileContent<Menu: View>: View, Equatable {
                 // Greys only, and only the widgets: an app's icon is its
                 // identity and is left alone.
                 .saturation(monochrome ? 0 : 1)
+                .environment(\.widgetPlateHidden, WidgetPlate.isHidden(widget.config))
         } else {
             DockItemView(item: item, scale: scale, position: position,
                          isRunning: isRunning, showRunningDot: true)
