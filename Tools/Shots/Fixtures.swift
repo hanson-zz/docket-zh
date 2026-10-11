@@ -201,7 +201,7 @@ enum Fixtures {
         guard disposable else { return }
         ClipboardHistory.shared.start()
         let board = NSPasteboard.general
-        for text in ["Docket 中文版 v0.3.1", "#0A84FF", "https://github.com/hanson-zz/docket-zh",
+        for text in ["Docket 中文版 v0.4.0", "#0A84FF", "https://github.com/hanson-zz/docket-zh",
                      "明天上午十点开会"] {
             board.clearContents()
             board.setString(text, forType: .string)

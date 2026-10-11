@@ -247,6 +247,35 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "converter", instance: widget(.converter),
              isPreview: false, source: .live),
 
+        // Live: arithmetic on a sum written into the config, the way the
+        // panel's own "=" keeps one.
+        Shot(name: "calculator",
+             instance: widget(.calculator, ["expression": .string("1280×(1+6%)")]),
+             isPreview: false, source: .live),
+
+        // Live: the catalog's own links, which are the widget's content
+        // rather than a reading of anything.
+        Shot(name: "bookmarks", instance: widget(.bookmarks), isPreview: false, source: .live),
+
+        // Live: today's rates from open.er-api.com, fetched here because the
+        // panel only fetches when the table is stale.
+        Shot(name: "currency", instance: widget(.currency), isPreview: false, source: .live,
+             prepare: {
+                 CurrencyService.shared.refresh(force: true)
+                 for _ in 0..<40 where CurrencyService.shared.rates == nil {
+                     try? await Task.sleep(for: .milliseconds(250))
+                 }
+             }),
+
+        // Live: this fork's public numbers, unauthenticated.
+        Shot(name: "github", instance: widget(.github), isPreview: false, source: .live,
+             prepare: {
+                 GitHubService.shared.refresh("hanson-zz/docket-zh", force: true)
+                 for _ in 0..<40 where GitHubService.shared.stats(for: "hanson-zz/docket-zh") == nil {
+                     try? await Task.sleep(for: .milliseconds(250))
+                 }
+             }),
+
         // Live, and deliberately last of the panels: the graph is drawn from
         // `SystemMetrics`' rolling buffer, which has no `isPreview` stand-in -
         // the only way to show it is to let the sampler fill, which it has
@@ -660,6 +689,9 @@ private struct ShelfShot {
     /// read things this tool has no consent for, and the rest would otherwise
     /// photograph whoever runs it.
     var sample: Bool
+    /// A look other than the default glass, for the shelf that shows them.
+    var look: ShelfLook? = nil
+    var monochrome = false
 }
 
 /// The showcase, which reads live, and then one shelf per group the README
@@ -705,6 +737,24 @@ private func shelves() -> [ShelfShot] {
                             widget(.capture), widget(.colorPicker)],
                   apps: ["com.apple.Preview", "com.apple.Photos"],
                   sample: true),
+        // v0.4.0：效率工具
+        ShelfShot(name: "shelf-utilities",
+                  widgets: [widget(.calculator), widget(.currency), widget(.bookmarks),
+                            widget(.github), widget(.mail)],
+                  sample: true),
+        // v0.4.0：桌面与应用
+        ShelfShot(name: "shelf-desktop",
+                  widgets: [widget(.clock, ["layout": .string("flip")]), widget(.wallpaper),
+                            widget(.appSwitcher), widget(.recorder),
+                            widget(.clock, ["layout": .string("pixel")])],
+                  sample: true),
+        // v0.4.0：外观预设（深色玻璃 + 单色）、时钟样式与天气
+        ShelfShot(name: "shelf-styles",
+                  widgets: [widget(.clock, ["layout": .string("analog")]),
+                            widget(.weather, ["layout": .string("sky")]),
+                            widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string("东京")]),
+                            widget(.calculator)],
+                  sample: true, look: .darkGlass, monochrome: true),
     ]
 }
 
@@ -712,6 +762,8 @@ private func shelves() -> [ShelfShot] {
 private func captureShelf(_ shot: ShelfShot, on screen: NSScreen) async {
     guard let shelf = makeShelfState(widgets: shot.widgets, apps: shot.apps,
                                      sample: shot.sample) else { return }
+    if let look = shot.look { look.apply(to: &shelf.state.customDock) }
+    if shot.monochrome { shelf.state.customDock.widgetColor = .monochrome }
     guard let (window, hosting) = makeWindow(DockShelfView().environment(shelf),
                                              shadow: false, on: screen) else {
         log("shelf: measured empty, skipping")
