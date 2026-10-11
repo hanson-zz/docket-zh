@@ -89,6 +89,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             menu.addItem(.separator())
         }
         if hasShelf {
+            if let hidden = hiddenWidgetsMenu() { menu.addItem(hidden) }
             menu.addItem(item("添加小组件…", #selector(openLibrary)))
         }
         menu.addItem(item("设置…", #selector(openSettings), key: ","))
@@ -97,6 +98,35 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openUpdate() { UpdateService.shared.openReleasePage() }
+
+    /// Widgets a visibility rule has taken off the shelf. Here as well as on
+    /// the shelf's own menu, because a shelf of nothing but hidden widgets
+    /// has no tile left to right-click.
+    private func hiddenWidgetsMenu() -> NSMenuItem? {
+        let hidden = WidgetVisibility.hiddenWidgets(app.customProfile?.items ?? [],
+                                                    WidgetConditionMonitor.shared.conditions,
+                                                    ignoringConditions: app.showsSampleData)
+        guard !hidden.isEmpty else { return nil }
+        let parent = NSMenuItem(title: "已隐藏的小组件", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for widget in hidden {
+            let name = WidgetCatalog.entry(widget.kind)?.name ?? widget.kind.rawValue
+            let entry = NSMenuItem(title: "\(name)（\(WidgetVisibility.hiddenReason(widget))）",
+                                   action: #selector(restoreWidget(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = widget.id
+            submenu.addItem(entry)
+        }
+        parent.submenu = submenu
+        return parent
+    }
+
+    @objc private func restoreWidget(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? UUID,
+              let widget = app.customProfile?.items.compactMap(\.widget).first(where: { $0.id == id })
+        else { return }
+        app.updateWidget(WidgetVisibility.restored(widget))
+    }
 
     /// One kind of layout: the parent names the one in use, the submenu
     /// switches between them.

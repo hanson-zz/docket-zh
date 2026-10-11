@@ -16,6 +16,10 @@ struct BatteryDevice: Identifiable, Sendable {
     /// False = nothing reported this battery; render it as unavailable rather
     /// than as an empty one.
     var present: Bool
+    /// The Mac only: running from the adapter rather than its battery. Not
+    /// the same as `charging`, which is false on an adapter once the battery
+    /// is full or charging is held back.
+    var onPower: Bool = false
 
     static func absent(_ kind: BatteryDeviceKind) -> BatteryDevice {
         BatteryDevice(id: kind.rawValue, kind: kind, level: 0, charging: false, present: false)
@@ -86,7 +90,8 @@ final class BatteryMetrics {
                 kind: .mac,
                 level: min(Double(current) / Double(capacity), 1),
                 charging: description[kIOPSIsChargingKey as String] as? Bool ?? false,
-                present: true
+                present: true,
+                onPower: description[kIOPSPowerSourceStateKey as String] as? String == kIOPSACPowerValue
             )
         }
         return nil  // desktop Mac, or the API gave us nothing

@@ -194,6 +194,14 @@ struct DockShelfView: View {
     }
 
     private var hasWidgets: Bool { app.hasWidgets }
+    /// What the visibility rules are judged against.
+    private var conditions: WidgetConditions { WidgetConditionMonitor.shared.conditions }
+
+    /// Widgets currently off the shelf, for the menu that brings them back.
+    private var hiddenWidgets: [WidgetInstance] {
+        WidgetVisibility.hiddenWidgets(app.customProfile?.items ?? [], conditions,
+                                       ignoringConditions: app.showsSampleData)
+    }
     /// Hairline plus its margins.
     private var separatorExtent: CGFloat { 7 }
     /// The grip's own extent along the shelf, as a slot in the row.
@@ -211,9 +219,14 @@ struct DockShelfView: View {
         // Filtered rather than edited: the apps stay in the profile and come
         // back the moment the setting goes off, so turning it on costs
         // nothing and turning it off loses nothing.
-        let items = settings.widgetsOnly
+        let shown = settings.widgetsOnly
             ? app.effectiveItems.filter(\.isWidget)
             : app.effectiveItems
+        // Widgets whose visibility rule says no are left out of the row
+        // entirely, so nothing is laid out, measured or hit-tested for them.
+        // They stay in the profile and are listed under "已隐藏的小组件".
+        let items = WidgetVisibility.visibleItems(shown, conditions,
+                                                  ignoringConditions: app.showsSampleData)
         var entries = items.map {
             Entry(id: $0.id, item: $0, isRunningApp: false, label: label(for: $0))
         }
@@ -478,6 +491,10 @@ struct DockShelfView: View {
             for: NSApplication.didChangeScreenParametersNotification)) { _ in measureScreen() }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
         .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
+        .onChange(of: WidgetConditionMonitor.conditionalKinds(in: app.customProfile?.items ?? []),
+                  initial: true) { _, kinds in
+            WidgetConditionMonitor.shared.watch(kinds)
+        }
     }
 
     private func measureScreen() {
@@ -1290,6 +1307,7 @@ struct DockShelfView: View {
                 }
             }
             if let widget = entry.item.widget {
+                visibilityMenu(widget)
                 Button(WidgetPlate.isHidden(widget.config) ? "显示背景和边框" : "隐藏背景和边框") {
                     withAnimation(.snappy(duration: 0.2)) {
                         app.updateWidget(WidgetPlate.toggled(widget))
@@ -1381,8 +1399,62 @@ struct DockShelfView: View {
             Button("常规") { addSpacer(.regular, after: entry) }
         }
         Divider()
+        hiddenWidgetsMenu
         Button("添加小组件…") { LibraryWindow.shared.show(app: app) }
         Button("程序坞设置…") { SettingsWindow.shared.show(app: app) }
+    }
+
+    /// When this widget is on the shelf: always, on its condition, or never.
+    @ViewBuilder
+    private func visibilityMenu(_ widget: WidgetInstance) -> some View {
+        Menu("显示条件") {
+            Picker("显示条件", selection: Binding(
+                get: { WidgetVisibility.mode(widget.config) },
+                set: { mode in
+                    var updated = widget
+                    updated.config.set(WidgetVisibility.modeKey, .string(mode.rawValue))
+                    withAnimation(.snappy(duration: 0.24)) { app.updateWidget(updated) }
+                })) {
+                ForEach(WidgetVisibility.modes(for: widget.kind), id: \.self) { mode in
+                    Text(mode == .conditional
+                         ? (WidgetVisibility.conditionTitle(widget.kind, config: widget.config) ?? mode.title)
+                         : mode.title)
+                        .tag(mode)
+                }
+            }
+            .pickerStyle(.inline)
+            if widget.kind == .battery {
+                Divider()
+                Picker("电量阈值", selection: Binding(
+                    get: { WidgetVisibility.batteryThreshold(widget.config) },
+                    set: { value in
+                        var updated = widget
+                        updated.config.set(WidgetVisibility.thresholdKey, .number(Double(value)))
+                        app.updateWidget(updated)
+                    })) {
+                    ForEach(WidgetVisibility.thresholdChoices, id: \.self) { value in
+                        Text(value >= 100 ? "任意电量" : "不高于 \(value)%").tag(value)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Everything a rule has taken off the shelf, each a click from coming back.
+    @ViewBuilder
+    private var hiddenWidgetsMenu: some View {
+        let hidden = hiddenWidgets
+        if !hidden.isEmpty {
+            Menu("已隐藏的小组件") {
+                ForEach(hidden) { widget in
+                    Button("\(WidgetCatalog.entry(widget.kind)?.name ?? widget.kind.rawValue)（\(WidgetVisibility.hiddenReason(widget))）") {
+                        withAnimation(.snappy(duration: 0.24)) {
+                            app.updateWidget(WidgetVisibility.restored(widget))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func addSpacer(_ size: SpacerSize, after entry: Entry) {

@@ -257,6 +257,11 @@ public enum WidgetCatalog {
         Entry(kind: .github, name: "GitHub", category: .tools,
               defaults: c(["repo": .string("hanson-zz/docket-zh")]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Whether any app is using the default input device, from Core Audio.
+        // Reading the state needs no microphone permission.
+        Entry(kind: .microphone, name: "麦克风", category: .system, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -297,6 +302,7 @@ public enum WidgetCatalog {
              .calculator,
              .currency,
              .github,
+             .microphone,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -421,6 +427,9 @@ public enum WidgetCatalog {
             .settings("com.apple.Wallpaper-Settings.extension")
         case .recorder:
             .app(bundleID: "com.apple.VoiceMemos")
+        // Where the input device is chosen.
+        case .microphone:
+            .settings("com.apple.Sound-Settings.extension")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
@@ -548,6 +557,7 @@ public enum WidgetCatalog {
         case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
         case .appSwitcher: return CGSize(width: 220, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)
+        case .microphone: return CGSize(width: 184, height: 62)
         }
     }
 
@@ -593,6 +603,7 @@ public enum WidgetCatalog {
         case .timer: return 92
         case .alarm: return 76
         case .hydration: return 88
+        case .microphone: return 88
         case .notes: return 96
         case .airdrop: return 76
         case .progress:

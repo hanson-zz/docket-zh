@@ -139,6 +139,30 @@ struct WidgetSettingsSections: View {
     @ViewBuilder
     private func displaySection(_ instance: WidgetInstance) -> some View {
         Section("显示") {
+            Picker("显示条件", selection: Binding(
+                get: { WidgetVisibility.mode(instance.config) },
+                set: { mode in write(instance) { $0.set(WidgetVisibility.modeKey, .string(mode.rawValue)) } })) {
+                ForEach(WidgetVisibility.modes(for: instance.kind), id: \.self) { mode in
+                    Text(mode == .conditional
+                         ? (WidgetVisibility.conditionTitle(instance.kind, config: instance.config) ?? mode.title)
+                         : mode.title)
+                        .tag(mode)
+                }
+            }
+            if instance.kind == .battery, WidgetVisibility.mode(instance.config) == .conditional {
+                Picker("电量阈值", selection: Binding(
+                    get: { WidgetVisibility.batteryThreshold(instance.config) },
+                    set: { value in write(instance) { $0.set(WidgetVisibility.thresholdKey, .number(Double(value))) } })) {
+                    ForEach(WidgetVisibility.thresholdChoices, id: \.self) { value in
+                        Text(value >= 100 ? "任意电量" : "不高于 \(value)%").tag(value)
+                    }
+                }
+            }
+            if WidgetVisibility.mode(instance.config) != .always {
+                Text("被隐藏的小组件可以在扩展栏的右键菜单或菜单栏的“已隐藏的小组件”中恢复。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Toggle(isOn: Binding(
                 get: { WidgetPlate.isHidden(instance.config) },
                 set: { on in write(instance) { $0.set(WidgetPlate.key, .bool(on)) } })) {
