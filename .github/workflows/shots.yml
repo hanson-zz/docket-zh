@@ -43,10 +43,10 @@ jobs:
           system_profiler SPDisplaysDataType || true
           sw_vers
 
-      # The runner boots at 1024x768 at 1x, which crops a whole shelf and
-      # leaves every image soft. displayplacer lists the modes the virtual
-      # display offers; a scaled (HiDPI) mode at least 1440 points wide is
-      # preferred, then the widest plain one. Allowed to fail: the capture
+      # The runner boots at 1024x768, which crops a whole shelf.
+      # displayplacer lists the modes the virtual display offers; a scaled
+      # (HiDPI) mode at least 1440 points wide is preferred, then the widest
+      # plain one up to 1920. Allowed to fail: the capture
       # still runs at whatever the display is.
       - name: Larger display
         env:
@@ -59,14 +59,17 @@ jobs:
           import re, sys
           text = open(sys.argv[1]).read()
           ident = re.search(r"Persistent screen id: (\S+)", text)
-          modes = re.findall(r"mode (\d+): res:(\d+)x(\d+).*?scaling:(on|off)", text)
+          # "scaling:on" marks a HiDPI mode; the runner's virtual display
+          # has offered none so far, so the field is optional.
+          modes = re.findall(r"mode (\d+): res:(\d+)x(\d+)([^\n]*)", text)
           if not ident or not modes:
               sys.exit(0)
           def score(m):
-              n, w, h, scaled = int(m[0]), int(m[1]), int(m[2]), m[3] == "on"
-              # Fits in a 4K virtual framebuffer when doubled.
+              w, h, scaled = int(m[1]), int(m[2]), "scaling:on" in m[3]
               hidpi = scaled and 1440 <= w <= 1920
-              return (hidpi, w if hidpi else 0, w * h)
+              # Plain modes are taken up to 1920 wide, which holds the widest
+              # shelf with room to spare.
+              return (hidpi, w if hidpi else 0, w * h if w <= 1920 else 0)
           best = max(modes, key=score)
           print(f"id:{ident.group(1)} mode:{best[0]}")
           PY

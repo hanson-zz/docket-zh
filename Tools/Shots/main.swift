@@ -106,7 +106,7 @@ private func shots(since started: Date) -> [Shot] {
         // real overlap between here and Tokyo at the moment of capture.
         Shot(name: "world-clock",
              instance: widget(.world, ["zone": .string("Asia/Tokyo"),
-                                       "city": .string("Tokyo")]),
+                                       "city": .string("东京")]),
              isPreview: false, source: .live),
 
         // Live: the calendar and nothing else, so the three bars are exactly
@@ -153,7 +153,7 @@ private func shots(since started: Date) -> [Shot] {
         // The note's own words, which are the widget's content rather than a
         // reading of anything.
         Shot(name: "sticky-note",
-             instance: widget(.notes, ["text": .string("Renew the domain")]),
+             instance: widget(.notes, ["text": .string("续费域名")]),
              isPreview: false, source: .live),
 
         // Sample data. A live read would list this machine's own accessories,
@@ -670,10 +670,10 @@ private func shelves() -> [ShelfShot] {
         ShelfShot(name: "shelf-showcase",
                   widgets: [widget(.clock),
                             widget(.world, ["zone": .string("Asia/Tokyo"),
-                                            "city": .string("Tokyo")]),
+                                            "city": .string("东京")]),
                             widget(.system, ["metrics": .list([.string("cpu"),
                                                                .string("memory")])]),
-                            widget(.notes, ["text": .string("Renew the domain")])],
+                            widget(.notes, ["text": .string("续费域名")])],
                   apps: ["com.apple.finder", "com.apple.Safari", "com.apple.mail",
                          "com.apple.Terminal", "com.apple.systempreferences"],
                   sample: false),
