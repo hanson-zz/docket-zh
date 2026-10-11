@@ -468,20 +468,34 @@ struct SettingsView: View {
 
         Section("外观") {
             // One choice, not a material and then a style of that material:
-            // the three are what anyone is actually choosing between.
-            // Drawn in the real materials over a scrap of wallpaper, because
-            // the difference between them is only visible over something.
-            HStack(spacing: 10) {
-                ForEach([Look.frosted, .glass, .clear], id: \.self) { option in
+            // these are what anyone is actually choosing between. Drawn in
+            // the real materials over a scrap of wallpaper, because the
+            // difference between them is only visible over something.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
+                      spacing: 10) {
+                ForEach(ShelfLook.ordered, id: \.self) { option in
                     ChoiceCard(title: option.title, selected: look.wrappedValue == option) {
                         look.wrappedValue = option
                     } picture: {
-                        MaterialSample(look: option).frame(height: 52)
+                        MaterialSample(look: option).frame(height: 44)
                     }
                 }
             }
             .padding(.vertical, 2)
-            .help("辅助功能设置中的“降低透明度”会覆盖“玻璃”和“透明”效果。")
+            .help("“透明”不绘制底板，每个小组件保留自己的卡片。")
+
+            Picker(selection: $state.customDock.widgetColor) {
+                Text("原色").tag(WidgetColorMode.original)
+                Text("单色").tag(WidgetColorMode.monochrome)
+            } label: {
+                subtitled("小组件颜色", "单色只把扩展栏上的小组件画成灰阶，应用图标不受影响。")
+            }
+            .pickerStyle(.segmented)
+
+            Toggle(isOn: $state.customDock.reduceTransparency) {
+                subtitled("降低透明度",
+                          "使用不透明的底板。系统设置 ▸ 辅助功能 ▸ 显示 中开启“降低透明度”时会自动生效。")
+            }
 
             if !state.customDock.followSystemDock {
                 Toggle("放大指针下方的项目", isOn: $state.customDock.magnification)
@@ -537,28 +551,10 @@ struct SettingsView: View {
         }
     }
 
-    fileprivate enum Look: Hashable {
-        case frosted, glass, clear
-
-        var title: String {
-            switch self {
-            case .frosted: "磨砂"
-            case .glass: "玻璃"
-            case .clear: "透明"
-            }
-        }
-    }
-
-    private var look: Binding<Look> {
+    private var look: Binding<ShelfLook> {
         Binding(
-            get: {
-                guard state.customDock.material == .liquidGlass else { return .frosted }
-                return state.customDock.glass == .clear ? .clear : .glass
-            },
-            set: { look in
-                state.customDock.material = look == .frosted ? .frosted : .liquidGlass
-                if look != .frosted { state.customDock.glass = look == .clear ? .clear : .regular }
-            })
+            get: { ShelfLook(state.customDock) },
+            set: { $0.apply(to: &state.customDock) })
     }
 
     // MARK: - Widgets
@@ -851,7 +847,7 @@ private struct EdgeSketch: View {
 
 /// The shelf's material, for real, over a scrap of colour.
 private struct MaterialSample: View {
-    let look: SettingsView.Look
+    let look: ShelfLook
 
     var body: some View {
         ZStack {
@@ -863,18 +859,34 @@ private struct MaterialSample: View {
         }
     }
 
+    private var ink: Color {
+        switch look.forcedAppearance {
+        case .light?: .black.opacity(0.55)
+        default: .white.opacity(0.9)
+        }
+    }
+
     @ViewBuilder private var slab: some View {
         let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
         let tiles = HStack(spacing: 4) {
             ForEach(0..<3, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 3).fill(.white.opacity(0.9)).frame(width: 12, height: 12)
+                RoundedRectangle(cornerRadius: 3).fill(ink).frame(width: 12, height: 12)
             }
         }
         .padding(6)
         switch look {
         case .frosted: tiles.background(.regularMaterial, in: shape)
         case .glass: tiles.glassEffect(.regular, in: shape)
-        case .clear: tiles.glassEffect(.clear, in: shape)
+        case .clearGlass: tiles.glassEffect(.clear, in: shape)
+        case .lightGlass: tiles.glassEffect(MaterialBackground.glassValue(.regular, tint: .light), in: shape)
+        case .darkGlass: tiles.glassEffect(MaterialBackground.glassValue(.regular, tint: .dark), in: shape)
+        case .white:
+            tiles.background(Color(hex: "#F6F6F6"), in: shape)
+                .overlay { shape.strokeBorder(.black.opacity(0.1), lineWidth: 1) }
+        case .black:
+            tiles.background(Color(hex: "#161616"), in: shape)
+                .overlay { shape.strokeBorder(.white.opacity(0.12), lineWidth: 1) }
+        case .transparent: tiles
         }
     }
 }

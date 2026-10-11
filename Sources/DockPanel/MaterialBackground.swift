@@ -10,14 +10,26 @@ import AppKit
 /// an `NSVisualEffectView`, which is what Apple's own Dock uses.
 ///
 /// Reduce Transparency wins over both: the accessibility setting is not a
-/// style preference.
+/// style preference. The shelf's own "降低透明度" switch does the same for
+/// anyone who wants it on the shelf alone.
+///
+/// Three more looks have no material to sample: a white plate, a black one,
+/// and none at all, where the widgets' own cards are the only surfaces.
 struct MaterialBackground: View {
     var material: DockMaterial
     var glass: GlassStyle
     var radius: CGFloat
+    /// Glass leaned toward light or dark. Ignored by the other materials.
+    var tint: GlassTint = .automatic
+    /// The shelf's own Reduce Transparency, on top of the system's.
+    var opaque = false
 
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+
+    private var reduceTransparency: Bool { systemReduceTransparency || opaque }
+
+    private var solid: Bool { material == .solidLight || material == .solidDark }
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -29,7 +41,14 @@ struct MaterialBackground: View {
                 // A hairline top rim is what stops the shelf reading as a flat
                 // cut-out against a busy wallpaper. Glass supplies its own, so
                 // this is only for the frosted material.
-                if material == .frosted && !reduceTransparency {
+                if solid {
+                    // A flat plate needs its edge drawn, or white on a white
+                    // window is no shelf at all.
+                    shape.strokeBorder(material == .solidLight
+                                       ? Color.black.opacity(0.10)
+                                       : Color.white.opacity(0.12),
+                                       lineWidth: 1)
+                } else if material == .frosted && !reduceTransparency {
                     shape.strokeBorder(
                         LinearGradient(
                             colors: [.white.opacity(scheme == .dark ? 0.22 : 0.65),
@@ -44,7 +63,7 @@ struct MaterialBackground: View {
             // Glass casts its own, and stacking ours on top of it is why the
             // shelf sat heavier on the desktop than Apple's Dock does. The
             // frosted plate is an NSVisualEffectView and genuinely has none.
-            .shadow(color: .black.opacity(material == .liquidGlass
+            .shadow(color: .black.opacity(material == .liquidGlass || material == .plateless
                                           ? 0
                                           : (scheme == .dark ? 0.34 : 0.18)),
                     radius: 9, x: 0, y: 4)
@@ -52,12 +71,19 @@ struct MaterialBackground: View {
 
     @ViewBuilder
     private var surface: some View {
-        if reduceTransparency {
-            shape.fill(scheme == .dark ? Color(hex: "#1C1C1C") : Color(hex: "#F2F2F2"))
-        } else {
-            switch material {
-            case .frosted: frosted
-            case .liquidGlass: liquid
+        switch material {
+        // Already opaque, or deliberately nothing: Reduce Transparency has
+        // nothing to take away from either.
+        case .solidLight: shape.fill(Color(hex: "#F6F6F6"))
+        case .solidDark: shape.fill(Color(hex: "#161616"))
+        case .plateless: Color.clear
+        case .frosted, .liquidGlass:
+            if reduceTransparency {
+                shape.fill(scheme == .dark ? Color(hex: "#1C1C1C") : Color(hex: "#F2F2F2"))
+            } else if material == .frosted {
+                frosted
+            } else {
+                liquid
             }
         }
     }
@@ -105,7 +131,21 @@ struct MaterialBackground: View {
     /// over it and was not clear at all.
     private var liquid: some View {
         Color.clear
-            .glassEffect(glass == .clear ? .clear : .regular, in: shape)
+            .glassEffect(Self.glassValue(glass, tint: tint), in: shape)
+    }
+
+    /// The glass for a style and a tint.
+    ///
+    /// A tint, not a fill laid over the glass: the glass's own tint keeps the
+    /// refraction and the specular edge that a scrim on top suppresses (see
+    /// above), while still holding the plate light or dark over any wallpaper.
+    static func glassValue(_ style: GlassStyle, tint: GlassTint) -> Glass {
+        let base: Glass = style == .clear ? .clear : .regular
+        switch tint {
+        case .automatic: return base
+        case .light: return base.tint(Color.white.opacity(0.42))
+        case .dark: return base.tint(Color.black.opacity(0.48))
+        }
     }
 }
 

@@ -68,10 +68,26 @@ public enum AppAppearance: String, Codable, Sendable, CaseIterable {
 
 public enum DockMaterial: String, Codable, Sendable, CaseIterable {
     case liquidGlass, frosted
+    /// An opaque plate that stays white, or black, whatever the appearance.
+    case solidLight = "white", solidDark = "black"
+    /// No plate at all. Every widget keeps its own card, and icons stand on
+    /// the desktop the way they do on a transparent Dock.
+    case plateless = "none"
 }
 
 public enum GlassStyle: String, Codable, Sendable, CaseIterable {
     case regular, clear
+}
+
+/// Which way Liquid Glass is leaned: left to sample the desktop, or tinted
+/// toward light or dark so the shelf keeps one look over any wallpaper.
+public enum GlassTint: String, Codable, Sendable, CaseIterable {
+    case automatic, light, dark
+}
+
+/// Whether widgets keep their own colours or are drawn in greys only.
+public enum WidgetColorMode: String, Codable, Sendable, CaseIterable {
+    case original, monochrome
 }
 
 public enum MenuBarLabelMode: String, Codable, Sendable, CaseIterable {
@@ -660,6 +676,14 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// real material is what makes the shelf sit beside the Dock convincingly.
     public var material: DockMaterial = .liquidGlass
     public var glass: GlassStyle = .regular
+    /// Only read while the material is Liquid Glass.
+    public var glassTint: GlassTint = .automatic
+    /// Widget colours on the shelf: their own, or greys only.
+    public var widgetColor: WidgetColorMode = .original
+    /// An opaque plate whatever the material, as macOS's own Reduce
+    /// Transparency does. The system setting still applies on its own; this
+    /// is for anyone who wants it on the shelf alone.
+    public var reduceTransparency: Bool = false
     public var autoHide: Bool = false
     public var showHandleWhenHidden: Bool = true
     public var useAsDesktopWidget: Bool = false
@@ -720,6 +744,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         scale = try c.decodeIfPresent(Double.self, forKey: .scale) ?? Geometry.defaultScale
         material = try c.decodeIfPresent(DockMaterial.self, forKey: .material) ?? .liquidGlass
         glass = try c.decodeIfPresent(GlassStyle.self, forKey: .glass) ?? .regular
+        glassTint = try c.decodeIfPresent(GlassTint.self, forKey: .glassTint) ?? .automatic
+        widgetColor = try c.decodeIfPresent(WidgetColorMode.self, forKey: .widgetColor) ?? .original
+        reduceTransparency = try c.decodeIfPresent(Bool.self, forKey: .reduceTransparency) ?? false
         autoHide = try c.decodeIfPresent(Bool.self, forKey: .autoHide) ?? false
         showHandleWhenHidden = try c.decodeIfPresent(Bool.self, forKey: .showHandleWhenHidden) ?? true
         useAsDesktopWidget = try c.decodeIfPresent(Bool.self, forKey: .useAsDesktopWidget) ?? false
@@ -982,6 +1009,8 @@ extension DockPosition: LenientChoice { public static var fallback: Self { .bott
 extension AppAppearance: LenientChoice { public static var fallback: Self { .system } }
 extension DockMaterial: LenientChoice { public static var fallback: Self { .liquidGlass } }
 extension GlassStyle: LenientChoice { public static var fallback: Self { .regular } }
+extension GlassTint: LenientChoice { public static var fallback: Self { .automatic } }
+extension WidgetColorMode: LenientChoice { public static var fallback: Self { .original } }
 extension MenuBarLabelMode: LenientChoice { public static var fallback: Self { .custom } }
 extension SpacerSize: LenientChoice { public static var fallback: Self { .regular } }
 extension PaletteColor: LenientChoice { public static var fallback: Self { .blue } }

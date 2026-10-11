@@ -389,6 +389,9 @@ struct DockShelfView: View {
                 .allowsHitTesting(false)
             shelf(solved)
         }
+        // A white or black plate, or glass leaned one way, pins the ink to
+        // match, whatever the system appearance is.
+        .modifier(ShelfScheme(forced: ShelfLook(settings).forcedAppearance))
         .background { WindowReader { shelfWindow = $0 } }
         .onChange(of: hoverTarget(solved)) { _, new in
             applyHoverLabel(new)
@@ -484,7 +487,9 @@ struct DockShelfView: View {
         .background(alignment: edgeAlignment) {
             MaterialBackground(material: settings.material,
                                glass: settings.glass,
-                               radius: chrome.radius)
+                               radius: chrome.radius,
+                               tint: settings.glassTint,
+                               opaque: settings.reduceTransparency)
         }
         .overlay {
             // allowsHitTesting(false) is essential: an overlay takes part in
@@ -746,7 +751,8 @@ struct DockShelfView: View {
                            position: position,
                            isRunning: isRunning(entry.item),
                            now: app.now,
-                           isPreview: app.showsSampleData) { menu(for: entry) }
+                           isPreview: app.showsSampleData,
+                           monochrome: settings.widgetColor == .monochrome) { menu(for: entry) }
             .equatable()
             // Only widgets read this. An icon already answers the pointer by
             // magnifying, and a second affordance on top would be noise.
@@ -1406,6 +1412,8 @@ private struct TileContent<Menu: View>: View, Equatable {
     var now: Date
     /// Sample values instead of live ones; see `AppState.showsSampleData`.
     var isPreview = false
+    /// Widgets drawn in greys only; see `WidgetColorMode`.
+    var monochrome = false
     /// Deliberately absent from `==`: a closure cannot be compared, and its
     /// captures are either value-stable (the entry) or references that stay
     /// current (AppState).
@@ -1416,7 +1424,8 @@ private struct TileContent<Menu: View>: View, Equatable {
         // menu down with it. See MenuTracking.
         if MenuTracking.isOpen { return true }
         guard a.scale == b.scale, a.position == b.position,
-              a.isRunning == b.isRunning, a.item == b.item else { return false }
+              a.isRunning == b.isRunning, a.monochrome == b.monochrome,
+              a.item == b.item else { return false }
         // Only time-dependent tiles care about the tick; app icons must not
         // redraw once a second for nothing.
         return a.item.isWidget ? a.now == b.now : true
@@ -1433,9 +1442,25 @@ private struct TileContent<Menu: View>: View, Equatable {
                              context: WidgetContext(position: position, now: now,
                                                     isPreview: isPreview),
                              scale: scale)
+                // Greys only, and only the widgets: an app's icon is its
+                // identity and is left alone.
+                .saturation(monochrome ? 0 : 1)
         } else {
             DockItemView(item: item, scale: scale, position: position,
                          isRunning: isRunning, showRunningDot: true)
+        }
+    }
+}
+
+/// Pins the shelf's colour scheme when its look calls for one.
+private struct ShelfScheme: ViewModifier {
+    var forced: AppAppearance?
+
+    func body(content: Content) -> some View {
+        switch forced {
+        case .light?: content.environment(\.colorScheme, .light)
+        case .dark?: content.environment(\.colorScheme, .dark)
+        case .system?, nil: content
         }
     }
 }
