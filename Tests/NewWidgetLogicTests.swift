@@ -286,3 +286,84 @@ final class CurrencyRatesTests: XCTestCase {
         XCTAssertEqual(CurrencyNames.format(.nan, code: "USD"), "-")
     }
 }
+
+final class SkyMathTests: XCTestCase {
+    private let shanghai = TimeZone(identifier: "Asia/Shanghai")!
+
+    private func local(_ y: Int, _ m: Int, _ d: Int, zone: TimeZone) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        return calendar.date(from: DateComponents(year: y, month: m, day: d, hour: 9))!
+    }
+
+    private func minutes(_ date: Date, zone: TimeZone) -> Int {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        return c.hour! * 60 + c.minute!
+    }
+
+    /// Beijing at the June solstice: sunrise about 04:46, sunset about 19:46
+    /// (China Meteorological Administration tables).
+    func testBeijingAtTheSolstice() {
+        guard case .normal(let rise, let set)? = SunTimes.on(local(2026, 6, 21, zone: shanghai),
+                                                             latitude: 39.9042, longitude: 116.4074,
+                                                             zone: shanghai) else { return XCTFail() }
+        XCTAssertEqual(minutes(rise, zone: shanghai), 4 * 60 + 46, accuracy: 4)
+        XCTAssertEqual(minutes(set, zone: shanghai), 19 * 60 + 46, accuracy: 4)
+    }
+
+    /// Oslo in late December: about 09:18 and 15:12.
+    func testOsloInWinter() {
+        let oslo = TimeZone(identifier: "Europe/Oslo")!
+        guard case .normal(let rise, let set)? = SunTimes.on(local(2026, 12, 21, zone: oslo),
+                                                             latitude: 59.9139, longitude: 10.7522,
+                                                             zone: oslo) else { return XCTFail() }
+        XCTAssertEqual(minutes(rise, zone: oslo), 9 * 60 + 18, accuracy: 5)
+        XCTAssertEqual(minutes(set, zone: oslo), 15 * 60 + 12, accuracy: 5)
+    }
+
+    func testThePolesHaveNoSunriseSometimes() {
+        let tromso = TimeZone(identifier: "Europe/Oslo")!
+        XCTAssertEqual(SunTimes.on(local(2026, 6, 21, zone: tromso), latitude: 69.65, longitude: 18.96,
+                                   zone: tromso), .polarDay)
+        XCTAssertEqual(SunTimes.on(local(2026, 12, 21, zone: tromso), latitude: 69.65, longitude: 18.96,
+                                   zone: tromso), .polarNight)
+        XCTAssertNil(SunTimes.on(.now, latitude: .nan, longitude: 0))
+        XCTAssertNil(SunTimes.on(.now, latitude: 95, longitude: 0))
+    }
+
+    func testWindIsNamedForWhereItComesFrom() {
+        XCTAssertEqual(Wind.direction(0), "北风")
+        XCTAssertEqual(Wind.direction(44), "东北风")
+        XCTAssertEqual(Wind.direction(90), "东风")
+        XCTAssertEqual(Wind.direction(200), "南风")
+        XCTAssertEqual(Wind.direction(338), "北风")
+        XCTAssertEqual(Wind.direction(-90), "西风")
+        XCTAssertEqual(Wind.direction(720 + 135), "东南风")
+    }
+
+    func testBeaufortForce() {
+        XCTAssertEqual(Wind.beaufort(0.1), 0)
+        XCTAssertEqual(Wind.beaufort(1.0), 1)
+        XCTAssertEqual(Wind.beaufort(4.2), 3)
+        XCTAssertEqual(Wind.beaufort(10.8), 6)
+        XCTAssertEqual(Wind.beaufort(40), 12)
+        XCTAssertEqual(Wind.summary(speed: 4.2, from: 45), "东北风 3 级 · 4.2 m/s")
+        XCTAssertEqual(Wind.summary(speed: 0.1, from: 45), "无风")
+    }
+
+    func testPixelDigitsAreFiveBySeven() {
+        for character in "0123456789" {
+            let glyph = PixelFont.glyph(character)
+            XCTAssertEqual(glyph?.count, 7, "\(character)")
+            XCTAssertTrue(glyph?.allSatisfy { $0.count == 5 } ?? false, "\(character)")
+            XCTAssertTrue(glyph?.joined().contains(true) ?? false, "\(character) is blank")
+        }
+        let grid = PixelFont.render("12:34")
+        XCTAssertEqual(grid.count, 7)
+        XCTAssertEqual(grid[0].count, 5 * 4 + 1 + 4, "four digits, a colon, four gaps")
+        XCTAssertTrue(grid.allSatisfy { $0.count == grid[0].count })
+        XCTAssertNil(PixelFont.glyph("x"))
+    }
+}

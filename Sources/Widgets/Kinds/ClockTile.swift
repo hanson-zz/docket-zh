@@ -11,7 +11,20 @@ struct ClockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    private var style: String { instance.config.string("layout", default: "standard") }
+
     var body: some View {
+        // The compact tile is the time and nothing else, whatever the style:
+        // 88pt has no room for a face or a card.
+        if style == "standard" || !instance.expanded && !context.position.isVertical {
+            standard
+        } else {
+            ClockStyleReadout(style: style, now: context.now, zone: .current,
+                              vertical: context.position.isVertical)
+        }
+    }
+
+    private var standard: some View {
         ClockReadout(
             now: context.now,
             zone: .current,

@@ -10,7 +10,8 @@ struct WeatherTile: View {
     /// the tint is part of how it reads at a glance.
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "多云")
+                                           condition: "多云",
+                                           windSpeed: 4.2, windFrom: 45, humidity: 62)
 
     private var layout: String { instance.config.string("layout", default: "current") }
     private var fahrenheit: Bool { instance.config.bool("fahrenheit") }
@@ -59,6 +60,7 @@ struct WeatherTile: View {
                 switch layout {
                 case "hourly": hourlyStrip
                 case "conditions": wide(caption: weather?.condition ?? "-")
+                case "sky": wide(caption: skyCaption)
                 default: wide(caption: placeCaption)
                 }
             }
@@ -83,6 +85,20 @@ struct WeatherTile: View {
         let city = city
         guard !city.isEmpty else { return }
         Task { await WeatherService.shared.setLocation(city: city) }
+    }
+
+    /// Wind and the next sunrise or sunset: the two things the forecast
+    /// already knows, or can work out, beyond the temperature.
+    private var skyCaption: String {
+        var parts: [String] = []
+        if let weather, let speed = weather.windSpeed {
+            let force = Wind.beaufort(speed)
+            parts.append(force == 0 ? "无风" : "\(Wind.direction(weather.windFrom ?? 0)) \(force) 级")
+        }
+        if let next = WeatherSun.next(after: context.now, preview: context.isPreview) {
+            parts.append("\(next.rising ? "日出" : "日落") \(next.date.formatted(.dateTime.hour().minute()))")
+        }
+        return parts.isEmpty ? placeCaption : parts.joined(separator: " · ")
     }
 
     // MARK: - Layouts
@@ -271,5 +287,40 @@ struct WeatherTile: View {
                         temperatureC: pair.0,
                         symbolName: pair.1)
         }
+    }
+}
+
+/// Sun times for wherever the weather is for.
+enum WeatherSun {
+    /// The library has no place, so its sample is a fixed spring day in Oslo.
+    static let sampleCoordinate = (lat: 59.9139, lon: 10.7522)
+
+    @MainActor
+    static func coordinate(preview: Bool) -> (lat: Double, lon: Double)? {
+        if preview { return sampleCoordinate }
+        guard let place = WeatherService.shared.place else { return nil }
+        return (place.lat, place.lon)
+    }
+
+    /// Today's rise and set in the Mac's own time zone. A city far away
+    /// still gets its own moments, just read on this Mac's clock.
+    @MainActor
+    static func today(_ now: Date, preview: Bool) -> SunTimes.Day? {
+        guard let c = coordinate(preview: preview) else { return nil }
+        return SunTimes.on(now, latitude: c.lat, longitude: c.lon)
+    }
+
+    /// Whichever of sunrise and sunset comes next, today or tomorrow.
+    @MainActor
+    static func next(after now: Date, preview: Bool) -> (rising: Bool, date: Date)? {
+        guard let c = coordinate(preview: preview) else { return nil }
+        for offset in 0...1 {
+            let day = now.addingTimeInterval(Double(offset) * 86_400)
+            guard case .normal(let rise, let set)? = SunTimes.on(day, latitude: c.lat, longitude: c.lon)
+            else { continue }
+            if rise > now { return (true, rise) }
+            if set > now { return (false, set) }
+        }
+        return nil
     }
 }

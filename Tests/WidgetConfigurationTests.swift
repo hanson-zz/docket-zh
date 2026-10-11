@@ -87,7 +87,7 @@ final class WidgetConfigurationTests: XCTestCase {
     }
 
     func testAKindWithNoVariantsReportsNone() {
-        for kind in [WidgetKind.clock, .notes, .stock, .airdrop] {
+        for kind in [WidgetKind.stopwatch, .notes, .stock, .airdrop] {
             guard let instance = WidgetCatalog.make(kind) else { return XCTFail("\(kind) missing") }
             XCTAssertTrue(WidgetCatalog.entry(kind)?.variants.isEmpty ?? false,
                           "precondition: \(kind) declares no variants")

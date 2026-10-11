@@ -31,8 +31,13 @@ public enum WidgetCatalog {
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
-        Entry(kind: .clock, name: "时钟", category: .clocks, defaults: c([:]),
-              variants: [], supportsCompact: true, selfContained: true),
+        Entry(kind: .clock, name: "时钟", category: .clocks,
+              defaults: c(["layout": .string("standard")]),
+              variants: [("标准", ["layout": .string("standard")]),
+                         ("模拟表盘", ["layout": .string("analog")]),
+                         ("翻页", ["layout": .string("flip")]),
+                         ("像素", ["layout": .string("pixel")])],
+              supportsCompact: true, selfContained: true),
 
         Entry(kind: .world, name: "世界时钟", category: .clocks,
               defaults: c(["city": .string("伦敦"), "zone": .string("Europe/London")]),
@@ -155,7 +160,8 @@ public enum WidgetCatalog {
                            "city": .string("")]),
               variants: [("当前", ["layout": .string("current")]),
                          ("天气状况", ["layout": .string("conditions")]),
-                         ("逐小时预报", ["layout": .string("hourly")])],
+                         ("逐小时预报", ["layout": .string("hourly")]),
+                         ("风与日出日落", ["layout": .string("sky")])],
               supportsCompact: true, selfContained: true),
 
         // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
@@ -502,8 +508,12 @@ public enum WidgetCatalog {
         case .shortcut: return CGSize(width: 140, height: 76)
         case .airdrop: return CGSize(width: 100, height: 76)
         case .weather:
-            return cfg.string("layout", default: "current") == "hourly"
-                ? CGSize(width: 216, height: 132) : CGSize(width: 148, height: 132)
+            switch cfg.string("layout", default: "current") {
+            case "hourly": return CGSize(width: 216, height: 132)
+            // Wind and the next sun time are a longer caption than a city.
+            case "sky": return CGSize(width: 196, height: 132)
+            default: return CGSize(width: 148, height: 132)
+            }
         case .stripe, .paddle:
             return cfg.bool("chart", default: true)
                 ? CGSize(width: 200, height: 144) : CGSize(width: 148, height: 108)

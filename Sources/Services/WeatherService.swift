@@ -9,6 +9,12 @@ struct WeatherNow: Sendable {
     var symbolName: String
     /// Human text, e.g. "Partly Cloudy".
     var condition: String
+    /// Metres a second, and where it blows from in degrees. Both are in the
+    /// compact endpoint's instant details; gusts are not, so none are shown.
+    var windSpeed: Double? = nil
+    var windFrom: Double? = nil
+    /// Percent.
+    var humidity: Double? = nil
 }
 
 /// One point of the hourly forecast.
@@ -49,6 +55,9 @@ final class WeatherService {
 
     private(set) var current: WeatherNow?
     private(set) var hourly: [WeatherHour] = []
+    /// Where the forecast is for, so sunrise and sunset can be worked out
+    /// for the same place without a request of their own.
+    private(set) var place: Coordinate?
 
     @ObservationIgnored private var coordinate: Coordinate?
     @ObservationIgnored private var city = ""
@@ -69,6 +78,7 @@ final class WeatherService {
            let found = await coordinate(for: wanted) {
             city = wanted
             coordinate = found
+            place = found
             // A new place must not keep showing the old place's numbers.
             current = nil
             hourly = []
@@ -129,9 +139,13 @@ final class WeatherService {
         let currentEntry = series.first { $0.time >= now.addingTimeInterval(-3600) } ?? series[0]
         if let celsius = currentEntry.data.instant.details.airTemperature,
            let code = currentEntry.data.symbolCode {
+            let details = currentEntry.data.instant.details
             current = WeatherNow(temperatureC: celsius,
                                  symbolName: Self.symbol(for: code),
-                                 condition: Self.condition(for: code))
+                                 condition: Self.condition(for: code),
+                                 windSpeed: details.windSpeed,
+                                 windFrom: details.windFromDirection,
+                                 humidity: details.relativeHumidity)
         }
 
         hourly = series.lazy
@@ -234,7 +248,12 @@ private struct Forecast: Decodable {
     }
     struct EntryData: Decodable {
         struct Instant: Decodable {
-            struct Details: Decodable { var airTemperature: Double? }
+            struct Details: Decodable {
+                var airTemperature: Double?
+                var windSpeed: Double?
+                var windFromDirection: Double?
+                var relativeHumidity: Double?
+            }
             var details: Details
         }
         struct Period: Decodable {

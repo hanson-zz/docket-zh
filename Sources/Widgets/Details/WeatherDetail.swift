@@ -10,9 +10,11 @@ import SwiftUI
 /// of its own would be refused by the 15-minute throttle anyway.
 ///
 /// Only what `WeatherService` actually publishes: a temperature, a symbol, a
-/// condition and the hourly series. No humidity, wind, sunrise or daily high
-/// and low, because the compact endpoint the service calls carries none of
-/// them and a panel is not worth a second request.
+/// condition, wind and humidity from the same instant, and the hourly
+/// series. Sunrise and sunset are worked out from the forecast's own
+/// coordinates rather than asked for. No gusts or daily high and low,
+/// because the compact endpoint carries neither and a panel is not worth a
+/// second request.
 struct WeatherDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -29,6 +31,10 @@ struct WeatherDetail: View {
                     now(weather)
                 } else {
                     unavailable
+                }
+
+                if !city.isEmpty, weather != nil {
+                    extras
                 }
 
                 if !hours.isEmpty {
@@ -111,6 +117,42 @@ struct WeatherDetail: View {
                 .foregroundStyle(WidgetStyle.primary)
         }
         .lineLimit(1)
+    }
+
+    // MARK: Wind, humidity, sun
+
+    private var extras: some View {
+        let sun = WeatherSun.today(context.now, preview: context.isPreview)
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)],
+                         spacing: 6) {
+            if let speed = weather?.windSpeed {
+                HStack(spacing: 6) {
+                    // Points the way the wind blows, which is away from where
+                    // it comes from.
+                    Image(systemName: "location.north.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .rotationEffect(.degrees((weather?.windFrom ?? 0) + 180))
+                        .frame(width: 22, height: 22)
+                        .background(Circle().fill(.white.opacity(0.12)))
+                    StatChip(label: "风", value: Wind.summary(speed: speed, from: weather?.windFrom ?? 0))
+                }
+            }
+            if let humidity = weather?.humidity {
+                StatChip(label: "湿度", value: "\(Int(humidity.rounded()))%")
+            }
+            switch sun {
+            case .normal(let rise, let set)?:
+                StatChip(label: "日出", value: rise.formatted(.dateTime.hour().minute()))
+                StatChip(label: "日落", value: set.formatted(.dateTime.hour().minute()))
+            case .polarDay?:
+                StatChip(label: "日照", value: "极昼")
+            case .polarNight?:
+                StatChip(label: "日照", value: "极夜")
+            case nil:
+                EmptyView()
+            }
+        }
     }
 
     // MARK: Hours
@@ -224,7 +266,8 @@ struct WeatherDetail: View {
 
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "多云")
+                                           condition: "多云",
+                                           windSpeed: 4.2, windFrom: 45, humidity: 62)
 
     private static func sampleHours(from date: Date) -> [WeatherHour] {
         let temperatures: [Double] = [18, 19, 19, 17, 16, 16, 15, 14]
