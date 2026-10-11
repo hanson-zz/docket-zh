@@ -87,6 +87,7 @@ final class WidgetOptionTests: XCTestCase {
             .stock: ["symbol", "symbols", "chart"],
             .watchlist: ["symbols"],
             .weather: ["city", "fahrenheit"],
+            .photos: ["folder", "interval", "shuffle"],
         ]
 
         for kind in WidgetKind.allCases {

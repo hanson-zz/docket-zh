@@ -1,0 +1,61 @@
+import SwiftUI
+
+/// The last thing copied, and how many before it are a click away.
+///
+/// Placing this widget is what starts the history: nothing watches the
+/// pasteboard on a shelf that does not have one.
+struct ClipboardTile: View {
+    var instance: WidgetInstance
+    var context: WidgetContext
+
+    private var history: ClipboardHistory { ClipboardHistory.shared }
+    private var latest: ClipboardHistory.Entry? { context.isPreview ? nil : history.entries.first }
+
+    var body: some View {
+        let column = context.position.isVertical
+        return WidgetSurface {
+            if column {
+                VStack(spacing: 6) {
+                    badge(size: 32)
+                    Text(context.isPreview ? "8 条" : "\(history.entries.count) 条")
+                        .font(WidgetStyle.label(11))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .lineLimit(1)
+                }
+            } else {
+                HStack(spacing: 10) {
+                    badge(size: 40)
+                    TileReading(value: value, caption: caption, valueSize: 14)
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .onAppear { if !context.isPreview { history.start() } }
+    }
+
+    private var value: String {
+        if context.isPreview { return "明天上午十点开会" }
+        return latest?.preview ?? "尚未拷贝"
+    }
+
+    private var caption: String {
+        let count = context.isPreview ? 8 : history.entries.count
+        return count == 0 ? "剪贴板" : "剪贴板 · \(count) 条"
+    }
+
+    private func badge(size: CGFloat) -> some View {
+        TileBadge(size: size) {
+            if case .image(let image, _, _)? = latest?.content {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: size, height: size)
+                    .clipShape(.rect(cornerRadius: size * 0.26, style: .continuous))
+            } else {
+                Image(systemName: "list.clipboard")
+                    .font(.system(size: size * 0.42, weight: .medium))
+                    .foregroundStyle(WidgetStyle.primary)
+            }
+        }
+    }
+}

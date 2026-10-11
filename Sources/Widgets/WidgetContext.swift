@@ -121,6 +121,10 @@ public struct WidgetSurface<Content: View>: View {
     /// tile so a card with a cover behind it is still a card: same corner,
     /// same edge, same lift under the pointer.
     public var image: NSImage?
+    /// How much black is laid over `image`. Now Playing keeps the default so
+    /// white text stays legible on any cover; a photo frame is the picture
+    /// itself and passes zero.
+    public var scrim: Double = WidgetStyle.artworkScrim
     @ViewBuilder public var content: Content
 
     @Environment(\.colorScheme) private var scheme
@@ -152,9 +156,11 @@ public struct WidgetSurface<Content: View>: View {
 
 
     public init(fill: Color? = nil, image: NSImage? = nil,
+                scrim: Double = WidgetStyle.artworkScrim,
                 @ViewBuilder content: () -> Content) {
         self.fill = fill
         self.image = image
+        self.scrim = scrim
         self.content = content()
     }
 
@@ -174,7 +180,7 @@ public struct WidgetSurface<Content: View>: View {
                                 // neither. Letterboxing a background would
                                 // draw bars inside the card.
                                 .aspectRatio(contentMode: .fill)
-                                .overlay(Color.black.opacity(WidgetStyle.artworkScrim))
+                                .overlay(Color.black.opacity(scrim))
                                 .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner,
                                                             style: .continuous))
                         }

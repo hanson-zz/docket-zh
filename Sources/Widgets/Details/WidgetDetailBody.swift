@@ -51,6 +51,20 @@ struct WidgetDetailBody: View {
             RemindersDetail(instance: instance, context: context)
         case .shortcut:
             ShortcutDetail(instance: instance, context: context)
+        case .photos:
+            PhotoFrameDetail(instance: instance, context: context)
+        case .screenshots:
+            ScreenshotsDetail(instance: instance, context: context)
+        case .downloads:
+            DownloadsDetail(instance: instance, context: context)
+        case .fileShelf:
+            FileShelfDetail(instance: instance, context: context)
+        case .clipboard:
+            ClipboardDetail(instance: instance, context: context)
+        case .colorPicker:
+            ColorPickerDetail(instance: instance, context: context)
+        case .converter:
+            ConverterDetail(instance: instance, context: context)
         default:
             // Only `.aiUsage` reaches this now, and it is a stub: no tile,
             // no service, nothing to read. Better an honest line than a

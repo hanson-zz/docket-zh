@@ -157,6 +157,39 @@ public enum WidgetCatalog {
                          ("天气状况", ["layout": .string("conditions")]),
                          ("逐小时预报", ["layout": .string("hourly")])],
               supportsCompact: true, selfContained: true),
+
+        // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
+        // the Settings field is there for anyone who would rather paste.
+        Entry(kind: .photos, name: "相册", category: .media,
+              defaults: c(["layout": .string("standard"), "folder": .string(""),
+                           "interval": .number(30), "shuffle": .bool(false)]),
+              variants: [("标准", ["layout": .string("standard")]),
+                         ("宽幅", ["layout": .string("wide")])],
+              supportsCompact: false, selfContained: true),
+
+        Entry(kind: .screenshots, name: "最近截图", category: .files, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .downloads, name: "下载", category: .files, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // The held paths live under `files`, which is deliberately not a
+        // default: it is the shelf's contents, not a setting.
+        Entry(kind: .fileShelf, name: "文件暂存", category: .files, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .clipboard, name: "剪贴板", category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // Recent colours live under `recent`, not a default, for the same
+        // reason as the file shelf's paths.
+        Entry(kind: .colorPicker, name: "取色器", category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // Category, units and value are edited in the panel, where the unit
+        // menus can follow the category; see ConverterState.
+        Entry(kind: .converter, name: "单位换算", category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -186,6 +219,10 @@ public enum WidgetCatalog {
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
+            nil
+        // A photo or a file is its own colour; a tint behind it competes.
+        case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
+             .colorPicker, .converter:
             nil
         }
     }
@@ -285,11 +322,18 @@ public enum WidgetCatalog {
             .app(bundleID: "com.apple.finder")
         case .shortcut:
             .app(bundleID: "com.apple.shortcuts")
+        // Each has a panel, so these are only the fallback: the files are
+        // Finder's, and a colour off the screen is Digital Color Meter's.
+        case .photos, .screenshots, .downloads, .fileShelf:
+            .app(bundleID: "com.apple.finder")
+        case .colorPicker:
+            .app(bundleID: "com.apple.DigitalColorMeter")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
-        case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify:
+        case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
+             .clipboard, .converter:
             nil
         }
     }
@@ -385,6 +429,15 @@ public enum WidgetCatalog {
         case .shopify: return CGSize(width: 200, height: 132)
         case .stock: return CGSize(width: 192, height: 132)
         case .watchlist: return CGSize(width: 276, height: 176)
+        case .photos:
+            return cfg.string("layout", default: "standard") == "wide"
+                ? CGSize(width: 176, height: 62) : CGSize(width: 112, height: 62)
+        case .screenshots: return CGSize(width: 132, height: 62)
+        case .downloads: return CGSize(width: 176, height: 62)
+        case .fileShelf: return CGSize(width: 148, height: 62)
+        case .clipboard: return CGSize(width: 196, height: 62)
+        case .colorPicker: return CGSize(width: 136, height: 62)
+        case .converter: return CGSize(width: 188, height: 62)
         }
     }
 
@@ -443,6 +496,10 @@ public enum WidgetCatalog {
             return Double(metrics * 54 + 8)
         case .network:
             return cfg.string("display", default: "both") == "both" ? 76 : 46
+        case .photos:
+            return cfg.string("layout", default: "standard") == "wide" ? 112 : 76
+        case .colorPicker, .converter:
+            return 84
         default:
             return 76
         }

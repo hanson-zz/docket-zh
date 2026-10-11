@@ -20,5 +20,10 @@
 	<key>NSRemindersFullAccessUsageDescription</key><string>Docket 会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。</string>
 	<key>NSAppleEventsUsageDescription</key><string>Docket 通过程序坞小组件控制音乐播放，并读取浏览器标签页中正在播放的媒体。</string>
 	<key>NSLocationWhenInUseUsageDescription</key><string>Docket 会使用你的位置来显示天气小组件。</string>
+	<key>NSDesktopFolderUsageDescription</key><string>Docket 会读取“桌面”文件夹，在“最近截图”小组件中显示你的截图。</string>
+	<key>NSDownloadsFolderUsageDescription</key><string>Docket 会读取“下载”文件夹，在“下载”小组件中显示最近下载的文件。</string>
+	<key>NSDocumentsFolderUsageDescription</key><string>Docket 会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。</string>
+	<key>NSRemovableVolumesUsageDescription</key><string>Docket 会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。</string>
+	<key>NSNetworkVolumesUsageDescription</key><string>Docket 会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。</string>
 </dict>
 </plist>

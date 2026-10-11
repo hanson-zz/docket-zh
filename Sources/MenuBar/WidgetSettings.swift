@@ -315,6 +315,9 @@ struct WidgetSettingsSections: View {
         "browsers": "浏览器标签页",
         "devices": "设备",
         "metrics": "读数",
+        "folder": "文件夹",
+        "interval": "切换间隔",
+        "shuffle": "随机顺序",
     ]
 
     static func label(_ key: String) -> String {
@@ -333,13 +336,18 @@ struct WidgetSettingsSections: View {
     }
 
     static func prompt(_ key: String) -> String {
-        key == "city" ? "当前位置" : ""
+        switch key {
+        case "city": "当前位置"
+        case "folder": "图片"
+        default: ""
+        }
     }
 
     static func range(_ key: String) -> ClosedRange<Double> {
         switch key {
         case "duration": 60...14_400
         case "skip": 5...60
+        case "interval": 5...3_600
         default: 0...1_000
         }
     }

@@ -1225,6 +1225,16 @@ struct DockShelfView: View {
             if let widget = entry.item.widget, widget.kind == .weather {
                 Button("设置位置…") { setCity(widget) }
             }
+            if let widget = entry.item.widget, widget.kind == .photos {
+                Button("选择文件夹…") {
+                    let current = FolderFeed.folder(for: .pictures(widget.config.string("folder")))
+                    guard let url = FileActions.chooseFolder(title: "选择相册要轮播的文件夹",
+                                                             startingAt: current) else { return }
+                    var updated = widget
+                    updated.config.set("folder", .string(url.path))
+                    app.updateWidget(updated)
+                }
+            }
             if entry.item.fileRef != nil {
                 Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }

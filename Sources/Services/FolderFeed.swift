@@ -1,0 +1,240 @@
+import AppKit
+import Foundation
+import Observation
+
+/// The newest files in a folder, re-read on a gentle poll.
+///
+/// One feed per folder, shared by every tile and panel that shows it, the
+/// same way every Now Playing tile shares one `MusicService`. The listing
+/// itself runs off the main thread; only the finished, sorted array comes
+/// back, so a Downloads folder with thousands of items never stalls the
+/// shelf.
+///
+/// Docket is not sandboxed, so nothing here needs a security-scoped
+/// bookmark. What it does need is consent: Desktop and Downloads are
+/// protected by TCC, and the first read of either is what makes macOS ask.
+/// A refusal comes back as a permission error, which the feed reports in
+/// words instead of showing an empty folder.
+@MainActor @Observable
+final class FolderFeed {
+    enum Source: Hashable, Sendable {
+        /// Pictures under a folder, recursively. Empty path means ~/Pictures.
+        case pictures(String)
+        /// Captures in wherever `screencapture` writes them.
+        case screenshots
+        /// Everything at the top of ~/Downloads.
+        case downloads
+    }
+
+    let source: Source
+    private(set) var files: [ListedFile] = []
+    private(set) var folder: URL
+    /// `nil` until the first listing finished.
+    private(set) var loadedAt: Date?
+    private(set) var error: String?
+
+    @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private var inFlight = false
+    @ObservationIgnored private var lastStart: Date = .distantPast
+
+    private static var feeds: [Source: FolderFeed] = [:]
+
+    static func shared(_ source: Source) -> FolderFeed {
+        if let feed = feeds[source] { return feed }
+        let feed = FolderFeed(source: source)
+        feeds[source] = feed
+        return feed
+    }
+
+    private init(source: Source) {
+        self.source = source
+        self.folder = Self.folder(for: source)
+    }
+
+    static var home: URL { FileManager.default.homeDirectoryForCurrentUser }
+
+    static func folder(for source: Source) -> URL {
+        switch source {
+        case .pictures(let path):
+            let trimmed = path.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { return home.appendingPathComponent("Pictures", isDirectory: true) }
+            let expanded = (trimmed as NSString).expandingTildeInPath
+            return URL(fileURLWithPath: expanded, isDirectory: true)
+        case .screenshots:
+            return ScreenshotLocation.resolve(screencapturePreference("location"), home: home)
+        case .downloads:
+            return home.appendingPathComponent("Downloads", isDirectory: true)
+        }
+    }
+
+    /// `screencapture`'s own preferences, re-read every time: the user can
+    /// change the location in the Screenshot app while Docket runs, and
+    /// cfprefsd keeps handing back a cached copy until asked to look again.
+    static func screencapturePreference(_ key: String) -> String? {
+        let domain = "com.apple.screencapture" as CFString
+        _ = CFPreferencesAppSynchronize(domain)
+        return CFPreferencesCopyAppValue(key as CFString, domain) as? String
+    }
+
+    /// How long a listing stays fresh. Screenshots are the one that has to
+    /// feel instant: you take one and look down at the shelf.
+    private var interval: TimeInterval {
+        switch source {
+        case .pictures: 120
+        case .screenshots: 3
+        case .downloads: 5
+        }
+    }
+
+    /// Idempotent; the first tile to appear starts it.
+    func start() {
+        guard timer == nil else { return }
+        refresh(force: true)
+        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    /// Re-reads now if allowed. `force` skips the interval (a panel opening,
+    /// a file just trashed) but never stacks a second listing on the first.
+    func refresh(force: Bool = false) {
+        let now = Date.now
+        guard PollGate.shouldStart(inFlight: inFlight,
+                                   blocked: false,
+                                   sinceLastStart: force ? .infinity : now.timeIntervalSince(lastStart),
+                                   interval: interval) else { return }
+        inFlight = true
+        lastStart = now
+        let folder = Self.folder(for: source)
+        self.folder = folder
+        let source = source
+        let prefix = source == .screenshots ? Self.screencapturePreference("name") : nil
+        Task {
+            let result = await Self.offMain { Self.list(source, folder: folder, customPrefix: prefix) }
+            inFlight = false
+            loadedAt = .now
+            switch result {
+            case .success(let listed):
+                error = nil
+                if listed != files { files = listed }
+            case .failure(let message):
+                error = message.text
+                files = []
+            }
+        }
+    }
+
+    /// Moves a file to the Trash and drops it from the listing at once.
+    func trash(_ file: ListedFile) {
+        do {
+            try FileManager.default.trashItem(at: file.url, resultingItemURL: nil)
+            files.removeAll { $0.url == file.url }
+            Thumbnails.shared.forget(file.url)
+        } catch {
+            NSSound.beep()
+        }
+        refresh(force: true)
+    }
+
+    // MARK: Listing
+
+    struct Failure: Error, Sendable { var text: String }
+
+    nonisolated private static let queue = DispatchQueue(label: "com.docket-zh.folderfeed", qos: .utility)
+
+    nonisolated private static func offMain<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
+        await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: work()) }
+        }
+    }
+
+    nonisolated private static let keys: [URLResourceKey] = [
+        .contentModificationDateKey, .creationDateKey, .addedToDirectoryDateKey,
+        .isDirectoryKey, .isPackageKey, .fileSizeKey, .isHiddenKey,
+    ]
+
+    nonisolated private static func list(_ source: Source, folder: URL,
+                                         customPrefix: String?) -> Result<[ListedFile], Failure> {
+        let fm = FileManager.default
+        var isDirectory: ObjCBool = false
+        guard fm.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return .failure(Failure(text: "找不到文件夹“\(folder.lastPathComponent)”。"))
+        }
+        switch source {
+        case .pictures:
+            return .success(pictures(in: folder))
+        case .screenshots, .downloads:
+            let contents: [URL]
+            do {
+                contents = try fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys,
+                                                      options: [.skipsHiddenFiles])
+            } catch {
+                return .failure(Failure(text: denied(folder)))
+            }
+            var listed: [ListedFile] = []
+            for url in contents {
+                guard let file = describe(url) else { continue }
+                if source == .screenshots {
+                    guard !file.isDirectory, isCapture(url, customPrefix: customPrefix) else { continue }
+                } else if file.isPartialDownload {
+                    continue
+                }
+                listed.append(file)
+            }
+            return .success(ListedFile.newestFirst(listed, limit: source == .screenshots ? 60 : 50))
+        }
+    }
+
+    nonisolated private static func denied(_ folder: URL) -> String {
+        "无法读取“\(folder.lastPathComponent)”文件夹。请在 系统设置 → 隐私与安全性 → 文件与文件夹 中允许 Docket 中文版访问。"
+    }
+
+    nonisolated private static func describe(_ url: URL) -> ListedFile? {
+        guard let values = try? url.resourceValues(forKeys: Set(keys)) else { return nil }
+        if values.isHidden == true { return nil }
+        let date = values.addedToDirectoryDate ?? values.creationDate
+            ?? values.contentModificationDate ?? .distantPast
+        // A package (an .app, a .pages document) is one file to a person.
+        let folder = values.isDirectory == true && values.isPackage != true
+        return ListedFile(url: url, date: date, isDirectory: folder,
+                          size: values.fileSize.map(Int64.init))
+    }
+
+    /// Named like a capture, or marked as one by `screencapture` itself.
+    nonisolated private static func isCapture(_ url: URL, customPrefix: String?) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard ListedFile.imageExtensions.contains(ext) || ext == "mov" else { return false }
+        if ScreenshotNaming.looksLikeCapture(url.lastPathComponent, customPrefix: customPrefix) { return true }
+        return url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return false }
+            return getxattr(path, "com.apple.metadata:kMDItemIsScreenCapture", nil, 0, 0, 0) >= 0
+        }
+    }
+
+    /// Pictures under a folder, newest first, without walking a whole disk:
+    /// packages (a Photos library among them) are skipped, and the walk
+    /// stops after a fixed number of entries.
+    nonisolated private static func pictures(in folder: URL) -> [ListedFile] {
+        guard let walker = FileManager.default.enumerator(
+            at: folder, includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { return [] }
+        var found: [ListedFile] = []
+        var visited = 0
+        while let url = walker.nextObject() as? URL {
+            visited += 1
+            if visited > 8000 || found.count >= 600 { break }
+            guard ListedFile.imageExtensions.contains(url.pathExtension.lowercased()),
+                  let file = describe(url), !file.isDirectory else { continue }
+            var dated = file
+            // A photo's own date is when it was last changed, not when it was
+            // dropped into this folder.
+            if let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
+                .contentModificationDate { dated.date = modified }
+            found.append(dated)
+        }
+        return ListedFile.newestFirst(found, limit: 300)
+    }
+}

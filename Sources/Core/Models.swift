@@ -144,6 +144,8 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case hydration, calendar, reminders, notes, music, battery, system
     case network, aiUsage = "ai-usage", shortcut, airdrop, weather
     case stripe, paddle, stock, watchlist, shopify
+    case photos, screenshots, downloads, fileShelf = "file-shelf"
+    case clipboard, colorPicker = "color-picker", converter
 }
 
 /// What a widget opens when its card is clicked.
@@ -169,10 +171,13 @@ public enum WidgetCategory: String, Codable, Sendable, CaseIterable {
     case weather = "Weather"
     case business = "Business"
     case stocks = "Stocks"
+    case files = "Files"
+    case tools = "Tools"
 
     /// Library sidebar order.
     public static let ordered: [WidgetCategory] = [
-        .clocks, .reminders, .calendar, .notes, .media, .system, .weather, .business, .stocks,
+        .clocks, .reminders, .calendar, .notes, .media, .files, .tools, .system, .weather,
+        .business, .stocks,
     ]
 }
 
@@ -1016,6 +1021,8 @@ public extension WidgetCategory {
         case .weather: "天气"
         case .business: "商业"
         case .stocks: "股票"
+        case .files: "文件"
+        case .tools: "工具"
         }
     }
 }

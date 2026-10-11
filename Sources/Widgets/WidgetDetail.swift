@@ -378,6 +378,8 @@ enum WidgetDetail {
         // five of those hours and the service publishes twelve.
         case .weather: 340
         case .music: 330
+        case .photos, .screenshots: 340
+        case .downloads, .fileShelf, .clipboard, .converter: 320
         default: 300
         }
     }
