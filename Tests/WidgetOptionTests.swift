@@ -90,6 +90,7 @@ final class WidgetOptionTests: XCTestCase {
             .photos: ["folder", "interval", "shuffle"],
             .emoji: ["emoji"],
             .search: ["engine"],
+            .wallpaper: ["folder", "allScreens"],
         ]
 
         for kind in WidgetKind.allCases {

@@ -384,6 +384,7 @@ enum WidgetDetail {
         case .music: 330
         case .photos, .screenshots: 340
         case .downloads, .fileShelf, .clipboard, .converter, .search: 320
+        case .wallpaper: 340
         default: 300
         }
     }

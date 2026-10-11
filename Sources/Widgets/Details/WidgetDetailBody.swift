@@ -67,6 +67,8 @@ struct WidgetDetailBody: View {
             ConverterDetail(instance: instance, context: context)
         case .search:
             SearchDetail(instance: instance, context: context)
+        case .wallpaper:
+            WallpaperDetail(instance: instance, context: context)
         default:
             // Only `.aiUsage` reaches this now, and it is a stub: no tile,
             // no service, nothing to read. Better an honest line than a

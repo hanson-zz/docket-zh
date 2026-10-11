@@ -163,6 +163,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case photos, screenshots, downloads, fileShelf = "file-shelf"
     case clipboard, colorPicker = "color-picker", converter
     case capture, emoji, search, volume, toggles
+    case wallpaper
 }
 
 /// What a widget opens when its card is clicked.

@@ -320,6 +320,7 @@ struct WidgetSettingsSections: View {
         "shuffle": "随机顺序",
         "emoji": "常用表情",
         "engine": "搜索引擎",
+        "allScreens": "应用到所有显示器",
     ]
 
     static func label(_ key: String) -> String {
