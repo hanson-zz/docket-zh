@@ -172,6 +172,8 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case appSwitcher = "app-switcher"
     case wallpaper
     case microphone
+    case gauges
+    case posture
 }
 
 /// What a widget opens when its card is clicked.

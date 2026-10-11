@@ -167,3 +167,113 @@ final class MicrophoneTextTests: XCTestCase {
                        .settings("com.apple.Sound-Settings.extension"))
     }
 }
+
+final class PostureScheduleTests: XCTestCase {
+    private var calendar: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        return c
+    }()
+
+    private func at(_ day: Int, _ hour: Int, _ minute: Int) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+    }
+
+    private let schedule = PostureSchedule(interval: 1800, start: 9 * 60, end: 18 * 60)
+
+    func testParsesTimes() {
+        XCTAssertEqual(PostureSchedule.minutes("09:30"), 570)
+        XCTAssertEqual(PostureSchedule.minutes("9:05"), 545)
+        XCTAssertEqual(PostureSchedule.minutes("18：00"), 1080)
+        XCTAssertNil(PostureSchedule.minutes("25:00"))
+        XCTAssertNil(PostureSchedule.minutes("abc"))
+        XCTAssertEqual(PostureSchedule.clock(570), "09:30")
+    }
+
+    func testIntervalHasAFloor() {
+        XCTAssertEqual(PostureSchedule(interval: 10, start: 0, end: 0).interval, 300)
+    }
+
+    func testActiveHours() {
+        XCTAssertTrue(schedule.isActive(at(12, 9, 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(at(12, 18, 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(at(12, 7, 0), calendar: calendar))
+        let night = PostureSchedule(interval: 1800, start: 22 * 60, end: 6 * 60)
+        XCTAssertTrue(night.isActive(at(12, 23, 0), calendar: calendar))
+        XCTAssertTrue(night.isActive(at(12, 2, 0), calendar: calendar))
+        XCTAssertFalse(night.isActive(at(12, 12, 0), calendar: calendar))
+    }
+
+    func testDueFromWindowStartWithoutABreak() {
+        let due = schedule.due(lastBreak: nil, now: at(12, 9, 10), calendar: calendar)
+        XCTAssertEqual(due, at(12, 9, 30))
+        // A break from yesterday does not count.
+        XCTAssertEqual(schedule.due(lastBreak: at(11, 17, 0), now: at(12, 9, 10), calendar: calendar),
+                       at(12, 9, 30))
+    }
+
+    func testDueFromLastBreak() {
+        XCTAssertEqual(schedule.due(lastBreak: at(12, 10, 5), now: at(12, 10, 20), calendar: calendar),
+                       at(12, 10, 35))
+        XCTAssertEqual(schedule.remaining(lastBreak: at(12, 10, 5), now: at(12, 10, 20), calendar: calendar), 900)
+        XCTAssertEqual(schedule.progress(lastBreak: at(12, 10, 5), now: at(12, 10, 20), calendar: calendar),
+                       0.5, accuracy: 0.0001)
+    }
+
+    func testIgnoredReminderRepeats() {
+        let next = schedule.nextReminder(lastBreak: at(12, 10, 0), now: at(12, 10, 45), calendar: calendar)
+        XCTAssertEqual(next, at(12, 11, 0))
+        XCTAssertEqual(schedule.remaining(lastBreak: at(12, 10, 0), now: at(12, 10, 45), calendar: calendar), 0)
+    }
+
+    func testReminderWaitsForTheNextWindow() {
+        let next = schedule.nextReminder(lastBreak: at(12, 17, 50), now: at(12, 17, 55), calendar: calendar)
+        XCTAssertEqual(next, at(13, 9, 30))
+    }
+
+    func testTally() {
+        let now = at(12, 15, 0)
+        XCTAssertEqual(PostureTally.dayKey(now, calendar: calendar), "2026-10-12")
+        XCTAssertEqual(PostureTally.today(storedDay: "2026-10-12", count: 3, now: now, calendar: calendar), 3)
+        XCTAssertEqual(PostureTally.today(storedDay: "2026-10-11", count: 3, now: now, calendar: calendar), 0)
+        let logged = PostureTally.logging(storedDay: "2026-10-11", count: 7, now: now, calendar: calendar)
+        XCTAssertEqual(logged.day, "2026-10-12")
+        XCTAssertEqual(logged.count, 1)
+        XCTAssertEqual(PostureTally.logging(storedDay: "2026-10-12", count: 2, now: now, calendar: calendar).count, 3)
+    }
+}
+
+final class GaugeReadingTests: XCTestCase {
+    func testUsedFraction() {
+        XCTAssertEqual(GaugeReading.usedFraction(free: 250, total: 1000), 0.75, accuracy: 0.0001)
+        XCTAssertEqual(GaugeReading.usedFraction(free: 10, total: 0), 0)
+        XCTAssertEqual(GaugeReading.usedFraction(free: 2000, total: 1000), 0)
+    }
+
+    func testBytes() {
+        XCTAssertEqual(GaugeReading.bytes(245_000_000_000), "245 GB")
+        XCTAssertEqual(GaugeReading.bytes(1_234_000_000_000), "1.2 TB")
+        XCTAssertEqual(GaugeReading.bytes(512_000_000), "512 MB")
+        XCTAssertEqual(GaugeReading.bytes(900), "900 B")
+        XCTAssertEqual(GaugeReading.percent(0.624), "62%")
+    }
+
+    func testRingsAreOrderedAndNeverEmpty() {
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig()), ["storage", "battery"])
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery"), .string("storage")])])),
+                       ["storage", "battery"])
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery")])])), ["battery"])
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("cpu")])])), ["storage", "battery"])
+        let one = WidgetCatalog.naturalSize(WidgetInstance(kind: .gauges,
+            config: WidgetConfig(["rings": .list([.string("battery")])])))
+        let two = WidgetCatalog.naturalSize(WidgetCatalog.make(.gauges)!)
+        XCTAssertLessThan(one.width, two.width)
+    }
+
+    func testNewKindsAreInTheLibrary() {
+        for kind in [WidgetKind.gauges, .posture] {
+            XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind)")
+            XCTAssertNotNil(WidgetCatalog.make(kind), "\(kind)")
+        }
+    }
+}

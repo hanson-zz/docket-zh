@@ -359,7 +359,7 @@ enum WidgetDetail {
             false
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .emoji, .volume, .toggles, .mail, .microphone:
+        case .capture, .emoji, .volume, .toggles, .mail, .microphone, .gauges:
             false
         default:
             true
@@ -391,6 +391,7 @@ enum WidgetDetail {
         case .calculator: 280
         case .currency: 320
         case .github: 320
+        case .posture: 320
         default: 300
         }
     }

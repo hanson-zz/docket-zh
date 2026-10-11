@@ -373,6 +373,10 @@ struct WidgetSettingsSections: View {
         "to": "目标币种",
         "amount": "金额",
         "repo": "仓库",
+        "rings": "圆环",
+        "start": "开始时间",
+        "end": "结束时间",
+        "notify": "发送通知",
     ]
 
     static func label(_ key: String) -> String {
@@ -384,6 +388,7 @@ struct WidgetSettingsSections: View {
         "metrics": "要显示的读数",
         "sources": "要读取的播放器",
         "devices": "要显示的设备",
+        "rings": "要显示的圆环",
     ]
 
     static func groupLabel(_ key: String) -> String {
@@ -396,6 +401,8 @@ struct WidgetSettingsSections: View {
         case "folder": "图片"
         case "links": "标题 网址, …"
         case "repo": "用户/仓库"
+        case "start": "09:00"
+        case "end": "18:00"
         default: ""
         }
     }
@@ -431,6 +438,7 @@ struct WidgetSettingsSections: View {
                     ("磁盘", "disk"), ("电池", "battery")],
         "devices": [("这台 Mac", "mac"), ("AirPods", "pods"),
                     ("AirPods 充电盒", "case"), ("键盘", "keyboard")],
+        "rings": [("存储空间", "storage"), ("电池", "battery")],
     ]
 
     /// String options that are really a choice from a fixed set.

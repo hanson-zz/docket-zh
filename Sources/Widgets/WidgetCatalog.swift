@@ -262,6 +262,19 @@ public enum WidgetCatalog {
         // Reading the state needs no microphone permission.
         Entry(kind: .microphone, name: "麦克风", category: .system, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Storage from URLResourceValues, battery from the power-source API.
+        // CPU temperature is left out: macOS has no public API for it.
+        Entry(kind: .gauges, name: "圆环仪表", category: .system,
+              defaults: c(["rings": .list([.string("storage"), .string("battery")])]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // Modelled on the hydration reminder, with active hours, a
+        // notification and a count of today's breaks.
+        Entry(kind: .posture, name: "久坐提醒", category: .reminders,
+              defaults: c(["duration": .number(1800), "start": .string("09:00"),
+                           "end": .string("18:00"), "notify": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -288,6 +301,7 @@ public enum WidgetCatalog {
         case .stock, .watchlist: PaletteColor.green.hex
         case .aiUsage: PaletteColor.indigo.hex
         case .hydration: PaletteColor.blue.hex
+        case .posture: PaletteColor.green.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -302,7 +316,7 @@ public enum WidgetCatalog {
              .calculator,
              .currency,
              .github,
-             .microphone,
+             .microphone, .gauges,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -430,12 +444,14 @@ public enum WidgetCatalog {
         // Where the input device is chosen.
         case .microphone:
             .settings("com.apple.Sound-Settings.extension")
+        case .gauges:
+            .settings("com.apple.settings.Storage")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search:
+             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture:
             nil
         }
     }
@@ -558,6 +574,9 @@ public enum WidgetCatalog {
         case .appSwitcher: return CGSize(width: 220, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)
         case .microphone: return CGSize(width: 184, height: 62)
+        case .gauges:
+            return CGSize(width: GaugeReading.tileWidth(rings: GaugeReading.rings(cfg).count), height: 62)
+        case .posture: return CGSize(width: 168, height: 124)
         }
     }
 
@@ -602,8 +621,9 @@ public enum WidgetCatalog {
         case .stopwatch, .countdown: return 62
         case .timer: return 92
         case .alarm: return 76
-        case .hydration: return 88
+        case .hydration, .posture: return 88
         case .microphone: return 88
+        case .gauges: return Double(GaugeReading.rings(cfg).count * 66)
         case .notes: return 96
         case .airdrop: return 76
         case .progress:

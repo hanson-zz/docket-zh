@@ -95,6 +95,8 @@ final class WidgetOptionTests: XCTestCase {
             .recorder: ["folder"],
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],
+            .gauges: ["rings"],
+            .posture: ["duration", "start", "end", "notify"],
         ]
 
         for kind in WidgetKind.allCases {
