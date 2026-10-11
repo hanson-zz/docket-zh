@@ -143,3 +143,21 @@ final class RecordingNamingTests: XCTestCase {
         XCTAssertEqual(RecordingNaming.elapsed(.infinity), "0:00")
     }
 }
+
+final class MailBadgeTests: XCTestCase {
+    func testParsesWhatMailAnswers() {
+        XCTAssertEqual(MailBadge.parse("12"), 12)
+        XCTAssertEqual(MailBadge.parse(" 0\n"), 0)
+        XCTAssertNil(MailBadge.parse(nil))
+        XCTAssertNil(MailBadge.parse("missing value"))
+        XCTAssertNil(MailBadge.parse("-3"))
+    }
+
+    func testTheFigureCapsAtNinetyNine() {
+        XCTAssertEqual(MailBadge.figure(0), "0")
+        XCTAssertEqual(MailBadge.figure(99), "99")
+        XCTAssertEqual(MailBadge.figure(100), "99+")
+        XCTAssertEqual(MailBadge.caption(0), "没有未读邮件")
+        XCTAssertEqual(MailBadge.caption(4), "封未读邮件")
+    }
+}

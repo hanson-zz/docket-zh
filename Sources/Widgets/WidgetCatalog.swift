@@ -232,6 +232,10 @@ public enum WidgetCatalog {
         Entry(kind: .recorder, name: "录音", category: .media,
               defaults: c(["folder": .string("")]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Read from Mail over AppleScript, and only while Mail is open.
+        Entry(kind: .mail, name: "邮件", category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -268,6 +272,7 @@ public enum WidgetCatalog {
              .appSwitcher,
              .bookmarks,
              .recorder,
+             .mail,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -385,6 +390,8 @@ public enum WidgetCatalog {
             .settings("com.apple.Sound-Settings.extension")
         case .toggles:
             .settings("com.apple.ControlCenter-Settings.extension")
+        case .mail:
+            .app(bundleID: "com.apple.mail")
         // Both have panels; these are where the card goes without one.
         case .wallpaper:
             .settings("com.apple.Wallpaper-Settings.extension")
@@ -505,6 +512,7 @@ public enum WidgetCatalog {
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: 140, height: 62)
+        case .mail: return CGSize(width: 160, height: 62)
         case .recorder: return CGSize(width: 168, height: 62)
         case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
         case .appSwitcher: return CGSize(width: 220, height: 62)

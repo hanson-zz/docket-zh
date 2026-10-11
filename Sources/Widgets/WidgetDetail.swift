@@ -359,7 +359,7 @@ enum WidgetDetail {
             false
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .emoji, .volume, .toggles:
+        case .capture, .emoji, .volume, .toggles, .mail:
             false
         default:
             true
