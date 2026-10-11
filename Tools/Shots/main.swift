@@ -124,6 +124,10 @@ private func shots(since started: Date) -> [Shot] {
         // against the real clock.
         Shot(name: "alarm", instance: widget(.alarm), isPreview: false, source: .live),
 
+        // Sample values: whether the runner's clock falls inside the default
+        // hours would decide what a live capture shows.
+        Shot(name: "posture", instance: widget(.posture), isPreview: true, source: .sample),
+
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,
         // and in this tool there is no tile. One prepare covers the watchlist
@@ -692,6 +696,8 @@ private struct ShelfShot {
     /// A look other than the default glass, for the shelf that shows them.
     var look: ShelfLook? = nil
     var monochrome = false
+    /// "放不下时：自动缩小", for the shelf that is longer than the screen.
+    var shrink = false
 }
 
 /// The showcase, which reads live, and then one shelf per group the README
@@ -755,6 +761,20 @@ private func shelves() -> [ShelfShot] {
                             widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string("东京")]),
                             widget(.calculator)],
                   sample: true, look: .darkGlass, monochrome: true),
+        // v0.4.1：圆环仪表、麦克风、久坐提醒，以及一个隐藏了背景和边框的时钟
+        ShelfShot(name: "shelf-v041",
+                  widgets: [widget(.gauges), widget(.microphone), widget(.posture),
+                            widget(.clock, ["layout": .string("flip"), "hidePlate": .bool(true)]),
+                            widget(.battery, ["layout": .string("gauge")])],
+                  sample: true),
+        // v0.4.1：放不下时自动缩小。比屏幕还长的一排小组件
+        ShelfShot(name: "shelf-shrink",
+                  widgets: [widget(.clock), widget(.calendar), widget(.reminders), widget(.timer),
+                            widget(.hydration), widget(.posture), widget(.weather),
+                            widget(.music), widget(.system), widget(.gauges), widget(.microphone),
+                            widget(.search), widget(.clipboard), widget(.currency),
+                            widget(.watchlist)],
+                  sample: true, shrink: true),
     ]
 }
 
@@ -764,6 +784,7 @@ private func captureShelf(_ shot: ShelfShot, on screen: NSScreen) async {
                                      sample: shot.sample) else { return }
     if let look = shot.look { look.apply(to: &shelf.state.customDock) }
     if shot.monochrome { shelf.state.customDock.widgetColor = .monochrome }
+    if shot.shrink { shelf.state.customDock.overflow = .shrink }
     guard let (window, hosting) = makeWindow(DockShelfView().environment(shelf),
                                              shadow: false, on: screen) else {
         log("shelf: measured empty, skipping")
