@@ -515,7 +515,7 @@ final class WidgetConfigurationTests: XCTestCase {
     func testBatteryIsTheOnlyWidgetThatOpensSystemSettings() {
         for kind in WidgetKind.allCases {
             guard case .settings = WidgetCatalog.openTarget(kind) else { continue }
-            XCTAssertTrue([WidgetKind.battery, .volume, .toggles].contains(kind), "\(kind) claims a System Settings pane")
+            XCTAssertTrue([WidgetKind.battery, .volume, .toggles, .wallpaper].contains(kind), "\(kind) claims a System Settings pane")
         }
         XCTAssertNotNil(WidgetCatalog.openTarget(.battery)?.settingsURL)
     }
@@ -547,7 +547,7 @@ final class WidgetConfigurationTests: XCTestCase {
     /// and the other two are self-contained readouts.
     func testEveryOtherCatalogEntryHasADestination() {
         let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter,
-                                          .emoji, .search]
+                                          .emoji, .search, .appSwitcher, .bookmarks]
         for entry in WidgetCatalog.entries where !selfDriven.contains(entry.kind) {
             XCTAssertNotNil(WidgetCatalog.openTarget(entry.kind),
                             "\(entry.kind) is in the library but opens nothing")

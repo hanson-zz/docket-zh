@@ -67,6 +67,8 @@ struct WidgetDetailBody: View {
             ConverterDetail(instance: instance, context: context)
         case .search:
             SearchDetail(instance: instance, context: context)
+        case .recorder:
+            RecorderDetail(instance: instance, context: context)
         case .bookmarks:
             BookmarksDetail(instance: instance, context: context)
         case .appSwitcher:

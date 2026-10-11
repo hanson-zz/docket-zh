@@ -25,5 +25,6 @@
 	<key>NSDocumentsFolderUsageDescription</key><string>Docket 会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。</string>
 	<key>NSRemovableVolumesUsageDescription</key><string>Docket 会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。</string>
 	<key>NSNetworkVolumesUsageDescription</key><string>Docket 会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。</string>
+	<key>NSMicrophoneUsageDescription</key><string>Docket 会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。</string>
 </dict>
 </plist>

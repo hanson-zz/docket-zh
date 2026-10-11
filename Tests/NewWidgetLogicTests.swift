@@ -104,3 +104,42 @@ final class BookmarkTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Bookmark.columnHeight(count: 1), 62)
     }
 }
+
+final class RecordingNamingTests: XCTestCase {
+    private var utc: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    func testTheNameSortsAndHasNoColon() {
+        let date = Date(timeIntervalSince1970: 1_792_000_000) // 2026-10-14 17:46:40 UTC
+        let name = RecordingNaming.fileName(for: date, calendar: utc)
+        XCTAssertEqual(name, "录音 2026-10-14 17.46.40.m4a")
+        XCTAssertFalse(name.contains(":"))
+        XCTAssertTrue(RecordingNaming.isRecording(name))
+    }
+
+    func testOnlyOurFilesAreListed() {
+        XCTAssertTrue(RecordingNaming.isRecording("录音 2026-01-01 00.00.00 2.M4A"))
+        XCTAssertFalse(RecordingNaming.isRecording("会议.m4a"))
+        XCTAssertFalse(RecordingNaming.isRecording("录音 草稿.txt"))
+    }
+
+    func testASecondPressInTheSameSecondDoesNotOverwrite() {
+        let name = "录音 2026-10-15 02.13.20.m4a"
+        XCTAssertEqual(RecordingNaming.unique(name, taken: []), name)
+        XCTAssertEqual(RecordingNaming.unique(name, taken: [name]), "录音 2026-10-15 02.13.20 2.m4a")
+        XCTAssertEqual(RecordingNaming.unique(name, taken: [name, "录音 2026-10-15 02.13.20 2.m4a"]),
+                       "录音 2026-10-15 02.13.20 3.m4a")
+    }
+
+    func testElapsedTime() {
+        XCTAssertEqual(RecordingNaming.elapsed(0), "0:00")
+        XCTAssertEqual(RecordingNaming.elapsed(7.9), "0:07")
+        XCTAssertEqual(RecordingNaming.elapsed(754), "12:34")
+        XCTAssertEqual(RecordingNaming.elapsed(3723), "1:02:03")
+        XCTAssertEqual(RecordingNaming.elapsed(-5), "0:00")
+        XCTAssertEqual(RecordingNaming.elapsed(.infinity), "0:00")
+    }
+}

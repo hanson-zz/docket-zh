@@ -227,6 +227,11 @@ public enum WidgetCatalog {
                                               "哔哩哔哩 https://www.bilibili.com",
                                               "知乎 https://www.zhihu.com"].map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Empty folder: ~/Downloads. Chosen in the panel.
+        Entry(kind: .recorder, name: "录音", category: .media,
+              defaults: c(["folder": .string("")]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -262,6 +267,7 @@ public enum WidgetCatalog {
              .wallpaper,
              .appSwitcher,
              .bookmarks,
+             .recorder,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -379,12 +385,17 @@ public enum WidgetCatalog {
             .settings("com.apple.Sound-Settings.extension")
         case .toggles:
             .settings("com.apple.ControlCenter-Settings.extension")
+        // Both have panels; these are where the card goes without one.
+        case .wallpaper:
+            .settings("com.apple.Wallpaper-Settings.extension")
+        case .recorder:
+            .app(bundleID: "com.apple.VoiceMemos")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .wallpaper, .appSwitcher, .bookmarks, .search:
+             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .search:
             nil
         }
     }
@@ -494,6 +505,7 @@ public enum WidgetCatalog {
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: 140, height: 62)
+        case .recorder: return CGSize(width: 168, height: 62)
         case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
         case .appSwitcher: return CGSize(width: 220, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)

@@ -387,6 +387,7 @@ enum WidgetDetail {
         case .wallpaper: 340
         case .appSwitcher: 320
         case .bookmarks: 300
+        case .recorder: 320
         default: 300
         }
     }
