@@ -547,7 +547,8 @@ final class WidgetConfigurationTests: XCTestCase {
     /// and the other two are self-contained readouts.
     func testEveryOtherCatalogEntryHasADestination() {
         let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter,
-                                          .emoji, .search, .appSwitcher, .bookmarks]
+                                          .emoji, .search, .appSwitcher, .bookmarks,
+                                          .calculator, .currency]
         for entry in WidgetCatalog.entries where !selfDriven.contains(entry.kind) {
             XCTAssertNotNil(WidgetCatalog.openTarget(entry.kind),
                             "\(entry.kind) is in the library but opens nothing")

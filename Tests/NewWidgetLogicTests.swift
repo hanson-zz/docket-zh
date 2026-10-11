@@ -161,3 +161,128 @@ final class MailBadgeTests: XCTestCase {
         XCTAssertEqual(MailBadge.caption(4), "封未读邮件")
     }
 }
+
+final class CalculatorTests: XCTestCase {
+    private func value(_ text: String, file: StaticString = #filePath, line: UInt = #line) -> Double? {
+        guard case .success(let v) = Calculator.evaluate(text) else { return nil }
+        return v
+    }
+
+    private func failure(_ text: String) -> Calculator.Failure? {
+        guard case .failure(let f) = Calculator.evaluate(text) else { return nil }
+        return f
+    }
+
+    func testPrecedenceAndBrackets() {
+        XCTAssertEqual(value("1+2*3"), 7)
+        XCTAssertEqual(value("(1+2)*3"), 9)
+        XCTAssertEqual(value("10-4-3"), 3, "left associative")
+        XCTAssertEqual(value("100/10/5"), 2)
+        XCTAssertEqual(value(" 2 * ( 3 + 4 ) "), 14)
+    }
+
+    func testPowersAndSigns() {
+        XCTAssertEqual(value("2^3^2"), 512, "right associative")
+        XCTAssertEqual(value("-2^2"), -4, "the power binds tighter than the sign")
+        XCTAssertEqual(value("2^-1"), 0.5)
+        XCTAssertEqual(value("2*-3"), -6)
+        XCTAssertEqual(value("--3"), 3)
+    }
+
+    func testPercent() {
+        XCTAssertEqual(value("50%"), 0.5)
+        XCTAssertEqual(value("200*15%"), 30)
+    }
+
+    func testWhatChineseKeyboardsType() {
+        XCTAssertEqual(value("１２＋３"), 15)
+        XCTAssertEqual(value("7÷2"), 3.5)
+        XCTAssertEqual(value("3×4"), 12)
+        XCTAssertEqual(value("（1+1）×2"), 4)
+        XCTAssertEqual(value("1,000+1"), 1001)
+        XCTAssertEqual(value("5−8"), -3)
+    }
+
+    /// Every one of these would have raised an uncatchable exception in
+    /// NSExpression. Here each is an error value.
+    func testBadInputFailsInsteadOfCrashing() {
+        XCTAssertEqual(failure(""), .empty)
+        XCTAssertEqual(failure("   "), .empty)
+        XCTAssertEqual(failure("2+"), .incomplete)
+        XCTAssertEqual(failure("1/0"), .divisionByZero)
+        XCTAssertEqual(failure("((1)"), .unbalanced)
+        XCTAssertEqual(failure("1)"), .unbalanced)
+        XCTAssertEqual(failure("1.2.3"), .unexpected("."))
+        XCTAssertEqual(failure("2a"), .unexpected("a"))
+        XCTAssertEqual(failure("sqrt(4)"), .unexpected("s"))
+        XCTAssertEqual(failure("10^400"), .notFinite)
+        XCTAssertNotNil(failure(String(repeating: "(", count: 200) + "1" + String(repeating: ")", count: 200)))
+        XCTAssertEqual(failure(String(repeating: "1+", count: 300) + "1"), .tooLong)
+    }
+
+    func testFormatting() {
+        XCTAssertEqual(Calculator.format(0.1 + 0.2), "0.3")
+        XCTAssertEqual(Calculator.format(10.0 / 3), "3.33333333333")
+        XCTAssertEqual(Calculator.format(123_456_789_000), "123456789000")
+        XCTAssertEqual(Calculator.format(-0.0), "0")
+        XCTAssertEqual(Calculator.format(2.5), "2.5")
+        XCTAssertEqual(Calculator.format(1e20), "1e+20")
+        XCTAssertEqual(Calculator.format(.nan), "-")
+        for failure in [Calculator.Failure.empty, .incomplete, .unbalanced, .divisionByZero, .tooLong,
+                        .notFinite, .unexpected("x")] {
+            XCTAssertFalse(failure.message.isEmpty)
+        }
+    }
+}
+
+final class CurrencyRatesTests: XCTestCase {
+    private let sample = Data("""
+    {"result":"success","base_code":"CNY","time_last_update_unix":1792022400,
+     "rates":{"CNY":1,"USD":0.1404,"EUR":0.1290,"JPY":21.05,"BAD":0}}
+    """.utf8)
+
+    func testParsesTheProvidersPayload() throws {
+        let rates = try XCTUnwrap(CurrencyRates.parse(sample))
+        XCTAssertEqual(rates.base, "CNY")
+        XCTAssertEqual(rates.updated, Date(timeIntervalSince1970: 1_792_022_400))
+        XCTAssertNil(rates.rates["BAD"], "a zero rate would divide by zero later")
+        XCTAssertEqual(rates.codes, ["CNY", "EUR", "JPY", "USD"])
+    }
+
+    func testAnErrorResponseIsNotATable() {
+        XCTAssertNil(CurrencyRates.parse(Data(#"{"result":"error","error-type":"unsupported-code"}"#.utf8)))
+        XCTAssertNil(CurrencyRates.parse(Data("not json".utf8)))
+        XCTAssertNil(CurrencyRates.parse(Data(#"{"result":"success","base_code":"CNY","rates":{}}"#.utf8)))
+    }
+
+    func testCrossRatesGoThroughTheBase() throws {
+        let rates = try XCTUnwrap(CurrencyRates.parse(sample))
+        XCTAssertEqual(try XCTUnwrap(rates.convert(100, from: "CNY", to: "USD")), 14.04, accuracy: 1e-9)
+        XCTAssertEqual(try XCTUnwrap(rates.convert(14.04, from: "USD", to: "CNY")), 100, accuracy: 1e-9)
+        XCTAssertEqual(try XCTUnwrap(rates.rate(from: "USD", to: "EUR")), 0.1290 / 0.1404, accuracy: 1e-12)
+        XCTAssertEqual(rates.convert(5, from: "usd", to: "usd"), 5, "codes are case-insensitive")
+        XCTAssertNil(rates.convert(1, from: "USD", to: "XYZ"))
+        XCTAssertNil(rates.convert(.infinity, from: "USD", to: "CNY"))
+    }
+
+    func testStalenessAndTheCacheRoundTrip() throws {
+        let rates = try XCTUnwrap(CurrencyRates.parse(sample))
+        XCTAssertFalse(rates.isStale(now: rates.updated.addingTimeInterval(3600)))
+        XCTAssertTrue(rates.isStale(now: rates.updated.addingTimeInterval(13 * 3600)))
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        XCTAssertEqual(try decoder.decode(CurrencyRates.self, from: encoder.encode(rates)), rates)
+    }
+
+    func testNamesAndFormatting() {
+        XCTAssertEqual(CurrencyNames.name("cny"), "人民币")
+        XCTAssertEqual(CurrencyNames.name("ZZZ"), "ZZZ")
+        XCTAssertEqual(CurrencyNames.common.first?.code, "CNY", "CNY leads the menus")
+        XCTAssertEqual(Set(CurrencyNames.common.map { $0.code }).count, CurrencyNames.common.count)
+        XCTAssertEqual(CurrencyNames.format(1234.5, code: "USD"), "1,234.50")
+        XCTAssertEqual(CurrencyNames.format(2105.4, code: "JPY"), "2,105")
+        XCTAssertEqual(CurrencyNames.format(.nan, code: "USD"), "-")
+    }
+}

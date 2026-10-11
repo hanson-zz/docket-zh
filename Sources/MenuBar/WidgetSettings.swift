@@ -322,6 +322,9 @@ struct WidgetSettingsSections: View {
         "engine": "搜索引擎",
         "allScreens": "应用到所有显示器",
         "links": "网址",
+        "from": "原币种",
+        "to": "目标币种",
+        "amount": "金额",
     ]
 
     static func label(_ key: String) -> String {
@@ -353,15 +356,21 @@ struct WidgetSettingsSections: View {
         case "duration": 60...14_400
         case "skip": 5...60
         case "interval": 5...3_600
+        case "amount": 0...1_000_000
         default: 0...1_000
         }
     }
 
     static func step(_ key: String) -> Double {
-        key == "duration" ? 300 : 5
+        switch key {
+        case "duration": 300
+        case "amount": 100
+        default: 5
+        }
     }
 
     static func format(_ key: String, _ value: Double) -> String {
+        if key == "amount" { return UnitConverter.format(value) }
         guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
         return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分钟" : "\(minutes) 分钟"
@@ -394,6 +403,8 @@ struct WidgetSettingsSections: View {
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
         "notes.color": PaperColor.picker.map { (docketColourName($0.rawValue), $0.rawValue) },
         "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
+        "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
+        "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

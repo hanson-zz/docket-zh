@@ -388,6 +388,8 @@ enum WidgetDetail {
         case .appSwitcher: 320
         case .bookmarks: 300
         case .recorder: 320
+        case .calculator: 280
+        case .currency: 320
         default: 300
         }
     }
