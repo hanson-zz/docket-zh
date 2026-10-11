@@ -70,6 +70,7 @@ public struct WidgetTile: View {
         case .search: SearchTile(instance: instance, context: context)
         case .volume: VolumeTile(instance: instance, context: context)
         case .toggles: QuickTogglesTile(instance: instance, context: context)
+        case .github: GitHubTile(instance: instance, context: context)
         case .currency: CurrencyTile(instance: instance, context: context)
         case .calculator: CalculatorTile(instance: instance, context: context)
         case .mail: MailTile(instance: instance, context: context)

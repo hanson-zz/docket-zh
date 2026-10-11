@@ -390,6 +390,7 @@ enum WidgetDetail {
         case .recorder: 320
         case .calculator: 280
         case .currency: 320
+        case .github: 320
         default: 300
         }
     }

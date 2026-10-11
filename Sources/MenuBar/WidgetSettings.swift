@@ -325,6 +325,7 @@ struct WidgetSettingsSections: View {
         "from": "原币种",
         "to": "目标币种",
         "amount": "金额",
+        "repo": "仓库",
     ]
 
     static func label(_ key: String) -> String {
@@ -347,6 +348,7 @@ struct WidgetSettingsSections: View {
         case "city": "当前位置"
         case "folder": "图片"
         case "links": "标题 网址, …"
+        case "repo": "用户/仓库"
         default: ""
         }
     }

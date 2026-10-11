@@ -367,3 +367,50 @@ final class SkyMathTests: XCTestCase {
         XCTAssertNil(PixelFont.glyph("x"))
     }
 }
+
+final class GitHubStatsTests: XCTestCase {
+    func testParsesARepository() throws {
+        let json = Data("""
+        {"full_name":"hanson-zz/docket-zh","stargazers_count":1234,"forks_count":56,
+         "subscribers_count":7,"watchers_count":1234,"open_issues_count":9,
+         "html_url":"https://github.com/hanson-zz/docket-zh","private":false}
+        """.utf8)
+        var stats = try XCTUnwrap(GitHubStats.parseRepository(json))
+        XCTAssertEqual(stats.fullName, "hanson-zz/docket-zh")
+        XCTAssertEqual(stats.stars, 1234)
+        XCTAssertEqual(stats.watchers, 7, "subscribers are the watchers; watchers_count mirrors stars")
+        XCTAssertNil(stats.openIssues, "unknown until the pull requests are counted")
+        stats.openPulls = 3
+        XCTAssertEqual(stats.openIssues, 6, "GitHub counts pull requests as issues")
+        stats.openPulls = 20
+        XCTAssertEqual(stats.openIssues, 0)
+        XCTAssertNil(GitHubStats.parseRepository(Data(#"{"message":"Not Found"}"#.utf8)))
+    }
+
+    func testSearchAndNotifications() {
+        XCTAssertEqual(GitHubStats.parseSearchTotal(Data(#"{"total_count":4,"items":[]}"#.utf8)), 4)
+        XCTAssertNil(GitHubStats.parseSearchTotal(Data(#"{"message":"rate limited"}"#.utf8)))
+        XCTAssertEqual(GitHubStats.parseNotificationCount(Data(#"[{"unread":true},{"unread":false},{}]"#.utf8)), 2)
+        XCTAssertNil(GitHubStats.parseNotificationCount(Data(#"{"message":"Bad credentials"}"#.utf8)))
+    }
+
+    func testShortCounts() {
+        XCTAssertEqual(GitHubStats.short(999), "999")
+        XCTAssertEqual(GitHubStats.short(1000), "1k")
+        XCTAssertEqual(GitHubStats.short(1234), "1.2k")
+        XCTAssertEqual(GitHubStats.short(56_789), "56k")
+        XCTAssertEqual(GitHubStats.short(2_500_000), "2.5M")
+    }
+
+    func testRepoSlugs() {
+        XCTAssertEqual(RepoSlug.parse("hanson-zz/docket-zh")?.repo, "docket-zh")
+        XCTAssertEqual(RepoSlug.parse("https://github.com/apple/swift.git")?.owner, "apple")
+        XCTAssertEqual(RepoSlug.parse("https://github.com/apple/swift.git")?.repo, "swift")
+        XCTAssertEqual(RepoSlug.parse("github.com/a/b/issues/3?x=1")?.repo, "b")
+        XCTAssertEqual(RepoSlug.parse("git@github.com:o/r.git")?.repo, "r")
+        XCTAssertNil(RepoSlug.parse("justone"))
+        XCTAssertNil(RepoSlug.parse("中文/仓库"))
+        XCTAssertNil(RepoSlug.parse("a b/c"))
+        XCTAssertNil(RepoSlug.parse(""))
+    }
+}

@@ -252,6 +252,11 @@ public enum WidgetCatalog {
         Entry(kind: .currency, name: "汇率换算", category: .tools,
               defaults: c(["from": .string("USD"), "to": .string("CNY"), "amount": .number(100)]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Public numbers need no token; one in the keychain adds notifications.
+        Entry(kind: .github, name: "GitHub", category: .tools,
+              defaults: c(["repo": .string("hanson-zz/docket-zh")]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -291,6 +296,7 @@ public enum WidgetCatalog {
              .mail,
              .calculator,
              .currency,
+             .github,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -420,7 +426,7 @@ public enum WidgetCatalog {
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .search:
+             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search:
             nil
         }
     }
@@ -534,6 +540,7 @@ public enum WidgetCatalog {
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: 140, height: 62)
+        case .github: return CGSize(width: 196, height: 62)
         case .currency: return CGSize(width: 196, height: 62)
         case .calculator: return CGSize(width: 168, height: 62)
         case .mail: return CGSize(width: 160, height: 62)

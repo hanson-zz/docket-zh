@@ -90,6 +90,7 @@ final class WidgetOptionTests: XCTestCase {
             .photos: ["folder", "interval", "shuffle"],
             .emoji: ["emoji"],
             .search: ["engine"],
+            .github: ["repo"],
             .currency: ["from", "to", "amount"],
             .recorder: ["folder"],
             .bookmarks: ["links"],
