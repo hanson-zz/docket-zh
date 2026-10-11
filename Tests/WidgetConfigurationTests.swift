@@ -515,7 +515,7 @@ final class WidgetConfigurationTests: XCTestCase {
     func testBatteryIsTheOnlyWidgetThatOpensSystemSettings() {
         for kind in WidgetKind.allCases {
             guard case .settings = WidgetCatalog.openTarget(kind) else { continue }
-            XCTAssertTrue([WidgetKind.battery, .volume].contains(kind), "\(kind) claims a System Settings pane")
+            XCTAssertTrue([WidgetKind.battery, .volume, .toggles].contains(kind), "\(kind) claims a System Settings pane")
         }
         XCTAssertNotNil(WidgetCatalog.openTarget(.battery)?.settingsURL)
     }

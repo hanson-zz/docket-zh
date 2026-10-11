@@ -207,6 +207,9 @@ public enum WidgetCatalog {
 
         Entry(kind: .volume, name: "音量", category: .media, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        Entry(kind: .toggles, name: "快速开关", category: .system, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -239,7 +242,7 @@ public enum WidgetCatalog {
             nil
         // A photo or a file is its own colour; a tint behind it competes.
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
-             .colorPicker, .converter, .capture, .emoji, .search, .volume:
+             .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
     }
@@ -354,6 +357,8 @@ public enum WidgetCatalog {
             .app(bundleID: "com.apple.screenshot.launcher")
         case .volume:
             .settings("com.apple.Sound-Settings.extension")
+        case .toggles:
+            .settings("com.apple.ControlCenter-Settings.extension")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
@@ -468,6 +473,7 @@ public enum WidgetCatalog {
         case .emoji: return CGSize(width: 160, height: 62)
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
+        case .toggles: return CGSize(width: 140, height: 62)
         }
     }
 
@@ -532,6 +538,8 @@ public enum WidgetCatalog {
             return 84
         case .capture:
             return 112
+        case .toggles:
+            return 128
         case .emoji:
             return 132
         default:

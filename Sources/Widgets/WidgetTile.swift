@@ -69,6 +69,7 @@ public struct WidgetTile: View {
         case .emoji: EmojiTile(instance: instance, context: context)
         case .search: SearchTile(instance: instance, context: context)
         case .volume: VolumeTile(instance: instance, context: context)
+        case .toggles: QuickTogglesTile(instance: instance, context: context)
         // Still to come; a labelled placeholder beats rendering nothing. None
         // of these four can be placed today, so nothing reaches this arm:
         // they have no WidgetCatalog entry at all, so make returns nil. It
