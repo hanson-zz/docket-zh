@@ -141,10 +141,12 @@ struct WeatherDetail: View {
             if let humidity = weather?.humidity {
                 StatChip(label: "湿度", value: "\(Int(humidity.rounded()))%")
             }
-            switch sun {
+            switch sun?.day {
             case .normal(let rise, let set)?:
-                StatChip(label: "日出", value: rise.formatted(.dateTime.hour().minute()))
-                StatChip(label: "日落", value: set.formatted(.dateTime.hour().minute()))
+                let zone = sun?.zone ?? .current
+                let note = WeatherSun.localNote(zone, at: rise)
+                StatChip(label: "日出" + note, value: WeatherSun.time(rise, zone: zone))
+                StatChip(label: "日落" + note, value: WeatherSun.time(set, zone: zone))
             case .polarDay?:
                 StatChip(label: "日照", value: "极昼")
             case .polarNight?:

@@ -61,7 +61,6 @@ struct AppSwitcherTile: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(context.isPreview)
         .help(app.name)
         .accessibilityLabel(app.isActive ? "\(app.name)（当前）" : app.name)
     }

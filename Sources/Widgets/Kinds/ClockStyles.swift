@@ -42,7 +42,7 @@ struct ClockStyleReadout: View {
                         Text(ClockPanelWeekday.of(now, zone: zone))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary)
-                        Text(ClockFormat.date(now, zone: zone))
+                        Text(ClockPanelWeekday.monthDay(now, zone: zone))
                             .font(.system(size: 12))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
@@ -200,6 +200,13 @@ struct PixelText: View {
 enum ClockPanelWeekday {
     static func of(_ date: Date, zone: TimeZone) -> String {
         var style = Date.FormatStyle.dateTime.weekday(.wide)
+        style.timeZone = zone
+        return date.formatted(style)
+    }
+
+    /// "10月12日", without the weekday the line above already gives.
+    static func monthDay(_ date: Date, zone: TimeZone) -> String {
+        var style = Date.FormatStyle.dateTime.month(.abbreviated).day()
         style.timeZone = zone
         return date.formatted(style)
     }

@@ -50,7 +50,6 @@ struct BookmarksTile: View {
             BookmarkBadge(link: link, size: 30)
         }
         .buttonStyle(.plain)
-        .disabled(context.isPreview)
         .help("\(link.title)\n\(link.url.absoluteString)")
         .accessibilityLabel("打开 \(link.title)")
     }

@@ -96,7 +96,7 @@ struct WeatherTile: View {
             parts.append(force == 0 ? "无风" : "\(Wind.direction(weather.windFrom ?? 0)) \(force) 级")
         }
         if let next = WeatherSun.next(after: context.now, preview: context.isPreview) {
-            parts.append("\(next.rising ? "日出" : "日落") \(next.date.formatted(.dateTime.hour().minute()))")
+            parts.append("\(next.rising ? "日出" : "日落") \(WeatherSun.time(next.date, zone: next.zone))")
         }
         return parts.isEmpty ? placeCaption : parts.joined(separator: " · ")
     }
@@ -290,37 +290,59 @@ struct WeatherTile: View {
     }
 }
 
-/// Sun times for wherever the weather is for.
+/// Sun times for wherever the weather is for, on that place's own clock.
 enum WeatherSun {
-    /// The library has no place, so its sample is a fixed spring day in Oslo.
-    static let sampleCoordinate = (lat: 59.9139, lon: 10.7522)
-
-    @MainActor
-    static func coordinate(preview: Bool) -> (lat: Double, lon: Double)? {
-        if preview { return sampleCoordinate }
-        guard let place = WeatherService.shared.place else { return nil }
-        return (place.lat, place.lon)
+    struct Place {
+        var lat: Double
+        var lon: Double
+        var zone: TimeZone
     }
 
-    /// Today's rise and set in the Mac's own time zone. A city far away
-    /// still gets its own moments, just read on this Mac's clock.
+    /// The library has no place, so its sample is Oslo.
+    static let samplePlace = Place(lat: 59.9139, lon: 10.7522,
+                                   zone: TimeZone(identifier: "Europe/Oslo") ?? .current)
+
     @MainActor
-    static func today(_ now: Date, preview: Bool) -> SunTimes.Day? {
-        guard let c = coordinate(preview: preview) else { return nil }
-        return SunTimes.on(now, latitude: c.lat, longitude: c.lon)
+    static func place(preview: Bool) -> Place? {
+        if preview { return samplePlace }
+        guard let found = WeatherService.shared.place else { return nil }
+        // The map lookup names the zone; without one, this Mac's is the
+        // honest fallback rather than a guess from the longitude.
+        let zone = found.zone.flatMap(TimeZone.init(identifier:)) ?? .current
+        return Place(lat: found.lat, lon: found.lon, zone: zone)
+    }
+
+    @MainActor
+    static func today(_ now: Date, preview: Bool) -> (day: SunTimes.Day, zone: TimeZone)? {
+        guard let p = place(preview: preview),
+              let day = SunTimes.on(now, latitude: p.lat, longitude: p.lon, zone: p.zone) else { return nil }
+        return (day, p.zone)
     }
 
     /// Whichever of sunrise and sunset comes next, today or tomorrow.
     @MainActor
-    static func next(after now: Date, preview: Bool) -> (rising: Bool, date: Date)? {
-        guard let c = coordinate(preview: preview) else { return nil }
+    static func next(after now: Date, preview: Bool) -> (rising: Bool, date: Date, zone: TimeZone)? {
+        guard let p = place(preview: preview) else { return nil }
         for offset in 0...1 {
             let day = now.addingTimeInterval(Double(offset) * 86_400)
-            guard case .normal(let rise, let set)? = SunTimes.on(day, latitude: c.lat, longitude: c.lon)
+            guard case .normal(let rise, let set)? = SunTimes.on(day, latitude: p.lat, longitude: p.lon,
+                                                                 zone: p.zone)
             else { continue }
-            if rise > now { return (true, rise) }
-            if set > now { return (false, set) }
+            if rise > now { return (true, rise, p.zone) }
+            if set > now { return (false, set, p.zone) }
         }
         return nil
+    }
+
+    /// "06:12" on the place's clock.
+    static func time(_ date: Date, zone: TimeZone) -> String {
+        var style = Date.FormatStyle.dateTime.hour().minute()
+        style.timeZone = zone
+        return date.formatted(style)
+    }
+
+    /// "（当地时间）" when the place keeps a different clock from this Mac.
+    static func localNote(_ zone: TimeZone, at date: Date) -> String {
+        zone.secondsFromGMT(for: date) == TimeZone.current.secondsFromGMT(for: date) ? "" : "（当地时间）"
     }
 }

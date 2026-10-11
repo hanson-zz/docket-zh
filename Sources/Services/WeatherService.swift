@@ -215,6 +215,9 @@ final class WeatherService {
     struct Coordinate: Sendable, Hashable {
         var lat: Double
         var lon: Double
+        /// The place's own time zone, from the same map lookup, so its
+        /// sunrise reads on its own clock rather than on this Mac's.
+        var zone: String? = nil
     }
 
     private func coordinate(for city: String) async -> Coordinate? {
@@ -233,7 +236,7 @@ final class WeatherService {
               let item = try? await request.mapItems.first
         else { return nil }
         let found = item.location.coordinate
-        return Coordinate(lat: found.latitude, lon: found.longitude)
+        return Coordinate(lat: found.latitude, lon: found.longitude, zone: item.timeZone?.identifier)
     }
 }
 
