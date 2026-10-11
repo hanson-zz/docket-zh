@@ -321,6 +321,7 @@ struct WidgetSettingsSections: View {
         "emoji": "常用表情",
         "engine": "搜索引擎",
         "allScreens": "应用到所有显示器",
+        "links": "网址",
     ]
 
     static func label(_ key: String) -> String {
@@ -342,6 +343,7 @@ struct WidgetSettingsSections: View {
         switch key {
         case "city": "当前位置"
         case "folder": "图片"
+        case "links": "标题 网址, …"
         default: ""
         }
     }

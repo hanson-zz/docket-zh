@@ -219,6 +219,14 @@ public enum WidgetCatalog {
         // What Command-Tab lists: the regular apps that are open.
         Entry(kind: .appSwitcher, name: "应用切换器", category: .system, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Each link is "标题 网址" or just the address; see Bookmark.
+        Entry(kind: .bookmarks, name: "书签", category: .tools,
+              defaults: c(["links": .list(["GitHub https://github.com/hanson-zz/docket-zh",
+                                              "必应 https://cn.bing.com",
+                                              "哔哩哔哩 https://www.bilibili.com",
+                                              "知乎 https://www.zhihu.com"].map { .string($0) })]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -253,6 +261,7 @@ public enum WidgetCatalog {
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
              .wallpaper,
              .appSwitcher,
+             .bookmarks,
              .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
@@ -375,7 +384,7 @@ public enum WidgetCatalog {
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .wallpaper, .appSwitcher, .search:
+             .clipboard, .converter, .emoji, .wallpaper, .appSwitcher, .bookmarks, .search:
             nil
         }
     }
@@ -485,6 +494,7 @@ public enum WidgetCatalog {
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: 140, height: 62)
+        case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
         case .appSwitcher: return CGSize(width: 220, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)
         }
@@ -553,6 +563,8 @@ public enum WidgetCatalog {
             return 112
         case .toggles:
             return 128
+        case .bookmarks:
+            return Bookmark.columnHeight(count: cfg.strings("links").count)
         case .appSwitcher:
             return 112
         case .wallpaper:
