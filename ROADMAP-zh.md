@@ -112,7 +112,7 @@
 - [x] Codex 状态：正在工作 / 等你确认 / 已完成，完成和需要批准时可通知
 - [x] 详情面板：匀速线、用完时间预测、今日与 30 天 token、可用重置次数、Spark 与代码审查额度（可选）
 - [x] 改进（相对 Codenotch）：代理设置、离线缓存、指数退避、额度提醒只在跨过阈值时发一次、识别“等你确认”
-- [ ] 以后按需：Claude Code、Cursor、Kimi、智谱 GLM、DeepSeek 等其他服务
+- [ ] 以后按需：Anthropic Claude、Cursor、Kimi、智谱 GLM、DeepSeek 等其他服务
 
 ## 需要在真机上验证
 
