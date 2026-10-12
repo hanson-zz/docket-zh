@@ -377,6 +377,10 @@ struct WidgetSettingsSections: View {
         "start": "开始时间",
         "end": "结束时间",
         "notify": "发送通知",
+        "show": "圆环显示",
+        "alertAt": "首次提醒阈值",
+        "notifyDone": "任务完成时通知",
+        "extras": "显示 Spark 与代码审查额度",
     ]
 
     static func label(_ key: String) -> String {
@@ -413,6 +417,7 @@ struct WidgetSettingsSections: View {
         case "skip": 5...60
         case "interval": 5...3_600
         case "amount": 0...1_000_000
+        case "alertAt": 50...95
         default: 0...1_000
         }
     }
@@ -426,6 +431,7 @@ struct WidgetSettingsSections: View {
     }
 
     static func format(_ key: String, _ value: Double) -> String {
+        if key == "alertAt" { return "\(Int(value))%" }
         if key == "amount" { return UnitConverter.format(value) }
         guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
@@ -459,6 +465,7 @@ struct WidgetSettingsSections: View {
         "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
         "notes.color": PaperColor.picker.map { (docketColourName($0.rawValue), $0.rawValue) },
+        "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],
         "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },

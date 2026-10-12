@@ -127,6 +127,7 @@ private func shots(since started: Date) -> [Shot] {
         // Sample values: whether the runner's clock falls inside the default
         // hours would decide what a live capture shows.
         Shot(name: "posture", instance: widget(.posture), isPreview: true, source: .sample),
+        Shot(name: "codex", instance: widget(.aiUsage), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,
@@ -775,6 +776,11 @@ private func shelves() -> [ShelfShot] {
                             widget(.search), widget(.clipboard), widget(.currency),
                             widget(.watchlist)],
                   sample: true, shrink: true),
+        // v0.5.0：Codex 用量
+        ShelfShot(name: "shelf-codex",
+                  widgets: [widget(.aiUsage), widget(.aiUsage, ["show": .string("remaining")]),
+                            widget(.clock), widget(.system)],
+                  sample: true),
     ]
 }
 

@@ -40,6 +40,7 @@ final class WidgetConditionMonitor {
         if kinds.contains(.battery) { BatteryMetrics.shared.start() }
         if kinds.contains(.mail) { MailService.shared.start() }
         if kinds.contains(.microphone) { MicrophoneMonitor.shared.start() }
+        if kinds.contains(.aiUsage) { CodexService.shared.startActivity() }
         sample()
         guard timer == nil else { return }
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -74,6 +75,10 @@ final class WidgetConditionMonitor {
             // A refusal or a failure stays visible so the tile can say so.
             case .denied, .failed: next.mailUnread = nil
             }
+        }
+        if watched.contains(.aiUsage) {
+            let activity = CodexService.shared.activity
+            next.codexActive = activity == .working || activity == .waiting
         }
         if next != conditions { conditions = next }
     }

@@ -81,11 +81,12 @@ public struct WidgetTile: View {
         case .microphone: MicrophoneTile(instance: instance, context: context)
         case .gauges: GaugesTile(instance: instance, context: context)
         case .posture: PostureTile(instance: instance, context: context)
+        case .aiUsage: CodexUsageTile(instance: instance, context: context)
         // Still to come; a labelled placeholder beats rendering nothing. None
         // of these four can be placed today, so nothing reaches this arm:
         // they have no WidgetCatalog entry at all, so make returns nil. It
         // stays as the honest fallback for when they can be.
-        case .aiUsage, .stripe, .paddle, .shopify:
+        case .stripe, .paddle, .shopify:
             UnavailableTile(kind: instance.kind)
         }
     }

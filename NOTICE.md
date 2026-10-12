@@ -101,6 +101,48 @@ stale" for exactly that reason. Quotes are informational only and are not
 suitable for any financial decision. Yahoo and Yahoo Finance are trademarks of
 Yahoo Inc.
 
+### Codenotch - Codex usage endpoints
+
+The Codex usage widget (`Sources/Core/CodexUsage.swift`,
+`Sources/Services/CodexService.swift`) reads the same ChatGPT backend
+endpoints (`chatgpt.com/backend-api/wham/usage`, `/wham/profiles/me`,
+`/wham/rate-limit-reset-credits`) and the same local Codex files
+(`~/.codex/auth.json`, `~/.codex/sessions/**/rollout-*.jsonl`) that
+[**Codenotch**](https://github.com/vinzdg/codenotch) does. Which endpoints
+exist, which headers they want, how their payloads are shaped, and which
+session-log events mark a turn starting and ending were learned from
+Codenotch's source. Docket's code is a fresh, smaller implementation in its own
+style; any part of it that follows Codenotch closely is used under Codenotch's
+licence:
+
+> MIT License
+>
+> Copyright (c) 2026 Vinz
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+These ChatGPT endpoints are **undocumented and unofficial**. OpenAI publishes
+no contract for them and can change them at any time; the widget keeps the
+last good reading and says so when one fails. The Codex sign-in is only ever
+read, never written or refreshed, and the token is sent to chatgpt.com only.
+OpenAI, ChatGPT and Codex are trademarks of OpenAI.
+
 ### Apple
 
 Docket is built entirely on Apple's own frameworks - SwiftUI, AppKit,
@@ -119,7 +161,8 @@ is not linked into, or shipped with, the app.
 
 **There are none.** Docket has no Swift Package Manager dependencies, no
 CocoaPods, no Carthage, and no vendored third-party source. Everything under
-`Sources/` was written for this project.
+`Sources/` was written for this project (the Codex usage widget follows
+Codenotch's findings, as described above).
 
 ---
 
@@ -128,7 +171,8 @@ CocoaPods, no Carthage, and no vendored third-party source. Everything under
 Apple, macOS, Mac, Finder, Dock, Apple Music, AirDrop, Xcode, SwiftUI, and SF
 Symbols are trademarks of Apple Inc., registered in the U.S. and other
 countries. Spotify is a trademark of Spotify AB. Yahoo is a trademark of Yahoo
-Inc. **Dockset** and its branding belong to its developer.
+Inc. OpenAI, ChatGPT and Codex are trademarks of OpenAI. **Dockset** and its
+branding belong to its developer.
 
 All of these marks are used here only to describe what Docket interoperates
 with or what it was inspired by. None of these companies or developers are

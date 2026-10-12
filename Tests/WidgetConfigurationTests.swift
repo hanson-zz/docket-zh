@@ -101,7 +101,7 @@ final class WidgetConfigurationTests: XCTestCase {
     /// entry, so every catalog lookup for them has to fail closed rather than
     /// fall through to some other kind's variants.
     func testAKindOutsideTheCatalogReportsNoVariant() {
-        for kind in [WidgetKind.stripe, .paddle, .shopify, .aiUsage] {
+        for kind in [WidgetKind.stripe, .paddle, .shopify] {
             XCTAssertNil(WidgetCatalog.entry(kind), "precondition: \(kind) is not in the catalog")
             XCTAssertNil(WidgetCatalog.variantTitle(matching: WidgetConfig(["layout": .string("numbers")]),
                                                     kind: kind), "\(kind)")
@@ -173,7 +173,7 @@ final class WidgetConfigurationTests: XCTestCase {
     }
 
     func testAKindOutsideTheCatalogOffersNoSettings() {
-        for kind in [WidgetKind.stripe, .paddle, .shopify, .aiUsage] {
+        for kind in [WidgetKind.stripe, .paddle, .shopify] {
             XCTAssertTrue(WidgetCatalog.configurableKeys(kind).isEmpty, "\(kind)")
         }
     }
@@ -465,7 +465,7 @@ final class WidgetConfigurationTests: XCTestCase {
         // the only thing keeping these off the shelf. Pinned as a set so that
         // giving one an entry without also giving it a tile fails here rather
         // than shipping a "still to come" card in the library.
-        let unbuilt: Set<WidgetKind> = [.aiUsage, .stripe, .paddle, .shopify]
+        let unbuilt: Set<WidgetKind> = [.stripe, .paddle, .shopify]
         XCTAssertEqual(Set(WidgetKind.allCases.filter { WidgetCatalog.entry($0) == nil }),
                        unbuilt,
                        "A kind gained or lost a catalog entry; it needs a tile before it gains one")
@@ -548,7 +548,7 @@ final class WidgetConfigurationTests: XCTestCase {
     func testEveryOtherCatalogEntryHasADestination() {
         let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter,
                                           .emoji, .search, .appSwitcher, .bookmarks,
-                                          .calculator, .currency, .github, .posture]
+                                          .calculator, .currency, .github, .posture, .aiUsage]
         for entry in WidgetCatalog.entries where !selfDriven.contains(entry.kind) {
             XCTAssertNotNil(WidgetCatalog.openTarget(entry.kind),
                             "\(entry.kind) is in the library but opens nothing")

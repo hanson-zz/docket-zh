@@ -97,6 +97,7 @@ final class WidgetOptionTests: XCTestCase {
             .wallpaper: ["folder", "allScreens"],
             .gauges: ["rings"],
             .posture: ["duration", "start", "end", "notify"],
+            .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras"],
         ]
 
         for kind in WidgetKind.allCases {

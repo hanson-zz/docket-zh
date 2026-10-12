@@ -275,6 +275,13 @@ public enum WidgetCatalog {
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
                            "end": .string("18:00"), "notify": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
+
+        // Codex's own rate limits, read with the sign-in Codex keeps in
+        // ~/.codex, and what Codex is doing from its newest session log.
+        Entry(kind: .aiUsage, name: "Codex 用量", category: .system,
+              defaults: c(["show": .string("used"), "notify": .bool(true), "alertAt": .number(80),
+                           "notifyDone": .bool(true), "extras": .bool(false)]),
+              variants: [], supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -450,8 +457,9 @@ public enum WidgetCatalog {
         // Spotify while its own transport already owns the card, `progress`
         // and `hydration` are self-contained, and the business tiles are for
         // dashboards we cannot address.
-        case .music, .progress, .hydration, .aiUsage, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture:
+        case .music, .progress, .hydration, .stripe, .paddle, .shopify,
+             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
+             .aiUsage:
             nil
         }
     }
@@ -535,7 +543,7 @@ public enum WidgetCatalog {
                           height: Double(metrics * (rings ? 60 : 46) + 16))
         case .network:
             return cfg.bool("chart") ? CGSize(width: 160, height: 84) : CGSize(width: 100, height: 62)
-        case .aiUsage: return CGSize(width: 192, height: 132)
+        case .aiUsage: return CGSize(width: 244, height: 62)
         case .shortcut: return CGSize(width: 140, height: 76)
         case .airdrop: return CGSize(width: 100, height: 76)
         case .weather:
@@ -624,6 +632,7 @@ public enum WidgetCatalog {
         case .hydration, .posture: return 88
         case .microphone: return 88
         case .gauges: return Double(GaugeReading.rings(cfg).count * 66)
+        case .aiUsage: return 132
         case .notes: return 96
         case .airdrop: return 76
         case .progress:

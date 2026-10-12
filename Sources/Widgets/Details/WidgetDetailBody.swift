@@ -83,10 +83,12 @@ struct WidgetDetailBody: View {
             WallpaperDetail(instance: instance, context: context)
         case .posture:
             PostureDetail(instance: instance, context: context)
+        case .aiUsage:
+            CodexUsageDetail(instance: instance, context: context)
         default:
-            // Only `.aiUsage` reaches this now, and it is a stub: no tile,
-            // no service, nothing to read. Better an honest line than a
-            // panel that explains its own absence.
+            // Nothing reaches this now that every placeable kind has a
+            // panel. Better an honest line than a panel that explains its
+            // own absence.
             Text("此小组件没有更多详情。")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)

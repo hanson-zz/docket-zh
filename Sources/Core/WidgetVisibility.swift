@@ -35,9 +35,12 @@ public struct WidgetConditions: Equatable, Sendable {
     public var batteryLevel: Double?
     public var micInUse: Bool?
     public var mailUnread: Int?
+    /// Codex is working on a turn or waiting for an answer.
+    public var codexActive: Bool?
 
     public init(musicPlaying: Bool? = nil, onBattery: Bool? = nil, batteryLevel: Double? = nil,
-                micInUse: Bool? = nil, mailUnread: Int? = nil) {
+                micInUse: Bool? = nil, mailUnread: Int? = nil, codexActive: Bool? = nil) {
+        self.codexActive = codexActive
         self.musicPlaying = musicPlaying
         self.onBattery = onBattery
         self.batteryLevel = batteryLevel
@@ -63,7 +66,7 @@ public enum WidgetVisibility {
     /// Kinds with a condition of their own to show on.
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
-        case .music, .battery, .microphone, .mail: true
+        case .music, .battery, .microphone, .mail, .aiUsage: true
         default: false
         }
     }
@@ -79,6 +82,7 @@ public enum WidgetVisibility {
         case .music: return "正在播放时显示"
         case .microphone: return "麦克风使用中时显示"
         case .mail: return "有未读邮件时显示"
+        case .aiUsage: return "Codex 工作中或等你确认时显示"
         case .battery:
             let threshold = batteryThreshold(config)
             return threshold >= 100 ? "使用电池时显示" : "使用电池且电量不高于 \(threshold)% 时显示"
@@ -96,6 +100,8 @@ public enum WidgetVisibility {
             return conditions.micInUse
         case .mail:
             return conditions.mailUnread.map { $0 > 0 }
+        case .aiUsage:
+            return conditions.codexActive
         case .battery:
             guard let onBattery = conditions.onBattery else { return nil }
             guard onBattery else { return false }

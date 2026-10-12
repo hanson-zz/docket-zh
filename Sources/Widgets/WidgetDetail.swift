@@ -352,11 +352,6 @@ enum WidgetDetail {
     /// than the app the widget is about.
     static func exists(for kind: WidgetKind) -> Bool {
         switch kind {
-        // Everything with a tile and something to say. `.aiUsage` is the
-        // only kind left out, and it is a stub - no tile, no service,
-        // nothing a panel could honestly show.
-        case .aiUsage:
-            false
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
         case .capture, .emoji, .volume, .toggles, .mail, .microphone, .gauges:
@@ -392,6 +387,7 @@ enum WidgetDetail {
         case .currency: 320
         case .github: 320
         case .posture: 320
+        case .aiUsage: 340
         default: 300
         }
     }
