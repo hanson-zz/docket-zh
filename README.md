@@ -254,6 +254,8 @@ macOS 开启“降低透明度”时会自动使用不透明底板。下图是�
 
 ### v0.5.0 新增：Codex 用量
 
+<img src="docs/images/zh/shelf-codex.png" alt="扩展栏：两个 Codex 用量小组件（已用和剩余两种显示）、时钟、系统活动（示例数据）" width="100%">
+
 <p align="center">
   <img src="docs/images/zh/codex.png" alt="Codex 用量详情面板：5 小时额度和每周额度、重置时间、用量预测、近 30 天 token（示例数据）" width="50%"><br>
   <sub>Codex 用量：两种额度、重置时间和近 30 天 token（示例数据）</sub>
