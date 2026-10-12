@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Two soft wave bands. They run past the canvas so the icon outline cuts
-       them off. Colour comes from icon.json, per appearance. -->
-  <path fill="#000" d="M-60 760 C 70 712 190 712 312 760 S 556 808 680 760 S 924 712 1084 760 L 1084 1100 L -60 1100 Z"/>
-</svg>
