@@ -44,7 +44,7 @@ final class CurrencyService {
         Task {
             defer { loading = false }
             var request = URLRequest(url: Self.endpoint, timeoutInterval: 15)
-            request.setValue("Docket-zh (macOS dock widget; https://github.com/hanson-zz/docket-zh)",
+            request.setValue("Dockling (macOS dock widget; https://github.com/hanson-zz/docket-zh)",
                              forHTTPHeaderField: "User-Agent")
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)

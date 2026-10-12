@@ -100,7 +100,7 @@ final class GitHubService {
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.setValue("Docket-zh (https://github.com/hanson-zz/docket-zh)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Dockling (https://github.com/hanson-zz/docket-zh)", forHTTPHeaderField: "User-Agent")
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               let http = response as? HTTPURLResponse else { return nil }

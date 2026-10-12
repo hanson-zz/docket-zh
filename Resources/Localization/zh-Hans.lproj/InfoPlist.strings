@@ -1,12 +1,12 @@
-/* 简体中文 InfoPlist 本地化（Docket 中文版） */
-"CFBundleDisplayName" = "Docket 中文版";
-"NSCalendarsFullAccessUsageDescription" = "Docket 会在程序坞小组件中显示你即将到来的日程。";
-"NSRemindersFullAccessUsageDescription" = "Docket 会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。";
-"NSAppleEventsUsageDescription" = "Docket 通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，并在“邮件”小组件中读取“邮件”App 收件箱的未读数量。";
-"NSLocationWhenInUseUsageDescription" = "Docket 会使用你的位置来显示天气小组件。";
-"NSDesktopFolderUsageDescription" = "Docket 会读取“桌面”文件夹，在“最近截图”小组件中显示你的截图。";
-"NSDownloadsFolderUsageDescription" = "Docket 会读取“下载”文件夹，在“下载”小组件中显示最近下载的文件。";
-"NSDocumentsFolderUsageDescription" = "Docket 会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。";
-"NSRemovableVolumesUsageDescription" = "Docket 会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。";
-"NSNetworkVolumesUsageDescription" = "Docket 会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。";
-"NSMicrophoneUsageDescription" = "Docket 会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。";
+/* 简体中文 InfoPlist 本地化（码头） */
+"CFBundleDisplayName" = "码头";
+"NSCalendarsFullAccessUsageDescription" = "码头会在程序坞小组件中显示你即将到来的日程。";
+"NSRemindersFullAccessUsageDescription" = "码头会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。";
+"NSAppleEventsUsageDescription" = "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，并在“邮件”小组件中读取“邮件”App 收件箱的未读数量。";
+"NSLocationWhenInUseUsageDescription" = "码头会使用你的位置来显示天气小组件。";
+"NSDesktopFolderUsageDescription" = "码头会读取“桌面”文件夹，在“最近截图”小组件中显示你的截图。";
+"NSDownloadsFolderUsageDescription" = "码头会读取“下载”文件夹，在“下载”小组件中显示最近下载的文件。";
+"NSDocumentsFolderUsageDescription" = "码头会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。";
+"NSRemovableVolumesUsageDescription" = "码头会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。";
+"NSNetworkVolumesUsageDescription" = "码头会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。";
+"NSMicrophoneUsageDescription" = "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。";

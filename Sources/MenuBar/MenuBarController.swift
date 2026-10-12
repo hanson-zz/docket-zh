@@ -27,7 +27,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: "rectangle.bottomthird.inset.filled",
-                               accessibilityDescription: "Docket")
+                               accessibilityDescription: "码头")
         button.image?.isTemplate = true
         button.title = labelText.isEmpty ? "" : " \(labelText)"
     }
@@ -93,9 +93,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             menu.addItem(item("添加小组件…", #selector(openLibrary)))
         }
         menu.addItem(item("设置…", #selector(openSettings), key: ","))
+        menu.addItem(item("支持码头…", #selector(openSponsor)))
         menu.addItem(.separator())
-        menu.addItem(item("退出 Docket", #selector(quit), key: "q"))
+        menu.addItem(item("退出码头", #selector(quit), key: "q"))
     }
+
+    @objc private func openSponsor() { SponsorWindow.shared.show() }
 
     @objc private func openUpdate() { UpdateService.shared.openReleasePage() }
 

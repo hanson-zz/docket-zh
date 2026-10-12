@@ -103,8 +103,8 @@ jobs:
       - name: Zip the app
         run: |
           ditto -c -k --keepParent \
-            build/Build/Products/Release/Docket.app \
-            "Docket-zh-${TAG}.zip"
+            build/Build/Products/Release/Dockling.app \
+            "Dockling-${TAG}.zip"
 
       # A disk image as well as the zip, because it is what a Mac user expects
       # to download: it mounts, it shows the app beside an Applications alias,
@@ -113,15 +113,15 @@ jobs:
       # target appear without shipping a background image and a .DS_Store.
       - name: Build the disk image
         run: |
-          STAGE="$(mktemp -d)/Docket"
+          STAGE="$(mktemp -d)/Dockling"
           mkdir -p "$STAGE"
-          ditto build/Build/Products/Release/Docket.app "$STAGE/Docket.app"
+          ditto build/Build/Products/Release/Dockling.app "$STAGE/Dockling.app"
           ln -s /Applications "$STAGE/Applications"
           hdiutil create \
-            -volname "Docket-zh" \
+            -volname "Dockling" \
             -srcfolder "$STAGE" \
             -ov -format UDZO \
-            "Docket-zh-${TAG}.dmg"
+            "Dockling-${TAG}.dmg"
 
       # --clobber so a re-run after a build failure replaces the assets instead
       # of stopping on the ones the first attempt managed to upload.
@@ -130,8 +130,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$TAG" \
-            "Docket-zh-${TAG}.dmg" \
-            "Docket-zh-${TAG}.zip" \
+            "Dockling-${TAG}.dmg" \
+            "Dockling-${TAG}.zip" \
             --clobber
 
       # release-please writes the notes from the commits, which covers what

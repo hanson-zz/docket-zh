@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- The shelf, rising out of the bottom edge. It runs on past the canvas so
-       the icon's own outline is what cuts it off, the way the screen edge cuts
-       off the real one. Colour comes from icon.json, per appearance. -->
-  <rect x="156" y="600" width="712" height="560" rx="116" fill="#000"/>
-</svg>

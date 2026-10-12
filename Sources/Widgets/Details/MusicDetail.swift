@@ -366,11 +366,11 @@ struct MusicDetail: View {
         let setup = browserSetupHint
         return VStack(spacing: 4) {
             Text(setup == nil ? (open ? "未在播放" : "无可读取内容")
-                              : "有标签页正在播放 Docket 无法读取的媒体")
+                              : "有标签页正在播放码头无法读取的媒体")
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
             Text(setup ?? (open ? "在\(sourceNames)中播放点什么吧。"
-                                : "Docket 可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
+                                : "码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(WidgetStyle.secondary)
         }

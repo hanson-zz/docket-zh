@@ -152,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? await Task.sleep(for: .seconds(5))
             guard self != nil else { return }
             let alert = NSAlert()
-            alert.messageText = "要检查 Docket 的新版本吗？"
+            alert.messageText = "要检查码头的新版本吗？"
             alert.informativeText = """
                 Docket 可以每天检查一次新版本，并在发现新版本时通过菜单栏项提示你。\
                 更新永远不会自动安装。

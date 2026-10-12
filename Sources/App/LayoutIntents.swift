@@ -70,7 +70,7 @@ struct LayoutEntity: AppEntity {
     // Computed rather than stored statics: Swift 6 rejects a mutable static,
     // and computing these costs nothing.
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        TypeDisplayRepresentation(name: "Docket 布局")
+        TypeDisplayRepresentation(name: "码头布局")
     }
 
     static var defaultQuery: LayoutEntityQuery { LayoutEntityQuery() }
@@ -96,14 +96,14 @@ struct LayoutEntityQuery: EntityQuery {
 
 /// The filter users add under System Settings > Focus > Focus Filters.
 struct DocketFocusFilter: SetFocusFilterIntent {
-    static var title: LocalizedStringResource { "切换 Docket 布局" }
+    static var title: LocalizedStringResource { "切换码头布局" }
 
     @Parameter(title: "布局")
     var layout: LayoutEntity?
 
     var displayRepresentation: DisplayRepresentation {
         guard let layout else { return DisplayRepresentation(title: "未选择布局") }
-        return DisplayRepresentation(title: "\(layout.name)", subtitle: "切换到此 Docket 布局")
+        return DisplayRepresentation(title: "\(layout.name)", subtitle: "切换到此码头布局")
     }
 
     func perform() async throws -> some IntentResult {

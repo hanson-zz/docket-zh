@@ -202,7 +202,7 @@ struct SettingsView: View {
                     Spacer()
                     if state.originalMacOSDock != nil {
                         Button("恢复原始状态", action: onRestoreOriginalDock)
-                            .help("将系统程序坞恢复到 Docket 首次修改之前的样子。")
+                            .help("将系统程序坞恢复到码头首次修改之前的样子。")
                     }
                 }
 
@@ -258,7 +258,7 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("快捷键：点按布局右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
-                Text("专注模式：打开“系统设置 ▸ 专注模式”，选择一个专注模式，在“专注模式过滤条件”中点按“添加过滤条件”，选择 Docket 并挑选一个布局。该专注模式开启时会切换到这个布局，结束时恢复之前的布局。")
+                Text("专注模式：打开“系统设置 ▸ 专注模式”，选择一个专注模式，在“专注模式过滤条件”中点按“添加过滤条件”，选择码头并挑选一个布局。该专注模式开启时会切换到这个布局，结束时恢复之前的布局。")
             }
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -353,7 +353,7 @@ struct SettingsView: View {
                 Toggle("显示菜单栏图标", isOn: $state.menuBar.showIcon)
                     .disabled(state.setup == .macOSDockOnly)
                     .help(state.setup == .macOSDockOnly
-                          ? "屏幕上没有扩展栏时，这是访问 Docket 的唯一途径。"
+                          ? "屏幕上没有扩展栏时，这是访问码头的唯一途径。"
                           : "关闭此项后，仍可通过扩展栏自身的菜单打开设置。")
                 Picker("在旁边显示", selection: $state.menuBar.label) {
                     ForEach(MenuBarLabelMode.allCases, id: \.self) { Text(title($0)).tag($0) }
@@ -367,7 +367,7 @@ struct SettingsView: View {
                 Toggle("检查新版本", isOn: Binding(
                     get: { state.checkForUpdates == true },
                     set: { state.checkForUpdates = $0 }))
-                    .help("Docket 每天向 GitHub 查询一次最新版本号，如果有更新版本，会在菜单栏项中提示你。不会自动安装任何内容，也不会发送其他任何信息。")
+                    .help("码头每天向 GitHub 查询一次最新版本号，如果有更新版本，会在菜单栏项中提示你。不会自动安装任何内容，也不会发送其他任何信息。")
             }
 
             // About, folded in. A whole section in the sidebar for an icon and
@@ -378,7 +378,7 @@ struct SettingsView: View {
                         .resizable()
                         .frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Docket \(shortVersion)")
+                        Text("码头 \(shortVersion)")
                             .font(.headline)
                             .monospacedDigit()
                         Text("所有数据都保存在这台 Mac 上 Application Support 中的一个文件里，不会同步。")
@@ -389,6 +389,8 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 2)
             }
+
+            SupportSections()
         }
         .formStyle(.grouped)
     }
@@ -709,7 +711,7 @@ struct SettingsView: View {
                 } header: {
                     Text("专注计时")
                 } footer: {
-                    Text("所有专注计时小组件共用这些设置，Docket 将它们视为同一个计时器。")
+                    Text("所有专注计时小组件共用这些设置，码头将它们视为同一个计时器。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

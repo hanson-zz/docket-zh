@@ -377,8 +377,8 @@ struct MusicTile: View {
         }
         .foregroundStyle(subInk)
         .frame(maxWidth: .infinity)
-        .help(setup.map { "有浏览器标签页正在播放媒体，但 Docket 无法读取。请开启：\($0)。" }
-              ?? (open ? "当前没有播放内容。" : "Docket 可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
+        .help(setup.map { "有浏览器标签页正在播放媒体，但码头无法读取。请开启：\($0)。" }
+              ?? (open ? "当前没有播放内容。" : "码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
     }
 
     /// The menu item the user has to switch on, or nil when nothing is asking.

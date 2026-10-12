@@ -48,7 +48,7 @@ final class WeatherService {
 
     /// MET blocks requests without a real identifier. Replace the contact
     /// with the shipping app's own before release.
-    private static let userAgent = "Docket/1.0 (macOS dock widget; https://github.com/nparashar150/docket)"
+    private static let userAgent = "Dockling/1.0 (macOS dock widget; https://github.com/hanson-zz/docket-zh)"
 
     /// MET asks for ~1 call per location per 15 minutes.
     private static let minimumInterval: TimeInterval = 15 * 60

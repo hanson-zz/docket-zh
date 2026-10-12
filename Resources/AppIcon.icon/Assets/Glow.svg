@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Warm light coming up from below the edge the shelf rises out of. -->
+  <!-- Warm lantern light at the end of the pier, spilling onto the water. -->
   <defs>
-    <radialGradient id="g" cx="512" cy="1024" r="330" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFDE96" stop-opacity="0.9"/>
-      <stop offset="0.4" stop-color="#FFA046" stop-opacity="0.3"/>
-      <stop offset="1" stop-color="#FF8C32" stop-opacity="0"/>
+    <radialGradient id="g" cx="724" cy="330" r="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE3A0" stop-opacity="0.85"/>
+      <stop offset="0.35" stop-color="#FFB15A" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FF9440" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#g)"/>

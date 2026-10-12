@@ -87,7 +87,7 @@ public final class UpdateService {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         // Identifies the app rather than looking like an anonymous scraper,
         // the same courtesy WeatherService already extends to MET Norway.
-        request.setValue("Docket-zh/\(current?.description ?? "dev") (macOS; https://github.com/\(UpdateService.releasesRepository))",
+        request.setValue("Dockling/\(current?.description ?? "dev") (macOS; https://github.com/\(UpdateService.releasesRepository))",
                          forHTTPHeaderField: "User-Agent")
         if let etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
 

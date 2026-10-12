@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- The pier: a deck that reads as the shelf, standing on three posts, with
+       a lantern post at the far end. Colour comes from icon.json. -->
+  <g fill="#000">
+    <rect x="136" y="572" width="752" height="92" rx="46"/>
+    <rect x="232" y="620" width="68" height="236" rx="34"/>
+    <rect x="478" y="620" width="68" height="236" rx="34"/>
+    <rect x="724" y="620" width="68" height="236" rx="34"/>
+    <rect x="708" y="372" width="32" height="230" rx="16"/>
+  </g>
+</svg>

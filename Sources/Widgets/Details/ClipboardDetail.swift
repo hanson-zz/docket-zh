@@ -32,7 +32,7 @@ struct ClipboardDetail: View {
                         history.clear()
                     }
                 }
-                Text("记录只保存在内存中，退出 Docket 后即清除。密码管理器标记为隐藏的内容不会被记录。")
+                Text("记录只保存在内存中，退出码头后即清除。密码管理器标记为隐藏的内容不会被记录。")
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)

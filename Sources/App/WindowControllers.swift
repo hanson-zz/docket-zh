@@ -135,7 +135,7 @@ final class SettingsWindow: HostedWindow {
                 onClearError: { app.clearError() },
                 onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } }
             ),
-            title: "Docket 设置",
+            title: "码头设置",
             // Taller and resizable, because the Widgets tab is not a fixed
             // form: it grows by one section per widget on the shelf. At the
             // old fixed 520x460 a shelf with four widgets showed two of them
@@ -175,7 +175,7 @@ final class SettingsWindow: HostedWindow {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.message = "选择一个 Docket 布局备份文件。"
+        panel.message = "选择一个码头布局备份文件。"
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 

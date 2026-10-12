@@ -96,7 +96,7 @@ struct RevenueDetail: View {
             Text("未连接")
                 .font(WidgetStyle.value(20))
                 .foregroundStyle(WidgetStyle.primary)
-            Text("Docket 没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。")
+            Text("码头没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。")
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)

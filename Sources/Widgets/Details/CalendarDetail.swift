@@ -190,8 +190,8 @@ struct CalendarDetail: View {
     private var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(access == .notDetermined
-                 ? "Docket 尚未获得访问你日历的权限。"
-                 : "Docket 的日历访问权限已关闭。")
+                 ? "码头尚未获得访问你日历的权限。"
+                 : "码头的日历访问权限已关闭。")
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)

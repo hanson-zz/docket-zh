@@ -92,7 +92,7 @@ final class VoiceRecorder {
     // MARK: Private
 
     private func denied() {
-        error = "没有麦克风权限。请在 系统设置 ▸ 隐私与安全性 ▸ 麦克风 中允许 Docket 中文版。"
+        error = "没有麦克风权限。请在 系统设置 ▸ 隐私与安全性 ▸ 麦克风 中允许码头。"
     }
 
     private func begin() {

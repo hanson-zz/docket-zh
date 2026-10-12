@@ -81,7 +81,7 @@ public enum StrutMode {
         if ProcessInfo.processInfo.environment["DOCKET_STRUT_CONSENT"] != nil { return true }
 
         let alert = NSAlert()
-        alert.messageText = "允许 Docket 管理你的程序坞吗？"
+        alert.messageText = "允许码头管理你的程序坞吗？"
         alert.informativeText = """
             只有程序坞预留了屏幕空间，窗口才会停在扩展栏边上，而这只有程序坞本身能做到。\
             Docket 会把系统程序坞移到屏幕\(edge.displayName)，关闭其自动隐藏，\
