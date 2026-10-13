@@ -59,7 +59,6 @@ struct ClockStyleReadout: View {
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    Spacer(minLength: 0)
                 }
             }
         }
@@ -88,7 +87,6 @@ struct ClockStyleReadout: View {
                             .font(WidgetStyle.label(10))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
-                    Spacer(minLength: 0)
                 }
             }
         }
@@ -116,7 +114,7 @@ struct ClockStyleReadout: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             } else {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .center, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(parts.time)
                             .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
@@ -140,7 +138,7 @@ struct ClockStyleReadout: View {
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
@@ -177,7 +175,6 @@ struct ClockStyleReadout: View {
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    Spacer(minLength: 0)
                 }
             }
         }
@@ -191,7 +188,7 @@ struct ClockStyleReadout: View {
         calendar.timeZone = zone
         let c = calendar.dateComponents([.hour, .minute], from: now)
         let said = ChineseTimeText.say(hour: c.hour ?? 0, minute: c.minute ?? 0)
-        return VStack(alignment: vertical ? .center : .leading, spacing: 1) {
+        return VStack(alignment: .center, spacing: 1) {
             Text(said.period + " · " + ClockPanelWeekday.of(now, zone: zone))
                 .font(WidgetStyle.caption(vertical ? 9 : 11))
                 .foregroundStyle(WidgetStyle.secondary)
@@ -203,8 +200,8 @@ struct ClockStyleReadout: View {
         }
         .lineLimit(vertical ? 2 : 1)
         .minimumScaleFactor(0.55)
-        .multilineTextAlignment(vertical ? .center : .leading)
-        .frame(maxWidth: .infinity, alignment: vertical ? .center : .leading)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: Pixel
@@ -223,7 +220,6 @@ struct ClockStyleReadout: View {
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
-                    Spacer(minLength: 0)
                 }
             }
         }
