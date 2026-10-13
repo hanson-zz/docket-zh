@@ -510,7 +510,7 @@ enum CoreAudioReader {
 enum Responsibility {
     private typealias Lookup = @convention(c) (pid_t) -> pid_t
 
-    nonisolated(unsafe) private static let lookup: Lookup? = {
+    private static let lookup: Lookup? = {
         guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2),
                                  "responsibility_get_pid_responsible_for_pid") else { return nil }
         return unsafeBitCast(symbol, to: Lookup.self)
@@ -538,17 +538,17 @@ enum AudioCapturePermission {
     private typealias Preflight = @convention(c) (CFString, CFDictionary?) -> Int
     private typealias Request = @convention(c) (CFString, CFDictionary?, @escaping @convention(block) (Bool) -> Void) -> Void
 
-    private static let service = "kTCCServiceAudioCapture" as CFString
+    private static var service: CFString { "kTCCServiceAudioCapture" as CFString }
 
     nonisolated(unsafe) private static let handle: UnsafeMutableRawPointer? =
         dlopen("/System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC", RTLD_NOW)
 
-    nonisolated(unsafe) private static let preflight: Preflight? = {
+    private static let preflight: Preflight? = {
         guard let handle, let symbol = dlsym(handle, "TCCAccessPreflight") else { return nil }
         return unsafeBitCast(symbol, to: Preflight.self)
     }()
 
-    nonisolated(unsafe) private static let requestAccess: Request? = {
+    private static let requestAccess: Request? = {
         guard let handle, let symbol = dlsym(handle, "TCCAccessRequest") else { return nil }
         return unsafeBitCast(symbol, to: Request.self)
     }()

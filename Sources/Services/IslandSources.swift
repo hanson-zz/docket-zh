@@ -1,4 +1,5 @@
 import AppKit
+import AudioToolbox
 import CoreAudio
 import CoreGraphics
 import EventKit
@@ -139,7 +140,7 @@ final class SystemVolumeWatcher {
 enum DisplayBrightness {
     private typealias Getter = @convention(c) (UInt32, UnsafeMutablePointer<Float>) -> Int32
 
-    nonisolated(unsafe) private static let getter: Getter? = {
+    private static let getter: Getter? = {
         guard let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
               let symbol = dlsym(handle, "DisplayServicesGetBrightness") else { return nil }
         return unsafeBitCast(symbol, to: Getter.self)
