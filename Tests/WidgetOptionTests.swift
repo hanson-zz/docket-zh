@@ -102,6 +102,7 @@ final class WidgetOptionTests: XCTestCase {
             .ambient: ["sounds", "volume"],
             .lunar: ["showTerm", "workAlert"],
             .trash: ["flies", "threshold"],
+            .habit: ["showStreak"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
             .clock: ["seconds"],

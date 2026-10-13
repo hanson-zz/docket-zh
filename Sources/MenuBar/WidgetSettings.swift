@@ -399,6 +399,7 @@ struct WidgetSettingsSections: View {
         "threshold": "苍蝇出现的大小",
         "pasteOnClick": "点按后直接粘贴（需要辅助功能权限）",
         "actions": "开关",
+        "showStreak": "显示连续打卡天数",
     ]
 
     static func label(_ key: String) -> String {

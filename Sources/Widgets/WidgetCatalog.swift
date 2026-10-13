@@ -308,6 +308,12 @@ public enum WidgetCatalog {
               defaults: c(["showDone": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // Habits of its own under `habits`, with each day they were done;
+        // see HabitTracker.
+        Entry(kind: .habit, name: "习惯打卡", category: .reminders,
+              defaults: c(["showStreak": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
         Entry(kind: .lunar, name: "农历与假期", category: .calendar,
               defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
@@ -360,6 +366,7 @@ public enum WidgetCatalog {
         case .ambient: PaletteColor.teal.hex
         case .lunar: PaletteColor.red.hex
         case .trash: PaletteColor.green.hex
+        case .habit: PaletteColor.green.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -516,7 +523,7 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage, .todo, .ambient, .lunar, .trash:
+             .aiUsage, .todo, .ambient, .lunar, .trash, .habit:
             nil
         }
     }
@@ -652,6 +659,7 @@ public enum WidgetCatalog {
         case .ambient: return CGSize(width: 188, height: 62)
         case .lunar: return CGSize(width: 196, height: 62)
         case .trash: return CGSize(width: 176, height: 62)
+        case .habit: return CGSize(width: 196, height: 62)
         }
     }
 
@@ -742,6 +750,8 @@ public enum WidgetCatalog {
                 return WeatherLayout.citiesColumnHeight(count: count)
             default: return 76
             }
+        case .habit:
+            return HabitTracker.columnHeight(count: HabitTracker.habits(cfg).count)
         default:
             return 76
         }
