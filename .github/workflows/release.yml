@@ -98,6 +98,48 @@ jobs:
             DEVELOPMENT_TEAM="" \
             ENABLE_HARDENED_RUNTIME=NO
 
+      # Ad-hoc signatures change with every build, so macOS treats each update
+      # as a new app and drops its permissions (Accessibility, Full Disk
+      # Access, Screen Recording). Re-signing with one long-lived self-signed
+      # certificate keeps the designated requirement the same across releases,
+      # so the permissions survive an update. The certificate lives in two
+      # repository secrets; without them the build stays ad-hoc as before.
+      - name: Sign with the stable identity
+        env:
+          SIGNING_P12_BASE64: ${{ secrets.SIGNING_P12_BASE64 }}
+          SIGNING_P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_P12_BASE64" ] || [ -z "$SIGNING_P12_PASSWORD" ]; then
+            echo "::warning::No signing secrets, keeping the ad-hoc signature."
+            exit 0
+          fi
+          APP=build/Build/Products/Release/Dockling.app
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KCPASS="$(openssl rand -hex 16)"
+          echo "$SIGNING_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$KCPASS" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPASS" "$KC"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KC" -P "$SIGNING_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCPASS" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          HASH="$(security find-certificate -c "Dockling Self-Signed" -Z "$KC" | awk '/SHA-1/ {print $NF; exit}')"
+          if [ -z "$HASH" ]; then
+            echo "::error::The signing certificate did not import."
+            exit 1
+          fi
+          ENT="$RUNNER_TEMP/entitlements.plist"
+          codesign -d --entitlements :- "$APP" > "$ENT" 2>/dev/null || true
+          SIGN=(codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none)
+          if [ -s "$ENT" ]; then SIGN+=(--entitlements "$ENT"); fi
+          # Inside out: nested code first, then the app itself.
+          find "$APP/Contents" -depth \( -name "*.dylib" -o -name "*.framework" -o -name "*.appex" -o -name "*.xpc" -o -name "*.bundle" \) -print0 \
+            | while IFS= read -r -d '' item; do codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none "$item"; done
+          "${SIGN[@]}" "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
+          codesign -d -r- "$APP"
+          security delete-keychain "$KC"
+
       # ditto, not zip: an .app is a bundle full of symlinks and executable
       # bits, and zip flattens both, and the extracted copy will not launch.
       - name: Zip the app
