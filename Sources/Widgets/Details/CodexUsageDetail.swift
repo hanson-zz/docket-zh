@@ -43,6 +43,11 @@ struct CodexUsageDetail: View {
                     }
                     stats(report, now: now)
                     chart(report, now: now)
+                    if let source = report.source, !context.isPreview {
+                        Text("来源：\(source.title)")
+                            .font(WidgetStyle.caption(10))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
                 } else {
                     PanelNote(symbol: "network", text: service.problem?.message ?? "正在读取…").frame(height: 100)
                 }

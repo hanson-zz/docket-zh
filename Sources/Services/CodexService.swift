@@ -4,7 +4,12 @@ import Observation
 
 /// Codex's rate limits and what it is doing right now.
 ///
-/// Limits come from the same backend Codex's own `/status` asks, with the
+/// Limits are asked of Codex's own `codex app-server` first
+/// (`account/rateLimits/read`, see CodexAppServerClient). When no codex
+/// binary is found, or it fails or takes too long, the widget falls back to
+/// the older path below.
+///
+/// The fallback's limits come from the same backend Codex's own `/status` asks, with the
 /// ChatGPT sign-in Codex keeps in `~/.codex/auth.json`. The file is only ever
 /// read: Codex refreshes that token itself, and Docket never writes it, so a
 /// widget can not sign Codex out. The token goes to chatgpt.com and nowhere
@@ -129,8 +134,9 @@ final class CodexService {
         loading = true
         let extras = includeExtras
         let session = Self.session()
+        let proxy = UserDefaults.standard.string(forKey: Self.proxyKey).flatMap(CodexProxy.parse)
         Task {
-            let outcome = await Self.fetch(session: session, includeExtras: extras)
+            let outcome = await Self.fetch(session: session, includeExtras: extras, proxy: proxy)
             loading = false
             apply(outcome)
         }
@@ -195,7 +201,33 @@ final class CodexService {
         return URLSession(configuration: config)
     }
 
-    nonisolated private static func fetch(session: URLSession, includeExtras: Bool) async -> Outcome {
+    /// The official app-server first, then the web endpoint the widget has
+    /// always used. The report says which one answered.
+    nonisolated private static func fetch(session: URLSession, includeExtras: Bool,
+                                          proxy: CodexProxy?) async -> Outcome {
+        if case .success(let official) = await CodexAppServerClient.read(includeExtras: includeExtras, proxy: proxy) {
+            return await completed(official, session: session)
+        }
+        return await fetchWeb(session: session, includeExtras: includeExtras)
+    }
+
+    /// Adds what only the web side knows (the daily token chart, the email,
+    /// a plan the server left out) to an app-server reading. Any of it
+    /// failing leaves the reading as it was.
+    nonisolated private static func completed(_ official: CodexUsageReport, session: URLSession) async -> Outcome {
+        var report = official
+        guard let data = try? Data(contentsOf: home.appendingPathComponent("auth.json")),
+              let credential = try? CodexAuth.credential(from: data) else {
+            return .ok(report, email: nil)
+        }
+        if report.plan == nil { report.plan = credential.plan }
+        if let (body, response) = await get("profiles/me", credential, session), response.statusCode == 200 {
+            report.daily = CodexUsageParser.daily(from: body)
+        }
+        return .ok(report, email: credential.email)
+    }
+
+    nonisolated private static func fetchWeb(session: URLSession, includeExtras: Bool) async -> Outcome {
         let credential: CodexAuth.Credential
         do {
             let data = try Data(contentsOf: home.appendingPathComponent("auth.json"))
@@ -232,7 +264,7 @@ final class CodexService {
 
         let report = CodexUsageReport(windows: windows,
                                       plan: CodexUsageParser.plan(from: data) ?? credential.plan,
-                                      resetCredits: resets, daily: daily, fetchedAt: .now)
+                                      resetCredits: resets, daily: daily, fetchedAt: .now, source: .web)
         return .ok(report, email: credential.email)
     }
 

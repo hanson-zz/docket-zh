@@ -63,14 +63,18 @@ public struct CodexUsageReport: Codable, Equatable, Sendable {
     public var resetCredits: Int?
     public var daily: [CodexDailyTokens]
     public var fetchedAt: Date
+    /// Which way the reading was taken. Optional so a reading cached before
+    /// this field existed still decodes.
+    public var source: CodexUsageSource?
 
     public init(windows: [CodexLimitWindow], plan: String? = nil, resetCredits: Int? = nil,
-                daily: [CodexDailyTokens] = [], fetchedAt: Date) {
+                daily: [CodexDailyTokens] = [], fetchedAt: Date, source: CodexUsageSource? = nil) {
         self.windows = windows
         self.plan = plan
         self.resetCredits = resetCredits
         self.daily = daily
         self.fetchedAt = fetchedAt
+        self.source = source
     }
 
     /// The session window. Named, never `windows.first`, so an extra can never
