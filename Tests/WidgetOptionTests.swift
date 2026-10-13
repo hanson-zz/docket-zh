@@ -106,6 +106,7 @@ final class WidgetOptionTests: XCTestCase {
             .week: ["allDay", "calendars"],
             .crypto: ["coins", "currency", "colors", "chart"],
             .radio: ["volume"],
+            .anniversary: ["showRing"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
             .clock: ["seconds"],

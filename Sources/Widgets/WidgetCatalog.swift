@@ -322,6 +322,15 @@ public enum WidgetCatalog {
               defaults: c(["showStreak": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // Dates of its own under `events`, counted down or up, by the solar
+        // or the lunar calendar; the single card's event is `pinned`, chosen
+        // in the panel. See Anniversary.
+        Entry(kind: .anniversary, name: "纪念日", category: .reminders,
+              defaults: c(["layout": .string("single"), "showRing": .bool(true)]),
+              variants: [("单个", ["layout": .string("single")]),
+                         ("多个", ["layout": .string("multi")])],
+              supportsCompact: false, selfContained: true),
+
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
         Entry(kind: .week, name: "一周日程", category: .calendar,
@@ -397,6 +406,7 @@ public enum WidgetCatalog {
         case .crypto: PaletteColor.yellow.hex
         case .appVolume: PaletteColor.indigo.hex
         case .radio: PaletteColor.orange.hex
+        case .anniversary: PaletteColor.pink.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -461,6 +471,10 @@ public enum WidgetCatalog {
             config.string("layout", default: "current") == "cities"
         case (.weather, "city"):
             config.string("layout", default: "current") != "cities"
+        // The ring sits beside the one big number; three columns have no
+        // room for it and never draw one.
+        case (.anniversary, "showRing"):
+            config.string("layout", default: "single") == "single"
         default:
             true
         }
@@ -553,7 +567,8 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio:
+             .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
+             .anniversary:
             nil
         }
     }
@@ -695,6 +710,9 @@ public enum WidgetCatalog {
             return CGSize(width: CryptoMarket.tileWidth(count: CryptoMarket.coinIDs(cfg).count), height: 62)
         case .appVolume: return CGSize(width: 196, height: 62)
         case .radio: return CGSize(width: 212, height: 62)
+        case .anniversary:
+            return CGSize(width: Anniversary.tileWidth(layout: cfg.string("layout", default: "single"),
+                                                       count: Anniversary.events(cfg).count), height: 62)
         }
     }
 
@@ -792,6 +810,9 @@ public enum WidgetCatalog {
                                              chart: cfg.bool("chart", default: true))
         case .habit:
             return HabitTracker.columnHeight(count: HabitTracker.habits(cfg).count)
+        case .anniversary:
+            return Anniversary.columnHeight(layout: cfg.string("layout", default: "single"),
+                                            count: Anniversary.events(cfg).count)
         default:
             return 76
         }

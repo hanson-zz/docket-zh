@@ -73,7 +73,7 @@ public enum WidgetVisibility {
     /// Kinds with a condition of their own to show on.
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
-        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio: true
+        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary: true
         default: false
         }
     }
@@ -93,6 +93,7 @@ public enum WidgetVisibility {
         case .todo: return "有未完成的待办时显示"
         case .ambient: return "正在播放时显示"
         case .radio: return "正在收听时显示"
+        case .anniversary: return "\(Anniversary.soonDays) 天内有纪念日时显示"
         case .battery:
             let threshold = batteryThreshold(config)
             return threshold >= 100 ? "使用电池时显示" : "使用电池且电量不高于 \(threshold)% 时显示"
@@ -115,6 +116,8 @@ public enum WidgetVisibility {
         // Read from the widget's own list, so it needs no monitor.
         case .todo:
             return QuickTodo.openCount(instance.config) > 0
+        case .anniversary:
+            return Anniversary.hasSoon(instance.config)
         case .ambient:
             return conditions.ambientPlaying
         case .radio:

@@ -139,6 +139,8 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "app-volume", instance: widget(.appVolume), isPreview: true, source: .sample),
         // Sample station: a live stream's audio cannot be photographed anyway.
         Shot(name: "radio", instance: widget(.radio), isPreview: true, source: .sample),
+        // Sample dates: a shelf's own events are the user's, not ours to show.
+        Shot(name: "anniversary", instance: widget(.anniversary), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,
