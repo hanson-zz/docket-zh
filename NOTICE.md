@@ -90,6 +90,21 @@ displays this data, it must carry that attribution too.** MET's terms also
 require a descriptive `User-Agent` with a real contact on every request, which
 `WeatherService` sets.
 
+### Open-Meteo - daily forecasts
+
+The weather widget's 7-day, 10-day and multi-city layouts, and the 10-day
+list in its detail panel, read daily forecasts from
+**[Open-Meteo](https://open-meteo.com/)** (`api.open-meteo.com`), free and
+without an API key under its
+[terms](https://open-meteo.com/en/terms). The data is licensed
+**[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**. The weather
+detail panel shows `WeatherService.forecastAttribution`:
+
+> 部分天气数据来自 Open-Meteo
+
+`ForecastService` caches each place and asks at most once every 30 minutes,
+well inside the free tier's non-commercial limits.
+
 ### Yahoo Finance - stock quotes
 
 The Stock and Watchlist widgets read Yahoo's chart endpoint

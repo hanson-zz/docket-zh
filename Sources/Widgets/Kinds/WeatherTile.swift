@@ -55,9 +55,15 @@ struct WeatherTile: View {
         // genuinely coloured (a sticky note's paper), never a readout.
         WidgetSurface {
             if context.position.isVertical {
-                column
+                switch layout {
+                case "week", "tenDays": forecastColumn
+                case "cities": citiesColumn
+                default: column
+                }
             } else {
                 switch layout {
+                case "week", "tenDays": forecastRow
+                case "cities": citiesRow
                 case "hourly": hourlyStrip
                 case "conditions": wide(caption: weather?.condition ?? "-")
                 case "sky": wide(caption: skyCaption)
@@ -67,16 +73,54 @@ struct WeatherTile: View {
         }
         .onAppear { load() }
         .onChange(of: city) { load() }
+        .onChange(of: layout) { load() }
+        .onChange(of: cities) { load() }
+        // The shared place can move under this tile (the last city set
+        // wins), and the daily forecast has to follow it.
+        .onChange(of: sharedPlaceKey) {
+            guard !context.isPreview else { return }
+            Task { await refreshForecasts() }
+        }
         // `now` ticks every second; only act when the 15-minute bucket turns
         // over, which is the cadence MET asks for anyway.
         .onChange(of: Int(context.now.timeIntervalSince1970) / 900) {
             guard !context.isPreview else { return }
-            Task { await WeatherService.shared.refresh() }
+            Task {
+                await WeatherService.shared.refresh()
+                await refreshForecasts()
+            }
+        }
+    }
+
+    private var sharedPlaceKey: String {
+        guard let place = WeatherService.shared.place else { return "" }
+        return DailyForecast.cacheKey(lat: place.lat, lon: place.lon)
+    }
+
+    /// The daily forecasts behind the 7-day, 10-day and multi-city layouts.
+    /// Each place is throttled to one fetch per 30 minutes inside the
+    /// service, so calling this on every 15-minute tick costs nothing.
+    private func refreshForecasts() async {
+        switch layout {
+        case "week", "tenDays":
+            if let place = WeatherService.shared.place {
+                await ForecastService.shared.refresh(place)
+            }
+        case "cities":
+            await ForecastService.shared.load(cities: cities)
+        default:
+            break
         }
     }
 
     private func load() {
         guard !context.isPreview else { return }
+        // The multi-city card is its own list of places. It never points the
+        // shared service at a city, so the other weather tiles keep theirs.
+        if layout == "cities" {
+            Task { await refreshForecasts() }
+            return
+        }
         // Asked for only because a weather widget is on the shelf, and only
         // when no city has been typed in.
         if instance.config.string("city").trimmingCharacters(in: .whitespaces).isEmpty {
@@ -84,7 +128,10 @@ struct WeatherTile: View {
         }
         let city = city
         guard !city.isEmpty else { return }
-        Task { await WeatherService.shared.setLocation(city: city) }
+        Task {
+            await WeatherService.shared.setLocation(city: city)
+            await refreshForecasts()
+        }
     }
 
     /// Wind and the next sunrise or sunset: the two things the forecast
@@ -243,6 +290,202 @@ struct WeatherTile: View {
         }
     }
 
+    // MARK: - Daily forecast and cities
+
+    /// The multi-city card's places, cleaned and capped at three.
+    private var cities: [String] {
+        WeatherLayout.cities(instance.config.strings("cities", default: WeatherLayout.defaultCities))
+    }
+
+    /// The daily forecast for the shared city, the same place the other
+    /// layouts report.
+    private var dailyForecast: DailyForecast? {
+        if context.isPreview { return Self.sampleForecast(now: context.now) }
+        return WeatherService.shared.place.flatMap { ForecastService.shared.forecast(at: $0) }
+    }
+
+    private func cityForecast(_ city: String, index: Int) -> DailyForecast? {
+        context.isPreview
+            ? Self.sampleCityForecast(index, now: context.now)
+            : ForecastService.shared.forecast(city: city)
+    }
+
+    /// A row of day columns, like the system's own weather turned on its
+    /// side: the day, its symbol, high and low, and a bar placing the day's
+    /// range on the scale of every day shown. Falls back to the single
+    /// reading until the forecast lands.
+    @ViewBuilder private var forecastRow: some View {
+        let forecast = dailyForecast
+        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.days(layout: layout)) ?? []
+        if shown.isEmpty {
+            wide(caption: placeCaption)
+        } else {
+            let today = forecast?.todayKey(now: context.now) ?? ""
+            let scale = DailyForecast.scale(shown)
+            HStack(spacing: 0) {
+                ForEach(shown, id: \.key) { day in
+                    VStack(spacing: 2) {
+                        Text(DailyForecast.weekdayLabel(day.key, today: today))
+                            .font(WidgetStyle.caption(10))
+                            .foregroundStyle(day.key == today ? WidgetStyle.primary : WidgetStyle.secondary)
+                        Image(systemName: WMOWeather.symbol(day.code))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(WidgetStyle.primary)
+                            .font(.system(size: 13))
+                            .frame(height: 14)
+                        HStack(spacing: 2) {
+                            Text(degrees(day.highC))
+                                .foregroundStyle(WidgetStyle.primary)
+                            Text(degrees(day.lowC))
+                                .foregroundStyle(WidgetStyle.secondary)
+                        }
+                        .font(WidgetStyle.label(11))
+                        .monospacedDigit()
+                        rangeBar(day, scale: scale, width: 28)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(DailyForecast.weekdayLabel(day.key, today: today))，"
+                                        + "\(WMOWeather.condition(day.code))，"
+                                        + "最高 \(degrees(day.highC))，最低 \(degrees(day.lowC))")
+                }
+            }
+        }
+    }
+
+    /// A 76pt column has room for a row per day and no columns: the day,
+    /// its symbol and the high. Fewer days than the wide layout, so the tile
+    /// stays a tile rather than a tower.
+    @ViewBuilder private var forecastColumn: some View {
+        let forecast = dailyForecast
+        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.columnDays(layout: layout)) ?? []
+        if shown.isEmpty {
+            column
+        } else {
+            let today = forecast?.todayKey(now: context.now) ?? ""
+            VStack(spacing: 0) {
+                ForEach(shown, id: \.key) { day in
+                    HStack(spacing: 2) {
+                        Text(DailyForecast.weekdayLabel(day.key, today: today))
+                            .font(WidgetStyle.caption(10))
+                            .foregroundStyle(day.key == today ? WidgetStyle.primary : WidgetStyle.secondary)
+                        Image(systemName: WMOWeather.symbol(day.code))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(WidgetStyle.primary)
+                            .font(.system(size: 11))
+                            .frame(width: 14)
+                        Spacer(minLength: 0)
+                        Text(degrees(day.highC))
+                            .font(WidgetStyle.label(11))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .monospacedDigit()
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(height: WeatherLayout.dayRowHeight)
+                }
+            }
+        }
+    }
+
+    /// Up to three places side by side: symbol, city, the temperature now
+    /// and today's high and low.
+    private var citiesRow: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(cities.enumerated()), id: \.offset) { index, city in
+                cityCell(city, forecast: cityForecast(city, index: index))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func cityCell(_ city: String, forecast: DailyForecast?) -> some View {
+        let now = forecast?.current
+        let today = forecast?.today(now: context.now)
+        return HStack(spacing: 5) {
+            Image(systemName: citySymbol(forecast))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(WidgetStyle.primary)
+                .font(.system(size: 16))
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(city)
+                    .font(WidgetStyle.caption(10))
+                    .foregroundStyle(WidgetStyle.secondary)
+                Text(now.map { degrees($0.temperatureC) } ?? "--°")
+                    .font(WidgetStyle.value(16))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .monospacedDigit()
+                Text(today.map { "\(degrees($0.highC))/\(degrees($0.lowC))" } ?? " ")
+                    .font(WidgetStyle.caption(10))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+        }
+    }
+
+    /// The side-shelf version: each city its name over symbol and reading.
+    private var citiesColumn: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(cities.enumerated()), id: \.offset) { index, city in
+                let forecast = cityForecast(city, index: index)
+                VStack(spacing: 1) {
+                    Text(city)
+                        .font(WidgetStyle.caption(10))
+                        .foregroundStyle(WidgetStyle.secondary)
+                    HStack(spacing: 3) {
+                        Image(systemName: citySymbol(forecast))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(WidgetStyle.primary)
+                            .font(.system(size: 12))
+                        Text(forecast?.current.map { degrees($0.temperatureC) } ?? "--°")
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .monospacedDigit()
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(height: WeatherLayout.cityRowHeight)
+            }
+        }
+    }
+
+    /// Now if known, else today, else a neutral sky.
+    private func citySymbol(_ forecast: DailyForecast?) -> String {
+        if let now = forecast?.current { return WMOWeather.symbol(now.code, isDay: now.isDay) }
+        if let day = forecast?.today(now: context.now) { return WMOWeather.symbol(day.code) }
+        return "cloud.sun.fill"
+    }
+
+    /// The day's low to high, on the scale of every day shown. Cool to warm
+    /// like the system's bar, so a cold day reads at a glance.
+    private func rangeBar(_ day: DailyForecast.Day, scale: (low: Double, high: Double)?,
+                          width: CGFloat) -> some View {
+        let fractions: (start: Double, end: Double) = scale.map {
+            DailyForecast.rangeFractions(low: day.lowC, high: day.highC, scaleLow: $0.low, scaleHigh: $0.high)
+        } ?? (0, 1)
+        let length = max(3, width * (fractions.end - fractions.start))
+        let offset = min(width * fractions.start, width - length)
+        return Capsule()
+            .fill(WidgetStyle.secondary.opacity(0.22))
+            .frame(width: width, height: 3)
+            .overlay(alignment: .leading) {
+                Capsule()
+                    .fill(LinearGradient(colors: [Self.rainBlue, Self.warm],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: length, height: 3)
+                    .offset(x: offset)
+            }
+            .accessibilityHidden(true)
+    }
+
+    private static let warm = Color(hex: "#FF9F0A")
+
     // MARK: - Pieces
 
     private func icon(size: CGFloat) -> some View {
@@ -277,6 +520,33 @@ struct WeatherTile: View {
 
     private func converted(_ celsius: Double) -> Double {
         fahrenheit ? celsius * 9 / 5 + 32 : celsius
+    }
+
+    /// Ten days for the library, starting today on this Mac's calendar.
+    static func sampleForecast(now: Date) -> DailyForecast {
+        let offset = TimeZone.current.secondsFromGMT(for: now)
+        let highs: [Double] = [19, 21, 22, 18, 15, 16, 20, 23, 22, 19]
+        let lows: [Double] = [11, 12, 14, 12, 9, 8, 10, 13, 14, 12]
+        let codes = [2, 0, 1, 61, 63, 3, 2, 0, 0, 80]
+        let days = (0..<10).map { index in
+            DailyForecast.Day(key: DailyForecast.dayKey(now.addingTimeInterval(Double(index) * 86_400),
+                                                        utcOffsetSeconds: offset),
+                              code: codes[index], highC: highs[index], lowC: lows[index])
+        }
+        return DailyForecast(current: .init(temperatureC: 18, code: 2), days: days, utcOffsetSeconds: offset)
+    }
+
+    /// Three different skies for the multi-city sample.
+    static func sampleCityForecast(_ index: Int, now: Date) -> DailyForecast {
+        let offset = TimeZone.current.secondsFromGMT(for: now)
+        let samples: [(now: Double, code: Int, high: Double, low: Double)] = [
+            (16, 0, 20, 9), (21, 2, 23, 17), (27, 61, 29, 23),
+        ]
+        let sample = samples[index % samples.count]
+        let day = DailyForecast.Day(key: DailyForecast.dayKey(now, utcOffsetSeconds: offset),
+                                    code: sample.code, highC: sample.high, lowC: sample.low)
+        return DailyForecast(current: .init(temperatureC: sample.now, code: sample.code),
+                             days: [day], utcOffsetSeconds: offset)
     }
 
     private static func sampleHours(from date: Date) -> [WeatherHour] {

@@ -86,7 +86,7 @@ final class WidgetOptionTests: XCTestCase {
             .shortcut: ["name"],
             .stock: ["symbol", "symbols", "chart"],
             .watchlist: ["symbols"],
-            .weather: ["city", "fahrenheit"],
+            .weather: ["city", "cities", "fahrenheit"],
             .photos: ["folder", "interval", "shuffle"],
             .emoji: ["emoji"],
             .search: ["engine"],
@@ -254,6 +254,7 @@ final class OptionApplicabilityTests: XCTestCase {
         "system.chart",
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
         "search.engine",
+        "weather.city", "weather.cities",
     ]
 
     /// Everything else is unconditional, and a rule added carelessly would

@@ -46,6 +46,10 @@ final class WeatherService {
     /// CC BY 4.0 requires this to be visible in the UI.
     static let attribution = "天气数据来自 MET Norway（挪威气象研究所）"
 
+    /// The daily forecasts and the multi-city layout come from Open-Meteo,
+    /// whose data is CC BY 4.0 as well. Shown beside `attribution`.
+    static let forecastAttribution = "部分天气数据来自 Open-Meteo"
+
     /// MET blocks requests without a real identifier. Replace the contact
     /// with the shipping app's own before release.
     private static let userAgent = "Dockling/1.0 (macOS dock widget; https://github.com/hanson-zz/docket-zh)"
@@ -220,7 +224,10 @@ final class WeatherService {
         var zone: String? = nil
     }
 
-    private func coordinate(for city: String) async -> Coordinate? {
+    /// Also used by `ForecastService` for the multi-city layout. It only
+    /// fills the lookup cache, so asking for another city here never moves
+    /// the one shared location the other layouts read.
+    func coordinate(for city: String) async -> Coordinate? {
         let key = city.lowercased()
         if let cached = geocoded[key] { return cached }
         guard let found = await Self.geocode(city) else { return nil }

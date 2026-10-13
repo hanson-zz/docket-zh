@@ -341,6 +341,7 @@ struct WidgetSettingsSections: View {
     private static let labels: [String: String] = [
         "fahrenheit": "以华氏度显示温度",
         "city": "城市",
+        "cities": "城市列表（最多 3 个）",
         "skip": "快进/快退秒数",
         "mini": "紧凑布局",
         "chart": "显示图表",
@@ -421,6 +422,7 @@ struct WidgetSettingsSections: View {
     static func prompt(_ key: String) -> String {
         switch key {
         case "city": "当前位置"
+        case "cities": "北京, 上海, 广州"
         case "folder": "图片"
         case "links": "标题 网址, …"
         case "repo": "用户/仓库"

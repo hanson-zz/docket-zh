@@ -173,12 +173,19 @@ public enum WidgetCatalog {
         Entry(kind: .weather, name: "天气", category: .weather,
               // Empty city: use wherever the user actually is. "Oslo" is the
               // city in the reference screenshots, not a sane default.
+              // `cities` is only read by the multi-city layout, which shows
+              // those places (at most three) and ignores `city`; see
+              // WeatherLayout.cities.
               defaults: c(["layout": .string("current"), "fahrenheit": .bool(false),
-                           "city": .string("")]),
+                           "city": .string(""),
+                           "cities": .list(WeatherLayout.defaultCities.map { .string($0) })]),
               variants: [("当前", ["layout": .string("current")]),
                          ("天气状况", ["layout": .string("conditions")]),
                          ("逐小时预报", ["layout": .string("hourly")]),
-                         ("风与日出日落", ["layout": .string("sky")])],
+                         ("风与日出日落", ["layout": .string("sky")]),
+                         ("未来 7 天", ["layout": .string("week")]),
+                         ("未来 10 天", ["layout": .string("tenDays")]),
+                         ("多城市", ["layout": .string("cities")])],
               supportsCompact: true, selfContained: true),
 
         // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
@@ -411,6 +418,12 @@ public enum WidgetCatalog {
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"
+        // The multi-city card shows its own list of places and no other;
+        // every other layout reads the one city and never the list.
+        case (.weather, "cities"):
+            config.string("layout", default: "current") == "cities"
+        case (.weather, "city"):
+            config.string("layout", default: "current") != "cities"
         default:
             true
         }
@@ -595,6 +608,12 @@ public enum WidgetCatalog {
             case "hourly": return CGSize(width: 216, height: 132)
             // Wind and the next sun time are a longer caption than a city.
             case "sky": return CGSize(width: 196, height: 132)
+            // A row of day columns, each as wide as "24° 16°".
+            case "week", "tenDays":
+                return CGSize(width: WeatherLayout.forecastWidth(layout: cfg.string("layout")), height: 132)
+            case "cities":
+                let count = WeatherLayout.cities(cfg.strings("cities", default: WeatherLayout.defaultCities)).count
+                return CGSize(width: WeatherLayout.citiesWidth(count: count), height: 132)
             default: return CGSize(width: 148, height: 132)
             }
         case .stripe, .paddle:
@@ -714,6 +733,15 @@ public enum WidgetCatalog {
             return 132
         case .todo, .ambient, .lunar, .trash:
             return 112
+        case .weather:
+            let layout = cfg.string("layout", default: "current")
+            switch layout {
+            case "week", "tenDays": return WeatherLayout.forecastColumnHeight(layout: layout)
+            case "cities":
+                let count = WeatherLayout.cities(cfg.strings("cities", default: WeatherLayout.defaultCities)).count
+                return WeatherLayout.citiesColumnHeight(count: count)
+            default: return 76
+            }
         default:
             return 76
         }
