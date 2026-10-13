@@ -176,6 +176,8 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case posture
     case todo
     case ambient
+    case lunar
+    case trash
 }
 
 /// What a widget opens when its card is clicked.
@@ -802,7 +804,12 @@ public struct MacOSDockSettings: Codable, Hashable, Sendable {
 
 public struct MenuBarSettings: Codable, Hashable, Sendable {
     public var showIcon: Bool = true
-    public var label: MenuBarLabelMode = .custom
+    /// Icon only by default: the layout's name is already in the menu's
+    /// submenu, and beside the icon it cost menu bar width all day.
+    public var label: MenuBarLabelMode = .none
+    /// Written by every save. A file without it predates the icon-only
+    /// default, so its old automatic `.custom` is reset to `.none` once.
+    public var labelReviewed: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -816,7 +823,10 @@ public struct MenuBarSettings: Codable, Hashable, Sendable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         showIcon = try c.decodeIfPresent(Bool.self, forKey: .showIcon) ?? true
-        label = try c.decodeIfPresent(MenuBarLabelMode.self, forKey: .label) ?? .custom
+        let reviewed = try c.decodeIfPresent(Bool.self, forKey: .labelReviewed) ?? false
+        let saved: MenuBarLabelMode = try c.decodeIfPresent(MenuBarLabelMode.self, forKey: .label) ?? MenuBarLabelMode.none
+        label = reviewed ? saved : MenuBarLabelMode.none
+        labelReviewed = true
     }
 
     public init() {}
@@ -1027,7 +1037,7 @@ extension DockMaterial: LenientChoice { public static var fallback: Self { .liqu
 extension GlassStyle: LenientChoice { public static var fallback: Self { .regular } }
 extension GlassTint: LenientChoice { public static var fallback: Self { .automatic } }
 extension WidgetColorMode: LenientChoice { public static var fallback: Self { .original } }
-extension MenuBarLabelMode: LenientChoice { public static var fallback: Self { .custom } }
+extension MenuBarLabelMode: LenientChoice { public static var fallback: Self { .none } }
 extension SpacerSize: LenientChoice { public static var fallback: Self { .regular } }
 extension PaletteColor: LenientChoice { public static var fallback: Self { .blue } }
 extension PaperColor: LenientChoice { public static var fallback: Self { .yellow } }

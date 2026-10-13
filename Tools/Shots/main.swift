@@ -130,6 +130,8 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "codex", instance: widget(.aiUsage), isPreview: true, source: .sample),
         Shot(name: "todo", instance: widget(.todo), isPreview: true, source: .sample),
         Shot(name: "ambient", instance: widget(.ambient), isPreview: true, source: .sample),
+        Shot(name: "lunar", instance: widget(.lunar), isPreview: true, source: .sample),
+        Shot(name: "trash", instance: widget(.trash), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,

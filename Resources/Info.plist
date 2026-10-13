@@ -18,7 +18,7 @@
 	<key>NSHumanReadableCopyright</key><string></string>
 	<key>NSCalendarsFullAccessUsageDescription</key><string>码头会在程序坞小组件中显示你即将到来的日程。</string>
 	<key>NSRemindersFullAccessUsageDescription</key><string>码头会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。</string>
-	<key>NSAppleEventsUsageDescription</key><string>码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，并在“邮件”小组件中读取“邮件”App 收件箱的未读数量。</string>
+	<key>NSAppleEventsUsageDescription</key><string>码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，并通过访达清空废纸篓、推出磁盘。</string>
 	<key>NSLocationWhenInUseUsageDescription</key><string>码头会使用你的位置来显示天气小组件。</string>
 	<key>NSDesktopFolderUsageDescription</key><string>码头会读取“桌面”文件夹，在“最近截图”小组件中显示你的截图。</string>
 	<key>NSDownloadsFolderUsageDescription</key><string>码头会读取“下载”文件夹，在“下载”小组件中显示最近下载的文件。</string>

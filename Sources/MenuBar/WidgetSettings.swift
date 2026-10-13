@@ -384,6 +384,12 @@ struct WidgetSettingsSections: View {
         "showDone": "显示已完成的待办",
         "sounds": "声音",
         "volume": "音量",
+        "showTerm": "显示当天的节气",
+        "workAlert": "提醒调休上班和放假",
+        "flies": "垃圾多了招来苍蝇",
+        "threshold": "苍蝇出现的大小",
+        "pasteOnClick": "点按后直接粘贴（需要辅助功能权限）",
+        "actions": "开关",
     ]
 
     static func label(_ key: String) -> String {
@@ -397,6 +403,7 @@ struct WidgetSettingsSections: View {
         "devices": "要显示的设备",
         "rings": "要显示的圆环",
         "sounds": "要混合的声音",
+        "actions": "要显示的开关",
     ]
 
     static func groupLabel(_ key: String) -> String {
@@ -451,6 +458,7 @@ struct WidgetSettingsSections: View {
                     ("AirPods 充电盒", "case"), ("键盘", "keyboard")],
         "rings": [("存储空间", "storage"), ("电池", "battery")],
         "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
+        "actions": QuickToggle.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     /// String options that are really a choice from a fixed set.
@@ -475,6 +483,7 @@ struct WidgetSettingsSections: View {
         "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
+        "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

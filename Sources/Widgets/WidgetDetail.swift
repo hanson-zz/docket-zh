@@ -390,6 +390,8 @@ enum WidgetDetail {
         case .aiUsage: 340
         case .todo: 320
         case .ambient: 320
+        case .lunar: 320
+        case .trash: 320
         default: 300
         }
     }

@@ -1340,6 +1340,10 @@ struct DockShelfView: View {
                     app.updateWidget(updated)
                 }
             }
+            if let widget = entry.item.widget, widget.kind == .trash {
+                Button("打开废纸篓") { TrashMonitor.shared.open() }
+                Button("清空废纸篓…") { TrashMonitor.shared.empty() }
+            }
             if entry.item.fileRef != nil {
                 Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }

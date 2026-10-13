@@ -40,7 +40,10 @@ struct ClipboardTile: View {
 
     private var caption: String {
         let count = context.isPreview ? 8 : history.entries.count
-        return count == 0 ? "剪贴板" : "剪贴板 · \(count) 条"
+        let starred = context.isPreview ? 3 : ClipboardPins.pins(instance.config).count
+        var text = count == 0 ? "剪贴板" : "剪贴板 · \(count) 条"
+        if starred > 0 { text += " · \(starred) 星标" }
+        return text
     }
 
     private func badge(size: CGFloat) -> some View {

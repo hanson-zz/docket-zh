@@ -100,6 +100,10 @@ final class WidgetOptionTests: XCTestCase {
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras"],
             .todo: ["showDone"],
             .ambient: ["sounds", "volume"],
+            .lunar: ["showTerm", "workAlert"],
+            .trash: ["flies", "threshold"],
+            .clipboard: ["pasteOnClick"],
+            .toggles: ["actions"],
         ]
 
         for kind in WidgetKind.allCases {

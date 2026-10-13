@@ -184,7 +184,8 @@ public enum WidgetCatalog {
         Entry(kind: .fileShelf, name: "文件暂存", category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .clipboard, name: "剪贴板", category: .tools, defaults: c([:]),
+        // Starred texts live under `pins`, contents rather than a setting.
+        Entry(kind: .clipboard, name: "剪贴板", category: .tools, defaults: c(["pasteOnClick": .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Recent colours live under `recent`, not a default, for the same
@@ -214,7 +215,9 @@ public enum WidgetCatalog {
         Entry(kind: .volume, name: "音量", category: .media, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .toggles, name: "快速开关", category: .system, defaults: c([:]),
+        // Which switches, in order; see QuickToggle.
+        Entry(kind: .toggles, name: "快速开关", category: .system,
+              defaults: c([QuickToggle.key: .list(QuickToggle.defaults.map { .string($0.rawValue) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
@@ -281,6 +284,16 @@ public enum WidgetCatalog {
               defaults: c(["showDone": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // Lunar date, solar terms and the official holidays; see ChineseCalendar.
+        Entry(kind: .lunar, name: "农历与假期", category: .calendar,
+              defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // The Trash's size, a drop target, and flies; see TrashFlies.
+        Entry(kind: .trash, name: "废纸篓", category: .files,
+              defaults: c(["flies": .bool(true), "threshold": .string(TrashFlies.defaultThreshold)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Synthesised noise, mixed live; see AmbientSynth and AmbientPlayer.
         Entry(kind: .ambient, name: "环境音", category: .media,
               defaults: c(["sounds": .list([.string("rain")]), "volume": .number(50)]),
@@ -321,6 +334,8 @@ public enum WidgetCatalog {
         case .posture: PaletteColor.green.hex
         case .todo: PaletteColor.orange.hex
         case .ambient: PaletteColor.teal.hex
+        case .lunar: PaletteColor.red.hex
+        case .trash: PaletteColor.green.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -471,7 +486,7 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage, .todo, .ambient:
+             .aiUsage, .todo, .ambient, .lunar, .trash:
             nil
         }
     }
@@ -584,7 +599,7 @@ public enum WidgetCatalog {
         case .emoji: return CGSize(width: 160, height: 62)
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
-        case .toggles: return CGSize(width: 140, height: 62)
+        case .toggles: return CGSize(width: QuickToggle.length(count: QuickToggle.chosen(cfg).count), height: 62)
         case .github: return CGSize(width: 196, height: 62)
         case .currency: return CGSize(width: 196, height: 62)
         case .calculator: return CGSize(width: 168, height: 62)
@@ -599,6 +614,8 @@ public enum WidgetCatalog {
         case .posture: return CGSize(width: 168, height: 124)
         case .todo: return CGSize(width: 204, height: 62)
         case .ambient: return CGSize(width: 188, height: 62)
+        case .lunar: return CGSize(width: 196, height: 62)
+        case .trash: return CGSize(width: 176, height: 62)
         }
     }
 
@@ -667,7 +684,7 @@ public enum WidgetCatalog {
         case .capture:
             return 112
         case .toggles:
-            return 128
+            return Double(QuickToggle.chosen(cfg).count * 30 + 8)
         case .currency:
             return 84
         case .bookmarks:
@@ -678,7 +695,7 @@ public enum WidgetCatalog {
             return 112
         case .emoji:
             return 132
-        case .todo, .ambient:
+        case .todo, .ambient, .lunar, .trash:
             return 112
         default:
             return 76

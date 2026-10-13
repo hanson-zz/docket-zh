@@ -1,38 +1,42 @@
 import AppKit
+import ApplicationServices
 import SwiftUI
 
-/// The last twenty copies. A click puts one back on the pasteboard.
+/// Starred snippets first, then the last twenty copies, with a search field
+/// over both. A click puts one back on the pasteboard, and with 点按后直接粘贴
+/// on, pastes it into the app in front as well.
 ///
-/// Kept in memory only and gone when Docket quits; the footnote says so,
-/// because a list of everything you copied is exactly the kind of thing
-/// people want to know is not being written down.
+/// The history is kept in memory only and gone when Docket quits; the
+/// footnote says so. Starred texts are the exception, because keeping them
+/// is the point: they are saved with the widget (see `ClipboardPins`).
 struct ClipboardDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     private var history: ClipboardHistory { ClipboardHistory.shared }
-    @State private var copied: UUID?
+    @State private var copied: String?
+    @State private var query = ""
+    @FocusState private var searching: Bool
+
+    private var pins: [String] { ClipboardPins.pins(instance.config) }
+    private var pastes: Bool { instance.config.bool("pasteOnClick", default: false) }
 
     var body: some View {
         DetailCard {
             MeshBackdrop(color: WidgetStyle.tint(.indigo))
         } content: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 PanelHeader(symbol: "list.clipboard", title: "剪贴板",
-                            subtitle: "最近 \(ClipboardHistory.limit) 条 · 点按即可重新拷贝")
-                if context.isPreview || history.entries.isEmpty {
-                    PanelNote(symbol: "doc.on.clipboard", text: "拷贝的文本和图片会显示在这里。")
-                        .frame(height: 248)
-                } else {
-                    list
-                }
+                            subtitle: pastes ? "点按即可粘贴到前台应用" : "点按即可重新拷贝 · 星标保留常用文本")
+                searchField
+                list
                 HStack(spacing: 8) {
-                    PanelButton(title: "全部清除", symbol: "trash") {
+                    PanelButton(title: "清除历史", symbol: "trash") {
                         guard !context.isPreview else { return }
                         history.clear()
                     }
                 }
-                Text("记录只保存在内存中，退出码头后即清除。密码管理器标记为隐藏的内容不会被记录。")
+                Text("历史只保存在内存中，退出码头后即清除；加了星标的文本会保存下来。密码管理器标记为隐藏的内容不会被记录。")
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
@@ -41,46 +45,158 @@ struct ClipboardDetail: View {
         .onAppear { if !context.isPreview { history.start() } }
     }
 
-    private var list: some View {
-        ScrollView {
-            LazyVStack(spacing: 4) {
-                ForEach(history.entries) { entry in
-                    row(entry)
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.6))
+            TextField("", text: $query, prompt: Text("搜索剪贴板"))
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(.white)
+                .focused($searching)
+                .disabled(context.isPreview)
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.5))
                 }
+                .buttonStyle(.plain)
             }
         }
-        .scrollIndicators(.never)
-        .frame(height: 248)
+        .padding(.horizontal, 10)
+        .frame(height: 28)
+        .glassPane(cornerRadius: 9)
     }
 
-    private func row(_ entry: ClipboardHistory.Entry) -> some View {
-        HStack(spacing: 10) {
+    @ViewBuilder
+    private var list: some View {
+        let shownPins = pins.filter { ClipboardPins.matches($0, query: query) }
+        let shownEntries = context.isPreview ? [] : history.entries.filter { entry in
+            if case .text(let text) = entry.content, ClipboardPins.isPinned(text, in: pins) { return false }
+            return ClipboardPins.matches(entry.preview, query: query)
+        }
+        if shownPins.isEmpty && shownEntries.isEmpty {
+            PanelNote(symbol: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass",
+                      text: query.isEmpty ? "拷贝的文本和图片会显示在这里。点星标可以把常用文本留下来。" : "没有找到“\(query)”。")
+                .frame(height: 248)
+        } else {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 4) {
+                    if !shownPins.isEmpty {
+                        sectionLabel("星标")
+                        ForEach(shownPins, id: \.self) { pinRow($0) }
+                    }
+                    if !shownEntries.isEmpty {
+                        if !shownPins.isEmpty { sectionLabel("最近") }
+                        ForEach(shownEntries) { entryRow($0) }
+                    }
+                }
+            }
+            .scrollIndicators(.never)
+            .frame(height: 248)
+        }
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.6)
+            .foregroundStyle(.white.opacity(0.55))
+            .padding(.leading, 4)
+            .padding(.top, 2)
+    }
+
+    private func pinRow(_ text: String) -> some View {
+        rowShell(id: "pin:" + text) {
+            Image(systemName: "text.quote")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.opacity(0.1))
+        } title: {
+            text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
+        } caption: {
+            "星标"
+        } star: {
+            starButton(text, pinned: true)
+        } tap: {
+            put(text)
+            copied = "pin:" + text
+        }
+        .contextMenu {
+            Button("拷贝") { put(text, paste: false) }
+            Button("上移") { savePins(ClipboardPins.moving(text, by: -1, in: pins)) }
+            Button("下移") { savePins(ClipboardPins.moving(text, by: 1, in: pins)) }
+            Button("取消星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
+        }
+    }
+
+    private func entryRow(_ entry: ClipboardHistory.Entry) -> some View {
+        let text = Self.text(of: entry)
+        return rowShell(id: entry.id.uuidString) {
             thumbnail(entry)
+        } title: {
+            entry.preview
+        } caption: {
+            RelativeAge.caption(entry.date, now: context.now)
+        } star: {
+            if let text { starButton(text, pinned: false) }
+        } tap: {
+            history.copy(entry)
+            if pastes { Self.pasteSoon() }
+            copied = history.entries.first?.id.uuidString
+        }
+        .contextMenu {
+            Button("拷贝") { history.copy(entry) }
+            if let text { Button("加星标") { savePins(ClipboardPins.toggling(text, in: pins)) } }
+            Button("删除") { history.remove(entry) }
+        }
+    }
+
+    private func rowShell<Thumb: View, Star: View>(
+        id: String,
+        @ViewBuilder thumb: () -> Thumb,
+        title: () -> String,
+        caption: () -> String,
+        @ViewBuilder star: () -> Star,
+        tap: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            thumb()
                 .frame(width: 30, height: 30)
                 .clipShape(.rect(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
-                Text(entry.preview)
+                Text(title())
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                Text(copied == entry.id ? "已拷贝" : RelativeAge.caption(entry.date, now: context.now))
+                Text(copied == id ? (pastes ? "已粘贴" : "已拷贝") : caption())
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
             }
             Spacer(minLength: 0)
+            star()
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .glassPane(cornerRadius: 9)
         .contentShape(.rect(cornerRadius: 9))
-        .onTapGesture {
-            history.copy(entry)
-            copied = history.entries.first?.id
+        .onTapGesture(perform: tap)
+    }
+
+    private func starButton(_ text: String, pinned: Bool) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            withAnimation(.snappy(duration: 0.25)) { savePins(ClipboardPins.toggling(text, in: pins)) }
+        } label: {
+            Image(systemName: pinned ? "star.fill" : "star")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(pinned ? Color.yellow : .white.opacity(0.5))
+                .frame(width: 22, height: 22)
+                .contentShape(.rect)
         }
-        .contextMenu {
-            Button("拷贝") { history.copy(entry) }
-            Button("删除") { history.remove(entry) }
-        }
+        .buttonStyle(.plain)
+        .help(pinned ? "取消星标" : "加星标，退出后也保留")
     }
 
     @ViewBuilder
@@ -96,6 +212,39 @@ struct ClipboardDetail: View {
                 .foregroundStyle(.white.opacity(0.8))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.white.opacity(0.1))
+        }
+    }
+
+    private static func text(of entry: ClipboardHistory.Entry) -> String? {
+        if case .text(let value) = entry.content { return value }
+        return nil
+    }
+
+    private func savePins(_ next: [String]) {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(instance) { ClipboardPins.store(next, in: &$0) }
+    }
+
+    private func put(_ text: String, paste: Bool? = nil) {
+        guard !context.isPreview else { return }
+        history.copyText(text)
+        if paste ?? pastes { Self.pasteSoon() }
+    }
+
+    /// ⌘V into the app in front, a moment after the copy so the pasteboard
+    /// is settled. Posting keystrokes needs Accessibility; without it macOS
+    /// is asked to show its prompt and the text is simply left copied.
+    static func pasteSoon() {
+        guard AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary) else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            let source = CGEventSource(stateID: .combinedSessionState)
+            let v: CGKeyCode = 9
+            let down = CGEvent(keyboardEventSource: source, virtualKey: v, keyDown: true)
+            let up = CGEvent(keyboardEventSource: source, virtualKey: v, keyDown: false)
+            down?.flags = .maskCommand
+            up?.flags = .maskCommand
+            down?.post(tap: .cghidEventTap)
+            up?.post(tap: .cghidEventTap)
         }
     }
 }

@@ -143,6 +143,56 @@ last good reading and says so when one fails. The Codex sign-in is only ever
 read, never written or refreshed, and the token is sent to chatgpt.com only.
 OpenAI, ChatGPT and Codex are trademarks of OpenAI.
 
+### OnlySwitch - quick switches
+
+The 快速开关 widget (`Sources/Core/QuickToggleList.swift`,
+`Sources/Services/QuickActions.swift`) offers the same kinds of switches as
+[**OnlySwitch**](https://github.com/jacklandrin/OnlySwitch) and uses the same
+public commands for them: Finder's `AppleShowAllFiles` and `CreateDesktop`
+keys and `NSGlobalDomain AppleShowAllExtensions` followed by `killall Finder`,
+Finder's `eject (every disk whose ejectable is true)`, the AppleScript input
+volume for muting the microphone, and an IOKit `NoDisplaySleep` assertion for
+Keep Awake. Docket's code is its own; anything that follows OnlySwitch closely
+is used under its licence:
+
+> MIT License
+>
+> Copyright (c) 2021 jack
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+### holiday-cn - Chinese public holiday data
+
+The 农历与假期 widget reads the State Council's yearly holiday notices as
+published by [**holiday-cn**](https://github.com/NateScarlet/holiday-cn)
+(MIT), fetched at run time through jsDelivr; the 2026 schedule is bundled in
+`Sources/Core/ChineseCalendar.swift`. The schedule itself is an official
+government notice (gov.cn).
+
+### BananaBin - the idea of flies on the Trash
+
+The 废纸篓 widget's flies, which appear once the Trash passes a chosen size,
+multiply every hour it is left and scatter under the pointer, are an idea from
+[BananaBin](https://bananabin.app) by Leon Schrijvers and Rik Schennink.
+BananaBin is a paid, closed-source app; none of its code or artwork is used,
+only the idea, drawn and written from scratch.
+
 ### Apple
 
 Docket is built entirely on Apple's own frameworks - SwiftUI, AppKit,
@@ -162,7 +212,8 @@ is not linked into, or shipped with, the app.
 **There are none.** Docket has no Swift Package Manager dependencies, no
 CocoaPods, no Carthage, and no vendored third-party source. Everything under
 `Sources/` was written for this project (the Codex usage widget follows
-Codenotch's findings, as described above).
+Codenotch's findings and the quick switches follow OnlySwitch, as described
+above).
 
 ---
 

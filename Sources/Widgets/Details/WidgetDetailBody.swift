@@ -89,6 +89,10 @@ struct WidgetDetailBody: View {
             TodoDetail(instance: instance, context: context)
         case .ambient:
             AmbientDetail(instance: instance, context: context)
+        case .lunar:
+            LunarDetail(instance: instance, context: context)
+        case .trash:
+            TrashDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

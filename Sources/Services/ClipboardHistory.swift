@@ -137,6 +137,11 @@ final class ClipboardHistory {
                                        limit: Self.limit) { $0.same(as: $1) }
     }
 
+    /// Puts a starred text on the pasteboard, listing it as the newest copy.
+    func copyText(_ text: String) {
+        copy(Entry(content: .text(text), date: .now))
+    }
+
     func remove(_ entry: Entry) {
         entries.removeAll { $0.id == entry.id }
     }
