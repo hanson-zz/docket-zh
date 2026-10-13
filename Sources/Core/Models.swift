@@ -221,6 +221,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case habit
     case week
     case crypto
+    case appVolume = "app-volume"
 }
 
 /// What a widget opens when its card is clicked.
@@ -917,6 +918,8 @@ public struct PersistedState: Codable, Sendable {
     /// Layouts to return to when the current Focus ends. Nil while no Focus
     /// filter has switched anything.
     public var focusRevert: FocusRevert?
+    /// 灵动提示: the capsule under the notch. All off by default.
+    public var island = IslandSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -941,6 +944,7 @@ public struct PersistedState: Codable, Sendable {
         borrowedDockPrefs = try c.decodeIfPresent(DockPrefs.self, forKey: .borrowedDockPrefs)
         checkForUpdates = try c.decodeIfPresent(Bool.self, forKey: .checkForUpdates)
         focusRevert = try c.decodeIfPresent(FocusRevert.self, forKey: .focusRevert)
+        island = try c.decodeIfPresent(IslandSettings.self, forKey: .island) ?? IslandSettings()
     }
 
     public init() {}

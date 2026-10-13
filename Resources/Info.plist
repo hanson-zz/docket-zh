@@ -25,6 +25,7 @@
 	<key>NSDocumentsFolderUsageDescription</key><string>码头会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。</string>
 	<key>NSRemovableVolumesUsageDescription</key><string>码头会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。</string>
 	<key>NSNetworkVolumesUsageDescription</key><string>码头会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。</string>
+	<key>NSAudioCaptureUsageDescription</key><string>码头会在你调节“应用音量”小组件中某个应用的音量或将其静音时，接入该应用的声音并按你设置的音量重新播放。声音不会被录制或保存。</string>
 	<key>NSMicrophoneUsageDescription</key><string>码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。</string>
 </dict>
 </plist>

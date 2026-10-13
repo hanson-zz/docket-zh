@@ -42,6 +42,9 @@ public final class AppState {
             if state.timer != oldValue.timer {
                 onTimerChanged?(state.timer)
             }
+            if state.island != oldValue.island {
+                onIslandChanged?(state.island)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them
@@ -64,6 +67,8 @@ public final class AppState {
     /// The Focus Timer settings, which the widgets read through their own
     /// shared provider rather than from here.
     @ObservationIgnored public var onTimerChanged: (@MainActor (TimerState) -> Void)?
+    /// 灵动提示, for the controller that owns the floating capsule.
+    @ObservationIgnored public var onIslandChanged: (@MainActor (IslandSettings) -> Void)?
     /// Layout hotkeys, for the service that registers them with the system.
     @ObservationIgnored public var onShortcutsChanged: (@MainActor ([ShortcutBinding]) -> Void)?
 

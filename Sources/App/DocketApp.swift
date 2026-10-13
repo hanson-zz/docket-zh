@@ -55,6 +55,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TimerStateProvider.shared.onChange = { [state] timer in state.state.timer = timer }
         state.onTimerChanged = { timer in TimerStateProvider.shared.adopt(timer) }
 
+        // 灵动提示: off unless switched on in Settings ▸ 通用.
+        IslandController.shared.apply(state.state.island)
+        state.onIslandChanged = { island in IslandController.shared.apply(island) }
+
         // Layout hotkeys. Registered now and again whenever a layout gains,
         // loses or changes its combination; the service ignores a list that
         // has not changed, so the didSet that reports it can be generous.

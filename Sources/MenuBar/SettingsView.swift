@@ -360,6 +360,8 @@ struct SettingsView: View {
                 }
             }
 
+            islandSection
+
             Section("更新") {
                 // The consent alert promises this control exists, so it does.
                 // Binding through a default of false means a state file that
@@ -394,6 +396,40 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
     }
+
+    /// 灵动提示. All off by default; each source starts only when its switch
+    /// is on, and the capsule window exists only while something is shown.
+    private var islandSection: some View {
+        Section {
+            Toggle("音量提示", isOn: $state.island.volume)
+                .help("调节系统音量或静音时，在屏幕顶部中央显示当前音量。")
+            Toggle("亮度提示", isOn: $state.island.brightness)
+                .disabled(!brightnessAvailable && !state.island.brightness)
+                .help(brightnessAvailable
+                      ? "调节内建显示器亮度时，在屏幕顶部中央显示当前亮度。"
+                      : "这台 Mac 没有可读取亮度的内建显示器。")
+            Toggle("会议倒计时", isOn: $state.island.meeting)
+                .help("日程开始前，在屏幕顶部中央显示“X 分钟后：日程标题”。需要日历权限。")
+            if state.island.meeting {
+                Picker("提前显示", selection: Binding(
+                    get: { state.island.leadMinutes },
+                    set: { state.island.meetingMinutes = $0 })) {
+                    ForEach(IslandSettings.minuteChoices, id: \.self) { minutes in
+                        Text("\(minutes) 分钟").tag(minutes)
+                    }
+                }
+            }
+        } header: {
+            Text("灵动提示")
+        } footer: {
+            Text("在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var brightnessAvailable: Bool { DisplayBrightness.isAvailable }
 
     private var shortVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"

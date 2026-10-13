@@ -225,6 +225,53 @@ multiply every hour it is left and scatter under the pointer, are an idea from
 BananaBin is a paid, closed-source app; none of its code or artwork is used,
 only the idea, drawn and written from scratch.
 
+### AudioCap - process tap reference (BSD 2-Clause)
+
+The 应用音量 widget's tap pipeline (`Sources/Services/AppVolumeService.swift`)
+follows the sequence in Apple's Core Audio process-tap API: a
+`CATapDescription` with `mutedWhenTapped`, `AudioHardwareCreateProcessTap`, a
+private aggregate device with the output as its main sub-device and the tap in
+its tap list, and an I/O proc on that device. The aggregate-device dictionary
+keys and the teardown order were checked against
+[**AudioCap**](https://github.com/insidegui/AudioCap) by Guilherme Rambo, which
+is licensed under the BSD 2-Clause licence:
+
+> Copyright (c) 2024 Guilherme Rambo
+>
+> Redistribution and use in source and binary forms, with or without
+> modification, are permitted provided that the following conditions are met:
+>
+> - Redistributions of source code must retain the above copyright notice, this
+>   list of conditions and the following disclaimer.
+>
+> - Redistributions in binary form must reproduce the above copyright notice,
+>   this list of conditions and the following disclaimer in the documentation
+>   and/or other materials provided with the distribution.
+>
+> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+> AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+> IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+> DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+> FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+> DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+> SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+> CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+> OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+> OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Per-app volume mixers such as FineTune (GPL-3.0) were not consulted for code;
+nothing from a copyleft project is used. The gain curve, the helper-to-app
+grouping, the tap plan and the render loop are this project's own.
+
+### 灵动提示 - island-style capsule
+
+The capsule under the notch is an idea seen in "dynamic island" apps for the
+Mac, among them SuperIsland, whose repository carries no licence. No code from
+it, or from any other such app, is used; the panel, the level and countdown
+logic and the views were written from scratch against AppKit, SwiftUI, Core
+Audio and EventKit. Display brightness is read through the private
+DisplayServices framework, opened at run time and optional.
+
 ### Apple
 
 Docket is built entirely on Apple's own frameworks - SwiftUI, AppKit,
