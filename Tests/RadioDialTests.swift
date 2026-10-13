@@ -119,23 +119,65 @@ final class RadioDialTests: XCTestCase {
 
     // MARK: Radio Browser
 
-    func testSearchAndCountryAddresses() throws {
-        let search = try XCTUnwrap(RadioBrowser.searchURL(name: "音乐 之声"))
-        let parts = try XCTUnwrap(URLComponents(url: search, resolvingAgainstBaseURL: false))
+    private func query(_ url: URL) throws -> [String: String] {
+        let parts = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(parts.scheme, "https")
         XCTAssertEqual(parts.host, "de1.api.radio-browser.info")
         XCTAssertEqual(parts.path, "/json/stations/search")
-        let query = Dictionary(uniqueKeysWithValues: (parts.queryItems ?? []).map { ($0.name, $0.value ?? "") })
-        XCTAssertEqual(query["name"], "音乐 之声")
-        XCTAssertEqual(query["limit"], "30")
-        XCTAssertEqual(query["hidebroken"], "true")
-        XCTAssertEqual(query["order"], "clickcount")
-        XCTAssertEqual(query["reverse"], "true")
-        XCTAssertNil(RadioBrowser.searchURL(name: "   "))
+        return Dictionary(uniqueKeysWithValues: (parts.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+    }
 
-        let country = try XCTUnwrap(RadioBrowser.countryURL(code: "cn"))
-        XCTAssertTrue(country.absoluteString.hasPrefix(
-            "https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/CN?"))
-        XCTAssertNil(RadioBrowser.countryURL(code: "CHN"))
+    func testSearchByNameInsideRegion() throws {
+        let items = try query(XCTUnwrap(RadioBrowser.searchURL(name: " 音乐 之声 ", region: .chinese)))
+        XCTAssertEqual(items["name"], "音乐 之声")
+        XCTAssertEqual(items["language"], "chinese")
+        XCTAssertNil(items["countrycode"])
+        XCTAssertEqual(items["limit"], "30")
+        XCTAssertEqual(items["hidebroken"], "true")
+        XCTAssertEqual(items["order"], "clickcount")
+        XCTAssertEqual(items["reverse"], "true")
+
+        let hk = try query(XCTUnwrap(RadioBrowser.searchURL(name: "RTHK", region: .hongKong)))
+        XCTAssertEqual(hk["name"], "RTHK")
+        XCTAssertEqual(hk["countrycode"], "HK")
+        XCTAssertNil(hk["language"])
+    }
+
+    func testEmptyNameListsRegionTopStations() throws {
+        for region in RadioRegion.allCases {
+            let items = try query(XCTUnwrap(RadioBrowser.searchURL(name: "   ", region: region)))
+            XCTAssertNil(items["name"], region.rawValue)
+            XCTAssertEqual(items["order"], "clickcount")
+            XCTAssertEqual(items["reverse"], "true")
+            switch region {
+            case .chinese:
+                XCTAssertEqual(items["language"], "chinese")
+                XCTAssertNil(items["countrycode"])
+            case .mainland, .hongKong, .taiwan, .macau:
+                XCTAssertEqual(items["countrycode"], region.rawValue)
+                XCTAssertNil(items["language"])
+            case .global:
+                XCTAssertNil(items["countrycode"])
+                XCTAssertNil(items["language"])
+            }
+        }
+        let cn = try query(XCTUnwrap(RadioBrowser.searchURL(region: .mainland)))
+        XCTAssertEqual(cn["countrycode"], "CN")
+    }
+
+    func testRegionTitlesCodesAndStorage() {
+        XCTAssertEqual(RadioRegion.allCases.map(\.title), ["中文电台", "大陆", "香港", "台湾", "澳门", "全球"])
+        XCTAssertEqual([RadioRegion.mainland, .hongKong, .taiwan, .macau].map(\.rawValue), ["CN", "HK", "TW", "MO"])
+        XCTAssertEqual(RadioRegion.fallback, .chinese)
+
+        var config = WidgetConfig()
+        XCTAssertEqual(RadioRegion.stored(config), .chinese)
+        RadioRegion.store(.taiwan, in: &config)
+        XCTAssertEqual(config.string(RadioRegion.configKey), "TW")
+        XCTAssertEqual(RadioRegion.stored(config), .taiwan)
+        config.set(RadioRegion.configKey, .string("XX"))
+        XCTAssertEqual(RadioRegion.stored(config), .chinese)
+        XCTAssertEqual(RadioRegion(stored: "all"), .global)
     }
 
     func testUserAgentIsDescriptiveASCII() {

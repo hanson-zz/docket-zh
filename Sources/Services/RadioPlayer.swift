@@ -262,15 +262,13 @@ final class RadioMetadataRelay: NSObject, AVPlayerItemMetadataOutputPushDelegate
 
 /// Asks the Radio Browser directory, trying its mirrors in order.
 enum RadioDirectory {
-    enum Query: Sendable {
-        case name(String)
-        case country(String)
+    /// A name to look for (empty lists the most listened) inside a region.
+    struct Query: Sendable, Equatable {
+        var name: String
+        var region: RadioRegion
 
         func url(host: String) -> URL? {
-            switch self {
-            case .name(let words): RadioBrowser.searchURL(name: words, host: host)
-            case .country(let code): RadioBrowser.countryURL(code: code, host: host)
-            }
+            RadioBrowser.searchURL(name: name, region: region, host: host)
         }
     }
 

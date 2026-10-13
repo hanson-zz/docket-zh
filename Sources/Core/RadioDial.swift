@@ -220,6 +220,58 @@ public enum RadioDial {
     }
 }
 
+// MARK: - Search region
+
+/// Which part of the directory "搜索电台" looks in. Chinese-language
+/// stations by default; the rest narrow by country code, and "全球" does not
+/// narrow at all. The raw value is what the widget's config keeps.
+public enum RadioRegion: String, CaseIterable, Identifiable, Sendable {
+    case chinese = "chinese"
+    case mainland = "CN"
+    case hongKong = "HK"
+    case taiwan = "TW"
+    case macau = "MO"
+    case global = "all"
+
+    public static let configKey = "searchRegion"
+    public static let fallback: RadioRegion = .chinese
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .chinese: "中文电台"
+        case .mainland: "大陆"
+        case .hongKong: "香港"
+        case .taiwan: "台湾"
+        case .macau: "澳门"
+        case .global: "全球"
+        }
+    }
+
+    /// The query items that narrow a Radio Browser search to this region.
+    public var filter: [URLQueryItem] {
+        switch self {
+        case .chinese: [URLQueryItem(name: "language", value: "chinese")]
+        case .mainland, .hongKong, .taiwan, .macau: [URLQueryItem(name: "countrycode", value: rawValue)]
+        case .global: []
+        }
+    }
+
+    /// A stored value read back; anything unknown is the default.
+    public init(stored raw: String) {
+        self = RadioRegion(rawValue: raw.trimmingCharacters(in: .whitespaces)) ?? Self.fallback
+    }
+
+    public static func stored(_ config: WidgetConfig) -> RadioRegion {
+        RadioRegion(stored: config.string(configKey))
+    }
+
+    public static func store(_ region: RadioRegion, in config: inout WidgetConfig) {
+        config.set(configKey, .string(region.rawValue))
+    }
+}
+
 // MARK: - Radio Browser
 
 /// The public station directory at radio-browser.info: no key, but it asks
@@ -234,37 +286,27 @@ public enum RadioBrowser {
                                "all.api.radio-browser.info"]
     public static let limit = 30
 
-    public static func searchURL(name: String, host: String = hosts[0]) -> URL? {
-        let words = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !words.isEmpty else { return nil }
+    /// The directory's station search, narrowed to `region`. With no name
+    /// it lists that region's most listened stations; with one it searches
+    /// station names inside the region. Always ordered by clicks, broken
+    /// streams left out.
+    public static func searchURL(name: String = "", region: RadioRegion = .global,
+                                 host: String = hosts[0]) -> URL? {
+        let words = RadioDial.oneLine(name)
         var parts = URLComponents()
         parts.scheme = "https"
         parts.host = host
         parts.path = "/json/stations/search"
-        parts.queryItems = [
-            URLQueryItem(name: "name", value: words),
+        var items: [URLQueryItem] = []
+        if !words.isEmpty { items.append(URLQueryItem(name: "name", value: words)) }
+        items += region.filter
+        items += [
             URLQueryItem(name: "limit", value: String(limit)),
             URLQueryItem(name: "hidebroken", value: "true"),
             URLQueryItem(name: "order", value: "clickcount"),
             URLQueryItem(name: "reverse", value: "true"),
         ]
-        return parts.url
-    }
-
-    /// The most listened stations of one country, by ISO code ("CN").
-    public static func countryURL(code: String, host: String = hosts[0]) -> URL? {
-        let cc = code.trimmingCharacters(in: .whitespaces).uppercased()
-        guard cc.count == 2, cc.allSatisfy({ $0.isASCII && $0.isLetter }) else { return nil }
-        var parts = URLComponents()
-        parts.scheme = "https"
-        parts.host = host
-        parts.path = "/json/stations/bycountrycodeexact/\(cc)"
-        parts.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit)),
-            URLQueryItem(name: "hidebroken", value: "true"),
-            URLQueryItem(name: "order", value: "clickcount"),
-            URLQueryItem(name: "reverse", value: "true"),
-        ]
+        parts.queryItems = items
         return parts.url
     }
 

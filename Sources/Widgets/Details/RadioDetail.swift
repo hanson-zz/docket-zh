@@ -22,6 +22,14 @@ struct RadioDetail: View {
     @State private var searching = false
     @State private var searchFailed = false
     @State private var searched = false
+    /// What the shown results answer, so the list can say what it is.
+    @State private var shownQuery: RadioDirectory.Query?
+    /// Bumped for every request; an answer that comes back after a newer
+    /// request was made is dropped.
+    @State private var requestID = 0
+    /// The region picked in this panel, until the config written for it
+    /// comes back.
+    @State private var pickedRegion: RadioRegion?
     /// The slider's own value while dragging, so the profile is saved once
     /// at the end of the drag rather than sixty times during it.
     @State private var dragging: Double?
@@ -35,6 +43,10 @@ struct RadioDetail: View {
     private var station: RadioStation? { stations.isEmpty ? nil : stations[index] }
     private var volume: Double { dragging ?? instance.config.double("volume", default: 60) }
     private var playing: Bool { context.isPreview || player.plays(station) }
+    private var region: RadioRegion {
+        if let pickedRegion { return pickedRegion }
+        return context.isPreview ? RadioRegion.fallback : RadioRegion.stored(instance.config)
+    }
 
     private var accent: Color { RadioIcon.glow }
     private static let needle = Color(hex: "#FF453A")
@@ -358,6 +370,8 @@ struct RadioDetail: View {
 
     private var typedURL: URL? { RadioDial.streamURL(query) }
 
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     private var search: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
@@ -368,9 +382,20 @@ struct RadioDetail: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .foregroundStyle(.white)
-                    .onSubmit { typedURL == nil ? run(.name(query)) : addCustom() }
+                    .onSubmit { typedURL == nil ? run() : addCustom() }
                     .disabled(context.isPreview)
                 if searching { ProgressView().controlSize(.mini) }
+                if !query.isEmpty, !context.isPreview {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("清空搜索")
+                }
             }
             .padding(.horizontal, 10)
             .frame(height: 32)
@@ -379,18 +404,23 @@ struct RadioDetail: View {
             if typedURL != nil {
                 customRow
             } else {
+                regionRow
                 HStack(spacing: 6) {
-                    chip("搜索") { run(.name(query)) }
-                        .disabled(query.trimmingCharacters(in: .whitespaces).isEmpty)
-                    chip("中国热门电台") { run(.country("CN")) }
+                    Text(listTitle)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
                     Spacer()
+                    if !trimmedQuery.isEmpty { chip("搜索") { run() } }
                 }
             }
 
             if searchFailed {
                 note("连不上电台目录，请检查网络后再试。")
             } else if searched, results.isEmpty, !searching {
-                note("没有找到电台，换个关键词试试。")
+                note(shownQuery?.name.isEmpty == false
+                     ? "\((shownQuery?.region ?? region).title)里没有找到这个电台，换个关键词或地区试试。"
+                     : "\((shownQuery?.region ?? region).title)暂时没有可收听的电台。")
             } else if !results.isEmpty {
                 ScrollView {
                     VStack(spacing: 2) {
@@ -401,6 +431,49 @@ struct RadioDetail: View {
                 .scrollIndicators(.automatic)
             }
         }
+        .onAppear {
+            if !searched, !searching, trimmedQuery.isEmpty { run() }
+        }
+        .onChange(of: trimmedQuery) { _, words in
+            // Clearing the field goes back to the region's top stations.
+            if words.isEmpty, shownQuery?.name.isEmpty == false { run() }
+        }
+    }
+
+    /// "中文电台 · 热门电台" for the top list, "“音乐” · 香港" for a search.
+    private var listTitle: String {
+        let shown = shownQuery ?? RadioDirectory.Query(name: "", region: region)
+        if shown.name.isEmpty { return "\(shown.region.title) · 热门电台" }
+        return "“\(shown.name)” · \(shown.region.title)"
+    }
+
+    private var regionRow: some View {
+        HStack(spacing: 4) {
+            ForEach(RadioRegion.allCases) { option in regionChip(option) }
+        }
+    }
+
+    private func regionChip(_ option: RadioRegion) -> some View {
+        let on = option == region
+        return Button {
+            guard !context.isPreview, option != region else { return }
+            pickedRegion = option
+            save { RadioRegion.store(option, in: &$0) }
+            run(in: option)
+        } label: {
+            Text(option.title)
+                .font(.system(size: 11, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(on ? .white : .white.opacity(0.65))
+                .frame(maxWidth: .infinity)
+                .frame(height: 24)
+                .background(Capsule().fill(on ? accent.opacity(0.4) : .white.opacity(0.08)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(option == .global ? "不限地区和语言" : "只看\(option.title)")
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     private var customRow: some View {
@@ -485,17 +558,24 @@ struct RadioDetail: View {
             .padding(.vertical, 4)
     }
 
-    private func run(_ query: RadioDirectory.Query) {
-        if case .name(let words) = query, words.trimmingCharacters(in: .whitespaces).isEmpty { return }
-        guard !context.isPreview, !searching else { return }
+    /// Lists the region's top stations when the field is empty, otherwise
+    /// searches names inside the region. A newer request wins over one still
+    /// on its way.
+    private func run(in chosen: RadioRegion? = nil) {
+        guard !context.isPreview, typedURL == nil else { return }
+        let request = RadioDirectory.Query(name: trimmedQuery, region: chosen ?? region)
+        requestID += 1
+        let id = requestID
         searching = true
         searchFailed = false
         Task {
-            let found = await RadioDirectory.fetch(query)
+            let found = await RadioDirectory.fetch(request)
+            guard id == requestID else { return }
             searching = false
             searched = true
             searchFailed = found == nil
             results = found ?? []
+            shownQuery = request
         }
     }
 
