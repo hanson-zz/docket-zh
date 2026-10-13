@@ -261,7 +261,7 @@ public enum HabitTracker {
     /// The 76pt column stacks a name over seven dots per habit, up to four.
     public static func columnHeight(count: Int) -> Double {
         let rows = min(max(count, 1), 4)
-        return Double(rows * 30 + 12)
+        return max(76, Double(rows * 30 + 12))
     }
 
     /// The tile's caption under the habits, or its empty state.
