@@ -281,3 +281,16 @@ final class ShelfColorTests: XCTestCase {
         XCTAssertEqual(old.shelfColor, "")
     }
 }
+
+final class ChineseTimeTextTests: XCTestCase {
+    func testSpokenTimes() {
+        XCTAssertEqual(ChineseTimeText.say(hour: 16, minute: 43).period, "下午")
+        XCTAssertEqual(ChineseTimeText.say(hour: 16, minute: 43).time, "四点四十三分")
+        XCTAssertEqual(ChineseTimeText.say(hour: 14, minute: 0).time, "两点整")
+        XCTAssertEqual(ChineseTimeText.say(hour: 0, minute: 30).time, "十二点半")
+        XCTAssertEqual(ChineseTimeText.say(hour: 9, minute: 5).time, "九点零五分")
+        XCTAssertEqual(ChineseTimeText.say(hour: 10, minute: 10).time, "十点十分")
+        XCTAssertEqual(ChineseTimeText.say(hour: 23, minute: 59).period, "深夜")
+        XCTAssertEqual(ChineseTimeText.number(20), "二十")
+    }
+}

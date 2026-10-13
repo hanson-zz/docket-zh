@@ -7,6 +7,14 @@ struct ClockStyleReadout: View {
     var now: Date
     var zone: TimeZone
     var vertical: Bool
+    /// Show the seconds on the faces that are digits.
+    var seconds = true
+
+    private var secondText: String {
+        var calendar = Calendar.current
+        calendar.timeZone = zone
+        return String(format: "%02d", calendar.component(.second, from: now))
+    }
 
     private var parts: (time: String, meridiem: String?) { ClockFormat.compactTime(now, zone: zone) }
 
@@ -15,6 +23,9 @@ struct ClockStyleReadout: View {
             switch style {
             case "analog": analog
             case "flip": flip
+            case "digital": digital
+            case "ring": ring
+            case "words": words
             default: pixel
             }
         }
@@ -63,13 +74,15 @@ struct ClockStyleReadout: View {
         return Group {
             if vertical {
                 VStack(spacing: 3) {
-                    FlipCard(text: hours, size: 20)
-                    FlipCard(text: minutes, size: 20)
+                    FlipCard(text: hours, size: seconds ? 16 : 20)
+                    FlipCard(text: minutes, size: seconds ? 16 : 20)
+                    if seconds { FlipCard(text: secondText, size: 16) }
                 }
             } else {
-                HStack(spacing: 5) {
-                    FlipCard(text: hours, size: 26)
-                    FlipCard(text: minutes, size: 26)
+                HStack(spacing: seconds ? 4 : 5) {
+                    FlipCard(text: hours, size: seconds ? 22 : 26)
+                    FlipCard(text: minutes, size: seconds ? 22 : 26)
+                    if seconds { FlipCard(text: secondText, size: 22) }
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
                             .font(WidgetStyle.label(10))
@@ -81,16 +94,130 @@ struct ClockStyleReadout: View {
         }
     }
 
+    // MARK: Big digits
+
+    /// Heavy figures with the seconds riding small beside them, and the date
+    /// underneath.
+    private var digital: some View {
+        Group {
+            if vertical {
+                VStack(spacing: 1) {
+                    Text(parts.time)
+                        .font(.system(size: 20, weight: .heavy, design: .rounded).monospacedDigit())
+                        .foregroundStyle(WidgetStyle.primary)
+                        .rollingValue(parts.time)
+                    if seconds {
+                        Text(secondText)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(.orange)
+                            .rollingValue(secondText)
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(parts.time)
+                            .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
+                            .foregroundStyle(WidgetStyle.primary)
+                            .rollingValue(parts.time)
+                        if seconds {
+                            Text(secondText)
+                                .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
+                                .foregroundStyle(.orange)
+                                .rollingValue(secondText)
+                        }
+                        if let meridiem = parts.meridiem {
+                            Text(meridiem)
+                                .font(WidgetStyle.label(10))
+                                .foregroundStyle(WidgetStyle.secondary)
+                        }
+                    }
+                    Text(ClockFormat.date(now, zone: zone))
+                        .font(WidgetStyle.caption(11))
+                        .foregroundStyle(WidgetStyle.secondary)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    // MARK: Seconds ring
+
+    /// The time inside a ring that fills once a minute.
+    private var ring: some View {
+        let progress = (Double(secondText) ?? 0) / 60
+        let diameter: CGFloat = vertical ? 50 : 46
+        return Group {
+            if vertical {
+                SecondsRing(progress: progress, diameter: diameter) {
+                    Text(parts.time)
+                        .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(WidgetStyle.primary)
+                }
+            } else {
+                HStack(spacing: 10) {
+                    SecondsRing(progress: progress, diameter: diameter) {
+                        Text(secondText)
+                            .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(.orange)
+                            .rollingValue(secondText)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(parts.time)
+                            .font(.system(size: 22, weight: .bold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(WidgetStyle.primary)
+                            .rollingValue(parts.time)
+                        Text(ClockPanelWeekday.monthDay(now, zone: zone) + " " + ClockPanelWeekday.of(now, zone: zone))
+                            .font(WidgetStyle.caption(11))
+                            .foregroundStyle(WidgetStyle.secondary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+
+    // MARK: Words
+
+    /// "下午" over "四点四十三分".
+    private var words: some View {
+        var calendar = Calendar.current
+        calendar.timeZone = zone
+        let c = calendar.dateComponents([.hour, .minute], from: now)
+        let said = ChineseTimeText.say(hour: c.hour ?? 0, minute: c.minute ?? 0)
+        return VStack(alignment: vertical ? .center : .leading, spacing: 1) {
+            Text(said.period + " · " + ClockPanelWeekday.of(now, zone: zone))
+                .font(WidgetStyle.caption(vertical ? 9 : 11))
+                .foregroundStyle(WidgetStyle.secondary)
+            Text(said.time)
+                .font(.system(size: vertical ? 13 : 20, weight: .semibold, design: .serif))
+                .foregroundStyle(WidgetStyle.primary)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.4), value: said.time)
+        }
+        .lineLimit(vertical ? 2 : 1)
+        .minimumScaleFactor(0.55)
+        .multilineTextAlignment(vertical ? .center : .leading)
+        .frame(maxWidth: .infinity, alignment: vertical ? .center : .leading)
+    }
+
     // MARK: Pixel
 
     private var pixel: some View {
-        let text = parts.time.count == 4 ? " " + parts.time : parts.time
+        let base = parts.time.count == 4 ? " " + parts.time : parts.time
+        let text = seconds && !vertical ? base + ":" + secondText : base
         return Group {
             if vertical {
                 PixelText(text: text, dot: 1.9)
             } else {
                 HStack(spacing: 6) {
-                    PixelText(text: text, dot: 3.3)
+                    PixelText(text: text, dot: seconds ? 2.7 : 3.3)
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -160,17 +287,41 @@ struct FlipCard: View {
             .padding(.horizontal, size * 0.18)
             .frame(height: size * 1.32)
             .background {
-                RoundedRectangle(cornerRadius: size * 0.2, style: .continuous)
-                    .fill(WidgetStyle.primary.opacity(0.1))
-            }
-            .overlay {
-                // The hinge across the middle.
-                Rectangle()
-                    .fill(Color.black.opacity(0.28))
-                    .frame(height: 1)
+                // The hinge sits behind the figures, as a split between the
+                // two halves of the card. Drawn over them it struck the
+                // digits through.
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.2, style: .continuous)
+                        .fill(WidgetStyle.primary.opacity(0.1))
+                    Rectangle()
+                        .fill(Color.black.opacity(0.22))
+                        .frame(height: 1)
+                }
             }
             .contentTransition(.numericText())
             .animation(.snappy(duration: 0.3), value: text)
+    }
+}
+
+/// A ring that fills with the seconds, around whatever it holds.
+struct SecondsRing<Content: View>: View {
+    var progress: Double
+    var diameter: CGFloat
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(WidgetStyle.primary.opacity(0.1), lineWidth: 3.5)
+            Circle()
+                .trim(from: 0, to: max(0.001, progress))
+                .stroke(Color.orange, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                // A jump back to empty at the top of the minute, not a sweep
+                // backwards round the whole ring.
+                .animation(progress == 0 ? nil : .linear(duration: 0.9), value: progress)
+            content()
+        }
+        .frame(width: diameter, height: diameter)
     }
 }
 

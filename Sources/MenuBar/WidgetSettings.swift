@@ -385,6 +385,7 @@ struct WidgetSettingsSections: View {
         "sounds": "声音",
         "volume": "音量",
         "showTerm": "显示当天的节气",
+        "seconds": "显示秒（翻页、像素、大号数字）",
         "workAlert": "提醒调休上班和放假",
         "flies": "垃圾多了招来苍蝇",
         "threshold": "苍蝇出现的大小",

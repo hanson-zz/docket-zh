@@ -20,7 +20,8 @@ struct ClockTile: View {
             standard
         } else {
             ClockStyleReadout(style: style, now: context.now, zone: .current,
-                              vertical: context.position.isVertical)
+                              vertical: context.position.isVertical,
+                              seconds: instance.config.bool("seconds", default: true))
         }
     }
 

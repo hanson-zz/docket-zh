@@ -32,11 +32,14 @@ public enum WidgetCatalog {
 
     public static let entries: [Entry] = [
         Entry(kind: .clock, name: "时钟", category: .clocks,
-              defaults: c(["layout": .string("standard")]),
+              defaults: c(["layout": .string("standard"), "seconds": .bool(true)]),
               variants: [("标准", ["layout": .string("standard")]),
                          ("模拟表盘", ["layout": .string("analog")]),
                          ("翻页", ["layout": .string("flip")]),
-                         ("像素", ["layout": .string("pixel")])],
+                         ("像素", ["layout": .string("pixel")]),
+                         ("大号数字", ["layout": .string("digital")]),
+                         ("秒圈", ["layout": .string("ring")]),
+                         ("中文", ["layout": .string("words")])],
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .world, name: "世界时钟", category: .clocks,
