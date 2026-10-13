@@ -188,12 +188,19 @@ struct WidgetSettingsSections: View {
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
+                if WidgetCatalog.isSupporterOnly(variant.overrides), !Supporter.isUnlocked {
+                    SponsorWindow.shared.show()
+                    return
+                }
                 write(instance) { config in
                     for (key, value) in variant.overrides { config.set(key, value) }
                 }
             })) {
                 ForEach(entry.variants.indices, id: \.self) { index in
-                    Text(entry.variants[index].title).tag(entry.variants[index].title)
+                    let variant = entry.variants[index]
+                    Text(WidgetCatalog.isSupporterOnly(variant.overrides) && !Supporter.isUnlocked
+                         ? "\(variant.title)（赞助者专属）" : variant.title)
+                        .tag(variant.title)
                 }
             }
     }
@@ -385,7 +392,7 @@ struct WidgetSettingsSections: View {
         "sounds": "声音",
         "volume": "音量",
         "showTerm": "显示当天的节气",
-        "seconds": "显示秒（翻页、像素、大号数字）",
+        "seconds": "显示秒（数字类样式）",
         "workAlert": "提醒调休上班和放假",
         "flies": "垃圾多了招来苍蝇",
         "threshold": "苍蝇出现的大小",

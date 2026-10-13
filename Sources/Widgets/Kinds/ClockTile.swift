@@ -11,13 +11,23 @@ struct ClockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private var style: String { instance.config.string("layout", default: "standard") }
+    /// A supporter face falls back to flip cards while it is locked, so a
+    /// config copied from another Mac still shows the time.
+    private var style: String {
+        let layout = instance.config.string("layout", default: "standard")
+        if WidgetCatalog.supporterClockLayouts.contains(layout), !Supporter.isUnlocked, !context.isPreview { return "flip" }
+        return layout
+    }
 
     var body: some View {
         // The compact tile is the time and nothing else, whatever the style:
         // 88pt has no room for a face or a card.
         if style == "standard" || !instance.expanded && !context.position.isVertical {
             standard
+        } else if WidgetCatalog.supporterClockLayouts.contains(style) {
+            SupporterClockFace(style: style, now: context.now, zone: .current,
+                               vertical: context.position.isVertical,
+                               seconds: instance.config.bool("seconds", default: true))
         } else {
             ClockStyleReadout(style: style, now: context.now, zone: .current,
                               vertical: context.position.isVertical,

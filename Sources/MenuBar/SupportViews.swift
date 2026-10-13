@@ -149,20 +149,20 @@ struct SponsorView: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     if unlocked {
-                        Label("已解锁赞助者专属配色，谢谢你！", systemImage: "heart.fill")
+                        Label("已解锁赞助者专属配色和表盘，谢谢你！", systemImage: "heart.fill")
                             .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
-                        Text("在 设置 ▸ 扩展栏 ▸ 外观 中选择。")
+                        Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、简约、极简。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
                         Button {
                             unlocked = true
                         } label: {
-                            Label("我已赞助，解锁专属配色", systemImage: "paintpalette")
+                            Label("我已赞助，解锁专属配色和表盘", systemImage: "paintpalette")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(Color(hex: ShelfColor.redPanda.hex))
-                        Text("给扩展栏换上小熊猫橙、樱花粉等 \(ShelfColor.allCases.count) 种配色。码头不联网验证，全凭你的诚信。")
+                        Text("\(ShelfColor.allCases.count) 种扩展栏配色，加上霓虹、实景、简约、极简 4 款时钟表盘。码头不联网验证，全凭你的诚信。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

@@ -268,6 +268,15 @@ struct WidgetLibraryView: View {
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
+                if WidgetCatalog.isSupporterOnly(card.overrides) {
+                    Text("赞助者专属")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Capsule().fill(Color(hex: ShelfColor.redPanda.hex)))
+                        .fixedSize()
+                }
                 Spacer(minLength: 2)
                 Button { add(card) } label: {
                     Image(systemName: "plus")
@@ -338,6 +347,10 @@ struct WidgetLibraryView: View {
     }
 
     private func add(_ card: LibraryCard) {
+        if WidgetCatalog.isSupporterOnly(card.overrides), !Supporter.isUnlocked {
+            SponsorWindow.shared.show()
+            return
+        }
         guard let instance = WidgetCatalog.make(card.kind, overrides: card.overrides) else { return }
         onAdd(instance)
     }

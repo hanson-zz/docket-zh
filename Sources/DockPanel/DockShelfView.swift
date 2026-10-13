@@ -1364,7 +1364,9 @@ struct DockShelfView: View {
             Menu("样式") {
                 ForEach(catalog.variants.indices, id: \.self) { index in
                     let variant = catalog.variants[index]
-                    Button(variant.title) {
+                    let locked = WidgetCatalog.isSupporterOnly(variant.overrides) && !Supporter.isUnlocked
+                    Button(locked ? "\(variant.title)（赞助者专属）" : variant.title) {
+                        if locked { SponsorWindow.shared.show(); return }
                         var updated = widget
                         for (key, value) in variant.overrides { updated.config.set(key, value) }
                         withAnimation(.snappy(duration: 0.26)) { app.updateWidget(updated) }

@@ -28,6 +28,15 @@ public enum WidgetCatalog {
         public var selfContained: Bool
     }
 
+    /// 赞助者专属表盘, unlocked from the sponsor window like the shelf colours.
+    public static let supporterClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
+
+    /// Whether a variant's overrides pick a supporter-only face.
+    public static func isSupporterOnly(_ overrides: [String: WidgetConfig.Value]) -> Bool {
+        if case .string(let layout) = overrides["layout"] { return supporterClockLayouts.contains(layout) }
+        return false
+    }
+
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
@@ -39,7 +48,11 @@ public enum WidgetCatalog {
                          ("像素", ["layout": .string("pixel")]),
                          ("大号数字", ["layout": .string("digital")]),
                          ("秒圈", ["layout": .string("ring")]),
-                         ("中文", ["layout": .string("words")])],
+                         ("中文", ["layout": .string("words")]),
+                         ("霓虹", ["layout": .string("neon")]),
+                         ("实景", ["layout": .string("nixie")]),
+                         ("简约", ["layout": .string("lcd")]),
+                         ("极简", ["layout": .string("minimal")])],
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .world, name: "世界时钟", category: .clocks,
