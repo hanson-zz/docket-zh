@@ -127,6 +127,7 @@ public enum PaletteColor: String, Codable, Sendable, CaseIterable {
 
 public enum PaperColor: String, Codable, Sendable, CaseIterable {
     case yellow, orange, pink, purple, blue, green, graphite
+    case cream, peach, coral, mint, teal, lavender, kraft, slate, night
 
     public var hex: String {
         switch self {
@@ -137,10 +138,49 @@ public enum PaperColor: String, Codable, Sendable, CaseIterable {
         case .blue: "#96C7F5"
         case .green: "#ADD985"
         case .graphite: "#CFCCC2"
+        case .cream: "#F6EFDF"
+        case .peach: "#FFCFB0"
+        case .coral: "#FF9A8B"
+        case .mint: "#A8E6CF"
+        case .teal: "#8FD8D8"
+        case .lavender: "#DCD0F5"
+        case .kraft: "#D9B98C"
+        case .slate: "#5B6B7F"
+        case .night: "#26262B"
         }
     }
 
-    public static let picker: [PaperColor] = [.yellow, .orange, .pink, .purple, .blue, .green]
+    /// The two dark papers take light ink; every other swatch is light in
+    /// both appearances and keeps the fixed dark ink.
+    public var isDark: Bool { self == .slate || self == .night }
+
+    public var inkHex: String { isDark ? "#F4F4F6" : "#1C1C1E" }
+
+    public var title: String {
+        switch self {
+        case .yellow: "柠檬黄"
+        case .orange: "橘子橙"
+        case .pink: "樱花粉"
+        case .purple: "葡萄紫"
+        case .blue: "天空蓝"
+        case .green: "青草绿"
+        case .graphite: "石墨灰"
+        case .cream: "奶油白"
+        case .peach: "蜜桃"
+        case .coral: "珊瑚红"
+        case .mint: "薄荷绿"
+        case .teal: "湖水青"
+        case .lavender: "薰衣草"
+        case .kraft: "牛皮纸"
+        case .slate: "雾霾蓝"
+        case .night: "夜黑"
+        }
+    }
+
+    public static let picker: [PaperColor] = [
+        .yellow, .cream, .kraft, .peach, .orange, .coral, .pink, .lavender,
+        .purple, .blue, .teal, .mint, .green, .slate, .night,
+    ]
 }
 
 public enum MetricColor {

@@ -105,7 +105,8 @@ public enum WidgetCatalog {
 
         Entry(kind: .notes, name: "便签", category: .notes,
               defaults: c(["text": .string(""), "color": .string("yellow")]),
-              variants: [], supportsCompact: false, selfContained: true),
+              variants: PaperColor.picker.map { ($0.title, ["color": .string($0.rawValue)]) },
+              supportsCompact: false, selfContained: true),
 
         Entry(kind: .music, name: "正在播放", category: .media,
               defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),

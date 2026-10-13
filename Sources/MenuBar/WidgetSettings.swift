@@ -486,7 +486,7 @@ struct WidgetSettingsSections: View {
     static let stringChoices: [String: [(title: String, value: String)]] = [
         "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
-        "notes.color": PaperColor.picker.map { (docketColourName($0.rawValue), $0.rawValue) },
+        "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
         "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],
         "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },

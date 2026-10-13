@@ -14,11 +14,14 @@ struct StickyNoteTile: View {
     /// Every `PaperColor` is a light swatch in both appearances, so the ink is
     /// deliberately fixed dark rather than semantic - `Color.primary` would go
     /// white in dark mode and vanish into the paper.
-    private static let ink = Color(hex: "#1C1C1E")
+    private var ink: Color { Color(hex: swatch.inkHex) }
+
+    private var swatch: PaperColor {
+        PaperColor(rawValue: instance.config.string("color", default: "yellow")) ?? .yellow
+    }
 
     private var paper: Color {
-        let stored = instance.config.string("color", default: "yellow")
-        return WidgetStyle.paper(PaperColor(rawValue: stored) ?? .yellow)
+        WidgetStyle.paper(swatch)
     }
 
     private var stored: String { instance.config.string("text") }
@@ -50,7 +53,7 @@ struct StickyNoteTile: View {
             } else {
                 Text(text)
                 .font(.system(size: column ? 10 : 13, weight: .semibold))
-                .foregroundStyle(Self.ink)
+                .foregroundStyle(ink)
                 .multilineTextAlignment(.leading)
                 .lineLimit(column ? 5 : 4)
                 .minimumScaleFactor(column ? 0.8 : 1)
@@ -75,10 +78,10 @@ struct StickyNoteTile: View {
         VStack(alignment: .leading, spacing: column ? 5 : 7) {
             Image(systemName: "pencil.line")
                 .font(.system(size: column ? 11 : 13, weight: .semibold))
-                .foregroundStyle(Self.ink.opacity(0.28))
+                .foregroundStyle(ink.opacity(0.28))
             ForEach(0..<(column ? 2 : 2), id: \.self) { line in
                 Capsule()
-                    .fill(Self.ink.opacity(0.14))
+                    .fill(ink.opacity(0.14))
                     // The second line is shorter, the way a written one runs
                     // out. Equal lines read as a loading skeleton.
                     .frame(width: line == 0 ? nil : 34, height: 2)
