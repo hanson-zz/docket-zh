@@ -139,7 +139,7 @@ struct MaterialBackground: View {
     /// over it and was not clear at all.
     private var liquid: some View {
         Color.clear
-            .glassEffect(color.map { Self.glassValue(glass, color: $0) } ?? Self.glassValue(glass, tint: tint), in: shape)
+            .glassEffect(Self.glass(glass, tint: tint, color: color), in: shape)
     }
 
     /// The glass for a style and a tint.
@@ -147,6 +147,13 @@ struct MaterialBackground: View {
     /// A tint, not a fill laid over the glass: the glass's own tint keeps the
     /// refraction and the specular edge that a scrim on top suppresses (see
     /// above), while still holding the plate light or dark over any wallpaper.
+    /// The supporter colour, when there is one, replaces the light or dark lean.
+    static func glass(_ style: GlassStyle, tint: GlassTint, color: ShelfColor?) -> Glass {
+        guard let color else { return glassValue(style, tint: tint) }
+        let base: Glass = style == .clear ? .clear : .regular
+        return base.tint(Color(hex: color.hex).opacity(style == .clear ? 0.35 : 0.5))
+    }
+
     static func glassValue(_ style: GlassStyle, tint: GlassTint) -> Glass {
         let base: Glass = style == .clear ? .clear : .regular
         switch tint {
