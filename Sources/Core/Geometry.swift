@@ -50,6 +50,20 @@ public enum Geometry {
         position == .bottom ? 62 : 76
     }
 
+    // MARK: Spacers
+
+    /// Length along the shelf of a spacer item.
+    ///
+    /// A regular spacer is one tile, as in Apple's Dock. A small one used to
+    /// be half a tile, which with a gap on each side opened a hole about
+    /// three times the gap between any other two items, and it is what the
+    /// default layout puts between the apps and the widgets. Now it is one
+    /// gap, so the seam reads as a slightly wider gap rather than a missing
+    /// item.
+    public static func spacerLength(_ size: SpacerSize, tile: Double, itemGap: Double) -> Double {
+        size == .small ? itemGap : tile
+    }
+
     // MARK: Chrome
 
     public struct Chrome: Equatable, Sendable {

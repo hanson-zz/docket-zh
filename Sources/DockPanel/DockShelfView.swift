@@ -431,7 +431,8 @@ struct DockShelfView: View {
         }
         if case .spacer(_, let size) = item {
             let full = vertical ? geo.height : geo.width
-            let length = size == .small ? full / 2 : full
+            let length = CGFloat(Geometry.spacerLength(size, tile: Double(full),
+                                                       itemGap: Geometry.chrome(scale: scale).itemGap))
             return vertical ? CGSize(width: geo.width, height: length)
                             : CGSize(width: length, height: geo.height)
         }

@@ -995,4 +995,11 @@ extension WidgetCatalogTests {
             }
         }
     }
+
+    func testSmallSpacerIsOneGapNotHalfATile() {
+        let gap = Geometry.chrome(scale: 0.35).itemGap
+        XCTAssertEqual(Geometry.spacerLength(.small, tile: 50, itemGap: gap), gap)
+        XCTAssertEqual(Geometry.spacerLength(.regular, tile: 50, itemGap: gap), 50)
+        XCTAssertLessThan(Geometry.spacerLength(.small, tile: 50, itemGap: gap), 25)
+    }
 }

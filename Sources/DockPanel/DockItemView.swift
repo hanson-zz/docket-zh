@@ -19,7 +19,8 @@ struct DockItemView: View {
         switch item {
         case .spacer(_, let size):
             Color.clear
-                .frame(width: spacerLength(size), height: spacerLength(size))
+                .frame(width: position.isVertical ? geo.width : spacerLength(size),
+                       height: position.isVertical ? spacerLength(size) : geo.height)
         default:
             tile
                 .frame(width: geo.width, height: geo.height)
@@ -27,11 +28,11 @@ struct DockItemView: View {
         }
     }
 
-    /// A small spacer is half a tile, a regular one a full tile - matching
-    /// what Apple's Dock does with its two spacer tile types.
+    /// The same length the shelf budgets for it (`Geometry.spacerLength`).
     private func spacerLength(_ size: SpacerSize) -> CGFloat {
         let full = position.isVertical ? geo.height : geo.width
-        return size == .small ? full / 2 : full
+        return CGFloat(Geometry.spacerLength(size, tile: Double(full),
+                                             itemGap: Geometry.chrome(scale: scale).itemGap))
     }
 
     @ViewBuilder
