@@ -103,6 +103,7 @@ final class WidgetOptionTests: XCTestCase {
             .lunar: ["showTerm", "workAlert"],
             .trash: ["flies", "threshold"],
             .habit: ["showStreak"],
+            .week: ["allDay", "calendars"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
             .clock: ["seconds"],

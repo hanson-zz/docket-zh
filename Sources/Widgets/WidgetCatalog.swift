@@ -314,6 +314,12 @@ public enum WidgetCatalog {
               defaults: c(["showStreak": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // This week from EventKit, Monday first; see WeekAgenda. Same
+        // options as the Calendar widget, which reads the same store.
+        Entry(kind: .week, name: "一周日程", category: .calendar,
+              defaults: c(["allDay": .bool(true), "calendars": .list([])]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
         Entry(kind: .lunar, name: "农历与假期", category: .calendar,
               defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
@@ -367,6 +373,7 @@ public enum WidgetCatalog {
         case .lunar: PaletteColor.red.hex
         case .trash: PaletteColor.green.hex
         case .habit: PaletteColor.green.hex
+        case .week: PaletteColor.orange.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -472,7 +479,7 @@ public enum WidgetCatalog {
         switch kind {
         case .clock, .world, .alarm, .timer, .stopwatch, .countdown:
             .app(bundleID: "com.apple.clock")
-        case .calendar:
+        case .calendar, .week:
             .app(bundleID: "com.apple.iCal")
         case .reminders:
             .app(bundleID: "com.apple.reminders")
@@ -660,6 +667,7 @@ public enum WidgetCatalog {
         case .lunar: return CGSize(width: 196, height: 62)
         case .trash: return CGSize(width: 176, height: 62)
         case .habit: return CGSize(width: 196, height: 62)
+        case .week: return CGSize(width: 216, height: 62)
         }
     }
 
@@ -750,6 +758,8 @@ public enum WidgetCatalog {
                 return WeatherLayout.citiesColumnHeight(count: count)
             default: return 76
             }
+        case .week:
+            return 112
         case .habit:
             return HabitTracker.columnHeight(count: HabitTracker.habits(cfg).count)
         default:

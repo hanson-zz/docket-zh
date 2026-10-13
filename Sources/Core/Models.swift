@@ -219,6 +219,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case lunar
     case trash
     case habit
+    case week
 }
 
 /// What a widget opens when its card is clicked.

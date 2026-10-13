@@ -393,6 +393,7 @@ enum WidgetDetail {
         case .lunar: 320
         case .trash: 320
         case .habit: 340
+        case .week: 320
         default: 300
         }
     }

@@ -87,6 +87,7 @@ public struct WidgetTile: View {
         case .lunar: LunarTile(instance: instance, context: context)
         case .trash: TrashTile(instance: instance, context: context)
         case .habit: HabitTile(instance: instance, context: context)
+        case .week: WeekTile(instance: instance, context: context)
         // Still to come; a labelled placeholder beats rendering nothing. None
         // of these four can be placed today, so nothing reaches this arm:
         // they have no WidgetCatalog entry at all, so make returns nil. It
