@@ -725,7 +725,6 @@ public final class AppState {
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { continue }
             profile.items.append(.app(id: UUID(), bundleID: bundleID, ref: .capture(url)))
         }
-        profile.items.append(.spacer(id: UUID(), size: .small))
         for kind in [WidgetKind.clock, .system, .battery] {
             if let widget = WidgetCatalog.make(kind) { profile.items.append(.widget(widget)) }
         }
