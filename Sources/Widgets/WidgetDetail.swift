@@ -388,6 +388,8 @@ enum WidgetDetail {
         case .github: 320
         case .posture: 320
         case .aiUsage: 340
+        case .todo: 320
+        case .ambient: 320
         default: 300
         }
     }

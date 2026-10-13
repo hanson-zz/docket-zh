@@ -82,6 +82,8 @@ public struct WidgetTile: View {
         case .gauges: GaugesTile(instance: instance, context: context)
         case .posture: PostureTile(instance: instance, context: context)
         case .aiUsage: CodexUsageTile(instance: instance, context: context)
+        case .todo: TodoTile(instance: instance, context: context)
+        case .ambient: AmbientTile(instance: instance, context: context)
         // Still to come; a labelled placeholder beats rendering nothing. None
         // of these four can be placed today, so nothing reaches this arm:
         // they have no WidgetCatalog entry at all, so make returns nil. It

@@ -98,6 +98,8 @@ final class WidgetOptionTests: XCTestCase {
             .gauges: ["rings"],
             .posture: ["duration", "start", "end", "notify"],
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras"],
+            .todo: ["showDone"],
+            .ambient: ["sounds", "volume"],
         ]
 
         for kind in WidgetKind.allCases {

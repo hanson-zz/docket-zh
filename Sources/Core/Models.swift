@@ -174,6 +174,8 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case microphone
     case gauges
     case posture
+    case todo
+    case ambient
 }
 
 /// What a widget opens when its card is clicked.

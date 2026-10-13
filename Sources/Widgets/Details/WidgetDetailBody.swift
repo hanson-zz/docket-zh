@@ -85,6 +85,10 @@ struct WidgetDetailBody: View {
             PostureDetail(instance: instance, context: context)
         case .aiUsage:
             CodexUsageDetail(instance: instance, context: context)
+        case .todo:
+            TodoDetail(instance: instance, context: context)
+        case .ambient:
+            AmbientDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

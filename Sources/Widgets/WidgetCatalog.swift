@@ -276,6 +276,16 @@ public enum WidgetCatalog {
                            "end": .string("18:00"), "notify": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // A list of its own under `items`, never the system's Reminders.
+        Entry(kind: .todo, name: "快速待办", category: .reminders,
+              defaults: c(["showDone": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
+        // Synthesised noise, mixed live; see AmbientSynth and AmbientPlayer.
+        Entry(kind: .ambient, name: "环境音", category: .media,
+              defaults: c(["sounds": .list([.string("rain")]), "volume": .number(50)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Codex's own rate limits, read with the sign-in Codex keeps in
         // ~/.codex, and what Codex is doing from its newest session log.
         Entry(kind: .aiUsage, name: "Codex 用量", category: .system,
@@ -309,6 +319,8 @@ public enum WidgetCatalog {
         case .aiUsage: PaletteColor.indigo.hex
         case .hydration: PaletteColor.blue.hex
         case .posture: PaletteColor.green.hex
+        case .todo: PaletteColor.orange.hex
+        case .ambient: PaletteColor.teal.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -459,7 +471,7 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage:
+             .aiUsage, .todo, .ambient:
             nil
         }
     }
@@ -585,6 +597,8 @@ public enum WidgetCatalog {
         case .gauges:
             return CGSize(width: GaugeReading.tileWidth(rings: GaugeReading.rings(cfg).count), height: 62)
         case .posture: return CGSize(width: 168, height: 124)
+        case .todo: return CGSize(width: 204, height: 62)
+        case .ambient: return CGSize(width: 188, height: 62)
         }
     }
 
@@ -664,6 +678,8 @@ public enum WidgetCatalog {
             return 112
         case .emoji:
             return 132
+        case .todo, .ambient:
+            return 112
         default:
             return 76
         }

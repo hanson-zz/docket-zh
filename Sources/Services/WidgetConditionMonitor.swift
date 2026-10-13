@@ -80,6 +80,9 @@ final class WidgetConditionMonitor {
             let activity = CodexService.shared.activity
             next.codexActive = activity == .working || activity == .waiting
         }
+        if watched.contains(.ambient) {
+            next.ambientPlaying = AmbientPlayer.shared.isPlaying
+        }
         if next != conditions { conditions = next }
     }
 }

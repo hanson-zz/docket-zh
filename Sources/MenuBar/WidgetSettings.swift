@@ -381,6 +381,9 @@ struct WidgetSettingsSections: View {
         "alertAt": "首次提醒阈值",
         "notifyDone": "任务完成时通知",
         "extras": "显示 Spark 与代码审查额度",
+        "showDone": "显示已完成的待办",
+        "sounds": "声音",
+        "volume": "音量",
     ]
 
     static func label(_ key: String) -> String {
@@ -393,6 +396,7 @@ struct WidgetSettingsSections: View {
         "sources": "要读取的播放器",
         "devices": "要显示的设备",
         "rings": "要显示的圆环",
+        "sounds": "要混合的声音",
     ]
 
     static func groupLabel(_ key: String) -> String {
@@ -418,6 +422,7 @@ struct WidgetSettingsSections: View {
         case "interval": 5...3_600
         case "amount": 0...1_000_000
         case "alertAt": 50...95
+        case "volume": 0...100
         default: 0...1_000
         }
     }
@@ -431,7 +436,7 @@ struct WidgetSettingsSections: View {
     }
 
     static func format(_ key: String, _ value: Double) -> String {
-        if key == "alertAt" { return "\(Int(value))%" }
+        if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "amount" { return UnitConverter.format(value) }
         guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
@@ -445,6 +450,7 @@ struct WidgetSettingsSections: View {
         "devices": [("这台 Mac", "mac"), ("AirPods", "pods"),
                     ("AirPods 充电盒", "case"), ("键盘", "keyboard")],
         "rings": [("存储空间", "storage"), ("电池", "battery")],
+        "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     /// String options that are really a choice from a fixed set.

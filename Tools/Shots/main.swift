@@ -128,6 +128,8 @@ private func shots(since started: Date) -> [Shot] {
         // hours would decide what a live capture shows.
         Shot(name: "posture", instance: widget(.posture), isPreview: true, source: .sample),
         Shot(name: "codex", instance: widget(.aiUsage), isPreview: true, source: .sample),
+        Shot(name: "todo", instance: widget(.todo), isPreview: true, source: .sample),
+        Shot(name: "ambient", instance: widget(.ambient), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,

@@ -271,7 +271,7 @@ final class GaugeReadingTests: XCTestCase {
     }
 
     func testNewKindsAreInTheLibrary() {
-        for kind in [WidgetKind.gauges, .posture] {
+        for kind in [WidgetKind.gauges, .posture, .todo, .ambient] {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind)")
             XCTAssertNotNil(WidgetCatalog.make(kind), "\(kind)")
         }
