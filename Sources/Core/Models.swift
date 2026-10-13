@@ -222,6 +222,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case week
     case crypto
     case appVolume = "app-volume"
+    case radio
 }
 
 /// What a widget opens when its card is clicked.

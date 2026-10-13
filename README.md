@@ -342,6 +342,12 @@ OpenAI 随时可能改动，到时小组件会提示“接口有变动”。用 
   （默认红涨绿跌，可改为绿涨红跌），也可以关掉走势线。点开面板可看全部币种并切换 CNY/USD。
   数据来自 [CoinGecko](https://www.coingecko.com) 免费接口，每 5 分钟最多刷新一次，断网或请求失败时保留上次的价格并变淡显示。
   行情仅供参考。尚未在真机上验证。
+- **收音机**：收听网络电台，图标是[阿喵收音机 meowRadio](https://github.com/ca-x/meowRadio) 的猫耳复古收音机，播放时会发光并跳动音量条。
+  卡片上显示当前电台和“正在收听”或“已暂停”，带播放/暂停和下一台按钮。点开面板是仿 meowRadio“弧光调谐”的界面：
+  大号频道号和电台名、可拖动换台的弧形刻度、音量、定时关闭（15、30、60、120 分钟）、收藏列表，
+  还能搜索 [Radio Browser](https://www.radio-browser.info) 电台目录（或一键列出中国热门电台），也可以粘贴 http(s) 串流地址添加自定义电台。
+  内置中国之声、经济之声、音乐之声、环球资讯广播、北京新闻广播、动感 101。支持 MP3、AAC 串流和 HLS，
+  断流后按 2、4、8、16、30 秒自动重连，电台提供曲目信息时显示“正在播放”。可设为“正在收听时显示”。尚未在真机上验证。
 
 ---
 
@@ -468,6 +474,7 @@ README 里的图片都由仓库自带的截图工具拍摄：`Tools/Shots` 把�
 - 天气数据来自 **[MET Norway](https://api.met.no/)**，依 CC BY 4.0 许可使用。
 - 逐日天气预报来自 **[Open-Meteo](https://open-meteo.com/)**，依 CC BY 4.0 许可使用。
 - **[Codenotch](https://github.com/vinzdg/codenotch)**（MIT 许可）：Codex 用量小组件读取的接口和会话日志格式参考了它的源码。
+- **[阿喵收音机 meowRadio](https://github.com/ca-x/meowRadio)**（MIT 许可，Copyright (c) 2026 ca-x）：收音机小组件的图标和“弧光调谐”面板的设计参考了它；电台目录来自 **[Radio Browser](https://www.radio-browser.info)**。
 - 工程由 **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** 生成。
 
 本分支与 Dockset、CoolDock、Docket 上游及其作者均**无任何关联**，也未获得其认可或赞助。

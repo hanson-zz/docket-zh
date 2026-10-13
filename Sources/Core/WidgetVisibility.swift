@@ -39,11 +39,14 @@ public struct WidgetConditions: Equatable, Sendable {
     public var codexActive: Bool?
     /// The ambient widget is playing.
     public var ambientPlaying: Bool?
+    /// The radio is tuned in and playing.
+    public var radioPlaying: Bool?
 
     public init(musicPlaying: Bool? = nil, onBattery: Bool? = nil, batteryLevel: Double? = nil,
                 micInUse: Bool? = nil, mailUnread: Int? = nil, codexActive: Bool? = nil,
-                ambientPlaying: Bool? = nil) {
+                ambientPlaying: Bool? = nil, radioPlaying: Bool? = nil) {
         self.ambientPlaying = ambientPlaying
+        self.radioPlaying = radioPlaying
         self.codexActive = codexActive
         self.musicPlaying = musicPlaying
         self.onBattery = onBattery
@@ -70,7 +73,7 @@ public enum WidgetVisibility {
     /// Kinds with a condition of their own to show on.
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
-        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient: true
+        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio: true
         default: false
         }
     }
@@ -89,6 +92,7 @@ public enum WidgetVisibility {
         case .aiUsage: return "Codex 工作中或等你确认时显示"
         case .todo: return "有未完成的待办时显示"
         case .ambient: return "正在播放时显示"
+        case .radio: return "正在收听时显示"
         case .battery:
             let threshold = batteryThreshold(config)
             return threshold >= 100 ? "使用电池时显示" : "使用电池且电量不高于 \(threshold)% 时显示"
@@ -113,6 +117,8 @@ public enum WidgetVisibility {
             return QuickTodo.openCount(instance.config) > 0
         case .ambient:
             return conditions.ambientPlaying
+        case .radio:
+            return conditions.radioPlaying
         case .battery:
             guard let onBattery = conditions.onBattery else { return nil }
             guard onBattery else { return false }

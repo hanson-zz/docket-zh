@@ -83,6 +83,9 @@ final class WidgetConditionMonitor {
         if watched.contains(.ambient) {
             next.ambientPlaying = AmbientPlayer.shared.isPlaying
         }
+        if watched.contains(.radio) {
+            next.radioPlaying = RadioPlayer.shared.isPlaying
+        }
         if next != conditions { conditions = next }
     }
 }

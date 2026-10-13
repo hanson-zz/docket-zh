@@ -343,6 +343,12 @@ public enum WidgetCatalog {
               defaults: c(["sounds": .list([.string("rain")]), "volume": .number(50)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // Internet radio through one shared AVPlayer; favourites live under
+        // `stations` like the to-do list's items, see RadioDial and RadioPlayer.
+        Entry(kind: .radio, name: "收音机", category: .media,
+              defaults: c(["volume": .number(60)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Each playing app's own volume, through Core Audio process taps; see
         // AppVolume and AppVolumeService. Per-app choices are kept by the
         // service, by bundle identifier, not in the widget's config.
@@ -390,6 +396,7 @@ public enum WidgetCatalog {
         case .week: PaletteColor.orange.hex
         case .crypto: PaletteColor.yellow.hex
         case .appVolume: PaletteColor.indigo.hex
+        case .radio: PaletteColor.orange.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -546,7 +553,7 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume:
+             .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio:
             nil
         }
     }
@@ -687,6 +694,7 @@ public enum WidgetCatalog {
         case .crypto:
             return CGSize(width: CryptoMarket.tileWidth(count: CryptoMarket.coinIDs(cfg).count), height: 62)
         case .appVolume: return CGSize(width: 196, height: 62)
+        case .radio: return CGSize(width: 212, height: 62)
         }
     }
 
@@ -766,7 +774,7 @@ public enum WidgetCatalog {
             return 112
         case .emoji:
             return 132
-        case .todo, .ambient, .lunar, .trash, .appVolume:
+        case .todo, .ambient, .lunar, .trash, .appVolume, .radio:
             return 112
         case .weather:
             let layout = cfg.string("layout", default: "current")

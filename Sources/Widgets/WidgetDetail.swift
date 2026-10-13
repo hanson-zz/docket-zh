@@ -396,6 +396,7 @@ enum WidgetDetail {
         case .week: 320
         case .crypto: 340
         case .appVolume: 320
+        case .radio: 340
         default: 300
         }
     }

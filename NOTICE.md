@@ -263,6 +263,59 @@ Per-app volume mixers such as FineTune (GPL-3.0) were not consulted for code;
 nothing from a copyleft project is used. The gain curve, the helper-to-app
 grouping, the tap plan and the render loop are this project's own.
 
+### meowRadio - radio icon and the arc tuner look (MIT)
+
+The 收音机 widget's icon (`Resources/Radio/RadioMeow.png`, the cat-eared retro
+radio, scaled down to 256 px) is the logo of
+[**meowRadio 阿喵收音机**](https://github.com/ca-x/meowRadio), and the
+widget's panel (`Sources/Widgets/Details/RadioDetail.swift`) follows the look
+of meowRadio's "弧光调谐" theme: a big channel number, the station's name, and
+an arc dial with a needle. The reconnect schedule (2, 4, 8, 16, then 30
+seconds) and the 15/30/60/120 minute sleep timer presets follow meowRadio's
+too. No meowRadio code is used: meowRadio is a Rust server with a web
+interface, and the player here is this project's own, built on `AVPlayer`.
+meowRadio is licensed under the MIT licence:
+
+> MIT License
+>
+> Copyright (c) 2026 ca-x
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+### Radio Browser - radio station directory
+
+The 收音机 widget searches the public, community-run station directory at
+[radio-browser.info](https://www.radio-browser.info) (`de1`, then `de2`, then
+`all.api.radio-browser.info`, `/json/stations/search` and
+`/json/stations/bycountrycodeexact/CN`), without a key, sending the
+descriptive User-Agent in `RadioBrowser.userAgent` as the directory asks.
+Searches happen only when the user asks for one; nothing is fetched in the
+background. The panel credits the directory with
+`RadioBrowser.attribution`
+
+> 电台目录来自 Radio Browser
+
+linked to radio-browser.info. Streams themselves come from each station's own
+servers; the built-in presets (中国之声, 经济之声, 音乐之声 from CNR, 环球资讯广播
+from CRI, and two stations relayed by Qingting FM) are public live streams
+and belong to their broadcasters.
+
 ### 灵动提示 - island-style capsule
 
 The capsule under the notch is an idea seen in "dynamic island" apps for the
