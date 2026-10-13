@@ -104,6 +104,7 @@ final class WidgetOptionTests: XCTestCase {
             .trash: ["flies", "threshold"],
             .habit: ["showStreak"],
             .week: ["allDay", "calendars"],
+            .crypto: ["coins", "currency", "colors", "chart"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
             .clock: ["seconds"],

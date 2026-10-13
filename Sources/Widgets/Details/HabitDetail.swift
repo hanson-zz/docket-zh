@@ -126,10 +126,10 @@ struct HabitDetail: View {
                     Label(todayDone ? "今天已打卡" : "今天打卡",
                           systemImage: todayDone ? "checkmark.circle.fill" : "circle")
                         .font(WidgetStyle.label(11))
-                        .foregroundStyle(todayDone ? .white : .white.opacity(0.85))
+                        .foregroundStyle(todayDone ? Color.white : Color.white.opacity(0.85))
                         .padding(.horizontal, 9)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(todayDone ? accent.opacity(0.75) : .white.opacity(0.12)))
+                        .background(Capsule().fill(todayDone ? accent.opacity(0.75) : Color.white.opacity(0.12)))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -206,7 +206,7 @@ struct HabitDetail: View {
                 .frame(width: size, height: size)
                 .background {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(day.done ? accent.opacity(0.85) : .white.opacity(day.isFuture ? 0.03 : 0.08))
+                        .fill(day.done ? accent.opacity(0.85) : Color.white.opacity(day.isFuture ? 0.03 : 0.08))
                 }
                 .overlay {
                     if day.isToday {

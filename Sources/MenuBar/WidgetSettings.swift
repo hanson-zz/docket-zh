@@ -400,6 +400,9 @@ struct WidgetSettingsSections: View {
         "pasteOnClick": "点按后直接粘贴（需要辅助功能权限）",
         "actions": "开关",
         "showStreak": "显示连续打卡天数",
+        "coins": "币种（BTC、ETH 等代码，或 CoinGecko ID）",
+        "currency": "计价货币",
+        "colors": "涨跌颜色",
     ]
 
     static func label(_ key: String) -> String {
@@ -429,6 +432,7 @@ struct WidgetSettingsSections: View {
         case "repo": "用户/仓库"
         case "start": "09:00"
         case "end": "18:00"
+        case "coins": "BTC, ETH, SOL"
         default: ""
         }
     }
@@ -495,6 +499,8 @@ struct WidgetSettingsSections: View {
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
+        "crypto.currency": [("人民币 CNY", "cny"), ("美元 USD", "usd")],
+        "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

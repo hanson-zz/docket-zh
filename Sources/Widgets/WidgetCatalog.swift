@@ -164,6 +164,14 @@ public enum WidgetCatalog {
                            "chart": .bool(true)]),
               variants: [], supportsCompact: true, selfContained: true),
 
+        // Prices from CoinGecko's free API, at most every five minutes, the
+        // last good table cached; see CryptoMarket and CryptoService.
+        Entry(kind: .crypto, name: "加密货币行情", category: .stocks,
+              defaults: c(["coins": .list(CryptoMarket.defaultCoins.map { .string($0) }),
+                           "currency": .string("cny"), "colors": .string(ChangeColors.redUp.rawValue),
+                           "chart": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // No `chart` here, unlike Stock: this tile is a list of rows and has
         // never drawn one, so the switch had nothing to switch.
         Entry(kind: .watchlist, name: "自选股", category: .stocks,
@@ -374,6 +382,7 @@ public enum WidgetCatalog {
         case .trash: PaletteColor.green.hex
         case .habit: PaletteColor.green.hex
         case .week: PaletteColor.orange.hex
+        case .crypto: PaletteColor.yellow.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -530,7 +539,7 @@ public enum WidgetCatalog {
         // dashboards we cannot address.
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
-             .aiUsage, .todo, .ambient, .lunar, .trash, .habit:
+             .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto:
             nil
         }
     }
@@ -668,6 +677,8 @@ public enum WidgetCatalog {
         case .trash: return CGSize(width: 176, height: 62)
         case .habit: return CGSize(width: 196, height: 62)
         case .week: return CGSize(width: 216, height: 62)
+        case .crypto:
+            return CGSize(width: CryptoMarket.tileWidth(count: CryptoMarket.coinIDs(cfg).count), height: 62)
         }
     }
 
@@ -760,6 +771,9 @@ public enum WidgetCatalog {
             }
         case .week:
             return 112
+        case .crypto:
+            return CryptoMarket.columnHeight(count: CryptoMarket.coinIDs(cfg).count,
+                                             chart: cfg.bool("chart", default: true))
         case .habit:
             return HabitTracker.columnHeight(count: HabitTracker.habits(cfg).count)
         default:

@@ -116,6 +116,23 @@ stale" for exactly that reason. Quotes are informational only and are not
 suitable for any financial decision. Yahoo and Yahoo Finance are trademarks of
 Yahoo Inc.
 
+### CoinGecko - cryptocurrency prices
+
+The 加密货币行情 widget reads CoinGecko's free public API
+(`api.coingecko.com/api/v3/coins/markets`) without a key: prices, 24-hour
+change and the hourly sparkline. `CryptoService` asks at most once every five
+minutes, keeps the last good answer in Caches, and marks it stale when a
+refresh fails rather than blanking it. CoinGecko's terms ask that the data be
+credited where it is shown, so `CryptoMarket.attribution`
+
+> 数据来自 CoinGecko
+
+is rendered, with a link to [coingecko.com](https://www.coingecko.com), in
+`Sources/Widgets/Details/CryptoDetail.swift`. **Any other surface that shows
+these prices must carry the same credit.** Prices are informational only and
+are not suitable for any financial decision. CoinGecko is a trademark of its
+owner.
+
 ### Codenotch - Codex usage endpoints
 
 The Codex usage widget (`Sources/Core/CodexUsage.swift`,
