@@ -23,6 +23,9 @@ struct MaterialBackground: View {
     var tint: GlassTint = .automatic
     /// The shelf's own Reduce Transparency, on top of the system's.
     var opaque = false
+    /// A supporter colour, laid in as the glass's own tint or over the
+    /// other plates. See `ShelfColor`.
+    var color: ShelfColor?
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
@@ -37,6 +40,11 @@ struct MaterialBackground: View {
 
     var body: some View {
         surface
+            .overlay {
+                if let color, material != .liquidGlass || reduceTransparency, material != .plateless {
+                    shape.fill(Color(hex: color.hex).opacity(solid || reduceTransparency ? 0.22 : 0.3))
+                }
+            }
             .overlay {
                 // A hairline top rim is what stops the shelf reading as a flat
                 // cut-out against a busy wallpaper. Glass supplies its own, so
@@ -131,7 +139,7 @@ struct MaterialBackground: View {
     /// over it and was not clear at all.
     private var liquid: some View {
         Color.clear
-            .glassEffect(Self.glassValue(glass, tint: tint), in: shape)
+            .glassEffect(color.map { Self.glassValue(glass, color: $0) } ?? Self.glassValue(glass, tint: tint), in: shape)
     }
 
     /// The glass for a style and a tint.

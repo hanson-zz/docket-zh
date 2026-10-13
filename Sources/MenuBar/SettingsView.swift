@@ -486,6 +486,8 @@ struct SettingsView: View {
             .padding(.vertical, 2)
             .help("“透明”不绘制底板，每个小组件保留自己的卡片。")
 
+            SupporterColorPicker(selection: $state.customDock.shelfColor)
+
             Picker(selection: $state.customDock.widgetColor) {
                 Text("原色").tag(WidgetColorMode.original)
                 Text("单色").tag(WidgetColorMode.monochrome)
@@ -1166,5 +1168,66 @@ final class ShortcutKeyRecorder {
         }
         commit(combo)
         stop()
+    }
+}
+
+/// 赞助者专属配色: swatches that tint the plate, locked until the sponsor
+/// window's thank-you button has been pressed on this Mac.
+private struct SupporterColorPicker: View {
+    @Binding var selection: String
+    @AppStorage(Supporter.key) private var unlocked = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("专属配色")
+                if !unlocked {
+                    Image(systemName: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if !unlocked {
+                    Button("支持码头后解锁…") { SponsorWindow.shared.show() }
+                        .controlSize(.small)
+                }
+            }
+            HStack(spacing: 10) {
+                swatch(nil)
+                ForEach(ShelfColor.allCases) { swatch($0) }
+            }
+            .disabled(!unlocked)
+            .opacity(unlocked ? 1 : 0.45)
+            Text(unlocked ? "给扩展栏底板染一层颜色，“透明”外观下不生效。" : "赞助者专属：给扩展栏换上小熊猫橙、樱花粉等配色。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func swatch(_ color: ShelfColor?) -> some View {
+        let chosen = ShelfColor.parse(selection) == color
+        return Button {
+            selection = color?.rawValue ?? ""
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(color.map { Color(hex: $0.hex) } ?? Color.secondary.opacity(0.15))
+                    .frame(width: 26, height: 26)
+                if color == nil {
+                    Image(systemName: "nosign")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                Circle()
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .frame(width: 32, height: 32)
+                    .opacity(chosen ? 1 : 0)
+            }
+            .frame(width: 34, height: 34)
+            .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .help(color?.title ?? "无")
+        .accessibilityLabel(color?.title ?? "无配色")
     }
 }

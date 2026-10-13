@@ -579,7 +579,8 @@ struct DockShelfView: View {
                                glass: settings.glass,
                                radius: chrome.radius,
                                tint: settings.glassTint,
-                               opaque: settings.reduceTransparency)
+                               opaque: settings.reduceTransparency,
+                               color: Supporter.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
         }
         .overlay {
             // allowsHitTesting(false) is essential: an overlay takes part in

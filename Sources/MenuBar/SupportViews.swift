@@ -113,8 +113,19 @@ struct SupportSections: View {
 }
 
 /// The sponsor window: a letter beside WeChat / Alipay payment codes.
+/// Whether this Mac has unlocked the supporter colours.
+///
+/// The honour system, said plainly in the window that sets it: there is no
+/// server to ask and the code is public, so a check would stop no one and
+/// only get in the way of people who did support it.
+enum Supporter {
+    static let key = "supporter.unlocked"
+    static var isUnlocked: Bool { UserDefaults.standard.bool(forKey: key) }
+}
+
 struct SponsorView: View {
     @State private var method = 0
+    @AppStorage(Supporter.key) private var unlocked = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 24) {
@@ -134,6 +145,27 @@ struct SponsorView: View {
                     }
                     Button { Support.openRepo() } label: {
                         Label("去 GitHub 点星", systemImage: "star")
+                    }
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    if unlocked {
+                        Label("已解锁赞助者专属配色，谢谢你！", systemImage: "heart.fill")
+                            .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                        Text("在 设置 ▸ 扩展栏 ▸ 外观 中选择。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button {
+                            unlocked = true
+                        } label: {
+                            Label("我已赞助，解锁专属配色", systemImage: "paintpalette")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color(hex: ShelfColor.redPanda.hex))
+                        Text("给扩展栏换上小熊猫橙、樱花粉等 \(ShelfColor.allCases.count) 种配色。码头不联网验证，全凭你的诚信。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }

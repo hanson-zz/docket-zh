@@ -699,6 +699,8 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// Transparency does. The system setting still applies on its own; this
     /// is for anyone who wants it on the shelf alone.
     public var reduceTransparency: Bool = false
+    /// A supporter colour laid into the plate (`ShelfColor`), empty for none.
+    public var shelfColor: String = ""
     /// What happens when the shelf is longer than the screen.
     public var overflow: ShelfOverflow = .scroll
     public var autoHide: Bool = false
@@ -764,6 +766,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         glassTint = try c.decodeIfPresent(GlassTint.self, forKey: .glassTint) ?? .automatic
         widgetColor = try c.decodeIfPresent(WidgetColorMode.self, forKey: .widgetColor) ?? .original
         reduceTransparency = try c.decodeIfPresent(Bool.self, forKey: .reduceTransparency) ?? false
+        shelfColor = try c.decodeIfPresent(String.self, forKey: .shelfColor) ?? ""
         overflow = try c.decodeIfPresent(ShelfOverflow.self, forKey: .overflow) ?? .scroll
         autoHide = try c.decodeIfPresent(Bool.self, forKey: .autoHide) ?? false
         showHandleWhenHidden = try c.decodeIfPresent(Bool.self, forKey: .showHandleWhenHidden) ?? true

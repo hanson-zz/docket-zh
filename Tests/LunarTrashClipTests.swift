@@ -259,3 +259,25 @@ final class QuickToggleListTests: XCTestCase {
         XCTAssertEqual(QuickToggle.length(count: 4), 140)
     }
 }
+
+final class ShelfColorTests: XCTestCase {
+    func testParseAndDefaults() {
+        XCTAssertNil(ShelfColor.parse(""))
+        XCTAssertNil(ShelfColor.parse("nope"))
+        XCTAssertEqual(ShelfColor.parse("sakura"), .sakura)
+        XCTAssertEqual(CustomDockSettings().shelfColor, "")
+        for color in ShelfColor.allCases {
+            XCTAssertTrue(color.hex.hasPrefix("#") && color.hex.count == 7)
+            XCTAssertFalse(color.title.isEmpty)
+        }
+    }
+
+    func testShelfColorSurvivesASaveAndOldFilesHaveNone() throws {
+        var settings = CustomDockSettings()
+        settings.shelfColor = "mint"
+        let data = try JSONEncoder().encode(settings)
+        XCTAssertEqual(try JSONDecoder().decode(CustomDockSettings.self, from: data).shelfColor, "mint")
+        let old = try JSONDecoder().decode(CustomDockSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(old.shelfColor, "")
+    }
+}
