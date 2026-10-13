@@ -1,7 +1,7 @@
 import AppKit
 import Observation
 
-/// How full the Trash is, for the 废纸篓 widget.
+/// How full the Trash is, for the 废纸篓 widget and the shelf's Trash icon.
 ///
 /// macOS guards ~/.Trash: an app without Full Disk Access gets "Operation
 /// not permitted" listing it, so `needsAccess` is a state the widget shows
@@ -18,17 +18,22 @@ final class TrashMonitor {
     private(set) var items = 0
     private(set) var needsAccess = false
     private(set) var loaded = false
-    /// When the Trash first went over the widget's threshold; kept across
-    /// launches so the hourly flies survive a restart.
-    private(set) var overSince: Date?
+    /// When the Trash first went over each threshold anything shows flies
+    /// for (the widget's and the shelf Trash icon's), kept across launches
+    /// so the hourly flies survive a restart.
+    private(set) var overSince: [Int64: Date] = [:]
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var lastStamp: (Date?, Int)?
     @ObservationIgnored private var lastFullCount: Date = .distantPast
     @ObservationIgnored private var counting = false
-    @ObservationIgnored private var threshold: Int64 = TrashFlies.thresholdBytes(TrashFlies.defaultThreshold)
+    @ObservationIgnored private var watching: Set<Int64> = []
 
-    private static let overSinceKey = "trash.overSince"
+    /// One date per threshold, keyed by its byte count as text.
+    private static let overSinceKey = "trash.overSinceByThreshold"
+    /// The single date written before thresholds were tracked separately;
+    /// read once as the default threshold's.
+    private static let legacyOverSinceKey = "trash.overSince"
 
     static var trashURL: URL {
         FileManager.default.urls(for: .trashDirectory, in: .userDomainMask).first
@@ -36,12 +41,25 @@ final class TrashMonitor {
     }
 
     private init() {
-        let stored = UserDefaults.standard.double(forKey: Self.overSinceKey)
-        overSince = stored > 0 ? Date(timeIntervalSince1970: stored) : nil
+        let defaults = UserDefaults.standard
+        if let stored = defaults.dictionary(forKey: Self.overSinceKey) as? [String: Double] {
+            for (key, seconds) in stored {
+                guard let threshold = Int64(key), seconds > 0 else { continue }
+                overSince[threshold] = Date(timeIntervalSince1970: seconds)
+            }
+        } else {
+            let legacy = defaults.double(forKey: Self.legacyOverSinceKey)
+            if legacy > 0 {
+                overSince[TrashFlies.thresholdBytes(TrashFlies.defaultThreshold)] = Date(timeIntervalSince1970: legacy)
+            }
+        }
     }
 
+    /// Starts watching, and counts flies for `threshold` from now on. Called
+    /// by everything that shows flies, each with its own size; safe to call
+    /// again.
     func start(threshold: Int64) {
-        self.threshold = threshold
+        watching.insert(threshold)
         guard timer == nil else {
             updateOverSince()
             return
@@ -55,8 +73,11 @@ final class TrashMonitor {
         self.timer = timer
     }
 
-    func flies(now: Date) -> Int {
-        TrashFlies.count(bytes: bytes, threshold: threshold, overSince: overSince, now: now)
+    /// None while access is missing: an unreadable Trash has no size, and
+    /// flies over a zero would be a guess.
+    func flies(now: Date, threshold: Int64) -> Int {
+        guard !needsAccess else { return 0 }
+        return TrashFlies.count(bytes: bytes, threshold: threshold, overSince: overSince[threshold], now: now)
     }
 
     func check(force: Bool) {
@@ -116,14 +137,12 @@ final class TrashMonitor {
     }
 
     private func updateOverSince() {
-        let next = TrashFlies.overSince(previous: overSince, bytes: bytes, threshold: threshold, now: .now)
+        let next = TrashFlies.overSince(previous: overSince, watching: watching, bytes: bytes, now: .now)
         guard next != overSince else { return }
         overSince = next
-        if let next {
-            UserDefaults.standard.set(next.timeIntervalSince1970, forKey: Self.overSinceKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: Self.overSinceKey)
-        }
+        let stored = Dictionary(uniqueKeysWithValues: next.map { (String($0.key), $0.value.timeIntervalSince1970) })
+        UserDefaults.standard.set(stored, forKey: Self.overSinceKey)
+        UserDefaults.standard.removeObject(forKey: Self.legacyOverSinceKey)
     }
 
     // MARK: Actions

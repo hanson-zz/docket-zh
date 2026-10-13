@@ -139,6 +139,39 @@ final class HolidayScheduleTests: XCTestCase {
 final class TrashFliesTests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    func testEachThresholdKeepsItsOwnClock() {
+        let earlier = now.addingTimeInterval(-7_200)
+        let small: Int64 = 10, large: Int64 = 100
+        // A newly watched threshold starts now; one already running keeps its date.
+        let next = TrashFlies.overSince(previous: [small: earlier], watching: [small, large], bytes: 150, now: now)
+        XCTAssertEqual(next, [small: earlier, large: now])
+        // Under the larger one only: that clock stops, the smaller keeps going.
+        let under = TrashFlies.overSince(previous: next, watching: [small, large], bytes: 50, now: now)
+        XCTAssertEqual(under, [small: earlier])
+    }
+
+    func testUnwatchedThresholdsAreKeptOrDroppedButNeverStarted() {
+        let earlier = now.addingTimeInterval(-3_600)
+        let small: Int64 = 10, large: Int64 = 100
+        // Nobody watches `large` now: it keeps its date while still over...
+        XCTAssertEqual(TrashFlies.overSince(previous: [large: earlier], watching: [small], bytes: 150, now: now),
+                       [small: now, large: earlier])
+        // ...is dropped once the Trash falls under it...
+        XCTAssertEqual(TrashFlies.overSince(previous: [large: earlier], watching: [small], bytes: 50, now: now),
+                       [small: now])
+        // ...and is never started when it was not there.
+        XCTAssertEqual(TrashFlies.overSince(previous: [:], watching: [small], bytes: 150, now: now), [small: now])
+        XCTAssertEqual(TrashFlies.overSince(previous: [:], watching: [], bytes: 150, now: now), [:])
+    }
+
+    func testFlyScaleFollowsTheIcon() {
+        XCTAssertEqual(TrashFlies.flyScale(side: 40), 1, accuracy: 0.0001)
+        XCTAssertEqual(TrashFlies.flyScale(side: 30), 0.75, accuracy: 0.0001)
+        XCTAssertEqual(TrashFlies.flyScale(side: 4), 0.6, accuracy: 0.0001)
+        XCTAssertEqual(TrashFlies.flyScale(side: 400), 1.6, accuracy: 0.0001)
+        XCTAssertEqual(TrashFlies.flyScale(side: 0), 0)
+    }
+
     func testNoFliesBelowTheThreshold() {
         XCTAssertEqual(TrashFlies.count(bytes: 0, threshold: 1, overSince: nil, now: now), 0)
         XCTAssertEqual(TrashFlies.count(bytes: 99_000_000, threshold: 100_000_000, overSince: nil, now: now), 0)

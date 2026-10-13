@@ -44,6 +44,31 @@ public enum TrashFlies {
         return previous ?? now
     }
 
+    /// The same, for every threshold anything is showing flies for: the
+    /// 废纸篓 widget and the shelf's own Trash icon can each pick a size, so
+    /// each size keeps its own clock. A threshold in `watching` starts its
+    /// clock when the Trash crosses it; one nobody watches any more keeps
+    /// its date while the Trash stays over and is dropped once it falls
+    /// under, so coming back to it later never resumes a stale clock.
+    public static func overSince(previous: [Int64: Date], watching: Set<Int64>,
+                                 bytes: Int64, now: Date) -> [Int64: Date] {
+        var next: [Int64: Date] = [:]
+        for threshold in watching.union(previous.keys) {
+            let start = overSince(previous: previous[threshold], bytes: bytes, threshold: threshold, now: now)
+            guard let start, previous[threshold] != nil || watching.contains(threshold) else { continue }
+            next[threshold] = start
+        }
+        return next
+    }
+
+    /// How big a fly is drawn on a bin `side` points across: the widget's
+    /// badge (34 to 40 points) is the reference, a smaller shelf icon gets
+    /// smaller flies and a large one larger, within reason.
+    public static func flyScale(side: Double) -> Double {
+        guard side > 0 else { return 0 }
+        return min(1.6, max(0.6, side / 40))
+    }
+
     /// Where fly `index` is at time `t`, as an offset from the centre of the
     /// bin in units of its half-width, plus the direction it faces. Each fly
     /// has its own orbit, speed and wobble so the swarm never moves as one.

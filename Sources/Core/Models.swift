@@ -749,6 +749,12 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     public var hideWhenMacOSDockAppears: Bool = false
     public var showRunningApps: Bool = true
     public var showTrash: Bool = false
+    /// Flies on the shelf's own Trash icon, the same as the 废纸篓 widget's.
+    /// On by default: they only arrive once the Trash passes the size below.
+    public var showTrashFlies: Bool = true
+    /// The size the shelf Trash icon's flies arrive at, one of
+    /// `TrashFlies.thresholds`' values.
+    public var trashFliesThreshold: String = TrashFlies.defaultThreshold
     /// Widgets and nothing else on the shelf.
     ///
     /// For the setup this app is usually run in: Apple's Dock keeps the apps
@@ -814,6 +820,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         hideWhenMacOSDockAppears = try c.decodeIfPresent(Bool.self, forKey: .hideWhenMacOSDockAppears) ?? false
         showRunningApps = try c.decodeIfPresent(Bool.self, forKey: .showRunningApps) ?? true
         showTrash = try c.decodeIfPresent(Bool.self, forKey: .showTrash) ?? false
+        showTrashFlies = try c.decodeIfPresent(Bool.self, forKey: .showTrashFlies) ?? true
+        trashFliesThreshold = try c.decodeIfPresent(String.self, forKey: .trashFliesThreshold)
+            ?? TrashFlies.defaultThreshold
         widgetsOnly = try c.decodeIfPresent(Bool.self, forKey: .widgetsOnly) ?? false
         magnification = try c.decodeIfPresent(Bool.self, forKey: .magnification) ?? true
         switchLayoutsByGesture = try c.decodeIfPresent(Bool.self, forKey: .switchLayoutsByGesture) ?? true

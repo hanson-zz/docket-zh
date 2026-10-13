@@ -609,6 +609,17 @@ struct SettingsView: View {
             if !state.customDock.widgetsOnly {
                 Toggle("显示正在运行的应用", isOn: $state.customDock.showRunningApps)
                 Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
+                if state.customDock.showTrash {
+                    Toggle("废纸篓图标上显示苍蝇", isOn: $state.customDock.showTrashFlies)
+                    if state.customDock.showTrashFlies {
+                        Picker("苍蝇出现的大小", selection: $state.customDock.trashFliesThreshold) {
+                            ForEach(TrashFlies.thresholds.indices, id: \.self) { index in
+                                Text(TrashFlies.thresholds[index].label)
+                                    .tag(TrashFlies.thresholds[index].value)
+                            }
+                        }
+                    }
+                }
             }
             // Rearranging a mirrored app takes the list over, which is right,
             // but there has to be a way to give it back.

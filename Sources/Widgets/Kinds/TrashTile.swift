@@ -24,7 +24,7 @@ struct TrashTile: View {
     private var items: Int { context.isPreview ? 37 : monitor.items }
     private var flies: Int {
         guard showsFlies else { return 0 }
-        return context.isPreview ? 5 : monitor.flies(now: context.now)
+        return context.isPreview ? 5 : monitor.flies(now: context.now, threshold: threshold)
     }
 
     var body: some View {

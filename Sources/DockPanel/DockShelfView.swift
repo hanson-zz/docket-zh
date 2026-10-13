@@ -849,6 +849,16 @@ struct DockShelfView: View {
             // Only widgets read this. An icon already answers the pointer by
             // magnifying, and a second affordance on top would be noise.
             .environment(\.widgetHovered, entry.item.isWidget && hoveredID == entry.id)
+            // Flies on the built-in Trash, outside the Equatable gate so the
+            // swarm follows the Trash's size on its own, and inside the
+            // magnification so they grow with the icon.
+            .overlay {
+                if entry.isTrash, settings.showTrashFlies {
+                    ShelfTrashFlies(side: CGFloat(iconGeometry.icon),
+                                    threshold: TrashFlies.thresholdBytes(settings.trashFliesThreshold),
+                                    hovering: hoveredID == entry.id)
+                }
+            }
             // The frame grows along the shelf only. That is what Apple's Dock
             // does: the plate gets longer so neighbours are pushed aside, but
             // its thickness never changes and icons simply grow out of it.
