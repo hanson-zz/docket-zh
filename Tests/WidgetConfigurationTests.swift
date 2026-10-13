@@ -167,7 +167,7 @@ final class WidgetConfigurationTests: XCTestCase {
     }
 
     func testAKindWithNoOptionsOffersNoSettings() {
-        for kind in [WidgetKind.clock, .stopwatch, .timer, .airdrop] {
+        for kind in [WidgetKind.stopwatch, .timer, .airdrop] {
             XCTAssertTrue(WidgetCatalog.configurableKeys(kind).isEmpty, "\(kind)")
         }
     }

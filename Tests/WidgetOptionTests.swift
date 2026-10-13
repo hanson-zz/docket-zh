@@ -104,6 +104,7 @@ final class WidgetOptionTests: XCTestCase {
             .trash: ["flies", "threshold"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
+            .clock: ["seconds"],
         ]
 
         for kind in WidgetKind.allCases {
