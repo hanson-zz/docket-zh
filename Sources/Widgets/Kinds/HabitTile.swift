@@ -204,7 +204,10 @@ enum HabitLog {
         let wasDone = HabitTracker.habits(instance.config).first { $0.id == id }
             .map { HabitTracker.isDone($0, on: day) } ?? true
         change(instance) { HabitTracker.toggling(id, day: day, in: $0) }
-        if !wasDone, HabitTracker.dayKey(day) == HabitTracker.dayKey(.now) { PetTreats.give(.habit) }
+        if !wasDone, HabitTracker.dayKey(day) == HabitTracker.dayKey(.now) {
+            // Once per habit per day: unchecking and checking again is not a second treat.
+            PetTreats.giveOnce(.habit, for: "\(id)|\(HabitTracker.dayKey(day))")
+        }
     }
 }
 

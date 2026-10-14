@@ -14,7 +14,11 @@ import Foundation
 /// `sleepSince` (0 while awake), `lastAction` + `lastActionAt` (what was done
 /// last, for the few seconds the character acts it out), `cared` (the day keys
 /// something was done for it, for the streak) and `focusCredited` (the end of
-/// the last focus session it was fed for). `character` is the one option.
+/// the last focus session it was fed for), `sleepNightly` (1 while it is in
+/// its own night's sleep), `wokeAt` (when it was last woken by hand, so a pet
+/// woken at midnight stays up) and `lastActionFull` (1 when the last thing done
+/// was not needed: fed full, played with happy, washed clean). `character` is
+/// the one option.
 public enum PetNeed: String, CaseIterable, Sendable, Identifiable {
     case food, mood, energy, clean
 
@@ -118,6 +122,8 @@ public enum PetEffect: Equatable, Sendable {
     case none
     /// Bubbles rising until this moment, after a wash.
     case bubbles(until: Date)
+    /// Hearts floating up until this moment, after a game.
+    case hearts(until: Date)
     /// Smudges while 清洁 is low.
     case dirty
 }
@@ -135,10 +141,18 @@ public struct PetState: Equatable, Sendable {
     /// Day keys, `yyyyMMdd`.
     public var cared: Set<String>
     public var focusCredited: Date?
+    /// Asleep because it is night rather than because it was put to bed: it
+    /// sleeps until morning instead of until energy is full.
+    public var sleepNightly: Bool
+    /// Last woken by hand (or by being fed, played with or washed).
+    public var wokeAt: Date?
+    /// The last action was not needed, so it is turned down rather than acted out.
+    public var lastActionFull: Bool
 
     public init(food: Double = 80, mood: Double = 80, energy: Double = 80, clean: Double = 80,
                 at: Date, sleepSince: Date? = nil, lastAction: PetAction? = nil, lastActionAt: Date? = nil,
-                cared: Set<String> = [], focusCredited: Date? = nil) {
+                cared: Set<String> = [], focusCredited: Date? = nil, sleepNightly: Bool = false,
+                wokeAt: Date? = nil, lastActionFull: Bool = false) {
         self.food = VirtualPet.clamp(food)
         self.mood = VirtualPet.clamp(mood)
         self.energy = VirtualPet.clamp(energy)
@@ -149,6 +163,9 @@ public struct PetState: Equatable, Sendable {
         self.lastActionAt = lastActionAt
         self.cared = cared
         self.focusCredited = focusCredited
+        self.sleepNightly = sleepNightly
+        self.wokeAt = wokeAt
+        self.lastActionFull = lastActionFull
     }
 
     public subscript(need: PetNeed) -> Double {
@@ -194,6 +211,16 @@ public enum VirtualPet {
     /// Longer than this away is counted as this, so a month off is a sad pet,
     /// not a negative one (the values are clamped anyway) or an overflow.
     public static let maxCatchUpHours: Double = 24 * 30
+    /// It goes to bed by itself at `nightStart` and gets up at `nightEnd`.
+    public static let nightStart = 23
+    public static let nightEnd = 7
+    /// After this long with nobody looking after it (the Mac off over a
+    /// weekend, a holiday), time alone takes a need no lower than `awayFloor`:
+    /// hungry on the way back, not sick for days.
+    public static let awayAfterHours: Double = 12
+    public static let awayFloor: Double = 20
+    /// At or above this, feeding, playing or washing is turned down.
+    public static let fullLine: Double = 95
     /// How much a treat from elsewhere in 码头 gives.
     public static let treatFood: Double = 10
     public static let treatMood: Double = 6
@@ -220,7 +247,10 @@ public enum VirtualPet {
                         lastAction: PetAction(rawValue: config.string("lastAction")),
                         lastActionAt: date("lastActionAt"),
                         cared: Set(config.strings("cared").filter(HabitTracker.isDayKey)),
-                        focusCredited: date("focusCredited"))
+                        focusCredited: date("focusCredited"),
+                        sleepNightly: config.double("sleepNightly") > 0 && date("sleepSince") != nil,
+                        wokeAt: date("wokeAt"),
+                        lastActionFull: config.double("lastActionFull") > 0)
     }
 
     public static func store(_ state: PetState, in config: inout WidgetConfig, now: Date = .now,
@@ -235,6 +265,9 @@ public enum VirtualPet {
         config.set("lastAction", .string(state.lastAction?.rawValue ?? ""))
         config.set("lastActionAt", .number(state.lastActionAt?.timeIntervalSince1970 ?? 0))
         config.set("focusCredited", .number(state.focusCredited?.timeIntervalSince1970 ?? 0))
+        config.set("sleepNightly", .number(state.sleepNightly && state.isSleeping ? 1 : 0))
+        config.set("wokeAt", .number(state.wokeAt?.timeIntervalSince1970 ?? 0))
+        config.set("lastActionFull", .number(state.lastActionFull ? 1 : 0))
         let cutoff = calendar.date(byAdding: .day, value: -keptDays, to: now)
             .map { HabitTracker.dayKey($0, calendar: calendar) } ?? ""
         config.set("cared", .list(state.cared.filter { $0 > cutoff }.sorted().map { .string($0) }))
@@ -242,32 +275,124 @@ public enum VirtualPet {
 
     // MARK: Time passing
 
+    /// Whether `date` falls in the pet's night, 23:00 to 7:00.
+    public static func isNight(_ date: Date, calendar: Calendar = HabitTracker.calendar) -> Bool {
+        let hour = calendar.component(.hour, from: date)
+        return hour >= nightStart || hour < nightEnd
+    }
+
+    /// When the night `date` is in began (only meaningful at night).
+    static func nightBegan(_ date: Date, calendar: Calendar) -> Date {
+        let day = calendar.startOfDay(for: date)
+        let today = calendar.date(byAdding: .hour, value: nightStart, to: day) ?? day
+        if calendar.component(.hour, from: date) >= nightStart { return today }
+        return calendar.date(byAdding: .day, value: -1, to: today) ?? today
+    }
+
+    /// The next 23:00 or 7:00 after `date`.
+    static func nextNightEdge(after date: Date, calendar: Calendar) -> Date {
+        let day = calendar.startOfDay(for: date)
+        let hour = calendar.component(.hour, from: date)
+        if hour < nightEnd { return calendar.date(byAdding: .hour, value: nightEnd, to: day) ?? date }
+        if hour < nightStart { return calendar.date(byAdding: .hour, value: nightStart, to: day) ?? date }
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: day) ?? date
+        return calendar.date(byAdding: .hour, value: nightEnd, to: tomorrow) ?? date
+    }
+
     /// The state as it is at `now`. Asleep, energy fills at `sleepGain` an
-    /// hour and the rest fall at half speed; once energy is full it wakes up
-    /// by itself and the rest of the time is spent awake.
-    public static func advanced(_ state: PetState, to now: Date) -> PetState {
+    /// hour and the rest fall at half speed. Put to bed by hand, it wakes once
+    /// energy is full; at night it goes to bed by itself (unless it was woken
+    /// by hand that night) and sleeps until morning. Past `awayAfterHours`
+    /// of the gap, time alone takes nothing below `awayFloor`.
+    ///
+    /// Walked in pieces cut at 23:00, 7:00 and the away mark, so each piece is
+    /// all night or all day; a month away is about sixty pieces.
+    public static func advanced(_ state: PetState, to now: Date,
+                                calendar: Calendar = HabitTracker.calendar) -> PetState {
         var s = state
-        var hours = min(maxCatchUpHours, max(0, now.timeIntervalSince(state.at) / 3600))
+        let start = state.at
+        let end = start.addingTimeInterval(min(maxCatchUpHours, max(0, now.timeIntervalSince(start) / 3600)) * 3600)
         s.at = max(now, state.at)
-        if s.isSleeping, hours > 0 {
-            let toFull = max(0, (100 - s.energy) / sleepGain)
-            let asleep = min(hours, toFull)
-            s.energy += sleepGain * asleep
-            for need in [PetNeed.food, .mood, .clean] { s[need] -= need.perHour * 0.5 * asleep }
-            hours -= asleep
-            if hours > 0 || s.energy >= 100 { s.sleepSince = nil }
+        let awayMark = start.addingTimeInterval(awayAfterHours * 3600)
+        var t = start
+        while t < end {
+            var next = min(end, nextNightEdge(after: t, calendar: calendar))
+            if t < awayMark { next = min(next, awayMark) }
+            if next <= t { next = end }
+            let hours = next.timeIntervalSince(t) / 3600
+            let night = isNight(t, calendar: calendar)
+            let away = t >= awayMark
+            let before = PetNeed.allCases.map { s[$0] }
+
+            if s.isSleeping, s.sleepNightly, !night {
+                s.sleepSince = nil
+                s.sleepNightly = false
+            }
+            // Put to bed by hand and still asleep when night falls: stays down till morning.
+            if s.isSleeping, night { s.sleepNightly = true }
+            if !s.isSleeping, night, s.wokeAt.map({ $0 < nightBegan(t, calendar: calendar) }) ?? true {
+                s.sleepSince = t
+                s.sleepNightly = true
+            }
+
+            var awake = hours
+            if s.isSleeping {
+                let asleep = s.sleepNightly ? hours : min(hours, max(0, (100 - s.energy) / sleepGain))
+                s.energy += sleepGain * asleep
+                for need in [PetNeed.food, .mood, .clean] { s[need] -= need.perHour * 0.5 * asleep }
+                awake = hours - asleep
+                if !s.sleepNightly, awake > 0 || s.energy >= 100 { s.sleepSince = nil }
+            }
+            if !s.isSleeping, awake > 0 {
+                for need in PetNeed.allCases { s[need] -= need.perHour * awake }
+            }
+            // Clamped piece by piece: a night's sleep past full is not banked.
+            for need in PetNeed.allCases { s[need] = s[need] }
+            if away {
+                for (i, need) in PetNeed.allCases.enumerated() where s[need] < before[i] {
+                    s[need] = max(s[need], min(before[i], awayFloor))
+                }
+            }
+            t = next
         }
-        if !s.isSleeping, hours > 0 {
-            for need in PetNeed.allCases { s[need] -= need.perHour * hours }
+        // Read at night without any time passing (a pet stored at 23:30).
+        if !s.isSleeping, isNight(s.at, calendar: calendar),
+           s.wokeAt.map({ $0 < nightBegan(s.at, calendar: calendar) }) ?? true, end > start {
+            s.sleepSince = s.at
+            s.sleepNightly = true
+        }
+        if s.isSleeping, s.sleepNightly, !isNight(s.at, calendar: calendar) {
+            s.sleepSince = nil
+            s.sleepNightly = false
         }
         for need in PetNeed.allCases { s[need] = s[need] }
         return s
     }
 
-    /// Does `action` at `now`.
+    /// Whether `action` would do nothing worth doing: food for a full pet, a
+    /// game for a happy one, a bath for a clean one.
+    public static func isFull(_ action: PetAction, _ state: PetState) -> Bool {
+        switch action {
+        case .feed: state.food >= fullLine
+        case .play: state.mood >= fullLine
+        case .wash: state.clean >= fullLine
+        case .sleep, .treat: false
+        }
+    }
+
+    /// Does `action` at `now`. Feeding a full pet (or playing with a happy
+    /// one, washing a clean one) changes nothing but the line it says, and
+    /// leaves it asleep if it was.
     public static func performing(_ action: PetAction, on state: PetState, now: Date,
                                   calendar: Calendar = HabitTracker.calendar) -> PetState {
-        var s = advanced(state, to: now)
+        var s = advanced(state, to: now, calendar: calendar)
+        if isFull(action, s) {
+            s.lastAction = action
+            s.lastActionAt = now
+            s.lastActionFull = true
+            return s
+        }
+        let wasAsleep = s.isSleeping
         switch action {
         case .feed:
             s.food += 30
@@ -290,12 +415,18 @@ public enum VirtualPet {
             s.food += treatFood
             s.mood += treatMood
         }
+        if wasAsleep, !s.isSleeping {
+            s.wokeAt = now
+            s.sleepNightly = false
+        }
+        if action == .sleep, s.isSleeping { s.sleepNightly = false }
         // The fields are written directly above; the subscript is what clamps.
         for need in PetNeed.allCases { s[need] = s[need] }
         // Waking it up or putting it down is not something it acts out.
         if action != .sleep {
             s.lastAction = action
             s.lastActionAt = now
+            s.lastActionFull = false
         }
         s.cared.insert(HabitTracker.dayKey(now, calendar: calendar))
         return s
@@ -315,7 +446,7 @@ public enum VirtualPet {
     /// Acting out what was just done beats everything for a few seconds, then
     /// sleep, then sick, hungry and happy.
     public static func look(_ state: PetState, now: Date) -> PetLook {
-        if let action = state.lastAction, let when = state.lastActionAt,
+        if let action = state.lastAction, let when = state.lastActionAt, !state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
             case .feed, .treat: return .eat
@@ -335,9 +466,11 @@ public enum VirtualPet {
     /// own, and washing a pet that was already happy would otherwise change
     /// nothing on screen.
     public static func effect(_ state: PetState, now: Date) -> PetEffect {
-        if state.lastAction == .wash, let when = state.lastActionAt,
+        if let action = state.lastAction, let when = state.lastActionAt, !state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
-            return .bubbles(until: when.addingTimeInterval(actSeconds))
+            let until = when.addingTimeInterval(actSeconds)
+            if action == .wash { return .bubbles(until: until) }
+            if action == .play { return .hearts(until: until) }
         }
         if state.clean < lowLine { return .dirty }
         return .none
@@ -345,7 +478,20 @@ public enum VirtualPet {
 
     /// The tile's one line: what it is doing, or the lowest need.
     public static func statusLine(_ state: PetState, now: Date) -> String {
-        if case .bubbles = effect(state, now: now) { return "洗得香喷喷" }
+        if let action = state.lastAction, let when = state.lastActionAt, state.lastActionFull,
+           now >= when, now.timeIntervalSince(when) < actSeconds {
+            switch action {
+            case .feed: return "吃不下了"
+            case .play: return "已经很开心了"
+            case .wash: return "已经很干净了"
+            case .sleep, .treat: break
+            }
+        }
+        switch effect(state, now: now) {
+        case .bubbles: return "洗得香喷喷"
+        case .hearts: return "玩得真开心"
+        default: break
+        }
         let look = look(state, now: now)
         switch look {
         case .idle:

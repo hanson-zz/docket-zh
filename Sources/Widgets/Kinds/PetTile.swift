@@ -150,6 +150,18 @@ struct PetEffectLayer: View {
                     }
                 }
                 .transition(.opacity)
+            case .hearts(let until):
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    let left = until.timeIntervalSince(timeline.date)
+                    if left > 0 {
+                        Canvas { context, size in
+                            Self.drawHearts(in: &context, size: size,
+                                            elapsed: VirtualPet.actSeconds - left,
+                                            fade: min(1, left / 0.6), height: height)
+                        }
+                    }
+                }
+                .transition(.opacity)
             case .dirty:
                 Canvas { context, size in Self.drawSmudges(in: &context, size: size) }
                     .transition(.opacity)
@@ -177,6 +189,26 @@ struct PetEffectLayer: View {
             // The highlight that makes a circle read as a bubble.
             let shine = CGRect(x: x - r * 0.5, y: y - r * 0.55, width: r * 0.35, height: r * 0.35)
             context.fill(Path(ellipseIn: shine), with: .color(.white.opacity(0.85 * alpha)))
+        }
+    }
+
+    /// Five hearts that pop out above the head one after another and float up.
+    nonisolated static func drawHearts(in context: inout GraphicsContext, size: CGSize, elapsed: Double,
+                                       fade: Double, height: CGFloat) {
+        let pink = Color(red: 1, green: 0.38, blue: 0.52)
+        var symbol = context.resolve(Image(systemName: "heart.fill"))
+        symbol.shading = .color(pink)
+        for i in 0..<5 {
+            let n = Double(i)
+            let t = elapsed - n * 0.45
+            guard t > 0 else { continue }
+            let life = min(1, t / 1.8)
+            let x = size.width * (0.2 + 0.6 * fraction(n * 0.618 + 0.1)) + sin(t * 3 + n) * size.width * 0.05
+            let y = size.height * (0.45 - life * 0.5)
+            let side = height * (0.12 + 0.06 * fraction(n * 0.37)) * min(1, t / 0.25)
+            var layer = context
+            layer.opacity = fade * (1 - life * 0.7)
+            layer.draw(symbol, in: CGRect(x: x - side / 2, y: y - side / 2, width: side, height: side))
         }
     }
 
@@ -241,6 +273,20 @@ enum PetTreats {
         guard let pending = defaults.stringArray(forKey: key), !pending.isEmpty else { return [] }
         defaults.removeObject(forKey: key)
         return pending.compactMap(PetTreat.init(rawValue:))
+    }
+
+    private static let givenKey = "docket.pet.treatsGiven"
+
+    /// Gives `treat` unless one was already given under `key` today (a habit
+    /// and its day). Only today's keys are kept.
+    static func giveOnce(_ treat: PetTreat, for key: String) {
+        let defaults = UserDefaults.standard
+        let today = HabitTracker.dayKey(.now)
+        var given = (defaults.stringArray(forKey: givenKey) ?? []).filter { $0.hasSuffix(today) }
+        guard !given.contains(key) else { return }
+        given.append(key)
+        defaults.set(given, forKey: givenKey)
+        give(treat)
     }
 
     static var hasPending: Bool { !(UserDefaults.standard.stringArray(forKey: key) ?? []).isEmpty }
