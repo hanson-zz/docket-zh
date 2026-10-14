@@ -265,6 +265,15 @@ final class ClipboardPinsTests: XCTestCase {
         XCTAssertEqual(ClipboardPins.moving("a", by: -1, in: ["a", "b"]), ["a", "b"])
     }
 
+    func testReplacingKeepsPlaceAndDropsRepeats() {
+        XCTAssertEqual(ClipboardPins.replacing("b", with: "B2", in: ["a", "b", "c"]), ["a", "B2", "c"])
+        XCTAssertEqual(ClipboardPins.replacing("c", with: "a", in: ["a", "b", "c"]), ["a", "b"])
+        XCTAssertEqual(ClipboardPins.replacing("b", with: "  ", in: ["a", "b"]), ["a", "b"])
+        XCTAssertEqual(ClipboardPins.replacing("x", with: "y", in: ["a"]), ["a"])
+        let long = String(repeating: "长", count: 6_000)
+        XCTAssertEqual(ClipboardPins.replacing("a", with: long, in: ["a"]).first?.count, ClipboardPins.maxLength)
+    }
+
     func testSearchMatchesEveryWord() {
         XCTAssertTrue(ClipboardPins.matches("家里 WiFi 的密码是 1234", query: "wifi 密码"))
         XCTAssertFalse(ClipboardPins.matches("家里 WiFi", query: "wifi 密码"))

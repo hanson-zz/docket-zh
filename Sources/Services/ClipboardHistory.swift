@@ -142,6 +142,28 @@ final class ClipboardHistory {
         copy(Entry(content: .text(text), date: .now))
     }
 
+    /// Saves an edit of a text entry back into the history, in the same
+    /// place, so it can be copied again. Another entry with the same words
+    /// is folded into it. If the entry has meanwhile scrolled out of the
+    /// last twenty, the edit is listed as the newest copy instead. The
+    /// pasteboard itself is left alone until the edit is copied.
+    @discardableResult
+    func edit(_ id: UUID, text: String) -> Entry? {
+        let value = String(text.prefix(Self.textLimit))
+        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard let index = entries.firstIndex(where: { $0.id == id }) else {
+            let added = Entry(content: .text(value), date: .now)
+            entries = RecentList.inserting(added, into: entries, limit: Self.limit) { $0.same(as: $1) }
+            return added
+        }
+        let edited = Entry(content: .text(value), date: entries[index].date)
+        var next = entries
+        next[index] = edited
+        next.removeAll { $0.id != edited.id && $0.same(as: edited) }
+        entries = next
+        return edited
+    }
+
     func remove(_ entry: Entry) {
         entries.removeAll { $0.id == entry.id }
     }

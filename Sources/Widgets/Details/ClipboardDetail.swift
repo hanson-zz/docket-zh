@@ -6,6 +6,10 @@ import SwiftUI
 /// over both. A click puts one back on the pasteboard, and with 点按后直接粘贴
 /// on, pastes it into the app in front as well.
 ///
+/// Any text, starred or recent, can be edited in place: the edit is saved
+/// back where it was (a star stays starred, a recent copy stays in the
+/// history) and can then be copied again like any other entry.
+///
 /// The history is kept in memory only and gone when Docket quits; the
 /// footnote says so. Starred texts are the exception, because keeping them
 /// is the point: they are saved with the widget (see `ClipboardPins`).
@@ -17,6 +21,21 @@ struct ClipboardDetail: View {
     @State private var copied: String?
     @State private var query = ""
     @FocusState private var searching: Bool
+    @State private var editing: EditTarget?
+    @State private var draft = ""
+    @FocusState private var editorFocused: Bool
+
+    /// What the editor is changing: a starred text by its words, or a
+    /// recent copy by its id.
+    private enum EditTarget: Equatable {
+        case pin(String)
+        case entry(UUID)
+
+        var isPin: Bool {
+            if case .pin = self { return true }
+            return false
+        }
+    }
 
     private var pins: [String] { ClipboardPins.pins(instance.config) }
     private var pastes: Bool { instance.config.bool("pasteOnClick", default: false) }
@@ -26,14 +45,29 @@ struct ClipboardDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.indigo))
         } content: {
             VStack(alignment: .leading, spacing: 10) {
-                PanelHeader(symbol: "list.clipboard", title: "剪贴板",
-                            subtitle: pastes ? "点按即可粘贴到前台应用" : "点按即可重新拷贝 · 星标保留常用文本")
-                searchField
-                list
-                HStack(spacing: 8) {
-                    PanelButton(title: "清除历史", symbol: "trash") {
-                        guard !context.isPreview else { return }
-                        history.clear()
+                if let editing {
+                    PanelHeader(symbol: "pencil", title: "编辑",
+                                subtitle: editing.isPin ? "保存后仍在星标里" : "保存后回到历史，可再次拷贝")
+                    editor
+                    HStack(spacing: 8) {
+                        PanelButton(title: "取消", symbol: "xmark") { endEditing() }
+                        PanelButton(title: "保存", symbol: "checkmark") { saveEdit(copy: false) }
+                            .disabled(draftIsEmpty)
+                        PanelButton(title: "保存并拷贝", symbol: "doc.on.doc", prominent: true) {
+                            saveEdit(copy: true)
+                        }
+                        .disabled(draftIsEmpty)
+                    }
+                } else {
+                    PanelHeader(symbol: "list.clipboard", title: "剪贴板",
+                                subtitle: pastes ? "点按即可粘贴到前台应用" : "点按即可重新拷贝 · 星标保留常用文本")
+                    searchField
+                    list
+                    HStack(spacing: 8) {
+                        PanelButton(title: "清除历史", symbol: "trash") {
+                            guard !context.isPreview else { return }
+                            history.clear()
+                        }
                     }
                 }
                 Text("历史只保存在内存中，退出码头后即清除；加了星标的文本会保存下来。密码管理器标记为隐藏的内容不会被记录。")
@@ -43,6 +77,95 @@ struct ClipboardDetail: View {
             }
         }
         .onAppear { if !context.isPreview { history.start() } }
+    }
+
+    // MARK: Editing
+
+    private var draftIsEmpty: Bool {
+        draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var draftLimit: Int {
+        editing?.isPin == true ? ClipboardPins.maxLength : 20_000
+    }
+
+    private var editor: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            TextEditor(text: $draft)
+                .font(.system(size: 13))
+                .foregroundStyle(.white)
+                .scrollContentBackground(.hidden)
+                .scrollIndicators(.never)
+                .focused($editorFocused)
+                .disabled(context.isPreview)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            HStack(spacing: 6) {
+                Text(draftIsEmpty ? "内容不能为空" : "\(draft.count) 字")
+                    .font(WidgetStyle.caption(10).monospacedDigit())
+                    .foregroundStyle(.white.opacity(draft.count > draftLimit || draftIsEmpty ? 0.9 : 0.5))
+                Spacer(minLength: 0)
+                Text("Esc 取消")
+                    .font(WidgetStyle.caption(10))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(height: 286)
+        .glassPane(cornerRadius: 12)
+        .onExitCommand { endEditing() }
+    }
+
+    private func beginEditing(_ target: EditTarget, text: String) {
+        guard !context.isPreview else { return }
+        draft = text
+        searching = false
+        withAnimation(.snappy(duration: 0.2)) { editing = target }
+        DispatchQueue.main.async { editorFocused = true }
+    }
+
+    private func endEditing() {
+        editorFocused = false
+        withAnimation(.snappy(duration: 0.2)) { editing = nil }
+    }
+
+    /// Saves the edit where it came from, and with 保存并拷贝 puts it on
+    /// the pasteboard as well (never pasting: the editor was in front, so
+    /// there is no app to paste into that you meant).
+    private func saveEdit(copy: Bool) {
+        guard let target = editing, !context.isPreview, !draftIsEmpty else { return }
+        let text = draft
+        switch target {
+        case .pin(let old):
+            let next = ClipboardPins.replacing(old, with: text, in: pins)
+            savePins(next)
+            if copy {
+                let saved = ClipboardPins.clip(text)
+                put(saved, paste: false)
+                copied = "pin:" + saved
+            }
+        case .entry(let id):
+            guard let edited = history.edit(id, text: text) else { return }
+            if copy {
+                history.copy(edited)
+                copied = history.entries.first?.id.uuidString
+            }
+        }
+        endEditing()
+    }
+
+    private func editButton(_ target: EditTarget, text: String) -> some View {
+        Button {
+            beginEditing(target, text: text)
+        } label: {
+            Image(systemName: "pencil")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.5))
+                .frame(width: 22, height: 22)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("编辑")
     }
 
     private var searchField: some View {
@@ -118,6 +241,7 @@ struct ClipboardDetail: View {
         } caption: {
             "星标"
         } star: {
+            editButton(.pin(text), text: text)
             starButton(text, pinned: true)
         } tap: {
             put(text)
@@ -125,6 +249,7 @@ struct ClipboardDetail: View {
         }
         .contextMenu {
             Button("拷贝") { put(text, paste: false) }
+            Button("编辑") { beginEditing(.pin(text), text: text) }
             Button("上移") { savePins(ClipboardPins.moving(text, by: -1, in: pins)) }
             Button("下移") { savePins(ClipboardPins.moving(text, by: 1, in: pins)) }
             Button("取消星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
@@ -140,7 +265,10 @@ struct ClipboardDetail: View {
         } caption: {
             RelativeAge.caption(entry.date, now: context.now)
         } star: {
-            if let text { starButton(text, pinned: false) }
+            if let text {
+                editButton(.entry(entry.id), text: text)
+                starButton(text, pinned: false)
+            }
         } tap: {
             history.copy(entry)
             if pastes { Self.pasteSoon() }
@@ -148,7 +276,10 @@ struct ClipboardDetail: View {
         }
         .contextMenu {
             Button("拷贝") { history.copy(entry) }
-            if let text { Button("加星标") { savePins(ClipboardPins.toggling(text, in: pins)) } }
+            if let text {
+                Button("编辑") { beginEditing(.entry(entry.id), text: text) }
+                Button("加星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
+            }
             Button("删除") { history.remove(entry) }
         }
     }
@@ -175,7 +306,7 @@ struct ClipboardDetail: View {
                     .foregroundStyle(.white.opacity(0.6))
             }
             Spacer(minLength: 0)
-            star()
+            HStack(spacing: 0) { star() }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)

@@ -34,6 +34,18 @@ public enum ClipboardPins {
         return Array(([value] + pins).prefix(maxPins))
     }
 
+    /// Swaps a pin for its edited text in the same place. An empty edit
+    /// changes nothing; an edit that matches another pin keeps just one.
+    public static func replacing(_ old: String, with new: String, in pins: [String]) -> [String] {
+        let value = clip(new)
+        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let index = pins.firstIndex(of: old) else { return pins }
+        var result = pins
+        result[index] = value
+        var seen = Set<String>()
+        return result.filter { seen.insert($0).inserted }
+    }
+
     public static func moving(_ text: String, by offset: Int, in pins: [String]) -> [String] {
         guard let index = pins.firstIndex(of: text) else { return pins }
         let target = min(max(index + offset, 0), pins.count - 1)
