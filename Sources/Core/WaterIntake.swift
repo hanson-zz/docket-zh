@@ -434,6 +434,28 @@ public enum WaterIntake {
         return count
     }
 
+    /// Days in a row before today that missed their goal, counted back from
+    /// yesterday and never past the first day anything was logged (a new
+    /// widget has not missed the days before it existed). 0 once today's
+    /// goal is met.
+    public static func missedDays(_ days: [WaterDay], goal: Int, today: Date,
+                                  calendar: Calendar = WaterIntake.calendar) -> Int {
+        if Self.today(days, goal: goal, now: today, calendar: calendar).isMet { return 0 }
+        guard let first = days.map(\.key).min() else { return 0 }
+        let byKey = Dictionary(days.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        var count = 0
+        var day = calendar.startOfDay(for: today)
+        while count <= keptDays {
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+            day = previous
+            let key = HabitTracker.dayKey(day, calendar: calendar)
+            guard key >= first else { break }
+            if byKey[key]?.isMet == true { break }
+            count += 1
+        }
+        return count
+    }
+
     /// The last `count` days, oldest first and today last: the panel's bars.
     public static func lastDays(_ days: [WaterDay], goal: Int, today: Date, count: Int = 7,
                                 calendar: Calendar = WaterIntake.calendar) -> [WaterDayReading] {

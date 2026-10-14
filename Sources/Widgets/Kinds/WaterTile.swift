@@ -40,6 +40,16 @@ struct WaterTile: View {
         return WaterIntake.today(instance.config, now: context.now)
     }
 
+    private var missedDays: Int {
+        WaterIntake.missedDays(WaterIntake.days(instance.config), goal: WaterIntake.goal(instance.config),
+                               today: context.now)
+    }
+
+    private func publishMissed() {
+        guard !context.isPreview else { return }
+        UserDefaults.standard.set(missedDays, forKey: VirtualPet.missedDaysDefault)
+    }
+
     /// When the next reminder goes out, or nil for none.
     private var nextReminder: Date? {
         guard !context.isPreview else { return nil }
@@ -64,6 +74,10 @@ struct WaterTile: View {
         .accessibilityLabel("喝水，\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))")
         .onAppear { WaterNotifier.shared.update(instance, next: nextReminder) }
         .onChange(of: nextReminder) { _, next in WaterNotifier.shared.update(instance, next: next) }
+        // The pet's 渴成骷髅 reads this; written from here so it needs no
+        // way to find the 喝水 widget itself.
+        .onAppear { publishMissed() }
+        .onChange(of: missedDays) { _, _ in publishMissed() }
     }
 
     // MARK: Wide

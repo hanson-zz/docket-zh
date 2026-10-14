@@ -27,7 +27,7 @@ struct PetDetail: View {
         let state = context.isPreview
             ? VirtualPet.sample(now: now)
             : VirtualPet.advanced(VirtualPet.state(instance.config, now: now), to: now)
-        let look = VirtualPet.look(state, now: now)
+        let look = VirtualPet.look(state, now: now, dried: dried)
         return DetailCard {
             MeshBackdrop(color: accent)
         } content: {
@@ -41,6 +41,7 @@ struct PetDetail: View {
                     .foregroundStyle(.white.opacity(0.5))
                     .fixedSize(horizontal: false, vertical: true)
                 notifyToggle
+                dryToggle
                 characterPicker
             }
         }
@@ -61,9 +62,9 @@ struct PetDetail: View {
                 Text(character.title)
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(VirtualPet.statusLine(state, now: now))
+                Text(VirtualPet.statusLine(state, now: now, dried: dried))
                     .font(WidgetStyle.label(12))
-                    .foregroundStyle(look == .sick || look == .hungry
+                    .foregroundStyle(look == .sick || look == .hungry || look == .dried
                                      ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
                                      : .white.opacity(0.85))
                 Text("整体 \(Int(state.health.rounded()))%")
@@ -163,6 +164,34 @@ struct PetDetail: View {
         .buttonStyle(.plain)
         .disabled(context.isPreview)
         .help("生病了：看病后四项状态至少回到 \(Int(VirtualPet.healTo))")
+    }
+
+    @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0
+
+    private var dried: Bool {
+        !context.isPreview && VirtualPet.isDried(instance.config, missedDays: missedDays)
+    }
+
+    private var dryToggle: some View {
+        Toggle(isOn: Binding(
+            get: { instance.config.bool(VirtualPet.dryKey) },
+            set: { on in
+                guard !context.isPreview else { return }
+                PetLog.set(VirtualPet.dryKey, .bool(on), in: instance)
+            })) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("喝水不达标会渴成骷髅")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text("喝水小组件连续 \(VirtualPet.dryDays) 天没喝够，它就变成骷髅；喝够一天马上复活。")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .padding(10)
+        .glassPane(cornerRadius: 10)
     }
 
     private var notifyToggle: some View {

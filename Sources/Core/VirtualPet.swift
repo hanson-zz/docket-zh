@@ -108,6 +108,8 @@ public enum PetTreat: String, CaseIterable, Sendable {
 /// What the character is drawn doing.
 public enum PetLook: String, CaseIterable, Sendable {
     case idle, cheer, rest, eat, hungry, sick
+    /// 喝水连续 3 天没达标：渴成骷髅，喝够一天就复活。
+    case dried
 
     public var title: String {
         switch self {
@@ -117,6 +119,7 @@ public enum PetLook: String, CaseIterable, Sendable {
         case .eat: "吃得正香"
         case .hungry: "饿了"
         case .sick: "生病了"
+        case .dried: "渴成骷髅了"
         }
     }
 }
@@ -478,7 +481,7 @@ public enum VirtualPet {
 
     /// Acting out what was just done beats everything for a few seconds, then
     /// sleep, then sick, hungry and happy.
-    public static func look(_ state: PetState, now: Date) -> PetLook {
+    public static func look(_ state: PetState, now: Date, dried: Bool = false) -> PetLook {
         if let action = state.lastAction, let when = state.lastActionAt, !state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
@@ -487,6 +490,7 @@ public enum VirtualPet {
             case .sleep: break
             }
         }
+        if dried { return .dried }
         if state.isSleeping { return .rest }
         if isSick(state) { return .sick }
         if state.food < lowLine { return .hungry }
@@ -544,7 +548,7 @@ public enum VirtualPet {
     }
 
     /// The tile's one line: what it is doing, or the lowest need.
-    public static func statusLine(_ state: PetState, now: Date) -> String {
+    public static func statusLine(_ state: PetState, now: Date, dried: Bool = false) -> String {
         if let action = state.lastAction, let when = state.lastActionAt, state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
@@ -561,8 +565,10 @@ public enum VirtualPet {
         case .healing: return "好多了"
         default: break
         }
-        let look = look(state, now: now)
+        let look = look(state, now: now, dried: dried)
         switch look {
+        case .dried:
+            return "渴成骷髅了，快喝水"
         case .idle:
             if state.clean < lowLine { return "有点脏了" }
             if state.mood < lowLine { return "有点无聊" }
@@ -617,11 +623,23 @@ public enum VirtualPet {
     /// pictures; eating, hungry and sick are the pet's own. The red panda has
     /// all six of its own, full body, since 喝水's is the app icon's head.
     public static func imageName(_ character: WaterCharacter, _ look: PetLook) -> String {
+        if look == .dried { return "pet-\(character.rawValue)-skeleton" }
         if character == .redPanda { return "pet-panda-\(look.rawValue)" }
         switch look {
         case .idle, .cheer, .rest: return "water-\(character.rawValue)-\(look.rawValue)"
-        case .eat, .hungry, .sick: return "pet-\(character.rawValue)-\(look.rawValue)"
+        case .eat, .hungry, .sick, .dried: return "pet-\(character.rawValue)-\(look.rawValue)"
         }
+    }
+
+    /// 渴成骷髅: switched on in the panel, and 喝水 has gone `dryDays`
+    /// days in a row without reaching its goal (today met counts as 0).
+    public static let dryKey = "dryUp"
+    public static let dryDays = 3
+    /// Where 喝水 leaves its run of missed days for the pet to read.
+    public static let missedDaysDefault = "docket.water.missedDays"
+
+    public static func isDried(_ config: WidgetConfig, missedDays: Int) -> Bool {
+        config.bool(dryKey) && missedDays >= dryDays
     }
 
     /// A believable pet for the library and the screenshots.

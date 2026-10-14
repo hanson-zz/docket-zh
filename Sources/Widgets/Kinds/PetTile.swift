@@ -23,6 +23,12 @@ struct PetTile: View {
         WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
     }
 
+    @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0
+
+    private var dried: Bool {
+        !context.isPreview && VirtualPet.isDried(instance.config, missedDays: missedDays)
+    }
+
     private var state: PetState {
         if context.isPreview { return VirtualPet.sample(now: context.now) }
         return VirtualPet.advanced(VirtualPet.state(instance.config, now: context.now), to: context.now)
@@ -30,7 +36,7 @@ struct PetTile: View {
 
     var body: some View {
         let s = state
-        let look = VirtualPet.look(s, now: context.now)
+        let look = VirtualPet.look(s, now: context.now, dried: dried)
         return WidgetSurface {
             Group {
                 if context.position.isVertical {
@@ -42,7 +48,7 @@ struct PetTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now))")
+        .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried))")
         .onAppear { collectTreats() }
         .onChange(of: context.now) { _, _ in collectTreats() }
         // Rescheduled when the stored state changes (something was done for
@@ -73,7 +79,7 @@ struct PetTile: View {
                 Text(character.title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
-                Text(VirtualPet.statusLine(s, now: context.now))
+                Text(VirtualPet.statusLine(s, now: context.now, dried: dried))
                     .font(.system(size: 11))
                     .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 PetBar(value: s.health, height: 4)
@@ -90,7 +96,7 @@ struct PetTile: View {
         VStack(spacing: 4) {
             PetFigure(character: character, look: look, height: 40,
                       effect: VirtualPet.effect(s, now: context.now))
-            Text(VirtualPet.statusLine(s, now: context.now))
+            Text(VirtualPet.statusLine(s, now: context.now, dried: dried))
                 .font(WidgetStyle.caption(9))
                 .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 .lineLimit(1)
@@ -454,7 +460,7 @@ enum PetStyle {
 
     static func tint(look: PetLook, health: Double) -> Color {
         switch look {
-        case .sick, .hungry: Color(hex: PaletteColor.red.hex)
+        case .sick, .hungry, .dried: Color(hex: PaletteColor.red.hex)
         case .cheer, .eat: accent
         default: health < 30 ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary
         }
