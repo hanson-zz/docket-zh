@@ -59,6 +59,8 @@ public enum PetNeed: String, CaseIterable, Sendable, Identifiable {
 /// the tile's one control).
 public enum PetAction: String, CaseIterable, Sendable, Identifiable {
     case feed, play, sleep, wash
+    /// Only offered while it is sick: brings every need back to `healTo`.
+    case heal
     /// Something done elsewhere in 码头 that feeds it: a glass of water, a
     /// habit checked off, a focus session finished.
     case treat
@@ -73,6 +75,7 @@ public enum PetAction: String, CaseIterable, Sendable, Identifiable {
         case .play: "玩耍"
         case .sleep: "睡觉"
         case .wash: "清洁"
+        case .heal: "看病"
         case .treat: "奖励"
         }
     }
@@ -83,6 +86,7 @@ public enum PetAction: String, CaseIterable, Sendable, Identifiable {
         case .play: "tennisball.fill"
         case .sleep: "moon.zzz.fill"
         case .wash: "shower.fill"
+        case .heal: "cross.case.fill"
         case .treat: "gift.fill"
         }
     }
@@ -124,8 +128,29 @@ public enum PetEffect: Equatable, Sendable {
     case bubbles(until: Date)
     /// Hearts floating up until this moment, after a game.
     case hearts(until: Date)
+    /// Little crosses floating up until this moment, after seeing the doctor.
+    case healing(until: Date)
     /// Smudges while 清洁 is low.
     case dirty
+}
+
+/// A reminder to look after it, from `VirtualPet.nextAlert`.
+public struct PetAlert: Equatable, Sendable {
+    public var date: Date
+    public var sick: Bool
+    /// The tile's line at that moment: 饿了, 有点脏了, 生病了...
+    public var line: String
+
+    public init(date: Date, sick: Bool, line: String) {
+        self.date = date
+        self.sick = sick
+        self.line = line
+    }
+
+    public func message(name: String) -> (title: String, body: String) {
+        sick ? ("\(name)生病了", "快去看看它，带它看病吧。")
+             : ("\(name)需要照顾", "它\(line)，去照顾一下它吧。")
+    }
 }
 
 public struct PetState: Equatable, Sendable {
@@ -221,6 +246,9 @@ public enum VirtualPet {
     public static let awayFloor: Double = 20
     /// At or above this, feeding, playing or washing is turned down.
     public static let fullLine: Double = 95
+    /// Seeing the doctor brings every need at least this far: out of sick and
+    /// out of hungry, but still wanting looking after.
+    public static let healTo: Double = 40
     /// How much a treat from elsewhere in 码头 gives.
     public static let treatFood: Double = 10
     public static let treatMood: Double = 6
@@ -376,6 +404,8 @@ public enum VirtualPet {
         case .feed: state.food >= fullLine
         case .play: state.mood >= fullLine
         case .wash: state.clean >= fullLine
+        // Nothing to treat in a pet that is not sick.
+        case .heal: !isSick(state)
         case .sleep, .treat: false
         }
     }
@@ -410,6 +440,9 @@ public enum VirtualPet {
         case .wash:
             s.clean += 40
             s.mood += 4
+            s.sleepSince = nil
+        case .heal:
+            for need in PetNeed.allCases { s[need] = max(s[need], healTo) }
             s.sleepSince = nil
         case .treat:
             s.food += treatFood
@@ -450,15 +483,48 @@ public enum VirtualPet {
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
             case .feed, .treat: return .eat
-            case .play, .wash: return .cheer
+            case .play, .wash, .heal: return .cheer
             case .sleep: break
             }
         }
         if state.isSleeping { return .rest }
-        if PetNeed.allCases.contains(where: { state[$0] < sickLine }) { return .sick }
+        if isSick(state) { return .sick }
         if state.food < lowLine { return .hungry }
         if PetNeed.allCases.allSatisfy({ state[$0] >= happyLine }) { return .cheer }
         return .idle
+    }
+
+    /// Any need below `sickLine`.
+    public static func isSick(_ state: PetState) -> Bool {
+        PetNeed.allCases.contains { state[$0] < sickLine }
+    }
+
+    /// The next reminder for 需要照顾时通知: when it next starts wanting
+    /// looking after, or, if it already does, when it falls sick. Looked for
+    /// in ten-minute steps over two days; one due at night waits for 7:00,
+    /// when it is up anyway. Nil when it is already sick (the reminder for
+    /// that has gone) or nothing comes due.
+    public static func nextAlert(_ state: PetState, after now: Date,
+                                 calendar: Calendar = HabitTracker.calendar) -> PetAlert? {
+        let current = advanced(state, to: now, calendar: calendar)
+        if isSick(current) { return nil }
+        let wantsSick = current.needsCare
+        var t = now
+        let limit = now.addingTimeInterval(48 * 3600)
+        while t < limit {
+            t = t.addingTimeInterval(600)
+            let later = advanced(current, to: t, calendar: calendar)
+            let due = wantsSick ? isSick(later) : (later.needsCare || isSick(later))
+            guard due else { continue }
+            var when = t
+            if isNight(when, calendar: calendar) {
+                when = nextNightEdge(after: when, calendar: calendar)
+            }
+            let then = advanced(current, to: when, calendar: calendar)
+            if isSick(then) { return PetAlert(date: when, sick: true, line: "生病了") }
+            return PetAlert(date: when, sick: false, line: statusLine(then, now: when))
+        }
+        return nil
     }
 
     /// What is drawn over the picture: bubbles for a few seconds after a
@@ -471,6 +537,7 @@ public enum VirtualPet {
             let until = when.addingTimeInterval(actSeconds)
             if action == .wash { return .bubbles(until: until) }
             if action == .play { return .hearts(until: until) }
+            if action == .heal { return .healing(until: until) }
         }
         if state.clean < lowLine { return .dirty }
         return .none
@@ -484,12 +551,14 @@ public enum VirtualPet {
             case .feed: return "吃不下了"
             case .play: return "已经很开心了"
             case .wash: return "已经很干净了"
+            case .heal: return "没有生病"
             case .sleep, .treat: break
             }
         }
         switch effect(state, now: now) {
         case .bubbles: return "洗得香喷喷"
         case .hearts: return "玩得真开心"
+        case .healing: return "好多了"
         default: break
         }
         let look = look(state, now: now)

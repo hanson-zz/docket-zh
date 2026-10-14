@@ -54,6 +54,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TimerStateProvider.shared.adopt(state.state.timer)
         TimerStateProvider.shared.onChange = { [state] timer in state.state.timer = timer }
         state.onTimerChanged = { timer in TimerStateProvider.shared.adopt(timer) }
+        // A focus session that ends is a treat for the pet, noticed from launch
+        // rather than by a pet tile, which may be on another layout.
+        PetFocusWatcher.shared.start()
 
         // 灵动提示: off unless switched on in Settings ▸ 通用.
         IslandController.shared.apply(state.state.island)

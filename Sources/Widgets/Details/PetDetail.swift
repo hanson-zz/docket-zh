@@ -34,11 +34,13 @@ struct PetDetail: View {
             VStack(alignment: .leading, spacing: 12) {
                 hero(state, look: look, now: now)
                 needs(state)
+                if VirtualPet.isSick(state) { healButton }
                 actions(state)
-                Text("喝一杯水、完成一项习惯打卡或一轮专注，都会喂它一点。")
+                Text("喝一杯水、完成一项习惯打卡或一轮专注，都会喂它一点；有几只宠物就每只都喂。")
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.5))
                     .fixedSize(horizontal: false, vertical: true)
+                notifyToggle
                 characterPicker
             }
         }
@@ -140,6 +142,49 @@ struct PetDetail: View {
                 .accessibilityLabel(title)
             }
         }
+    }
+
+    /// Shown only while it is sick, above the four, in red: the one thing
+    /// that gets it better at once.
+    private var healButton: some View {
+        Button {
+            guard !context.isPreview else { return }
+            withAnimation(.snappy(duration: 0.3)) { PetLog.act(.heal, in: instance) }
+        } label: {
+            Label("带它看病", systemImage: PetAction.heal.symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: PaletteColor.red.hex).opacity(0.8)))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .help("生病了：看病后四项状态至少回到 \(Int(VirtualPet.healTo))")
+    }
+
+    private var notifyToggle: some View {
+        Toggle(isOn: Binding(
+            get: { instance.config.bool("notify") },
+            set: { on in
+                guard !context.isPreview else { return }
+                PetLog.set("notify", .bool(on), in: instance)
+            })) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("需要照顾时通知")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text("饿了、脏了、困了或生病时发一条通知，夜里不打扰。")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .padding(10)
+        .glassPane(cornerRadius: 10)
     }
 
     // MARK: Character

@@ -184,6 +184,50 @@ final class VirtualPetTests: XCTestCase {
         XCTAssertEqual(VirtualPet.statusLine(game, now: now), "玩得真开心")
     }
 
+    func testSeeingTheDoctorOnlyWhenSick() {
+        let now = at(2026, 10, 14, 15)
+        let sick = PetState(food: 10, mood: 60, energy: 5, clean: 50, at: now)
+        XCTAssertTrue(VirtualPet.isSick(sick))
+        let healed = VirtualPet.performing(.heal, on: sick, now: now, calendar: calendar)
+        XCTAssertFalse(VirtualPet.isSick(healed))
+        XCTAssertEqual(healed.food, VirtualPet.healTo)
+        XCTAssertEqual(healed.energy, VirtualPet.healTo)
+        XCTAssertEqual(healed.mood, 60, "what was fine stays as it was")
+        XCTAssertEqual(VirtualPet.effect(healed, now: now), .healing(until: now.addingTimeInterval(VirtualPet.actSeconds)))
+        XCTAssertEqual(VirtualPet.statusLine(healed, now: now), "好多了")
+
+        let well = PetState(food: 60, mood: 60, energy: 60, clean: 60, at: now)
+        let turned = VirtualPet.performing(.heal, on: well, now: now, calendar: calendar)
+        XCTAssertEqual(turned.food, 60)
+        XCTAssertEqual(VirtualPet.statusLine(turned, now: now), "没有生病")
+    }
+
+    func testNextAlert() {
+        let noon = at(2026, 10, 14, 12)
+        // Food 60 reaches 35 in five hours, at 17:00.
+        let pet = PetState(food: 60, mood: 90, energy: 90, clean: 90, at: noon)
+        let alert = VirtualPet.nextAlert(pet, after: noon, calendar: calendar)
+        XCTAssertEqual(alert?.sick, false)
+        XCTAssertEqual(alert?.line, "饿了")
+        XCTAssertEqual(alert.map { $0.date.timeIntervalSince(noon) / 3600 } ?? 0, 5, accuracy: 0.2)
+        XCTAssertEqual(alert?.message(name: "小熊猫").title, "小熊猫需要照顾")
+
+        // Already hungry: the next one is for falling sick (food 30 to 15, three hours).
+        let hungry = PetState(food: 30, mood: 90, energy: 90, clean: 90, at: noon)
+        let sick = VirtualPet.nextAlert(hungry, after: noon, calendar: calendar)
+        XCTAssertEqual(sick?.sick, true)
+        XCTAssertEqual(sick.map { $0.date.timeIntervalSince(noon) / 3600 } ?? 0, 3, accuracy: 0.2)
+
+        // Due in the night: waits for 7:00.
+        let evening = at(2026, 10, 14, 21)
+        let late = VirtualPet.nextAlert(PetState(food: 45, mood: 90, energy: 90, clean: 90, at: evening),
+                                        after: evening, calendar: calendar)
+        XCTAssertEqual(late?.date, at(2026, 10, 15, 7))
+
+        XCTAssertNil(VirtualPet.nextAlert(PetState(food: 5, at: noon), after: noon, calendar: calendar),
+                     "already sick")
+    }
+
     func testPictures() {
         XCTAssertEqual(VirtualPet.imageName(.redPanda, .idle), "pet-panda-idle")
         XCTAssertEqual(VirtualPet.imageName(.redPanda, .rest), "pet-panda-rest")

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@preconcurrency import UserNotifications
 
 /// 电子宠物：the chosen character (the red panda by default) with how it is
 /// doing, a bar for its four needs averaged, and a bowl to feed it.
@@ -9,8 +10,9 @@ import SwiftUI
 /// from the shelf is the one thing worth not opening anything for.
 ///
 /// The tile is also where treats from elsewhere in 码头 arrive: a glass of
-/// water or a habit checked off leaves one in `PetTreats`, and a focus session
-/// that ran out is noticed here from the shared timer. Draining them here
+/// water, a habit checked off or a focus session that ran out (noticed by
+/// `PetFocusWatcher` whether or not a pet is showing) leaves one in
+/// `PetTreats`, and every pet picks up each one once. Picking them up here
 /// rather than at the source keeps 喝水 and 习惯打卡 knowing nothing about the
 /// pet beyond dropping a note in a box.
 struct PetTile: View {
@@ -43,6 +45,24 @@ struct PetTile: View {
         .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now))")
         .onAppear { collectTreats() }
         .onChange(of: context.now) { _, _ in collectTreats() }
+        // Rescheduled when the stored state changes (something was done for
+        // it) or the reminder is switched; not every second.
+        .task(id: alertKey) { scheduleAlert() }
+    }
+
+    private var alertKey: String {
+        "\(instance.config.double("at"))|\(instance.config.bool("notify"))|\(character.rawValue)"
+    }
+
+    private func scheduleAlert() {
+        guard !context.isPreview else { return }
+        guard instance.config.bool("notify") else {
+            PetNotifier.shared.update(instance, alert: nil, name: character.title)
+            return
+        }
+        let now = Date.now
+        let alert = VirtualPet.nextAlert(VirtualPet.state(instance.config, now: now), after: now)
+        PetNotifier.shared.update(instance, alert: alert, name: character.title)
     }
 
     private func wide(_ s: PetState, look: PetLook) -> some View {
@@ -119,7 +139,21 @@ struct PetFigure: View {
             }
         }
         .frame(width: height * 0.95, height: height)
-        .overlay { PetEffectLayer(effect: effect, height: height) }
+        .overlay {
+            // Smudges go on the character, not the card: masked by its own
+            // outline, so an octopus's gaps and a penguin's narrow body show
+            // none in the air beside them.
+            if effect == .dirty, let image = PetArt.image(character, look) {
+                PetEffectLayer(effect: effect, height: height)
+                    .mask {
+                        Image(nsImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+            } else {
+                PetEffectLayer(effect: effect, height: height)
+            }
+        }
         .animation(.easeInOut(duration: 0.25), value: look)
         .animation(.easeInOut(duration: 0.4), value: effect)
         .accessibilityHidden(true)
@@ -155,9 +189,23 @@ struct PetEffectLayer: View {
                     let left = until.timeIntervalSince(timeline.date)
                     if left > 0 {
                         Canvas { context, size in
-                            Self.drawHearts(in: &context, size: size,
-                                            elapsed: VirtualPet.actSeconds - left,
-                                            fade: min(1, left / 0.6), height: height)
+                            Self.drawFloaters(in: &context, size: size, symbol: "heart.fill",
+                                              color: Color(red: 1, green: 0.38, blue: 0.52),
+                                              elapsed: VirtualPet.actSeconds - left,
+                                              fade: min(1, left / 0.6), height: height)
+                        }
+                    }
+                }
+                .transition(.opacity)
+            case .healing(let until):
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    let left = until.timeIntervalSince(timeline.date)
+                    if left > 0 {
+                        Canvas { context, size in
+                            Self.drawFloaters(in: &context, size: size, symbol: "cross.fill",
+                                              color: Color(red: 0.30, green: 0.80, blue: 0.55),
+                                              elapsed: VirtualPet.actSeconds - left,
+                                              fade: min(1, left / 0.6), height: height)
                         }
                     }
                 }
@@ -192,12 +240,11 @@ struct PetEffectLayer: View {
         }
     }
 
-    /// Five hearts that pop out above the head one after another and float up.
-    nonisolated static func drawHearts(in context: inout GraphicsContext, size: CGSize, elapsed: Double,
-                                       fade: Double, height: CGFloat) {
-        let pink = Color(red: 1, green: 0.38, blue: 0.52)
-        var symbol = context.resolve(Image(systemName: "heart.fill"))
-        symbol.shading = .color(pink)
+    /// Five symbols (hearts, crosses) that pop out one after another and float up.
+    nonisolated static func drawFloaters(in context: inout GraphicsContext, size: CGSize, symbol name: String,
+                                         color: Color, elapsed: Double, fade: Double, height: CGFloat) {
+        var symbol = context.resolve(Image(systemName: name))
+        symbol.shading = .color(color)
         for i in 0..<5 {
             let n = Double(i)
             let t = elapsed - n * 0.45
@@ -215,8 +262,11 @@ struct PetEffectLayer: View {
     nonisolated static func drawSmudges(in context: inout GraphicsContext, size: CGSize) {
         // Fixed spots on the lower half, where a pet that has been rolling
         // around picks up dirt.
+        // Spread over the lower body, clear of the face; the mask keeps only
+        // the ones that land on the character.
         let spots: [(Double, Double, Double)] = [
-            (0.30, 0.62, 0.10), (0.62, 0.70, 0.08), (0.46, 0.82, 0.07), (0.70, 0.52, 0.06), (0.24, 0.80, 0.05),
+            (0.30, 0.66, 0.09), (0.62, 0.72, 0.08), (0.46, 0.84, 0.07), (0.72, 0.62, 0.06),
+            (0.24, 0.82, 0.05), (0.40, 0.74, 0.05), (0.56, 0.64, 0.05), (0.68, 0.86, 0.06),
         ]
         let mud = Color(red: 0.42, green: 0.30, blue: 0.20)
         for (x, y, r) in spots {
@@ -248,34 +298,51 @@ struct PetBar: View {
     }
 }
 
-/// Treats left by other widgets for whichever pet draws next. Kept in the
-/// defaults rather than a widget's config because the widget that earns one
-/// is not the pet: a glass of water knows nothing about which pet is on
-/// which shelf, and there may be none.
+/// Treats left by other widgets for every pet. Kept in the defaults rather
+/// than a widget's config because the widget that earns one is not the pet:
+/// a glass of water knows nothing about which pets are on which shelf, and
+/// there may be none.
+///
+/// A log rather than a queue: each treat has a number, and each pet keeps the
+/// last number it picked up (`treatSeen` in its config), so two pets both get
+/// it and a pet on another layout gets it when it next shows. Two days of
+/// treats are kept.
 @MainActor
 enum PetTreats {
-    private static let key = "docket.pet.treats"
+    private static let logKey = "docket.pet.treatLog"
+    private static let seqKey = "docket.pet.treatSeq"
+    private static let givenKey = "docket.pet.treatsGiven"
     /// A backlog is a bowl, not a buffet: a long day away is worth a good
     /// meal, not a hundred.
     static let maxPending = 20
+    static let keptSeconds: TimeInterval = 2 * 86_400
 
-    static func give(_ treat: PetTreat) {
-        let defaults = UserDefaults.standard
-        var pending = defaults.stringArray(forKey: key) ?? []
-        guard pending.count < maxPending else { return }
-        pending.append(treat.rawValue)
-        defaults.set(pending, forKey: key)
+    struct Entry {
+        var seq: Int
+        var treat: PetTreat
+        var at: Date
     }
 
-    /// Takes every pending treat, leaving none for another pet.
-    static func take() -> [PetTreat] {
-        let defaults = UserDefaults.standard
-        guard let pending = defaults.stringArray(forKey: key), !pending.isEmpty else { return [] }
-        defaults.removeObject(forKey: key)
-        return pending.compactMap(PetTreat.init(rawValue:))
+    static var latest: Int { UserDefaults.standard.integer(forKey: seqKey) }
+
+    private static func entries() -> [Entry] {
+        (UserDefaults.standard.stringArray(forKey: logKey) ?? []).compactMap { line in
+            let parts = line.split(separator: "|")
+            guard parts.count == 3, let seq = Int(parts[0]), let treat = PetTreat(rawValue: String(parts[1])),
+                  let at = Double(parts[2]) else { return nil }
+            return Entry(seq: seq, treat: treat, at: Date(timeIntervalSince1970: at))
+        }
     }
 
-    private static let givenKey = "docket.pet.treatsGiven"
+    static func give(_ treat: PetTreat, now: Date = .now) {
+        let defaults = UserDefaults.standard
+        let seq = latest + 1
+        var lines = entries().filter { now.timeIntervalSince($0.at) < keptSeconds }
+            .map { "\($0.seq)|\($0.treat.rawValue)|\($0.at.timeIntervalSince1970)" }
+        lines.append("\(seq)|\(treat.rawValue)|\(now.timeIntervalSince1970)")
+        defaults.set(Array(lines.suffix(60)), forKey: logKey)
+        defaults.set(seq, forKey: seqKey)
+    }
 
     /// Gives `treat` unless one was already given under `key` today (a habit
     /// and its day). Only today's keys are kept.
@@ -289,7 +356,39 @@ enum PetTreats {
         give(treat)
     }
 
-    static var hasPending: Bool { !(UserDefaults.standard.stringArray(forKey: key) ?? []).isEmpty }
+    /// The treats after `seen` from the last two days, at most `maxPending`.
+    static func since(_ seen: Int, now: Date = .now) -> [PetTreat] {
+        Array(entries().filter { $0.seq > seen && now.timeIntervalSince($0.at) < keptSeconds }
+            .map(\.treat).suffix(maxPending))
+    }
+}
+
+/// Notices a focus session ending, for the pet, whether or not a pet is
+/// showing: checked every few seconds from launch, so a session that ends and
+/// is followed straight away by the next one is still counted.
+@MainActor
+final class PetFocusWatcher {
+    static let shared = PetFocusWatcher()
+    private static let creditedKey = "docket.pet.focusCredited"
+    private var timer: Timer?
+
+    func start() {
+        guard timer == nil else { return }
+        timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
+            MainActor.assumeIsolated { PetFocusWatcher.shared.check() }
+        }
+    }
+
+    func check(now: Date = .now) {
+        let defaults = UserDefaults.standard
+        let credited = defaults.double(forKey: Self.creditedKey)
+        guard let deadline = VirtualPet.finishedFocus(TimerStateProvider.shared.state,
+                                                      credited: credited > 0
+                                                          ? Date(timeIntervalSince1970: credited) : nil,
+                                                      now: now) else { return }
+        defaults.set(deadline.timeIntervalSince1970, forKey: Self.creditedKey)
+        PetTreats.give(.focus, now: now)
+    }
 }
 
 /// The writes the tile and the panel both make, from the instance's current
@@ -304,19 +403,18 @@ enum PetLog {
         }
     }
 
-    /// Pending treats and a finished focus session, written in one go and
-    /// only when there is something: the tile calls this every tick.
+    /// The treats this pet has not picked up yet, written only when there
+    /// are some: the tile calls this every tick.
     static func collect(in instance: WidgetInstance, now: Date) {
-        let credited = instance.config.double("focusCredited")
-        let focus = VirtualPet.finishedFocus(TimerStateProvider.shared.state,
-                                             credited: credited > 0 ? Date(timeIntervalSince1970: credited) : nil,
-                                             now: now)
-        guard PetTreats.hasPending || focus != nil else { return }
-        let count = PetTreats.take().count + (focus == nil ? 0 : 1)
+        let latest = PetTreats.latest
+        let seen = Int(instance.config.double("treatSeen"))
+        guard latest != seen else { return }
+        // A log that went backwards (defaults reset) starts this pet over.
+        let treats = latest > seen ? PetTreats.since(seen, now: now) : []
         WidgetWriter.write(instance) { config in
-            var state = VirtualPet.treating(count, on: VirtualPet.state(config, now: now), now: now)
-            if let focus { state.focusCredited = focus }
-            VirtualPet.store(state, in: &config, now: now)
+            let state = VirtualPet.treating(treats.count, on: VirtualPet.state(config, now: now), now: now)
+            if !treats.isEmpty { VirtualPet.store(state, in: &config, now: now) }
+            config.set("treatSeen", .number(Double(latest)))
         }
     }
 
@@ -360,5 +458,49 @@ enum PetStyle {
         case .cheer, .eat: accent
         default: health < 30 ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary
         }
+    }
+}
+
+/// 需要照顾时通知: one pending reminder per pet, for when it next wants
+/// looking after (or falls sick), replaced whenever something is done for it.
+/// Off unless switched on in the panel; permission is asked the first time.
+@MainActor
+final class PetNotifier {
+    static let shared = PetNotifier()
+    private var scheduled: [UUID: Date] = [:]
+    private var asked = false
+    private let presenter = BannerPresenter()
+
+    private static func identifier(_ id: UUID) -> String { "docket.pet.\(id.uuidString)" }
+
+    func update(_ instance: WidgetInstance, alert: PetAlert?, name: String) {
+        let id = Self.identifier(instance.id)
+        guard let alert, alert.date > .now else {
+            if scheduled.removeValue(forKey: instance.id) != nil {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+            }
+            return
+        }
+        if let existing = scheduled[instance.id], abs(existing.timeIntervalSince(alert.date)) < 1 { return }
+        scheduled[instance.id] = alert.date
+        let message = alert.message(name: name)
+        let date = alert.date
+        Task { await schedule(id: id, at: date, title: message.title, body: message.body) }
+    }
+
+    private func schedule(id: String, at date: Date, title: String, body: String) async {
+        let center = UNUserNotificationCenter.current()
+        if center.delegate == nil { center.delegate = presenter }
+        if !asked {
+            asked = true
+            _ = try? await center.requestAuthorization(options: [.alert, .sound])
+        }
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, date.timeIntervalSinceNow),
+                                                        repeats: false)
+        try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
 }
