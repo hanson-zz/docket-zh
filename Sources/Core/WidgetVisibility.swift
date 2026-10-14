@@ -79,7 +79,7 @@ public enum WidgetVisibility {
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
         case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary, .water,
-             .github: true
+             .github, .pet: true
         default: false
         }
     }
@@ -101,6 +101,7 @@ public enum WidgetVisibility {
         case .radio: return "正在收听时显示"
         case .anniversary: return "\(Anniversary.soonDays) 天内有纪念日时显示"
         case .water: return "今天未达标时显示"
+        case .pet: return "需要照顾时显示"
         case .github: return "有新反馈时显示"
         case .battery:
             let threshold = batteryThreshold(config)
@@ -128,6 +129,8 @@ public enum WidgetVisibility {
             return Anniversary.hasSoon(instance.config)
         case .water:
             return WaterIntake.belowGoal(instance.config)
+        case .pet:
+            return VirtualPet.needsCare(instance.config)
         case .ambient:
             return conditions.ambientPlaying
         case .radio:

@@ -109,6 +109,7 @@ final class WidgetOptionTests: XCTestCase {
             .water: ["goal", "cupSize", "remindEvery", "start", "end", "unit", "character"],
             .clipboard: ["pasteOnClick"],
             .translate: ["clickAction", "autoDirection"],
+            .pet: ["character"],
             .toggles: ["actions"],
             .clock: ["seconds"],
         ]

@@ -1,0 +1,187 @@
+import Foundation
+import XCTest
+
+final class VirtualPetTests: XCTestCase {
+    private let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        calendar.firstWeekday = 2
+        return calendar
+    }()
+
+    private func at(_ y: Int, _ m: Int, _ d: Int, _ hour: Int = 12, _ minute: Int = 0) -> Date {
+        calendar.date(from: DateComponents(year: y, month: m, day: d, hour: hour, minute: minute))!
+    }
+
+    // MARK: Time passing
+
+    func testNeedsRunDownByTheHour() {
+        let start = at(2026, 10, 14, 8)
+        let pet = PetState(food: 80, mood: 80, energy: 80, clean: 80, at: start)
+        let later = VirtualPet.advanced(pet, to: start.addingTimeInterval(4 * 3600))
+        XCTAssertEqual(later.food, 60, accuracy: 0.001)
+        XCTAssertEqual(later.mood, 64, accuracy: 0.001)
+        XCTAssertEqual(later.energy, 68, accuracy: 0.001)
+        XCTAssertEqual(later.clean, 72, accuracy: 0.001)
+        XCTAssertEqual(later.at, start.addingTimeInterval(4 * 3600))
+
+        let month = VirtualPet.advanced(pet, to: start.addingTimeInterval(90 * 86_400))
+        XCTAssertEqual(month.food, 0, "never below empty")
+        XCTAssertEqual(VirtualPet.advanced(pet, to: start.addingTimeInterval(-3600)).food, 80,
+                       "a clock set back changes nothing")
+    }
+
+    func testSleepFillsEnergyThenWakesByItself() {
+        let start = at(2026, 10, 14, 22)
+        let pet = PetState(food: 80, mood: 80, energy: 40, clean: 80, at: start, sleepSince: start)
+        let oneHour = VirtualPet.advanced(pet, to: start.addingTimeInterval(3600))
+        XCTAssertTrue(oneHour.isSleeping)
+        XCTAssertEqual(oneHour.energy, 60, accuracy: 0.001)
+        XCTAssertEqual(oneHour.food, 77.5, accuracy: 0.001, "half speed asleep")
+        XCTAssertEqual(oneHour.mood, 78, accuracy: 0.001)
+
+        // Full after three hours, then two more awake.
+        let fiveHours = VirtualPet.advanced(pet, to: start.addingTimeInterval(5 * 3600))
+        XCTAssertFalse(fiveHours.isSleeping)
+        XCTAssertEqual(fiveHours.energy, 94, accuracy: 0.001)
+        XCTAssertEqual(fiveHours.food, 80 - 7.5 - 10, accuracy: 0.001)
+    }
+
+    // MARK: Care
+
+    func testActions() {
+        let now = at(2026, 10, 14, 9)
+        let pet = PetState(food: 20, mood: 50, energy: 50, clean: 20, at: now)
+        let fed = VirtualPet.performing(.feed, on: pet, now: now, calendar: calendar)
+        XCTAssertEqual(fed.food, 50)
+        XCTAssertEqual(fed.lastAction, .feed)
+        XCTAssertEqual(fed.cared, ["20261014"])
+
+        let played = VirtualPet.performing(.play, on: pet, now: now, calendar: calendar)
+        XCTAssertEqual(played.mood, 75)
+        XCTAssertEqual(played.energy, 40)
+
+        XCTAssertEqual(VirtualPet.performing(.wash, on: pet, now: now, calendar: calendar).clean, 60)
+        XCTAssertEqual(VirtualPet.performing(.feed, on: PetState(food: 90, at: now), now: now).food, 100,
+                       "never above full")
+
+        let asleep = VirtualPet.performing(.sleep, on: pet, now: now, calendar: calendar)
+        XCTAssertTrue(asleep.isSleeping)
+        XCTAssertNil(asleep.lastAction, "going to bed is not acted out")
+        XCTAssertFalse(VirtualPet.performing(.sleep, on: asleep, now: now).isSleeping, "the same button wakes it")
+        XCTAssertFalse(VirtualPet.performing(.feed, on: asleep, now: now).isSleeping, "food wakes it too")
+    }
+
+    func testTreatsAreCappedAndCountAsCare() {
+        let now = at(2026, 10, 14, 9)
+        let pet = PetState(food: 0, mood: 0, energy: 50, clean: 50, at: now)
+        let two = VirtualPet.treating(2, on: pet, now: now, calendar: calendar)
+        XCTAssertEqual(two.food, 2 * VirtualPet.treatFood)
+        XCTAssertEqual(two.mood, 2 * VirtualPet.treatMood)
+        XCTAssertEqual(two.cared, ["20261014"])
+        XCTAssertEqual(VirtualPet.treating(0, on: pet, now: now), pet)
+        XCTAssertEqual(VirtualPet.treating(500, on: pet, now: now).food, 100)
+    }
+
+    // MARK: Looks
+
+    func testLookPriority() {
+        let now = at(2026, 10, 14, 15)
+        var pet = PetState(food: 50, mood: 50, energy: 50, clean: 50, at: now)
+        XCTAssertEqual(VirtualPet.look(pet, now: now), .idle)
+        pet.food = 20
+        XCTAssertEqual(VirtualPet.look(pet, now: now), .hungry)
+        pet.clean = 10
+        XCTAssertEqual(VirtualPet.look(pet, now: now), .sick, "sick beats hungry")
+        pet.sleepSince = now
+        XCTAssertEqual(VirtualPet.look(pet, now: now), .rest)
+        pet.lastAction = .feed
+        pet.lastActionAt = now.addingTimeInterval(-1)
+        XCTAssertEqual(VirtualPet.look(pet, now: now), .eat, "acting out beats everything")
+        XCTAssertEqual(VirtualPet.look(pet, now: now.addingTimeInterval(10)), .rest, "for a few seconds")
+
+        let happy = PetState(food: 90, mood: 90, energy: 80, clean: 76, at: now)
+        XCTAssertEqual(VirtualPet.look(happy, now: now), .cheer)
+        XCTAssertEqual(VirtualPet.statusLine(PetState(food: 60, mood: 60, energy: 60, clean: 20, at: now), now: now),
+                       "有点脏了")
+    }
+
+    func testPictures() {
+        XCTAssertEqual(VirtualPet.imageName(.redPanda, .idle), "pet-panda-idle")
+        XCTAssertEqual(VirtualPet.imageName(.redPanda, .rest), "pet-panda-rest")
+        XCTAssertEqual(VirtualPet.imageName(.shiba, .cheer), "water-shiba-cheer", "reuses 喝水's")
+        XCTAssertEqual(VirtualPet.imageName(.otter, .sick), "pet-otter-sick")
+        XCTAssertEqual(VirtualPet.imageName(.octopus, .hungry), "pet-octopus-hungry")
+    }
+
+    // MARK: Streak and storage
+
+    func testStreak() {
+        let today = at(2026, 10, 14, 10)
+        var pet = PetState(at: today, cared: ["20261011", "20261012", "20261013"])
+        XCTAssertEqual(VirtualPet.streak(pet, today: today, calendar: calendar), 3, "today not done yet keeps it")
+        pet.cared.insert("20261014")
+        XCTAssertEqual(VirtualPet.streak(pet, today: today, calendar: calendar), 4)
+        pet.cared = ["20261010"]
+        XCTAssertEqual(VirtualPet.streak(pet, today: today, calendar: calendar), 0)
+    }
+
+    func testRoundTripsThroughTheConfig() {
+        let now = at(2026, 10, 14, 10)
+        let pet = PetState(food: 12.34, mood: 56, energy: 78, clean: 90, at: now, sleepSince: now,
+                           lastAction: .wash, lastActionAt: now, cared: ["20261014", "20260101"],
+                           focusCredited: now)
+        var config = WidgetConfig()
+        VirtualPet.store(pet, in: &config, now: now, calendar: calendar)
+        let back = VirtualPet.state(config, now: now)
+        XCTAssertEqual(back.food, 12.3, accuracy: 0.001)
+        XCTAssertEqual(back.mood, 56)
+        XCTAssertEqual(back.sleepSince, now)
+        XCTAssertEqual(back.lastAction, .wash)
+        XCTAssertEqual(back.focusCredited, now)
+        XCTAssertEqual(back.cared, ["20261014"], "older than four months is dropped")
+
+        let fresh = VirtualPet.state(WidgetConfig(), now: now)
+        XCTAssertEqual(fresh.food, 80)
+        XCTAssertEqual(fresh.at, now)
+        XCTAssertFalse(fresh.needsCare)
+    }
+
+    func testFinishedFocusIsCreditedOnce() {
+        let now = at(2026, 10, 14, 10)
+        var timer = TimerState()
+        timer.phase = .focus
+        timer.deadline = now.addingTimeInterval(-60)
+        XCTAssertEqual(VirtualPet.finishedFocus(timer, credited: nil, now: now), timer.deadline)
+        XCTAssertNil(VirtualPet.finishedFocus(timer, credited: timer.deadline, now: now), "once")
+        timer.paused = 30
+        XCTAssertNil(VirtualPet.finishedFocus(timer, credited: nil, now: now), "paused is not finished")
+        timer.paused = nil
+        timer.phase = .rest
+        XCTAssertNil(VirtualPet.finishedFocus(timer, credited: nil, now: now), "a break is not focus")
+        timer.phase = .focus
+        timer.deadline = now.addingTimeInterval(60)
+        XCTAssertNil(VirtualPet.finishedFocus(timer, credited: nil, now: now), "still running")
+        timer.deadline = now.addingTimeInterval(-2 * 86_400)
+        XCTAssertNil(VirtualPet.finishedFocus(timer, credited: nil, now: now), "a stale leftover")
+    }
+
+    // MARK: Wiring
+
+    func testPetIsWiredIntoTheCatalogAndVisibility() {
+        let entry = WidgetCatalog.entry(.pet)
+        XCTAssertEqual(entry?.name, "电子宠物")
+        XCTAssertEqual(entry?.category, .reminders)
+        XCTAssertTrue(WidgetVisibility.supportsCondition(.pet))
+        var widget = WidgetCatalog.make(.pet)!
+        XCTAssertEqual(WidgetVisibility.conditionTitle(.pet, config: widget.config), "需要照顾时显示")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: widget.config, kind: .pet), "小熊猫")
+        XCTAssertTrue(WidgetCatalog.isSupporterOnly(["character": .string("shiba")]))
+        XCTAssertFalse(WidgetCatalog.isSupporterOnly(["character": .string("panda")]))
+
+        widget.config.set(WidgetVisibility.modeKey, .string("conditional"))
+        XCTAssertEqual(WidgetVisibility.conditionHolds(widget, .unknown), false, "a new pet is fine")
+        VirtualPet.store(PetState(food: 10, at: .now), in: &widget.config)
+        XCTAssertEqual(WidgetVisibility.conditionHolds(widget, .unknown), true, "hungry shows it")
+    }
+}

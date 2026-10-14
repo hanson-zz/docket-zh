@@ -364,6 +364,20 @@ public enum WidgetCatalog {
                          ("圆环", ["layout": .string("ring")])],
               supportsCompact: false, selfContained: true),
 
+        // A pet of its own: four needs kept with the time they were true, so
+        // they run down without anything running (see VirtualPet), and the
+        // same six characters as 喝水 under `character`, the red panda free
+        // and the other five 赞助者专属.
+        Entry(kind: .pet, name: "电子宠物", category: .reminders,
+              defaults: c(["character": .string("panda")]),
+              variants: [("小熊猫", ["character": .string("panda")]),
+                         ("柴犬", ["character": .string("shiba")]),
+                         ("橘猫", ["character": .string("cat")]),
+                         ("企鹅", ["character": .string("penguin")]),
+                         ("水獭", ["character": .string("otter")]),
+                         ("章鱼", ["character": .string("octopus")])],
+              supportsCompact: false, selfContained: true),
+
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
         Entry(kind: .week, name: "一周日程", category: .calendar,
@@ -440,6 +454,7 @@ public enum WidgetCatalog {
         case .radio: PaletteColor.orange.hex
         case .anniversary: PaletteColor.pink.hex
         case .water: PaletteColor.blue.hex
+        case .pet: ShelfColor.redPanda.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -602,7 +617,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate:
+             .anniversary, .water, .translate, .pet:
             nil
         }
     }
@@ -750,6 +765,7 @@ public enum WidgetCatalog {
                                                        count: Anniversary.events(cfg).count), height: 62)
         case .water:
             return CGSize(width: WaterIntake.tileWidth(layout: cfg.string("layout", default: "character")), height: 62)
+        case .pet: return CGSize(width: 196, height: 62)
         }
     }
 
@@ -855,6 +871,9 @@ public enum WidgetCatalog {
                                             count: Anniversary.events(cfg).count)
         case .water:
             return WaterIntake.columnHeight(layout: cfg.string("layout", default: "character"))
+        // The character, a line, the bar and the bowl.
+        case .pet:
+            return 118
         default:
             return 76
         }

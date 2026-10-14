@@ -228,6 +228,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case anniversary
     case water
     case translate
+    case pet
 }
 
 /// What a widget opens when its card is clicked.

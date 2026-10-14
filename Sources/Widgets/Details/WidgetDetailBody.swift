@@ -107,6 +107,8 @@ struct WidgetDetailBody: View {
             WaterDetail(instance: instance, context: context)
         case .translate:
             TranslateDetail(instance: instance, context: context)
+        case .pet:
+            PetDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

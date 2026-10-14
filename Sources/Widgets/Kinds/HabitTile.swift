@@ -199,7 +199,12 @@ enum HabitLog {
     }
 
     static func toggle(_ id: String, day: Date, in instance: WidgetInstance) {
+        // Checking off today (not unchecking, not filling in a past day) is
+        // a treat for the pet.
+        let wasDone = HabitTracker.habits(instance.config).first { $0.id == id }
+            .map { HabitTracker.isDone($0, on: day) } ?? true
         change(instance) { HabitTracker.toggling(id, day: day, in: $0) }
+        if !wasDone, HabitTracker.dayKey(day) == HabitTracker.dayKey(.now) { PetTreats.give(.habit) }
     }
 }
 

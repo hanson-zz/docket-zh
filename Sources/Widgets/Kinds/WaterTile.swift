@@ -175,6 +175,7 @@ enum WaterLog {
             // The log keeps minutes; the cup in the character's paws needs the second.
             config.set("loggedAt", .number(now.timeIntervalSince1970))
         }
+        PetTreats.give(.water)
     }
 
     static func undo(_ instance: WidgetInstance) {

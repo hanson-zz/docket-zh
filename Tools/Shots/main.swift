@@ -140,6 +140,8 @@ private func shots(since started: Date) -> [Shot] {
         // Sample translation: the language packs are the runner's, and a
         // shelf's own history is the user's.
         Shot(name: "translate", instance: widget(.translate), isPreview: true, source: .sample),
+        // A sample pet: a shelf's own pet is the user's.
+        Shot(name: "pet", instance: widget(.pet), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,

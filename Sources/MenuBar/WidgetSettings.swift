@@ -545,6 +545,7 @@ struct WidgetSettingsSections: View {
         "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? "关闭" : "每 \($0) 分钟", "\($0)") },
         "water.unit": [("毫升", "ml"), ("盎司", "oz")],
         "water.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
+        "pet.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
         "translate.clickAction": Translate.ClickAction.allCases.map { ($0.title, $0.rawValue) },
         "github.interval": GitHubWatch.intervalChoices.map { ("每 \($0) 分钟", "\($0)") },
     ]
