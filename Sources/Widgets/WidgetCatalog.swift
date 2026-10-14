@@ -40,8 +40,13 @@ public enum WidgetCatalog {
     public static func isSupporterOnly(_ overrides: [String: WidgetConfig.Value]) -> Bool {
         if case .string(let layout) = overrides["layout"], supporterClockLayouts.contains(layout) { return true }
         if case .string(let character) = overrides["character"], supporterWaterCharacters.contains(character) { return true }
+        if case .string(let layout) = overrides["layout"], WifiRingStyle.from(layout: layout)?.isSupporterOnly == true { return true }
         return false
     }
+
+    /// 网络活动's four Wi-Fi rings, one variant each.
+    private static let wifiVariants: [(title: String, overrides: [String: WidgetConfig.Value])] =
+        WifiRingStyle.allCases.map { (title: "Wi-Fi \($0.title)", overrides: ["layout": .string($0.rawValue)]) }
 
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
@@ -142,10 +147,14 @@ public enum WidgetCatalog {
 
         // No `popupChart`: it was read by nothing, and the detail panel it
         // presumably meant now exists and always draws its history.
+        // The Wi-Fi rings share the card: same shelf slot, a different
+        // reading of the same link. 经典 is free, the other three are
+        // 赞助者专属 appearances.
         Entry(kind: .network, name: "网络活动", category: .system,
-              defaults: c(["display": .string("both"), "chart": .bool(false)]),
-              variants: [("仅数字", ["chart": .bool(false)]),
-                         ("带图表", ["chart": .bool(true)])],
+              defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false)]),
+              variants: [("仅数字", ["layout": .string("speed"), "chart": .bool(false)]),
+                         ("带图表", ["layout": .string("speed"), "chart": .bool(true)])]
+                + wifiVariants,
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .shortcut, name: "快捷指令", category: .system,
@@ -524,6 +533,10 @@ public enum WidgetCatalog {
         // room for it and never draw one.
         case (.anniversary, "showRing"):
             config.string("layout", default: "single") == "single"
+        // The Wi-Fi rings read the signal, not throughput, so the direction
+        // and the chart mean nothing there.
+        case (.network, "display"), (.network, "chart"):
+            WifiRingStyle.from(layout: config.string("layout", default: "speed")) == nil
         default:
             true
         }
@@ -700,6 +713,9 @@ public enum WidgetCatalog {
             return CGSize(width: Double(metrics * (rings ? 66 : 70)) + inset,
                           height: Double(metrics * (rings ? 60 : 46) + 16))
         case .network:
+            if WifiRingStyle.from(layout: cfg.string("layout", default: "speed")) != nil {
+                return CGSize(width: 124, height: 62)
+            }
             return cfg.bool("chart") ? CGSize(width: 160, height: 84) : CGSize(width: 100, height: 62)
         case .aiUsage: return CGSize(width: 244, height: 62)
         case .shortcut: return CGSize(width: 140, height: 76)
@@ -826,6 +842,7 @@ public enum WidgetCatalog {
             // Each metric gets a row: sparkline, value, label.
             return Double(metrics * 54 + 8)
         case .network:
+            if WifiRingStyle.from(layout: cfg.string("layout", default: "speed")) != nil { return 76 }
             return cfg.string("display", default: "both") == "both" ? 76 : 46
         case .photos:
             return cfg.string("layout", default: "standard") == "wide" ? 112 : 76

@@ -25,6 +25,7 @@ struct NetworkDetail: View {
             MeshBackdrop(color: Color(red: 0.05, green: 0.45, blue: 0.5))
         } content: {
             VStack(alignment: .leading, spacing: 14) {
+                if let wifi = wifiStyle { wifiSection(wifi) }
                 headline
 
                 // Two samples is the minimum a line can be drawn from, and
@@ -37,6 +38,54 @@ struct NetworkDetail: View {
                 }
             }
         }
+    }
+
+    // MARK: Wi-Fi
+    //
+    // Shown when the card is one of the Wi-Fi rings: the same ring larger,
+    // then what the tile has no room for. The rates still follow, because
+    // the link and what flows over it are one question.
+
+    private var wifiStyle: WifiRingStyle? {
+        WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
+                            unlocked: Supporter.isUnlocked || context.isPreview)
+    }
+
+    private var wifiRSSI: Int? { context.isPreview ? -52 : WifiMetrics.shared.rssi }
+    private var wifiNoise: Int? { context.isPreview ? -92 : WifiMetrics.shared.noise }
+    private var wifiRate: Double? { context.isPreview ? 866 : WifiMetrics.shared.rate }
+    private var wifiName: String? { context.isPreview ? nil : WifiMetrics.shared.ssid }
+
+    private func wifiSection(_ style: WifiRingStyle) -> some View {
+        let reading = WifiReading(rssi: wifiRSSI)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 14) {
+                WifiRingView(style: style, reading: reading, diameter: 84)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(reading.label)
+                        .font(WidgetStyle.value(28))
+                        .foregroundStyle(WidgetStyle.primary)
+                    Text(wifiName ?? "Wi-Fi 信号")
+                        .font(WidgetStyle.caption(11))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .lineLimit(1)
+                }
+            }
+            if let rssi = wifiRSSI {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                                    GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    StatChip(label: "信号强度", value: "\(rssi) dBm")
+                    StatChip(label: "信号质量", value: "\(reading.percent)%")
+                    if let noise = wifiNoise, let snr = WifiQuality.snr(rssi: rssi, noise: noise) {
+                        StatChip(label: "信噪比", value: "\(snr) dB")
+                    }
+                    if let rate = wifiRate {
+                        StatChip(label: "连接速率", value: "\(Int(rate.rounded())) Mbps")
+                    }
+                }
+            }
+        }
+        .onAppear { if !context.isPreview { WifiMetrics.shared.start() } }
     }
 
     // MARK: Now

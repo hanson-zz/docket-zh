@@ -21,7 +21,7 @@ public enum WidgetSearch {
         "music": ["music", "now playing", "spotify", "音乐", "歌曲", "播放", "网易云", "netease", "cloudmusic", "小宇宙", "播客", "podcast", "xiaoyuzhou"],
         "battery": ["battery", "电量", "充电"],
         "system": ["system", "cpu", "memory", "内存", "处理器"],
-        "network": ["network", "speed", "网速", "流量"],
+        "network": ["network", "speed", "网速", "流量", "wifi", "wi-fi", "信号", "无线"],
         "ai-usage": ["codex", "ai", "chatgpt", "openai", "用量", "额度"],
         "shortcut": ["shortcuts", "自动化"],
         "airdrop": ["airdrop", "传文件"],

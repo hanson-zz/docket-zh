@@ -7,7 +7,9 @@ struct NetworkActivityTile: View {
 
     var body: some View {
         WidgetSurface {
-            if context.position.isVertical {
+            if let wifi = wifiStyle {
+                WifiSignalTile(style: wifi, context: context)
+            } else if context.position.isVertical {
                 column
             } else if showsChart {
                 VStack(spacing: 6) {
@@ -20,6 +22,13 @@ struct NetworkActivityTile: View {
         }
         // ponytail: start-only; the sampler is shared by every network tile.
         .onAppear { if !context.isPreview { NetworkMetrics.shared.start() } }
+    }
+
+    /// A Wi-Fi layout, with a locked 赞助者专属 style drawn as 经典; the
+    /// library's preview shows the real one, as the clock faces do.
+    private var wifiStyle: WifiRingStyle? {
+        WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
+                            unlocked: Supporter.isUnlocked || context.isPreview)
     }
 
     // MARK: Pieces
