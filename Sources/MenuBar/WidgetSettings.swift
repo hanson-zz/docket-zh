@@ -430,6 +430,7 @@ struct WidgetSettingsSections: View {
         "forward": "显示“快进”按钮",
         "spotify": "Spotify",
         "apple": "Apple 音乐",
+        "netease": "网易云音乐",
         "browsers": "浏览器标签页",
         "devices": "设备",
         "metrics": "读数",

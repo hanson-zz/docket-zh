@@ -5,19 +5,25 @@ import Observation
 
 /// Which player a reading came from.
 public enum MusicSource: String, Sendable, CaseIterable {
-    case spotify, appleMusic
+    case spotify, appleMusic, netease
 
     var bundleID: String {
         switch self {
         case .spotify: "com.spotify.client"
         case .appleMusic: "com.apple.Music"
+        case .netease: "com.netease.163music"
         }
     }
+
+    /// 网易云音乐 has no AppleScript dictionary: it is read from the system's
+    /// Now Playing and driven with the media keys, so it cannot be seeked.
+    public var canSeek: Bool { self != .netease }
 
     var displayName: String {
         switch self {
         case .spotify: "Spotify"
         case .appleMusic: "音乐"
+        case .netease: "网易云音乐"
         }
     }
 }
@@ -294,8 +300,8 @@ public final class MusicService {
     /// What both apps do natively: restart the track if we are past the first
     /// few seconds, otherwise step back one.
     public func previous() {
-        let restart = (nowPlaying?.elapsed ?? 0) > 3
         guard let source = nowPlaying?.source else { return }
+        let restart = source.canSeek && (nowPlaying?.elapsed ?? 0) > 3
         if restart {
             seek(to: 0)
         } else {
@@ -305,7 +311,7 @@ public final class MusicService {
     }
 
     public func seek(to seconds: TimeInterval) {
-        guard let track = nowPlaying else { return }
+        guard let track = nowPlaying, track.source.canSeek else { return }
         let target = max(0, track.duration > 0 ? min(seconds, track.duration) : seconds)
         optimistically { $0.elapsed = target }
         Bridge.send("set player position to \(String(format: "%.2f", target))", to: track.source)
@@ -382,6 +388,7 @@ enum Bridge {
     enum ArtworkRef: Sendable {
         case url(URL)          // Spotify hands out an https image URL
         case appleMusic        // Music hands out raw bytes, over another event
+        case nowPlaying        // 网易云音乐: the system's Now Playing artwork
     }
 
     private static let queue = DispatchQueue(label: "com.namanparashar.plinth.music")
@@ -464,6 +471,10 @@ enum Bridge {
             }
             guard let data, !data.isEmpty else { return (nil, nil) }
             return (NSImage(data: data), ArtworkTint.extract(data))
+        case .nowPlaying:
+            let data = await offMain { NowPlayingReader.artwork() }
+            guard let data, !data.isEmpty else { return (nil, nil) }
+            return (NSImage(data: data), ArtworkTint.extract(data))
         }
     }
 
@@ -471,6 +482,15 @@ enum Bridge {
 
     static func send(_ body: String, to source: MusicSource) {
         guard isRunning(source) else { return }
+        if source == .netease {
+            switch body {
+            case "playpause": MediaKeys.press(.playPause)
+            case "next track": MediaKeys.press(.next)
+            case "previous track": MediaKeys.press(.previous)
+            default: break
+            }
+            return
+        }
         let id = source.bundleID
         queue.async {
             guard permitted(source, ask: false) else { return }
@@ -480,7 +500,7 @@ enum Bridge {
 
     static func ask(_ sources: [MusicSource]) async {
         await offMain {
-            for source in sources where isRunning(source) {
+            for source in sources where isRunning(source) && source != .netease {
                 // A real event raises the dialog; the permission-check API
                 // blocks instead of prompting.
                 _ = script("tell application id \"\(source.bundleID)\" to return name")
@@ -544,6 +564,10 @@ enum Bridge {
     }
 
     private static func read(_ source: MusicSource) -> Reading {
+        if source == .netease {
+            guard let track = NowPlayingReader.read(bundleID: source.bundleID) else { return .idle }
+            return .track(track, .nowPlaying)
+        }
         let id = source.bundleID
         let extra = source == .spotify ? " & tab & (artwork url of t)" : ""
         let body = """
@@ -582,6 +606,7 @@ enum Bridge {
         let ref: ArtworkRef? = switch source {
         case .spotify: f.count > 6 ? URL(string: f[6]).map(ArtworkRef.url) : nil
         case .appleMusic: .appleMusic
+        case .netease: .nowPlaying
         }
         return .track(track, ref)
     }

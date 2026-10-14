@@ -19,6 +19,7 @@ struct MusicTile: View {
         var list: [MusicSource] = []
         if config.bool("spotify", default: true) { list.append(.spotify) }
         if config.bool("apple", default: true) { list.append(.appleMusic) }
+        if config.bool("netease", default: true) { list.append(.netease) }
         return list
     }
 
@@ -219,7 +220,7 @@ struct MusicTile: View {
                 .contentShape(Rectangle())
                 .onTapGesture { location in
                     // Browser playback is read-only apart from play/pause.
-                    guard !context.isPreview, !track.isBrowser,
+                    guard !context.isPreview, !track.isBrowser, track.canSeek,
                           geo.size.width > 0, track.duration > 0 else { return }
                     let ratio = min(1, max(0, location.x / geo.size.width))
                     MusicService.shared.seek(to: ratio * track.duration)
@@ -292,7 +293,7 @@ struct MusicTile: View {
         } else {
             let skip = max(1, config.int("skip", default: 15))
             HStack(spacing: spacing) {
-                if config.bool("backward") {
+                if config.bool("backward"), track.canSeek {
                     button(skipSymbol("gobackward", skip), size) { MusicService.shared.skip(by: -Double(skip)) }
                 }
                 if config.bool("previous", default: true) {
@@ -304,7 +305,7 @@ struct MusicTile: View {
                 if config.bool("next", default: true) {
                     button("forward.end.fill", size) { MusicService.shared.next() }
                 }
-                if config.bool("forward") {
+                if config.bool("forward"), track.canSeek {
                     button(skipSymbol("goforward", skip), size) { MusicService.shared.skip(by: Double(skip)) }
                 }
             }
@@ -407,6 +408,8 @@ struct Playing {
     var progress: Double
     var artwork: NSImage?
     var isBrowser: Bool
+    /// Whether the scrubber and the skip-by-seconds buttons can move it.
+    var canSeek = true
 
     /// The app the sound is actually coming from, so the tile can show its
     /// icon when there is no album art.
@@ -442,6 +445,7 @@ struct Playing {
         progress = native.progress
         artwork = native.artwork
         isBrowser = false
+        canSeek = native.source.canSeek
         sourceBundleID = native.source.bundleID
         tint = native.tint
     }

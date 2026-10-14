@@ -18,7 +18,7 @@ public enum WidgetSearch {
         "calendar": ["calendar", "event", "日程", "会议"],
         "reminders": ["reminders", "todo", "待办"],
         "notes": ["notes", "sticky", "备忘", "笔记"],
-        "music": ["music", "now playing", "spotify", "音乐", "歌曲", "播放"],
+        "music": ["music", "now playing", "spotify", "音乐", "歌曲", "播放", "网易云", "netease", "cloudmusic"],
         "battery": ["battery", "电量", "充电"],
         "system": ["system", "cpu", "memory", "内存", "处理器"],
         "network": ["network", "speed", "网速", "流量"],

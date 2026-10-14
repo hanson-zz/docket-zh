@@ -113,7 +113,7 @@ public enum WidgetCatalog {
         Entry(kind: .music, name: "正在播放", category: .media,
               defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),
                            "backward": .bool(false), "forward": .bool(false), "skip": .number(15),
-                           "spotify": .bool(true), "apple": .bool(true),
+                           "spotify": .bool(true), "apple": .bool(true), "netease": .bool(true),
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true)]),

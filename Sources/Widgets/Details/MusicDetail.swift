@@ -33,6 +33,7 @@ struct MusicDetail: View {
         var list: [MusicSource] = []
         if config.bool("spotify", default: true) { list.append(.spotify) }
         if config.bool("apple", default: true) { list.append(.appleMusic) }
+        if config.bool("netease", default: true) { list.append(.netease) }
         return list
     }
 
@@ -242,7 +243,7 @@ struct MusicDetail: View {
     }
 
     private func canSeek(_ track: Playing) -> Bool {
-        !context.isPreview && !track.isBrowser && track.duration > 0
+        !context.isPreview && !track.isBrowser && track.canSeek && track.duration > 0
     }
 
     /// A minimum width rather than a fitted one: without it the bar shifts
@@ -273,7 +274,7 @@ struct MusicDetail: View {
         } else {
             let step = max(1, config.int("skip", default: 15))
             HStack(spacing: 14) {
-                if config.bool("backward") {
+                if config.bool("backward"), track.canSeek {
                     secondary(skipSymbol("gobackward", step), 15) {
                         MusicService.shared.skip(by: -Double(step))
                     }
@@ -281,7 +282,7 @@ struct MusicDetail: View {
                 secondary("backward.end.fill", 17) { MusicService.shared.previous() }
                 play(track.isPlaying) { MusicService.shared.playPause() }
                 secondary("forward.end.fill", 17) { MusicService.shared.next() }
-                if config.bool("forward") {
+                if config.bool("forward"), track.canSeek {
                     secondary(skipSymbol("goforward", step), 15) {
                         MusicService.shared.skip(by: Double(step))
                     }
