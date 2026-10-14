@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// A stand-up reminder, built the way the hydration tile is: a ring that
+/// A stand-up reminder, built the way the old drink reminder was: a ring that
 /// fills while you sit, a countdown, and a check to log a break.
 ///
 /// The card's own click opens the panel; logging is the check beside the

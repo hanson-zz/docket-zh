@@ -240,10 +240,23 @@ struct WidgetSettingsSections: View {
             // through to the default silently, so the setting looked broken
             // rather than rejected.
             if let choices = Self.stringChoices(entry.kind, key) {
+                // A 赞助者专属 choice (a 喝水 character) reads as locked and
+                // opens the sponsor window instead of being written, as the
+                // style picker does for the supporter clock faces.
                 Picker(Self.label(key), selection: Binding(
                     get: { instance.config.string(key, default: fallback) },
-                    set: { value in write(instance) { $0.set(key, .string(value)) } })) {
-                    ForEach(choices, id: \.value) { Text($0.title).tag($0.value) }
+                    set: { value in
+                        if WidgetCatalog.isSupporterOnly([key: .string(value)]), !Supporter.isUnlocked {
+                            SponsorWindow.shared.show()
+                            return
+                        }
+                        write(instance) { $0.set(key, .string(value)) }
+                    })) {
+                    ForEach(choices, id: \.value) { choice in
+                        Text(WidgetCatalog.isSupporterOnly([key: .string(choice.value)]) && !Supporter.isUnlocked
+                             ? "\(choice.title)（赞助者专属）" : choice.title)
+                            .tag(choice.value)
+                    }
                 }
             } else {
                 // Bordered, and in a LabeledContent rather than carrying its

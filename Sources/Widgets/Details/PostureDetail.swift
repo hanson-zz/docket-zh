@@ -12,7 +12,7 @@ struct PostureDetail: View {
 
     var body: some View {
         // A schedule rather than `context.now`, which is frozen when the
-        // panel opens; see HydrationDetail.
+        // panel opens; see WaterDetail.
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             content(now: tick.date)
         }
@@ -32,7 +32,7 @@ struct PostureDetail: View {
         return DetailCard {
             ZStack(alignment: .bottom) {
                 MeshBackdrop(color: accent)
-                // The bar rises while you sit, the hydration panel's water
+                // The bar rises while you sit, the water panel's level
                 // turned into a plain level.
                 GeometryReader { geo in
                     VStack(spacing: 0) {

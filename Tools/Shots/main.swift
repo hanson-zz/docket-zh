@@ -114,12 +114,6 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "time-progress", instance: widget(.progress),
              isPreview: false, source: .live),
 
-        // Live. No drink has been logged, so the panel says so rather than
-        // dressing its cycle anchor up as one - which is the state a widget
-        // added a minute ago is genuinely in.
-        Shot(name: "hydration", instance: widget(.hydration),
-             isPreview: false, source: .live),
-
         // The catalog's own default alarm, with the countdown to it computed
         // against the real clock.
         Shot(name: "alarm", instance: widget(.alarm), isPreview: false, source: .live),
@@ -740,7 +734,7 @@ private func shelves() -> [ShelfShot] {
         // 生产力和日常专注
         ShelfShot(name: "shelf-productivity",
                   widgets: [widget(.calendar), widget(.reminders), widget(.timer),
-                            widget(.hydration), widget(.notes, ["text": .string("周五前提交报告")])],
+                            widget(.water), widget(.notes, ["text": .string("周五前提交报告")])],
                   sample: true),
         // Mac 控制和系统工具
         ShelfShot(name: "shelf-system",
@@ -786,7 +780,7 @@ private func shelves() -> [ShelfShot] {
         // v0.4.1：放不下时自动缩小。比屏幕还长的一排小组件
         ShelfShot(name: "shelf-shrink",
                   widgets: [widget(.clock), widget(.calendar), widget(.reminders), widget(.timer),
-                            widget(.hydration), widget(.posture), widget(.weather),
+                            widget(.water), widget(.posture), widget(.weather),
                             widget(.music), widget(.system), widget(.gauges), widget(.microphone),
                             widget(.search), widget(.clipboard), widget(.currency),
                             widget(.watchlist)],

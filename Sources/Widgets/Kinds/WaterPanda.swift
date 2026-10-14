@@ -74,7 +74,7 @@ struct WaterPanda: View {
     }
 
     /// No picture in the bundle (the screenshot tool has none): a drop that
-    /// fills the same way, the hydration tile's treatment.
+    /// fills the same way, the old drink reminder's treatment.
     private var fallback: some View {
         ZStack {
             Image(systemName: "drop")
@@ -156,7 +156,7 @@ enum WaterArt {
 }
 
 enum WaterStyle {
-    /// The catalog's accent, the same blue the hydration reminder uses.
+    /// The catalog's accent, the reminders' blue.
     static var water: Color { Color(hex: WidgetCatalog.accentHex(.water) ?? PaletteColor.blue.hex) }
     static let surface = Color(hex: "#C8E8FF")
 }

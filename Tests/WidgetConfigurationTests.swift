@@ -546,7 +546,7 @@ final class WidgetConfigurationTests: XCTestCase {
     /// has somewhere else to send the click: `.music` opens a detail panel,
     /// and the other two are self-contained readouts.
     func testEveryOtherCatalogEntryHasADestination() {
-        let selfDriven: Set<WidgetKind> = [.music, .progress, .hydration, .clipboard, .converter,
+        let selfDriven: Set<WidgetKind> = [.music, .progress, .clipboard, .converter,
                                           .emoji, .search, .appSwitcher, .bookmarks,
                                           .calculator, .currency, .github, .posture, .aiUsage,
                                           .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio, .anniversary, .water]

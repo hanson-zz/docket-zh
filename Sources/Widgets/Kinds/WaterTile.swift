@@ -8,7 +8,7 @@ import SwiftUI
 /// Two styles. 角色 leads with the character and the water inside it; 圆环
 /// is the Codex tile's ring with the percentage in the middle, for a shelf
 /// that wants something quieter. Both have today's tally and a "+" that logs
-/// one cup of water (`cupSize`). Like the hydration tile, the "+" is the only
+/// one cup of water (`cupSize`). Like the other reminder tiles, the "+" is the only
 /// control: the card's own click opens the panel, where other amounts and
 /// drinks, the day's list, the goal and the history live.
 ///
@@ -21,7 +21,11 @@ struct WaterTile: View {
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
     private var goal: Int { WaterIntake.goal(instance.config) }
-    private var character: WaterCharacter { WaterCharacter.from(instance.config) }
+    /// A locked 赞助者专属 character is drawn as the red panda; the library's
+    /// preview shows the real one, as the clock's supporter faces do.
+    private var character: WaterCharacter {
+        WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+    }
 
     /// Re-read every tick, so the cup goes down three seconds after a drink
     /// and the character dozes off when the reminder hours end.

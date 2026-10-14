@@ -244,7 +244,7 @@ final class WidgetCatalogTests: XCTestCase {
     func testWidgetsNeedingRoomGetItInAColumn() {
         // Where a stacked layout genuinely needs more than the bottom shelf's
         // 62pt strip, the column must grant it.
-        for kind in [WidgetKind.timer, .hydration, .notes, .clock] {
+        for kind in [WidgetKind.timer, .water, .notes, .clock] {
             guard let instance = WidgetCatalog.make(kind) else { continue }
             XCTAssertGreaterThan(WidgetCatalog.verticalHeight(instance), 62, "\(kind)")
         }
@@ -742,7 +742,7 @@ extension WidgetCatalogTests {
     /// a no-op action still consumes the click, which would eat the controls
     /// inside the card.
     func testSelfContainedWidgetsAdvertiseNoDestination() {
-        for kind in [WidgetKind.music, .hydration, .progress] {
+        for kind in [WidgetKind.music, .water, .progress] {
             XCTAssertNil(WidgetCatalog.openTarget(kind), "\(kind)")
         }
     }

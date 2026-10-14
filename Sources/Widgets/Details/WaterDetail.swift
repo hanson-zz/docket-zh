@@ -36,7 +36,7 @@ struct WaterDetail: View {
 
     var body: some View {
         // A schedule rather than `context.now`, which is frozen for as long
-        // as the panel is open (see HydrationDetail): the day can roll over
+        // as the panel is open: the day can roll over
         // under an open panel.
         TimelineView(.periodic(from: .now, by: 30)) { tick in
             content(now: context.isPreview ? context.now : tick.date)
@@ -70,7 +70,7 @@ struct WaterDetail: View {
                 .controlSize(.small)
 
                 switch tab {
-                case .today: entries(today)
+                case .today: entries(today, all: all, now: now)
                 case .history: history(all, goal: goal, now: now, streak: streak)
                 case .goal: goalSettings(goal)
                 }
@@ -89,7 +89,8 @@ struct WaterDetail: View {
             // Its own animation clock, only while the panel is open: the
             // tile's surface stands still, the panel's moves.
             TimelineView(.animation(minimumInterval: 1.0 / 24, paused: context.isPreview)) { tick in
-                WaterPanda(character: WaterCharacter.from(instance.config),
+                WaterPanda(character: WaterCharacter.shown(instance.config,
+                                                           unlocked: Supporter.isUnlocked || context.isPreview),
                            mood: context.isPreview ? .idle : WaterMood.at(tick.date, config: instance.config),
                            level: level,
                            phase: context.isPreview ? 0.3 : tick.date.timeIntervalSinceReferenceDate,
@@ -254,8 +255,9 @@ struct WaterDetail: View {
 
     // MARK: 今天
 
-    private func entries(_ today: WaterDay) -> some View {
+    private func entries(_ today: WaterDay, all: [WaterDay], now: Date) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            schedule(all, now: now)
             HStack {
                 Text("\(today.entries.count) 杯")
                     .font(WidgetStyle.label(11))
@@ -286,10 +288,55 @@ struct WaterDetail: View {
                         }
                     }
                 }
-                .frame(maxHeight: 170)
+                .frame(maxHeight: 140)
                 .scrollIndicators(.automatic)
             }
         }
+    }
+
+    // MARK: When
+
+    /// What the old 喝水提醒 showed and the tally does not: when the last
+    /// glass went in, and when the next reminder is due, or how long it has
+    /// been overdue (the notification only ever says it once).
+    private func schedule(_ all: [WaterDay], now: Date) -> some View {
+        HStack(spacing: 8) {
+            StatChip(label: "上次喝水", value: lastDrinkLine(all, now: now))
+            StatChip(label: "下次提醒", value: dueLine(now: now))
+        }
+    }
+
+    private func lastDrinkLine(_ all: [WaterDay], now: Date) -> String {
+        if context.isPreview { return "14:20，40 分钟前" }
+        guard let last = WaterIntake.lastDrink(all),
+              WaterIntake.calendar.isDate(last, inSameDayAs: now) else { return "今天还没喝" }
+        let since = max(0, now.timeIntervalSince(last))
+        return since < 60 ? "\(Self.clock(last))，刚刚" : "\(Self.clock(last))，\(Self.spelled(since))前"
+    }
+
+    private func dueLine(now: Date) -> String {
+        if context.isPreview { return "15:20" }
+        switch WaterReminder.due(instance.config, now: now) {
+        case .off: return "已关闭"
+        case .met(let next): return "达标啦，明天 \(Self.clock(next))"
+        case .upcoming(let at):
+            let day = WaterIntake.calendar.isDate(at, inSameDayAs: now) ? "" : "明天 "
+            return "\(day)\(Self.clock(at))"
+        case .overdue(let seconds):
+            return seconds >= 60 ? "已超时 \(Self.spelled(seconds))" : "该喝水了"
+        }
+    }
+
+    private static func clock(_ date: Date) -> String {
+        PostureSchedule.clock(WaterIntake.calendar.component(.hour, from: date) * 60
+                              + WaterIntake.calendar.component(.minute, from: date))
+    }
+
+    /// "45 分钟", "1 小时 30 分钟": a span, not a ticking countdown.
+    private static func spelled(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds / 60)
+        guard minutes >= 60 else { return "\(max(1, minutes)) 分钟" }
+        return minutes % 60 == 0 ? "\(minutes / 60) 小时" : "\(minutes / 60) 小时 \(minutes % 60) 分钟"
     }
 
     private func entryRow(_ entry: WaterEntry, index: Int) -> some View {
@@ -543,7 +590,7 @@ struct WaterDetail: View {
 
     /// Six faces in a row; the chosen one sits on the accent.
     private var characterPicker: some View {
-        let chosen = WaterCharacter.from(instance.config)
+        let chosen = WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
         return VStack(alignment: .leading, spacing: 6) {
             Text("角色")
                 .font(WidgetStyle.label(12))
@@ -551,8 +598,10 @@ struct WaterDetail: View {
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { character in
                     let selected = character == chosen
+                    let locked = character.isSupporterOnly && !Supporter.isUnlocked && !context.isPreview
                     Button {
                         guard !context.isPreview else { return }
+                        if locked { SponsorWindow.shared.show(); return }
                         withAnimation(.snappy(duration: 0.25)) {
                             WaterLog.set("character", .string(character.rawValue), in: instance)
                         }
@@ -560,6 +609,16 @@ struct WaterDetail: View {
                         VStack(spacing: 2) {
                             WaterPanda(character: character, mood: .idle, level: 1, height: 26)
                                 .frame(height: 28)
+                                .opacity(locked ? 0.55 : 1)
+                                .overlay(alignment: .topTrailing) {
+                                    if locked {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 8, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .padding(2.5)
+                                            .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex)))
+                                    }
+                                }
                             Text(character.title)
                                 .font(.system(size: 9, weight: .semibold))
                                 .lineLimit(1)
@@ -574,8 +633,8 @@ struct WaterDetail: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
-                    .help(character.title)
-                    .accessibilityLabel("角色：\(character.title)")
+                    .help(locked ? "\(character.title)（赞助者专属）" : character.title)
+                    .accessibilityLabel(locked ? "角色：\(character.title)，赞助者专属" : "角色：\(character.title)")
                 }
             }
         }

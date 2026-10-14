@@ -149,20 +149,20 @@ struct SponsorView: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     if unlocked {
-                        Label("已解锁赞助者专属配色和表盘，谢谢你！", systemImage: "heart.fill")
+                        Label("已解锁赞助者专属配色、表盘和角色，谢谢你！", systemImage: "heart.fill")
                             .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
-                        Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、简约、极简。")
+                        Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、简约、极简；角色在喝水小组件里：柴犬、橘猫、企鹅、水獭、章鱼。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
                         Button {
                             unlocked = true
                         } label: {
-                            Label("我已赞助，解锁专属配色和表盘", systemImage: "paintpalette")
+                            Label("我已赞助，解锁专属配色、表盘和角色", systemImage: "paintpalette")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(Color(hex: ShelfColor.redPanda.hex))
-                        Text("\(ShelfColor.allCases.count) 种扩展栏配色，加上霓虹、实景、简约、极简 4 款时钟表盘。码头不联网验证，全凭你的诚信。")
+                        Text("\(ShelfColor.allCases.count) 种扩展栏配色，霓虹、实景、简约、极简 4 款时钟表盘，加上喝水小组件的柴犬、橘猫、企鹅、水獭、章鱼 5 个角色。码头不联网验证，全凭你的诚信。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

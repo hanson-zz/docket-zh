@@ -45,7 +45,6 @@ public struct WidgetTile: View {
         case .progress: TimeProgressTile(instance: instance, context: context)
         case .countdown: CountdownTile(instance: instance, context: context)
         case .alarm: AlarmTile(instance: instance, context: context)
-        case .hydration: HydrationTile(instance: instance, context: context)
         case .notes: StickyNoteTile(instance: instance, context: context)
         case .battery: BatteryTile(instance: instance, context: context)
         case .system: SystemActivityTile(instance: instance, context: context)

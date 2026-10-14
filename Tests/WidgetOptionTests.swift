@@ -74,7 +74,6 @@ final class WidgetOptionTests: XCTestCase {
             .progress: ["period"],
             .countdown: ["duration", "name", "presets"],
             .alarm: ["time", "name"],
-            .hydration: ["duration"],
             .calendar: ["allDay", "calendars"],
             .reminders: ["list"],
             .notes: ["text", "color"],

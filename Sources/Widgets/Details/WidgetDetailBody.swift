@@ -41,8 +41,6 @@ struct WidgetDetailBody: View {
             AlarmDetail(instance: instance, context: context)
         case .progress:
             TimeProgressDetail(instance: instance, context: context)
-        case .hydration:
-            HydrationDetail(instance: instance, context: context)
         case .network:
             NetworkDetail(instance: instance, context: context)
         case .airdrop:

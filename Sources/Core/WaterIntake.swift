@@ -192,7 +192,9 @@ public enum WaterIntake {
     /// 体重 x 35 毫升.
     public static let millilitresPerKilogram = 35
     public static let quickAmounts = [100, 250, 500]
-    public static let reminderChoices = [0, 30, 45, 60, 90, 120]
+    /// 15, 20, 180 and 240 came with the old 喝水提醒, whose interval was
+    /// any number of minutes; see `migratingHydration`.
+    public static let reminderChoices = [0, 15, 20, 30, 45, 60, 90, 120, 180, 240]
     public static let defaultReminder = 60
     public static let millilitresPerOunce = 29.5735
 
@@ -230,6 +232,40 @@ public enum WaterIntake {
     public static func reminderMinutes(_ config: WidgetConfig) -> Int {
         let value = Int(config.string("remindEvery", default: "\(defaultReminder)")) ?? 0
         return reminderChoices.contains(value) ? value : 0
+    }
+
+    // MARK: The old 喝水提醒
+
+    /// The raw kind the old 喝水提醒 widget was saved under. Kept only so a
+    /// saved shelf still decodes; see `WidgetInstance.init(from:)`.
+    public static let legacyHydrationKind = "hydration"
+
+    /// The old widget's config as 喝水's.
+    ///
+    /// It stored two things: `duration`, seconds between drinks (45 minutes
+    /// by default), and `lastDrink`, the moment of the last tap. The interval
+    /// becomes `remindEvery`, the nearest choice on the menu that is not off.
+    /// `lastDrink` is dropped: it has no amount, so it cannot become a glass
+    /// in the log without inventing one. Every other key (where the tile sits,
+    /// when it shows) is kept, and anything 喝水 needs that is missing is
+    /// filled from the catalog's defaults when the tile is drawn.
+    public static func migratingHydration(_ old: WidgetConfig) -> WidgetConfig {
+        var config = old
+        let seconds = old.double("duration", default: 2700)
+        config.set("duration", nil)
+        config.set("lastDrink", nil)
+        if config["remindEvery"] == nil {
+            config.set("remindEvery", .string("\(nearestReminder(seconds: seconds))"))
+        }
+        return config
+    }
+
+    /// The menu's interval closest to `seconds`, never 0 (off): the old widget
+    /// had no off, so a shelf that had one keeps being reminded.
+    public static func nearestReminder(seconds: Double) -> Int {
+        let minutes = seconds.isFinite ? seconds / 60 : Double(defaultReminder)
+        let choices = reminderChoices.filter { $0 > 0 }
+        return choices.min { abs(Double($0) - minutes) < abs(Double($1) - minutes) } ?? defaultReminder
     }
 
     // MARK: Reading and writing
@@ -551,6 +587,53 @@ public struct WaterReminder: Equatable, Sendable {
         return window(calendar.startOfDay(for: tomorrow)).start
     }
 
+    /// Where the reminder stands, for the panel: the old 喝水提醒's readout
+    /// (when the next drink is due, and how long it has been overdue), on
+    /// 喝水's schedule.
+    public enum Due: Equatable, Sendable {
+        /// Reminders are off.
+        case off
+        /// Today's goal is met; the next one is tomorrow's first, at this time.
+        case met(Date)
+        /// Due at this time.
+        case upcoming(Date)
+        /// Due for this many seconds, inside the hours with the goal unmet.
+        case overdue(TimeInterval)
+    }
+
+    /// The same rule as `next`, except that a due time already passed is
+    /// reported as overdue rather than rolled forward to the next repeat.
+    public func due(now: Date, lastDrink: Date?, todayTotal: Int, goal: Int,
+                    calendar: Calendar = WaterIntake.calendar) -> Due {
+        guard every > 0 else { return .off }
+        if WaterIntake.isMet(total: todayTotal, goal: goal) {
+            guard let next = next(now: now, lastDrink: lastDrink, todayTotal: todayTotal, goal: goal,
+                                  calendar: calendar) else { return .off }
+            return .met(next)
+        }
+        let dayStart = calendar.startOfDay(for: now)
+        let w = window(dayStart)
+        if now >= w.start, now <= w.end {
+            var dueAt = w.start
+            if let lastDrink, lastDrink >= dayStart {
+                dueAt = max(dueAt, lastDrink.addingTimeInterval(TimeInterval(every * 60)))
+            }
+            if dueAt <= now { return .overdue(now.timeIntervalSince(dueAt)) }
+            if dueAt <= w.end { return .upcoming(dueAt) }
+        }
+        guard let next = next(now: now, lastDrink: lastDrink, todayTotal: todayTotal, goal: goal,
+                              calendar: calendar) else { return .off }
+        return .upcoming(next)
+    }
+
+    public static func due(_ config: WidgetConfig, now: Date,
+                           calendar: Calendar = WaterIntake.calendar) -> Due {
+        let days = WaterIntake.days(config)
+        let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
+        return WaterReminder(config: config).due(now: now, lastDrink: WaterIntake.lastDrink(days, calendar: calendar),
+                                                  todayTotal: today.total, goal: today.goal, calendar: calendar)
+    }
+
     public static func next(_ config: WidgetConfig, now: Date,
                             calendar: Calendar = WaterIntake.calendar) -> Date? {
         let days = WaterIntake.days(config)
@@ -616,6 +699,10 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
     /// Whether it has a picture per mood.
     public var hasMoods: Bool { self != .redPanda }
 
+    /// 赞助者专属: every character but the red panda, unlocked from the
+    /// sponsor window like the supporter clock faces.
+    public var isSupporterOnly: Bool { self != .redPanda }
+
     /// The bundled picture's name for a mood, without the extension.
     public func imageName(_ mood: WaterMood) -> String {
         hasMoods ? "water-\(rawValue)-\(mood.rawValue)" : "WaterPanda"
@@ -632,6 +719,14 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
 
     public static func from(_ config: WidgetConfig) -> WaterCharacter {
         WaterCharacter(rawValue: config.string("character", default: WaterCharacter.redPanda.rawValue)) ?? .redPanda
+    }
+
+    /// What is drawn: a supporter-only character falls back to the red panda
+    /// while it is locked, as a supporter clock face falls back to flip
+    /// cards, so a config copied from another Mac still shows someone.
+    public static func shown(_ config: WidgetConfig, unlocked: Bool) -> WaterCharacter {
+        let chosen = from(config)
+        return chosen.isSupporterOnly && !unlocked ? .redPanda : chosen
     }
 }
 

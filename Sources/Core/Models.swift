@@ -196,8 +196,10 @@ public enum MetricColor {
 
 public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     // Registry order drives library order.
+    // `hydration` (喝水提醒) was folded into `water`; a saved one is read
+    // back as `water` by `WidgetInstance`, see `WaterIntake.legacyHydrationKind`.
     case clock, world, stopwatch, timer, progress, countdown, alarm
-    case hydration, calendar, reminders, notes, music, battery, system
+    case calendar, reminders, notes, music, battery, system
     case network, aiUsage = "ai-usage", shortcut, airdrop, weather
     case stripe, paddle, stock, watchlist, shopify
     case photos, screenshots, downloads, fileShelf = "file-shelf"
@@ -352,6 +354,34 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
         self.kind = kind
         self.expanded = expanded
         self.config = config
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, kind, expanded, config
+    }
+
+    /// The synthesized decode, plus one alias: the old 喝水提醒 widget
+    /// (`hydration`) comes back as 喝水 (`water`), its interval carried over
+    /// by `WaterIntake.migratingHydration`. Same id, so the tile keeps its
+    /// place, and the next save writes it as `water`, which makes the move
+    /// one-time. Any other unknown kind still throws, which `DockItem`
+    /// answers by dropping that one widget.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        expanded = try c.decode(Bool.self, forKey: .expanded)
+        let raw = try c.decode(String.self, forKey: .kind)
+        let stored = try c.decode(WidgetConfig.self, forKey: .config)
+        if let known = WidgetKind(rawValue: raw) {
+            kind = known
+            config = stored
+        } else if raw == WaterIntake.legacyHydrationKind {
+            kind = .water
+            config = WaterIntake.migratingHydration(stored)
+        } else {
+            throw DecodingError.dataCorruptedError(forKey: .kind, in: c,
+                                                   debugDescription: "Unknown widget kind \(raw)")
+        }
     }
 }
 

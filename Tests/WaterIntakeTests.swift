@@ -253,7 +253,7 @@ final class WaterIntakeTests: XCTestCase {
         XCTAssertTrue(WidgetVisibility.supportsCondition(.water))
         var widget = WidgetCatalog.make(.water)!
         XCTAssertEqual(WidgetVisibility.conditionTitle(.water, config: widget.config), "今天未达标时显示")
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: widget.config, kind: .water), "角色")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: widget.config, kind: .water), "小熊猫")
         XCTAssertGreaterThanOrEqual(WidgetCatalog.verticalHeight(widget), 76)
 
         widget.config.set(WidgetVisibility.modeKey, .string("conditional"))

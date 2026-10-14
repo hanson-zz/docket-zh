@@ -31,9 +31,15 @@ public enum WidgetCatalog {
     /// 赞助者专属表盘, unlocked from the sponsor window like the shelf colours.
     public static let supporterClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
 
-    /// Whether a variant's overrides pick a supporter-only face.
+    /// 赞助者专属角色 for 喝水: every character but the red panda.
+    public static let supporterWaterCharacters: Set<String> =
+        Set(WaterCharacter.allCases.filter(\.isSupporterOnly).map(\.rawValue))
+
+    /// Whether a variant's overrides (or one option's value) pick a
+    /// supporter-only clock face or 喝水 character.
     public static func isSupporterOnly(_ overrides: [String: WidgetConfig.Value]) -> Bool {
-        if case .string(let layout) = overrides["layout"] { return supporterClockLayouts.contains(layout) }
+        if case .string(let layout) = overrides["layout"], supporterClockLayouts.contains(layout) { return true }
+        if case .string(let character) = overrides["character"], supporterWaterCharacters.contains(character) { return true }
         return false
     }
 
@@ -78,10 +84,6 @@ public enum WidgetCatalog {
 
         Entry(kind: .alarm, name: "闹钟", category: .clocks,
               defaults: c(["time": .string("14:30"), "name": .string("给小王回电话")]),
-              variants: [], supportsCompact: false, selfContained: true),
-
-        Entry(kind: .hydration, name: "喝水提醒", category: .reminders,
-              defaults: c(["duration": .number(2700)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // No `showCallButton`: read by nothing. A join-call affordance needs
@@ -304,7 +306,7 @@ public enum WidgetCatalog {
               defaults: c(["rings": .list([.string("storage"), .string("battery")])]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // Modelled on the hydration reminder, with active hours, a
+        // A ring that fills between breaks, with active hours, a
         // notification and a count of today's breaks.
         Entry(kind: .posture, name: "久坐提醒", category: .reminders,
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
@@ -339,7 +341,14 @@ public enum WidgetCatalog {
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
                            "unit": .string("ml"), "character": .string("panda")]),
-              variants: [("角色", ["layout": .string("character")]),
+              // The red panda's card names its character, so a 柴犬 config is
+              // not also matched by it; the other five are 赞助者专属.
+              variants: [("小熊猫", ["layout": .string("character"), "character": .string("panda")]),
+                         ("柴犬", ["layout": .string("character"), "character": .string("shiba")]),
+                         ("橘猫", ["layout": .string("character"), "character": .string("cat")]),
+                         ("企鹅", ["layout": .string("character"), "character": .string("penguin")]),
+                         ("水獭", ["layout": .string("character"), "character": .string("otter")]),
+                         ("章鱼", ["layout": .string("character"), "character": .string("octopus")]),
                          ("圆环", ["layout": .string("ring")])],
               supportsCompact: false, selfContained: true),
 
@@ -407,7 +416,6 @@ public enum WidgetCatalog {
         case .network: MetricColor.netUpload
         case .stock, .watchlist: PaletteColor.green.hex
         case .aiUsage: PaletteColor.indigo.hex
-        case .hydration: PaletteColor.blue.hex
         case .posture: PaletteColor.green.hex
         case .todo: PaletteColor.orange.hex
         case .ambient: PaletteColor.teal.hex
@@ -576,9 +584,9 @@ public enum WidgetCatalog {
             .settings("com.apple.settings.Storage")
         // No honest destination: `music` would have to guess between Music and
         // Spotify while its own transport already owns the card, `progress`
-        // and `hydration` are self-contained, and the business tiles are for
+        // and `water` are self-contained, and the business tiles are for
         // dashboards we cannot address.
-        case .music, .progress, .hydration, .stripe, .paddle, .shopify,
+        case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
              .anniversary, .water:
@@ -620,7 +628,7 @@ public enum WidgetCatalog {
             default: return CGSize(width: 176, height: 78)
             }
         case .countdown: return CGSize(width: 140, height: 72)
-        case .alarm, .hydration: return CGSize(width: 168, height: 124)
+        case .alarm: return CGSize(width: 168, height: 124)
         case .calendar:
             switch cfg.string("layout", default: "nextEvent") {
             case "date": return CGSize(width: 88, height: 76)
@@ -772,7 +780,7 @@ public enum WidgetCatalog {
         case .stopwatch, .countdown: return 62
         case .timer: return 92
         case .alarm: return 76
-        case .hydration, .posture: return 88
+        case .posture: return 88
         case .microphone: return 88
         case .gauges: return Double(GaugeReading.rings(cfg).count * 66)
         case .aiUsage: return 132
