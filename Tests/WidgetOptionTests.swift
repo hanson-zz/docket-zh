@@ -107,6 +107,7 @@ final class WidgetOptionTests: XCTestCase {
             .crypto: ["coins", "currency", "colors", "chart"],
             .radio: ["volume"],
             .anniversary: ["showRing"],
+            .water: ["goal", "cupSize", "remindEvery", "start", "end", "unit"],
             .clipboard: ["pasteOnClick"],
             .toggles: ["actions"],
             .clock: ["seconds"],

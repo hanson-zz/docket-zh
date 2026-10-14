@@ -404,6 +404,10 @@ struct WidgetSettingsSections: View {
         "coins": "币种（BTC、ETH 等代码，或 CoinGecko ID）",
         "currency": "计价货币",
         "colors": "涨跌颜色",
+        "goal": "每日目标",
+        "cupSize": "一杯的容量（卡片上的 +）",
+        "remindEvery": "喝水提醒",
+        "unit": "单位",
     ]
 
     static func label(_ key: String) -> String {
@@ -446,6 +450,8 @@ struct WidgetSettingsSections: View {
         case "amount": 0...1_000_000
         case "alertAt": 50...95
         case "volume": 0...100
+        case "goal": Double(WaterIntake.goalRange.lowerBound)...Double(WaterIntake.goalRange.upperBound)
+        case "cupSize": Double(WaterIntake.cupRange.lowerBound)...Double(WaterIntake.cupRange.upperBound)
         default: 0...1_000
         }
     }
@@ -454,6 +460,8 @@ struct WidgetSettingsSections: View {
         switch key {
         case "duration": 300
         case "amount": 100
+        case "goal": 100
+        case "cupSize": 50
         default: 5
         }
     }
@@ -461,6 +469,7 @@ struct WidgetSettingsSections: View {
     static func format(_ key: String, _ value: Double) -> String {
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "amount" { return UnitConverter.format(value) }
+        if key == "goal" || key == "cupSize" { return "\(Int(value)) 毫升" }
         guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
         return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分钟" : "\(minutes) 分钟"
@@ -502,6 +511,8 @@ struct WidgetSettingsSections: View {
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
         "crypto.currency": [("人民币 CNY", "cny"), ("美元 USD", "usd")],
         "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
+        "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? "关闭" : "每 \($0) 分钟", "\($0)") },
+        "water.unit": [("毫升", "ml"), ("盎司", "oz")],
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

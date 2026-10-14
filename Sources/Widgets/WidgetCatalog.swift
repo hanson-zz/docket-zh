@@ -331,6 +331,17 @@ public enum WidgetCatalog {
                          ("多个", ["layout": .string("multi")])],
               supportsCompact: false, selfContained: true),
 
+        // Today's glasses under `days`, with the red panda filling up toward
+        // the goal; reminders between `start` and `end`. See WaterIntake.
+        Entry(kind: .water, name: "喝水", category: .reminders,
+              defaults: c(["layout": .string("character"), "goal": .number(2000),
+                           "cupSize": .number(250), "remindEvery": .string("60"),
+                           "start": .string("09:00"), "end": .string("21:00"),
+                           "unit": .string("ml")]),
+              variants: [("角色", ["layout": .string("character")]),
+                         ("圆环", ["layout": .string("ring")])],
+              supportsCompact: false, selfContained: true),
+
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
         Entry(kind: .week, name: "一周日程", category: .calendar,
@@ -407,6 +418,7 @@ public enum WidgetCatalog {
         case .appVolume: PaletteColor.indigo.hex
         case .radio: PaletteColor.orange.hex
         case .anniversary: PaletteColor.pink.hex
+        case .water: PaletteColor.blue.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -568,7 +580,7 @@ public enum WidgetCatalog {
         case .music, .progress, .hydration, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary:
+             .anniversary, .water:
             nil
         }
     }
@@ -713,6 +725,8 @@ public enum WidgetCatalog {
         case .anniversary:
             return CGSize(width: Anniversary.tileWidth(layout: cfg.string("layout", default: "single"),
                                                        count: Anniversary.events(cfg).count), height: 62)
+        case .water:
+            return CGSize(width: WaterIntake.tileWidth(layout: cfg.string("layout", default: "character")), height: 62)
         }
     }
 
@@ -813,6 +827,8 @@ public enum WidgetCatalog {
         case .anniversary:
             return Anniversary.columnHeight(layout: cfg.string("layout", default: "single"),
                                             count: Anniversary.events(cfg).count)
+        case .water:
+            return WaterIntake.columnHeight(layout: cfg.string("layout", default: "character"))
         default:
             return 76
         }

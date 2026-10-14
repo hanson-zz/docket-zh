@@ -43,6 +43,9 @@ targets:
       # 收音机小组件的图标（阿喵收音机 meowRadio 的猫耳复古收音机，MIT），作为普通资源打包。
       - path: Resources/Radio
         buildPhase: resources
+      # 喝水小组件的小熊猫（作者自己的应用图标形象，抠图缩小），作为普通资源打包。
+      - path: Resources/Water
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is
