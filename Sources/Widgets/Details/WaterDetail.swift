@@ -21,6 +21,7 @@ struct WaterDetail: View {
     @State private var customAmount = ""
     @State private var editingCustom = false
     @State private var weightText = ""
+    @State private var confirmReset = false
     @FocusState private var focus: Field?
 
     private enum Field: Hashable { case amount, weight }
@@ -577,15 +578,159 @@ struct WaterDetail: View {
             .padding(10)
             .glassPane(cornerRadius: 10)
 
-            HStack(spacing: 8) {
-                StatChip(label: "提醒", value: reminder.every == 0 ? "已关闭" : "每 \(reminder.every) 分钟")
-                StatChip(label: "时段", value: "\(PostureSchedule.clock(reminder.start)) 到 \(PostureSchedule.clock(reminder.end))")
+            reminderSettings(reminder)
+
+            Button {
+                confirmReset = true
+            } label: {
+                Label("复位喝水设置", systemImage: "arrow.counterclockwise")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 30)
+                    .glassPane(cornerRadius: 10)
+                    .contentShape(.rect)
             }
-            Text("达标后当天不再提醒，刚喝过水也会顺延。间隔、时段、一杯的容量、单位和角色也可以在设置的小组件页里改。")
+            .buttonStyle(.plain)
+            .disabled(context.isPreview)
+            .confirmationDialog("复位喝水设置？", isPresented: $confirmReset) {
+                Button("复位", role: .destructive) {
+                    WaterLog.resetSettings(in: instance)
+                    weightText = ""
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("每日目标、体重、提醒间隔、时段和下次提醒恢复默认，喝水记录、角色和单位保留。")
+            }
+
+            Text("达标后当天不再提醒，刚喝过水也会顺延。一杯的容量和单位可以在设置的小组件页里改。")
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    // MARK: 提醒
+
+    private func reminderSettings(_ reminder: WaterReminder) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            settingRow("提醒") {
+                Picker("", selection: Binding(
+                    get: { reminder.every },
+                    set: { value in
+                        guard !context.isPreview else { return }
+                        WaterLog.set("remindEvery", .string(String(value)), in: instance)
+                    })) {
+                        ForEach(WaterIntake.reminderChoices, id: \.self) { value in
+                            Text(value == 0 ? "关闭" : "每 \(value) 分钟").tag(value)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+            }
+            settingRow("时段") {
+                HStack(spacing: 4) {
+                    timePicker(reminder.start, key: "start")
+                    Text("到").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                    timePicker(reminder.end % 1440, key: "end")
+                }
+            }
+            if reminder.every > 0 {
+                nextReminderRow
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    private var nextReminderRow: some View {
+        let now = Date.now
+        let picked = WaterReminder.override(instance.config, now: now)
+        let shown = WaterReminder.next(instance.config, now: now) ?? now
+        let calendar = WaterIntake.calendar
+        let minutes = calendar.component(.hour, from: shown) * 60 + calendar.component(.minute, from: shown)
+        return VStack(alignment: .leading, spacing: 6) {
+            settingRow("下次提醒") {
+                HStack(spacing: 6) {
+                    if !calendar.isDate(shown, inSameDayAs: now) {
+                        Text("明天").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                    }
+                    DatePicker("", selection: Binding(
+                        get: { Self.date(minutes: minutes) },
+                        set: { date in
+                            let m = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+                            pickNext(WaterReminder.pickedTime(minutes: m, now: .now))
+                        }), displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .datePickerStyle(.field)
+                        .fixedSize()
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach([15, 30, 60], id: \.self) { delay in
+                    chip(delay == 60 ? "1 小时后" : "\(delay) 分钟后") {
+                        pickNext(Date.now.addingTimeInterval(TimeInterval(delay * 60)))
+                    }
+                }
+                Spacer(minLength: 0)
+                if picked != nil {
+                    chip("恢复自动") {
+                        guard !context.isPreview else { return }
+                        WaterLog.set(WaterReminder.overrideKey, nil, in: instance)
+                    }
+                }
+            }
+        }
+    }
+
+    private func pickNext(_ date: Date) {
+        guard !context.isPreview else { return }
+        WaterLog.set(WaterReminder.overrideKey, .number(date.timeIntervalSince1970), in: instance)
+    }
+
+    private func settingRow<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        HStack {
+            Text(title)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            Spacer()
+            content()
+        }
+        .controlSize(.small)
+    }
+
+    private func timePicker(_ minutes: Int, key: String) -> some View {
+        DatePicker("", selection: Binding(
+            get: { Self.date(minutes: minutes) },
+            set: { date in
+                guard !context.isPreview else { return }
+                let calendar = WaterIntake.calendar
+                let m = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+                WaterLog.set(key, .string(PostureSchedule.clock(m)), in: instance)
+            }), displayedComponents: .hourAndMinute)
+            .labelsHidden()
+            .datePickerStyle(.field)
+            .fixedSize()
+            .disabled(context.isPreview)
+    }
+
+    private func chip(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.14)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+    }
+
+    /// Today at `minutes` after midnight, for a time-only picker.
+    private static func date(minutes: Int) -> Date {
+        WaterIntake.calendar.startOfDay(for: .now).addingTimeInterval(TimeInterval(minutes * 60))
     }
 
     /// Six faces in a row; the chosen one sits on the accent.

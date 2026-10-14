@@ -174,6 +174,8 @@ enum WaterLog {
             WaterIntake.store(days, in: &config, now: now)
             // The log keeps minutes; the cup in the character's paws needs the second.
             config.set("loggedAt", .number(now.timeIntervalSince1970))
+            // A drink answers a hand-picked reminder; the schedule resumes.
+            config.set(WaterReminder.overrideKey, nil)
         }
         PetTreats.give(.water)
     }
@@ -194,8 +196,22 @@ enum WaterLog {
         }
     }
 
-    static func set(_ key: String, _ value: WidgetConfig.Value, in instance: WidgetInstance) {
+    static func set(_ key: String, _ value: WidgetConfig.Value?, in instance: WidgetInstance) {
         WidgetWriter.write(instance) { $0.set(key, value) }
+    }
+
+    /// 复位: the goal, weight and reminder schedule back to the catalog's
+    /// defaults. The drink log, the character and the unit stay.
+    static func resetSettings(in instance: WidgetInstance) {
+        let defaults = WidgetCatalog.entry(.water)?.defaults ?? WidgetConfig()
+        WidgetWriter.write(instance) { config in
+            for key in ["remindEvery", "start", "end", "cupSize"] {
+                config.set(key, defaults[key])
+            }
+            config.set("weight", nil)
+            config.set(WaterReminder.overrideKey, nil)
+        }
+        setGoal(WaterIntake.clampGoal(defaults.int("goal", default: 2000)), in: instance)
     }
 }
 

@@ -626,8 +626,34 @@ public struct WaterReminder: Equatable, Sendable {
         return .upcoming(next)
     }
 
+    /// A next reminder picked by hand in the panel, kept as `nextAt`
+    /// (seconds since 1970). It holds while it is still ahead, reminders are
+    /// on and today's goal is not met; a drink clears it, and once it has
+    /// passed the usual schedule takes over again.
+    public static let overrideKey = "nextAt"
+
+    public static func override(_ config: WidgetConfig, now: Date,
+                                calendar: Calendar = WaterIntake.calendar) -> Date? {
+        let stamp = config.double(overrideKey)
+        guard stamp > 0, WaterIntake.reminderMinutes(config) > 0 else { return nil }
+        let at = Date(timeIntervalSince1970: stamp)
+        guard at > now else { return nil }
+        let today = WaterIntake.today(WaterIntake.days(config), goal: WaterIntake.goal(config),
+                                      now: now, calendar: calendar)
+        return WaterIntake.isMet(total: today.total, goal: today.goal) ? nil : at
+    }
+
+    /// The time a hand-picked reminder lands on: `minutes` after midnight
+    /// today, or tomorrow when that has already gone by.
+    public static func pickedTime(minutes: Int, now: Date,
+                                  calendar: Calendar = WaterIntake.calendar) -> Date {
+        let today = calendar.startOfDay(for: now).addingTimeInterval(TimeInterval(minutes * 60))
+        return today > now ? today : today.addingTimeInterval(86_400)
+    }
+
     public static func due(_ config: WidgetConfig, now: Date,
                            calendar: Calendar = WaterIntake.calendar) -> Due {
+        if let picked = override(config, now: now, calendar: calendar) { return .upcoming(picked) }
         let days = WaterIntake.days(config)
         let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
         return WaterReminder(config: config).due(now: now, lastDrink: WaterIntake.lastDrink(days, calendar: calendar),
@@ -636,6 +662,7 @@ public struct WaterReminder: Equatable, Sendable {
 
     public static func next(_ config: WidgetConfig, now: Date,
                             calendar: Calendar = WaterIntake.calendar) -> Date? {
+        if let picked = override(config, now: now, calendar: calendar) { return picked }
         let days = WaterIntake.days(config)
         let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
         return WaterReminder(config: config).next(now: now, lastDrink: WaterIntake.lastDrink(days, calendar: calendar),
