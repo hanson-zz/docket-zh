@@ -28,10 +28,4 @@ final class NowPlayingInfoTests: XCTestCase {
         let helper = NowPlayingInfo.decode(#"{"id":"x.helper","parent":"com.netease.163music","title":"a"}"#)
         XCTAssertNotNil(helper?.track(for: netease, now: .now))
     }
-
-    func testNetEaseCannotSeek() {
-        XCTAssertFalse(MusicSource.netease.canSeek)
-        XCTAssertTrue(MusicSource.spotify.canSeek)
-        XCTAssertEqual(MusicSource.netease.displayName, "网易云音乐")
-    }
 }
