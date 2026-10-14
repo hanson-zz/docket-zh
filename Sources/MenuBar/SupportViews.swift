@@ -6,6 +6,7 @@ import SwiftUI
 enum Support {
     static let email = "694561981@qq.com"
     static let repoURL = URL(string: "https://github.com/\(UpdateService.releasesRepository)")!
+    static let kofiURL = URL(string: "https://ko-fi.com/hanson528")!
     static let shareText = "码头 Dockling：免费开源的 Mac 程序坞扩展栏，把常用 App、文件夹和小组件放在屏幕边上。"
 
     static func mailURL(subject: String, body: String = "") -> URL {
@@ -112,7 +113,7 @@ struct SupportSections: View {
     }
 }
 
-/// The sponsor window: a letter beside WeChat / Alipay payment codes.
+/// The sponsor window: a letter beside WeChat / Alipay / Ko-fi codes.
 /// Whether this Mac has unlocked the supporter colours.
 ///
 /// The honour system, said plainly in the window that sets it: there is no
@@ -123,8 +124,65 @@ enum Supporter {
     static var isUnlocked: Bool { UserDefaults.standard.bool(forKey: key) }
 }
 
+/// The ways to chip in: WeChat and Alipay for people in China, Ko-fi
+/// (PayPal or card) for everyone else.
+enum SponsorMethod: Int, CaseIterable, Identifiable {
+    case wechat, alipay, kofi
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .wechat: "微信"
+        case .alipay: "支付宝"
+        case .kofi: "Ko-fi"
+        }
+    }
+
+    var hint: String {
+        switch self {
+        case .wechat: "微信支付，适合国内用户"
+        case .alipay: "支付宝，适合国内用户"
+        case .kofi: "Ko-fi，支持 PayPal 和信用卡，适合海外用户"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .wechat: "message.fill"
+        case .alipay: "yensign.circle.fill"
+        case .kofi: "cup.and.saucer.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .wechat: Color(red: 0.03, green: 0.76, blue: 0.38)
+        case .alipay: Color(red: 0.09, green: 0.47, blue: 1.0)
+        case .kofi: Color(red: 0.16, green: 0.67, blue: 0.88)
+        }
+    }
+
+    var imageName: String {
+        switch self {
+        case .wechat: "SponsorWeChat"
+        case .alipay: "SponsorAlipay"
+        case .kofi: "SponsorKofi"
+        }
+    }
+
+    /// WeChat for a Chinese system or a China region, Ko-fi otherwise.
+    static func pick(languages: [String], region: String?) -> SponsorMethod {
+        let chinese = languages.first?.hasPrefix("zh") ?? false
+        return chinese || region == "CN" ? .wechat : .kofi
+    }
+
+    static var preferred: SponsorMethod {
+        pick(languages: Locale.preferredLanguages, region: Locale.current.region?.identifier)
+    }
+}
+
 struct SponsorView: View {
-    @State private var method = 0
+    @State private var method = SponsorMethod.preferred
     @AppStorage(Supporter.key) private var unlocked = false
 
     var body: some View {
@@ -172,16 +230,31 @@ struct SponsorView: View {
             .frame(width: 330)
 
             VStack(spacing: 12) {
-                Picker("", selection: $method) {
-                    Text("微信").tag(0)
-                    Text("支付宝").tag(1)
+                HStack(spacing: 6) {
+                    ForEach(SponsorMethod.allCases) { m in
+                        Button { method = m } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: m.symbol)
+                                Text(m.title)
+                            }
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(method == m ? Color.white : m.color)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule().fill(method == m ? m.color : m.color.opacity(0.12))
+                            )
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .help(m.hint)
+                    }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 200)
+                .frame(width: 270)
 
                 Group {
-                    if let code = Support.image(method == 0 ? "SponsorWeChat" : "SponsorAlipay") {
+                    if let code = Support.image(method.imageName) {
                         Image(nsImage: code)
                             .resizable()
                             .interpolation(.high)
@@ -191,13 +264,25 @@ struct SponsorView: View {
                             .fill(.quaternary)
                     }
                 }
-                .frame(width: 240, height: 340)
+                .frame(width: 240, height: 326)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
 
-                Text("用\(method == 0 ? "微信" : "支付宝")扫一扫，金额随意")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                if method == .kofi {
+                    Button { NSWorkspace.shared.open(Support.kofiURL) } label: {
+                        Label("在 Ko-fi 上请我喝咖啡", systemImage: "arrow.up.right.square")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(method.color)
+                    .contextMenu { Button("拷贝链接") { Support.copy(Support.kofiURL.absoluteString) } }
+                    Text("支持 PayPal 和信用卡，适合海外用户")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("用\(method.title)扫一扫，金额随意")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding(28)

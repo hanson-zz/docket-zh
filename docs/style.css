@@ -111,6 +111,10 @@ h2{font-size:30px;margin:0 0 18px;text-align:center}
 .qr figure{margin:0;text-align:center}
 .qr img{width:180px;border-radius:14px;background:#fff;border:1px solid var(--line)}
 .qr figcaption{font-size:14px;color:var(--mut);margin-top:6px}
+.qr figcaption a{color:inherit}
+html:not([data-lang="zh"]) .qr .kofi{order:-1}
+.kofi-btn{text-align:center;margin-top:18px}
+.kofi-btn .btn{background:#29abe0;color:#fff;border-color:#29abe0}
 
 /* footer */
 footer{border-top:1px solid var(--line);padding:28px 0 50px;color:var(--mut);font-size:14px;margin-top:20px}
