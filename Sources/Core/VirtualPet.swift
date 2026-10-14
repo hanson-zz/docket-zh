@@ -251,6 +251,7 @@ public enum VirtualPet {
         if !s.isSleeping, hours > 0 {
             for need in PetNeed.allCases { s[need] -= need.perHour * hours }
         }
+        for need in PetNeed.allCases { s[need] = s[need] }
         return s
     }
 
@@ -280,6 +281,8 @@ public enum VirtualPet {
             s.food += treatFood
             s.mood += treatMood
         }
+        // The fields are written directly above; the subscript is what clamps.
+        for need in PetNeed.allCases { s[need] = s[need] }
         // Waking it up or putting it down is not something it acts out.
         if action != .sleep {
             s.lastAction = action
