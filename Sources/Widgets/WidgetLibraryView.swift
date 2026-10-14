@@ -1,4 +1,6 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Cards
 
@@ -18,8 +20,11 @@ private struct LibraryCard: Identifiable {
     var preview: WidgetInstance
 
     func matches(_ query: String) -> Bool {
-        title.localizedStandardContains(query) || name.localizedStandardContains(query)
+        WidgetSearch.matches(query, names: [title, name], kind: kind.rawValue)
     }
+
+    /// The permission this widget cannot work without, if any.
+    var permission: String? { WidgetSearch.permissions[kind.rawValue] }
 }
 
 /// Only self-contained kinds: the rest cannot be rendered in this build.
@@ -59,6 +64,7 @@ private func symbol(for category: WidgetCategory) -> String {
 
 private enum LibrarySelection: Hashable {
     case all
+    case appsAndFolders
     case category(WidgetCategory)
 }
 
@@ -67,15 +73,92 @@ private enum LibraryFocus: Hashable {
     case card(String)
 }
 
+// MARK: - Apps and folders
+
+/// A common app or folder offered in the library, so the shelf can be filled
+/// without dragging from Finder. `url == nil` is the "more" tile that opens a
+/// file picker.
+private struct LibraryShortcut: Identifiable {
+    var id: String
+    var title: String
+    var url: URL?
+    var isFolder: Bool
+
+    var item: DockItem? {
+        guard let url else { return nil }
+        return Self.item(for: url)
+    }
+
+    static func item(for url: URL) -> DockItem {
+        if url.pathExtension == "app" {
+            return .app(id: UUID(), bundleID: Bundle(url: url)?.bundleIdentifier ?? "", ref: .capture(url))
+        }
+        return .folder(id: UUID(), ref: .capture(url), icon: FolderIcon())
+    }
+
+    func matches(_ query: String) -> Bool {
+        guard url != nil else { return false }
+        let english = url?.deletingPathExtension().lastPathComponent ?? ""
+        return WidgetSearch.matches(query, names: [title, english], kind: "")
+    }
+
+    private static func named(_ url: URL, folder: Bool) -> LibraryShortcut {
+        LibraryShortcut(id: url.path, title: FileManager.default.displayName(atPath: url.path),
+                        url: url, isFolder: folder)
+    }
+
+    static let apps: [LibraryShortcut] = {
+        let paths = [
+            "/System/Library/CoreServices/Finder.app",
+            "/Applications/Safari.app",
+            "/System/Applications/Mail.app",
+            "/System/Applications/Messages.app",
+            "/System/Applications/Notes.app",
+            "/System/Applications/Calendar.app",
+            "/System/Applications/Music.app",
+            "/System/Applications/Photos.app",
+            "/System/Applications/App Store.app",
+            "/System/Applications/System Settings.app",
+        ]
+        return paths.map { URL(fileURLWithPath: $0) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+            .map { named($0, folder: false) }
+            + [LibraryShortcut(id: "more-apps", title: "更多应用…", url: nil, isFolder: false)]
+    }()
+
+    static let folders: [LibraryShortcut] = {
+        let fm = FileManager.default
+        let dirs: [FileManager.SearchPathDirectory] = [
+            .applicationDirectory, .downloadsDirectory, .documentDirectory, .desktopDirectory,
+            .picturesDirectory, .moviesDirectory, .musicDirectory,
+        ]
+        var urls = dirs.compactMap { dir -> URL? in
+            dir == .applicationDirectory
+                ? fm.urls(for: dir, in: .localDomainMask).first
+                : fm.urls(for: dir, in: .userDomainMask).first
+        }
+        urls.append(fm.homeDirectoryForCurrentUser)
+        return urls.filter { fm.fileExists(atPath: $0.path) }
+            .map { named($0, folder: true) }
+            + [LibraryShortcut(id: "more-folders", title: "更多文件夹…", url: nil, isFolder: true)]
+    }()
+
+    static var all: [LibraryShortcut] { apps + folders }
+}
+
 // MARK: - Library
 
 /// The **Add Widget** browser. Sized for a sheet; the host owns presentation.
 struct WidgetLibraryView: View {
     var onAdd: (WidgetInstance) -> Void
+    var onAddItem: (DockItem) -> Void
     var onClose: () -> Void
 
-    init(onAdd: @escaping (WidgetInstance) -> Void, onClose: @escaping () -> Void) {
+    init(onAdd: @escaping (WidgetInstance) -> Void,
+         onAddItem: @escaping (DockItem) -> Void = { _ in },
+         onClose: @escaping () -> Void) {
         self.onAdd = onAdd
+        self.onAddItem = onAddItem
         self.onClose = onClose
     }
 
@@ -107,13 +190,17 @@ struct WidgetLibraryView: View {
                 .padding(10)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
-                    row(.all, symbol: "square.grid.2x2", title: "所有小组件", enabled: true)
+                    row(.all, symbol: "square.grid.2x2", title: "所有小组件",
+                        count: libraryCards.count, enabled: true)
+                    row(.appsAndFolders, symbol: "app.badge", title: "应用和文件夹",
+                        count: LibraryShortcut.all.filter { $0.url != nil }.count, enabled: true)
                     ForEach(WidgetCategory.ordered, id: \.self) { category in
+                        let count = libraryCards.filter { $0.category == category }.count
                         row(.category(category), symbol: symbol(for: category),
-                            title: category.displayName,
+                            title: category.displayName, count: count,
                             // Categories whose kinds all need permissions or
                             // network have nothing to show in this build.
-                            enabled: libraryCards.contains { $0.category == category })
+                            enabled: count > 0)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -157,7 +244,7 @@ struct WidgetLibraryView: View {
     }
 
     private func row(_ item: LibrarySelection, symbol: String, title: String,
-                     enabled: Bool) -> some View {
+                     count: Int, enabled: Bool) -> some View {
         let selected = selection == item
         return Button { selection = item } label: {
             HStack(spacing: 7) {
@@ -166,6 +253,11 @@ struct WidgetLibraryView: View {
                     .frame(width: 16)
                 Text(title).font(.system(size: 13))
                 Spacer(minLength: 0)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundStyle(selected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
+                }
             }
             .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(enabled ? .primary : .tertiary))
             .padding(.horizontal, 8)
@@ -199,6 +291,12 @@ struct WidgetLibraryView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
                 Text("添加小组件").font(.system(size: 14, weight: .semibold))
+                Text("\(libraryCards.count)")
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1.5)
+                    .background(Capsule().fill(.quaternary))
                 Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark")
@@ -213,7 +311,7 @@ struct WidgetLibraryView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
             Divider()
-            if flatCards.isEmpty {
+            if flatCards.isEmpty && visibleShortcuts.isEmpty {
                 empty
             } else {
                 grid
@@ -226,6 +324,8 @@ struct WidgetLibraryView: View {
         VStack(spacing: 6) {
             Image(systemName: "magnifyingglass").font(.system(size: 22))
             Text("没有匹配的小组件").font(.system(size: 13))
+            Text("也可以试试拼音、首字母或英文，比如 tianqi、tq、weather")
+                .font(.system(size: 11))
         }
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -235,6 +335,9 @@ struct WidgetLibraryView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
+                    if !visibleShortcuts.isEmpty {
+                        shortcutsSection
+                    }
                     ForEach(sections, id: \.title) { section in
                         VStack(alignment: .leading, spacing: 10) {
                             Text(section.title)
@@ -259,6 +362,78 @@ struct WidgetLibraryView: View {
         }
     }
 
+    private var shortcutsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("应用和文件夹")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 76, maximum: 84), spacing: 8)],
+                      alignment: .leading, spacing: 10) {
+                ForEach(visibleShortcuts) { shortcut in
+                    shortcutView(shortcut)
+                }
+            }
+        }
+    }
+
+    private func shortcutView(_ shortcut: LibraryShortcut) -> some View {
+        Button { add(shortcut) } label: {
+            VStack(spacing: 5) {
+                Group {
+                    if let url = shortcut.url {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                            .resizable()
+                            .interpolation(.high)
+                    } else {
+                        Image(systemName: shortcut.isFolder ? "folder.badge.plus" : "plus.app")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(width: 40, height: 40)
+                .frame(width: 52, height: 52)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(shortcut.url == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear)))
+                Text(shortcut.title)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .frame(width: 76)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(shortcut.url == nil ? "选择其他\(shortcut.isFolder ? "文件夹" : "应用")" : "添加到扩展栏")
+        .accessibilityLabel(shortcut.url == nil ? shortcut.title : "添加“\(shortcut.title)”")
+    }
+
+    private var visibleShortcuts: [LibraryShortcut] {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        if !query.isEmpty { return LibraryShortcut.all.filter { $0.matches(query) } }
+        switch selection {
+        case .all, .appsAndFolders: return LibraryShortcut.all
+        case .category: return []
+        }
+    }
+
+    private func add(_ shortcut: LibraryShortcut) {
+        if let item = shortcut.item {
+            onAddItem(item)
+            return
+        }
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = !shortcut.isFolder
+        panel.canChooseDirectories = shortcut.isFolder
+        panel.allowsMultipleSelection = true
+        panel.prompt = "添加"
+        if !shortcut.isFolder {
+            panel.allowedContentTypes = [.applicationBundle]
+            panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        }
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls { onAddItem(LibraryShortcut.item(for: url)) }
+    }
+
     private func cardView(_ card: LibraryCard) -> some View {
         let focused = focus == .card(card.id)
         return VStack(spacing: 8) {
@@ -276,6 +451,13 @@ struct WidgetLibraryView: View {
                         .padding(.vertical, 1.5)
                         .background(Capsule().fill(Color(hex: ShelfColor.redPanda.hex)))
                         .fixedSize()
+                }
+                if let permission = card.permission {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                        .help("需要“\(permission)”权限，第一次用到时会请求。")
+                        .accessibilityLabel("需要\(permission)权限")
                 }
                 Spacer(minLength: 2)
                 Button { add(card) } label: {
@@ -322,8 +504,11 @@ struct WidgetLibraryView: View {
             return [(title: "搜索结果", cards: libraryCards.filter { $0.matches(query) })]
         }
         let categories: [WidgetCategory] = {
-            if case .category(let c) = selection { return [c] }
-            return WidgetCategory.ordered
+            switch selection {
+            case .category(let c): return [c]
+            case .appsAndFolders: return []
+            case .all: return WidgetCategory.ordered
+            }
         }()
         return categories.compactMap { category in
             let cards = libraryCards.filter { $0.category == category }

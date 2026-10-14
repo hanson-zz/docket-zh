@@ -95,6 +95,9 @@ final class LibraryWindow: HostedWindow {
                     // a time - so the library stays open, like Shortcuts' own.
                     _ = self
                 },
+                onAddItem: { item in
+                    withAnimation(.snappy(duration: 0.25)) { app.addItem(item) }
+                },
                 onClose: { [weak self] in self?.close() }
             ),
             title: "添加小组件",
