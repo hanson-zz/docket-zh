@@ -586,7 +586,43 @@ struct SettingsView: View {
             }
         }
 
+        soundSection
+
         itemList
+    }
+
+    /// 添加和移除小组件时的音效. The style and volume only show while the
+    /// switch is on; 试听 plays both sounds whatever the switch says.
+    private var soundSection: some View {
+        Section {
+            Toggle(isOn: $state.widgetSounds.enabled) {
+                subtitled("添加和移除小组件时播放音效",
+                          "添加时一声轻响，移除时像程序坞一样“噗”一声。系统设置里关闭了“播放用户界面音效”时不会播放。")
+            }
+            if state.widgetSounds.enabled {
+                Picker("音效风格", selection: $state.widgetSounds.style) {
+                    ForEach(WidgetSoundStyle.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .help("“码头”是码头自带的合成音效；“系统”使用这台 Mac 的程序坞音效，没有时改用系统提示音。")
+                LabeledContent("音量") {
+                    HStack {
+                        Slider(value: $state.widgetSounds.volume, in: 0...1)
+                        Text("\(Int((state.widgetSounds.volume * 100).rounded()))%")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, alignment: .trailing)
+                    }
+                }
+            }
+            LabeledContent("添加和移除的声音") {
+                Button("试听") {
+                    WidgetSoundEffects.shared.preview(settings: state.widgetSounds)
+                }
+            }
+        } header: {
+            Text("音效")
+        }
     }
 
     /// A control's label with one line of explanation under it, the way
@@ -725,9 +761,12 @@ struct SettingsView: View {
 
     private func remove(_ id: UUID) {
         guard let index = activeProfileIndex else { return }
+        let before = state.profiles[index].items
         withAnimation(.smooth(duration: 0.22)) {
             state.profiles[index].items.removeAll { $0.id == id }
         }
+        WidgetSoundEffects.shared.shelfChanged(from: before, to: state.profiles[index].items,
+                                               settings: state.widgetSounds)
     }
 
     private var widgets: some View {

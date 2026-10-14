@@ -271,7 +271,10 @@ public final class AppState {
         if profileID == nil, mirroringApps { adoptSystemApps() }
         let target = profileID ?? state.customDock.profileID
         guard let target, let index = index(of: target) else { return }
+        let before = state.profiles[index].items
         state.profiles[index].items.append(item)
+        WidgetSoundEffects.shared.shelfChanged(from: before, to: state.profiles[index].items,
+                                               settings: state.widgetSounds)
     }
 
     // MARK: Profiles
@@ -437,7 +440,10 @@ public final class AppState {
         if profileID == nil, mirroringApps { adoptSystemApps() }
         let target = profileID ?? state.customDock.profileID
         guard let target, let index = index(of: target) else { return }
+        let before = state.profiles[index].items
         state.profiles[index].items.removeAll { $0.id == itemID }
+        WidgetSoundEffects.shared.shelfChanged(from: before, to: state.profiles[index].items,
+                                               settings: state.widgetSounds)
     }
 
     public func moveItem(from source: Int, to destination: Int, in profileID: UUID? = nil) {
