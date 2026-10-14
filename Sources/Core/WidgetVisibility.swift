@@ -41,10 +41,15 @@ public struct WidgetConditions: Equatable, Sendable {
     public var ambientPlaying: Bool?
     /// The radio is tuned in and playing.
     public var radioPlaying: Bool?
+    /// New feedback per followed GitHub repository, keyed by
+    /// `GitHubWatch.key`. A repository missing from it has not been read yet.
+    public var githubFeedback: [String: Int]?
 
     public init(musicPlaying: Bool? = nil, onBattery: Bool? = nil, batteryLevel: Double? = nil,
                 micInUse: Bool? = nil, mailUnread: Int? = nil, codexActive: Bool? = nil,
-                ambientPlaying: Bool? = nil, radioPlaying: Bool? = nil) {
+                ambientPlaying: Bool? = nil, radioPlaying: Bool? = nil,
+                githubFeedback: [String: Int]? = nil) {
+        self.githubFeedback = githubFeedback
         self.ambientPlaying = ambientPlaying
         self.radioPlaying = radioPlaying
         self.codexActive = codexActive
@@ -73,7 +78,8 @@ public enum WidgetVisibility {
     /// Kinds with a condition of their own to show on.
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
-        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary, .water: true
+        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary, .water,
+             .github: true
         default: false
         }
     }
@@ -95,6 +101,7 @@ public enum WidgetVisibility {
         case .radio: return "正在收听时显示"
         case .anniversary: return "\(Anniversary.soonDays) 天内有纪念日时显示"
         case .water: return "今天未达标时显示"
+        case .github: return "有新反馈时显示"
         case .battery:
             let threshold = batteryThreshold(config)
             return threshold >= 100 ? "使用电池时显示" : "使用电池且电量不高于 \(threshold)% 时显示"
@@ -125,6 +132,13 @@ public enum WidgetVisibility {
             return conditions.ambientPlaying
         case .radio:
             return conditions.radioPlaying
+        // Any followed repository with something new. Unknown until at
+        // least one of them has been read, and unknown stays visible.
+        case .github:
+            guard let counts = conditions.githubFeedback else { return nil }
+            let known = GitHubWatch.repos(instance.config).compactMap { counts[GitHubWatch.key($0)] }
+            guard !known.isEmpty else { return nil }
+            return known.contains { $0 > 0 }
         case .battery:
             guard let onBattery = conditions.onBattery else { return nil }
             guard onBattery else { return false }

@@ -220,7 +220,7 @@ struct WidgetSettingsSections: View {
         // it is actually running with, so the control disagreed with the tile
         // until it was touched.
         case .bool(let fallback):
-            Toggle(Self.label(key), isOn: Binding(
+            Toggle(Self.label(key, kind: entry.kind), isOn: Binding(
                 get: { instance.config.bool(key, default: fallback) },
                 set: { on in write(instance) { $0.set(key, .bool(on)) } }))
 
@@ -229,7 +229,7 @@ struct WidgetSettingsSections: View {
                 get: { instance.config.double(key, default: fallback) },
                 set: { value in write(instance) { $0.set(key, .number(value)) } }),
                 in: Self.range(key), step: Self.step(key)) {
-                    LabeledContent(Self.label(key)) {
+                    LabeledContent(Self.label(key, kind: entry.kind)) {
                         Text(Self.format(key, instance.config.double(key, default: fallback)))
                     }
                 }
@@ -243,7 +243,7 @@ struct WidgetSettingsSections: View {
                 // A 赞助者专属 choice (a 喝水 character) reads as locked and
                 // opens the sponsor window instead of being written, as the
                 // style picker does for the supporter clock faces.
-                Picker(Self.label(key), selection: Binding(
+                Picker(Self.label(key, kind: entry.kind), selection: Binding(
                     get: { instance.config.string(key, default: fallback) },
                     set: { value in
                         if WidgetCatalog.isSupporterOnly([key: .string(value)]), !Supporter.isUnlocked {
@@ -267,7 +267,7 @@ struct WidgetSettingsSections: View {
                 // immediately after it, left of where every picker and
                 // toggle in the same form sits; LabeledContent lines it up
                 // with them instead.
-                LabeledContent(Self.label(key)) {
+                LabeledContent(Self.label(key, kind: entry.kind)) {
                     TextField("", text: Binding(
                         get: { instance.config.string(key, default: fallback) },
                         set: { text in write(instance) { $0.set(key, .string(text)) } }),
@@ -306,7 +306,7 @@ struct WidgetSettingsSections: View {
                 // did not exist, which is why a watchlist could never be
                 // edited: `symbols` is read by three views and was written by
                 // nothing at all.
-                LabeledContent(Self.label(key)) {
+                LabeledContent(Self.label(key, kind: entry.kind)) {
                     TextField("", text: Binding(
                         get: { instance.config.strings(key, default: Self.strings(fallback))
                                 .joined(separator: ", ") },
@@ -394,6 +394,7 @@ struct WidgetSettingsSections: View {
         "to": "目标币种",
         "amount": "金额",
         "repo": "仓库",
+        "repos": "仓库列表",
         "rings": "圆环",
         "start": "开始时间",
         "end": "结束时间",
@@ -426,8 +427,21 @@ struct WidgetSettingsSections: View {
         "autoDirection": "智能方向（中文译成英语，其他译成中文）",
     ]
 
+    /// Where one key means something different in one widget: `interval`
+    /// is the photo frame's seconds between pictures but GitHub's minutes
+    /// between checks.
+    private static let kindLabels: [String: String] = [
+        "github.interval": "检查间隔",
+        "github.notify": "有新议题、拉取请求或评论时通知",
+        "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
+    ]
+
     static func label(_ key: String) -> String {
         labels[key] ?? WidgetCatalog.optionLabel(key)
+    }
+
+    static func label(_ key: String, kind: WidgetKind) -> String {
+        kindLabels["\(kind.rawValue).\(key)"] ?? label(key)
     }
 
     /// What a run of toggles is choosing between.
@@ -451,6 +465,7 @@ struct WidgetSettingsSections: View {
         case "folder": "图片"
         case "links": "标题 网址, …"
         case "repo": "用户/仓库"
+        case "repos": "用户/仓库, 用户/仓库"
         case "start": "09:00"
         case "end": "18:00"
         case "coins": "BTC, ETH, SOL"
@@ -531,6 +546,7 @@ struct WidgetSettingsSections: View {
         "water.unit": [("毫升", "ml"), ("盎司", "oz")],
         "water.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
         "translate.clickAction": Translate.ClickAction.allCases.map { ($0.title, $0.rawValue) },
+        "github.interval": GitHubWatch.intervalChoices.map { ("每 \($0) 分钟", "\($0)") },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

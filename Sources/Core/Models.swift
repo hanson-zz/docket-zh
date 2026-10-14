@@ -375,7 +375,8 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
         let stored = try c.decode(WidgetConfig.self, forKey: .config)
         if let known = WidgetKind(rawValue: raw) {
             kind = known
-            config = stored
+            // GitHub followed one `repo`; it now keeps a list under `repos`.
+            config = known == .github ? GitHubWatch.migratingRepo(stored) : stored
         } else if raw == WaterIntake.legacyHydrationKind {
             kind = .water
             config = WaterIntake.migratingHydration(stored)

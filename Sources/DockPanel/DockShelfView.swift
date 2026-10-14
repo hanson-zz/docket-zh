@@ -496,6 +496,13 @@ struct DockShelfView: View {
                   initial: true) { _, kinds in
             WidgetConditionMonitor.shared.watch(kinds)
         }
+        // Every GitHub widget's repositories, checked on the service's own
+        // clock: a widget hidden until there is new feedback has no tile to
+        // drive its refresh.
+        .onChange(of: GitHubWatch.plan(app.customProfile?.items.compactMap(\.widget) ?? []),
+                  initial: true) { _, plan in
+            GitHubService.shared.schedule(plan)
+        }
     }
 
     private func measureScreen() {

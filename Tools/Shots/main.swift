@@ -284,11 +284,16 @@ private func shots(since started: Date) -> [Shot] {
                  }
              }),
 
-        // Live: this fork's public numbers, unauthenticated.
-        Shot(name: "github", instance: widget(.github), isPreview: false, source: .live,
+        // Live: this fork's public numbers, newest issues and comments and
+        // latest release, unauthenticated. Two projects, so the switcher
+        // chips show; the panel opens on the first.
+        Shot(name: "github",
+             instance: widget(.github, ["repos": .list([.string("hanson-zz/docket-zh"),
+                                                        .string("nparashar150/dockset")])]),
+             isPreview: false, source: .live,
              prepare: {
-                 GitHubService.shared.refresh("hanson-zz/docket-zh", force: true)
-                 for _ in 0..<40 where GitHubService.shared.stats(for: "hanson-zz/docket-zh") == nil {
+                 GitHubService.shared.refreshAll(["hanson-zz/docket-zh", "nparashar150/dockset"], force: true)
+                 for _ in 0..<60 where GitHubService.shared.state(for: "hanson-zz/docket-zh")?.updated == nil {
                      try? await Task.sleep(for: .milliseconds(250))
                  }
              }),

@@ -86,6 +86,11 @@ final class WidgetConditionMonitor {
         if watched.contains(.radio) {
             next.radioPlaying = RadioPlayer.shared.isPlaying
         }
+        // Read by GitHubService on its own schedule, which the shelf keeps
+        // for every GitHub widget whether or not its tile is showing.
+        if watched.contains(.github) {
+            next.githubFeedback = GitHubService.shared.feedbackCounts
+        }
         if next != conditions { conditions = next }
     }
 }

@@ -297,9 +297,14 @@ public enum WidgetCatalog {
               defaults: c(["from": .string("USD"), "to": .string("CNY"), "amount": .number(100)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // Public numbers need no token; one in the keychain adds notifications.
+        // Public numbers need no token; one in the keychain adds notifications
+        // and a higher request limit. Up to eight repositories under `repos`
+        // (an old `repo` is moved there on load, see GitHubWatch); what was
+        // last seen of each is kept by GitHubService, not in the config.
         Entry(kind: .github, name: "GitHub", category: .tools,
-              defaults: c(["repo": .string("hanson-zz/docket-zh")]),
+              defaults: c(["repos": .list([.string(GitHubWatch.defaultRepo)]),
+                           "notify": .bool(false),
+                           "interval": .string("\(GitHubWatch.defaultInterval)")]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Whether any app is using the default input device, from Core Audio.
