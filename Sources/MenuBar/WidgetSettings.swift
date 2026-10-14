@@ -431,6 +431,7 @@ struct WidgetSettingsSections: View {
         "spotify": "Spotify",
         "apple": "Apple 音乐",
         "netease": "网易云音乐",
+        "xiaoyuzhou": "小宇宙",
         "browsers": "浏览器标签页",
         "devices": "设备",
         "metrics": "读数",

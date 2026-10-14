@@ -34,6 +34,7 @@ struct MusicDetail: View {
         if config.bool("spotify", default: true) { list.append(.spotify) }
         if config.bool("apple", default: true) { list.append(.appleMusic) }
         if config.bool("netease", default: true) { list.append(.netease) }
+        if config.bool("xiaoyuzhou", default: true) { list.append(.xiaoyuzhou) }
         return list
     }
 

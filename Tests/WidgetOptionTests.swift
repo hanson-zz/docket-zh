@@ -78,7 +78,7 @@ final class WidgetOptionTests: XCTestCase {
             .reminders: ["list"],
             .notes: ["text", "color"],
             .music: ["mini", "previous", "next", "backward", "forward",
-                     "skip", "spotify", "apple", "netease", "browsers"],
+                     "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers"],
             .battery: ["devices"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart"],
@@ -244,7 +244,7 @@ final class OptionApplicabilityTests: XCTestCase {
     /// whichever source is playing, so narrowing the sources narrows what it
     /// can show.
     func testTheSourceOptionsApplyInMiniToo() {
-        for key in ["spotify", "apple", "netease", "browsers"] {
+        for key in ["spotify", "apple", "netease", "xiaoyuzhou", "browsers"] {
             XCTAssertTrue(WidgetCatalog.applies(key, to: music(mini: true), kind: .music), key)
         }
     }

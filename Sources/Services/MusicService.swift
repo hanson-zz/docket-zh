@@ -5,25 +5,30 @@ import Observation
 
 /// Which player a reading came from.
 public enum MusicSource: String, Sendable, CaseIterable {
-    case spotify, appleMusic, netease
+    case spotify, appleMusic, netease, xiaoyuzhou
 
     var bundleID: String {
         switch self {
         case .spotify: "com.spotify.client"
         case .appleMusic: "com.apple.Music"
         case .netease: "com.netease.163music"
+        // The iPhone app, run on an Apple silicon Mac.
+        case .xiaoyuzhou: "app.podcast.cosmos"
         }
     }
 
-    /// 网易云音乐 has no AppleScript dictionary: it is read from the system's
-    /// Now Playing and driven with the media keys, so it cannot be seeked.
-    public var canSeek: Bool { self != .netease }
+    /// 网易云音乐 and 小宇宙 have no AppleScript dictionary: they are read
+    /// from the system's Now Playing and driven with the media keys, so they
+    /// cannot be seeked.
+    public var readsNowPlaying: Bool { self == .netease || self == .xiaoyuzhou }
+    public var canSeek: Bool { !readsNowPlaying }
 
     var displayName: String {
         switch self {
         case .spotify: "Spotify"
         case .appleMusic: "音乐"
         case .netease: "网易云音乐"
+        case .xiaoyuzhou: "小宇宙"
         }
     }
 }
@@ -482,7 +487,7 @@ enum Bridge {
 
     static func send(_ body: String, to source: MusicSource) {
         guard isRunning(source) else { return }
-        if source == .netease {
+        if source.readsNowPlaying {
             switch body {
             case "playpause": MediaKeys.press(.playPause)
             case "next track": MediaKeys.press(.next)
@@ -500,7 +505,7 @@ enum Bridge {
 
     static func ask(_ sources: [MusicSource]) async {
         await offMain {
-            for source in sources where isRunning(source) && source != .netease {
+            for source in sources where isRunning(source) && !source.readsNowPlaying {
                 // A real event raises the dialog; the permission-check API
                 // blocks instead of prompting.
                 _ = script("tell application id \"\(source.bundleID)\" to return name")
@@ -564,7 +569,7 @@ enum Bridge {
     }
 
     private static func read(_ source: MusicSource) -> Reading {
-        if source == .netease {
+        if source.readsNowPlaying {
             guard let track = NowPlayingReader.read(bundleID: source.bundleID) else { return .idle }
             return .track(track, .nowPlaying)
         }
@@ -606,7 +611,7 @@ enum Bridge {
         let ref: ArtworkRef? = switch source {
         case .spotify: f.count > 6 ? URL(string: f[6]).map(ArtworkRef.url) : nil
         case .appleMusic: .appleMusic
-        case .netease: .nowPlaying
+        case .netease, .xiaoyuzhou: .nowPlaying
         }
         return .track(track, ref)
     }
