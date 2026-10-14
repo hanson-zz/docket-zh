@@ -26,6 +26,14 @@ struct BatteryDevice: Identifiable, Sendable {
     }
 }
 
+/// A Bluetooth accessory with no slot of its own on the tile: a Magic Mouse
+/// or Trackpad. Only the battery reminders read these.
+struct AccessoryBattery: Sendable {
+    var id: String
+    var name: String
+    var level: Double
+}
+
 /// Battery levels for the Mac and whatever Apple accessories are connected.
 ///
 /// The Mac comes from the power-source API; accessories publish a
@@ -38,6 +46,7 @@ final class BatteryMetrics {
 
     /// Always one entry per kind, in this order, so a view can lay out fixed slots.
     private(set) var devices: [BatteryDevice] = BatteryMetrics.order.map(BatteryDevice.absent)
+    @ObservationIgnored private(set) var extras: [AccessoryBattery] = []
 
     private static let order: [BatteryDeviceKind] = [.mac, .pods, .podsCase, .keyboard]
 
@@ -66,9 +75,12 @@ final class BatteryMetrics {
     }
 
     private func sample() {
-        var found = Self.accessoryDevices()
+        let (accessories, others) = Self.accessoryDevices()
+        var found = accessories
         if let mac = Self.macDevice() { found[.mac] = mac }
         devices = Self.order.map { found[$0] ?? .absent($0) }
+        extras = others
+        BatteryAlerts.shared.check(devices: devices, extras: others)
     }
 
     // MARK: - Mac
@@ -102,12 +114,13 @@ final class BatteryMetrics {
     /// AirPods, their case and a Magic Keyboard all hang off
     /// `AppleDeviceManagementHIDEventService` and publish battery percentages
     /// as plain registry properties.
-    private static func accessoryDevices() -> [BatteryDeviceKind: BatteryDevice] {
+    private static func accessoryDevices() -> ([BatteryDeviceKind: BatteryDevice], [AccessoryBattery]) {
         var found: [BatteryDeviceKind: BatteryDevice] = [:]
+        var others: [AccessoryBattery] = []
         var iterator: io_iterator_t = 0
         let matching = IOServiceMatching("AppleDeviceManagementHIDEventService")
         guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
-            return found
+            return (found, others)
         }
         defer { IOObjectRelease(iterator) }
 
@@ -117,7 +130,8 @@ final class BatteryMetrics {
             defer { IOObjectRelease(service) }
 
             guard let properties = properties(of: service) else { continue }
-            let name = ((properties["Product"] as? String) ?? "").lowercased()
+            let product = (properties["Product"] as? String) ?? ""
+            let name = product.lowercased()
 
             if name.contains("pod") || name.contains("beats") {
                 // Two buds, one reading: the emptier one is the one that dies first.
@@ -134,9 +148,14 @@ final class BatteryMetrics {
                 if let level = percent(properties["BatteryPercent"]), found[.keyboard] == nil {
                     found[.keyboard] = BatteryDevice(id: "keyboard", kind: .keyboard, level: level, charging: false, present: true)
                 }
+            } else if name.contains("mouse") || name.contains("trackpad") {
+                if let level = percent(properties["BatteryPercent"]), !others.contains(where: { $0.id == product }) {
+                    let label = name.contains("mouse") ? "妙控鼠标" : "妙控板"
+                    others.append(AccessoryBattery(id: product, name: label, level: level))
+                }
             }
         }
-        return found
+        return (found, others)
     }
 
     private static func properties(of service: io_service_t) -> [String: Any]? {

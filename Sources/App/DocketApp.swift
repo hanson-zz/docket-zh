@@ -58,6 +58,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // rather than by a pet tile, which may be on another layout.
         PetFocusWatcher.shared.start()
 
+        // Battery reminders take their settings from the first 电池 widget,
+        // on whichever layout it sits.
+        BatteryAlerts.shared.settings = { [state] in
+            func battery(in items: [DockItem]) -> WidgetInstance? {
+                for item in items {
+                    switch item {
+                    case .widget(let widget) where widget.kind == .battery: return widget
+                    case .group(let group): if let found = battery(in: group.items) { return found }
+                    default: continue
+                    }
+                }
+                return nil
+            }
+            for profile in state.state.profiles {
+                if let widget = battery(in: profile.items) { return BatteryAlertSettings(config: widget.config) }
+            }
+            return nil
+        }
+
         // 灵动提示: off unless switched on in Settings ▸ 通用.
         IslandController.shared.apply(state.state.island)
         state.onIslandChanged = { island in IslandController.shared.apply(island) }

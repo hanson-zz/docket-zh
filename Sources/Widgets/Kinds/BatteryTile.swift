@@ -17,6 +17,14 @@ struct BatteryTile: View {
                 }
             }
         }
+        // A reminder going out flashes the tile twice, so a glance at the
+        // shelf says which widget the notification came from.
+        .phaseAnimator([0.0, 1.0, 0.0, 1.0, 0.0],
+                       trigger: context.isPreview ? 0 : BatteryAlerts.shared.pulse) { content, glow in
+            content
+                .scaleEffect(1 + 0.05 * glow)
+                .brightness(0.18 * glow)
+        } animation: { _ in .easeInOut(duration: 0.22) }
         // ponytail: start-only; one sampler feeds every battery tile.
         .onAppear { if !context.isPreview { BatteryMetrics.shared.start() } }
     }

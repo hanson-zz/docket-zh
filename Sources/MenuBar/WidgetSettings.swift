@@ -58,6 +58,9 @@ struct WidgetSettingsSections: View {
                         }
                     }
                 }
+                if pair.instance.kind == .battery {
+                    batteryAlertSection(pair.instance)
+                }
                 displaySection(pair.instance)
             }
         }
@@ -131,6 +134,53 @@ struct WidgetSettingsSections: View {
         WidgetCatalog.configurableKeys(entry.kind).filter {
             WidgetCatalog.applies($0, to: instance.config, kind: entry.kind)
         }
+    }
+
+    // MARK: Battery reminders
+
+    @ViewBuilder
+    private func batteryAlertSection(_ instance: WidgetInstance) -> some View {
+        let settings = BatteryAlertSettings(config: instance.config)
+        Section("电池提醒") {
+            LabeledContent("充电到") {
+                HStack(spacing: 12) {
+                    ForEach(BatteryAlertSettings.chargeChoices, id: \.self) { level in
+                        levelToggle(level, in: settings.charge, key: BatteryAlertSettings.chargeKey, instance)
+                    }
+                }
+            }
+            LabeledContent("电量低于") {
+                HStack(spacing: 12) {
+                    ForEach(BatteryAlertSettings.lowChoices, id: \.self) { level in
+                        levelToggle(level, in: settings.low, key: BatteryAlertSettings.lowKey, instance)
+                    }
+                }
+            }
+            Toggle("蓝牙设备电量低于 \(BatteryAlertSettings.accessoryLevel)%", isOn: Binding(
+                get: { settings.accessory },
+                set: { on in write(instance) { $0.set(BatteryAlertSettings.accessoryKey, .bool(on)) } }))
+            Toggle("充满后仍插着电超过 2 小时", isOn: Binding(
+                get: { settings.full },
+                set: { on in write(instance) { $0.set(BatteryAlertSettings.fullKey, .bool(on)) } }))
+            Toggle("电池温度高于 \(Int(BatteryAlertSettings.hotCelsius))°C", isOn: Binding(
+                get: { settings.hot },
+                set: { on in write(instance) { $0.set(BatteryAlertSettings.hotKey, .bool(on)) } }))
+            Text("每一档每次充电或放电只提醒一次，发通知时电池卡片会闪一下。蓝牙设备包括 AirPods、妙控键盘、鼠标和触控板。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func levelToggle(_ level: Int, in selected: Set<Int>, key: String,
+                             _ instance: WidgetInstance) -> some View {
+        Toggle("\(level)%", isOn: Binding(
+            get: { selected.contains(level) },
+            set: { on in
+                var levels = selected
+                if on { levels.insert(level) } else { levels.remove(level) }
+                write(instance) { $0.set(key, BatteryAlertSettings.encode(levels)) }
+            }))
+            .toggleStyle(.checkbox)
     }
 
     // MARK: Display
