@@ -106,6 +106,24 @@ final class VirtualPetTests: XCTestCase {
                        "有点脏了")
     }
 
+    func testWashShowsBubblesAndDirtShowsSmudges() {
+        let start = at(2026, 10, 14, 8)
+        let dirty = PetState(food: 90, mood: 90, energy: 90, clean: 20, at: start)
+        XCTAssertEqual(VirtualPet.effect(dirty, now: start), .dirty)
+
+        let washed = VirtualPet.performing(.wash, on: dirty, now: start, calendar: calendar)
+        XCTAssertEqual(VirtualPet.effect(washed, now: start.addingTimeInterval(1)),
+                       .bubbles(until: start.addingTimeInterval(VirtualPet.actSeconds)))
+        XCTAssertEqual(VirtualPet.statusLine(washed, now: start.addingTimeInterval(1)), "洗得香喷喷")
+        XCTAssertEqual(VirtualPet.effect(washed, now: start.addingTimeInterval(VirtualPet.actSeconds + 1)), .none,
+                       "60 is clean enough for no smudges once the bubbles are gone")
+
+        // Already clean and happy: the bubbles are the only thing that shows it was washed.
+        let happy = PetState(food: 95, mood: 95, energy: 95, clean: 95, at: start)
+        let again = VirtualPet.performing(.wash, on: happy, now: start, calendar: calendar)
+        if case .bubbles = VirtualPet.effect(again, now: start) {} else { XCTFail("no bubbles") }
+    }
+
     func testPictures() {
         XCTAssertEqual(VirtualPet.imageName(.redPanda, .idle), "pet-panda-idle")
         XCTAssertEqual(VirtualPet.imageName(.redPanda, .rest), "pet-panda-rest")

@@ -49,7 +49,8 @@ struct PetDetail: View {
     private func hero(_ state: PetState, look: PetLook, now: Date) -> some View {
         let streak = VirtualPet.streak(state, today: now)
         return HStack(alignment: .center, spacing: 14) {
-            PetFigure(character: character, look: look, height: 110)
+            PetFigure(character: character, look: look, height: 110,
+                      effect: VirtualPet.effect(state, now: now))
             VStack(alignment: .leading, spacing: 3) {
                 Text("电子宠物")
                     .font(.system(size: 10, weight: .semibold))

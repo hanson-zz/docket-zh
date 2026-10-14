@@ -47,7 +47,8 @@ struct PetTile: View {
 
     private func wide(_ s: PetState, look: PetLook) -> some View {
         HStack(spacing: 10) {
-            PetFigure(character: character, look: look, height: 44)
+            PetFigure(character: character, look: look, height: 44,
+                      effect: VirtualPet.effect(s, now: context.now))
             VStack(alignment: .leading, spacing: 3) {
                 Text(character.title)
                     .font(.system(size: 14, weight: .semibold))
@@ -67,7 +68,8 @@ struct PetTile: View {
 
     private func column(_ s: PetState, look: PetLook) -> some View {
         VStack(spacing: 4) {
-            PetFigure(character: character, look: look, height: 40)
+            PetFigure(character: character, look: look, height: 40,
+                      effect: VirtualPet.effect(s, now: context.now))
             Text(VirtualPet.statusLine(s, now: context.now))
                 .font(WidgetStyle.caption(9))
                 .foregroundStyle(PetStyle.tint(look: look, health: s.health))
@@ -98,6 +100,7 @@ struct PetFigure: View {
     var character: WaterCharacter
     var look: PetLook
     var height: CGFloat
+    var effect: PetEffect = .none
 
     var body: some View {
         Group {
@@ -116,8 +119,80 @@ struct PetFigure: View {
             }
         }
         .frame(width: height * 0.95, height: height)
+        .overlay { PetEffectLayer(effect: effect, height: height) }
         .animation(.easeInOut(duration: 0.25), value: look)
+        .animation(.easeInOut(duration: 0.4), value: effect)
         .accessibilityHidden(true)
+    }
+}
+
+/// Bubbles rising over the pet after a wash, or a few smudges on it while it
+/// is dirty. The bubbles keep their own clock and stop by themselves, since
+/// the tile is not redrawn every second.
+struct PetEffectLayer: View {
+    var effect: PetEffect
+    var height: CGFloat
+
+    var body: some View {
+        Group {
+            switch effect {
+            case .none:
+                EmptyView()
+            case .bubbles(let until):
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    let left = until.timeIntervalSince(timeline.date)
+                    if left > 0 {
+                        Canvas { context, size in
+                            Self.drawBubbles(in: &context, size: size,
+                                             time: timeline.date.timeIntervalSinceReferenceDate,
+                                             fade: min(1, left / 0.6), height: height)
+                        }
+                    }
+                }
+                .transition(.opacity)
+            case .dirty:
+                Canvas { context, size in Self.drawSmudges(in: &context, size: size) }
+                    .transition(.opacity)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    nonisolated private static func fraction(_ x: Double) -> Double { x - x.rounded(.down) }
+
+    nonisolated static func drawBubbles(in context: inout GraphicsContext, size: CGSize, time: Double,
+                            fade: Double, height: CGFloat) {
+        for i in 0..<12 {
+            let n = Double(i)
+            let phase = fraction(time * 0.55 + n * 0.137)
+            let x = size.width * (0.12 + 0.76 * fraction(n * 0.618))
+                + sin(time * 2.4 + n) * size.width * 0.04
+            let y = size.height * (1.05 - phase * 1.1)
+            let r = height * (0.035 + 0.035 * fraction(n * 0.37))
+            let rect = CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)
+            let alpha = fade * (phase < 0.15 ? phase / 0.15 : 1 - (phase - 0.15) / 0.85)
+            let circle = Path(ellipseIn: rect)
+            context.fill(circle, with: .color(.white.opacity(0.22 * alpha)))
+            context.stroke(circle, with: .color(.white.opacity(0.9 * alpha)), lineWidth: max(0.6, r * 0.18))
+            // The highlight that makes a circle read as a bubble.
+            let shine = CGRect(x: x - r * 0.5, y: y - r * 0.55, width: r * 0.35, height: r * 0.35)
+            context.fill(Path(ellipseIn: shine), with: .color(.white.opacity(0.85 * alpha)))
+        }
+    }
+
+    nonisolated static func drawSmudges(in context: inout GraphicsContext, size: CGSize) {
+        // Fixed spots on the lower half, where a pet that has been rolling
+        // around picks up dirt.
+        let spots: [(Double, Double, Double)] = [
+            (0.30, 0.62, 0.10), (0.62, 0.70, 0.08), (0.46, 0.82, 0.07), (0.70, 0.52, 0.06), (0.24, 0.80, 0.05),
+        ]
+        let mud = Color(red: 0.42, green: 0.30, blue: 0.20)
+        for (x, y, r) in spots {
+            let w = size.width * r * 1.4
+            let h = size.width * r
+            let rect = CGRect(x: size.width * x - w / 2, y: size.height * y - h / 2, width: w, height: h)
+            context.fill(Path(ellipseIn: rect), with: .color(mud.opacity(0.55)))
+        }
     }
 }
 

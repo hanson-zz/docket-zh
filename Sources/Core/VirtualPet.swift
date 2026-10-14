@@ -113,6 +113,15 @@ public enum PetLook: String, CaseIterable, Sendable {
     }
 }
 
+/// Drawn over the pet's picture rather than a picture of its own.
+public enum PetEffect: Equatable, Sendable {
+    case none
+    /// Bubbles rising until this moment, after a wash.
+    case bubbles(until: Date)
+    /// Smudges while 清洁 is low.
+    case dirty
+}
+
 public struct PetState: Equatable, Sendable {
     public var food: Double
     public var mood: Double
@@ -321,8 +330,22 @@ public enum VirtualPet {
         return .idle
     }
 
+    /// What is drawn over the picture: bubbles for a few seconds after a
+    /// wash, smudges while it is dirty. The pictures have no bath of their
+    /// own, and washing a pet that was already happy would otherwise change
+    /// nothing on screen.
+    public static func effect(_ state: PetState, now: Date) -> PetEffect {
+        if state.lastAction == .wash, let when = state.lastActionAt,
+           now >= when, now.timeIntervalSince(when) < actSeconds {
+            return .bubbles(until: when.addingTimeInterval(actSeconds))
+        }
+        if state.clean < lowLine { return .dirty }
+        return .none
+    }
+
     /// The tile's one line: what it is doing, or the lowest need.
     public static func statusLine(_ state: PetState, now: Date) -> String {
+        if case .bubbles = effect(state, now: now) { return "洗得香喷喷" }
         let look = look(state, now: now)
         switch look {
         case .idle:
