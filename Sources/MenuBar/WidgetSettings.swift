@@ -422,6 +422,8 @@ struct WidgetSettingsSections: View {
         "remindEvery": "喝水提醒",
         "unit": "单位",
         "character": "角色形象",
+        "clickAction": "点按卡片时",
+        "autoDirection": "智能方向（中文译成英语，其他译成中文）",
     ]
 
     static func label(_ key: String) -> String {
@@ -528,6 +530,7 @@ struct WidgetSettingsSections: View {
         "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? "关闭" : "每 \($0) 分钟", "\($0)") },
         "water.unit": [("毫升", "ml"), ("盎司", "oz")],
         "water.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
+        "translate.clickAction": Translate.ClickAction.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

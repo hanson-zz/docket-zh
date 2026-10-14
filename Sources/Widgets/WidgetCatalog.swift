@@ -284,6 +284,13 @@ public enum WidgetCatalog {
         Entry(kind: .calculator, name: "计算器", category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // Apple's on-device Translation: free, no key, nothing leaves the Mac.
+        // The languages and the last translations (`source`, `target`,
+        // `history`) are kept by the panel; see Translate.
+        Entry(kind: .translate, name: "翻译", category: .tools,
+              defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Rates from open.er-api.com, cached for offline use; see
         // CurrencyService. The amount is typed in the panel.
         Entry(kind: .currency, name: "汇率换算", category: .tools,
@@ -440,6 +447,7 @@ public enum WidgetCatalog {
              .recorder,
              .mail,
              .calculator,
+             .translate,
              .currency,
              .github,
              .microphone, .gauges,
@@ -589,7 +597,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water:
+             .anniversary, .water, .translate:
             nil
         }
     }
@@ -712,6 +720,7 @@ public enum WidgetCatalog {
         case .github: return CGSize(width: 196, height: 62)
         case .currency: return CGSize(width: 196, height: 62)
         case .calculator: return CGSize(width: 168, height: 62)
+        case .translate: return CGSize(width: 196, height: 62)
         case .mail: return CGSize(width: 160, height: 62)
         case .recorder: return CGSize(width: 168, height: 62)
         case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
@@ -807,6 +816,9 @@ public enum WidgetCatalog {
             return Double(QuickToggle.chosen(cfg).count * 30 + 8)
         case .currency:
             return 84
+        // The badge, the pair and two lines of the last result.
+        case .translate:
+            return 96
         case .bookmarks:
             return Bookmark.columnHeight(count: cfg.strings("links").count)
         case .appSwitcher:

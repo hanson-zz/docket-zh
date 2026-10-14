@@ -137,6 +137,9 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "anniversary", instance: widget(.anniversary), isPreview: true, source: .sample),
         // Sample glasses: a shelf's own log is the user's, not ours to show.
         Shot(name: "water", instance: widget(.water), isPreview: true, source: .sample),
+        // Sample translation: the language packs are the runner's, and a
+        // shelf's own history is the user's.
+        Shot(name: "translate", instance: widget(.translate), isPreview: true, source: .sample),
 
         // Live quotes, fetched here because the panel deliberately does not
         // fetch: it renders whatever the tile's service has already cached,
