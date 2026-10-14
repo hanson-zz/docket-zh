@@ -19,6 +19,14 @@ on:
         type: string
   release:
     types: [published]
+  # Manual run for a release that is still a draft (a hidden beta). A draft
+  # raises no release event, so it is built by dispatching this with its tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the release to attach the build to, for example v0.7.0-beta.1.
+        required: true
+        type: string
 
 # gh release upload and gh release edit both write to the release.
 permissions:
