@@ -215,6 +215,35 @@ final class WaterIntakeTests: XCTestCase {
         XCTAssertTrue(message.title.contains("小熊猫") || message.title.contains("喝水") || message.title.contains("补水"))
     }
 
+    // MARK: Characters and moods
+
+    func testCharactersAndTheirPictures() {
+        XCTAssertEqual(WaterCharacter.allCases.map(\.title), ["小熊猫", "柴犬", "橘猫", "企鹅", "水獭", "章鱼"])
+        XCTAssertEqual(WaterCharacter.from(WidgetConfig()), .redPanda)
+        XCTAssertEqual(WaterCharacter.from(WidgetConfig(["character": .string("otter")])), .otter)
+        XCTAssertEqual(WaterCharacter.from(WidgetConfig(["character": .string("llama")])), .redPanda)
+        XCTAssertEqual(WaterCharacter.redPanda.imageName(.cheer), "WaterPanda", "one picture for every mood")
+        XCTAssertEqual(WaterCharacter.shiba.imageName(.drink), "water-shiba-drink")
+        XCTAssertEqual(WidgetCatalog.entry(.water)?.defaults.values["character"], .string("panda"))
+    }
+
+    func testMoodPriority() {
+        let now = at(2026, 10, 14, 15)
+        let hours = reminder
+        XCTAssertEqual(WaterMood.at(now, loggedAt: now.addingTimeInterval(-1), lastDrink: now, met: true,
+                                    window: hours, calendar: calendar), .drink, "the cup first, even at the goal")
+        XCTAssertEqual(WaterMood.at(now, loggedAt: now.addingTimeInterval(-5), lastDrink: now, met: true,
+                                    window: hours, calendar: calendar), .cheer, "the cup goes down after 3 s")
+        XCTAssertEqual(WaterMood.at(now, loggedAt: nil, lastDrink: at(2026, 10, 14, 14), met: false,
+                                    window: hours, calendar: calendar), .idle)
+        XCTAssertEqual(WaterMood.at(now, loggedAt: nil, lastDrink: at(2026, 10, 14, 11), met: false,
+                                    window: hours, calendar: calendar), .rest, "four hours without a drink")
+        XCTAssertEqual(WaterMood.at(at(2026, 10, 14, 10), loggedAt: nil, lastDrink: nil, met: false,
+                                    window: hours, calendar: calendar), .idle, "counted from when the hours open")
+        XCTAssertEqual(WaterMood.at(at(2026, 10, 14, 23), loggedAt: nil, lastDrink: at(2026, 10, 14, 22, 50), met: false,
+                                    window: hours, calendar: calendar), .rest, "night")
+    }
+
     // MARK: Wiring
 
     func testWaterIsWiredIntoTheCatalogAndVisibility() {

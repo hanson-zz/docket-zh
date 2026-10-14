@@ -587,3 +587,93 @@ public extension WaterIntake {
         layout == "ring" ? 112 : 120
     }
 }
+
+// MARK: - Characters
+
+/// Who fills up on the tile. The red panda is the app icon's own and has one
+/// picture for every mood; the others have four, `water-<id>-<mood>.png`.
+public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
+    case redPanda = "panda"
+    case shiba
+    case cat
+    case penguin
+    case otter
+    case octopus
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .redPanda: "小熊猫"
+        case .shiba: "柴犬"
+        case .cat: "橘猫"
+        case .penguin: "企鹅"
+        case .otter: "水獭"
+        case .octopus: "章鱼"
+        }
+    }
+
+    /// Whether it has a picture per mood.
+    public var hasMoods: Bool { self != .redPanda }
+
+    /// The bundled picture's name for a mood, without the extension.
+    public func imageName(_ mood: WaterMood) -> String {
+        hasMoods ? "water-\(rawValue)-\(mood.rawValue)" : "WaterPanda"
+    }
+
+    /// Width over height of the box the character is drawn in: its widest
+    /// picture, so changing mood never moves the text beside it.
+    public var aspect: Double {
+        switch self {
+        case .redPanda: 360.0 / 281.0
+        default: 0.95
+        }
+    }
+
+    public static func from(_ config: WidgetConfig) -> WaterCharacter {
+        WaterCharacter(rawValue: config.string("character", default: WaterCharacter.redPanda.rawValue)) ?? .redPanda
+    }
+}
+
+/// What the character is doing.
+public enum WaterMood: String, CaseIterable, Sendable {
+    /// Sitting there.
+    case idle
+    /// Eyes closed: outside the reminder hours, or nothing drunk for a long while.
+    case rest
+    /// Holding a cup, for a moment after a drink is logged.
+    case drink
+    /// Arms up with confetti: today's goal is met.
+    case cheer
+
+    /// How long the cup stays up after a drink.
+    public static let drinkSeconds: TimeInterval = 3
+    /// How long without a drink before it dozes off inside the hours.
+    public static let dozeAfter: TimeInterval = 3 * 3600
+
+    /// Drinking beats everything for its few seconds, then a met goal, then
+    /// rest, then idle.
+    ///
+    /// `loggedAt` is when the last drink was written (a timestamp, since the
+    /// log itself only keeps minutes); `lastDrink` is the latest drink in the
+    /// log. The window is the reminder hours, whether or not reminders are on.
+    public static func at(_ now: Date, loggedAt: Date?, lastDrink: Date?, met: Bool,
+                          window: WaterReminder, calendar: Calendar = WaterIntake.calendar) -> WaterMood {
+        if let loggedAt, now >= loggedAt, now.timeIntervalSince(loggedAt) < drinkSeconds { return .drink }
+        if met { return .cheer }
+        guard window.isActive(now, calendar: calendar) else { return .rest }
+        let dayStart = calendar.startOfDay(for: now)
+        let opened = window.window(dayStart).start
+        let since = max(lastDrink ?? opened, opened)
+        return now.timeIntervalSince(since) >= dozeAfter ? .rest : .idle
+    }
+
+    public static func at(_ now: Date, config: WidgetConfig, calendar: Calendar = WaterIntake.calendar) -> WaterMood {
+        let days = WaterIntake.days(config)
+        let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
+        let logged = config.double("loggedAt")
+        return at(now, loggedAt: logged > 0 ? Date(timeIntervalSince1970: logged) : nil,
+                  lastDrink: WaterIntake.lastDrink(days, calendar: calendar), met: today.isMet,
+                  window: WaterReminder(config: config), calendar: calendar)
+    }
+}

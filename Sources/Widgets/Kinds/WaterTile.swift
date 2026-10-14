@@ -1,7 +1,9 @@
 import Foundation
 import SwiftUI
 
-/// 喝水：the red panda fills up as today's glasses go in.
+/// 喝水：the chosen character (the red panda by default) fills up as today's
+/// glasses go in, holds up a cup for a moment after each one, cheers when
+/// the goal is met and dozes outside the reminder hours.
 ///
 /// Two styles. 角色 leads with the character and the water inside it; 圆环
 /// is the Codex tile's ring with the percentage in the middle, for a shelf
@@ -19,6 +21,13 @@ struct WaterTile: View {
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
     private var goal: Int { WaterIntake.goal(instance.config) }
+    private var character: WaterCharacter { WaterCharacter.from(instance.config) }
+
+    /// Re-read every tick, so the cup goes down three seconds after a drink
+    /// and the character dozes off when the reminder hours end.
+    private var mood: WaterMood {
+        context.isPreview ? .idle : WaterMood.at(context.now, config: instance.config)
+    }
 
     private var today: WaterDay {
         if context.isPreview {
@@ -60,7 +69,7 @@ struct WaterTile: View {
             if isRing {
                 ring(level: level, done: done, diameter: 40)
             } else {
-                WaterPanda(level: level, celebrating: done, height: 40)
+                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 40)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
@@ -87,7 +96,7 @@ struct WaterTile: View {
             if isRing {
                 ring(level: level, done: done, diameter: 34)
             } else {
-                WaterPanda(level: level, celebrating: done, height: 34)
+                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 34)
             }
             VStack(spacing: 0) {
                 Text(WaterIntake.figure(day.total, ounces: ounces))
@@ -154,8 +163,13 @@ enum WaterLog {
     }
 
     static func drink(_ type: DrinkType, amount: Int, factor: Double? = nil, in instance: WidgetInstance) {
-        change(instance) { days, goal in
-            WaterIntake.logging(type, amount: amount, factor: factor, in: days, goal: goal, now: .now)
+        let now = Date.now
+        WidgetWriter.write(instance) { config in
+            let days = WaterIntake.logging(type, amount: amount, factor: factor, in: WaterIntake.days(config),
+                                           goal: WaterIntake.goal(config), now: now)
+            WaterIntake.store(days, in: &config, now: now)
+            // The log keeps minutes; the cup in the character's paws needs the second.
+            config.set("loggedAt", .number(now.timeIntervalSince1970))
         }
     }
 

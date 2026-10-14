@@ -345,9 +345,11 @@ The 喝水 widget's concept, a character that fills up with water as the day's
 drinks go in, with drink types that count for less than water and a streak of
 days the goal was met, was inspired by the iOS app **Waterllama**. Only the
 idea is borrowed: no Waterllama code, artwork, characters, name or other
-assets are used. The character is this project's own red panda, the same art
-as the app icon (`Resources/AppIcon.icon`), cut out and scaled down to
-`Resources/Water/WaterPanda.png`. The hydration factors and the weight-based
+assets are used. The characters are this project's own: the default red
+panda is the same art as the app icon (`Resources/AppIcon.icon`), cut out and
+scaled down to `Resources/Water/WaterPanda.png`, and the shiba, ginger cat,
+penguin, otter and octopus (`Resources/Water/water-<name>-<mood>.png`) were
+made for this project. The hydration factors and the weight-based
 goal suggestion are this project's own rough figures.
 
 ### Bundled dependencies

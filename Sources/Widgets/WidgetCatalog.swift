@@ -331,13 +331,14 @@ public enum WidgetCatalog {
                          ("多个", ["layout": .string("multi")])],
               supportsCompact: false, selfContained: true),
 
-        // Today's glasses under `days`, with the red panda filling up toward
-        // the goal; reminders between `start` and `end`. See WaterIntake.
+        // Today's glasses under `days`, with the chosen `character` (the red
+        // panda by default) filling up toward the goal; reminders between
+        // `start` and `end`. See WaterIntake.
         Entry(kind: .water, name: "喝水", category: .reminders,
               defaults: c(["layout": .string("character"), "goal": .number(2000),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
-                           "unit": .string("ml")]),
+                           "unit": .string("ml"), "character": .string("panda")]),
               variants: [("角色", ["layout": .string("character")]),
                          ("圆环", ["layout": .string("ring")])],
               supportsCompact: false, selfContained: true),

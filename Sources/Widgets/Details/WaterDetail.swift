@@ -8,7 +8,8 @@ import SwiftUI
 /// and the amounts, because logging is what the panel is opened for. The
 /// rest sits under three tabs so the panel stays the height of its
 /// neighbours: 今天 (the list, with undo), 统计 (seven bars and the month's
-/// dots) and 目标 (the goal, the weight suggestion and the reminder hours).
+/// dots) and 设置 (the character, the goal, the weight suggestion and the
+/// reminder hours).
 struct WaterDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -62,7 +63,7 @@ struct WaterDetail: View {
                 Picker("", selection: $tab) {
                     Text("今天").tag(Tab.today)
                     Text("统计").tag(Tab.history)
-                    Text("目标").tag(Tab.goal)
+                    Text("设置").tag(Tab.goal)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -88,7 +89,9 @@ struct WaterDetail: View {
             // Its own animation clock, only while the panel is open: the
             // tile's surface stands still, the panel's moves.
             TimelineView(.animation(minimumInterval: 1.0 / 24, paused: context.isPreview)) { tick in
-                WaterPanda(level: level,
+                WaterPanda(character: WaterCharacter.from(instance.config),
+                           mood: context.isPreview ? .idle : WaterMood.at(tick.date, config: instance.config),
+                           level: level,
                            phase: context.isPreview ? 0.3 : tick.date.timeIntervalSinceReferenceDate,
                            celebrating: done, height: 104)
             }
@@ -464,6 +467,8 @@ struct WaterDetail: View {
         let suggestion = weight.flatMap { WaterIntake.suggestedGoal(weightKilograms: $0) }
         let reminder = WaterReminder(config: instance.config)
         return VStack(alignment: .leading, spacing: 10) {
+            characterPicker
+
             Stepper(value: Binding(
                 get: { goal },
                 set: { value in
@@ -529,11 +534,53 @@ struct WaterDetail: View {
                 StatChip(label: "提醒", value: reminder.every == 0 ? "已关闭" : "每 \(reminder.every) 分钟")
                 StatChip(label: "时段", value: "\(PostureSchedule.clock(reminder.start)) 到 \(PostureSchedule.clock(reminder.end))")
             }
-            Text("达标后当天不再提醒，刚喝过水也会顺延。间隔、时段、一杯的容量和单位在设置的小组件页里改。")
+            Text("达标后当天不再提醒，刚喝过水也会顺延。间隔、时段、一杯的容量、单位和角色也可以在设置的小组件页里改。")
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// Six faces in a row; the chosen one sits on the accent.
+    private var characterPicker: some View {
+        let chosen = WaterCharacter.from(instance.config)
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("角色")
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            HStack(spacing: 4) {
+                ForEach(WaterCharacter.allCases) { character in
+                    let selected = character == chosen
+                    Button {
+                        guard !context.isPreview else { return }
+                        withAnimation(.snappy(duration: 0.25)) {
+                            WaterLog.set("character", .string(character.rawValue), in: instance)
+                        }
+                    } label: {
+                        VStack(spacing: 2) {
+                            WaterPanda(character: character, mood: .idle, level: 1, height: 26)
+                                .frame(height: 28)
+                            Text(character.title)
+                                .font(.system(size: 9, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
+                        .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(selected ? accent.opacity(0.75) : Color.white.opacity(0.08)))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(context.isPreview)
+                    .help(character.title)
+                    .accessibilityLabel("角色：\(character.title)")
+                }
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
     }
 
     private func saveWeight(_ weight: Double?) {

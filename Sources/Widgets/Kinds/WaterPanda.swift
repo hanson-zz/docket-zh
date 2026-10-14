@@ -1,18 +1,22 @@
 import AppKit
 import SwiftUI
 
-/// The red panda filling up with water.
+/// The chosen character filling up with water.
 ///
-/// The picture is the author's own red panda, the one on the app icon, cut
-/// out along its outline (Resources/Water/WaterPanda.png). The part above the
-/// water is drawn faded and grey, thirsty; below the surface it is in full
-/// colour with a faint blue over it, so the level reads as water rising
-/// inside the character rather than a bar beside it. The water is masked by
-/// the picture's own alpha, so it never spills outside the silhouette.
+/// The default is the author's own red panda, the one on the app icon, cut
+/// out along its outline (Resources/Water/WaterPanda.png); the shiba, the
+/// ginger cat, the penguin, the otter and the octopus each have four
+/// pictures, one per `WaterMood`. The part above the water is drawn faded and
+/// grey, thirsty; below the surface it is in full colour with a faint blue
+/// over it, so the level reads as water rising inside the character rather
+/// than a bar beside it. The water is masked by the picture's own alpha, so
+/// it never spills outside the silhouette.
 ///
 /// `phase` moves the surface. The tile passes a constant, so a shelf that sits
 /// there all day does not redraw every frame; the panel passes its clock.
 struct WaterPanda: View {
+    var character: WaterCharacter = .redPanda
+    var mood: WaterMood = .idle
     /// 0...1 toward today's goal.
     var level: Double
     var phase: Double = 0.3
@@ -20,9 +24,9 @@ struct WaterPanda: View {
     var height: CGFloat
 
     var body: some View {
-        let width = height * WaterArt.aspect
+        let width = height * CGFloat(character.aspect)
         ZStack {
-            if let image = WaterArt.image {
+            if let image = WaterArt.image(character, mood) {
                 art(image)
                     .saturation(0.15)
                     .opacity(0.5)
@@ -42,8 +46,11 @@ struct WaterPanda: View {
         }
         .frame(width: width, height: height)
         .animation(.smooth(duration: 0.6), value: level)
+        // A new mood swaps the picture with a short cross-fade.
+        .animation(.easeInOut(duration: 0.25), value: mood)
         .overlay(alignment: .topTrailing) {
-            if celebrating {
+            // The other characters' cheer picture has its own confetti.
+            if celebrating, !character.hasMoods {
                 Image(systemName: "sparkles")
                     .font(.system(size: max(8, height * 0.26), weight: .semibold))
                     .foregroundStyle(Color(hex: PaletteColor.yellow.hex))
@@ -130,14 +137,22 @@ struct WaterWave: Shape {
 
 @MainActor
 enum WaterArt {
-    /// A loose PNG in the bundle's Resources, like the radio's.
-    static let image: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "WaterPanda", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
-    }()
+    private static var cache: [String: NSImage] = [:]
+    private static var missing: Set<String> = []
 
-    /// Width over height of the cut-out (360 x 281).
-    static let aspect: CGFloat = 360.0 / 281.0
+    /// Loose PNGs in the bundle's Resources, like the radio's; read once.
+    static func image(_ character: WaterCharacter, _ mood: WaterMood) -> NSImage? {
+        let name = character.imageName(mood)
+        if let image = cache[name] { return image }
+        guard !missing.contains(name),
+              let url = Bundle.main.url(forResource: name, withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            missing.insert(name)
+            return nil
+        }
+        cache[name] = image
+        return image
+    }
 }
 
 enum WaterStyle {
