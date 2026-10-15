@@ -139,12 +139,8 @@ final class WidgetDetailWindow {
         // Almost touching the tile: the panel's own padding already includes
         // the tail's depth, so this is the gap between the tail's tip and the
         // tile, not between the tile and the body.
-        let gap: CGFloat = 2
-        let origin: CGPoint = switch edge {
-        case .bottom: CGPoint(x: anchor.x - size.width / 2, y: anchor.y + gap)
-        case .left: CGPoint(x: anchor.x + gap, y: anchor.y - size.height / 2)
-        case .right: CGPoint(x: anchor.x - size.width - gap, y: anchor.y - size.height / 2)
-        }
+        // Below the tile on a top shelf, above it on a bottom one.
+        let origin = Geometry.popupOrigin(edge: edge, anchor: anchor, size: size, gap: 2)
         let placed = clamped(origin, size: size)
 
         // Only now is the tail's offset knowable: clamping against the end of
@@ -152,12 +148,10 @@ final class WidgetDetailWindow {
         // pointing at the panel's own middle would point at nothing. Assigning
         // the root view twice is cheap and cannot change the measured size -
         // the offset moves the tail within the outline, not the frame.
-        let offset: CGFloat = switch edge {
-        case .bottom: anchor.x - (placed.x + size.width / 2)
         // Screen y counts up and the panel's own coordinates count down, so
-        // the sign flips on a side shelf.
-        case .left, .right: (placed.y + size.height / 2) - anchor.y
-        }
+        // the sign flips on a side shelf; see Geometry.popupTailOffset.
+        let offset = Geometry.popupTailOffset(edge: edge, anchor: anchor,
+                                              placed: placed, size: size)
         shown = (context, edge, offset)
         hosting?.rootView = WidgetDetailChrome(
             instance: instance, context: context, edge: edge, session: session,
@@ -259,6 +253,7 @@ struct WidgetDetailChrome: View {
     private var tailSide: Edge.Set {
         switch edge {
         case .bottom: .bottom
+        case .top: .top
         case .left: .leading
         case .right: .trailing
         }
@@ -329,6 +324,8 @@ struct WidgetDetailChrome: View {
         guard !appeared else { return .zero }
         return switch edge {
         case .bottom: CGSize(width: 0, height: 3)
+        // Starts a little lower and settles up toward a tile above it.
+        case .top: CGSize(width: 0, height: -3)
         case .left: CGSize(width: -3, height: 0)
         case .right: CGSize(width: 3, height: 0)
         }
@@ -432,6 +429,7 @@ struct PanelShape: Shape {
         var body = rect
         switch edge {
         case .bottom: body.size.height -= depth
+        case .top: body.origin.y += depth; body.size.height -= depth
         case .left: body.origin.x += depth; body.size.width -= depth
         case .right: body.size.width -= depth
         }
@@ -458,6 +456,15 @@ struct PanelShape: Shape {
             tail.addQuadCurve(to: CGPoint(x: x + 2.5, y: rect.maxY - 1.4),
                               control: CGPoint(x: x, y: rect.maxY + 0.4))
             tail.addLine(to: CGPoint(x: x + half, y: body.maxY - overlap))
+        case .top:
+            // The bottom tail mirrored: the shape's y runs down, so pointing
+            // up at a tile above means toward `rect.minY`.
+            let x = min(max(body.minX + limit, body.midX + arrowOffset), body.maxX - limit)
+            tail.move(to: CGPoint(x: x - half, y: body.minY + overlap))
+            tail.addLine(to: CGPoint(x: x - 2.5, y: rect.minY + 1.4))
+            tail.addQuadCurve(to: CGPoint(x: x + 2.5, y: rect.minY + 1.4),
+                              control: CGPoint(x: x, y: rect.minY - 0.4))
+            tail.addLine(to: CGPoint(x: x + half, y: body.minY + overlap))
         case .left:
             let y = min(max(body.minY + limit, body.midY + arrowOffset), body.maxY - limit)
             tail.move(to: CGPoint(x: body.minX + overlap, y: y - half))

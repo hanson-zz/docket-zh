@@ -94,7 +94,10 @@ public final class SystemDockSettings {
             magnification = value
         }
         if let raw = defaults.string(forKey: "orientation"),
-           let parsed = DockPosition(rawValue: raw) {
+           let parsed = DockPosition(rawValue: raw), parsed.isSystemDockEdge {
+            // Apple's Dock only knows left, bottom and right. `.top` is the
+            // shelf's own and never read from here, so following keeps
+            // mapping just those three.
             position = parsed
         }
         if let value = defaults.object(forKey: "autohide") as? Bool {

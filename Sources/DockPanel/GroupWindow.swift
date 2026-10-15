@@ -93,12 +93,8 @@ final class GroupWindow {
 
         // Everything is positioned against the sheet the user can see; the
         // panel is then offset so its invisible margin falls outside that.
-        let gap: CGFloat = 12
-        let sheet: CGPoint = switch edge {
-        case .bottom: CGPoint(x: anchor.x - visible.width / 2, y: anchor.y + gap)
-        case .left: CGPoint(x: anchor.x + gap, y: anchor.y - visible.height / 2)
-        case .right: CGPoint(x: anchor.x - visible.width - gap, y: anchor.y - visible.height / 2)
-        }
+        // Opens downwards from a top shelf; see Geometry.popupOrigin.
+        let sheet = Geometry.popupOrigin(edge: edge, anchor: anchor, size: visible, gap: 12)
         let placed = clamped(sheet, size: visible)
 
         panel.setFrame(CGRect(origin: CGPoint(x: placed.x - room, y: placed.y - room),
@@ -275,6 +271,7 @@ struct GroupSheet: View {
     private var growthAnchor: UnitPoint {
         switch edge {
         case .bottom: .bottom
+        case .top: .top
         case .left: .leading
         case .right: .trailing
         }

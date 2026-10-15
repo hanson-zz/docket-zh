@@ -41,12 +41,8 @@ final class TooltipWindow {
         let size = currentSize
         guard size.width > 1 else { return }
 
-        let gap: CGFloat = 10
-        let origin: CGPoint = switch edge {
-        case .bottom: CGPoint(x: anchor.x - size.width / 2, y: anchor.y + gap)
-        case .left: CGPoint(x: anchor.x + gap, y: anchor.y - size.height / 2)
-        case .right: CGPoint(x: anchor.x - size.width - gap, y: anchor.y - size.height / 2)
-        }
+        // Above a bottom shelf, below a top one; see Geometry.popupOrigin.
+        let origin = Geometry.popupOrigin(edge: edge, anchor: anchor, size: size, gap: 10)
 
         let frame = CGRect(origin: clamped(origin, size: size), size: size)
         // `setFrame(display:)` forces a synchronous redraw of a second window.
@@ -164,12 +160,7 @@ final class LayoutToast {
         let size = hosting?.fittingSize ?? .zero
         guard size.width > 1 else { return }
 
-        let gap: CGFloat = 4
-        let origin: CGPoint = switch edge {
-        case .bottom: CGPoint(x: shelf.midX - size.width / 2, y: shelf.maxY + gap)
-        case .left: CGPoint(x: shelf.maxX + gap, y: shelf.midY - size.height / 2)
-        case .right: CGPoint(x: shelf.minX - size.width - gap, y: shelf.midY - size.height / 2)
-        }
+        let origin = Geometry.besideShelfOrigin(edge: edge, shelf: shelf, size: size, gap: 4)
         panel.setFrame(CGRect(origin: origin, size: size), display: false)
         panel.alphaValue = 1
         panel.orderFrontRegardless()

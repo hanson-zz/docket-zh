@@ -41,8 +41,10 @@ struct DockItemView: View {
             icon
                 .frame(width: geo.icon, height: geo.icon)
                 // Bottom shelves sit the icon slightly high so the running dot
-                // has room underneath without enlarging the tile.
-                .offset(y: position == .bottom ? -4 * geo.factor : 0)
+                // has room underneath without enlarging the tile; top shelves
+                // mirror it, the dot going above, by the screen edge.
+                .offset(y: position == .bottom ? -4 * geo.factor
+                           : position == .top ? 4 * geo.factor : 0)
 
             if showRunningDot && isRunning {
                 // Fades and scales rather than blinking on: it appears the
@@ -143,6 +145,7 @@ struct DockItemView: View {
             .fill(Color.primary.opacity(scheme == .dark ? 0.75 : 0.55))
             .frame(width: geo.dot, height: geo.dot)
             .offset(x: position == .left ? -geo.dotOffset : position == .right ? geo.dotOffset : 0,
-                    y: position == .bottom ? geo.dotBottom : 0)
+                    y: position == .bottom ? geo.dotBottom
+                       : position == .top ? -geo.dotBottom : 0)
     }
 }

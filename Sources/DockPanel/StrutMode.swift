@@ -32,6 +32,12 @@ public enum StrutMode {
         if state.borrowedDockPrefs != nil {
             return DockStrut.thickness(on: edge)
         }
+        // Apple's Dock has no top edge, so there is no strip to borrow there.
+        // Said plainly rather than writing an orientation the Dock ignores.
+        guard edge.isSystemDockEdge else {
+            explainNoTopStrip()
+            return nil
+        }
         guard consent(edge: edge) else { return nil }
 
         // Recorded before anything is written, so an interruption between here
@@ -74,6 +80,20 @@ public enum StrutMode {
 
     /// Asked once, plainly, because the honest description of this is
     /// "Docket would like to change your Dock settings".
+    private static func explainNoTopStrip() {
+        if ProcessInfo.processInfo.environment["DOCKET_STRUT_CONSENT"] != nil { return }
+        let alert = NSAlert()
+        alert.messageText = "扩展栏在顶部时无法替换系统程序坞"
+        alert.informativeText = """
+            系统程序坞只能放在屏幕左侧、底部或右侧，无法在顶部为扩展栏预留空间。\
+            如需使用此功能，请先把扩展栏位置改为左侧、底部或右侧。
+            """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "好")
+        NSApp.activate(ignoringOtherApps: true)
+        _ = alert.runModal()
+    }
+
     private static func consent(edge: DockPosition) -> Bool {
         // A modal alert cannot be answered by a test harness, and this is the
         // one path in the app that blocks on a person. The same escape hatch

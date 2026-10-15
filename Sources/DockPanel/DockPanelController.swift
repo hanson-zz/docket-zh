@@ -26,6 +26,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     /// How close to the screen edge the pointer must get to bring the shelf back.
     private let revealZoneDepth: CGFloat = 3
+    /// See `revealZone`: the band under the menu bar for a top shelf.
+    private let topRevealZoneDepth: CGFloat = 6
     /// Grace before hiding again, so brushing past the edge of the shelf on the
     /// way somewhere else does not make it flicker.
     private let hideDelay: TimeInterval = 0.35
@@ -148,8 +150,13 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// also the one place in the app that asks the user a question, which is
     /// another reason it cannot be on the path of an ordinary settings write.
     private func syncStrut() {
-        let wanted = StrutMode.wanted(for: app.state.setup)
         let borrowed = app.state.borrowedDockPrefs != nil
+        // Moving a shelf that already borrows the strip to the top hands the
+        // strip back, since Apple's Dock cannot follow it there. Asking for
+        // the strip while already at the top still goes through `enter`,
+        // which explains why it cannot be done and puts the setup back.
+        let wanted = StrutMode.wanted(for: app.state.setup)
+            && (app.effectivePosition.isSystemDockEdge || !borrowed)
         guard wanted != borrowed else { return }
 
         Task { @MainActor [weak self] in
@@ -231,7 +238,9 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // `visibleFrame` already excludes the reservation, so placing against
         // it would put the shelf beside its own strut and leave the reserved
         // band showing the Dock underneath.
-        if app.state.borrowedDockPrefs != nil {
+        // Apple's Dock cannot reserve the top edge, so a top shelf never
+        // borrows a strip there and is placed the ordinary way.
+        if app.state.borrowedDockPrefs != nil, app.effectivePosition.isSystemDockEdge {
             return borrowedOrigin(for: size)
         }
 
@@ -239,26 +248,36 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         let reserve = settings.reserveSystemDockSpace
         let visible = targetScreen.visibleFrame
         let full = targetScreen.frame
+        // The top comes from `visibleFrame` whatever else happens, because
+        // the menu bar owns that edge. A top shelf hangs from the menu bar's
+        // underside, kept clear even while the menu bar hides itself.
+        let ceiling = app.effectivePosition == .top ? topCeiling(of: targetScreen) : visible.maxY
         // Without the reservation the shelf measures from the bezel, so a
-        // Dock that is not auto-hidden stops pushing it up. The top still
-        // comes from `visibleFrame`, because the menu bar owns that edge.
-        let bounds = reserve
-            ? visible
-            : CGRect(x: full.minX, y: full.minY, width: full.width, height: visible.maxY - full.minY)
+        // Dock that is not auto-hidden stops pushing it up.
+        let floor = reserve ? visible.minY : full.minY
+        let sides = reserve ? (visible.minX, visible.maxX) : (full.minX, full.maxX)
+        let bounds = CGRect(x: sides.0, y: floor,
+                            width: sides.1 - sides.0, height: max(0, ceiling - floor))
         let gap = CGFloat(min(max(settings.edgeGap, 0), 60))
         let inset: CGFloat = gap + (reserve ? systemDockClearance : 0)
 
-        let origin: CGPoint = switch app.effectivePosition {
-        case .bottom: CGPoint(x: bounds.midX - size.width / 2, y: bounds.minY + inset)
-        case .left: CGPoint(x: bounds.minX + inset, y: bounds.midY - size.height / 2)
-        case .right: CGPoint(x: bounds.maxX - size.width - inset, y: bounds.midY - size.height / 2)
-        }
+        // Never lets the shelf hang off-screen at large scales on small
+        // displays; see Geometry.shelfOrigin.
+        return Geometry.shelfOrigin(edge: app.effectivePosition, size: size,
+                                    bounds: bounds, inset: inset)
+    }
 
-        // Never let the shelf hang off-screen at large scales on small displays.
-        return CGPoint(
-            x: min(max(origin.x, bounds.minX), max(bounds.minX, bounds.maxX - size.width)),
-            y: min(max(origin.y, bounds.minY), max(bounds.minY, bounds.maxY - size.height))
-        )
+    /// The underside of the menu bar on `screen`, which is as high as a top
+    /// shelf (and its reveal strip) ever goes. See Geometry.topCeiling.
+    ///
+    /// The notch is covered by the same number: on a notched display the
+    /// menu bar is drawn as tall as the notch, and `safeAreaInsets.top`
+    /// reports that height, so the larger of the two is kept clear.
+    private func topCeiling(of screen: NSScreen) -> CGFloat {
+        let menuBar = max(NSStatusBar.system.thickness, screen.safeAreaInsets.top)
+        return Geometry.topCeiling(frameMaxY: screen.frame.maxY,
+                                   visibleMaxY: screen.visibleFrame.maxY,
+                                   menuBarHeight: menuBar)
     }
 
     /// Centred in the strip Apple's Dock is reserving on the shelf's behalf.
@@ -275,6 +294,10 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
         return switch app.effectivePosition {
         case .bottom: CGPoint(x: frame.midX - size.width / 2, y: frame.minY + slack)
+        // Unreachable: the caller only borrows on an edge Apple's Dock can
+        // take. Kept as the ordinary top placement rather than a trap.
+        case .top: CGPoint(x: frame.midX - size.width / 2,
+                           y: topCeiling(of: targetScreen) - size.height - slack)
         case .left: CGPoint(x: frame.minX + slack, y: frame.midY - size.height / 2)
         case .right: CGPoint(x: frame.maxX - size.width - slack, y: frame.midY - size.height / 2)
         }
@@ -294,14 +317,9 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private var hiddenOrigin: CGPoint { hiddenOrigin(for: panel?.frame.size ?? .zero) }
 
     private func hiddenOrigin(for size: CGSize) -> CGPoint {
-        let frame = targetScreen.frame
-        let shown = revealedOrigin(for: size)
-        let peek = handlePeek
-        return switch app.effectivePosition {
-        case .bottom: CGPoint(x: shown.x, y: frame.minY - size.height + peek)
-        case .left: CGPoint(x: frame.minX - size.width + peek, y: shown.y)
-        case .right: CGPoint(x: frame.maxX - peek, y: shown.y)
-        }
+        Geometry.hiddenShelfOrigin(edge: app.effectivePosition,
+                                   shown: revealedOrigin(for: size), size: size,
+                                   screen: targetScreen.frame, peek: handlePeek)
     }
 
     /// How much of the shelf stays on screen while hidden.
@@ -610,6 +628,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         let strip: CGFloat = 4
         return switch edge {
         case .bottom: mouse.y <= frame.minY + strip
+        // Apple's Dock never sits at the top; the guard above already left.
+        case .top: false
         case .left: mouse.x <= frame.minX + strip
         case .right: mouse.x >= frame.maxX - strip
         }
@@ -627,18 +647,18 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     }
 
     /// A thin strip along the docked edge, spanning the shelf's extent.
+    ///
+    /// On the top edge it is a band just under the menu bar instead, so
+    /// reaching for the menu bar (or bringing an auto-hidden one down) does
+    /// not also pull the shelf out. A little deeper there, because nothing
+    /// stops the pointer at that line the way the bezel does: it crosses the
+    /// band on its way up, and at 30Hz a 3pt band is easy to skip.
     private var revealZone: CGRect {
-        let frame = targetScreen.frame
-        let shelf = shelfFrame
-        return switch app.effectivePosition {
-        case .bottom:
-            CGRect(x: shelf.minX, y: frame.minY, width: shelf.width, height: revealZoneDepth)
-        case .left:
-            CGRect(x: frame.minX, y: shelf.minY, width: revealZoneDepth, height: shelf.height)
-        case .right:
-            CGRect(x: frame.maxX - revealZoneDepth, y: shelf.minY,
-                   width: revealZoneDepth, height: shelf.height)
-        }
+        let screen = targetScreen
+        let edge = app.effectivePosition
+        return Geometry.revealZone(edge: edge, shelf: shelfFrame, screen: screen.frame,
+                                   ceiling: topCeiling(of: screen),
+                                   depth: edge == .top ? topRevealZoneDepth : revealZoneDepth)
     }
 
     /// Closes an opened group once the pointer has left both it and the

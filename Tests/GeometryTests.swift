@@ -79,6 +79,9 @@ final class GeometryTests: XCTestCase {
         XCTAssertGreaterThan(Geometry.resizeDelta(from: start, to: CGPoint(x: 100, y: 80), position: .bottom), 0)
         XCTAssertGreaterThan(Geometry.resizeDelta(from: start, to: CGPoint(x: 80, y: 100), position: .right), 0)
         XCTAssertGreaterThan(Geometry.resizeDelta(from: start, to: CGPoint(x: 120, y: 100), position: .left), 0)
+        // A top shelf grows downwards; the drag is in SwiftUI space, y down.
+        XCTAssertGreaterThan(Geometry.resizeDelta(from: start, to: CGPoint(x: 100, y: 120), position: .top), 0)
+        XCTAssertLessThan(Geometry.resizeDelta(from: start, to: CGPoint(x: 100, y: 80), position: .top), 0)
     }
 
     // MARK: magnification

@@ -517,6 +517,7 @@ struct DockShelfView: View {
     private var edgeAlignment: Alignment {
         switch position {
         case .bottom: .bottom
+        case .top: .top
         case .left: .leading
         case .right: .trailing
         }
@@ -524,7 +525,13 @@ struct DockShelfView: View {
 
     /// Pins the row to the start of the long axis. Centring splits any overflow
     /// across both ends and silently eats the first and last items.
-    private var contentAlignment: Alignment { vertical ? .top : .bottomLeading }
+    private var contentAlignment: Alignment {
+        switch position {
+        case .left, .right: .top
+        case .top: .topLeading
+        case .bottom: .bottomLeading
+        }
+    }
 
     private var maxLength: CGFloat {
         let along = vertical ? screenSize.height : screenSize.width
@@ -846,8 +853,9 @@ struct DockShelfView: View {
         let size = baseSize(entry.item)
         // Captured as plain values: the keyframe closures are @Sendable and
         // cannot reach back into main-actor view state.
+        // Away from the screen edge: up off a bottom shelf, down off a top one.
         let bounceX: CGFloat = vertical ? (position == .left ? 1 : -1) : 0
-        let bounceY: CGFloat = vertical ? 0 : -1
+        let bounceY: CGFloat = vertical ? 0 : (position == .top ? 1 : -1)
         let peak = bouncePeak
 
         return TileContent(item: entry.item,
@@ -939,6 +947,7 @@ struct DockShelfView: View {
     private var magnificationAnchor: UnitPoint {
         switch position {
         case .bottom: .bottom
+        case .top: .top
         case .left: .leading
         case .right: .trailing
         }
@@ -1115,6 +1124,9 @@ struct DockShelfView: View {
         let growth = entry.item.isWidget ? 0 : iconGrowth
         let cross: CGFloat = switch position {
         case .bottom: crossHeadroom - growth
+        // Pinned to the top of its panel with the headroom below, the way a
+        // left shelf is pinned to the leading edge.
+        case .top: solved.restCross + growth
         case .left: solved.restCross + growth
         case .right: crossHeadroom - growth
         }
@@ -1129,6 +1141,7 @@ struct DockShelfView: View {
         // wrong one put the removal poof out over the desktop.
         let crossCentre: CGFloat = switch position {
         case .bottom: crossHeadroom + chrome.padding + iconGeometry.height / 2
+        case .top: chrome.padding + iconGeometry.height / 2
         case .left: chrome.padding + iconGeometry.width / 2
         case .right: crossHeadroom + chrome.padding + iconGeometry.width / 2
         }
@@ -1146,7 +1159,7 @@ struct DockShelfView: View {
         // SwiftUI measures down from the top of the content; AppKit screen
         // coordinates go up from the bottom.
         let anchor: CGPoint = switch position {
-        case .bottom: CGPoint(x: frame.minX + target.along, y: frame.maxY - target.cross)
+        case .bottom, .top: CGPoint(x: frame.minX + target.along, y: frame.maxY - target.cross)
         case .left: CGPoint(x: frame.minX + target.cross, y: frame.maxY - target.along)
         case .right: CGPoint(x: frame.minX + target.cross, y: frame.maxY - target.along)
         }
@@ -1158,7 +1171,7 @@ struct DockShelfView: View {
         // from whichever app tile was hovered last.
         hoverAnchor = anchor
         hoverIconCentre = switch position {
-        case .bottom: CGPoint(x: frame.minX + target.centre.x,
+        case .bottom, .top: CGPoint(x: frame.minX + target.centre.x,
                               y: frame.maxY - target.centre.y)
         case .left, .right: CGPoint(x: frame.minX + target.centre.y,
                                     y: frame.maxY - target.centre.x)

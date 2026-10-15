@@ -53,9 +53,25 @@ public struct DockPrefs: Codable, Hashable, Sendable {
     }
 }
 
+/// Which screen edge the shelf is docked to.
+///
+/// The cases are declared in the order Settings shows them. `.top` sits under
+/// the menu bar rather than over it: placement measures from the top of
+/// `visibleFrame`, so the menu bar keeps its edge. Apple's Dock has no top
+/// edge, which is why `isSystemDockEdge` exists: anything that mirrors or
+/// moves the system Dock only ever deals in the other three.
 public enum DockPosition: String, Codable, Sendable, CaseIterable {
-    case left, bottom, right   // deliberately no .top - the menu bar owns that edge
-    public var isVertical: Bool { self != .bottom }
+    case left, top, bottom, right
+
+    /// A column on a side of the screen, rather than a row along the top or bottom.
+    public var isVertical: Bool { self == .left || self == .right }
+    /// A row, along either the top or the bottom.
+    public var isHorizontal: Bool { !isVertical }
+    /// Whether Apple's Dock can sit on this edge (`com.apple.dock orientation`).
+    public var isSystemDockEdge: Bool { self != .top }
+    /// Whether popups anchored to a tile (labels, groups, detail panels)
+    /// open downwards, away from a shelf at the top.
+    public var opensDownward: Bool { self == .top }
 }
 
 public enum ProfileKind: String, Codable, Sendable, CaseIterable {
@@ -1157,6 +1173,7 @@ public extension DockPosition {
     var displayName: String {
         switch self {
         case .left: "左侧"
+        case .top: "顶部"
         case .bottom: "底部"
         case .right: "右侧"
         }

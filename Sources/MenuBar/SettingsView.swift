@@ -859,6 +859,7 @@ private func detail(_ value: DockSetup) -> String {
 private func title(_ value: DockPosition) -> String {
     switch value {
     case .left: "左侧"
+    case .top: "顶部"
     case .bottom: "底部"
     case .right: "右侧"
     }
@@ -932,15 +933,34 @@ private struct EdgeSketch: View {
     let edge: DockPosition
 
     var body: some View {
-        let vertical = edge != .bottom
+        let vertical = edge.isVertical
         RoundedRectangle(cornerRadius: 6, style: .continuous)
             .fill(.primary.opacity(0.06))
-            .overlay(alignment: edge == .left ? .leading : edge == .right ? .trailing : .bottom) {
+            .overlay(alignment: .top) {
+                // A hint of the menu bar on the top card, so it reads as the
+                // shelf hanging under the menu bar rather than replacing it.
+                if edge == .top {
+                    Rectangle()
+                        .fill(.primary.opacity(0.12))
+                        .frame(height: 3)
+                }
+            }
+            .overlay(alignment: alignment) {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.accentColor.opacity(0.85))
                     .frame(width: vertical ? 6 : 44, height: vertical ? 26 : 6)
                     .padding(4)
+                    .padding(.top, edge == .top ? 3 : 0)
             }
+    }
+
+    private var alignment: Alignment {
+        switch edge {
+        case .left: .leading
+        case .top: .top
+        case .bottom: .bottom
+        case .right: .trailing
+        }
     }
 }
 
