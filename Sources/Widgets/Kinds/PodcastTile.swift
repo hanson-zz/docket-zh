@@ -41,6 +41,11 @@ struct PodcastTile: View {
         if let episode, player.isCurrent(episode) {
             if player.problem != nil { return "播放失败" }
             if player.isBuffering, player.isPlaying { return "正在缓冲…" }
+            // 有时间轴时，播放中的说明换成当前章节，像歌词一样跟着走。
+            if player.isPlaying,
+               let chapter = PodcastChapters.current(PodcastRemote.chapters(for: episode), at: player.position) {
+                return chapter.title
+            }
             return player.isPlaying ? episode.title : "已暂停 · \(episode.title)"
         }
         if service.problems[show.id] != nil, show.episodes.isEmpty { return "暂时连不上小宇宙" }
@@ -70,8 +75,28 @@ struct PodcastTile: View {
         }
     }
 
+    /// 这张卡片的节目正在放（或暂停在）某一集。
+    private var isCurrentShow: Bool {
+        guard !context.isPreview, let episode else { return false }
+        return player.isCurrent(episode)
+    }
+
     private func cover(size: CGFloat) -> some View {
         PodcastCover(url: show?.imageURL, size: size, preview: context.isPreview)
+            // 正在播放的跳动小竖条，压在封面左下角，和“正在播放”卡片同一套。
+            .overlay(alignment: .bottomLeading) {
+                if isCurrentShow {
+                    PlayingBarsView(playing: playing, tint: .white, height: size * 0.3,
+                                    visible: ShelfVisibility.shared.cardsOnScreen)
+                        .padding(.horizontal, size * 0.1)
+                        .padding(.vertical, size * 0.08)
+                        .background {
+                            RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
+                                .fill(.black.opacity(0.35))
+                        }
+                        .padding(size * 0.06)
+                }
+            }
             .overlay(alignment: .topTrailing) {
                 if unheard > 0 {
                     Text(unheard > 9 ? "9+" : "\(unheard)")
@@ -112,6 +137,17 @@ enum PodcastRemote {
         let shows = PodcastService.shared.library.shows
         let chosen = instance.config.string(showKey)
         return shows.first { $0.id == chosen } ?? shows.first
+    }
+
+    /// 一集的章节：播放器手里的那份可能是开始播放时的旧数据，先找订阅里
+    /// 最新读到的同一集。
+    static func chapters(for episode: PodcastEpisode) -> [PodcastChapter] {
+        for show in PodcastService.shared.library.shows {
+            if let fresh = show.episodes.first(where: { $0.id == episode.id }), let chapters = fresh.chapters {
+                return chapters
+            }
+        }
+        return episode.chapters ?? []
     }
 
     static func choose(_ showID: String, in instance: WidgetInstance) {

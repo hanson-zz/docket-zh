@@ -12,15 +12,18 @@ public struct PodcastEpisode: Codable, Equatable, Sendable, Identifiable {
     public var duration: Int
     public var audioURL: URL?
     public var imageURL: URL?
+    /// 简介里主播写的时间轴，没有时间轴是 nil。可选，所以旧存档照常读取。
+    public var chapters: [PodcastChapter]?
 
     public init(id: String, title: String, pubDate: Date?, duration: Int,
-                audioURL: URL?, imageURL: URL? = nil) {
+                audioURL: URL?, imageURL: URL? = nil, chapters: [PodcastChapter]? = nil) {
         self.id = id
         self.title = title
         self.pubDate = pubDate
         self.duration = duration
         self.audioURL = audioURL
         self.imageURL = imageURL
+        self.chapters = chapters
     }
 }
 
@@ -203,6 +206,8 @@ public enum Xiaoyuzhou {
         var enclosure: Enclosure?
         var media: Media?
         var podcast: RawPodcast?
+        var description: String?
+        var shownotes: String?
 
         struct Enclosure: Decodable { var url: String? }
         struct Media: Decodable {
@@ -214,12 +219,18 @@ public enum Xiaoyuzhou {
             guard let eid, !eid.isEmpty else { return nil }
             let audio = [enclosure?.url, media?.source?.url].compactMap { $0 }
                 .compactMap(URL.init(string:)).first
+            let seconds = max(0, duration ?? 0)
+            // 简介和 shownotes 哪个写了时间轴就用哪个，都写了取条数多的。
+            let candidates = [shownotes, description].compactMap { $0 }
+                .map { PodcastChapters.parse($0, duration: seconds) }
+            let chapters = candidates.max { $0.count < $1.count } ?? []
             return PodcastEpisode(id: eid,
                                   title: (title?.isEmpty == false ? title : nil) ?? "未命名单集",
                                   pubDate: Xiaoyuzhou.date(pubDate),
-                                  duration: max(0, Int(duration ?? 0)),
+                                  duration: Int(seconds),
                                   audioURL: audio,
-                                  imageURL: image?.url)
+                                  imageURL: image?.url,
+                                  chapters: chapters.isEmpty ? nil : chapters)
         }
     }
 }

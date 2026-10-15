@@ -187,6 +187,7 @@ struct PodcastDetail: View {
             }
             .font(.system(size: 10).monospacedDigit())
             .foregroundStyle(.white.opacity(0.6))
+            chapterLines(episode, position: position)
             HStack(spacing: 22) {
                 Spacer()
                 roundButton("gobackward.15", size: 32, label: "后退 15 秒") {
@@ -209,6 +210,48 @@ struct PodcastDetail: View {
         }
         .padding(10)
         .glassPane(cornerRadius: 12)
+    }
+
+    /// 进度条下面的章节，像歌词：上一章淡、当前章亮、下一章淡，跟着播放
+    /// 位置往上走。点哪一行就跳到那一章。没有时间轴的单集不显示。
+    @ViewBuilder
+    private func chapterLines(_ episode: PodcastEpisode, position: Double) -> some View {
+        let chapters = PodcastRemote.chapters(for: episode)
+        if !chapters.isEmpty {
+            let current = PodcastChapters.currentIndex(chapters, at: position)
+            let center = current ?? -1
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(Array(chapters.enumerated()), id: \.element.id) { index, chapter in
+                    if abs(index - center) <= 1 || (current == nil && index == 0) {
+                        chapterLine(chapter, isCurrent: index == current)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.easeInOut(duration: 0.35), value: current)
+        }
+    }
+
+    private func chapterLine(_ chapter: PodcastChapter, isCurrent: Bool) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            player.seek(to: chapter.start)
+        } label: {
+            HStack(spacing: 6) {
+                Text(PodcastPlayback.clock(chapter.start))
+                    .font(.system(size: 9).monospacedDigit())
+                    .foregroundStyle(isCurrent ? PodcastCover.accent : .white.opacity(0.35))
+                Text(chapter.title)
+                    .font(.system(size: isCurrent ? 12 : 10.5, weight: isCurrent ? .semibold : .regular))
+                    .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.45))
+                    .lineLimit(1)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("跳到 \(PodcastPlayback.clock(chapter.start))")
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityLabel("\(isCurrent ? "当前章节，" : "")\(chapter.title)")
     }
 
     private func roundButton(_ symbol: String, size: CGFloat, label: String, filled: Bool = false,
