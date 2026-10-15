@@ -613,7 +613,7 @@ struct WidgetSettingsSections: View {
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
         "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],
-        "search.engine": SearchEngine.allCases.map { ($0.title, $0.rawValue) },
+        "search.engine": SearchSites.builtIn.map { ($0.title, $0.id) },
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },

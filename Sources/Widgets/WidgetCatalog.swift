@@ -572,6 +572,9 @@ public enum WidgetCatalog {
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"
+        // 搜索站的一排和自定义站在面板里点图标、点“添加”来改，设置里不列。
+        case (.search, "sites"), (.search, "customSites"):
+            false
         // The multi-city card shows its own list of places and no other;
         // every other layout reads the one city and never the list.
         case (.weather, "cities"):

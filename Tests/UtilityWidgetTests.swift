@@ -233,3 +233,67 @@ final class SearchQueryTests: XCTestCase {
                                              kind: .search))
     }
 }
+
+final class SearchSiteTests: XCTestCase {
+    func testOldEngineIDsStillResolve() {
+        for id in ["bing", "baidu", "google", "duckduckgo"] {
+            XCTAssertNotNil(SearchSites.builtIn(id), id)
+        }
+        let sites = SearchSites.resolve(ids: [], custom: [])
+        XCTAssertEqual(sites.map(\.id), SearchSites.defaultIDs)
+        XCTAssertEqual(SearchSites.selected("bing", in: sites)?.id, "bing")
+        XCTAssertEqual(SearchSites.selected("gone", in: sites)?.id, sites.first?.id)
+    }
+
+    func testTemplatesFillTheQuery() {
+        XCTAssertEqual(SearchSites.builtIn("bilibili")?.url(for: "原神 攻略")?.absoluteString,
+                       "https://search.bilibili.com/all?keyword=%E5%8E%9F%E7%A5%9E%20%E6%94%BB%E7%95%A5")
+        XCTAssertEqual(SearchSites.builtIn("douyin")?.url(for: "a/b")?.absoluteString,
+                       "https://www.douyin.com/search/a%2Fb")
+        XCTAssertEqual(SearchSites.builtIn("baidu")?.url(for: "天气")?.absoluteString,
+                       "https://www.baidu.com/s?wd=%E5%A4%A9%E6%B0%94")
+        XCTAssertNil(SearchSites.builtIn("github")?.url(for: "  "))
+        XCTAssertEqual(SearchSites.builtIn("github")?.url(for: "https://example.com")?.absoluteString,
+                       "https://example.com")
+    }
+
+    func testCustomSites() {
+        let douban = SearchSites.custom(title: "豆瓣", address: "www.douban.com/search?q=%s", id: "x1")
+        XCTAssertEqual(douban?.id, "custom-x1")
+        XCTAssertEqual(douban?.template, "https://www.douban.com/search?q=%s")
+        XCTAssertEqual(douban?.home?.absoluteString, "https://www.douban.com")
+        XCTAssertEqual(douban?.url(for: "书")?.absoluteString, "https://www.douban.com/search?q=%E4%B9%A6")
+        let tail = SearchSites.custom(title: "站", address: "https://s.example.com/q=", id: "x2")
+        XCTAssertEqual(tail?.url(for: "a")?.absoluteString, "https://s.example.com/q=a")
+        XCTAssertNil(SearchSites.custom(title: "", address: "https://a.com/?q=%s", id: "x3"))
+        XCTAssertNil(SearchSites.custom(title: "坏", address: "有 空格", id: "x4"))
+        XCTAssertNil(SearchSites.custom(title: "坏", address: "ftp://a.com/%s", id: "x5"))
+    }
+
+    func testResolveKeepsOrderSkipsUnknownAndDuplicates() {
+        let mine = SearchSite(id: "custom-a", title: "我的", template: "https://a.com/?q=%s")
+        let sites = SearchSites.resolve(ids: ["github", "custom-a", "gone", "github", "baidu"], custom: [mine])
+        XCTAssertEqual(sites.map(\.id), ["github", "custom-a", "baidu"])
+        let many = SearchSites.resolve(ids: SearchSites.builtIn.map(\.id), custom: [])
+        XCTAssertEqual(many.count, SearchSites.maxCount)
+    }
+
+    func testCustomSitesRoundTrip() {
+        let mine = SearchSite(id: "custom-a", title: "我的", template: "https://a.com/?q=%s")
+        let builtIn = SearchSites.builtIn("baidu")!
+        let text = SearchSites.encode([mine, builtIn])
+        XCTAssertEqual(SearchSites.decode(text), [mine], "只留自定义站")
+        XCTAssertEqual(SearchSites.decode(""), [])
+        XCTAssertEqual(SearchSites.decode("乱码"), [])
+    }
+
+    func testInitials() {
+        XCTAssertEqual(SearchSite(id: "custom-a", title: "豆瓣", template: "https://a.com").initial, "豆")
+        XCTAssertEqual(SearchSite(id: "custom-b", title: "ddg", template: "https://a.com").initial, "D")
+    }
+
+    func testSiteListsAreNotSettingsOptions() {
+        XCTAssertFalse(WidgetCatalog.applies("sites", to: WidgetConfig(), kind: .search))
+        XCTAssertFalse(WidgetCatalog.applies("customSites", to: WidgetConfig(), kind: .search))
+    }
+}
