@@ -64,6 +64,16 @@ struct SettingsView: View {
     /// somewhere specific.
     @State private var selection = SettingsSelection.shared
 
+    /// 设置 ▸ 通用 ▸ 应用图标 的选择。读它是为了换图标后“关于”里的图标跟着重绘。
+    @AppStorage(AppIconCatalog.key) private var appIconChoice = AppIconCatalog.defaultOption.id
+
+    /// “关于”里的图标：所选的应用图标，经典时是 bundle 自带的图标。
+    private var aboutIcon: NSImage {
+        let option = AppIconCatalog.shown(appIconChoice, unlocked: Supporter.isUnlocked)
+        if let image = AppIconSwitcher.image(for: option) { return image }
+        return NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+    }
+
     /// The size the shelf is actually drawn at, which is the Dock's while
     /// following and the stored one once overridden. Showing the stored value
     /// unconditionally meant the readout disagreed with the shelf.
@@ -348,6 +358,8 @@ struct SettingsView: View {
                 .padding(.vertical, 2)
             }
 
+            AppIconSection()
+
             Section("菜单栏") {
                 // Refused when there is no shelf, because the icon is then the
                 // only way into an app with no Dock tile and no window of its
@@ -388,7 +400,7 @@ struct SettingsView: View {
             // a version number was a fifth place to look for four things.
             Section {
                 HStack(spacing: 12) {
-                    Image(nsImage: NSApp.applicationIconImage)
+                    Image(nsImage: aboutIcon)
                         .resizable()
                         .frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 2) {

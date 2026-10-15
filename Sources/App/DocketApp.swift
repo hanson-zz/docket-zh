@@ -120,6 +120,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LayoutIntentBridge.attach(state)
 
         applyAppearance()
+        // 设置 ▸ 通用 ▸ 应用图标：只换运行时图标，不改 bundle。
+        AppIconSwitcher.start()
         if state.state.setup != .macOSDockOnly {
             shelf.show()
         }

@@ -49,6 +49,10 @@ targets:
       # 电子宠物的状态图（吃饭、饿了、生病，以及小熊猫的全身六种），作为普通资源打包。
       - path: Resources/Pet
         buildPhase: resources
+      # 设置 ▸ 通用 ▸ 应用图标 里可选的运行时图标（小熊猫码头等），作为普通资源打包。
+      # 不是 AppIcon：Finder 和启动台仍显示 Resources/AppIcon.icon 的经典图标。
+      - path: Resources/AppIcons
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is
