@@ -62,6 +62,13 @@ targets:
     # one less thing for that step to infer.
     dependencies:
       - sdk: AppIntents.framework
+      # 充电上限助手：放进 Contents/MacOS，用户在电池面板点“安装助手”时
+      # 以管理员身份复制到 /Library/PrivilegedHelperTools 并交给 launchd。
+      - target: ChargeHelper
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
     settings:
       base:
         # 应用改名为“码头 / Dockling”：安装包叫 Dockling.app，Finder 和启动台显示“码头”。
@@ -75,6 +82,26 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Resources/Docket.entitlements
         ENABLE_APP_SANDBOX: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  # 充电上限助手（root 运行的命令行小程序），只编译自己和共享的纯逻辑。
+  # SMC 和电源的 C 接口用到 mach_task_self_ 这类 C 全局变量，Swift 6 的
+  # 严格并发检查会把它当错误，所以这个小目标用 Swift 5 模式。
+  ChargeHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Tools/ChargeHelper
+      - path: Sources/Core/ChargeLimit.swift
+    dependencies:
+      - sdk: IOKit.framework
+    settings:
+      base:
+        PRODUCT_NAME: dockling-charge-helper
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.chargehelper
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: minimal
+        ENABLE_APP_SANDBOX: NO
+        SKIP_INSTALL: YES
 
   # Renders the real views into PNGs for the README.
   #

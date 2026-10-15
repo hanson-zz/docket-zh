@@ -99,6 +99,8 @@ struct BatteryDetail: View {
                     if let celsius = health.celsius { stat("温度", BatteryHealth.celsiusText(celsius)) }
                 }
             }
+
+            ChargeLimitSection(now: context.now)
         }
     }
 

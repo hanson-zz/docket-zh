@@ -141,7 +141,7 @@ jobs:
           SIGN=(codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none)
           if [ -s "$ENT" ]; then SIGN+=(--entitlements "$ENT"); fi
           # Inside out: nested code first, then the app itself.
-          find "$APP/Contents" -depth \( -name "*.dylib" -o -name "*.framework" -o -name "*.appex" -o -name "*.xpc" -o -name "*.bundle" \) -print0 \
+          find "$APP/Contents" -depth \( -name "*.dylib" -o -name "*.framework" -o -name "*.appex" -o -name "*.xpc" -o -name "*.bundle" -o -name "dockling-charge-helper" \) -print0 \
             | while IFS= read -r -d '' item; do codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none "$item"; done
           "${SIGN[@]}" "$APP"
           codesign --verify --strict --verbose=2 "$APP"
