@@ -5,6 +5,7 @@ import SwiftUI
 struct AppIconSection: View {
     @AppStorage(AppIconCatalog.key) private var choice = AppIconCatalog.defaultOption.id
     @AppStorage(Supporter.key) private var unlocked = false
+    @AppStorage("appIcon.finderFailed") private var finderFailed = false
 
     var body: some View {
         Section {
@@ -26,10 +27,16 @@ struct AppIconSection: View {
         } header: {
             Text("应用图标")
         } footer: {
-            Text("码头平时不在程序坞显示，所选图标会出现在它临时显示在程序坞和应用切换器里的时候，以及设置的“关于”、新手引导和提示框里。Finder 和启动台里仍显示经典图标。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("访达“应用程序”文件夹、程序坞、应用切换器和设置的“关于”里都会换成所选图标。访达偶尔要过一会儿才刷新；启动台由系统缓存，可能要重新登录后才变。")
+                    .foregroundStyle(.secondary)
+                if finderFailed {
+                    Text("访达里的图标没换成：码头所在的文件夹不可写。把码头放进“应用程序”文件夹后再选一次即可。")
+                        .foregroundStyle(.orange)
+                }
+            }
+            .font(.caption)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

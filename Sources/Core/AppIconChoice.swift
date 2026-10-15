@@ -32,7 +32,7 @@ public enum AppIconCatalog {
     /// UserDefaults 里保存所选图标 id 的键。
     public static let key = "appIcon.choice"
 
-    /// bundle 自带的图标，Finder 和启动台一直显示它。
+    /// bundle 自带的图标。选了别的图标时，Finder 里贴的是自定义图标。
     public static let classic = AppIconOption(
         id: "classic", title: "经典", resourceName: nil, isSupporterOnly: false)
 
@@ -40,8 +40,12 @@ public enum AppIconCatalog {
     public static let panda = AppIconOption(
         id: "panda", title: "小熊猫码头", resourceName: "AppIcon-Panda", isSupporterOnly: false)
 
+    /// 小熊猫码头的夜景版：深蓝夜空、暗色水面，同样免费。
+    public static let pandaDark = AppIconOption(
+        id: "pandaDark", title: "小熊猫夜色", resourceName: "AppIcon-PandaDark", isSupporterOnly: false)
+
     /// 设置里按这个顺序排列，第一项是默认。
-    public static let all: [AppIconOption] = [classic, panda]
+    public static let all: [AppIconOption] = [classic, panda, pandaDark]
 
     public static var defaultOption: AppIconOption { classic }
 
@@ -55,5 +59,20 @@ public enum AppIconCatalog {
     public static func shown(_ id: String?, unlocked: Bool) -> AppIconOption {
         let chosen = option(id)
         return chosen.isSupporterOnly && !unlocked ? defaultOption : chosen
+    }
+
+    /// Finder 里的图标要怎么改。
+    public enum FinderAction: Equatable, Sendable { case none, set, clear }
+
+    /// UserDefaults 里记着上次贴到 Finder 的图标 id，避免每次启动都重写。
+    public static let finderAppliedKey = "appIcon.finderApplied"
+
+    /// 选的是经典而应用包上贴着自定义图标就揭掉；选的是别的图标，应用包上
+    /// 没有自定义图标（比如更新后整包被替换）或贴的不是这一款就重贴。
+    public static func finderAction(for option: AppIconOption, hasCustomIcon: Bool,
+                                    lastApplied: String? = nil) -> FinderAction {
+        if option.isBundleIcon { return hasCustomIcon ? .clear : .none }
+        if !hasCustomIcon || lastApplied != option.id { return .set }
+        return .none
     }
 }

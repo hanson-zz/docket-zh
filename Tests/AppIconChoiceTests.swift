@@ -24,6 +24,22 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.shown("panda", unlocked: false), panda)
     }
 
+    func testPandaDarkIsFreeAndResolves() {
+        let dark = AppIconCatalog.option("pandaDark")
+        XCTAssertEqual(dark, AppIconCatalog.pandaDark)
+        XCTAssertEqual(dark.resourceName, "AppIcon-PandaDark")
+        XCTAssertFalse(dark.isSupporterOnly)
+        XCTAssertEqual(AppIconCatalog.all.map(\.id), ["classic", "panda", "pandaDark"])
+    }
+
+    func testFinderPlan() {
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.panda, hasCustomIcon: false), .set)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.panda, hasCustomIcon: true, lastApplied: "panda"), .none)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.pandaDark, hasCustomIcon: true, lastApplied: "panda"), .set)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classic, hasCustomIcon: true), .clear)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classic, hasCustomIcon: false), .none)
+    }
+
     func testSupporterOnlyFallsBackWhenLocked() {
         let locked = AppIconOption(id: "x", title: "X", resourceName: "X", isSupporterOnly: true)
         XCTAssertTrue(locked.isSupporterOnly)
