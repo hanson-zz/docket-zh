@@ -63,19 +63,28 @@ struct BatteryTile: View {
             // the shelf's badge and reading: the ring is the level, in white
             // unless the battery is low enough to earn a colour.
             HStack(spacing: 10) {
-                TileBadge {
-                    ZStack {
-                        TileRing(progress: reading.present ? reading.level : 0,
-                                 tint: ringTint(reading))
-                        Image(systemName: slot.symbol)
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                let shown = look(for: slot)
+                if shown == .classic {
+                    TileBadge {
+                        ZStack {
+                            TileRing(progress: reading.present ? reading.level : 0,
+                                     tint: ringTint(reading))
+                            Image(systemName: slot.symbol)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                        }
                     }
+                    .overlay(alignment: .bottomTrailing) {
+                        if reading.charging { bolt }
+                    }
+                    TileReading(value: percentText(reading), caption: caption(reading))
+                } else {
+                    BatteryGauge(look: shown, state: gaugeState(slot), diameter: 40,
+                                 center: shown == .panda ? .none : .symbol(slot.symbol),
+                                 isPreview: context.isPreview)
+                    TileReading(value: percentText(reading), caption: caption(reading))
+                        .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
                 }
-                .overlay(alignment: .bottomTrailing) {
-                    if reading.charging { bolt }
-                }
-                TileReading(value: percentText(reading), caption: caption(reading))
                 Spacer(minLength: 0)
             }
         }
@@ -88,19 +97,28 @@ struct BatteryTile: View {
         HStack(spacing: 0) {
             ForEach(slots) { slot in
                 let reading = reading(slot)
-                MetricProgressRing(progress: reading.present ? reading.level : 0,
-                                   tint: tint(reading),
-                                   track: reading.present
-                                       ? tint(reading).opacity(0.16)
-                                       : Color.primary.opacity(0.10),
-                                   diameter: 42,
-                                   lineWidth: 4.5) {
-                    Image(systemName: slot.symbol)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(reading.present ? tint(reading) : WidgetStyle.secondary)
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if reading.charging { bolt }
+                Group {
+                    let shown = look(for: slot)
+                    if shown == .classic {
+                        MetricProgressRing(progress: reading.present ? reading.level : 0,
+                                           tint: tint(reading),
+                                           track: reading.present
+                                               ? tint(reading).opacity(0.16)
+                                               : Color.primary.opacity(0.10),
+                                           diameter: 42,
+                                           lineWidth: 4.5) {
+                            Image(systemName: slot.symbol)
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundStyle(reading.present ? tint(reading) : WidgetStyle.secondary)
+                        }
+                        .overlay(alignment: .bottomTrailing) {
+                            if reading.charging { bolt }
+                        }
+                    } else {
+                        BatteryGauge(look: shown, state: gaugeState(slot), diameter: 42,
+                                     center: shown == .panda ? .none : .symbol(slot.symbol),
+                                     isPreview: context.isPreview)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(slot.name)
@@ -159,17 +177,23 @@ struct BatteryTile: View {
                 let reading = reading(slot)
                 let single = slots.count == 1
                 VStack(spacing: 3) {
-                    MetricProgressRing(progress: reading.present ? reading.level : 0,
-                                       tint: present,
-                                       track: reading.present
-                                           ? present.opacity(0.18)
-                                           : Color.primary.opacity(0.10),
-                                       diameter: single ? 42 : 34,
-                                       lineWidth: single ? 5 : 4) {
-                        percent(reading, size: single ? 14 : 11)
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        if reading.charging { bolt }
+                    let shown = look(for: slot)
+                    if shown == .classic {
+                        MetricProgressRing(progress: reading.present ? reading.level : 0,
+                                           tint: present,
+                                           track: reading.present
+                                               ? present.opacity(0.18)
+                                               : Color.primary.opacity(0.10),
+                                           diameter: single ? 42 : 34,
+                                           lineWidth: single ? 5 : 4) {
+                            percent(reading, size: single ? 14 : 11)
+                        }
+                        .overlay(alignment: .bottomTrailing) {
+                            if reading.charging { bolt }
+                        }
+                    } else {
+                        BatteryGauge(look: shown, state: gaugeState(slot), diameter: single ? 42 : 34,
+                                     center: .percent(single ? 14 : 11), isPreview: context.isPreview)
                     }
                     Image(systemName: slot.symbol)
                         .font(.system(size: single ? 13 : 11, weight: .regular))
@@ -197,6 +221,35 @@ struct BatteryTile: View {
 
     private var layout: String { instance.config.string("layout", default: "status") }
 
+    /// The widget's 外观, with a locked 赞助者专属 look drawn as 经典; the
+    /// library's preview shows the real one, as the Wi-Fi rings do.
+    private var chosenLook: BatteryLook {
+        BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+    }
+
+    /// The panda holds the Mac's battery; any other slot in that look gets
+    /// the free 液态 gauge rather than a row of pandas.
+    private func look(for slot: Slot) -> BatteryLook {
+        let look = chosenLook
+        if look == .panda, !slot.isMac { return .liquid }
+        return look
+    }
+
+    /// The Mac slot also carries the adapter, Low Power Mode and the
+    /// plug-in and full-charge moments; accessories have none of those.
+    private func gaugeState(_ slot: Slot) -> BatteryGaugeState {
+        let reading = reading(slot)
+        var state = BatteryGaugeState(level: reading.level, charging: reading.charging, present: reading.present)
+        if slot.isMac, !context.isPreview {
+            let metrics = BatteryMetrics.shared
+            state.lowPower = metrics.lowPowerMode
+            state.watts = metrics.power.watts
+            state.pluggedAt = metrics.pluggedAt
+            state.fullAt = metrics.fullAt
+        }
+        return state
+    }
+
     private var devices: [BatteryDeviceKind] {
         let parsed = instance.config
             .strings("devices", default: ["mac"])
@@ -212,6 +265,11 @@ struct BatteryTile: View {
     enum Slot: Identifiable {
         case fixed(BatteryDeviceKind, source: BluetoothBattery?)
         case accessory(BluetoothBattery)
+
+        var isMac: Bool {
+            if case .fixed(.mac, _) = self { return true }
+            return false
+        }
 
         var id: String {
             switch self {
@@ -268,6 +326,8 @@ struct BatteryTile: View {
         var level: Double
         var charging: Bool
         var present: Bool
+        /// The Mac only: on the adapter, charging or not.
+        var onPower = false
     }
 
     private func reading(_ slot: Slot) -> Reading {
@@ -291,12 +351,16 @@ struct BatteryTile: View {
         guard let device = BatteryMetrics.shared.device(kind), device.present else {
             return Reading(level: 0, charging: false, present: false)
         }
-        return Reading(level: device.level, charging: device.charging, present: true)
+        return Reading(level: device.level, charging: device.charging, present: true, onPower: device.onPower)
     }
 
     private func caption(_ reading: Reading) -> String {
         guard reading.present else { return "未连接" }
-        return reading.charging ? "正在充电" : "使用电池"
+        if reading.charging { return "正在充电" }
+        // On the adapter and not charging: full, or held back. It is not
+        // running on battery, whatever the old caption said.
+        if reading.onPower { return reading.level >= 0.995 ? "已充满" : "已接电源" }
+        return "使用电池"
     }
 
     @ViewBuilder

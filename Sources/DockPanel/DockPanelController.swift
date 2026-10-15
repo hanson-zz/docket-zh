@@ -95,6 +95,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         self.panel = panel
         panel.orderFrontRegardless()
         refresh()
+        publishVisibility()
     }
 
     /// A shelf gesture asked for the next or previous layout.
@@ -112,6 +113,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         WidgetDetailWindow.shared.close()
         TooltipWindow.shared.hide()
         panel?.orderOut(nil)
+        publishVisibility()
     }
 
     func close() {
@@ -121,6 +123,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         TooltipWindow.shared.hide()
         panel?.close()
         panel = nil
+        publishVisibility()
     }
 
     /// Re-read everything that can change: whether there is a shelf at all,
@@ -151,6 +154,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         }
         applyPlacement(animated: false)
         syncStrut()
+        publishVisibility()
     }
 
     /// Takes or gives back Apple's Dock reserved strip as the setup changes.
@@ -815,9 +819,21 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         hideWorkItem?.cancel()
         hideWorkItem = nil
         applyPlacement(animated: true, motion: motion)
+        publishVisibility()
+    }
+
+    /// Tells animated cards whether anyone can see them: ordered in, not
+    /// slid off the edge, and not fully covered.
+    private func publishVisibility() {
+        guard let panel else { return ShelfVisibility.shared.update(false) }
+        ShelfVisibility.shared.update(panel.isVisible && revealed && panel.occlusionState.contains(.visible))
     }
 
     // MARK: NSWindowDelegate
+
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        publishVisibility()
+    }
 
     func windowDidResize(_ notification: Notification) {
         // `resize(to:)` already places the frame it animates to. Re-placing on

@@ -22,6 +22,7 @@ struct BatteryDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 if let lead { hero(lead) }
+                if let lead, lead.isMac, lead.present { macSections }
                 if all.count > 1 {
                     VStack(spacing: 6) {
                         ForEach(all.dropFirst()) { item in
@@ -48,6 +49,78 @@ struct BatteryDetail: View {
         return Color(red: 0.72, green: 0.16, blue: 0.14)
     }
 
+    // MARK: Mac
+
+    /// The widget's 外观, with a locked 赞助者专属 look drawn as 经典.
+    private var look: BatteryLook {
+        BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+    }
+
+    private func gaugeState(_ device: Item) -> BatteryGaugeState {
+        var state = BatteryGaugeState(level: device.level, charging: device.charging, present: device.present)
+        if device.isMac, !context.isPreview {
+            let metrics = BatteryMetrics.shared
+            state.lowPower = metrics.lowPowerMode
+            state.watts = metrics.power.watts
+            state.pluggedAt = metrics.pluggedAt
+            state.fullAt = metrics.fullAt
+        }
+        return state
+    }
+
+    /// Today's curve, then 最大容量, 循环次数 and 温度. Each figure the Mac
+    /// does not publish is left out rather than shown as a dash.
+    @ViewBuilder
+    private var macSections: some View {
+        if !context.isPreview {
+            let metrics = BatteryMetrics.shared
+            VStack(alignment: .leading, spacing: 6) {
+                Text("今天")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.75))
+                if metrics.history.samples(from: Calendar.current.startOfDay(for: context.now),
+                                           to: context.now.addingTimeInterval(1)).isEmpty {
+                    Text("每 5 分钟记录一次电量，稍后这里会画出今天的曲线")
+                        .font(WidgetStyle.caption(11))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                } else {
+                    BatteryDayChart(history: metrics.history, day: context.now, now: context.now)
+                }
+            }
+            .padding(10)
+            .glassPane(cornerRadius: 10)
+
+            let health = metrics.health
+            if !health.isEmpty {
+                HStack(spacing: 6) {
+                    if let percent = health.capacityPercent { stat("最大容量", "\(percent)%") }
+                    if let cycles = health.cycles { stat("循环次数", "\(cycles)") }
+                    if let celsius = health.celsius { stat("温度", BatteryHealth.celsiusText(celsius)) }
+                }
+            }
+        }
+    }
+
+    private func stat(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(WidgetStyle.caption(11))
+                .foregroundStyle(.white.opacity(0.65))
+            Text(value)
+                .font(WidgetStyle.value(17))
+                .monospacedDigit()
+                .foregroundStyle(WidgetStyle.primary)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .glassPane(cornerRadius: 10)
+        .accessibilityElement(children: .combine)
+    }
+
     private func hero(_ device: Item) -> some View {
         HStack(alignment: .bottom, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
@@ -66,6 +139,7 @@ struct BatteryDetail: View {
                             .font(.system(size: 30, weight: .light))
                             .foregroundStyle(.white.opacity(0.7))
                     }
+                    .modifier(BatteryPlugBounce(trigger: gaugeState(device).pluggedAt))
                 } else {
                     // A dash, never a zero: a device that is not here has no
                     // level.
@@ -73,12 +147,20 @@ struct BatteryDetail: View {
                         .font(.system(size: 60, weight: .light))
                         .foregroundStyle(.white.opacity(0.7))
                 }
-                Text(caption(device))
+                Text(heroCaption(device))
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.75))
+                    .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
-            if device.charging {
+            if look != .classic {
+                // The look, large: the panel is looked at, so it animates
+                // whether or not the battery is charging.
+                BatteryGauge(look: device.isMac ? look : (look == .panda ? .liquid : look),
+                             state: gaugeState(device), diameter: 104,
+                             center: .none, inPanel: true, isPreview: context.isPreview)
+                    .padding(.bottom, 2)
+            } else if device.charging {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
@@ -137,6 +219,8 @@ struct BatteryDetail: View {
         var present: Bool
         /// AirPods: "左 80% · 右 78% · 盒 45%".
         var parts: String?
+
+        var isMac: Bool { id == "fixed.mac" }
     }
 
     /// Configured devices always, plus everything else actually reporting.
@@ -209,10 +293,25 @@ struct BatteryDetail: View {
     /// The tile's thresholds, so a battery does not change colour on its way
     /// from the shelf into the panel.
     private func tint(_ device: Item) -> Color {
+        if look != .classic, device.present {
+            let lowPower = device.isMac && !context.isPreview && BatteryMetrics.shared.lowPowerMode
+            return BatteryColorMap.tint(level: device.level, lowPower: lowPower, charging: device.charging)
+                .color.swiftUI
+        }
         guard device.present, !device.charging else { return present }
         if device.level <= 0.10 { return Color(hex: "#FF453A") }
         if device.level <= 0.20 { return Color(hex: "#FF9F0A") }
         return present
+    }
+
+    /// The Mac's lead line says everything the power source knows:
+    /// "充电中 · 67W · 约 48 分钟充满", "已充满", "使用电池 · 还能用约 2 小时".
+    private func heroCaption(_ device: Item) -> String {
+        if device.isMac, device.present {
+            if context.isPreview { return "使用电池 · 还能用约 5 小时" }
+            if let line = BatteryMetrics.shared.statusLine { return line }
+        }
+        return caption(device)
     }
 
     private func caption(_ device: Item) -> String {

@@ -192,7 +192,9 @@ struct SystemActivityDetail: View {
         case .battery:
             let mac = context.isPreview ? nil : BatteryMetrics.shared.device(.mac)
             guard let mac, mac.present else { return ("Mac 电池", "未报告") }
-            return ("Mac 电池", mac.charging ? "正在充电" : "使用电池")
+            // The 电池 widget's own status line: adapter watts and macOS's
+            // time estimate, not just which way the level is going.
+            return ("Mac 电池", BatteryMetrics.shared.statusLine ?? (mac.charging ? "正在充电" : "使用电池"))
         }
     }
 

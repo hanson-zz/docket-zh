@@ -26,6 +26,27 @@ struct BatteryDevice: Identifiable, Sendable {
     }
 }
 
+/// The Mac's adapter and time estimates, from the power-source API.
+struct MacPower: Equatable, Sendable {
+    /// The adapter's rating, while one is connected.
+    var watts: Int?
+    /// macOS's estimates in minutes; -1 while it is still working one out.
+    var minutesToFull: Int?
+    var minutesToEmpty: Int?
+    /// macOS considers the battery full.
+    var charged = false
+}
+
+/// AppleSmartBattery's longer-term figures. Each one is nil when this Mac
+/// does not publish it, and the panel then leaves that item out.
+struct MacBatteryHealth: Equatable, Sendable {
+    var capacityPercent: Int?
+    var cycles: Int?
+    var celsius: Double?
+
+    var isEmpty: Bool { capacityPercent == nil && cycles == nil && celsius == nil }
+}
+
 /// Battery levels for the Mac and whatever Bluetooth accessories are connected.
 ///
 /// The Mac comes from the power-source API; Apple accessories publish a
@@ -45,6 +66,23 @@ final class BatteryMetrics {
     /// Which accessory the fixed AirPods and keyboard slots are reading, so
     /// a card that shows those slots does not show the same device again.
     @ObservationIgnored private(set) var slotSources: [BatteryDeviceKind: String] = [:]
+    /// The Mac's adapter and estimates, for the panel's status line.
+    private(set) var power = MacPower()
+    /// Read once a minute: these move over weeks, not seconds.
+    private(set) var health = MacBatteryHealth()
+    /// 低电量模式, which tints every look yellow.
+    private(set) var lowPowerMode = false
+    /// One sample per five minutes over the last two days, kept on disk.
+    private(set) var history = BatteryHistory()
+    /// When the adapter was last connected, for the plug-in sweep.
+    private(set) var pluggedAt: Date?
+    /// When the battery last reached 100% on the adapter, for the gold glow.
+    private(set) var fullAt: Date?
+
+    @ObservationIgnored private var lastOnPower: Bool?
+    @ObservationIgnored private var lastLevel: Double?
+    @ObservationIgnored private var healthReadAt = Date.distantPast
+    @ObservationIgnored private var historyLoaded = false
 
     private static let order: [BatteryDeviceKind] = [.mac, .pods, .podsCase, .keyboard]
 
@@ -72,8 +110,17 @@ final class BatteryMetrics {
         return accessories.first { $0.id == id }
     }
 
+    /// The panel's summary line for the Mac, or nil without a battery.
+    var statusLine: String? {
+        guard let mac = device(.mac), mac.present else { return nil }
+        return BatteryStatusText.line(percent: BatteryColorMap.percent(mac.level), charging: mac.charging,
+                                      onPower: mac.onPower, charged: power.charged, watts: power.watts,
+                                      minutesToFull: power.minutesToFull, minutesToEmpty: power.minutesToEmpty)
+    }
+
     func start() {
         guard timer == nil else { return }
+        loadHistory()
         sample()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.sample() }
@@ -97,7 +144,18 @@ final class BatteryMetrics {
 
         var found: [BatteryDeviceKind: BatteryDevice] = [:]
         var sources: [BatteryDeviceKind: String] = [:]
-        if let mac = Self.macDevice() { found[.mac] = mac }
+        if let reading = Self.macDevice() {
+            let (mac, macPower) = reading
+            found[.mac] = mac
+            if macPower != power { power = macPower }
+            noteTransitions(mac)
+            recordHistory(mac)
+        } else if power != MacPower() {
+            power = MacPower()
+        }
+        let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        if lowPower != lowPowerMode { lowPowerMode = lowPower }
+        refreshHealthIfDue(hasBattery: found[.mac] != nil)
         // The old fixed slots, read from the same list: the first AirPods
         // (or any buds pair) and the first keyboard.
         let pods = merged.first { $0.kind.isAirPods && $0.hasBuds }
@@ -170,7 +228,78 @@ final class BatteryMetrics {
 
     // MARK: - Mac
 
-    private static func macDevice() -> BatteryDevice? {
+    /// The adapter going in, and the battery reaching full on it: each
+    /// stamps a moment the looks animate from once.
+    private func noteTransitions(_ mac: BatteryDevice) {
+        let now = Date.now
+        if let was = lastOnPower, !was, mac.onPower { pluggedAt = now }
+        lastOnPower = mac.onPower
+        if mac.onPower, mac.level >= 0.995, let previous = lastLevel, previous < 0.995 { fullAt = now }
+        lastLevel = mac.level
+    }
+
+    // MARK: - History
+
+    private static var historyURL: URL {
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.docket-zh.app"
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appending(path: bundleID, directoryHint: .isDirectory)
+            .appending(path: "battery-history.json")
+    }
+
+    private func loadHistory() {
+        guard !historyLoaded else { return }
+        historyLoaded = true
+        if let data = try? Data(contentsOf: Self.historyURL),
+           var decoded = try? JSONDecoder().decode(BatteryHistory.self, from: data) {
+            decoded.prune(now: .now)
+            history = decoded
+        }
+    }
+
+    /// The first second of each five-minute slot, so the file is written
+    /// at most twelve times an hour.
+    private func recordHistory(_ mac: BatteryDevice) {
+        let now = Date.now
+        guard history.wants(now) else { return }
+        var next = history
+        guard next.record(percent: BatteryColorMap.percent(mac.level), charging: mac.charging, at: now) else { return }
+        history = next
+        let url = Self.historyURL
+        if let data = try? JSONEncoder().encode(next) {
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                     withIntermediateDirectories: true)
+            try? data.write(to: url, options: .atomic)
+        }
+    }
+
+    // MARK: - Health
+
+    private func refreshHealthIfDue(hasBattery: Bool) {
+        let now = Date.now
+        guard now.timeIntervalSince(healthReadAt) >= 60 else { return }
+        healthReadAt = now
+        let next = hasBattery ? Self.readHealth() : MacBatteryHealth()
+        if next != health { health = next }
+    }
+
+    /// `AppleRawMaxCapacity`/`DesignCapacity` (or `MaxCapacity`),
+    /// `CycleCount` and `Temperature` off AppleSmartBattery.
+    private static func readHealth() -> MacBatteryHealth {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard service != 0 else { return MacBatteryHealth() }
+        defer { IOObjectRelease(service) }
+        guard let properties = properties(of: service) else { return MacBatteryHealth() }
+        func int(_ key: String) -> Int? { (properties[key] as? NSNumber)?.intValue }
+        return MacBatteryHealth(
+            capacityPercent: BatteryHealth.maximumCapacityPercent(rawMax: int("AppleRawMaxCapacity"),
+                                                                  design: int("DesignCapacity"),
+                                                                  maxCapacity: int("MaxCapacity")),
+            cycles: BatteryHealth.cycleCount(int("CycleCount")),
+            celsius: BatteryHealth.celsius(raw: int("Temperature")))
+    }
+
+    private static func macDevice() -> (BatteryDevice, MacPower)? {
         guard let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef]
         else { return nil }
@@ -182,14 +311,23 @@ final class BatteryMetrics {
             guard let current = description[kIOPSCurrentCapacityKey as String] as? Int,
                   let capacity = description[kIOPSMaxCapacityKey as String] as? Int, capacity > 0
             else { continue }
-            return BatteryDevice(
+            let onPower = description[kIOPSPowerSourceStateKey as String] as? String == kIOPSACPowerValue
+            let device = BatteryDevice(
                 id: BatteryDeviceKind.mac.rawValue,
                 kind: .mac,
                 level: min(Double(current) / Double(capacity), 1),
                 charging: description[kIOPSIsChargingKey as String] as? Bool ?? false,
                 present: true,
-                onPower: description[kIOPSPowerSourceStateKey as String] as? String == kIOPSACPowerValue
+                onPower: onPower
             )
+            var power = MacPower()
+            power.minutesToFull = description[kIOPSTimeToFullChargeKey as String] as? Int
+            power.minutesToEmpty = description[kIOPSTimeToEmptyKey as String] as? Int
+            power.charged = description[kIOPSIsChargedKey as String] as? Bool ?? false
+            if onPower, let adapter = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any] {
+                power.watts = adapter[kIOPSPowerAdapterWattsKey as String] as? Int
+            }
+            return (device, power)
         }
         return nil  // desktop Mac, or the API gave us nothing
     }

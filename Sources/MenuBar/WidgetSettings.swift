@@ -488,6 +488,7 @@ struct WidgetSettingsSections: View {
         "github.notify": "有新议题、拉取请求或评论时通知",
         "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
         "podcast.notify": "有新单集时通知",
+        "battery.look": "外观",
     ]
 
     static func label(_ key: String) -> String {
@@ -587,6 +588,7 @@ struct WidgetSettingsSections: View {
     /// missing here keeps its text field, which is the honest fallback.
     static let stringChoices: [String: [(title: String, value: String)]] = [
         "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
+        "battery.look": BatteryLook.allCases.map { ($0.title, $0.rawValue) },
         "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
         "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],

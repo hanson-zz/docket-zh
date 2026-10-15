@@ -41,6 +41,7 @@ public enum WidgetCatalog {
         if case .string(let layout) = overrides["layout"], supporterClockLayouts.contains(layout) { return true }
         if case .string(let character) = overrides["character"], supporterWaterCharacters.contains(character) { return true }
         if case .string(let layout) = overrides["layout"], WifiRingStyle.from(layout: layout)?.isSupporterOnly == true { return true }
+        if case .string(let look) = overrides[BatteryLook.key], BatteryLook.from(look)?.isSupporterOnly == true { return true }
         return false
     }
 
@@ -131,7 +132,11 @@ public enum WidgetCatalog {
                            // Connected Bluetooth accessories in the spare
                            // slots and the panel. A widget saved before this
                            // existed reads the same default, so it is on.
-                           BatteryShelf.bluetoothKey: .bool(true)]),
+                           BatteryShelf.bluetoothKey: .bool(true),
+                           // 外观. The catalog default is what a widget saved
+                           // before looks existed reads, so it stays 经典;
+                           // `make` gives a new widget 液态.
+                           BatteryLook.key: .string(BatteryLook.legacyDefault.rawValue)]),
               variants: [("状态", ["layout": .string("status")]),
                          ("百分比圆环", ["layout": .string("gauge")]),
                          ("仅图标", ["layout": .string("icon")])],
@@ -557,6 +562,9 @@ public enum WidgetCatalog {
         // and the chart mean nothing there.
         case (.network, "display"), (.network, "chart"):
             WifiRingStyle.from(layout: config.string("layout", default: "speed")) == nil
+        // 仅图标 draws bare glyphs; there is no gauge for a look to change.
+        case (.battery, BatteryLook.key):
+            config.string("layout", default: "status") != "icon"
         default:
             true
         }
@@ -662,6 +670,7 @@ public enum WidgetCatalog {
     public static func make(_ kind: WidgetKind, overrides: [String: WidgetConfig.Value] = [:]) -> WidgetInstance? {
         guard let entry = byKind[kind] else { return nil }
         var config = entry.defaults
+        if kind == .battery { config.set(BatteryLook.key, .string(BatteryLook.newWidgetDefault.rawValue)) }
         for (k, v) in overrides { config.set(k, v) }
         return WidgetInstance(kind: kind, expanded: true, config: config)
     }
