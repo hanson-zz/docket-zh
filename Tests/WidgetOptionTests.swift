@@ -110,6 +110,7 @@ final class WidgetOptionTests: XCTestCase {
             .clipboard: ["pasteOnClick"],
             .translate: ["clickAction", "autoDirection"],
             .pet: ["character"],
+            .podcast: ["notify"],
             .toggles: ["actions"],
             .clock: ["seconds"],
         ]

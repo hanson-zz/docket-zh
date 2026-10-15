@@ -400,6 +400,7 @@ enum WidgetDetail {
         case .anniversary: 360
         case .water: 360
         case .pet: 340
+        case .podcast: 340
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
         default: 300

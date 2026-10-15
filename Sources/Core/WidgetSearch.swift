@@ -64,6 +64,7 @@ public enum WidgetSearch {
         "water": ["water", "drink", "hydration", "喝水", "饮水"],
         "translate": ["translate", "translation", "英文", "中英"],
         "pet": ["pet", "tamagotchi", "red panda", "宠物", "小熊猫", "养成"],
+        "podcast": ["podcast", "podcasts", "bokee", "bk", "小宇宙", "xiaoyuzhou", "xyz", "订阅", "单集", "节目"],
     ]
 
     /// The pinyin of `text` without tones, as one run ("tianqi") and as its

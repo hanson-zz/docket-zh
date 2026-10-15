@@ -4,15 +4,32 @@ import SwiftUI
 /// A row of links, each a lettered disc; a click opens it in the default
 /// browser.
 ///
-/// No favicons: fetching one means asking every site for a picture whenever
-/// the shelf draws, which is a network request per link that nobody asked
-/// for. A letter on a colour from the host tells them apart just as well.
+/// No favicons on the shelf: drawing one means a picture per link on every
+/// redraw. A letter on a colour from the host tells them apart just as well.
+/// Each page's title and summary are read once, when the link is first seen
+/// (see `LinkPreview`), kept in the widget's config, and shown in the disc's
+/// tooltip and in the panel; a link without a title of its own takes its
+/// letter from the page's title.
 struct BookmarksTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     private var links: [Bookmark] {
         Array(Bookmark.list(instance.config.strings("links")).prefix(8))
+    }
+
+    private var previews: [String: LinkPreview] { LinkPreview.stored(instance.config) }
+
+    /// Every web link in the list with no preview yet, or whose last attempt
+    /// failed long enough ago. The fetch below re-runs when this changes.
+    private var pending: [URL] {
+        guard !context.isPreview else { return [] }
+        let stored = previews
+        var seen = Set<String>()
+        return Bookmark.list(instance.config.strings("links")).map(\.url).filter { url in
+            seen.insert(url.absoluteString).inserted
+                && LinkPreview.needsFetch(url, stored: stored[url.absoluteString], now: context.now)
+        }
     }
 
     var body: some View {
@@ -40,18 +57,36 @@ struct BookmarksTile: View {
                 }
             }
         }
+        .task(id: pending) {
+            let urls = pending
+            guard !urls.isEmpty else { return }
+            let fetched = await LinkPreviewFetcher.fetch(urls)
+            guard !Task.isCancelled, !fetched.isEmpty else { return }
+            BookmarkPreviews.save(fetched, in: instance)
+        }
     }
 
     private func disc(_ link: Bookmark) -> some View {
-        Button {
+        let preview = previews[link.url.absoluteString]
+        let title = link.displayTitle(preview)
+        let summary = preview?.hasContent == true ? preview?.summary : nil
+        return Button {
             guard !context.isPreview else { return }
             NSWorkspace.shared.open(link.url)
         } label: {
-            BookmarkBadge(link: link, size: 30)
+            BookmarkBadge(link: Bookmark(title: title, url: link.url), size: 30)
         }
         .buttonStyle(.plain)
-        .help("\(link.title)\n\(link.url.absoluteString)")
-        .accessibilityLabel("打开 \(link.title)")
+        .help([title, summary, link.url.absoluteString].compactMap { $0 }.joined(separator: "\n"))
+        .accessibilityLabel("打开 \(title)")
+    }
+}
+
+/// Writes fetched previews back into a bookmarks widget's config.
+@MainActor
+enum BookmarkPreviews {
+    static func save(_ fetched: [LinkPreview], in instance: WidgetInstance) {
+        WidgetWriter.write(instance) { LinkPreview.store(fetched, in: &$0) }
     }
 }
 

@@ -503,6 +503,11 @@ struct DockShelfView: View {
                   initial: true) { _, plan in
             GitHubService.shared.schedule(plan)
         }
+        // 播客 checks for new episodes only while one is placed; see PodcastService.
+        .onChange(of: PodcastWatch.plan(app.customProfile?.items.compactMap(\.widget) ?? []),
+                  initial: true) { _, plan in
+            PodcastService.shared.schedule(active: plan.active, notify: plan.notify)
+        }
     }
 
     private func measureScreen() {

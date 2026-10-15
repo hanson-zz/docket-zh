@@ -486,6 +486,7 @@ struct WidgetSettingsSections: View {
         "github.interval": "检查间隔",
         "github.notify": "有新议题、拉取请求或评论时通知",
         "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
+        "podcast.notify": "有新单集时通知",
     ]
 
     static func label(_ key: String) -> String {

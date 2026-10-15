@@ -414,6 +414,13 @@ public enum WidgetCatalog {
               defaults: c(["volume": .number(60)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 小宇宙 shows by their public pages, played in 码头; the subscriptions
+        // are shared by every 播客 widget and kept by PodcastService, which
+        // checks hourly while one is placed. `notify` announces new episodes.
+        Entry(kind: .podcast, name: "播客", category: .media,
+              defaults: c(["notify": .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Each playing app's own volume, through Core Audio process taps; see
         // AppVolume and AppVolumeService. Per-app choices are kept by the
         // service, by bundle identifier, not in the widget's config.
@@ -464,6 +471,7 @@ public enum WidgetCatalog {
         case .anniversary: PaletteColor.pink.hex
         case .water: PaletteColor.blue.hex
         case .pet: ShelfColor.redPanda.hex
+        case .podcast: "#25B4E1"
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -630,7 +638,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet:
+             .anniversary, .water, .translate, .pet, .podcast:
             nil
         }
     }
@@ -782,6 +790,7 @@ public enum WidgetCatalog {
         case .water:
             return CGSize(width: WaterIntake.tileWidth(layout: cfg.string("layout", default: "character")), height: 62)
         case .pet: return CGSize(width: 196, height: 62)
+        case .podcast: return CGSize(width: 220, height: 62)
         }
     }
 
@@ -865,7 +874,7 @@ public enum WidgetCatalog {
             return 112
         case .emoji:
             return 132
-        case .todo, .ambient, .lunar, .trash, .appVolume, .radio:
+        case .todo, .ambient, .lunar, .trash, .appVolume, .radio, .podcast:
             return 112
         case .weather:
             let layout = cfg.string("layout", default: "current")
