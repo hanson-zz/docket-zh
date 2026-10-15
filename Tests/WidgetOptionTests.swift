@@ -72,6 +72,7 @@ final class WidgetOptionTests: XCTestCase {
         let expected: [WidgetKind: Set<String>] = [
             .world: ["city", "zone"],
             .progress: ["period"],
+            .timer: ["look"],
             .countdown: ["duration", "name", "presets"],
             .alarm: ["time", "name"],
             .calendar: ["allDay", "calendars"],

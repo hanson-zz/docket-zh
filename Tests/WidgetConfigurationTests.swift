@@ -37,6 +37,7 @@ final class WidgetConfigurationTests: XCTestCase {
             (["layout": .string("numbers"), "chart": .bool(true)], "数字 + 图表"),
             (["layout": .string("rings")], "圆环"),
             (["layout": .string("bars")], "条形"),
+            (["layout": .string("liquid")], "液态"),
         ]
         for (overrides, title) in expected {
             guard let instance = WidgetCatalog.make(.system, overrides: overrides) else {
@@ -167,7 +168,7 @@ final class WidgetConfigurationTests: XCTestCase {
     }
 
     func testAKindWithNoOptionsOffersNoSettings() {
-        for kind in [WidgetKind.stopwatch, .timer, .airdrop] {
+        for kind in [WidgetKind.stopwatch, .airdrop] {
             XCTAssertTrue(WidgetCatalog.configurableKeys(kind).isEmpty, "\(kind)")
         }
     }

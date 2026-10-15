@@ -499,6 +499,7 @@ struct WidgetSettingsSections: View {
         "slacker.start": "上班时间",
         "slacker.end": "下班时间（要晚于上班时间）",
         "slacker.look": "外观",
+        "timer.look": "外观",
     ]
 
     static func label(_ key: String) -> String {
@@ -626,6 +627,7 @@ struct WidgetSettingsSections: View {
         "github.interval": GitHubWatch.intervalChoices.map { ("每 \($0) 分钟", "\($0)") },
         "slacker.font": SlackerClock.FontChoice.allCases.map { ($0.title, $0.rawValue) },
         "slacker.look": SlackerClock.Look.allCases.map { ($0.title, $0.rawValue) },
+        "timer.look": LiquidMotion.TimerLook.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

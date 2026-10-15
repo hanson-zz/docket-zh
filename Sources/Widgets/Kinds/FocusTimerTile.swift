@@ -67,6 +67,9 @@ struct FocusTimerTile: View {
         // A countdown at zero is not running whatever its deadline says: the
         // glyph offers a fresh start there, which is what pressing it does.
         let running = remaining > 0 && state.paused == nil && state.deadline != nil
+        let liquid = LiquidMotion.timerLook(instance.config) == .liquid
+        let golden = LiquidMotion.timerGolden(
+            secondsSinceEnd: state.deadline.map { context.now.timeIntervalSince($0) })
 
         WidgetSurface {
             if context.position.isVertical {
@@ -74,7 +77,8 @@ struct FocusTimerTile: View {
                 // it and the phase named underneath.
                 VStack(spacing: 5) {
                     ZStack {
-                        ring(fraction: remaining / total, tint: tint, diameter: 44, width: 6)
+                        dial(liquid: liquid, remaining: remaining, total: total, tint: tint,
+                             running: running, golden: golden, diameter: 44, width: 6)
                         Text(docketClockString(remaining))
                             .font(WidgetStyle.label(13))
                             .monospacedDigit()
@@ -100,8 +104,15 @@ struct FocusTimerTile: View {
                     // tile's, and the colour is an accent on it. A 180-minute
                     // session reads 3:00:00, which TileReading shrinks to fit.
                     TileBadge {
-                        TileRing(progress: remaining / total,
-                                 tint: tint.mix(with: WidgetStyle.primary, by: 0.25))
+                        if liquid {
+                            LiquidWater(level: LiquidMotion.timerLevel(remaining: remaining, total: total),
+                                        tint: tint, shape: .circle, visible: liquidVisible,
+                                        still: !running && !golden, golden: golden)
+                                .padding(4)
+                        } else {
+                            TileRing(progress: remaining / total,
+                                     tint: tint.mix(with: WidgetStyle.primary, by: 0.25))
+                        }
                     }
                     TileReading(value: docketClockString(remaining), caption: state.phase.label)
                     Spacer(minLength: 0)
@@ -112,7 +123,8 @@ struct FocusTimerTile: View {
                 // collapsed tile leaves starting to the panel rather than
                 // squeezing a glyph in beside a clock that can read 1:00:00.
                 VStack(spacing: 3) {
-                    ring(fraction: remaining / total, tint: tint, diameter: 24, width: 5)
+                    dial(liquid: liquid, remaining: remaining, total: total, tint: tint,
+                         running: running, golden: golden, diameter: 24, width: 5)
                     Text(docketClockString(remaining))
                         .font(WidgetStyle.label(13))
                         .monospacedDigit()
@@ -177,6 +189,26 @@ struct FocusTimerTile: View {
         if let paused = state.paused { return max(0, min(paused, total)) }
         guard let deadline = state.deadline else { return total }
         return max(0, min(deadline.timeIntervalSince(context.now), total))
+    }
+
+    /// 液态只在卡片可见、并且不是小组件库预览时动。
+    private var liquidVisible: Bool {
+        !context.isPreview && ShelfVisibility.shared.cardsOnScreen
+    }
+
+    /// 圆环或液态：液态的水随专注时间涨，结束时满并闪金光；暂停或没开始时
+    /// 水面静止。
+    @ViewBuilder
+    private func dial(liquid: Bool, remaining: TimeInterval, total: TimeInterval, tint: Color,
+                      running: Bool, golden: Bool, diameter: CGFloat, width: CGFloat) -> some View {
+        if liquid {
+            LiquidWater(level: LiquidMotion.timerLevel(remaining: remaining, total: total),
+                        tint: tint, shape: .circle, visible: liquidVisible,
+                        still: !running && !golden, golden: golden)
+                .frame(width: diameter, height: diameter)
+        } else {
+            ring(fraction: remaining / total, tint: tint, diameter: diameter, width: width)
+        }
     }
 
     /// Empties as time passes.

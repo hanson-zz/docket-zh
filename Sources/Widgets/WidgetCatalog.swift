@@ -74,14 +74,17 @@ public enum WidgetCatalog {
         Entry(kind: .stopwatch, name: "秒表", category: .clocks, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .timer, name: "专注计时", category: .clocks, defaults: c([:]),
+        // 专注计时没有样式选择，外观（圆环或液态）用 look 键，默认圆环。
+        Entry(kind: .timer, name: "专注计时", category: .clocks,
+              defaults: c([LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.ring.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         Entry(kind: .progress, name: "时间进度", category: .clocks,
               defaults: c(["layout": .string("bars"), "period": .string("year")]),
               variants: [("进度条", ["layout": .string("bars")]),
                          ("圆环", ["layout": .string("ring")]),
-                         ("百分比", ["layout": .string("percentage")])],
+                         ("百分比", ["layout": .string("percentage")]),
+                         ("液态", ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .countdown, name: "倒计时", category: .clocks,
@@ -168,7 +171,8 @@ public enum WidgetCatalog {
               variants: [("数字", ["layout": .string("numbers"), "chart": .bool(false)]),
                          ("数字 + 图表", ["layout": .string("numbers"), "chart": .bool(true)]),
                          ("圆环", ["layout": .string("rings")]),
-                         ("条形", ["layout": .string("bars")])],
+                         ("条形", ["layout": .string("bars")]),
+                         ("液态", ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: true, selfContained: true),
 
         // No `popupChart`: it was read by nothing, and the detail panel it
@@ -715,6 +719,7 @@ public enum WidgetCatalog {
             switch cfg.string("layout", default: "bars") {
             case "ring": return CGSize(width: 148, height: 76)
             case "percentage": return CGSize(width: 112, height: 62)
+            case LiquidMotion.layout: return CGSize(width: 132, height: 72)
             default: return CGSize(width: 176, height: 78)
             }
         case .countdown: return CGSize(width: 140, height: 72)
@@ -756,7 +761,7 @@ public enum WidgetCatalog {
             let metrics = max(1, cfg.strings("metrics", default: ["cpu", "memory"]).count)
             let layout = cfg.string("layout", default: "numbers")
             if layout == "bars" { return CGSize(width: 168, height: 62) }
-            let rings = layout == "rings"
+            let rings = layout == "rings" || layout == LiquidMotion.layout
             // The per-metric widths are content widths; the tile also has to
             // pay for WidgetSurface's horizontal inset, or a two-metric tile
             // truncates "Memory" to "Memo…". 168pt for two metrics matches the

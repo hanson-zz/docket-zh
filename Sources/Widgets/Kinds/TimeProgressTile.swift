@@ -56,8 +56,11 @@ struct TimeProgressTile: View {
                 if context.position.isVertical {
                     // The 52-bar run cannot survive 56pt of usable width, so a
                     // column always rings - whatever the horizontal layout is.
-                    if instance.config.string("layout", default: "bars") == "percentage" {
+                    let layout = instance.config.string("layout", default: "bars")
+                    if layout == "percentage" {
                         columnPercentage
+                    } else if layout == LiquidMotion.layout {
+                        columnLiquid
                     } else {
                         columnRing
                     }
@@ -65,6 +68,7 @@ struct TimeProgressTile: View {
                     switch instance.config.string("layout", default: "bars") {
                     case "ring": ringLayout
                     case "percentage": percentageLayout
+                    case LiquidMotion.layout: liquidLayout
                     default: barsLayout
                     }
                 }
@@ -135,7 +139,36 @@ struct TimeProgressTile: View {
         }
     }
 
+    /// 液态：整张卡片是一杯水，水位就是这段时间过去的比例。
+    private var liquidLayout: some View {
+        ZStack {
+            water
+            VStack(spacing: 1) {
+                percentText(24)
+                periodLabel(12)
+            }
+        }
+    }
+
+    private var water: some View {
+        LiquidWater(level: fraction, tint: WidgetStyle.primary,
+                    visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+            .fillingCard()
+    }
+
     // MARK: Column layouts (76pt wide, 56pt usable)
+
+    /// 侧边栏里的液态：一样铺满，数字在上，时段在下。
+    private var columnLiquid: some View {
+        ZStack {
+            water
+            VStack(spacing: 2) {
+                percentText(21)
+                    .minimumScaleFactor(0.6)
+                periodLabel(10)
+            }
+        }
+    }
 
     /// 76×80: ring with the figure inside, period beneath.
     private var columnRing: some View {

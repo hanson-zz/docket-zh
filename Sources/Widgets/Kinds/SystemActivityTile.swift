@@ -42,6 +42,7 @@ struct SystemActivityTile: View {
         switch layout {
         case "rings": rings
         case "bars": bars
+        case LiquidMotion.layout: liquid(diameter: 42, size: 12)
         default: numbers
         }
     }
@@ -51,6 +52,7 @@ struct SystemActivityTile: View {
         switch layout {
         case "rings": verticalRings
         case "bars": verticalBars
+        case LiquidMotion.layout: verticalLiquid
         default: verticalNumbers
         }
     }
@@ -140,6 +142,52 @@ struct SystemActivityTile: View {
             }
         }
         .lineLimit(1)
+    }
+
+    // MARK: 液态
+
+    /// 每个读数一个小水杯：水位是占用率，占用越高水波越急，过了 85% 变红。
+    private func liquidCup(_ metric: Metric, diameter: CGFloat, size: CGFloat) -> some View {
+        let load = value(metric)
+        let tint = LiquidMotion.isHot(load) ? Color.red : metric.color
+        return ZStack {
+            LiquidWater(level: load, tint: tint, shape: .circle,
+                        visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                        speed: LiquidMotion.busySpeed(load))
+            percent(load, size: size)
+                .minimumScaleFactor(0.6)
+                .shadow(color: .black.opacity(0.35), radius: 1, y: 0.5)
+                .padding(.horizontal, 3)
+        }
+        .frame(width: diameter, height: diameter)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(metric.label)
+        .accessibilityValue("百分之 \(Int((load * 100).rounded()))")
+    }
+
+    private func liquid(diameter: CGFloat, size: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            ForEach(metrics, id: \.self) { metric in
+                liquidCup(metric, diameter: diameter, size: size)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var verticalLiquid: some View {
+        VStack(spacing: 0) {
+            ForEach(metrics, id: \.self) { metric in
+                VStack(spacing: 2) {
+                    liquidCup(metric, diameter: 36, size: 11)
+                    Text(metric.short)
+                        .font(WidgetStyle.label(9))
+                        .foregroundStyle(WidgetStyle.secondary)
+                }
+                .frame(height: 54)
+            }
+        }
+        .lineLimit(1)
+        .padding(.vertical, 4)
     }
 
     // MARK: Column layouts
