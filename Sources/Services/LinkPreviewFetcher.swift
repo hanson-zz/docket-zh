@@ -12,7 +12,7 @@ enum LinkPreviewFetcher {
     /// ask for the same page twice at once.
     private static var inFlight: Set<String> = []
 
-    static let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+    nonisolated static let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
 
     /// Fetches every link in `urls` not already being fetched and returns a
     /// preview for each, a failure entry where the page could not be read.
