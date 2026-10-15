@@ -237,6 +237,78 @@ public enum Geometry {
         }
     }
 
+    // MARK: Keeping clear of the island
+    //
+    // 灵动提示 sits at the top centre of the screen with the menu bar, right
+    // where a top shelf hangs. The shelf is the one that moves: the capsule
+    // is anchored to the notch and has nowhere else to go.
+
+    /// Space left between the bottom of the capsule and the top of a shelf
+    /// that has stepped aside for it.
+    public static let islandSpacing: CGFloat = 6
+
+    /// The island's footprint, if it is one a shelf on `edge` and `screen`
+    /// has to keep clear of. Only a top shelf ever meets it, and only on the
+    /// same display.
+    public static func islandToAvoid(edge: DockPosition, island: CGRect?, screen: CGRect) -> CGRect? {
+        guard edge == .top, let island, !island.isEmpty, island.intersects(screen) else { return nil }
+        return island
+    }
+
+    /// Where a shelf whose ordinary place is `origin` sits once it has made
+    /// room for the island: unchanged unless it would touch the capsule (or
+    /// come within `spacing` of it), and then moved straight down until its
+    /// top is `spacing` under the capsule's bottom. Never below `floor`.
+    ///
+    /// Left, bottom and right shelves, and a shelf on another display, are
+    /// returned exactly as given.
+    public static func avoidingIsland(edge: DockPosition, origin: CGPoint, size: CGSize,
+                                      island: CGRect?, screen: CGRect, floor: CGFloat,
+                                      spacing: CGFloat = islandSpacing) -> CGPoint {
+        guard let island = islandToAvoid(edge: edge, island: island, screen: screen) else { return origin }
+        let shelf = CGRect(origin: origin, size: size)
+        guard shelf.intersects(island.insetBy(dx: -spacing, dy: -spacing)) else { return origin }
+        let lowered = island.minY - spacing - size.height
+        return CGPoint(x: origin.x, y: max(floor, min(origin.y, lowered)))
+    }
+
+    /// Whether a shelf at `shelf` would have to move for the island.
+    public static func islandDisplaces(edge: DockPosition, shelf: CGRect, island: CGRect?,
+                                       screen: CGRect, spacing: CGFloat = islandSpacing) -> Bool {
+        guard let island = islandToAvoid(edge: edge, island: island, screen: screen) else { return false }
+        return shelf.intersects(island.insetBy(dx: -spacing, dy: -spacing))
+    }
+
+    /// The strips that bring a hidden shelf back, with the island taken out.
+    ///
+    /// Without an island to avoid this is `revealZone` alone. With one, the
+    /// band under the menu bar keeps its pieces either side of the capsule,
+    /// and across the capsule's width it hangs from the capsule's underside
+    /// instead, so a pointer resting on the capsule never also pulls the
+    /// shelf out, and one coming up through the middle still meets the band
+    /// before it reaches the capsule.
+    public static func revealZones(edge: DockPosition, shelf: CGRect, screen: CGRect,
+                                   ceiling: CGFloat, depth: CGFloat, island: CGRect?) -> [CGRect] {
+        let band = revealZone(edge: edge, shelf: shelf, screen: screen, ceiling: ceiling, depth: depth)
+        guard let island = islandToAvoid(edge: edge, island: island, screen: screen),
+              band.intersects(island) else { return [band] }
+        var zones: [CGRect] = []
+        if island.minX > band.minX {
+            zones.append(CGRect(x: band.minX, y: band.minY,
+                                width: min(island.minX, band.maxX) - band.minX, height: band.height))
+        }
+        let middleMinX = max(band.minX, island.minX), middleMaxX = min(band.maxX, island.maxX)
+        if middleMaxX > middleMinX {
+            zones.append(CGRect(x: middleMinX, y: island.minY - depth,
+                                width: middleMaxX - middleMinX, height: depth))
+        }
+        if island.maxX < band.maxX {
+            let minX = max(island.maxX, band.minX)
+            zones.append(CGRect(x: minX, y: band.minY, width: band.maxX - minX, height: band.height))
+        }
+        return zones.filter { $0.width > 0 && $0.height > 0 }
+    }
+
     /// Origin of a popup of `size` (hover label, group sheet, widget panel)
     /// opened from a tile, `gap` points from `anchor` on the shelf's open
     /// side: above a bottom shelf, below a top one, beside a side one.

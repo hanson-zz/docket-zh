@@ -145,11 +145,21 @@ final class IslandController {
 
     /// Puts the panel up when there is something to show, and takes it down
     /// once the capsule has finished animating away.
+    ///
+    /// Its footprint is published to `IslandOccupancy` for as long as the
+    /// window is up, from before the capsule draws until after it has
+    /// finished leaving, so a top shelf can step aside first and come back
+    /// only once the capsule is gone.
     private func sync() {
         if model.content != nil {
             hideGeneration += 1
+            let appearing = panel?.isVisible != true
             let panel = panel ?? makePanel()
             place(panel)
+            if appearing, let footprint = IslandOccupancy.shared.frame,
+               IslandOccupancy.shared.wouldDisplace(footprint) {
+                hold()
+            }
             panel.orderFrontRegardless()
         } else if let panel {
             hideGeneration += 1
@@ -158,11 +168,26 @@ final class IslandController {
                 try? await Task.sleep(for: .milliseconds(600))
                 guard let self, self.hideGeneration == generation, self.model.content == nil else { return }
                 panel.orderOut(nil)
+                IslandOccupancy.shared.update(nil)
             }
         }
     }
 
-    private static let panelSize = CGSize(width: 440, height: 96)
+    private var holdGeneration = 0
+
+    /// Keeps the capsule back while the shelf slides out of its way.
+    private func hold() {
+        holdGeneration += 1
+        let generation = holdGeneration
+        model.held = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(IslandLayout.yieldDelay))
+            guard let self, self.holdGeneration == generation else { return }
+            self.model.held = false
+        }
+    }
+
+    private static let panelSize = IslandLayout.panelSize
 
     private func makePanel() -> NSPanel {
         let panel = NSPanel(contentRect: CGRect(origin: .zero, size: Self.panelSize),
@@ -188,7 +213,7 @@ final class IslandController {
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, let panel = self.panel else { return }
+                guard let self, let panel = self.panel, panel.isVisible else { return }
                 self.place(panel)
             }
         }
@@ -196,14 +221,50 @@ final class IslandController {
     }
 
     /// Top centre of the screen with the menu bar, under the notch when
-    /// there is one and under the menu bar when there is not.
+    /// there is one and under the menu bar when there is not. Shown on
+    /// displays without a notch too. See IslandLayout.panelFrame.
     private func place(_ panel: NSPanel) {
         guard let screen = NSScreen.screens.first else { return }
-        let frame = screen.frame
-        let notch = screen.safeAreaInsets.top
-        let top = notch > 0 ? frame.maxY - notch - 4 : screen.visibleFrame.maxY - 6
-        let origin = CGPoint(x: frame.midX - Self.panelSize.width / 2, y: top - Self.panelSize.height)
-        panel.setFrame(CGRect(origin: origin, size: Self.panelSize), display: false)
+        let frame = IslandLayout.panelFrame(screen: screen.frame,
+                                            visibleMaxY: screen.visibleFrame.maxY,
+                                            notch: screen.safeAreaInsets.top)
+        panel.setFrame(frame, display: false)
+        IslandOccupancy.shared.update(IslandLayout.occupied(panel: frame))
+    }
+}
+
+/// Where the island is, for whatever has to keep clear of it.
+///
+/// The island owns the frame and posts `didChange` whenever it changes, so
+/// the shelf reacts to the capsule appearing, leaving or moving to another
+/// display without polling. The shelf in turn says whether a footprint would
+/// push it aside, so the capsule can wait for it to get out of the way.
+/// Both sides live on the main actor.
+@MainActor
+final class IslandOccupancy {
+    static let shared = IslandOccupancy()
+
+    /// Posted on the main thread after `frame` changes.
+    nonisolated static let didChange = Notification.Name("DocklingIslandOccupancyDidChange")
+
+    /// The capsule's footprint in screen coordinates while its window is up,
+    /// nil while it is not. See IslandLayout.occupied.
+    private(set) var frame: CGRect?
+
+    /// Installed by the shelf: whether keeping clear of `footprint` would
+    /// move it right now.
+    var displaces: (@MainActor (CGRect) -> Bool)?
+
+    private init() {}
+
+    func update(_ next: CGRect?) {
+        guard next != frame else { return }
+        frame = next
+        NotificationCenter.default.post(name: Self.didChange, object: nil)
+    }
+
+    func wouldDisplace(_ footprint: CGRect) -> Bool {
+        displaces?(footprint) ?? false
     }
 }
 
@@ -212,8 +273,12 @@ final class IslandController {
 final class IslandModel {
     var flash: IslandContent?
     var meeting: IslandContent?
+    /// True for a moment while a top shelf steps aside, so the capsule
+    /// makes its entrance into space that is already clear.
+    var held = false
 
     var content: IslandContent? { IslandContent.resolve(flash: flash, meeting: meeting) }
+    var shown: IslandContent? { held ? nil : content }
 }
 
 // MARK: - The capsule
@@ -223,7 +288,7 @@ struct IslandView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let content = model.content {
+            if let content = model.shown {
                 IslandCapsule(content: content)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.55, anchor: .top).combined(with: .opacity),
@@ -232,7 +297,7 @@ struct IslandView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .animation(.spring(response: 0.36, dampingFraction: 0.72), value: model.content)
+        .animation(.spring(response: 0.36, dampingFraction: 0.72), value: model.shown)
     }
 }
 

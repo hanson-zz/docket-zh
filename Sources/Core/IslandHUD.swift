@@ -143,3 +143,51 @@ public enum IslandContent: Equatable, Sendable {
     /// How long a level flash stays up after the last change.
     public static let flashDuration: TimeInterval = 1.6
 }
+
+// MARK: - Where the capsule sits
+
+/// The capsule's window and the part of it that is actually drawn, decided
+/// apart from AppKit so the shelf can steer clear of it and tests can check
+/// the numbers.
+///
+/// AppKit screen coordinates throughout: y runs up, a screen's top is its
+/// `maxY`.
+public enum IslandLayout {
+    /// The window: wider and much taller than the capsule, so the capsule's
+    /// spring and shadow are never clipped. It is clear and ignores the mouse.
+    public static let panelSize = CGSize(width: 440, height: 96)
+
+    /// The capsule itself is 34pt tall and grows from the window's top edge.
+    public static let capsuleHeight: CGFloat = 34
+
+    /// Room under the capsule for its shadow (radius 8, 3pt down) and the
+    /// little overshoot of its entrance spring.
+    public static let shadowAllowance: CGFloat = 12
+
+    /// How long the capsule holds back when the shelf has to step aside
+    /// first, so it never draws over a shelf that is still on its way out.
+    /// Matches the shelf's own slide.
+    public static let yieldDelay: TimeInterval = 0.22
+
+    /// The window's frame on the screen with the menu bar: centred, just
+    /// under the notch when there is one, just under the menu bar when not.
+    ///
+    /// - Parameters:
+    ///   - screen: that screen's full frame.
+    ///   - visibleMaxY: the top of its `visibleFrame`.
+    ///   - notch: `safeAreaInsets.top`, zero on a display without a notch.
+    public static func panelFrame(screen: CGRect, visibleMaxY: CGFloat, notch: CGFloat) -> CGRect {
+        let top = notch > 0 ? screen.maxY - notch - 4 : visibleMaxY - 6
+        return CGRect(x: screen.midX - panelSize.width / 2, y: top - panelSize.height,
+                      width: panelSize.width, height: panelSize.height)
+    }
+
+    /// What the capsule can cover inside its window, in any state it draws:
+    /// the full width (the widest capsule, a meeting title, is 392pt), from
+    /// the window's top edge down to the bottom of the capsule's shadow.
+    /// The rest of the window is empty and is not worth keeping clear.
+    public static func occupied(panel: CGRect) -> CGRect {
+        let height = min(panel.height, capsuleHeight + shadowAllowance)
+        return CGRect(x: panel.minX, y: panel.maxY - height, width: panel.width, height: height)
+    }
+}

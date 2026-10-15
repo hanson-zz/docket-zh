@@ -42,6 +42,17 @@ final class WidgetDetailWindow {
 
     var isOpen: Bool { openWidgetID != nil && panel?.isVisible == true }
 
+    /// Moves the open panel up or down with a top shelf stepping aside for
+    /// 灵动提示, inside the shelf's own animation. See
+    /// DockPanelController.islandMoved.
+    func shift(by dy: CGFloat) {
+        guard isOpen, let panel, dy != 0 else { return }
+        panel.animator().setFrame(panel.frame.offsetBy(dx: 0, dy: dy), display: false)
+        // The shelf moved with it, and a click on the shelf is still the
+        // shelf's to handle.
+        host = host.offsetBy(dx: 0, dy: dy)
+    }
+
     func toggle(_ instance: WidgetInstance, context: WidgetContext,
                 anchor: CGPoint, edge: DockPosition, host: CGRect) {
         if openWidgetID == instance.id { return close() }

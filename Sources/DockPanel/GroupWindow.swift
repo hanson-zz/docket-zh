@@ -47,6 +47,14 @@ final class GroupWindow {
         return panel.frame.insetBy(dx: slack, dy: slack).contains(point)
     }
 
+    /// Moves the open sheet up or down with a top shelf stepping aside for
+    /// 灵动提示, inside the shelf's own animation. See
+    /// DockPanelController.islandMoved.
+    func shift(by dy: CGFloat) {
+        guard isOpen, let panel, dy != 0 else { return }
+        panel.animator().setFrame(panel.frame.offsetBy(dx: 0, dy: dy), display: false)
+    }
+
     func close() {
         guard panel?.isVisible == true, openGroupID != nil else { return }
         openGroupID = nil

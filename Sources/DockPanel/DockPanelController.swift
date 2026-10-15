@@ -26,7 +26,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     /// How close to the screen edge the pointer must get to bring the shelf back.
     private let revealZoneDepth: CGFloat = 3
-    /// See `revealZone`: the band under the menu bar for a top shelf.
+    /// See `revealZones`: the band under the menu bar for a top shelf.
     private let topRevealZoneDepth: CGFloat = 6
     /// Grace before hiding again, so brushing past the edge of the shelf on the
     /// way somewhere else does not make it flicker.
@@ -50,6 +50,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
                         }
                     }
                 })
+        }
+        // The island says when it appears, leaves or moves, so a top shelf
+        // can step aside for it without anything polling. See IslandOccupancy.
+        menuObservers.append(
+            NotificationCenter.default.addObserver(forName: IslandOccupancy.didChange, object: nil,
+                                                   queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.islandMoved() }
+            })
+        IslandOccupancy.shared.displaces = { [weak self] footprint in
+            self?.wouldMove(for: footprint) ?? false
         }
     }
 
@@ -234,6 +244,15 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private var revealedOrigin: CGPoint { revealedOrigin(for: panel?.frame.size ?? .zero) }
 
     private func revealedOrigin(for size: CGSize) -> CGPoint {
+        revealedOrigin(for: size, island: islandFootprint)
+    }
+
+    /// The island's footprint, when it is up. Whether it matters is decided
+    /// per screen and edge by Geometry.islandToAvoid.
+    private var islandFootprint: CGRect? { IslandOccupancy.shared.frame }
+
+    /// Where the shelf sits when visible, keeping clear of `island`.
+    private func revealedOrigin(for size: CGSize, island: CGRect?) -> CGPoint {
         // Borrowing the Dock's strip means sitting *in* it, not above it.
         // `visibleFrame` already excludes the reservation, so placing against
         // it would put the shelf beside its own strut and leave the reserved
@@ -263,8 +282,47 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
         // Never lets the shelf hang off-screen at large scales on small
         // displays; see Geometry.shelfOrigin.
-        return Geometry.shelfOrigin(edge: app.effectivePosition, size: size,
-                                    bounds: bounds, inset: inset)
+        let origin = Geometry.shelfOrigin(edge: app.effectivePosition, size: size,
+                                          bounds: bounds, inset: inset)
+        // A top shelf steps down under 灵动提示 while the capsule is up on
+        // the same display; every other edge comes back unchanged.
+        return Geometry.avoidingIsland(edge: app.effectivePosition, origin: origin, size: size,
+                                       island: island, screen: full, floor: bounds.minY)
+    }
+
+    /// Whether the island at `footprint` would push the shelf aside right
+    /// now, which is when the capsule waits for it before drawing.
+    private func wouldMove(for footprint: CGRect) -> Bool {
+        guard let panel, panel.isVisible, revealed, app.effectivePosition == .top else { return false }
+        let size = panel.frame.size
+        let ordinary = CGRect(origin: revealedOrigin(for: size, island: nil), size: size)
+        return Geometry.islandDisplaces(edge: .top, shelf: ordinary, island: footprint,
+                                        screen: targetScreen.frame)
+    }
+
+    /// The island appeared, left or moved: put a top shelf where it now
+    /// belongs, and take anything opened from it along.
+    ///
+    /// The group sheet, the widget panel and the layout name were placed
+    /// against the shelf when they opened, so they move by the same amount
+    /// rather than being left where the capsule or the old shelf position
+    /// is. The hover label is simply hidden; the next hover places it again.
+    private func islandMoved() {
+        guard let panel, app.effectivePosition == .top, !swiping, swipe == nil else { return }
+        guard panel.frame.width > 1, panel.frame.height > 1 else { return }
+        guard revealed else { return }
+        let target = revealedOrigin
+        let dy = target.y - panel.frame.origin.y
+        guard dy != 0 else { return }
+        TooltipWindow.shared.hide()
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = Motion.pointer.duration
+            context.timingFunction = CAMediaTimingFunction(name: Motion.pointer.timing)
+            panel.animator().setFrame(CGRect(origin: target, size: panel.frame.size), display: true)
+            GroupWindow.shared.shift(by: dy)
+            WidgetDetailWindow.shared.shift(by: dy)
+            LayoutToast.shared.shift(by: dy)
+        }
     }
 
     /// The underside of the menu bar on `screen`, which is as high as a top
@@ -592,7 +650,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             } else if hideWorkItem == nil {
                 scheduleHide()
             }
-        } else if revealZone.contains(mouse) {
+        } else if revealZones.contains(where: { $0.contains(mouse) }) {
             setRevealed(true)
         }
     }
@@ -653,12 +711,17 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// not also pull the shelf out. A little deeper there, because nothing
     /// stops the pointer at that line the way the bezel does: it crosses the
     /// band on its way up, and at 30Hz a 3pt band is easy to skip.
-    private var revealZone: CGRect {
+    ///
+    /// While 灵动提示 is up on the same display the top band steps around
+    /// it, see Geometry.revealZones, so hovering the capsule never brings
+    /// the shelf out as well.
+    private var revealZones: [CGRect] {
         let screen = targetScreen
         let edge = app.effectivePosition
-        return Geometry.revealZone(edge: edge, shelf: shelfFrame, screen: screen.frame,
-                                   ceiling: topCeiling(of: screen),
-                                   depth: edge == .top ? topRevealZoneDepth : revealZoneDepth)
+        return Geometry.revealZones(edge: edge, shelf: shelfFrame, screen: screen.frame,
+                                    ceiling: topCeiling(of: screen),
+                                    depth: edge == .top ? topRevealZoneDepth : revealZoneDepth,
+                                    island: islandFootprint)
     }
 
     /// Closes an opened group once the pointer has left both it and the

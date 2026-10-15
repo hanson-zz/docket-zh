@@ -173,6 +173,14 @@ final class LayoutToast {
         }
     }
 
+    /// Moves the open layout name up or down with a top shelf stepping aside for
+    /// 灵动提示, inside the shelf's own animation. See
+    /// DockPanelController.islandMoved.
+    func shift(by dy: CGFloat) {
+        guard panel?.isVisible == true, let panel, dy != 0 else { return }
+        panel.animator().setFrame(panel.frame.offsetBy(dx: 0, dy: dy), display: false)
+    }
+
     private func fadeOut() {
         guard let panel, panel.isVisible else { return }
         NSAnimationContext.runAnimationGroup { context in
