@@ -1,22 +1,14 @@
 import SwiftUI
 
-/// Every habit with this month as a heatmap: a square per day, filled where
-/// it was done. Click a square to check that day in or out, which is how a
-/// missed check-in is put right. A field at the top adds a habit;
-/// double-clicking a name renames it and the cross removes it.
+/// 上面是两列习惯卡片（见 `HabitGrid`）：点卡片编辑名称、图标、颜色和每日目标，
+/// 末尾的卡片新建习惯（有模板一点即加），右键可排序和删除。下面是每个习惯这个月
+/// 的热力图：一天一格，做到了就填色，点一格补打或取消那天的卡。
 struct HabitDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    @State private var draft = ""
-    @State private var editing: String?
-    @State private var editDraft = ""
-    @FocusState private var focus: Field?
-
-    private enum Field: Hashable {
-        case add
-        case edit(String)
-    }
+    @State private var editor: HabitEditTarget?
+    @State private var pendingDelete: Habit?
 
     private var habits: [Habit] {
         context.isPreview ? HabitSamples.habits(today: context.now) : HabitTracker.habits(instance.config)
@@ -32,27 +24,81 @@ struct HabitDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(done: done, total: all.count)
-                if all.count < HabitTracker.maxHabits { addField }
-                if all.isEmpty {
-                    Text("还没有习惯。输入一个，比如“早起”或“读书 30 分钟”，按回车添加。")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, 6)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 10) {
-                            ForEach(all) { habit in card(habit) }
-                        }
-                    }
-                    .frame(maxHeight: 420)
-                    .scrollIndicators(.automatic)
+                ScrollView {
+                    list(all)
+                }
+                .frame(maxHeight: 420)
+                .scrollIndicators(.automatic)
 
+                if !all.isEmpty {
                     HabitWeeklyReport(habits: all, accent: accent, now: context.now)
                 }
             }
+            .frame(minHeight: editor == nil ? nil : 470, alignment: .top)
+            .overlay { editorLayer(all) }
+            .animation(.snappy(duration: 0.2), value: editor)
         }
-        .onAppear { if !context.isPreview, habits.isEmpty { focus = .add } }
+        .confirmationDialog(deleteTitle, isPresented: deleteShown) {
+            Button("删除", role: .destructive) {
+                if let habit = pendingDelete { delete(habit) }
+                pendingDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingDelete = nil }
+        } message: {
+            Text("这个习惯和它的全部打卡记录都会删除，不能恢复。")
+        }
+    }
+
+    // MARK: Grid and month
+
+    private func list(_ all: [Habit]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HabitGrid(habits: all, now: context.now, isPreview: context.isPreview,
+                      onOpen: { editor = $0 },
+                      onTap: { tap($0) },
+                      onMove: { habit, offset in move(habit, by: offset) },
+                      onDelete: { pendingDelete = $0 })
+            if all.isEmpty {
+                Text("还没有习惯。点“新建习惯”，可以从早起、阅读、喝水等模板一键添加，也可以自己起名字。")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("本月记录")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.top, 4)
+                ForEach(all) { habit in card(habit) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func editorLayer(_ all: [Habit]) -> some View {
+        if let target = editor {
+            ZStack {
+                Color.black.opacity(0.35)
+                    .padding(-16)
+                    .contentShape(.rect)
+                    .onTapGesture { editor = nil }
+                HabitEditor(target: target, habits: all,
+                            onAddTemplate: { addTemplate($0) },
+                            onSave: { name, icon, color, goal, unit in
+                                save(target, name: name, icon: icon, color: color, goal: goal, unit: unit)
+                            },
+                            onDelete: { pendingDelete = $0 },
+                            onClose: { editor = nil })
+                    .id(target)
+            }
+            .transition(.opacity)
+        }
+    }
+
+    private var deleteTitle: String { "删除“\(pendingDelete?.name ?? "")”？" }
+
+    private var deleteShown: Binding<Bool> {
+        Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })
     }
 
     private func header(done: Int, total: Int) -> some View {
@@ -74,83 +120,37 @@ struct HabitDetail: View {
         }
     }
 
-    private var addField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.7))
-            TextField("", text: $draft, prompt: Text("添加习惯，按回车"))
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .foregroundStyle(.white)
-                .focused($focus, equals: .add)
-                .onSubmit(add)
-                .disabled(context.isPreview)
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 34)
-        .glassPane(cornerRadius: 10)
-    }
-
     // MARK: One habit
 
     private func card(_ habit: Habit) -> some View {
         let streak = HabitTracker.streak(habit, today: context.now)
         let todayDone = HabitTracker.isDone(habit, on: context.now)
+        let color = HabitStyle.color(habit)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                if editing == habit.id {
-                    TextField("", text: $editDraft)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .focused($focus, equals: .edit(habit.id))
-                        .onSubmit { finishEditing(habit.id) }
-                        .onChange(of: focus) { _, now in
-                            if now != .edit(habit.id), editing == habit.id { finishEditing(habit.id) }
-                        }
-                } else {
-                    Text(habit.name)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .contentShape(.rect)
-                        .onTapGesture(count: 2) { beginEditing(habit) }
-                        .help("双击改名")
-                }
+                HabitIconBadge(icon: habit.iconName, color: color, size: 22)
+                Text(habit.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .contentShape(.rect)
+                    .onTapGesture { if !context.isPreview { editor = .edit(habit.id) } }
+                    .help("点按编辑")
                 Spacer(minLength: 4)
                 Button {
-                    guard !context.isPreview else { return }
-                    withAnimation(.snappy(duration: 0.25)) {
-                        HabitLog.toggle(habit.id, day: context.now, in: instance)
-                    }
+                    tap(habit)
                 } label: {
-                    Label(todayDone ? "今天已打卡" : "今天打卡",
-                          systemImage: todayDone ? "checkmark.circle.fill" : "circle")
+                    Label(todayLabel(habit, done: todayDone),
+                          systemImage: todayDone ? "checkmark.circle.fill" : (habit.goal > 1 ? "plus.circle" : "circle"))
                         .font(WidgetStyle.label(11))
+                        .monospacedDigit()
                         .foregroundStyle(todayDone ? Color.white : Color.white.opacity(0.85))
                         .padding(.horizontal, 9)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(todayDone ? accent.opacity(0.75) : Color.white.opacity(0.12)))
+                        .background(Capsule().fill(todayDone ? color.opacity(0.75) : Color.white.opacity(0.12)))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-
-                Button {
-                    guard !context.isPreview else { return }
-                    withAnimation(.snappy(duration: 0.25)) {
-                        HabitLog.change(instance) { HabitTracker.removing(habit.id, from: $0) }
-                    }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .frame(width: 20, height: 20)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .help("删除这个习惯和它的记录")
-                .accessibilityLabel("删除 \(habit.name)")
             }
 
             HStack(alignment: .top, spacing: 12) {
@@ -208,7 +208,7 @@ struct HabitDetail: View {
                 .frame(width: size, height: size)
                 .background {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(day.done ? accent.opacity(0.85) : Color.white.opacity(day.isFuture ? 0.03 : 0.08))
+                        .fill(day.done ? HabitStyle.color(habit).opacity(0.85) : Color.white.opacity(day.isFuture ? 0.03 : 0.08))
                 }
                 .overlay {
                     if day.isToday {
@@ -225,27 +225,58 @@ struct HabitDetail: View {
 
     // MARK: Editing
 
-    private func add() {
-        guard !context.isPreview, HabitTracker.clean(draft) != nil else { return }
-        let name = draft
-        withAnimation(.snappy(duration: 0.3)) {
-            HabitLog.change(instance) { HabitTracker.adding(name, to: $0) }
-        }
-        draft = ""
-        focus = .add
+    private func todayLabel(_ habit: Habit, done: Bool) -> String {
+        if done { return "今天已打卡" }
+        guard habit.goal > 1 else { return "今天打卡" }
+        return "\(HabitTracker.count(habit, on: context.now))/\(habit.goal) \(habit.unitName)"
     }
 
-    private func beginEditing(_ habit: Habit) {
+    private func tap(_ habit: Habit) {
         guard !context.isPreview else { return }
-        editDraft = habit.name
-        editing = habit.id
-        focus = .edit(habit.id)
+        withAnimation(.snappy(duration: 0.25)) {
+            HabitLog.tap(habit.id, day: context.now, in: instance)
+        }
     }
 
-    private func finishEditing(_ id: String) {
-        let name = editDraft
-        editing = nil
-        HabitLog.change(instance) { HabitTracker.renaming(id, to: name, in: $0) }
+    private func save(_ target: HabitEditTarget, name: String, icon: String?, color: PaletteColor?,
+                      goal: Int, unit: String?) {
+        guard !context.isPreview else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            switch target {
+            case .new:
+                HabitLog.change(instance) {
+                    HabitTracker.adding(name, icon: icon, color: color, goal: goal, unit: unit, to: $0)
+                }
+            case .edit(let id):
+                HabitLog.change(instance) {
+                    HabitTracker.updating(id, name: name, icon: icon, color: color, goal: goal, unit: unit, in: $0)
+                }
+            }
+        }
+        editor = nil
+    }
+
+    private func addTemplate(_ template: HabitTemplate) {
+        guard !context.isPreview else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            HabitLog.change(instance) { HabitTracker.adding(template, to: $0) }
+        }
+        editor = nil
+    }
+
+    private func move(_ habit: Habit, by offset: Int) {
+        guard !context.isPreview else { return }
+        withAnimation(.snappy(duration: 0.25)) {
+            HabitLog.change(instance) { HabitTracker.moving(habit.id, by: offset, in: $0) }
+        }
+    }
+
+    private func delete(_ habit: Habit) {
+        guard !context.isPreview else { return }
+        if editor == .edit(habit.id) { editor = nil }
+        withAnimation(.snappy(duration: 0.25)) {
+            HabitLog.change(instance) { HabitTracker.removing(habit.id, from: $0) }
+        }
     }
 
     private var accent: Color {

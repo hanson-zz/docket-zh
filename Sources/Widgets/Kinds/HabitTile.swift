@@ -55,6 +55,9 @@ struct HabitTile: View {
     private func single(_ habit: Habit) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: habit.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(tint(habit))
                 Text(habit.name)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
@@ -137,7 +140,7 @@ struct HabitTile: View {
         let streak = HabitTracker.streak(habit, today: context.now)
         return Text(streak > 0 ? "\(streak) 天" : "0 天")
             .font(.system(size: size, weight: .semibold))
-            .foregroundStyle(streak > 0 ? tint : WidgetStyle.secondary)
+            .foregroundStyle(streak > 0 ? tint(habit) : WidgetStyle.secondary)
             .monospacedDigit()
             .lineLimit(1)
             .fixedSize()
@@ -152,39 +155,53 @@ struct HabitTile: View {
                     Button {
                         guard !context.isPreview else { return }
                         withAnimation(.snappy(duration: 0.25)) {
-                            HabitLog.toggle(habit.id, day: day.date, in: instance)
+                            HabitLog.tap(habit.id, day: day.date, in: instance)
                         }
                     } label: {
-                        dot(day, size: size)
+                        dot(day, habit: habit, size: size)
                             .padding(spacing / 2 + 2)
                             .contentShape(.rect)
                             .padding(-(spacing / 2 + 2))
                     }
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
-                    .help(day.done ? "取消今天的打卡" : "今天打卡：\(habit.name)")
+                    .help(todayHelp(habit, done: day.done))
                     .accessibilityLabel(day.done ? "取消 \(habit.name) 今天的打卡" : "\(habit.name) 今天打卡")
                 } else {
-                    dot(day, size: size)
+                    dot(day, habit: habit, size: size)
                 }
             }
         }
     }
 
-    private func dot(_ day: HabitDay, size: CGFloat) -> some View {
-        Circle()
-            .fill(day.done ? tint : WidgetStyle.primary.opacity(0.13))
+    private func todayHelp(_ habit: Habit, done: Bool) -> String {
+        if done { return "取消今天的打卡" }
+        guard habit.goal > 1 else { return "今天打卡：\(habit.name)" }
+        return "\(habit.name) 今天 \(HabitTracker.todayText(habit, today: context.now))，点一下加 1"
+    }
+
+    private func dot(_ day: HabitDay, habit: Habit, size: CGFloat) -> some View {
+        let color = tint(habit)
+        let progress = day.isToday && !day.done ? HabitTracker.progress(habit, on: day.date) : 0
+        return Circle()
+            .fill(day.done ? color : WidgetStyle.primary.opacity(0.13))
             .overlay {
                 if day.isToday, !day.done {
-                    Circle().strokeBorder(tint, lineWidth: max(1, size / 7))
+                    Circle().strokeBorder(color, lineWidth: max(1, size / 7))
+                }
+            }
+            .overlay {
+                // 计数习惯今天做到一半：圆点里按比例填一块扇形。
+                if progress > 0 {
+                    HabitPie(fraction: progress)
+                        .fill(color)
                 }
             }
             .frame(width: size, height: size)
     }
 
-    private var tint: Color {
-        Color(hex: WidgetCatalog.accentHex(.habit) ?? PaletteColor.green.hex)
-            .mix(with: WidgetStyle.primary, by: 0.15)
+    private func tint(_ habit: Habit) -> Color {
+        HabitStyle.color(habit).mix(with: WidgetStyle.primary, by: 0.15)
     }
 }
 
@@ -209,6 +226,46 @@ enum HabitLog {
             PetTreats.giveOnce(.habit, for: "\(id)|\(HabitTracker.dayKey(day))")
         }
     }
+
+    /// 打卡按钮：目标 1 次时勾选或取消，目标多次时加一次，加满算完成。
+    /// 只有今天从没完成变成完成的那一下才喂宠物。
+    static func tap(_ id: String, day: Date, in instance: WidgetInstance) {
+        let before = HabitTracker.habits(instance.config)
+        let wasDone = before.first { $0.id == id }.map { HabitTracker.isDone($0, on: day) } ?? true
+        let nowDone = HabitTracker.tapping(id, day: day, in: before).first { $0.id == id }
+            .map { HabitTracker.isDone($0, on: day) } ?? false
+        change(instance) { HabitTracker.tapping(id, day: day, in: $0) }
+        if !wasDone, nowDone, HabitTracker.dayKey(day) == HabitTracker.dayKey(.now) {
+            PetTreats.giveOnce(.habit, for: "\(id)|\(HabitTracker.dayKey(day))")
+        }
+    }
+}
+
+/// 习惯的图标颜色：设置过颜色就用它，没有就用小组件的强调色。
+enum HabitStyle {
+    static var accent: Color {
+        Color(hex: WidgetCatalog.accentHex(.habit) ?? PaletteColor.green.hex)
+    }
+
+    static func color(_ habit: Habit) -> Color {
+        habit.color.map { Color(hex: $0.hex) } ?? accent
+    }
+}
+
+/// 从 12 点方向顺时针的一块扇形。
+struct HabitPie: Shape {
+    var fraction: Double
+
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        var path = Path()
+        path.move(to: center)
+        path.addArc(center: center, radius: radius, startAngle: .degrees(-90),
+                    endAngle: .degrees(-90 + 360 * min(max(fraction, 0), 1)), clockwise: false)
+        path.closeSubpath()
+        return path
+    }
 }
 
 /// What the library and the screenshots show: three habits with a believable
@@ -221,9 +278,12 @@ enum HabitSamples {
                 .map { HabitTracker.dayKey($0, calendar: calendar) })
         }
         return [
-            Habit(id: "s1", name: "早起", days: days([0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13])),
-            Habit(id: "s2", name: "读书 30 分钟", days: days([1, 2, 3, 5, 6, 9, 13, 14])),
-            Habit(id: "s3", name: "跑步", days: days([0, 2, 4, 7, 9, 11])),
+            Habit(id: "s1", name: "早起", days: days([0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13]),
+                  icon: "sunrise.fill", color: .orange),
+            Habit(id: "s2", name: "读书 30 分钟", days: days([1, 2, 3, 5, 6, 9, 13, 14]),
+                  icon: "book.fill", color: .indigo),
+            Habit(id: "s3", name: "喝水", days: days([2, 4, 7, 9, 11]), icon: "drop.fill", color: .blue,
+                  goal: 8, unit: "杯", counts: [HabitTracker.dayKey(today, calendar: calendar): 5]),
         ]
     }
 }

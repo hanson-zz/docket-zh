@@ -11,24 +11,67 @@ import Foundation
 /// A string so the existing config type carries it without a new Codable
 /// shape; a day key rather than a timestamp so a check-in made in one time
 /// zone is still the same day after travelling, which is how a person counts.
+///
+/// 图标、颜色、每日目标次数、单位和当天未完成的次数，作为 `days` 列表最后一项
+/// 写成 `@icon=…;color=…;goal=…;unit=…;counts=yyyyMMdd:n+yyyyMMdd:n`。放在日期列表里
+/// 而不是新开一列，是因为旧版本读日期时会把认不出的项丢掉，降级后打卡记录仍然完整。
+/// 什么都没设置的习惯写出来和旧格式一模一样。
 public struct Habit: Equatable, Hashable, Sendable, Identifiable {
     public var id: String
     public var name: String
-    /// Day keys (`yyyyMMdd`) the habit was done on.
+    /// Day keys (`yyyyMMdd`) the habit was done on, that is its daily goal was met.
     public var days: Set<String>
+    /// SF Symbol 名称，nil 时用 `Habit.defaultIcon`。
+    public var icon: String?
+    /// nil 时用小组件自己的强调色。
+    public var color: PaletteColor?
+    /// 每天要做几次才算完成，1 就是原来的勾选。
+    public var goal: Int
+    /// 计数的单位，比如“杯”，nil 时显示“次”。
+    public var unit: String?
+    /// 还没达到目标的日子做了几次。达到目标的那天只记在 `days` 里。
+    public var counts: [String: Int]
 
-    public init(id: String = Habit.newID(), name: String, days: Set<String> = []) {
+    public static let defaultIcon = "checkmark.seal.fill"
+    public static let defaultUnit = "次"
+
+    public init(id: String = Habit.newID(), name: String, days: Set<String> = [],
+                icon: String? = nil, color: PaletteColor? = nil, goal: Int = 1,
+                unit: String? = nil, counts: [String: Int] = [:]) {
         self.id = id
         self.name = name
         self.days = days
+        self.icon = icon
+        self.color = color
+        self.goal = HabitTracker.clampGoal(goal)
+        self.unit = unit
+        self.counts = counts
     }
 
     public static func newID() -> String {
         String(UUID().uuidString.prefix(8)).lowercased()
     }
 
+    public var iconName: String { icon ?? Self.defaultIcon }
+    public var unitName: String { unit ?? Self.defaultUnit }
+
+    /// 只有设置过图标、颜色、目标、单位或有未完成次数时才写的那一项。
+    var meta: String? {
+        var parts: [String] = []
+        if let icon { parts.append("icon=\(icon)") }
+        if let color { parts.append("color=\(color.rawValue)") }
+        if goal != 1 { parts.append("goal=\(goal)") }
+        if let unit { parts.append("unit=\(unit)") }
+        let partial = counts.filter { $0.value > 0 && !days.contains($0.key) }
+        if !partial.isEmpty {
+            parts.append("counts=" + partial.keys.sorted().map { "\($0):\(partial[$0]!)" }.joined(separator: "+"))
+        }
+        return parts.isEmpty ? nil : "@" + parts.joined(separator: ";")
+    }
+
     var encoded: String {
-        "\(id)\t\(name)\t\(days.sorted().joined(separator: ","))"
+        let list = days.sorted() + (meta.map { [$0] } ?? [])
+        return "\(id)\t\(name)\t\(list.joined(separator: ","))"
     }
 
     /// Tolerant like the todo list: a bare string is a habit with that name
@@ -39,15 +82,62 @@ public struct Habit: Equatable, Hashable, Sendable, Identifiable {
             let name = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return nil }
             let id = String(parts[0])
-            let days = parts.count == 3
-                ? Set(parts[2].split(separator: ",").map(String.init).filter(HabitTracker.isDayKey))
-                : []
+            let items = parts.count == 3 ? parts[2].split(separator: ",").map(String.init) : []
+            let days = Set(items.filter(HabitTracker.isDayKey))
             self.init(id: id.isEmpty ? fallbackID : id, name: name, days: days)
+            if let meta = items.last(where: { $0.hasPrefix("@") }) { apply(meta: meta) }
         } else {
             let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return nil }
             self.init(id: fallbackID, name: name)
         }
+    }
+
+    /// 认不出的键和值都忽略，习惯本身照常读出。
+    private mutating func apply(meta: String) {
+        for pair in meta.dropFirst().split(separator: ";") {
+            let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
+            guard kv.count == 2 else { continue }
+            switch kv[0] {
+            case "icon": icon = HabitTracker.cleanIcon(kv[1])
+            case "color": color = PaletteColor(rawValue: kv[1])
+            case "goal": if let value = Int(kv[1]) { goal = HabitTracker.clampGoal(value) }
+            case "unit": unit = HabitTracker.cleanUnit(kv[1])
+            case "counts":
+                for entry in kv[1].split(separator: "+") {
+                    let dc = entry.split(separator: ":").map(String.init)
+                    guard dc.count == 2, HabitTracker.isDayKey(dc[0]), let n = Int(dc[1]), n > 0 else { continue }
+                    counts[dc[0]] = n
+                }
+            default: continue
+            }
+        }
+        // 目标改小以后旧的未完成次数可能已经够了。
+        let target = goal
+        for (key, n) in counts where n >= target {
+            days.insert(key)
+        }
+        let done = days
+        counts = counts.filter { !done.contains($0.key) && $0.value < target }
+    }
+}
+
+/// 新建习惯时一点即加的模板。
+public struct HabitTemplate: Equatable, Sendable, Identifiable {
+    public var name: String
+    public var icon: String
+    public var color: PaletteColor
+    public var goal: Int
+    public var unit: String?
+
+    public var id: String { name }
+
+    public init(name: String, icon: String, color: PaletteColor, goal: Int = 1, unit: String? = nil) {
+        self.name = name
+        self.icon = icon
+        self.color = color
+        self.goal = goal
+        self.unit = unit
     }
 }
 
@@ -124,6 +214,7 @@ public enum HabitTracker {
             guard let cutoff else { return habit }
             var kept = habit
             kept.days = habit.days.filter { $0 >= cutoff }
+            kept.counts = habit.counts.filter { $0.key >= cutoff }
             return kept
         }
         config.set(key, .list(trimmed.map { .string($0.encoded) }))
@@ -144,7 +235,12 @@ public enum HabitTracker {
 
     public static func renaming(_ id: String, to name: String, in habits: [Habit]) -> [Habit] {
         guard let words = clean(name) else { return habits }
-        return habits.map { $0.id == id ? Habit(id: $0.id, name: words, days: $0.days) : $0 }
+        return habits.map { habit in
+            guard habit.id == id else { return habit }
+            var changed = habit
+            changed.name = words
+            return changed
+        }
     }
 
     public static func removing(_ id: String, from habits: [Habit]) -> [Habit] {
@@ -161,14 +257,178 @@ public enum HabitTracker {
             guard habit.id == id else { return habit }
             var changed = habit
             if changed.days.contains(key) { changed.days.remove(key) } else { changed.days.insert(key) }
+            changed.counts[key] = nil
             return changed
         }
+    }
+
+    /// 打卡按钮的一下：目标是 1 次时和 `toggling` 一样；目标多次时加一次，
+    /// 加满算完成，已经完成时再点一下清零（和取消勾选一样）。
+    public static func tapping(_ id: String, day: Date, in habits: [Habit],
+                               today: Date = .now, calendar: Calendar = HabitTracker.calendar) -> [Habit] {
+        let key = dayKey(day, calendar: calendar)
+        guard key <= dayKey(today, calendar: calendar) else { return habits }
+        return habits.map { habit in
+            guard habit.id == id else { return habit }
+            var changed = habit
+            if changed.days.contains(key) {
+                changed.days.remove(key)
+                changed.counts[key] = nil
+            } else {
+                let next = (changed.counts[key] ?? 0) + 1
+                if next >= changed.goal {
+                    changed.days.insert(key)
+                    changed.counts[key] = nil
+                } else {
+                    changed.counts[key] = next
+                }
+            }
+            return changed
+        }
+    }
+
+    /// 编辑弹层的“完成”：名称、图标、颜色、目标和单位一起改，打卡记录不动。
+    /// 名称为空时保留原名。目标改小后，已经够数的未完成日子算作完成；
+    /// 目标改大不会取消已经完成的日子。
+    public static func updating(_ id: String, name: String, icon: String?, color: PaletteColor?,
+                                goal: Int, unit: String?, in habits: [Habit]) -> [Habit] {
+        habits.map { habit in
+            guard habit.id == id else { return habit }
+            var changed = habit
+            if let words = clean(name) { changed.name = words }
+            changed.icon = icon.flatMap(cleanIcon)
+            changed.color = color
+            changed.goal = clampGoal(goal)
+            changed.unit = unit.flatMap(cleanUnit)
+            let goal = changed.goal
+            for (key, n) in changed.counts where n >= goal { changed.days.insert(key) }
+            let done = changed.days
+            changed.counts = changed.counts.filter { !done.contains($0.key) && $0.value < goal }
+            return changed
+        }
+    }
+
+    /// 新建一个带图标、颜色和目标的习惯。满 `maxHabits` 个或名称为空时不变。
+    public static func adding(_ name: String, icon: String?, color: PaletteColor?, goal: Int, unit: String?,
+                              to habits: [Habit], id: String = Habit.newID()) -> [Habit] {
+        guard let words = clean(name), habits.count < maxHabits else { return habits }
+        return habits + [Habit(id: id, name: words, icon: icon.flatMap(cleanIcon), color: color,
+                               goal: goal, unit: unit.flatMap(cleanUnit))]
+    }
+
+    public static func adding(_ template: HabitTemplate, to habits: [Habit], id: String = Habit.newID()) -> [Habit] {
+        adding(template.name, icon: template.icon, color: template.color, goal: template.goal,
+               unit: template.unit, to: habits, id: id)
+    }
+
+    /// 上移（负数）或下移（正数），到头了就停在头上。
+    public static func moving(_ id: String, by offset: Int, in habits: [Habit]) -> [Habit] {
+        guard let from = habits.firstIndex(where: { $0.id == id }) else { return habits }
+        let to = min(max(from + offset, 0), habits.count - 1)
+        guard to != from else { return habits }
+        var result = habits
+        let habit = result.remove(at: from)
+        result.insert(habit, at: to)
+        return result
+    }
+
+    /// 拖到另一张卡片上：放到那张卡片的位置。
+    public static func moving(_ id: String, to targetID: String, in habits: [Habit]) -> [Habit] {
+        guard let from = habits.firstIndex(where: { $0.id == id }),
+              let to = habits.firstIndex(where: { $0.id == targetID }), from != to else { return habits }
+        return moving(id, by: to - from, in: habits)
+    }
+
+    // MARK: Goals, icons and colours
+
+    public static let maxGoal = 99
+    public static let maxUnitLength = 4
+
+    public static func clampGoal(_ goal: Int) -> Int { min(max(goal, 1), maxGoal) }
+
+    /// SF Symbol 名称只有小写字母、数字和点。
+    public static func cleanIcon(_ icon: String) -> String? {
+        let trimmed = icon.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed.count <= 60,
+              trimmed.allSatisfy({ $0.isASCII && ($0.isLowercase || $0.isNumber || $0 == ".") })
+        else { return nil }
+        return trimmed
+    }
+
+    /// 单位去掉存档里用作分隔的符号，最多 4 个字，空的就用默认的“次”。
+    public static func cleanUnit(_ unit: String) -> String? {
+        let banned: Set<Character> = [";", "=", ",", "+", "@", ":", "\t", "\n", "\r"]
+        let kept = String(unit.filter { !banned.contains($0) }).trimmingCharacters(in: .whitespaces)
+        guard !kept.isEmpty, kept != Habit.defaultUnit else { return nil }
+        return String(kept.prefix(maxUnitLength))
+    }
+
+    /// 编辑弹层里可选的图标。
+    public static let icons: [String] = [
+        "checkmark.seal.fill", "sunrise.fill", "book.fill", "figure.run",
+        "figure.mind.and.body", "drop.fill", "figure.flexibility", "square.and.pencil",
+        "moon.zzz.fill", "dumbbell.fill", "figure.walk", "bicycle",
+        "heart.fill", "brain.head.profile", "pills.fill", "fork.knife",
+        "cup.and.saucer.fill", "bed.double.fill", "music.note", "paintbrush.fill",
+        "graduationcap.fill", "leaf.fill", "phone.down.fill", "sparkles",
+    ]
+
+    /// 编辑弹层里可选的 8 种颜色。
+    public static let colors: [PaletteColor] = PaletteColor.picker
+
+    public static func colorName(_ color: PaletteColor) -> String {
+        switch color {
+        case .orange: "橙色"
+        case .yellow: "黄色"
+        case .pink: "粉色"
+        case .purple: "紫色"
+        case .blue: "蓝色"
+        case .green: "绿色"
+        case .graphite: "灰色"
+        case .indigo: "靛蓝"
+        case .red: "红色"
+        case .teal: "青色"
+        }
+    }
+
+    public static let templates: [HabitTemplate] = [
+        HabitTemplate(name: "早起", icon: "sunrise.fill", color: .orange),
+        HabitTemplate(name: "阅读", icon: "book.fill", color: .indigo),
+        HabitTemplate(name: "运动", icon: "figure.run", color: .red),
+        HabitTemplate(name: "冥想", icon: "figure.mind.and.body", color: .purple),
+        HabitTemplate(name: "喝水", icon: "drop.fill", color: .blue, goal: 8, unit: "杯"),
+        HabitTemplate(name: "拉伸", icon: "figure.flexibility", color: .green),
+        HabitTemplate(name: "写日记", icon: "square.and.pencil", color: .pink),
+        HabitTemplate(name: "不熬夜", icon: "moon.zzz.fill", color: .teal),
+    ]
+
+    /// 卡片底部的目标，比如“每天 1 次”“每天 8 杯”。
+    public static func goalText(_ habit: Habit) -> String {
+        "每天 \(habit.goal) \(habit.unitName)"
     }
 
     // MARK: Readings
 
     public static func isDone(_ habit: Habit, on date: Date, calendar: Calendar = HabitTracker.calendar) -> Bool {
         habit.days.contains(dayKey(date, calendar: calendar))
+    }
+
+    /// 那天做了几次：完成的日子算满目标。
+    public static func count(_ habit: Habit, on date: Date, calendar: Calendar = HabitTracker.calendar) -> Int {
+        let key = dayKey(date, calendar: calendar)
+        return habit.days.contains(key) ? habit.goal : min(habit.counts[key] ?? 0, habit.goal)
+    }
+
+    /// 那天完成了多少，0 到 1。
+    public static func progress(_ habit: Habit, on date: Date, calendar: Calendar = HabitTracker.calendar) -> Double {
+        Double(count(habit, on: date, calendar: calendar)) / Double(max(habit.goal, 1))
+    }
+
+    /// 卡片上的今日状态：“已完成”“未完成”或“3/8 杯”。
+    public static func todayText(_ habit: Habit, today: Date, calendar: Calendar = HabitTracker.calendar) -> String {
+        if isDone(habit, on: today, calendar: calendar) { return "已完成" }
+        if habit.goal == 1 { return "未完成" }
+        return "\(count(habit, on: today, calendar: calendar))/\(habit.goal) \(habit.unitName)"
     }
 
     /// Consecutive days done, ending today. A habit not yet done today keeps
