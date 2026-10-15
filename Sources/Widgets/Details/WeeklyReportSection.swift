@@ -260,6 +260,8 @@ final class FocusLogStore {
     static let shared = FocusLogStore()
     nonisolated static let logKey = "docket.focus.log"
     nonisolated static let goalKey = "docket.focus.dailyGoal"
+    /// Every minute ever focused; see `FocusLog.lifetimeMinutes`.
+    nonisolated static let totalKey = "docket.focus.totalMinutes"
     private nonisolated static let loggedKey = "docket.focus.loggedDeadline"
 
     private(set) var lines: [String]
@@ -288,9 +290,23 @@ final class FocusLogStore {
                                                           ? Date(timeIntervalSince1970: logged) : nil,
                                                       now: now) else { return }
         defaults.set(deadline.timeIntervalSince1970, forKey: Self.loggedKey)
-        let next = FocusLog.adding(seconds: FocusLog.sessionSeconds(state), endedAt: deadline, to: lines)
+        let seconds = FocusLog.sessionSeconds(state)
+        let total = FocusLog.addingTotal(seconds: seconds, stored: defaults.integer(forKey: Self.totalKey),
+                                         lines: lines)
+        let next = FocusLog.adding(seconds: seconds, endedAt: deadline, to: lines)
         lines = next
         defaults.set(next, forKey: Self.logKey)
+        defaults.set(total, forKey: Self.totalKey)
+    }
+
+    /// Every minute ever focused, never fewer than the log holds.
+    var lifetimeMinutes: Int {
+        FocusLog.lifetimeMinutes(stored: UserDefaults.standard.integer(forKey: Self.totalKey), lines: lines)
+    }
+
+    /// The daily goal set in the 专注计时 panel.
+    static var goal: Int {
+        FocusLog.goal(stored: UserDefaults.standard.integer(forKey: goalKey))
     }
 
     /// A believable week for the widget library, which has no log.

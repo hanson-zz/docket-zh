@@ -111,6 +111,8 @@ struct WidgetDetailBody: View {
             PetDetail(instance: instance, context: context)
         case .podcast:
             PodcastDetail(instance: instance, context: context)
+        case .perfectDay:
+            PerfectDayDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

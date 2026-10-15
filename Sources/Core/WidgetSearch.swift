@@ -64,6 +64,7 @@ public enum WidgetSearch {
         "water": ["water", "drink", "hydration", "喝水", "饮水"],
         "translate": ["translate", "translation", "英文", "中英"],
         "pet": ["pet", "tamagotchi", "red panda", "宠物", "小熊猫", "养成"],
+        "perfect-day": ["perfect day", "sun", "badge", "完美", "完美一天", "太阳", "小太阳", "wmyt", "洞悉", "打卡汇总", "徽章", "成就", "美好一天", "奈斯一天"],
         "podcast": ["podcast", "podcasts", "bokee", "bk", "小宇宙", "xiaoyuzhou", "xyz", "订阅", "单集", "节目"],
     ]
 

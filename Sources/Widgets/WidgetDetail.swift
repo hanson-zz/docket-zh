@@ -409,6 +409,8 @@ enum WidgetDetail {
         case .water: 360
         case .pet: 340
         case .podcast: 340
+        // The jar beside nothing, a seven-column calendar and four badges a row.
+        case .perfectDay: 380
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
         default: 300

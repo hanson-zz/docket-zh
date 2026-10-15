@@ -391,6 +391,13 @@ public enum WidgetCatalog {
                          ("章鱼", ["character": .string("octopus")])],
               supportsCompact: false, selfContained: true),
 
+        // 喝水、习惯打卡、专注计时 summed up as a sun a day, with its own
+        // history, month jar and badges kept by PerfectDayCenter (see
+        // PerfectDay). No options: the focus goal is the 专注计时 panel's.
+        Entry(kind: .perfectDay, name: "完美一天", category: .reminders,
+              defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
         Entry(kind: .week, name: "一周日程", category: .calendar,
@@ -476,6 +483,7 @@ public enum WidgetCatalog {
         case .water: PaletteColor.blue.hex
         case .pet: ShelfColor.redPanda.hex
         case .podcast: "#25B4E1"
+        case .perfectDay: PerfectDayTier.gold.hexes.deep
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -642,7 +650,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay:
             nil
         }
     }
@@ -801,6 +809,7 @@ public enum WidgetCatalog {
             return CGSize(width: WaterIntake.tileWidth(layout: cfg.string("layout", default: "character")), height: 62)
         case .pet: return CGSize(width: 196, height: 62)
         case .podcast: return CGSize(width: 220, height: 62)
+        case .perfectDay: return CGSize(width: 196, height: 62)
         }
     }
 
@@ -909,6 +918,9 @@ public enum WidgetCatalog {
         // The character, a line, the bar and the bowl.
         case .pet:
             return 118
+        // The sun, its name and the three dots.
+        case .perfectDay:
+            return 112
         default:
             return 76
         }

@@ -53,13 +53,39 @@ public enum FocusLog {
     /// Rounded to the nearest minute; under half a minute adds nothing.
     public static func adding(seconds: TimeInterval, endedAt: Date, to lines: [String],
                               calendar: Calendar = HabitTracker.calendar) -> [String] {
-        guard seconds.isFinite, seconds > 0 else { return lines }
-        let added = Int((seconds / 60).rounded())
+        let added = addedMinutes(seconds: seconds)
         guard added > 0 else { return lines }
         var log = minutes(lines)
         let key = HabitTracker.dayKey(endedAt, calendar: calendar)
         log[key] = min(maxMinutesPerDay, log[key, default: 0] + added)
         return Self.lines(log, now: endedAt, calendar: calendar)
+    }
+
+    /// The whole minutes a finished session of `seconds` adds: rounded to
+    /// the nearest minute, 0 for under half a minute or nonsense.
+    public static func addedMinutes(seconds: TimeInterval) -> Int {
+        guard seconds.isFinite, seconds > 0 else { return 0 }
+        return max(0, Int((seconds / 60).rounded()))
+    }
+
+    // MARK: Lifetime total
+
+    /// Every minute ever focused, for the 完美一天 badges (专注累计 10 / 100
+    /// 小时). The daily log forgets after `keptDays`, so the total is kept
+    /// beside it under its own key and only ever grows.
+    ///
+    /// A total never written (the log predates it) starts from what the log
+    /// still holds, and a total somehow below the log (defaults restored
+    /// from another Mac) is raised to it: never fewer hours than the days
+    /// on record add up to.
+    public static func lifetimeMinutes(stored: Int, lines: [String]) -> Int {
+        max(max(0, stored), minutes(lines).values.reduce(0, +))
+    }
+
+    /// The total after a finished session of `seconds`, with `lines` the log
+    /// as it was before the session was added.
+    public static func addingTotal(seconds: TimeInterval, stored: Int, lines: [String]) -> Int {
+        lifetimeMinutes(stored: stored, lines: lines) + addedMinutes(seconds: seconds)
     }
 
     /// The length of the focus session that `VirtualPet.finishedFocus` says

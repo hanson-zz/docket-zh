@@ -246,6 +246,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case translate
     case pet
     case podcast
+    case perfectDay = "perfect-day"
 }
 
 /// What a widget opens when its card is clicked.
