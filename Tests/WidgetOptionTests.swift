@@ -79,7 +79,7 @@ final class WidgetOptionTests: XCTestCase {
             .notes: ["text", "color"],
             .music: ["mini", "previous", "next", "backward", "forward",
                      "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers"],
-            .battery: ["devices", "bluetooth"],
+            .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart"],
             .shortcut: ["name"],
