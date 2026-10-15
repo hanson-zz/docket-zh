@@ -1,6 +1,13 @@
+import AppKit
 import SwiftUI
 
-/// Charge for the Mac and whatever Apple accessories are paired with it.
+/// Charge for the Mac and whatever Bluetooth accessories are connected.
+///
+/// The configured devices (the Mac by default) keep their slots. With
+/// 显示蓝牙设备 on, up to `BatteryShelf.accessorySlots` more slots go to
+/// connected accessories, chosen by `BluetoothBatteries.tilePicks`: a
+/// battery at or below 20% first, then earbuds and headphones, mouse,
+/// trackpad, keyboard, controller, speaker. The panel lists all of them.
 struct BatteryTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -12,7 +19,9 @@ struct BatteryTile: View {
             } else {
                 switch layout {
                 case "icon": icons
-                case "status" where devices.count == 1: status(devices[0])
+                // The single-device card keeps its look until an accessory
+                // connects; then the same space holds a row of gauges.
+                case "status" where slots.count == 1: status(slots[0])
                 default: gauges
                 }
             }
@@ -32,9 +41,9 @@ struct BatteryTile: View {
     // MARK: Layouts
 
     @ViewBuilder
-    private func status(_ kind: BatteryDeviceKind) -> some View {
-        let reading = reading(kind)
-        let symbol = Image(systemName: kind.symbol)
+    private func status(_ slot: Slot) -> some View {
+        let reading = reading(slot)
+        let symbol = Image(systemName: slot.symbol)
             .font(.system(size: 20, weight: .regular))
             .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
 
@@ -58,7 +67,7 @@ struct BatteryTile: View {
                     ZStack {
                         TileRing(progress: reading.present ? reading.level : 0,
                                  tint: ringTint(reading))
-                        Image(systemName: kind.symbol)
+                        Image(systemName: slot.symbol)
                             .font(.system(size: 11, weight: .regular))
                             .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
                     }
@@ -77,8 +86,8 @@ struct BatteryTile: View {
     /// and is what made the ring look cramped next to the metric rings.
     private var gauges: some View {
         HStack(spacing: 0) {
-            ForEach(devices, id: \.self) { kind in
-                let reading = reading(kind)
+            ForEach(slots) { slot in
+                let reading = reading(slot)
                 MetricProgressRing(progress: reading.present ? reading.level : 0,
                                    tint: tint(reading),
                                    track: reading.present
@@ -86,7 +95,7 @@ struct BatteryTile: View {
                                        : Color.primary.opacity(0.10),
                                    diameter: 42,
                                    lineWidth: 4.5) {
-                    Image(systemName: kind.symbol)
+                    Image(systemName: slot.symbol)
                         .font(.system(size: 15, weight: .regular))
                         .foregroundStyle(reading.present ? tint(reading) : WidgetStyle.secondary)
                 }
@@ -94,8 +103,9 @@ struct BatteryTile: View {
                     if reading.charging { bolt }
                 }
                 .frame(maxWidth: .infinity)
-                .accessibilityLabel(kind.name)
+                .accessibilityLabel(slot.name)
                 .accessibilityValue(caption(reading))
+                .help("\(slot.name) \(percentText(reading))")
             }
         }
         .lineLimit(1)
@@ -125,26 +135,29 @@ struct BatteryTile: View {
 
     private var icons: some View {
         HStack(spacing: 8) {
-            ForEach(devices, id: \.self) { kind in
-                let reading = reading(kind)
-                Image(systemName: kind.symbol)
+            ForEach(slots) { slot in
+                let reading = reading(slot)
+                Image(systemName: slot.symbol)
                     .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(reading.present ? present : WidgetStyle.secondary)
                     .frame(width: 44)
                     .overlay(alignment: .topTrailing) {
                         if reading.charging { bolt }
                     }
+                    .help("\(slot.name) \(percentText(reading))")
             }
         }
     }
 
-    /// One 62pt row per device - `WidgetCatalog.verticalHeight` hands out
-    /// `devices * 62`. A lone device gets the bigger ring the room allows.
+    /// One 62pt row per slot - `WidgetCatalog.verticalHeight` hands out
+    /// `BatteryShelf.slotCount * 62`. Rows share the height, so accessory
+    /// slots nothing fills leave the column evenly spaced rather than a gap
+    /// at the bottom. A lone device gets the bigger ring the room allows.
     private var column: some View {
         VStack(spacing: 0) {
-            ForEach(devices, id: \.self) { kind in
-                let reading = reading(kind)
-                let single = devices.count == 1
+            ForEach(slots) { slot in
+                let reading = reading(slot)
+                let single = slots.count == 1
                 VStack(spacing: 3) {
                     MetricProgressRing(progress: reading.present ? reading.level : 0,
                                        tint: present,
@@ -158,11 +171,12 @@ struct BatteryTile: View {
                     .overlay(alignment: .bottomTrailing) {
                         if reading.charging { bolt }
                     }
-                    Image(systemName: kind.symbol)
+                    Image(systemName: slot.symbol)
                         .font(.system(size: single ? 13 : 11, weight: .regular))
                         .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
                 }
-                .frame(height: 62)
+                .frame(minHeight: 62, maxHeight: .infinity)
+                .help("\(slot.name) \(percentText(reading))")
             }
         }
         .lineLimit(1)
@@ -193,12 +207,76 @@ struct BatteryTile: View {
         return parsed.isEmpty ? [.mac] : parsed
     }
 
+    /// One thing the card draws: a configured device, or a connected
+    /// accessory filling one of the spare slots.
+    enum Slot: Identifiable {
+        case fixed(BatteryDeviceKind, source: BluetoothBattery?)
+        case accessory(BluetoothBattery)
+
+        var id: String {
+            switch self {
+            case .fixed(let kind, _): "fixed.\(kind.rawValue)"
+            case .accessory(let device): "bt.\(device.id)"
+            }
+        }
+
+        var name: String {
+            switch self {
+            case .fixed(.pods, let source?): source.displayName
+            case .fixed(.podsCase, let source?): "\(source.displayName) 充电盒"
+            case .fixed(let kind, _): kind.name
+            case .accessory(let device): device.displayName
+            }
+        }
+
+        /// The fixed AirPods slot draws the model it is reading (Pro, Max).
+        @MainActor var symbol: String {
+            switch self {
+            case .fixed(.pods, let source?) where source.kind.isAirPods:
+                BatterySymbol.resolve(source.kind.symbol)
+            case .fixed(let kind, _): BatterySymbol.resolve(kind.symbol)
+            case .accessory(let device): BatterySymbol.resolve(device.kind.symbol)
+            }
+        }
+    }
+
+    private var slots: [Slot] {
+        let metrics = BatteryMetrics.shared
+        var result: [Slot] = devices.map { kind in
+            .fixed(kind, source: context.isPreview ? nil : metrics.source(of: kind))
+        }
+        let room = BatteryShelf.accessoryRoom(instance.config)
+        guard room > 0 else { return result }
+        if context.isPreview {
+            // The 状态 style previews as itself; the others show what an
+            // accessory slot looks like.
+            if layout != "status" || devices.count > 1 {
+                result.append(.accessory(BluetoothBattery(id: "preview.mouse", name: "妙控鼠标",
+                                                          kind: .mouse, main: 64)))
+            }
+            return result
+        }
+        // A device the card already shows in a fixed slot is not shown twice.
+        let shown = Set(devices.compactMap { metrics.slotSources[$0] })
+        let picks = BluetoothBatteries.tilePicks(metrics.accessories, excluding: shown, limit: room)
+        return result + picks.map(Slot.accessory)
+    }
+
     /// What a tile needs to draw one device. An absent device keeps `level` at
     /// zero - a missing accessory must never show an invented percentage.
     private struct Reading {
         var level: Double
         var charging: Bool
         var present: Bool
+    }
+
+    private func reading(_ slot: Slot) -> Reading {
+        switch slot {
+        case .fixed(let kind, _): return reading(kind)
+        case .accessory(let device):
+            guard let level = device.level else { return Reading(level: 0, charging: false, present: false) }
+            return Reading(level: Double(level) / 100, charging: device.charging, present: true)
+        }
     }
 
     private func reading(_ kind: BatteryDeviceKind) -> Reading {
@@ -269,5 +347,19 @@ extension BatteryDeviceKind {
         case .podsCase: "airpodspro.chargingcase.wireless.fill"
         case .keyboard: "keyboard"
         }
+    }
+}
+
+/// SF Symbols names checked against the running system, so a name this
+/// macOS does not have draws the generic radio-waves glyph rather than
+/// nothing.
+enum BatterySymbol {
+    @MainActor private static var known: [String: Bool] = [:]
+
+    @MainActor static func resolve(_ name: String) -> String {
+        if let ok = known[name] { return ok ? name : AccessoryKind.fallbackSymbol }
+        let ok = NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil
+        known[name] = ok
+        return ok ? name : AccessoryKind.fallbackSymbol
     }
 }

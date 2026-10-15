@@ -434,6 +434,7 @@ struct WidgetSettingsSections: View {
         "xiaoyuzhou": "小宇宙",
         "browsers": "浏览器标签页",
         "devices": "设备",
+        "bluetooth": "显示蓝牙设备（耳机、鼠标、触控板等）",
         "metrics": "读数",
         "folder": "文件夹",
         "interval": "切换间隔",

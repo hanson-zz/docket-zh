@@ -24,7 +24,11 @@ final class BatteryAlerts {
 
     private init() {}
 
-    func check(devices: [BatteryDevice], extras: [AccessoryBattery]) {
+    /// Whether any layout has a 电池 widget, which is what the reminders
+    /// and the slower accessory reads both wait for.
+    var hasBatteryWidget: Bool { settings() != nil }
+
+    func check(devices: [BatteryDevice], accessories: [BluetoothBattery]) {
         let now = Date.now
         guard now.timeIntervalSince(lastCheck) >= 15 else { return }
         lastCheck = now
@@ -36,12 +40,10 @@ final class BatteryAlerts {
             BatteryReading(percent: Int(($0.level * 100).rounded()), onPower: $0.onPower,
                            celsius: Self.temperature())
         }
-        let accessories = devices.filter { $0.kind != .mac && $0.present }.map {
-            AccessoryReading(id: $0.id, name: $0.kind.name, percent: Int(($0.level * 100).rounded()))
-        } + extras.map {
-            AccessoryReading(id: $0.id, name: $0.name, percent: Int(($0.level * 100).rounded()))
-        }
-        let alerts = tracker.check(mac, accessories: accessories, settings: settings, now: now)
+        // Every accessory once, from the one list: the fixed AirPods and
+        // keyboard slots read the same devices, so they are not added again.
+        let readings = BluetoothBatteries.alertReadings(accessories)
+        let alerts = tracker.check(mac, accessories: readings, settings: settings, now: now)
         guard !alerts.isEmpty else { return }
         pulse += 1
         for alert in alerts {

@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Every battery, one row each, where the tile had room for a row of glyphs.
+/// Every battery, one row each, where the tile had room for a row of glyphs:
+/// the Mac, then every connected Bluetooth accessory.
 ///
 /// The tile's gauge says how full a device is and nothing about which device
 /// it is - a glyph inside a 42pt ring is all a shelf affords. A panel row is
@@ -11,20 +12,20 @@ struct BatteryDetail: View {
     var context: WidgetContext
 
     var body: some View {
-        let kinds = devices
+        let all = items
         // The first device leads, large, and its charge colours the whole
         // card: green with room, amber getting low, red nearly out. The rest
         // follow as glass rows.
-        let lead = kinds.first.map(device)
+        let lead = all.first
         DetailCard {
             MeshBackdrop(color: ground(lead))
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 if let lead { hero(lead) }
-                if kinds.count > 1 {
+                if all.count > 1 {
                     VStack(spacing: 6) {
-                        ForEach(kinds.dropFirst(), id: \.self) { kind in
-                            row(device(kind))
+                        ForEach(all.dropFirst()) { item in
+                            row(item)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 8)
                                 .glassPane(cornerRadius: 10)
@@ -40,17 +41,17 @@ struct BatteryDetail: View {
 
     /// The level as the card's colour. Charging reads as healthy whatever
     /// the level, since the level is on its way up.
-    private func ground(_ device: BatteryDevice?) -> Color {
+    private func ground(_ device: Item?) -> Color {
         guard let device, device.present else { return Color(white: 0.3) }
         if device.charging || device.level > 0.5 { return Color(red: 0.12, green: 0.55, blue: 0.3) }
         if device.level > 0.2 { return Color(red: 0.75, green: 0.48, blue: 0.08) }
         return Color(red: 0.72, green: 0.16, blue: 0.14)
     }
 
-    private func hero(_ device: BatteryDevice) -> some View {
+    private func hero(_ device: Item) -> some View {
         HStack(alignment: .bottom, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Label(device.kind.name, systemImage: device.kind.symbol)
+                Label(device.name, systemImage: device.symbol)
                     .font(WidgetStyle.label(14))
                     .foregroundStyle(WidgetStyle.primary)
                 if device.present {
@@ -88,19 +89,19 @@ struct BatteryDetail: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func row(_ device: BatteryDevice) -> some View {
+    private func row(_ device: Item) -> some View {
         HStack(spacing: 12) {
             MetricProgressRing(progress: device.present ? device.level : 0,
                                tint: tint(device),
                                track: .white.opacity(0.14),
                                diameter: 34,
                                lineWidth: 4) {
-                Image(systemName: device.kind.symbol)
+                Image(systemName: device.symbol)
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(device.present ? tint(device) : WidgetStyle.secondary)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(device.kind.name)
+                Text(device.name)
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(WidgetStyle.primary)
                 Text(caption(device))
@@ -108,6 +109,12 @@ struct BatteryDetail: View {
                     .foregroundStyle(WidgetStyle.secondary)
             }
             Spacer(minLength: 8)
+            if device.charging {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .accessibilityLabel("正在充电")
+            }
             percent(device)
         }
         .lineLimit(1)
@@ -119,22 +126,67 @@ struct BatteryDetail: View {
 
     private var present: Color { Color(hex: MetricColor.batteryPresent) }
 
-    /// Configured devices always, plus anything else actually reporting.
+    /// One row of the panel: the Mac, a configured slot, or an accessory.
+    struct Item: Identifiable {
+        var id: String
+        var name: String
+        var symbol: String
+        /// 0...1. Meaningless unless `present`.
+        var level: Double
+        var charging: Bool
+        var present: Bool
+        /// AirPods: "左 80% · 右 78% · 盒 45%".
+        var parts: String?
+    }
+
+    /// Configured devices always, plus everything else actually reporting.
     ///
-    /// A device in the config was asked for, so "Not connected" is the answer
-    /// it is owed rather than being dropped. The rest are here because the
-    /// panel is where the widget says everything it knows - a tile left at the
-    /// default lists the Mac alone, and a panel that did the same would only
-    /// restate it. Slot order comes from the service so the rows do not
-    /// reshuffle as accessories come and go.
-    private var devices: [BatteryDeviceKind] {
+    /// A device in the config was asked for, so "未连接" is the answer it
+    /// is owed rather than being dropped. The rest are here because the
+    /// panel is where the widget says everything it knows. With 显示蓝牙设备
+    /// on, every connected accessory gets a row (AirPods with left, right
+    /// and case), and the fixed AirPods and keyboard slots give way to those
+    /// rows rather than repeating them. Off, the panel is what it always
+    /// was. Accessories are ordered by kind and then name, so rows do not
+    /// reshuffle as levels change.
+    private var items: [Item] {
         let parsed = Set(instance.config
             .strings("devices", default: ["mac"])
             .compactMap(BatteryDeviceKind.init(configValue:)))
         let configured = parsed.isEmpty ? Set([BatteryDeviceKind.mac]) : parsed
-        return BatteryMetrics.shared.devices
-            .map(\.kind)
-            .filter { configured.contains($0) || device($0).present }
+        let bluetooth = BatteryShelf.showsBluetooth(instance.config)
+        let accessories = bluetooth ? accessoryList : []
+        let covered = !accessories.isEmpty || context.isPreview
+        let kinds: [BatteryDeviceKind] = [.mac, .pods, .podsCase, .keyboard].filter { kind in
+            let device = device(kind)
+            if kind == .mac { return configured.contains(kind) || device.present }
+            // A present AirPods or keyboard already has its accessory row.
+            if bluetooth && device.present && covered { return false }
+            return configured.contains(kind) || device.present
+        }
+        return kinds.map { item(device($0)) } + accessories.map { item($0) }
+    }
+
+    private var accessoryList: [BluetoothBattery] {
+        if context.isPreview {
+            return [BluetoothBattery(id: "preview.pods", name: "AirPods Pro", kind: .airpodsPro,
+                                     left: 85, right: 82, caseLevel: 32),
+                    BluetoothBattery(id: "preview.mouse", name: "妙控鼠标", kind: .mouse, main: 64)]
+        }
+        return BatteryMetrics.shared.accessories
+    }
+
+    private func item(_ device: BatteryDevice) -> Item {
+        Item(id: "fixed.\(device.kind.rawValue)", name: device.kind.name,
+             symbol: BatterySymbol.resolve(device.kind.symbol), level: device.level,
+             charging: device.charging, present: device.present)
+    }
+
+    private func item(_ device: BluetoothBattery) -> Item {
+        Item(id: "bt.\(device.id)", name: device.displayName,
+             symbol: BatterySymbol.resolve(device.kind.symbol),
+             level: Double(device.level ?? 0) / 100, charging: device.charging,
+             present: device.level != nil, parts: device.partsCaption)
     }
 
     /// The service's own model rather than a second one: an absent device is
@@ -156,20 +208,21 @@ struct BatteryDetail: View {
 
     /// The tile's thresholds, so a battery does not change colour on its way
     /// from the shelf into the panel.
-    private func tint(_ device: BatteryDevice) -> Color {
+    private func tint(_ device: Item) -> Color {
         guard device.present, !device.charging else { return present }
         if device.level <= 0.10 { return Color(hex: "#FF453A") }
         if device.level <= 0.20 { return Color(hex: "#FF9F0A") }
         return present
     }
 
-    private func caption(_ device: BatteryDevice) -> String {
+    private func caption(_ device: Item) -> String {
         guard device.present else { return "未连接" }
+        if let parts = device.parts { return device.charging ? "正在充电 · \(parts)" : parts }
         return device.charging ? "正在充电" : "使用电池"
     }
 
     @ViewBuilder
-    private func percent(_ device: BatteryDevice) -> some View {
+    private func percent(_ device: Item) -> some View {
         if device.present {
             let value = Int((min(max(device.level, 0), 1) * 100).rounded())
             HStack(spacing: 0) {

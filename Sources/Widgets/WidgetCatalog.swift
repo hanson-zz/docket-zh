@@ -127,7 +127,11 @@ public enum WidgetCatalog {
 
         Entry(kind: .battery, name: "电池", category: .system,
               defaults: c(["layout": .string("status"),
-                           "devices": .list([.string("mac")])]),
+                           "devices": .list([.string("mac")]),
+                           // Connected Bluetooth accessories in the spare
+                           // slots and the panel. A widget saved before this
+                           // existed reads the same default, so it is on.
+                           BatteryShelf.bluetoothKey: .bool(true)]),
               variants: [("状态", ["layout": .string("status")]),
                          ("百分比圆环", ["layout": .string("gauge")]),
                          ("仅图标", ["layout": .string("icon")])],
@@ -695,11 +699,17 @@ public enum WidgetCatalog {
         case .music:
             return cfg.bool("mini") ? CGSize(width: 64, height: 62) : CGSize(width: 264, height: 132)
         case .battery:
-            let devices = max(1, cfg.strings("devices", default: ["mac"]).count)
-            if devices == 1, cfg.string("layout", default: "status") == "status" {
+            // The single-device 状态 card keeps its size: connected
+            // accessories turn it into three gauges, which fit the same 168.
+            if BatteryShelf.isStatusCard(cfg) {
                 return CGSize(width: 168, height: 132)
             }
-            return CGSize(width: Double(devices * 44 + (devices - 1) * 8 + 20),
+            // A slot per configured device, plus the spare slots kept for
+            // Bluetooth accessories when 显示蓝牙设备 is on. The height still
+            // follows the configured devices, as it always did.
+            let devices = BatteryShelf.configuredCount(cfg)
+            let slots = BatteryShelf.slotCount(cfg)
+            return CGSize(width: Double(slots * 44 + (slots - 1) * 8 + 20),
                           height: devices > 2 ? 116 : 62)
         case .system:
             // With the catalog's default, like every other reader of this key.
@@ -844,8 +854,7 @@ public enum WidgetCatalog {
         case .progress:
             return cfg.string("layout", default: "bars") == "percentage" ? 58 : 80
         case .battery:
-            let devices = max(1, cfg.strings("devices", default: ["mac"]).count)
-            return Double(devices * 62)
+            return Double(BatteryShelf.slotCount(cfg) * 62)
         case .system:
             let metrics = max(1, cfg.strings("metrics", default: ["cpu", "memory"]).count)
             // Each metric gets a row: sparkline, value, label.
