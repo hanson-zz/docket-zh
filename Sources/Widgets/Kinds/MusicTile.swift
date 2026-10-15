@@ -176,7 +176,10 @@ struct MusicTile: View {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 0) {
                         title(track, size: 15)
-                        artist(track, size: 12)
+                        HStack(spacing: 5) {
+                            bars(track, height: 10)
+                            artist(track, size: 12)
+                        }
                     }
                     Spacer(minLength: 0)
                     // Play/pause is on the artwork in this layout, so the row
@@ -251,7 +254,10 @@ struct MusicTile: View {
             Artwork(image: track.artwork, fallback: sourceIcon(track), side: 32, corner: 7)
             VStack(spacing: 0) {
                 title(track, size: 10)
-                artist(track, size: 9)
+                HStack(spacing: 3) {
+                    bars(track, height: 8)
+                    artist(track, size: 9)
+                }
             }
             transport(track, size: 11, spacing: 6)
         }
@@ -259,6 +265,13 @@ struct MusicTile: View {
     }
 
     // MARK: Shared pieces
+
+    /// 正在播放的跳动小竖条，放在艺人名前面。小宇宙、网易云、Spotify、
+    /// Apple Music 和浏览器视频都一样：播放时跳，暂停时停。
+    private func bars(_ track: Playing, height: CGFloat) -> some View {
+        PlayingBarsView(playing: track.isPlaying, tint: ink, height: height,
+                        visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+    }
 
     private func title(_ track: Playing, size: CGFloat) -> some View {
         Text(track.title)
