@@ -88,6 +88,22 @@ public enum WidgetCatalog {
               defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([])]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 摸鱼时钟：工作日倒数下班，周末祝周末快乐，四个小格是发薪、周五、
+        // 下一个节日和今天赚的钱，全部由 SlackerClock 算。背景色、背景图和
+        // 字体颜色只在面板里改（background、backgroundImage、textColor），
+        // 所以不在这里的默认值里，读的时候用 SlackerClock 的默认。
+        Entry(kind: .slacker, name: "摸鱼时钟", category: .clocks,
+              defaults: c([SlackerClock.workdaysKey: .list(SlackerClock.weekdays.map { .string(String($0)) }),
+                           SlackerClock.startKey: .string("09:00"),
+                           SlackerClock.endKey: .string("18:00"),
+                           SlackerClock.holidaysKey: .bool(true),
+                           SlackerClock.paydayKey: .number(Double(SlackerClock.defaultPayday)),
+                           SlackerClock.incomeKey: .number(SlackerClock.defaultIncome),
+                           SlackerClock.itemsKey: .list(SlackerClock.Item.allCases.map { .string($0.rawValue) }),
+                           SlackerClock.fontKey: .string(SlackerClock.FontChoice.system.rawValue),
+                           SlackerClock.tintKey: .bool(true)]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         Entry(kind: .alarm, name: "闹钟", category: .clocks,
               defaults: c(["time": .string("14:30"), "name": .string("给小王回电话")]),
               variants: [], supportsCompact: false, selfContained: true),
@@ -491,6 +507,7 @@ public enum WidgetCatalog {
         case .pet: ShelfColor.redPanda.hex
         case .podcast: "#25B4E1"
         case .perfectDay: PerfectDay.bambooHex
+        case .slacker: SlackerClock.workHex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -660,7 +677,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker:
             nil
         }
     }
@@ -821,6 +838,8 @@ public enum WidgetCatalog {
         case .pet: return CGSize(width: 196, height: 62)
         case .podcast: return CGSize(width: 220, height: 62)
         case .perfectDay: return CGSize(width: 196, height: 62)
+        case .slacker:
+            return CGSize(width: SlackerClock.tileWidth(count: SlackerClock.Settings(config: cfg).items.count), height: 62)
         }
     }
 
@@ -932,6 +951,9 @@ public enum WidgetCatalog {
         // The leaf, its name and the three dots.
         case .perfectDay:
             return 112
+        // Two lines of title, the panda, and the cells two to a row.
+        case .slacker:
+            return SlackerClock.columnHeight(count: SlackerClock.Settings(config: cfg).items.count)
         default:
             return 76
         }

@@ -411,6 +411,8 @@ enum WidgetDetail {
         case .podcast: 340
         // The basket, a seven-column calendar and four badge tags a row.
         case .perfectDay: 380
+        // A large copy of the card and the settings rows under it.
+        case .slacker: 400
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
         default: 300

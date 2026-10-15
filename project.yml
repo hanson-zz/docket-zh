@@ -53,6 +53,9 @@ targets:
       # 不是 AppIcon：Finder 和启动台仍显示 Resources/AppIcon.icon 的经典图标。
       - path: Resources/AppIcons
         buildPhase: resources
+      # 摸鱼时钟的三张小熊猫（上班敲电脑、下班喝茶、周末码头睡觉，透明 PNG 512x512），作为普通资源打包。
+      - path: Resources/Slacker
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

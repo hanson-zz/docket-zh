@@ -478,6 +478,13 @@ struct WidgetSettingsSections: View {
         "character": "角色形象",
         "clickAction": "点按卡片时",
         "autoDirection": "智能方向（中文译成英语，其他译成中文）",
+        "workdays": "工作日",
+        "payday": "发薪日",
+        "income": "每天的收入",
+        "more": "显示更多",
+        "font": "字体",
+        "tint": "背景随状态变色（上班橙、下班绿、周末蓝）",
+        "holidays": "按法定节假日和调休",
     ]
 
     /// Where one key means something different in one widget: `interval`
@@ -489,6 +496,8 @@ struct WidgetSettingsSections: View {
         "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
         "podcast.notify": "有新单集时通知",
         "battery.look": "外观",
+        "slacker.start": "上班时间",
+        "slacker.end": "下班时间（要晚于上班时间）",
     ]
 
     static func label(_ key: String) -> String {
@@ -507,6 +516,8 @@ struct WidgetSettingsSections: View {
         "rings": "要显示的圆环",
         "sounds": "要混合的声音",
         "actions": "要显示的开关",
+        "workdays": "工作日",
+        "more": "显示更多（卡片下方的小格）",
     ]
 
     static func groupLabel(_ key: String) -> String {
@@ -538,6 +549,8 @@ struct WidgetSettingsSections: View {
         case "volume": 0...100
         case "goal": Double(WaterIntake.goalRange.lowerBound)...Double(WaterIntake.goalRange.upperBound)
         case "cupSize": Double(WaterIntake.cupRange.lowerBound)...Double(WaterIntake.cupRange.upperBound)
+        case "payday": Double(SlackerClock.paydayRange.lowerBound)...Double(SlackerClock.paydayRange.upperBound)
+        case "income": SlackerClock.incomeRange
         default: 0...1_000
         }
     }
@@ -548,6 +561,8 @@ struct WidgetSettingsSections: View {
         case "amount": 100
         case "goal": 100
         case "cupSize": 50
+        case "payday": 1
+        case "income": SlackerClock.incomeStep
         default: 5
         }
     }
@@ -556,6 +571,8 @@ struct WidgetSettingsSections: View {
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "amount" { return UnitConverter.format(value) }
         if key == "goal" || key == "cupSize" { return "\(Int(value)) 毫升" }
+        if key == "payday" { return "每月 \(Int(value)) 日" }
+        if key == "income" { return "\(Int(value)) 元" }
         guard key == "duration" else { return "\(Int(value)) 秒" }
         let minutes = Int(value) / 60
         return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分钟" : "\(minutes) 分钟"
@@ -570,6 +587,8 @@ struct WidgetSettingsSections: View {
         "rings": [("存储空间", "storage"), ("电池", "battery")],
         "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
         "actions": QuickToggle.allCases.map { ($0.title, $0.rawValue) },
+        "workdays": SlackerClock.weekdayChoices,
+        "more": SlackerClock.Item.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     /// String options that are really a choice from a fixed set.
@@ -604,6 +623,7 @@ struct WidgetSettingsSections: View {
         "pet.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
         "translate.clickAction": Translate.ClickAction.allCases.map { ($0.title, $0.rawValue) },
         "github.interval": GitHubWatch.intervalChoices.map { ("每 \($0) 分钟", "\($0)") },
+        "slacker.font": SlackerClock.FontChoice.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)
