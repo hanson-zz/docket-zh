@@ -57,6 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // A focus session that ends is a treat for the pet, noticed from launch
         // rather than by a pet tile, which may be on another layout.
         PetFocusWatcher.shared.start()
+        // 专注计时面板的“近七天”：每轮专注结束时记下分钟数，同样从启动起就看着。
+        FocusLogStore.shared.start()
 
         // Battery reminders take their settings from the first 电池 widget,
         // on whichever layout it sits.

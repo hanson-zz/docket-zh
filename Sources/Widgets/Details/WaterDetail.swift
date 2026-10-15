@@ -75,6 +75,8 @@ struct WaterDetail: View {
                 case .history: history(all, goal: goal, now: now, streak: streak)
                 case .goal: goalSettings(goal)
                 }
+
+                WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now)
             }
         }
         .animation(.snappy(duration: 0.25), value: tab)

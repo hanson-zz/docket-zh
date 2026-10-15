@@ -47,6 +47,8 @@ struct HabitDetail: View {
                     }
                     .frame(maxHeight: 420)
                     .scrollIndicators(.automatic)
+
+                    HabitWeeklyReport(habits: all, accent: accent, now: context.now)
                 }
             }
         }

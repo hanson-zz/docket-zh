@@ -71,6 +71,9 @@ struct FocusTimerDetail: View {
                     }
                 }
 
+                // 近七天, above the drain so the bar stays along the card's foot.
+                FocusWeeklyReport(accent: tint, now: now, isPreview: context.isPreview)
+
                 drain(left / total)
             }
         }
