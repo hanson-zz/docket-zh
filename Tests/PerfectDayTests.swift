@@ -70,11 +70,11 @@ final class PerfectDayTests: XCTestCase {
     }
 
     func testBadgeIdsStayCompatibleWithSavedArchives() {
-        XCTAssertEqual(PerfectBadge.allCases.map(\.rawValue),
+        XCTAssertEqual(Array(PerfectBadge.allCases.prefix(10)).map(\.rawValue),
                        ["firstPerfect", "sunStreak3", "sunStreak7", "sunStreak30", "perfectMonth10", "suns50",
                         "water7", "habit7", "focus10h", "focus100h"])
         XCTAssertEqual(Set(PerfectBadge.allCases.map(\.title)).count, PerfectBadge.allCases.count, "names are distinct")
-        XCTAssertEqual(PerfectBadge.allCases.map(\.title),
+        XCTAssertEqual(Array(PerfectBadge.allCases.prefix(10)).map(\.title),
                        ["第一只满篮", "三日靠岸", "七日航程", "码头常客", "金叶之月", "竹林小仓",
                         "潮水七日", "七日打卡", "静心 10 小时", "静心 100 小时"])
     }
@@ -298,15 +298,16 @@ final class PerfectDayTests: XCTestCase {
 
     // MARK: Badge categories
 
-    func testEveryExistingBadgeIsBasicAndShownAsOneGroup() {
-        XCTAssertTrue(PerfectBadge.allCases.allSatisfy { $0.category == .basic })
-        XCTAssertTrue(PerfectBadge.allCases.allSatisfy { $0.hint == nil && $0.festivalWindow == nil })
+    func testTheFirstTenBadgesAreBasicAndGroupsComeInOrder() {
+        let basic = PerfectBadge.allCases.prefix(10)
+        XCTAssertTrue(basic.allSatisfy { $0.category == .basic })
+        XCTAssertTrue(basic.allSatisfy { $0.hint == nil && $0.festivalWindow == nil })
         XCTAssertEqual(PerfectBadgeCategory.allCases.map(\.title), ["初级", "隐藏", "节日限定"])
         XCTAssertEqual(PerfectBadgeCategory.allCases.map(\.rawValue), ["basic", "hidden", "festival"])
         let statuses = PerfectBadges.statuses(records: [], focusMinutes: 0, earned: [:], calendar: calendar)
         let groups = PerfectBadges.grouped(statuses)
-        XCTAssertEqual(groups.map(\.category), [.basic], "empty categories are left out")
-        XCTAssertEqual(groups.first?.statuses.count, PerfectBadge.allCases.count)
+        XCTAssertEqual(groups.map(\.category), [.basic, .hidden, .festival])
+        XCTAssertEqual(groups.map(\.statuses.count), [10, 8, 12])
         let locked = statuses.first { $0.badge == .leafStreak7 }!
         XCTAssertFalse(locked.isConcealed)
         XCTAssertEqual(locked.shownTitle, "七日航程")

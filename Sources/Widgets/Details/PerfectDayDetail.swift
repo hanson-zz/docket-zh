@@ -183,8 +183,11 @@ struct PerfectDayDetail: View {
 
     private func badgeSection(_ all: [PerfectDayRecord]) -> some View {
         let statuses = PerfectBadges.statuses(records: all,
-                                              focusMinutes: context.isPreview ? 900 : center.focusMinutes,
-                                              earned: context.isPreview ? [:] : center.archive.earned)
+                                              input: context.isPreview ? PerfectBadgeInput(focusMinutes: 900)
+                                                  : center.badgeInput(),
+                                              earned: context.isPreview ? [:] : center.archive.earned,
+                                              years: context.isPreview ? [:] : center.archive.festivalYears,
+                                              today: context.now)
         let unlocked = statuses.filter(\.unlocked).count
         return section("徽章 \(unlocked)/\(statuses.count)") {
             VStack(alignment: .leading, spacing: 12) {
@@ -208,7 +211,7 @@ struct PerfectDayDetail: View {
                     PerfectBadgeMedal(status: status, size: 54)
                     Text(status.shownTitle)
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.6))
+                        .foregroundStyle(.white.opacity(status.isLit ? 1 : 0.6))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(badgeLine(status))
@@ -225,6 +228,7 @@ struct PerfectDayDetail: View {
 
     /// 已解锁写日期；隐藏徽章只给提示，不露进度；其他写条件和进度。
     private func badgeLine(_ status: PerfectBadgeStatus) -> String {
+        if let line = status.festivalLine { return line }
         if status.unlocked { return earnedLine(status) }
         if status.isConcealed { return status.shownCondition }
         return "\(status.shownCondition)\n\(status.progressText)"

@@ -196,10 +196,20 @@ public struct PerfectDayArchive: Codable, Equatable, Sendable {
     /// Badge id to the `yyyyMMdd` it was earned on. Once in, never out: a
     /// badge is not taken back because old days were trimmed.
     public var earned: [String: String]
+    /// 节日徽章 id 到收下它的公历年份。旧存档没有这一项，读出来是空的。
+    public var festivalYears: [String: [Int]]
+    /// 喝水累计杯数里已经折起来的部分（见 `PerfectBadges.countingCups`）。
+    public var cupsFolded: Int
+    /// 最近还在喝水记录里的日子各自几杯。
+    public var cupDays: [String: Int]
 
-    public init(days: [String] = [], earned: [String: String] = [:]) {
+    public init(days: [String] = [], earned: [String: String] = [:], festivalYears: [String: [Int]] = [:],
+                cupsFolded: Int = 0, cupDays: [String: Int] = [:]) {
         self.days = days
         self.earned = earned
+        self.festivalYears = festivalYears
+        self.cupsFolded = cupsFolded
+        self.cupDays = cupDays
     }
 
     /// Lenient like `TimerState`: a missing key is empty, not a thrown error.
@@ -207,7 +217,13 @@ public struct PerfectDayArchive: Codable, Equatable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         days = try c.decodeIfPresent([String].self, forKey: .days) ?? []
         earned = try c.decodeIfPresent([String: String].self, forKey: .earned) ?? [:]
+        festivalYears = (try? c.decodeIfPresent([String: [Int]].self, forKey: .festivalYears)) ?? [:]
+        cupsFolded = (try? c.decodeIfPresent(Int.self, forKey: .cupsFolded)) ?? 0
+        cupDays = (try? c.decodeIfPresent([String: Int].self, forKey: .cupDays)) ?? [:]
     }
+
+    /// 喝水累计杯数。
+    public var cupCount: Int { max(0, cupsFolded) + cupDays.values.reduce(0) { $0 + max(0, $1) } }
 
     public var records: [PerfectDayRecord] {
         var byKey: [String: PerfectDayRecord] = [:]

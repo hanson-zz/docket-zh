@@ -88,6 +88,12 @@ public enum FocusLog {
         lifetimeMinutes(stored: stored, lines: lines) + addedMinutes(seconds: seconds)
     }
 
+    /// 夜猫子徽章：一轮专注在晚上 23 点到凌晨 3 点 59 分之间结束。
+    public static func isLateNight(_ endedAt: Date, calendar: Calendar = HabitTracker.calendar) -> Bool {
+        let hour = calendar.component(.hour, from: endedAt)
+        return hour >= 23 || hour < 4
+    }
+
     /// The length of the focus session that `VirtualPet.finishedFocus` says
     /// has just ended: the pinned duration, or the focus length when none
     /// was pinned.

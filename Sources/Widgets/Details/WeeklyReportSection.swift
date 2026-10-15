@@ -263,6 +263,8 @@ final class FocusLogStore {
     /// Every minute ever focused; see `FocusLog.lifetimeMinutes`.
     nonisolated static let totalKey = "docket.focus.totalMinutes"
     private nonisolated static let loggedKey = "docket.focus.loggedDeadline"
+    /// 第一次在深夜（23 点到 4 点前）完成一轮专注的日子，给竹篮的夜猫子徽章。
+    nonisolated static let lateNightKey = "docket.focus.lateNightDay"
 
     private(set) var lines: [String]
     @ObservationIgnored private var timer: Timer?
@@ -297,6 +299,14 @@ final class FocusLogStore {
         lines = next
         defaults.set(next, forKey: Self.logKey)
         defaults.set(total, forKey: Self.totalKey)
+        if defaults.string(forKey: Self.lateNightKey) == nil, FocusLog.isLateNight(deadline) {
+            defaults.set(HabitTracker.dayKey(deadline), forKey: Self.lateNightKey)
+        }
+    }
+
+    /// 有没有在深夜完成过一轮专注。从这一版开始记录。
+    var hasLateNightFocus: Bool {
+        UserDefaults.standard.string(forKey: Self.lateNightKey) != nil
     }
 
     /// Every minute ever focused, never fewer than the log holds.

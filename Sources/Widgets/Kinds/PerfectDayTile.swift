@@ -162,6 +162,15 @@ final class PerfectDayCenter {
     /// Every minute ever focused, for the 专注 badges.
     var focusMinutes: Int { FocusLogStore.shared.lifetimeMinutes }
 
+    /// 徽章用到的累计数字：专注分钟、喝水杯数、深夜专注、清早第一杯水。
+    func badgeInput(archive: PerfectDayArchive? = nil) -> PerfectBadgeInput {
+        let water = widgets().filter { $0.kind == .water }.flatMap { WaterIntake.days($0.config) }
+        return PerfectBadgeInput(focusMinutes: focusMinutes,
+                                 waterCups: (archive ?? self.archive).cupCount,
+                                 lateFocus: FocusLogStore.shared.hasLateNightFocus,
+                                 earlyDrink: PerfectBadges.hasEarlyFirstDrink(water))
+    }
+
     // MARK: Writing
 
     func refresh(now: Date = .now) {
@@ -172,8 +181,13 @@ final class PerfectDayCenter {
             PerfectDay.record(progress(s, on: date, now: now), key: HabitTracker.dayKey(date))
         }
         next.setRecords(records)
-        next.earned = PerfectBadges.earning(next.earned, records: records, focusMinutes: focusMinutes,
+        let water = s.water.flatMap { WaterIntake.days($0) }
+        let cups = PerfectBadges.countingCups(folded: next.cupsFolded, days: next.cupDays, water: water, today: now)
+        next.cupsFolded = cups.folded
+        next.cupDays = cups.days
+        next.earned = PerfectBadges.earning(next.earned, records: records, input: badgeInput(archive: next),
                                             today: now)
+        next.festivalYears = PerfectBadges.festivalYears(next.festivalYears, records: records, today: now)
         guard next != archive else { return }
         archive = next
         save()

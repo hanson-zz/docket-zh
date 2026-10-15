@@ -404,17 +404,17 @@ struct PerfectBadgeMedal: View {
                 path.addLine(to: CGPoint(x: size / 2, y: size * 0.02))
                 path.addLine(to: CGPoint(x: size / 2 + size * 0.08, y: tagTop + size * 0.1))
             }
-            .stroke(Color(hex: "#C9B08A").opacity(status.unlocked ? 0.9 : 0.4),
+            .stroke(Color(hex: "#C9B08A").opacity(status.isLit ? 0.9 : 0.4),
                     style: StrokeStyle(lineWidth: max(1, size * 0.025), lineCap: .round, lineJoin: .round))
             .frame(width: size, height: size)
 
             ZStack {
                 HarborTagShape()
-                    .fill(LinearGradient(colors: status.unlocked ? [light, deep]
+                    .fill(LinearGradient(colors: status.isLit ? [light, deep]
                                             : [Color(white: 0.42), Color(white: 0.26)],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                 HarborTagShape()
-                    .stroke(.white.opacity(status.unlocked ? 0.45 : 0.15), lineWidth: 1)
+                    .stroke(.white.opacity(status.isLit ? 0.45 : 0.15), lineWidth: 1)
                     .padding(size * 0.04)
                 // The eyelet.
                 Circle()
@@ -423,15 +423,24 @@ struct PerfectBadgeMedal: View {
                     .blendMode(.destinationOut)
                 Image(systemName: status.isConcealed ? "questionmark" : badge.symbol)
                     .font(.system(size: size * 0.28, weight: .semibold))
-                    .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.45))
-                    .shadow(color: .black.opacity(status.unlocked ? 0.25 : 0), radius: 1.5, y: 1)
+                    .foregroundStyle(.white.opacity(status.isLit ? 1 : 0.45))
+                    .shadow(color: .black.opacity(status.isLit ? 0.25 : 0), radius: 1.5, y: 1)
                     .offset(y: tagHeight * 0.08)
             }
             .compositingGroup()
             .frame(width: tagWidth, height: tagHeight)
             .offset(y: tagTop)
 
-            if !status.unlocked, !status.isConcealed {
+            if status.phase == .missed {
+                Text(PerfectBadges.missedText)
+                    .font(.system(size: max(7, size * 0.13), weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.horizontal, size * 0.06)
+                    .padding(.vertical, size * 0.015)
+                    .background(Capsule().fill(Color(hex: "#24222C")))
+                    .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 0.5))
+                    .offset(y: size * 0.84)
+            } else if !status.isLit, !status.isConcealed {
                 Image(systemName: "lock.fill")
                     .font(.system(size: size * 0.15, weight: .bold))
                     .foregroundStyle(.white.opacity(0.85))
