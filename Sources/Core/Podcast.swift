@@ -68,20 +68,14 @@ public enum XiaoyuzhouLink: Equatable, Sendable {
     case episode(String)
 
     /// Finds the first 小宇宙 show or episode address anywhere in `text`, so
-    /// a share message with words around the link still works.
+    /// a share message with words or punctuation right against the link
+    /// ("推荐给你：https://…") still works.
     public static func parse(_ text: String) -> XiaoyuzhouLink? {
-        for word in text.split(whereSeparator: { $0.isWhitespace || $0 == "，" || $0 == "," }) {
-            var candidate = String(word).trimmingCharacters(in: CharacterSet(charactersIn: "<>\"'()（）"))
-            if !candidate.lowercased().hasPrefix("http") { candidate = "https://" + candidate }
-            guard let url = URL(string: candidate), let host = url.host?.lowercased(),
-                  host == "xiaoyuzhoufm.com" || host.hasSuffix(".xiaoyuzhoufm.com") else { continue }
-            let parts = url.pathComponents.filter { $0 != "/" }
-            guard parts.count >= 2, isID(parts[1]) else { continue }
-            switch parts[0].lowercased() {
-            case "podcast": return .podcast(parts[1])
-            case "episode": return .episode(parts[1])
-            default: continue
-            }
+        let pattern = #/(?:^|[^A-Za-z0-9.\-])(?:https?://)?(?:[A-Za-z0-9\-]+\.)*xiaoyuzhoufm\.com/(podcast|episode)/([A-Za-z0-9]+)/#
+        for match in text.matches(of: pattern.ignoresCase()) {
+            let id = String(match.output.2)
+            guard isID(id) else { continue }
+            return match.output.1.lowercased() == "podcast" ? .podcast(id) : .episode(id)
         }
         return nil
     }
