@@ -187,27 +187,47 @@ struct PerfectDayDetail: View {
                                               earned: context.isPreview ? [:] : center.archive.earned)
         let unlocked = statuses.filter(\.unlocked).count
         return section("徽章 \(unlocked)/\(statuses.count)") {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 4),
-                      spacing: 12) {
-                ForEach(statuses) { status in
-                    VStack(spacing: 4) {
-                        PerfectBadgeMedal(status: status, size: 54)
-                        Text(status.badge.title)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(PerfectBadges.grouped(statuses)) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(group.category.title) \(group.statuses.filter(\.unlocked).count)/\(group.statuses.count)")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.6))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        Text(status.unlocked ? earnedLine(status) : "\(status.badge.condition)\n\(status.progressText)")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(.white.opacity(0.6))
+                        badgeGrid(group.statuses)
                     }
-                    .help(status.badge.condition)
-                    .accessibilityElement(children: .combine)
                 }
             }
         }
+    }
+
+    private func badgeGrid(_ statuses: [PerfectBadgeStatus]) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 4),
+                  spacing: 12) {
+            ForEach(statuses) { status in
+                VStack(spacing: 4) {
+                    PerfectBadgeMedal(status: status, size: 54)
+                    Text(status.shownTitle)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(badgeLine(status))
+                        .font(.system(size: 9))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .help(status.shownCondition)
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// 已解锁写日期；隐藏徽章只给提示，不露进度；其他写条件和进度。
+    private func badgeLine(_ status: PerfectBadgeStatus) -> String {
+        if status.unlocked { return earnedLine(status) }
+        if status.isConcealed { return status.shownCondition }
+        return "\(status.shownCondition)\n\(status.progressText)"
     }
 
     private func earnedLine(_ status: PerfectBadgeStatus) -> String {

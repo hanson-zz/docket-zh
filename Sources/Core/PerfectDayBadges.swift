@@ -1,5 +1,111 @@
 import Foundation
 
+/// 徽章的分类：面板按这个顺序分组展示。
+public enum PerfectBadgeCategory: String, CaseIterable, Sendable, Hashable, Identifiable {
+    /// 初级：条件公开，未解锁时显示条件和进度。
+    case basic
+    /// 隐藏：未解锁时只显示问号和一句提示，不透露名称和条件。
+    case hidden
+    /// 节日限定：只有在日期窗口里才能解锁，窗口可以按公历或农历写。
+    case festival
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .basic: "初级"
+        case .hidden: "隐藏"
+        case .festival: "节日限定"
+        }
+    }
+}
+
+/// 节日徽章能解锁的日期窗口：起止都按所选历法的“月、日”写，包含首尾两天。
+///
+/// 农历用 `Calendar(identifier: .chinese)`，月份是农历月（1 是正月），
+/// `leapMonth` 为真时只认闰月，为假时只认非闰月。起点晚于终点表示跨年，
+/// 比如腊月廿三到正月十五。
+public struct FestivalWindow: Equatable, Hashable, Sendable {
+    public enum Kind: String, Sendable, Hashable {
+        case gregorian
+        case chinese
+    }
+
+    public var kind: Kind
+    public var start: MonthDay
+    public var end: MonthDay
+    public var leapMonth: Bool
+
+    public struct MonthDay: Equatable, Hashable, Sendable, Comparable {
+        public var month: Int
+        public var day: Int
+
+        public init(_ month: Int, _ day: Int) {
+            self.month = month
+            self.day = day
+        }
+
+        public static func < (lhs: MonthDay, rhs: MonthDay) -> Bool {
+            (lhs.month, lhs.day) < (rhs.month, rhs.day)
+        }
+    }
+
+    public init(_ kind: Kind, from start: MonthDay, to end: MonthDay, leapMonth: Bool = false) {
+        self.kind = kind
+        self.start = start
+        self.end = end
+        self.leapMonth = leapMonth
+    }
+
+    /// 窗口用的历法，时区跟着本地日历走。
+    public func calendar(base: Calendar = PerfectDay.calendar) -> Calendar {
+        var calendar = Calendar(identifier: kind == .chinese ? .chinese : .gregorian)
+        calendar.timeZone = base.timeZone
+        calendar.locale = Locale(identifier: "zh_CN")
+        return calendar
+    }
+
+    /// `date` 在不在窗口里。
+    public func contains(_ date: Date, base: Calendar = PerfectDay.calendar) -> Bool {
+        let lunarOrSolar = self.calendar(base: base)
+        let c = lunarOrSolar.dateComponents([.month, .day, .isLeapMonth], from: date)
+        guard let month = c.month, let day = c.day else { return false }
+        if kind == .chinese, (c.isLeapMonth ?? false) != leapMonth { return false }
+        let today = MonthDay(month, day)
+        if start <= end { return start <= today && today <= end }
+        return today >= start || today <= end
+    }
+
+    /// “农历正月初一至正月十五”“公历12月24日至12月26日”。
+    public var text: String {
+        switch kind {
+        case .gregorian:
+            return "公历\(start.month)月\(start.day)日至\(end.month)月\(end.day)日"
+        case .chinese:
+            let leap = leapMonth ? "闰" : ""
+            return "农历\(leap)\(Self.lunarMonth(start.month))\(Self.lunarDay(start.day))至\(leap)\(Self.lunarMonth(end.month))\(Self.lunarDay(end.day))"
+        }
+    }
+
+    static func lunarMonth(_ month: Int) -> String {
+        let names = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"]
+        return names.indices.contains(month - 1) ? names[month - 1] : "\(month)月"
+    }
+
+    static func lunarDay(_ day: Int) -> String {
+        let digits = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+        guard (1...30).contains(day) else { return "\(day)日" }
+        switch day {
+        case 10: return "初十"
+        case 20: return "二十"
+        case 30: return "三十"
+        default:
+            let prefix = ["初", "十", "廿"][(day - 1) / 10]
+            return prefix + digits[(day - 1) % 10]
+        }
+    }
+}
+
 /// 小熊猫的竹篮的徽章：码头的木牌，按已结算的日子和专注总时长算出来。
 ///
 /// Earned once and kept: `PerfectDayArchive.earned` remembers the day each
@@ -84,6 +190,32 @@ public enum PerfectBadge: String, CaseIterable, Sendable, Hashable, Identifiable
         }
     }
 
+    /// 分类。现有十枚都是初级；隐藏和节日限定的徽章等确认后再加。
+    public var category: PerfectBadgeCategory {
+        switch self {
+        case .firstFullBasket, .leafStreak3, .leafStreak7, .leafStreak30, .goldMonth10, .leaves50,
+             .water7, .habit7, .focus10h, .focus100h:
+            .basic
+        }
+    }
+
+    /// 隐藏徽章未解锁时显示的一句提示。初级徽章没有。
+    public var hint: String? {
+        switch category {
+        case .hidden: "继续收集竹叶，也许会遇到惊喜"
+        case .basic, .festival: nil
+        }
+    }
+
+    /// 节日徽章能解锁的日期窗口。其他分类没有，任何一天都能解锁。
+    public var festivalWindow: FestivalWindow? {
+        switch self {
+        case .firstFullBasket, .leafStreak3, .leafStreak7, .leafStreak30, .goldMonth10, .leaves50,
+             .water7, .habit7, .focus10h, .focus100h:
+            nil
+        }
+    }
+
     /// The number to reach.
     public var target: Int {
         switch self {
@@ -112,6 +244,19 @@ public struct PerfectBadgeStatus: Equatable, Hashable, Sendable, Identifiable {
 
     public var id: String { badge.rawValue }
 
+    /// 未解锁的隐藏徽章：名称、条件和图形都不露出来。
+    public var isConcealed: Bool { PerfectBadges.isConcealed(category: badge.category, unlocked: unlocked) }
+
+    /// 面板上显示的名称。
+    public var shownTitle: String { isConcealed ? PerfectBadges.concealedTitle : badge.title }
+
+    /// 面板上名称下面的一行：隐藏徽章只给提示，节日徽章带上日期窗口。
+    public var shownCondition: String {
+        if isConcealed { return badge.hint ?? PerfectBadges.concealedHint }
+        if let window = badge.festivalWindow { return "\(badge.condition)（\(window.text)）" }
+        return badge.condition
+    }
+
     /// "3/7", or "4/10 小时" for the focus badges.
     public var progressText: String {
         switch badge {
@@ -119,6 +264,14 @@ public struct PerfectBadgeStatus: Equatable, Hashable, Sendable, Identifiable {
         default: "\(current)/\(badge.target)"
         }
     }
+}
+
+/// 面板上的一组徽章。
+public struct PerfectBadgeGroup: Equatable, Sendable, Identifiable {
+    public var category: PerfectBadgeCategory
+    public var statuses: [PerfectBadgeStatus]
+
+    public var id: String { category.rawValue }
 }
 
 public enum PerfectBadges {
@@ -152,7 +305,8 @@ public enum PerfectBadges {
         PerfectBadge.allCases.map { badge in
             let value = measure(badge, records: records, focusMinutes: focusMinutes, calendar: calendar)
             let kept = earned[badge.rawValue]
-            let unlocked = kept != nil || value >= badge.target
+            // 节日徽章只认在窗口里记下的那一次：窗口外达到条件不算解锁。
+            let unlocked = kept != nil || (badge.festivalWindow == nil && value >= badge.target)
             return PerfectBadgeStatus(badge: badge, current: unlocked ? badge.target : min(value, badge.target),
                                       unlocked: unlocked, earnedOn: kept)
         }
@@ -165,10 +319,27 @@ public enum PerfectBadges {
         var result = earned
         let key = HabitTracker.dayKey(today, calendar: calendar)
         for badge in PerfectBadge.allCases where result[badge.rawValue] == nil {
+            if let window = badge.festivalWindow, !window.contains(today, base: calendar) { continue }
             if measure(badge, records: records, focusMinutes: focusMinutes, calendar: calendar) >= badge.target {
                 result[badge.rawValue] = key
             }
         }
         return result
+    }
+
+    /// 未解锁的隐藏徽章显示的名称和默认提示。
+    public static let concealedTitle = "？？？"
+    public static let concealedHint = "还没被发现的徽章"
+
+    public static func isConcealed(category: PerfectBadgeCategory, unlocked: Bool) -> Bool {
+        category == .hidden && !unlocked
+    }
+
+    /// 按分类分组，顺序是初级、隐藏、节日限定；空的分类不出现。
+    public static func grouped(_ statuses: [PerfectBadgeStatus]) -> [PerfectBadgeGroup] {
+        PerfectBadgeCategory.allCases.compactMap { category in
+            let members = statuses.filter { $0.badge.category == category }
+            return members.isEmpty ? nil : PerfectBadgeGroup(category: category, statuses: members)
+        }
     }
 }

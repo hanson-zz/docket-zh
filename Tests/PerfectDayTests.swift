@@ -296,6 +296,60 @@ final class PerfectDayTests: XCTestCase {
         XCTAssertEqual(WidgetCatalog.accentHex(.perfectDay), PerfectDay.bambooHex)
     }
 
+    // MARK: Badge categories
+
+    func testEveryExistingBadgeIsBasicAndShownAsOneGroup() {
+        XCTAssertTrue(PerfectBadge.allCases.allSatisfy { $0.category == .basic })
+        XCTAssertTrue(PerfectBadge.allCases.allSatisfy { $0.hint == nil && $0.festivalWindow == nil })
+        XCTAssertEqual(PerfectBadgeCategory.allCases.map(\.title), ["初级", "隐藏", "节日限定"])
+        XCTAssertEqual(PerfectBadgeCategory.allCases.map(\.rawValue), ["basic", "hidden", "festival"])
+        let statuses = PerfectBadges.statuses(records: [], focusMinutes: 0, earned: [:], calendar: calendar)
+        let groups = PerfectBadges.grouped(statuses)
+        XCTAssertEqual(groups.map(\.category), [.basic], "empty categories are left out")
+        XCTAssertEqual(groups.first?.statuses.count, PerfectBadge.allCases.count)
+        let locked = statuses.first { $0.badge == .leafStreak7 }!
+        XCTAssertFalse(locked.isConcealed)
+        XCTAssertEqual(locked.shownTitle, "七日航程")
+        XCTAssertEqual(locked.shownCondition, "连续 7 天收到竹叶")
+    }
+
+    func testOnlyALockedHiddenBadgeIsConcealed() {
+        XCTAssertTrue(PerfectBadges.isConcealed(category: .hidden, unlocked: false))
+        XCTAssertFalse(PerfectBadges.isConcealed(category: .hidden, unlocked: true))
+        XCTAssertFalse(PerfectBadges.isConcealed(category: .basic, unlocked: false))
+        XCTAssertFalse(PerfectBadges.isConcealed(category: .festival, unlocked: false))
+        XCTAssertEqual(PerfectBadges.concealedTitle, "？？？")
+    }
+
+    func testGregorianWindowIncludingAcrossTheYearEnd() {
+        let christmas = FestivalWindow(.gregorian, from: .init(12, 24), to: .init(12, 26))
+        XCTAssertTrue(christmas.contains(day(2026, 12, 24), base: calendar))
+        XCTAssertTrue(christmas.contains(day(2026, 12, 26, hour: 23), base: calendar))
+        XCTAssertFalse(christmas.contains(day(2026, 12, 27), base: calendar))
+        let newYear = FestivalWindow(.gregorian, from: .init(12, 31), to: .init(1, 2))
+        XCTAssertTrue(newYear.contains(day(2026, 12, 31), base: calendar))
+        XCTAssertTrue(newYear.contains(day(2027, 1, 2), base: calendar))
+        XCTAssertFalse(newYear.contains(day(2027, 1, 3), base: calendar))
+        XCTAssertEqual(christmas.text, "公历12月24日至12月26日")
+    }
+
+    func testLunarWindowUsesTheChineseCalendar() {
+        // 2026 年春节是 2 月 17 日（农历正月初一），元宵节是 3 月 3 日。
+        let springFestival = FestivalWindow(.chinese, from: .init(1, 1), to: .init(1, 15))
+        XCTAssertFalse(springFestival.contains(day(2026, 2, 16), base: calendar), "除夕 is still 腊月")
+        XCTAssertTrue(springFestival.contains(day(2026, 2, 17), base: calendar))
+        XCTAssertTrue(springFestival.contains(day(2026, 3, 3), base: calendar))
+        XCTAssertFalse(springFestival.contains(day(2026, 3, 4), base: calendar))
+        XCTAssertEqual(springFestival.text, "农历正月初一至正月十五")
+        // 跨年的农历窗口：腊月廿三（小年）到正月十五。
+        let lunarNewYear = FestivalWindow(.chinese, from: .init(12, 23), to: .init(1, 15))
+        XCTAssertTrue(lunarNewYear.contains(day(2026, 2, 16), base: calendar))
+        XCTAssertEqual(lunarNewYear.text, "农历腊月廿三至正月十五")
+        XCTAssertEqual(FestivalWindow.lunarDay(10), "初十")
+        XCTAssertEqual(FestivalWindow.lunarDay(21), "廿一")
+        XCTAssertEqual(FestivalWindow.lunarDay(30), "三十")
+    }
+
     // MARK: FocusLog lifetime total
 
     func testLifetimeTotalStartsFromTheLogAndOnlyGrows() {

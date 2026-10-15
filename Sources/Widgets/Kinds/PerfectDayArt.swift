@@ -384,7 +384,8 @@ struct HarborTagShape: Shape {
 }
 
 /// A badge as a wooden dock tag on a string: a gradient tag with a hole at
-/// the top and an SF Symbol, greyed with a small lock while it is still to earn.
+/// the top and an SF Symbol, greyed with a small lock while it is still to
+/// earn. A hidden badge not yet found shows only a question mark.
 struct PerfectBadgeMedal: View {
     var status: PerfectBadgeStatus
     var size: CGFloat = 56
@@ -420,7 +421,7 @@ struct PerfectBadgeMedal: View {
                     .frame(width: size * 0.09, height: size * 0.09)
                     .offset(y: -tagHeight * 0.36)
                     .blendMode(.destinationOut)
-                Image(systemName: badge.symbol)
+                Image(systemName: status.isConcealed ? "questionmark" : badge.symbol)
                     .font(.system(size: size * 0.28, weight: .semibold))
                     .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.45))
                     .shadow(color: .black.opacity(status.unlocked ? 0.25 : 0), radius: 1.5, y: 1)
@@ -430,7 +431,7 @@ struct PerfectBadgeMedal: View {
             .frame(width: tagWidth, height: tagHeight)
             .offset(y: tagTop)
 
-            if !status.unlocked {
+            if !status.unlocked, !status.isConcealed {
                 Image(systemName: "lock.fill")
                     .font(.system(size: size * 0.15, weight: .bold))
                     .foregroundStyle(.white.opacity(0.85))
