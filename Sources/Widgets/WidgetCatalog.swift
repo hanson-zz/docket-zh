@@ -396,10 +396,12 @@ public enum WidgetCatalog {
                          ("章鱼", ["character": .string("octopus")])],
               supportsCompact: false, selfContained: true),
 
-        // 喝水、习惯打卡、专注计时 summed up as a sun a day, with its own
-        // history, month jar and badges kept by PerfectDayCenter (see
-        // PerfectDay). No options: the focus goal is the 专注计时 panel's.
-        Entry(kind: .perfectDay, name: "完美一天", category: .reminders,
+        // 喝水、习惯打卡、专注计时 summed up as a bamboo leaf a day for the
+        // red panda, with its own history, month basket and badges kept by
+        // PerfectDayCenter (see PerfectDay). No options: the focus goal is
+        // the 专注计时 panel's. The kind stays perfect-day so widgets already
+        // placed keep working.
+        Entry(kind: .perfectDay, name: "小熊猫的竹篮", category: .reminders,
               defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -488,7 +490,7 @@ public enum WidgetCatalog {
         case .water: PaletteColor.blue.hex
         case .pet: ShelfColor.redPanda.hex
         case .podcast: "#25B4E1"
-        case .perfectDay: PerfectDayTier.gold.hexes.deep
+        case .perfectDay: PerfectDay.bambooHex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -927,7 +929,7 @@ public enum WidgetCatalog {
         // The character, a line, the bar and the bowl.
         case .pet:
             return 118
-        // The sun, its name and the three dots.
+        // The leaf, its name and the three dots.
         case .perfectDay:
             return 112
         default:

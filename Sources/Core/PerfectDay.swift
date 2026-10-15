@@ -1,6 +1,10 @@
 import Foundation
 
-/// 完美一天：喝水、习惯、专注三件事，每天按达标几项发一个小太阳。
+/// 小熊猫的竹篮：喝水、习惯、专注三件事，每天按达标几项给小熊猫一片竹叶。
+///
+/// 内部类型名和小组件的 kind（`perfect-day`）沿用最初的命名，这样已经放上
+/// 扩展栏的小组件和已有的 perfect-day.json 都能照常读出来；用户看到的文案
+/// 和图形都是码头自己的竹叶、竹篮主题。
 ///
 /// The three sources keep their own logs and know nothing about this:
 ///
@@ -19,11 +23,11 @@ import Foundation
 ///
 /// The tier, by how many items took part and how many of them were met:
 ///
-/// - every item met, with at least two taking part: 完美一天, a gold sun;
-/// - two met and one missed (three taking part): 美好一天, a silver sun;
-/// - exactly one met: 奈斯一天, a bronze sun, whatever took part, so a day
+/// - every item met, with at least two taking part: 满篮一天, a gold leaf;
+/// - two met and one missed (three taking part): 丰收一天, a silver leaf;
+/// - exactly one met: 小有收获, a bronze leaf, whatever took part, so a day
 ///   with only one item to do can never be a gold one;
-/// - nothing met, or nothing taking part: no sun.
+/// - nothing met, or nothing taking part: no leaf.
 ///
 /// So with two items, both is gold and one is bronze; with one item, met is
 /// bronze. Those are the "fewer than three" rules, and `tier` is the one place
@@ -35,30 +39,30 @@ public enum PerfectDayTier: String, CaseIterable, Sendable, Hashable, Comparable
 
     public var id: String { rawValue }
 
-    /// 完美一天 / 美好一天 / 奈斯一天.
+    /// 满篮一天 / 丰收一天 / 小有收获.
     public var title: String {
         switch self {
-        case .gold: "完美一天"
-        case .silver: "美好一天"
-        case .bronze: "奈斯一天"
+        case .gold: "满篮一天"
+        case .silver: "丰收一天"
+        case .bronze: "小有收获"
         }
     }
 
-    /// 金太阳 / 银太阳 / 铜太阳.
-    public var sunName: String {
+    /// 金竹叶 / 银竹叶 / 铜竹叶.
+    public var leafName: String {
         switch self {
-        case .gold: "金太阳"
-        case .silver: "银太阳"
-        case .bronze: "铜太阳"
+        case .gold: "金竹叶"
+        case .silver: "银竹叶"
+        case .bronze: "铜竹叶"
         }
     }
 
-    /// Light and deep stops of the sun's face, as hex.
+    /// Light and deep stops of the leaf, as hex.
     public var hexes: (light: String, deep: String) {
         switch self {
-        case .gold: ("#FFD54A", "#FF9F1C")
-        case .silver: ("#EEF1F6", "#A7B0BE")
-        case .bronze: ("#F0B07A", "#B8692F")
+        case .gold: ("#FFE27A", "#D99A12")
+        case .silver: ("#F1F4F8", "#98A3B3")
+        case .bronze: ("#F3BC8C", "#A9622C")
         }
     }
 
@@ -184,7 +188,7 @@ public struct PerfectDayCell: Equatable, Hashable, Sendable {
     public var isFuture: Bool
 }
 
-/// Everything 完美一天 keeps, as one small file: the settled days and the
+/// Everything 小熊猫的竹篮 keeps, as one small file: the settled days and the
 /// badges earned with the day each was earned. Focus minutes are not here:
 /// they are the app's one `FocusLog`, kept by `FocusLogStore`.
 public struct PerfectDayArchive: Codable, Equatable, Sendable {
@@ -217,6 +221,11 @@ public struct PerfectDayArchive: Codable, Equatable, Sendable {
 }
 
 public enum PerfectDay {
+    /// 竹子的绿色：小组件的主题色、面板的底色和分享图的点缀。
+    public static let bambooHex = "#4E9A3E"
+    /// 竹篮的浅、深两种藤色。
+    public static let basketHexes = (light: "#E2B878", deep: "#9A6A34")
+
     /// Settled days kept: a couple of years of calendar.
     public static let keptDays = 800
     /// How far back a gap (the Mac was off, the app not running) is filled
@@ -325,7 +334,7 @@ public enum PerfectDay {
     /// - A gap since the last settled day (the app was not running) is filled
     ///   from the sources' own history, at most `backfillDays` back. Nothing
     ///   before the first settled day is filled in: the history starts the
-    ///   day 完美一天 was first placed.
+    ///   day the widget was first placed.
     /// - Days older than `keptDays` are dropped.
     public static func settled(_ records: [PerfectDayRecord], today: Date,
                                calendar: Calendar = PerfectDay.calendar,
@@ -363,7 +372,7 @@ public enum PerfectDay {
         return records.filter { $0.key.hasPrefix(prefix) }
     }
 
-    /// How many of each sun the month holds.
+    /// How many of each leaf the month holds.
     public static func counts(_ records: [PerfectDayRecord], month: Date,
                               calendar: Calendar = PerfectDay.calendar) -> [PerfectDayTier: Int] {
         var result: [PerfectDayTier: Int] = [.gold: 0, .silver: 0, .bronze: 0]
@@ -373,8 +382,8 @@ public enum PerfectDay {
         return result
     }
 
-    /// The month's suns in day order: the jar stacks them as they were earned.
-    public static func suns(_ records: [PerfectDayRecord], month: Date,
+    /// The month's leaves in day order: the basket piles them as they were earned.
+    public static func leaves(_ records: [PerfectDayRecord], month: Date,
                             calendar: Calendar = PerfectDay.calendar) -> [PerfectDayTier] {
         monthRecords(records, month: month, calendar: calendar).compactMap(\.tier)
     }
@@ -417,18 +426,18 @@ public enum PerfectDay {
 
     // MARK: Runs
 
-    /// Consecutive days, ending today, with a sun. Today without one yet
+    /// Consecutive days, ending today, with a leaf. Today without one yet
     /// keeps the run that ended yesterday: the day is not over.
     public static func currentStreak(_ records: [PerfectDayRecord], today: Date,
                                      calendar: Calendar = PerfectDay.calendar) -> Int {
-        let sunny = Set(records.filter { $0.tier != nil }.map(\.key))
+        let leafy = Set(records.filter { $0.tier != nil }.map(\.key))
         var day = calendar.startOfDay(for: today)
-        if !sunny.contains(HabitTracker.dayKey(day, calendar: calendar)) {
+        if !leafy.contains(HabitTracker.dayKey(day, calendar: calendar)) {
             guard let yesterday = calendar.date(byAdding: .day, value: -1, to: day) else { return 0 }
             day = yesterday
         }
         var count = 0
-        while sunny.contains(HabitTracker.dayKey(day, calendar: calendar)), count <= keptDays {
+        while leafy.contains(HabitTracker.dayKey(day, calendar: calendar)), count <= keptDays {
             count += 1
             guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
             day = previous
@@ -458,7 +467,22 @@ public enum PerfectDay {
 
     /// The tile's line for today.
     public static func headline(_ tier: PerfectDayTier?) -> String {
-        tier?.title ?? "还没有小太阳"
+        tier?.title ?? "还没有竹叶"
+    }
+
+    /// The panel's line under the headline.
+    public static func subline(_ tier: PerfectDayTier?) -> String {
+        tier.map { "小熊猫收到一片\($0.leafName)" } ?? "达标一项，小熊猫就能收到铜竹叶"
+    }
+
+    /// 怎么算: the rule in words, for the panel's foot.
+    public static func rules(focusGoal: Int) -> String {
+        "喝水达到当日目标；习惯当天全部完成；专注达到每日目标（\(max(1, focusGoal)) 分钟，在专注计时面板里设置）。"
+            + "三项全部达标是\(PerfectDayTier.gold.title)（\(PerfectDayTier.gold.leafName)），"
+            + "差一项是\(PerfectDayTier.silver.title)（\(PerfectDayTier.silver.leafName)），"
+            + "只达标一项是\(PerfectDayTier.bronze.title)（\(PerfectDayTier.bronze.leafName)）。"
+            + "没放喝水或专注计时小组件、或没设习惯时，那一项不计入：两项都达标算金竹叶，只达标一项算铜竹叶。"
+            + "每天的竹叶放进本月的竹篮，记录从放上这个小组件那天开始，按这台 Mac 的本地日历结算。"
     }
 
     /// "2026年10月".
@@ -467,7 +491,7 @@ public enum PerfectDay {
         return "\(c.year ?? 0)年\(c.month ?? 0)月"
     }
 
-    /// A believable month for the library and the screenshots: suns on most
+    /// A believable month for the library and the screenshots: leaves on most
     /// days so far, three items taking part.
     public static func sample(today: Date, calendar: Calendar = PerfectDay.calendar) -> [PerfectDayRecord] {
         let pattern: [(PerfectDayMark, PerfectDayMark, PerfectDayMark)] = [

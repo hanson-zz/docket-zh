@@ -70,7 +70,7 @@ public enum FocusLog {
 
     // MARK: Lifetime total
 
-    /// Every minute ever focused, for the 完美一天 badges (专注累计 10 / 100
+    /// Every minute ever focused, for the 小熊猫的竹篮 badges (专注累计 10 / 100
     /// 小时). The daily log forgets after `keptDays`, so the total is kept
     /// beside it under its own key and only ever grows.
     ///

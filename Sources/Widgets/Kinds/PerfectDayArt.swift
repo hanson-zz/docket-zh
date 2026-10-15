@@ -1,185 +1,225 @@
 import SwiftUI
 
-/// 完美一天的图形，全部用 SwiftUI 画出来，不带任何图片素材：
-/// 小太阳（圆、光芒、表情，金银铜三色，没得到时是灰色轮廓）、玻璃罐、
-/// 三项的小进度环和圆形徽章。
+/// 小熊猫的竹篮的图形，全部用 SwiftUI 画出来，不带任何图片素材：
+/// 竹叶（金银铜三色，没得到时是虚线轮廓）、编织竹篮、三项的小进度环、
+/// 码头木牌样式的徽章、月度频率条、日历和点缀用的竹子。
 
-// MARK: - Sun
+// MARK: - Leaf
 
-/// A sun: a round face with twelve rays and a smile, gold, silver or
-/// bronze. Nil draws the empty outline of one, for a day without a sun.
-struct SunGlyph: View {
+/// A bamboo leaf: a long pointed blade with a midrib and a short stalk,
+/// leaning to the right, gold, silver or bronze. Nil draws a dashed outline
+/// of one, for a day without a leaf.
+struct LeafGlyph: View {
     var tier: PerfectDayTier?
     var size: CGFloat
-    /// Below about 16pt a face is a smudge, so it is left off.
-    var face: Bool = true
-    /// The outline's colour for a day without a sun.
+    /// The outline's colour for a day without a leaf.
     var emptyInk: Color = .gray
 
     var body: some View {
         let tier = tier
-        let face = face
         let emptyInk = emptyInk
         return Canvas { context, canvas in
-            Self.draw(in: &context, size: canvas, tier: tier, face: face, emptyInk: emptyInk)
+            Self.draw(in: &context, size: canvas, tier: tier, emptyInk: emptyInk)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 
-    nonisolated static func draw(in context: inout GraphicsContext, size canvas: CGSize,
-                                 tier: PerfectDayTier?, face: Bool, emptyInk: Color) {
-        let side = min(canvas.width, canvas.height)
-        let c = CGPoint(x: canvas.width / 2, y: canvas.height / 2)
-        let outer = side / 2
-        let core = outer * 0.62
-        let rayWidth = max(1.2, outer * 0.17)
-        let rayInner = core * 1.1
-        let rayOuter = outer * 0.97
+    /// The blade, its midrib and its stalk inside `rect`, tilted about 36 degrees.
+    nonisolated static func paths(in rect: CGRect) -> (blade: Path, rib: Path, stalk: Path) {
+        let s = min(rect.width, rect.height)
+        let origin = CGPoint(x: rect.midX - s / 2, y: rect.midY - s / 2)
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: origin.x + x * s, y: origin.y + y * s) }
 
-        var rays = Path()
-        for index in 0..<12 {
-            let angle = Double(index) / 12 * 2 * .pi
-            let length = (index % 2 == 0 ? rayOuter : rayOuter * 0.9) - rayInner
-            let ray = Path(roundedRect: CGRect(x: -rayWidth / 2, y: rayInner, width: rayWidth, height: length),
-                           cornerRadius: rayWidth / 2)
-            rays.addPath(ray, transform: CGAffineTransform(translationX: c.x, y: c.y).rotated(by: angle))
-        }
-        let disc = Path(ellipseIn: CGRect(x: c.x - core, y: c.y - core, width: core * 2, height: core * 2))
+        var blade = Path()
+        blade.move(to: p(0.5, 0.84))
+        blade.addCurve(to: p(0.5, 0.05), control1: p(0.2, 0.7), control2: p(0.33, 0.24))
+        blade.addCurve(to: p(0.5, 0.84), control1: p(0.67, 0.24), control2: p(0.8, 0.7))
+        blade.closeSubpath()
+
+        var rib = Path()
+        rib.move(to: p(0.5, 0.82))
+        rib.addQuadCurve(to: p(0.5, 0.13), control: p(0.53, 0.48))
+
+        var stalk = Path()
+        stalk.move(to: p(0.5, 0.83))
+        stalk.addQuadCurve(to: p(0.45, 0.97), control: p(0.5, 0.92))
+
+        let turn = CGAffineTransform(translationX: rect.midX, y: rect.midY)
+            .rotated(by: .pi / 5)
+            .translatedBy(x: -rect.midX, y: -rect.midY)
+        return (blade.applying(turn), rib.applying(turn), stalk.applying(turn))
+    }
+
+    nonisolated static func draw(in context: inout GraphicsContext, size canvas: CGSize,
+                                 tier: PerfectDayTier?, emptyInk: Color) {
+        let rect = CGRect(origin: .zero, size: canvas)
+        let side = min(canvas.width, canvas.height)
+        let (blade, rib, stalk) = paths(in: rect)
+        let line = max(0.8, side * 0.05)
 
         guard let tier else {
-            let line = max(0.8, outer * 0.07)
-            context.stroke(rays, with: .color(emptyInk.opacity(0.45)), lineWidth: line * 0.8)
-            context.stroke(disc, with: .color(emptyInk.opacity(0.6)), lineWidth: line)
+            context.stroke(blade, with: .color(emptyInk.opacity(0.55)),
+                           style: StrokeStyle(lineWidth: line, lineJoin: .round, dash: [max(1.5, side * 0.09), max(1, side * 0.06)]))
+            context.stroke(stalk, with: .color(emptyInk.opacity(0.4)),
+                           style: StrokeStyle(lineWidth: line, lineCap: .round))
             return
         }
 
         let light = Color(hex: tier.hexes.light)
         let deep = Color(hex: tier.hexes.deep)
-        context.fill(rays, with: .linearGradient(Gradient(colors: [light, deep]),
-                                                 startPoint: CGPoint(x: c.x, y: c.y - outer),
-                                                 endPoint: CGPoint(x: c.x, y: c.y + outer)))
-        context.fill(disc, with: .radialGradient(Gradient(colors: [light, deep]),
-                                                 center: CGPoint(x: c.x - core * 0.3, y: c.y - core * 0.35),
-                                                 startRadius: 0, endRadius: core * 1.5))
-        // A sheen on the upper left, so it reads as round rather than flat.
-        let sheen = Path(ellipseIn: CGRect(x: c.x - core * 0.62, y: c.y - core * 0.78,
-                                           width: core * 0.7, height: core * 0.42))
-        context.fill(sheen, with: .color(.white.opacity(0.35)))
-        context.stroke(disc, with: .color(deep.opacity(0.9)), lineWidth: max(0.6, outer * 0.035))
-
-        guard face, side >= 16 else { return }
-        let ink = Color(hex: Self.inkHex(tier))
-        let eyeW = core * 0.15
-        let eyeH = core * 0.22
-        for dx in [-0.34, 0.34] {
-            let eye = Path(ellipseIn: CGRect(x: c.x + core * dx - eyeW / 2, y: c.y - core * 0.2 - eyeH / 2,
-                                             width: eyeW, height: eyeH))
-            context.fill(eye, with: .color(ink))
-            let cheek = Path(ellipseIn: CGRect(x: c.x + core * dx * 1.55 - core * 0.13, y: c.y + core * 0.12,
-                                               width: core * 0.26, height: core * 0.17))
-            context.fill(cheek, with: .color(Color(hex: "#FF6F7D").opacity(0.4)))
-        }
-        var smile = Path()
-        smile.addArc(center: CGPoint(x: c.x, y: c.y + core * 0.02), radius: core * 0.36,
-                     startAngle: .degrees(25), endAngle: .degrees(155), clockwise: false)
-        context.stroke(smile, with: .color(ink),
-                       style: StrokeStyle(lineWidth: max(0.8, core * 0.1), lineCap: .round))
-    }
-
-    nonisolated static func inkHex(_ tier: PerfectDayTier) -> String {
-        switch tier {
-        case .gold: "#6B3F0C"
-        case .silver: "#3F4757"
-        case .bronze: "#4E250B"
-        }
+        context.stroke(stalk, with: .color(deep), style: StrokeStyle(lineWidth: line * 1.3, lineCap: .round))
+        context.fill(blade, with: .linearGradient(Gradient(colors: [light, deep]),
+                                                  startPoint: CGPoint(x: rect.minX + side * 0.25, y: rect.minY + side * 0.15),
+                                                  endPoint: CGPoint(x: rect.maxX - side * 0.2, y: rect.maxY - side * 0.1)))
+        context.stroke(blade, with: .color(deep.opacity(0.9)), lineWidth: max(0.5, side * 0.03))
+        guard side >= 12 else { return }
+        context.stroke(rib, with: .color(deep.opacity(0.75)),
+                       style: StrokeStyle(lineWidth: max(0.6, side * 0.035), lineCap: .round))
+        // A soft shine along one half of the blade, so it reads as waxy.
+        var shine = Path()
+        let half = paths(in: rect.insetBy(dx: side * 0.12, dy: side * 0.12)).rib
+        shine.addPath(half, transform: CGAffineTransform(translationX: -side * 0.07, y: -side * 0.02))
+        context.stroke(shine, with: .color(.white.opacity(0.35)),
+                       style: StrokeStyle(lineWidth: max(0.6, side * 0.04), lineCap: .round))
     }
 }
 
-// MARK: - Jar
+// MARK: - Basket
 
-/// A glass jar with a lid, the month's suns piled up inside it from the
-/// bottom, in the order they were earned.
-struct SunJar: View {
-    var suns: [PerfectDayTier]
+/// A woven bamboo basket with a handle, the month's leaves heaped inside it
+/// from the bottom in the order they were earned, seen through the gaps of
+/// the weave.
+struct BambooBasket: View {
+    var leaves: [PerfectDayTier]
     var width: CGFloat = 170
-    var emptyText = "这个月还没有收集到小太阳"
+    var emptyText = "这个月的竹篮还空着"
 
-    private var height: CGFloat { width * 1.2 }
+    private var height: CGFloat { width * 1.05 }
+    private var rimY: CGFloat { height * 0.34 }
+    private var bottomY: CGFloat { height * 0.95 }
+
+    private var cane: (light: Color, deep: Color) {
+        (Color(hex: PerfectDay.basketHexes.light), Color(hex: PerfectDay.basketHexes.deep))
+    }
 
     var body: some View {
-        let glass = bodyRect
+        let shape = BasketBody(rimY: rimY / height, bottomY: bottomY / height)
         ZStack(alignment: .topLeading) {
-            // Lid and neck.
-            RoundedRectangle(cornerRadius: width * 0.05, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: "#F3D27A"), Color(hex: "#B8892B")],
+            handle
+
+            // The inside of the basket, dark, so leaves stand out.
+            shape
+                .fill(LinearGradient(colors: [Color(hex: "#3B2A1A").opacity(0.85), Color(hex: "#24190F").opacity(0.9)],
                                      startPoint: .top, endPoint: .bottom))
-                .overlay {
-                    // Ridges on the lid.
-                    VStack(spacing: width * 0.022) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            Rectangle().fill(.black.opacity(0.12)).frame(height: 1)
-                        }
-                    }
-                    .padding(.horizontal, width * 0.04)
-                }
-                .frame(width: width * 0.74, height: height * 0.11)
-                .offset(x: width * 0.13, y: 0)
-            RoundedRectangle(cornerRadius: width * 0.03, style: .continuous)
-                .fill(.white.opacity(0.08))
-                .overlay {
-                    RoundedRectangle(cornerRadius: width * 0.03, style: .continuous)
-                        .strokeBorder(.white.opacity(0.3), lineWidth: 1.2)
-                }
-                .frame(width: width * 0.66, height: height * 0.07)
-                .offset(x: width * 0.17, y: height * 0.105)
+                .frame(width: width, height: height)
 
-            // The glass.
-            RoundedRectangle(cornerRadius: width * 0.2, style: .continuous)
-                .fill(LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.04)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: glass.width, height: glass.height)
-                .offset(x: glass.minX, y: glass.minY)
-
-            // The suns, clipped to the glass.
+            // The leaves, clipped to the basket.
             ZStack(alignment: .topLeading) {
                 ForEach(Array(placements.enumerated()), id: \.offset) { _, place in
-                    SunGlyph(tier: place.tier, size: place.size)
+                    LeafGlyph(tier: place.tier, size: place.size)
                         .rotationEffect(.degrees(place.tilt))
-                        .position(x: place.center.x - glass.minX, y: place.center.y - glass.minY)
+                        .position(place.center)
                 }
             }
-            .frame(width: glass.width, height: glass.height, alignment: .topLeading)
-            .clipShape(RoundedRectangle(cornerRadius: width * 0.2, style: .continuous))
-            .offset(x: glass.minX, y: glass.minY)
+            .frame(width: width, height: height, alignment: .topLeading)
+            .clipShape(shape)
 
-            RoundedRectangle(cornerRadius: width * 0.2, style: .continuous)
-                .strokeBorder(.white.opacity(0.38), lineWidth: 1.5)
-                .frame(width: glass.width, height: glass.height)
-                .offset(x: glass.minX, y: glass.minY)
-            // A highlight down the left of the glass.
+            // The weave over them: horizontal canes with gaps, ribs that
+            // narrow toward the base.
+            weave
+                .frame(width: width, height: height)
+                .clipShape(shape)
+                .allowsHitTesting(false)
+
+            shape
+                .stroke(cane.deep, lineWidth: max(1.2, width * 0.012))
+                .frame(width: width, height: height)
+
+            // The rim, a thick bound cane across the top.
             Capsule()
-                .fill(LinearGradient(colors: [.white.opacity(0.28), .white.opacity(0.02)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(width: width * 0.05, height: glass.height * 0.55)
-                .offset(x: glass.minX + width * 0.07, y: glass.minY + glass.height * 0.12)
+                .fill(LinearGradient(colors: [cane.light, cane.deep], startPoint: .top, endPoint: .bottom))
+                .overlay {
+                    HStack(spacing: width * 0.05) {
+                        ForEach(0..<9, id: \.self) { _ in
+                            Capsule().fill(.black.opacity(0.15)).frame(width: 1.2)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .frame(width: width * 0.94, height: width * 0.07)
+                .offset(x: width * 0.03, y: rimY - width * 0.035)
 
-            if suns.isEmpty {
+            if leaves.isEmpty {
                 Text(emptyText)
                     .font(.system(size: max(10, width * 0.068)))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.white.opacity(0.75))
                     .multilineTextAlignment(.center)
-                    .frame(width: glass.width * 0.78)
-                    .position(x: glass.midX, y: glass.midY)
+                    .frame(width: width * 0.6)
+                    .position(x: width / 2, y: (rimY + bottomY) / 2)
             }
         }
         .frame(width: width, height: height, alignment: .topLeading)
         .accessibilityElement()
-        .accessibilityLabel(suns.isEmpty ? emptyText : "罐子里有 \(suns.count) 个小太阳")
+        .accessibilityLabel(leaves.isEmpty ? emptyText : "竹篮里有 \(leaves.count) 片竹叶")
     }
 
-    private var bodyRect: CGRect {
-        CGRect(x: width * 0.04, y: height * 0.16, width: width * 0.92, height: height * 0.84)
+    private var handle: some View {
+        let top = height * 0.03
+        let control = 2 * top - rimY
+        return Path { path in
+            path.move(to: CGPoint(x: width * 0.17, y: rimY))
+            path.addQuadCurve(to: CGPoint(x: width * 0.83, y: rimY), control: CGPoint(x: width / 2, y: control))
+        }
+        .stroke(LinearGradient(colors: [cane.light, cane.deep], startPoint: .top, endPoint: .bottom),
+                style: StrokeStyle(lineWidth: width * 0.05, lineCap: .round))
+        .overlay {
+            Path { path in
+                path.move(to: CGPoint(x: width * 0.17, y: rimY))
+                path.addQuadCurve(to: CGPoint(x: width * 0.83, y: rimY), control: CGPoint(x: width / 2, y: control))
+            }
+            .stroke(.white.opacity(0.25), style: StrokeStyle(lineWidth: width * 0.012, lineCap: .round, dash: [width * 0.04, width * 0.03]))
+        }
+        .frame(width: width, height: height)
+    }
+
+    private var weave: some View {
+        let w = width
+        let rim = rimY
+        let bottom = bottomY
+        let light = cane.light
+        let deep = cane.deep
+        return Canvas { context, _ in
+            let bandHeight = w * 0.045
+            var y = rim + w * 0.06
+            var row = 0
+            while y < bottom {
+                let band = Path(roundedRect: CGRect(x: 0, y: y, width: w, height: bandHeight),
+                                cornerRadius: bandHeight / 2)
+                context.fill(band, with: .linearGradient(Gradient(colors: [light, deep]),
+                                                         startPoint: CGPoint(x: 0, y: y),
+                                                         endPoint: CGPoint(x: 0, y: y + bandHeight)))
+                // Little ticks where the canes cross the ribs, offset each row.
+                var x = (row % 2 == 0 ? w * 0.04 : w * 0.1)
+                while x < w {
+                    let tick = Path(CGRect(x: x, y: y, width: 1, height: bandHeight))
+                    context.fill(tick, with: .color(.black.opacity(0.2)))
+                    x += w * 0.12
+                }
+                y += bandHeight + w * 0.07
+                row += 1
+            }
+            // Ribs from the rim down toward the base, converging.
+            for index in 0...8 {
+                let t = CGFloat(index) / 8
+                let topX = w * (0.06 + 0.88 * t)
+                let bottomX = w * (0.17 + 0.66 * t)
+                var rib = Path()
+                rib.move(to: CGPoint(x: topX, y: rim))
+                rib.addLine(to: CGPoint(x: bottomX, y: bottom))
+                context.stroke(rib, with: .color(deep.opacity(0.8)), lineWidth: max(1, w * 0.012))
+            }
+        }
     }
 
     private struct Placement {
@@ -189,40 +229,96 @@ struct SunJar: View {
         var tilt: Double
     }
 
-    /// Rows from the bottom, every other row nudged half a sun over and one
-    /// shorter, with as many columns as it takes for the month to fit.
+    /// Half the basket's width at height `y`: wide at the rim, narrower at the base.
+    private func halfWidth(at y: CGFloat) -> CGFloat {
+        let t = min(1, max(0, (y - rimY) / (bottomY - rimY)))
+        return width * (0.44 - 0.11 * t)
+    }
+
+    /// Rows from the bottom up, each as wide as the basket is at that
+    /// height, the leaves shrinking until the whole month fits.
     private var placements: [Placement] {
-        guard !suns.isEmpty else { return [] }
-        let inner = bodyRect.insetBy(dx: width * 0.05, dy: width * 0.05)
-        var columns = 4
-        var size = inner.width / CGFloat(columns)
-        func capacity(_ columns: Int, _ size: CGFloat) -> Int {
-            let rows = max(1, Int((inner.height - size) / (size * 0.86)) + 1)
-            return (rows + 1) / 2 * columns + rows / 2 * (columns - 1)
+        guard !leaves.isEmpty else { return [] }
+        func rows(_ size: CGFloat) -> [(y: CGFloat, count: Int)] {
+            var result: [(y: CGFloat, count: Int)] = []
+            var y = bottomY - size * 0.55
+            while y - size * 0.35 >= rimY + width * 0.02 {
+                let count = max(1, Int((halfWidth(at: y) * 2 - width * 0.06) / (size * 0.8)))
+                result.append((y: y, count: count))
+                y -= size * 0.62
+            }
+            return result
         }
-        while capacity(columns, size) < suns.count, columns < 10 {
-            columns += 1
-            size = inner.width / CGFloat(columns)
+        var size = width * 0.24
+        while rows(size).reduce(0, { $0 + $1.count }) < leaves.count, size > width * 0.07 {
+            size *= 0.92
         }
         var result: [Placement] = []
-        var row = 0
         var index = 0
-        while index < suns.count {
-            let odd = row % 2 == 1
-            let count = odd ? columns - 1 : columns
-            for column in 0..<count where index < suns.count {
-                let x = inner.minX + size / 2 + CGFloat(column) * size + (odd ? size / 2 : 0)
-                let y = inner.maxY - size / 2 - CGFloat(row) * size * 0.86
-                // A tilt from the position, so the pile looks tipped in by
+        for (row, line) in rows(size).enumerated() where index < leaves.count {
+            let slot = size * 0.8
+            let span = CGFloat(line.count) * slot
+            let start = width / 2 - span / 2 + slot / 2 + (row % 2 == 1 ? slot * 0.25 : 0)
+            for column in 0..<line.count where index < leaves.count {
+                // A tilt from the position, so the heap looks tipped in by
                 // hand and stays the same every time it is drawn.
-                let tilt = Double((index * 37 + row * 11) % 30) - 15
-                result.append(Placement(tier: suns[index], center: CGPoint(x: x, y: y),
-                                        size: size * 0.96, tilt: tilt))
+                let tilt = Double((index * 53 + row * 17) % 70) - 35
+                result.append(Placement(tier: leaves[index],
+                                        center: CGPoint(x: start + CGFloat(column) * slot, y: line.y),
+                                        size: size, tilt: tilt))
                 index += 1
             }
-            row += 1
         }
         return result
+    }
+}
+
+/// The basket's outline: straight sides tapering from the rim to a rounded base.
+struct BasketBody: Shape {
+    /// The rim and the base as fractions of the height.
+    var rimY: CGFloat
+    var bottomY: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + w * 0.06, y: rect.minY + h * rimY))
+        path.addLine(to: CGPoint(x: rect.minX + w * 0.94, y: rect.minY + h * rimY))
+        path.addLine(to: CGPoint(x: rect.minX + w * 0.84, y: rect.minY + h * (bottomY - 0.04)))
+        path.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.16, y: rect.minY + h * (bottomY - 0.04)),
+                          control: CGPoint(x: rect.midX, y: rect.minY + h * (bottomY + 0.04)))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Bamboo
+
+/// A few bamboo stalks with their nodes and a leaf or two, as decoration.
+struct BambooStalks: View {
+    var height: CGFloat = 160
+    var color: Color = Color(hex: PerfectDay.bambooHex)
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: height * 0.05) {
+            stalk(height * 0.9, width: height * 0.07)
+            stalk(height, width: height * 0.08)
+            stalk(height * 0.72, width: height * 0.06)
+        }
+        .frame(height: height, alignment: .bottom)
+        .accessibilityHidden(true)
+    }
+
+    private func stalk(_ length: CGFloat, width: CGFloat) -> some View {
+        VStack(spacing: width * 0.25) {
+            ForEach(0..<4, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: width * 0.3, style: .continuous)
+                    .fill(LinearGradient(colors: [color.opacity(0.9), color.opacity(0.55)],
+                                         startPoint: .leading, endPoint: .trailing))
+            }
+        }
+        .frame(width: width, height: length)
     }
 }
 
@@ -268,8 +364,27 @@ struct PerfectItemRing: View {
 
 // MARK: - Badge
 
-/// A round badge: a dark rim, a gradient disc and an SF Symbol, greyed with
-/// a small lock while it is still to earn.
+/// A luggage tag's outline: the top corners cut off, the bottom ones rounded.
+struct HarborTagShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let cut = rect.width * 0.3
+        let round = rect.width * 0.14
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + cut, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - cut, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + cut))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - round))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX - round, y: rect.maxY), control: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX + round, y: rect.maxY))
+        path.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - round), control: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + cut))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// A badge as a wooden dock tag on a string: a gradient tag with a hole at
+/// the top and an SF Symbol, greyed with a small lock while it is still to earn.
 struct PerfectBadgeMedal: View {
     var status: PerfectBadgeStatus
     var size: CGFloat = 56
@@ -278,36 +393,59 @@ struct PerfectBadgeMedal: View {
         let badge = status.badge
         let light = Color(hex: badge.hexes.light)
         let deep = Color(hex: badge.hexes.deep)
-        ZStack {
-            Circle().fill(Color(hex: "#24222C"))
-            Circle()
-                .fill(LinearGradient(colors: status.unlocked ? [light, deep]
-                                        : [Color(white: 0.42), Color(white: 0.26)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                .padding(size * 0.07)
-            Circle()
-                .strokeBorder(.white.opacity(status.unlocked ? 0.45 : 0.15), lineWidth: 1)
-                .padding(size * 0.11)
-            Image(systemName: badge.symbol)
-                .font(.system(size: size * 0.36, weight: .semibold))
-                .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.45))
-                .shadow(color: .black.opacity(status.unlocked ? 0.25 : 0), radius: 1.5, y: 1)
+        let tagWidth = size * 0.68
+        let tagHeight = size * 0.78
+        let tagTop = size * 0.2
+        ZStack(alignment: .top) {
+            // The string, looped over a peg above the tag.
+            Path { path in
+                path.move(to: CGPoint(x: size / 2 - size * 0.08, y: tagTop + size * 0.1))
+                path.addLine(to: CGPoint(x: size / 2, y: size * 0.02))
+                path.addLine(to: CGPoint(x: size / 2 + size * 0.08, y: tagTop + size * 0.1))
+            }
+            .stroke(Color(hex: "#C9B08A").opacity(status.unlocked ? 0.9 : 0.4),
+                    style: StrokeStyle(lineWidth: max(1, size * 0.025), lineCap: .round, lineJoin: .round))
+            .frame(width: size, height: size)
+
+            ZStack {
+                HarborTagShape()
+                    .fill(LinearGradient(colors: status.unlocked ? [light, deep]
+                                            : [Color(white: 0.42), Color(white: 0.26)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                HarborTagShape()
+                    .stroke(.white.opacity(status.unlocked ? 0.45 : 0.15), lineWidth: 1)
+                    .padding(size * 0.04)
+                // The eyelet.
+                Circle()
+                    .frame(width: size * 0.09, height: size * 0.09)
+                    .offset(y: -tagHeight * 0.36)
+                    .blendMode(.destinationOut)
+                Image(systemName: badge.symbol)
+                    .font(.system(size: size * 0.28, weight: .semibold))
+                    .foregroundStyle(.white.opacity(status.unlocked ? 1 : 0.45))
+                    .shadow(color: .black.opacity(status.unlocked ? 0.25 : 0), radius: 1.5, y: 1)
+                    .offset(y: tagHeight * 0.08)
+            }
+            .compositingGroup()
+            .frame(width: tagWidth, height: tagHeight)
+            .offset(y: tagTop)
+
             if !status.unlocked {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: size * 0.16, weight: .bold))
+                    .font(.system(size: size * 0.15, weight: .bold))
                     .foregroundStyle(.white.opacity(0.85))
-                    .padding(size * 0.06)
+                    .padding(size * 0.05)
                     .background(Circle().fill(Color(hex: "#24222C")))
-                    .offset(x: size * 0.32, y: size * 0.32)
+                    .offset(x: size * 0.28, y: size * 0.8)
             }
         }
-        .frame(width: size, height: size)
+        .frame(width: size, height: size + size * 0.02, alignment: .top)
     }
 }
 
 // MARK: - Frequency strip
 
-/// A cell a day across the month, coloured by the sun it got.
+/// A cell a day across the month, coloured by the leaf it got.
 struct PerfectFrequencyStrip: View {
     var days: [PerfectDayCell]
     var height: CGFloat = 22
@@ -327,7 +465,7 @@ struct PerfectFrequencyStrip: View {
         }
         .frame(height: height)
         .accessibilityElement()
-        .accessibilityLabel("月度小太阳频率，\(days.filter { $0.tier != nil }.count) 天有太阳")
+        .accessibilityLabel("月度竹叶频率，\(days.filter { $0.tier != nil }.count) 天收到竹叶")
     }
 
     private func fill(_ day: PerfectDayCell) -> AnyShapeStyle {
@@ -341,12 +479,12 @@ struct PerfectFrequencyStrip: View {
 
 // MARK: - Calendar
 
-/// The month as a calendar, a sun or an empty outline under each date,
+/// The month as a calendar, a leaf or an empty outline under each date,
 /// starting the week where the Mac's settings start it.
 struct PerfectCalendarGrid: View {
     var weeks: [[PerfectDayCell?]]
     var weekdays: [String]
-    var sunSize: CGFloat = 22
+    var leafSize: CGFloat = 22
 
     var body: some View {
         VStack(spacing: 6) {
@@ -376,18 +514,18 @@ struct PerfectCalendarGrid: View {
                 Text("\(day.day)")
                     .font(.system(size: 10, weight: day.isToday ? .bold : .regular))
                     .monospacedDigit()
-                    .foregroundStyle(day.isToday ? Color.black : .white.opacity(day.isFuture ? 0.3 : 0.75))
+                    .foregroundStyle(day.isToday ? Color.white : .white.opacity(day.isFuture ? 0.3 : 0.75))
                     .padding(.horizontal, 5)
                     .background {
-                        if day.isToday { Capsule().fill(Color(hex: PerfectDayTier.gold.hexes.light)) }
+                        if day.isToday { Capsule().fill(Color(hex: PerfectDay.bambooHex)) }
                     }
-                SunGlyph(tier: day.tier, size: sunSize, emptyInk: .white)
+                LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
                     .opacity(day.isFuture ? 0.35 : 1)
             }
             .accessibilityElement()
-            .accessibilityLabel("\(day.day) 日，\(day.tier?.title ?? "没有太阳")")
+            .accessibilityLabel("\(day.day) 日，\(day.tier.map { "\($0.title)，\($0.leafName)" } ?? "没有竹叶")")
         } else {
-            Color.clear.frame(height: sunSize + 16)
+            Color.clear.frame(height: leafSize + 16)
         }
     }
 }

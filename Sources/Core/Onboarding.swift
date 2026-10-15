@@ -3,7 +3,7 @@ import Foundation
 /// 新手引导里可以多选的“用途”。
 ///
 /// 每个用途按偏好顺序列出候选小组件（`WidgetKind.rawValue`）。候选里可以有
-/// 目录中暂时没有的种类（比如“完美一天”），挑选时会按目录过滤掉，所以这里
+/// 目录中暂时没有的种类，挑选时会按目录过滤掉，所以这里
 /// 写上它不会让布局里多出一个读不出来的小组件。
 public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     case productivity, health, system, fun, developer
@@ -22,7 +22,7 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     public var caption: String {
         switch self {
         case .productivity: "待办、日历、专注计时、习惯"
-        case .health: "喝水、久坐提醒、完美一天"
+        case .health: "喝水、久坐提醒、小熊猫的竹篮"
         case .system: "电池、网络、系统活动"
         case .fun: "音乐、收音机、播客、电子宠物"
         case .developer: "GitHub、Codex 用量"
@@ -145,12 +145,31 @@ public enum Onboarding {
         return min(total - 1, Int(clamped * Double(total)))
     }
 
-    /// 轨道动画里每个小组件的 SF Symbol。
+    /// 靠岸动画里第 `index` 个小组件（共 `count` 个）此刻走了多远，0 是还在画面外，1 是已经停进扩展栏。
+    ///
+    /// 小组件一个接一个出发：每个占用 `span` 这么长的一段进度，后一个比前一个晚
+    /// 出发，前后有重叠，读起来像排队进港。最后一个正好在进度走满时靠岸。
+    public static func dockingFraction(index: Int, count: Int, progress: Double, span: Double = 0.45) -> Double {
+        guard count > 0, index >= 0, index < count else { return 0 }
+        let clamped = min(max(progress, 0), 1)
+        if clamped >= 1 { return 1 }
+        let span = min(max(span, 0.05), 1)
+        let step = count > 1 ? (1 - span) / Double(count - 1) : 0
+        let start = Double(index) * step
+        return min(max((clamped - start) / span, 0), 1)
+    }
+
+    /// 进度为 `progress` 时已经靠岸的小组件个数。
+    public static func dockedCount(count: Int, progress: Double, span: Double = 0.45) -> Int {
+        (0..<max(0, count)).filter { dockingFraction(index: $0, count: count, progress: progress, span: span) >= 1 }.count
+    }
+
+    /// 靠岸动画里每个小组件小船上的 SF Symbol。
     public static func symbol(for kind: String) -> String {
         symbols[kind] ?? "square.grid.2x2.fill"
     }
 
-    /// 轨道动画里每个小组件圆点的颜色。
+    /// 靠岸动画里每个小组件小船的颜色。
     public static func colorHex(for kind: String) -> String {
         colors[kind] ?? PaletteColor.graphite.hex
     }
@@ -163,7 +182,7 @@ public enum Onboarding {
         "reminders": "list.bullet",
         "water": "drop.fill",
         "posture": "figure.stand",
-        "perfect-day": "sun.max.fill",
+        "perfect-day": "leaf.fill",
         "battery": "battery.75percent",
         "network": "wifi",
         "system": "cpu",
@@ -184,7 +203,7 @@ public enum Onboarding {
         "reminders": PaletteColor.orange.hex,
         "water": PaletteColor.blue.hex,
         "posture": PaletteColor.green.hex,
-        "perfect-day": PaletteColor.yellow.hex,
+        "perfect-day": PaletteColor.green.hex,
         "battery": MetricColor.batteryPresent,
         "network": MetricColor.netUpload,
         "system": MetricColor.cpu,

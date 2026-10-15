@@ -2,15 +2,16 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// 完美一天：today's sun (a grey outline until one is earned) and the three
-/// items as little rings. The card's own click opens the panel with the
-/// month's jar, the calendar and the badges. See `PerfectDay` for the rule.
+/// 小熊猫的竹篮：today's bamboo leaf (a dashed outline until one is earned)
+/// and the three items as little rings. The card's own click opens the panel
+/// with the month's basket, the calendar and the badges. See `PerfectDay`
+/// for the rule.
 ///
 /// It reads 喝水 and 习惯打卡 from their own widgets, on whichever layout they
 /// sit, and 专注 from the app's `FocusLog` and its daily goal, both kept by
 /// `FocusLogStore` (the 专注计时 panel's 近七天). Nothing here writes to those widgets, and nothing here gives the
 /// pet a treat: the pet already gets one for each glass, habit and session
-/// from the sources themselves, and a sun is not a fourth.
+/// from the sources themselves, and a leaf is not a fourth.
 struct PerfectDayTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -36,13 +37,13 @@ struct PerfectDayTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("完美一天，今天\(tier.map { "得到\($0.sunName)" } ?? "还没有小太阳")")
+        .accessibilityLabel("小熊猫的竹篮，今天\(tier.map { "收到\($0.leafName)" } ?? "还没有竹叶")")
         .onAppear { if !context.isPreview { center.refresh(now: context.now) } }
     }
 
     private func wide(_ items: [PerfectDayProgress], tier: PerfectDayTier?) -> some View {
         HStack(spacing: 10) {
-            SunGlyph(tier: tier, size: 42)
+            LeafGlyph(tier: tier, size: 42)
                 .animation(.smooth(duration: 0.4), value: tier)
             VStack(alignment: .leading, spacing: 5) {
                 Text(PerfectDay.headline(tier))
@@ -60,7 +61,7 @@ struct PerfectDayTile: View {
 
     private func column(_ items: [PerfectDayProgress], tier: PerfectDayTier?) -> some View {
         VStack(spacing: 5) {
-            SunGlyph(tier: tier, size: 40)
+            LeafGlyph(tier: tier, size: 40)
             Text(PerfectDay.headline(tier))
                 .font(WidgetStyle.caption(9))
                 .foregroundStyle(tier == nil ? WidgetStyle.secondary : WidgetStyle.primary)
@@ -73,12 +74,12 @@ struct PerfectDayTile: View {
     }
 }
 
-/// Keeps 完美一天's history: reads the three sources, settles the days into
+/// Keeps 小熊猫的竹篮's history: reads the three sources, settles the days into
 /// `perfect-day.json` beside the app's state file, and dates the badges.
 ///
 /// One for the app rather than one per widget, like `PodcastService`: two
-/// 完美一天 widgets on two layouts are the same days. History is written only
-/// while a 完美一天 widget is placed somewhere, so it starts the day the
+/// 竹篮 widgets on two layouts are the same days. History is written only
+/// while a 竹篮 widget is placed somewhere, so it starts the day the
 /// widget is first added. Focus minutes are `FocusLogStore`'s, logged from
 /// launch whether or not this widget is placed.
 @MainActor @Observable
@@ -186,7 +187,7 @@ final class PerfectDayCenter {
             encoder.outputFormatting = [.sortedKeys]
             try encoder.encode(archive).write(to: url, options: .atomic)
         } catch {
-            NSLog("完美一天：无法写入 \(url.path)：\(error.localizedDescription)")
+            NSLog("小熊猫的竹篮：无法写入 \(url.path)：\(error.localizedDescription)")
         }
     }
 

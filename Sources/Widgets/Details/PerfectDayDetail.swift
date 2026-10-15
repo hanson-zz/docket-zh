@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// 完美一天的面板：今天三项、月份切换、本月玻璃罐、三档计数、月度频率条、
-/// 日历视图、徽章，以及把本月小太阳做成一张图分享出去。
+/// 小熊猫的竹篮的面板：今天三项、月份切换、本月竹篮、三档计数、月度频率条、
+/// 日历视图、码头木牌徽章，以及把本月竹篮做成一张图分享出去。
 struct PerfectDayDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -39,7 +39,7 @@ struct PerfectDayDetail: View {
         let tier = PerfectDay.record(items, key: "").tier
         let shownMonth = month
         return DetailCard {
-            MeshBackdrop(color: Color(hex: PerfectDayTier.gold.hexes.deep))
+            MeshBackdrop(color: Color(hex: PerfectDay.bambooHex))
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -47,8 +47,8 @@ struct PerfectDayDetail: View {
                     todayRows(items)
                     Divider().overlay(.white.opacity(0.1))
                     monthBar(shownMonth)
-                    jarSection(all, month: shownMonth)
-                    section("月度小太阳频率") {
+                    basketSection(all, month: shownMonth)
+                    section("月度竹叶频率") {
                         PerfectFrequencyStrip(days: PerfectDay.monthDays(all, month: shownMonth, today: context.now))
                     }
                     section("日历视图") {
@@ -74,21 +74,21 @@ struct PerfectDayDetail: View {
     private func header(tier: PerfectDayTier?) -> some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("完美一天")
+                Text("小熊猫的竹篮")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(tier.map { "今天是\($0.title)" } ?? "今天还没有小太阳")
+                Text(tier.map { "今天是\($0.title)" } ?? "今天还没有竹叶")
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(tier.map { "得到一个\($0.sunName)" } ?? "达标一项就有铜太阳")
+                Text(PerfectDay.subline(tier))
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))
             }
             Spacer(minLength: 0)
-            SunGlyph(tier: tier, size: 52, emptyInk: .white)
+            PandaWithLeaf(tier: tier, size: 56)
         }
     }
 
@@ -142,15 +142,15 @@ struct PerfectDayDetail: View {
         .foregroundStyle(.white)
     }
 
-    private func jarSection(_ all: [PerfectDayRecord], month: Date) -> some View {
+    private func basketSection(_ all: [PerfectDayRecord], month: Date) -> some View {
         let counts = PerfectDay.counts(all, month: month)
         return VStack(spacing: 12) {
-            SunJar(suns: PerfectDay.suns(all, month: month), width: 170)
+            BambooBasket(leaves: PerfectDay.leaves(all, month: month), width: 170)
                 .frame(maxWidth: .infinity)
             HStack(spacing: 8) {
                 ForEach(PerfectDayTier.allCases.reversed()) { tier in
                     VStack(spacing: 4) {
-                        SunGlyph(tier: tier, size: 30)
+                        LeafGlyph(tier: tier, size: 30)
                         Text(tier.title)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white)
@@ -224,10 +224,10 @@ struct PerfectDayDetail: View {
                 Button {
                     share(all, month: month)
                 } label: {
-                    Label(monthsBack == 0 ? "分享本月小太阳" : "分享这个月的小太阳", systemImage: "square.and.arrow.up")
+                    Label(monthsBack == 0 ? "分享本月竹篮" : "分享这个月的竹篮", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: PerfectDayTier.gold.hexes.deep))
+                .tint(Color(hex: PerfectDay.bambooHex))
                 .background(ShareAnchor(box: anchor))
                 Button("存储到桌面") { saveToDesktop(all, month: month) }
                     .buttonStyle(.bordered)
@@ -250,7 +250,7 @@ struct PerfectDayDetail: View {
     }
 
     private func fileName(_ month: Date) -> String {
-        "码头小太阳-\(PerfectDay.monthTitle(month)).png"
+        "码头竹篮-\(PerfectDay.monthTitle(month)).png"
     }
 
     private func share(_ all: [PerfectDayRecord], month: Date) {
@@ -273,7 +273,7 @@ struct PerfectDayDetail: View {
         var url = desktop.appending(path: fileName(month))
         var n = 2
         while FileManager.default.fileExists(atPath: url.path) {
-            url = desktop.appending(path: "码头小太阳-\(PerfectDay.monthTitle(month)) \(n).png")
+            url = desktop.appending(path: "码头竹篮-\(PerfectDay.monthTitle(month)) \(n).png")
             n += 1
         }
         do {
@@ -309,12 +309,7 @@ struct PerfectDayDetail: View {
             Text("怎么算")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.75))
-            Text("""
-                喝水达到当日目标；习惯当天全部完成；专注达到每日目标（\(context.isPreview ? FocusLog.defaultGoal : center.focusGoal()) 分钟，在专注计时面板里设置）。\
-                三项全部达标是完美一天（金太阳），差一项是美好一天（银太阳），只达标一项是奈斯一天（铜太阳）。\
-                没放喝水或专注计时小组件、或没设习惯时，那一项不计入：两项都达标算金太阳，只达标一项算铜太阳。\
-                记录从放上这个小组件那天开始，按这台 Mac 的本地日历结算。
-                """)
+            Text(PerfectDay.rules(focusGoal: context.isPreview ? FocusLog.defaultGoal : center.focusGoal()))
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.5))
                 .fixedSize(horizontal: false, vertical: true)
@@ -324,8 +319,33 @@ struct PerfectDayDetail: View {
 
 // MARK: - Share image
 
-/// The picture shared from the panel: the jar, the three counts, the
-/// calendar, 码头's name and the month, on the panel's graphite.
+/// The red panda with today's leaf in its paws: the pet's own drawing when
+/// the bundle has it, otherwise the leaf alone.
+struct PandaWithLeaf: View {
+    var tier: PerfectDayTier?
+    var size: CGFloat
+
+    var body: some View {
+        if let panda = PetArt.image(.redPanda, tier == nil ? .idle : .eat) {
+            ZStack(alignment: .bottomTrailing) {
+                Image(nsImage: panda)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+                LeafGlyph(tier: tier, size: size * 0.45, emptyInk: .white)
+                    .offset(x: size * 0.08, y: size * 0.04)
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+        } else {
+            LeafGlyph(tier: tier, size: size, emptyInk: .white)
+        }
+    }
+}
+
+/// The picture shared from the panel: the basket, the three counts, the
+/// calendar, 码头's name and the month, on a bamboo grove's dark green.
 struct PerfectDayShareCard: View {
     var records: [PerfectDayRecord]
     var month: Date
@@ -334,29 +354,35 @@ struct PerfectDayShareCard: View {
 
     var body: some View {
         let counts = PerfectDay.counts(records, month: month)
+        let leaves = PerfectDay.leaves(records, month: month)
         VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("码头 · 完美一天")
+                    Text("码头 · 小熊猫的竹篮")
                         .font(.system(size: 13, weight: .semibold))
                         .tracking(1)
                         .foregroundStyle(.white.opacity(0.7))
-                    Text("\(PerfectDay.monthTitle(month))的小太阳")
+                    Text("\(PerfectDay.monthTitle(month))的竹篮")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
                 Spacer()
-                SunGlyph(tier: .gold, size: 44)
+                PandaWithLeaf(tier: .gold, size: 60)
             }
             HStack(alignment: .center, spacing: 22) {
-                SunJar(suns: PerfectDay.suns(records, month: month), width: 200)
+                BambooBasket(leaves: leaves, width: 200)
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(PerfectDayTier.allCases.reversed()) { tier in
                         HStack(spacing: 10) {
-                            SunGlyph(tier: tier, size: 34)
-                            Text(tier.title)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white)
+                            LeafGlyph(tier: tier, size: 34)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(tier.title)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                Text(tier.leafName)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.55))
+                            }
                             Spacer(minLength: 8)
                             Text("×\(counts[tier] ?? 0)")
                                 .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -364,7 +390,7 @@ struct PerfectDayShareCard: View {
                                 .foregroundStyle(Color(hex: tier.hexes.light))
                         }
                     }
-                    Text("共 \(PerfectDay.suns(records, month: month).count) 个小太阳")
+                    Text("小熊猫这个月收到 \(leaves.count) 片竹叶")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -374,9 +400,9 @@ struct PerfectDayShareCard: View {
             PerfectCalendarGrid(weeks: PerfectDay.monthGrid(records, month: month, today: today,
                                                             firstWeekday: firstWeekday),
                                 weekdays: PerfectDay.weekdaySymbols(firstWeekday: firstWeekday),
-                                sunSize: 26)
+                                leafSize: 26)
             HStack {
-                Text("喝水 · 习惯 · 专注，每天一个小太阳")
+                Text("喝水 · 习惯 · 专注，每天给小熊猫一片竹叶")
                 Spacer()
                 Text("码头 Dockling")
                     .fontWeight(.semibold)
@@ -387,11 +413,14 @@ struct PerfectDayShareCard: View {
         .padding(28)
         .frame(width: 520)
         .background {
-            ZStack {
-                LinearGradient(colors: [Color(hex: "#2A2638"), Color(hex: "#15141C")],
+            ZStack(alignment: .bottomTrailing) {
+                LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
                                startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [Color(hex: PerfectDayTier.gold.hexes.deep).opacity(0.28), .clear],
+                RadialGradient(colors: [Color(hex: "#C0502A").opacity(0.22), .clear],
                                center: .topTrailing, startRadius: 0, endRadius: 360)
+                BambooStalks(height: 220)
+                    .opacity(0.18)
+                    .padding(.trailing, 18)
             }
         }
         .environment(\.colorScheme, .dark)

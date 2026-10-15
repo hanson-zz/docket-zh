@@ -33,10 +33,62 @@ final class PerfectDayTests: XCTestCase {
     }
 
     func testTierNames() {
-        XCTAssertEqual(PerfectDayTier.gold.title, "完美一天")
-        XCTAssertEqual(PerfectDayTier.silver.title, "美好一天")
-        XCTAssertEqual(PerfectDayTier.bronze.title, "奈斯一天")
+        XCTAssertEqual(PerfectDayTier.gold.title, "满篮一天")
+        XCTAssertEqual(PerfectDayTier.silver.title, "丰收一天")
+        XCTAssertEqual(PerfectDayTier.bronze.title, "小有收获")
+        XCTAssertEqual(PerfectDayTier.allCases.map(\.leafName), ["铜竹叶", "银竹叶", "金竹叶"])
         XCTAssertTrue(PerfectDayTier.gold > .silver && PerfectDayTier.silver > .bronze)
+        XCTAssertEqual(PerfectDay.headline(nil), "还没有竹叶")
+        XCTAssertEqual(PerfectDay.headline(.gold), "满篮一天")
+        XCTAssertEqual(PerfectDay.subline(.silver), "小熊猫收到一片银竹叶")
+    }
+
+    func testRulesNameEveryTierAndTheGoal() {
+        let rules = PerfectDay.rules(focusGoal: 45)
+        XCTAssertTrue(rules.contains("45 分钟"))
+        for tier in PerfectDayTier.allCases {
+            XCTAssertTrue(rules.contains(tier.title), tier.title)
+            XCTAssertTrue(rules.contains(tier.leafName), tier.leafName)
+        }
+        XCTAssertTrue(rules.contains("竹篮"))
+    }
+
+    /// 用户看得到的文案里不再出现最初借鉴时的叫法。
+    func testUserFacingWordsAreBambooThemed() {
+        var texts = PerfectDayTier.allCases.flatMap { [$0.title, $0.leafName] }
+        texts += PerfectBadge.allCases.flatMap { [$0.title, $0.condition] }
+        texts += [PerfectDay.headline(nil), PerfectDay.subline(nil), PerfectDay.rules(focusGoal: 50)]
+        texts += WidgetSearch.keywords["perfect-day"] ?? []
+        texts.append(WidgetCatalog.entry(.perfectDay)?.name ?? "")
+        // 写成转义，这样在仓库里搜索这些词时只会搜到真正的问题。
+        let banned = ["\u{5B8C}\u{7F8E}", "\u{7F8E}\u{597D}\u{4E00}\u{5929}", "\u{5948}\u{65AF}", "\u{592A}\u{9633}", "\u{73BB}\u{7483}\u{7F50}", "\u{7F50}\u{5B50}", "\u{6D1E}\u{6089}", "sun", "perfect"]
+        for text in texts {
+            for word in banned {
+                XCTAssertFalse(text.lowercased().contains(word), "\(text) contains \(word)")
+            }
+        }
+    }
+
+    func testBadgeIdsStayCompatibleWithSavedArchives() {
+        XCTAssertEqual(PerfectBadge.allCases.map(\.rawValue),
+                       ["firstPerfect", "sunStreak3", "sunStreak7", "sunStreak30", "perfectMonth10", "suns50",
+                        "water7", "habit7", "focus10h", "focus100h"])
+        XCTAssertEqual(Set(PerfectBadge.allCases.map(\.title)).count, PerfectBadge.allCases.count, "names are distinct")
+        XCTAssertEqual(PerfectBadge.allCases.map(\.title),
+                       ["第一只满篮", "三日靠岸", "七日航程", "码头常客", "金叶之月", "竹林小仓",
+                        "潮水七日", "七日打卡", "静心 10 小时", "静心 100 小时"])
+    }
+
+    func testAnArchiveWrittenBeforeTheRenameStillReads() throws {
+        let json = #"{"days":["20261014|111","20261015|1-0"],"earned":{"firstPerfect":"20261014","sunStreak3":"20261015"}}"#
+        let archive = try JSONDecoder().decode(PerfectDayArchive.self, from: Data(json.utf8))
+        XCTAssertEqual(archive.records.map(\.tier), [.gold, .bronze])
+        let statuses = PerfectBadges.statuses(records: archive.records, focusMinutes: 0, earned: archive.earned,
+                                              calendar: calendar)
+        XCTAssertTrue(statuses.first { $0.badge == .firstFullBasket }!.unlocked)
+        XCTAssertTrue(statuses.first { $0.badge == .leafStreak3 }!.unlocked)
+        XCTAssertEqual(statuses.first { $0.badge == .leafStreak3 }?.earnedOn, "20261015")
+        XCTAssertEqual(WidgetKind.perfectDay.rawValue, "perfect-day", "placed widgets keep their kind")
     }
 
     func testRecordEncodingRoundTrips() {
@@ -141,7 +193,7 @@ final class PerfectDayTests: XCTestCase {
 
     // MARK: Months
 
-    func testMonthCountsSunsAndCells() {
+    func testMonthCountsLeavesAndCells() {
         let today = day(2026, 10, 15)
         let records = [record("20260930", "111"), record("20261001", "111"), record("20261002", "110"),
                        record("20261003", "100"), record("20261004", "000"), record("20261005", "111")]
@@ -149,7 +201,7 @@ final class PerfectDayTests: XCTestCase {
         XCTAssertEqual(counts[.gold], 2)
         XCTAssertEqual(counts[.silver], 1)
         XCTAssertEqual(counts[.bronze], 1)
-        XCTAssertEqual(PerfectDay.suns(records, month: today, calendar: calendar), [.gold, .silver, .bronze, .gold])
+        XCTAssertEqual(PerfectDay.leaves(records, month: today, calendar: calendar), [.gold, .silver, .bronze, .gold])
 
         let cells = PerfectDay.monthDays(records, month: today, today: today, calendar: calendar)
         XCTAssertEqual(cells.count, 31)
@@ -177,7 +229,7 @@ final class PerfectDayTests: XCTestCase {
         let records = [record("20261010", "111"), record("20261012", "100"), record("20261013", "110"),
                        record("20261014", "111"), record("20261015", "000")]
         XCTAssertEqual(PerfectDay.currentStreak(records, today: today, calendar: calendar), 3,
-                       "today without a sun yet keeps yesterday's run")
+                       "today without a leaf yet keeps yesterday's run")
         XCTAssertEqual(PerfectDay.longestRun(["20261030", "20261031", "20261101"], calendar: calendar), 3)
         XCTAssertEqual(PerfectDay.longestRun([], calendar: calendar), 0)
     }
@@ -198,21 +250,21 @@ final class PerfectDayTests: XCTestCase {
         let records = run(from: day(2026, 10, 1), days: 7, marks: "110")
         let statuses = PerfectBadges.statuses(records: records, focusMinutes: 0, earned: [:], calendar: calendar)
         func status(_ badge: PerfectBadge) -> PerfectBadgeStatus { statuses.first { $0.badge == badge }! }
-        XCTAssertFalse(status(.firstPerfect).unlocked)
-        XCTAssertTrue(status(.sunStreak3).unlocked)
-        XCTAssertTrue(status(.sunStreak7).unlocked)
-        XCTAssertFalse(status(.sunStreak30).unlocked)
-        XCTAssertEqual(status(.sunStreak30).progressText, "7/30")
+        XCTAssertFalse(status(.firstFullBasket).unlocked)
+        XCTAssertTrue(status(.leafStreak3).unlocked)
+        XCTAssertTrue(status(.leafStreak7).unlocked)
+        XCTAssertFalse(status(.leafStreak30).unlocked)
+        XCTAssertEqual(status(.leafStreak30).progressText, "7/30")
         XCTAssertTrue(status(.water7).unlocked)
         XCTAssertTrue(status(.habit7).unlocked)
         XCTAssertEqual(PerfectBadge.allCases.count, statuses.count)
     }
 
-    func testPerfectMonthAndCollectorAndFocus() {
+    func testGoldMonthAndCollectorAndFocus() {
         let records = run(from: day(2026, 9, 25), days: 15, marks: "111")
-        XCTAssertEqual(PerfectBadges.measure(.perfectMonth10, records: records, focusMinutes: 0, calendar: calendar), 9,
+        XCTAssertEqual(PerfectBadges.measure(.goldMonth10, records: records, focusMinutes: 0, calendar: calendar), 9,
                        "best single month, not a run across two")
-        XCTAssertEqual(PerfectBadges.measure(.suns50, records: records, focusMinutes: 0, calendar: calendar), 15)
+        XCTAssertEqual(PerfectBadges.measure(.leaves50, records: records, focusMinutes: 0, calendar: calendar), 15)
         let focus = PerfectBadges.statuses(records: [], focusMinutes: 630, earned: [:], calendar: calendar)
         XCTAssertTrue(focus.first { $0.badge == .focus10h }!.unlocked)
         let hundred = focus.first { $0.badge == .focus100h }!
@@ -230,16 +282,18 @@ final class PerfectDayTests: XCTestCase {
                                          calendar: calendar)
         XCTAssertEqual(kept["firstPerfect"], "20261015")
         let statuses = PerfectBadges.statuses(records: [], focusMinutes: 0, earned: kept, calendar: calendar)
-        XCTAssertTrue(statuses.first { $0.badge == .firstPerfect }!.unlocked)
+        XCTAssertTrue(statuses.first { $0.badge == .firstFullBasket }!.unlocked)
     }
 
     func testCatalogAndSearch() {
         let entry = WidgetCatalog.entry(.perfectDay)
-        XCTAssertEqual(entry?.name, "完美一天")
+        XCTAssertEqual(entry?.name, "小熊猫的竹篮")
         XCTAssertEqual(WidgetCatalog.configurableKeys(.perfectDay), [], "the focus goal is the timer panel's")
-        for query in ["完美", "太阳", "wmyt", "洞悉", "打卡汇总", "perfect"] {
-            XCTAssertTrue(WidgetSearch.matches(query, names: ["完美一天"], kind: "perfect-day"), query)
+        for query in ["竹篮", "竹叶", "小熊猫", "zl", "zhulan", "满篮", "打卡汇总", "徽章", "bamboo"] {
+            XCTAssertTrue(WidgetSearch.matches(query, names: ["小熊猫的竹篮"], kind: "perfect-day"), query)
         }
+        XCTAssertFalse(WidgetSearch.matches("太阳", names: ["小熊猫的竹篮"], kind: "perfect-day"))
+        XCTAssertEqual(WidgetCatalog.accentHex(.perfectDay), PerfectDay.bambooHex)
     }
 
     // MARK: FocusLog lifetime total

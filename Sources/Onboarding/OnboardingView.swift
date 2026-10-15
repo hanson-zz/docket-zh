@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 首次启动的新手引导。
 ///
-/// 六步：欢迎、选位置、选用途、权限、布置中、完成。顶部是分段进度条和返回按钮，
+/// 六步：欢迎、选位置、选用途、权限、布置中（小组件一个个靠岸停进扩展栏）、完成。顶部是分段进度条和返回按钮，
 /// 标题左对齐，选项是大卡片，底部一个大圆角的主按钮。位置一选就生效；
 /// 小组件在“布置中”这一步真正写进当前布局（只追加，不删除已有的）。
 struct OnboardingView: View {
@@ -258,7 +258,8 @@ struct OnboardingView: View {
 
     private var buildingStep: some View {
         VStack(spacing: 18) {
-            OrbitView(kinds: previewKinds.isEmpty ? ["clock"] : previewKinds, animated: !reduceMotion)
+            DockingView(kinds: previewKinds.isEmpty ? ["clock"] : previewKinds,
+                        position: position, progress: progress)
                 .frame(width: 300, height: 260)
                 .frame(maxWidth: .infinity)
 
@@ -522,72 +523,144 @@ private struct UseCard: View {
     }
 }
 
-// MARK: - 轨道动画
+// MARK: - 靠岸动画
 
-/// 所选小组件的彩色圆点在三圈同心轨道上缓慢旋转，中间是码头图标。
+/// 所选小组件像一艘艘小船，排着队从画面外沿水道驶来，一个接一个停进扩展栏（码头）里。
 ///
-/// 每圈方向和速度不同，看起来不机械；`animated` 为假（减少动态效果）时静止不动。
-private struct OrbitView: View {
+/// 完全由布置进度驱动：第几个小组件走到哪里由 `Onboarding.dockingFraction` 算出，
+/// 进度走满时全部靠岸。“减少动态效果”打开时进度直接是 1，画面一开始就是停好的样子。
+/// 扩展栏的方向跟着上一步选的位置：左右两侧是竖着的，小组件从下方驶来；
+/// 顶部和底部是横着的，小组件从右边驶来。
+private struct DockingView: View {
     let kinds: [String]
-    let animated: Bool
+    let position: DockPosition
+    let progress: Double
 
-    private let radii: [CGFloat] = [62, 96, 128]
-    /// 每圈转一周的秒数，负数为逆时针。
-    private let periods: [Double] = [26, -38, 52]
+    private let canvas = CGSize(width: 300, height: 260)
 
     var body: some View {
-        if animated {
-            TimelineView(.animation) { context in
-                orbit(time: context.date.timeIntervalSinceReferenceDate)
-            }
-        } else {
-            orbit(time: 0)
-        }
-    }
+        let vertical = position.isVertical
+        let layout = DockingGeometry(count: kinds.count, vertical: vertical, canvas: canvas)
+        ZStack(alignment: .topLeading) {
+            // 水面：几道浅浅的波纹，沿着小组件驶来的水道。
+            Waves(vertical: vertical, lane: layout.lane)
+                .stroke(Color.accentColor.opacity(0.18), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+                .frame(width: canvas.width, height: canvas.height)
 
-    private func orbit(time: Double) -> some View {
-        ZStack {
-            ForEach(radii.indices, id: \.self) { ring in
-                Circle()
-                    .stroke(Color.accentColor.opacity(0.14), lineWidth: 1.2)
-                    .frame(width: radii[ring] * 2, height: radii[ring] * 2)
-            }
+            // 扩展栏：一条圆角的栈桥，起点是码头图标。
+            RoundedRectangle(cornerRadius: layout.tile * 0.42, style: .continuous)
+                .fill(.background)
+                .overlay {
+                    RoundedRectangle(cornerRadius: layout.tile * 0.42, style: .continuous)
+                        .strokeBorder(.quaternary, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+                .frame(width: layout.shelf.width, height: layout.shelf.height)
+                .offset(x: layout.shelf.minX, y: layout.shelf.minY)
 
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 64, height: 64)
-                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                .frame(width: layout.tile, height: layout.tile)
+                .position(layout.slot(-1))
 
             ForEach(Array(kinds.enumerated()), id: \.offset) { index, kind in
-                let placement = place(index)
-                Image(systemName: Onboarding.symbol(for: kind))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(Color(hex: Onboarding.colorHex(for: kind)), in: Circle())
-                    .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                    .offset(offset(ring: placement.ring, slot: placement.slot,
-                                   count: placement.count, time: time))
+                let fraction = Onboarding.dockingFraction(index: index, count: kinds.count, progress: progress)
+                let eased = CGFloat(1 - pow(1 - fraction, 3))
+                let from = layout.entry(index)
+                let to = layout.slot(index)
+                // 行驶中轻轻起伏，越靠近码头越平稳。
+                let bob = CGFloat(fraction > 0 && fraction < 1 ? sin(fraction * .pi * 4) * 4 * (1 - fraction) : 0)
+                let x = from.x + (to.x - from.x) * eased + (vertical ? bob : 0)
+                let y = from.y + (to.y - from.y) * eased + (vertical ? 0 : bob)
+                ZStack {
+                    // 船尾的一道水痕，靠岸后消失。
+                    Capsule()
+                        .fill(Color(hex: Onboarding.colorHex(for: kind)).opacity(0.25 * (1 - fraction)))
+                        .frame(width: vertical ? 4 : layout.tile * 0.9, height: vertical ? layout.tile * 0.9 : 4)
+                        .offset(x: vertical ? 0 : layout.tile * 0.75, y: vertical ? layout.tile * 0.75 : 0)
+                    Image(systemName: Onboarding.symbol(for: kind))
+                        .font(.system(size: layout.tile * 0.42, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: layout.tile, height: layout.tile)
+                        .background(Color(hex: Onboarding.colorHex(for: kind)),
+                                    in: RoundedRectangle(cornerRadius: layout.tile * 0.28, style: .continuous))
+                        .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
+                }
+                .opacity(fraction > 0 ? 1 : 0)
+                .position(x: x, y: y)
             }
         }
+        .frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
+        .clipped()
         .accessibilityElement()
-        .accessibilityLabel("正在布置 \(kinds.count) 个小组件")
+        .accessibilityLabel("正在把 \(kinds.count) 个小组件停进扩展栏，已靠岸 \(Onboarding.dockedCount(count: kinds.count, progress: progress)) 个")
     }
 
-    /// 第几个圆点放在哪一圈的第几个位置。轮流分到三圈，外圈放得多一些也不挤。
-    private func place(_ index: Int) -> (ring: Int, slot: Int, count: Int) {
-        let ring = index % radii.count
-        let slot = index / radii.count
-        let count = (kinds.count - ring + radii.count - 1) / radii.count
-        return (ring, slot, max(count, 1))
-    }
+    /// 栈桥和每个泊位的位置。
+    private struct DockingGeometry {
+        let vertical: Bool
+        let canvas: CGSize
+        let tile: CGFloat
+        let spacing: CGFloat
+        let shelf: CGRect
+        /// 水道的中线：横向时是 y，竖向时是 x。
+        let lane: CGFloat
 
-    private func offset(ring: Int, slot: Int, count: Int, time: Double) -> CGSize {
-        let base = Double(slot) / Double(count) * 2 * .pi + Double(ring) * 0.9
-        let spin = time / periods[ring] * 2 * .pi
-        let angle = base + spin
-        return CGSize(width: CGFloat(cos(angle)) * radii[ring],
-                      height: CGFloat(sin(angle)) * radii[ring])
+        init(count: Int, vertical: Bool, canvas: CGSize) {
+            self.vertical = vertical
+            self.canvas = canvas
+            let length = (vertical ? canvas.height : canvas.width) - 28
+            let slots = CGFloat(count + 1)
+            spacing = 6
+            tile = min(34, max(14, (length - 16 - spacing * (slots - 1)) / slots))
+            let used = slots * tile + (slots - 1) * spacing + 16
+            let thickness = tile + 16
+            if vertical {
+                lane = canvas.width / 2
+                shelf = CGRect(x: lane - thickness / 2, y: 14, width: thickness, height: used)
+            } else {
+                lane = canvas.height / 2
+                shelf = CGRect(x: 14, y: lane - thickness / 2, width: used, height: thickness)
+            }
+        }
+
+        /// 第 `index` 个泊位的中心，-1 是最前面的码头图标。
+        func slot(_ index: Int) -> CGPoint {
+            let along = 8 + tile / 2 + CGFloat(index + 1) * (tile + spacing)
+            return vertical
+                ? CGPoint(x: lane, y: shelf.minY + along)
+                : CGPoint(x: shelf.minX + along, y: lane)
+        }
+
+        /// 出发点：画面外，沿着水道排在泊位后面。
+        func entry(_ index: Int) -> CGPoint {
+            vertical
+                ? CGPoint(x: lane, y: canvas.height + tile)
+                : CGPoint(x: canvas.width + tile, y: lane)
+        }
+    }
+}
+
+/// 几道和水道平行的波纹。
+private struct Waves: Shape {
+    let vertical: Bool
+    let lane: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for offset in [-44.0, -30.0, 30.0, 44.0] {
+            let base = lane + CGFloat(offset)
+            let length = vertical ? rect.height : rect.width
+            var t: CGFloat = 0
+            var first = true
+            while t <= length {
+                let wobble = sin(t / 14 + CGFloat(offset)) * 2.5
+                let point = vertical ? CGPoint(x: base + wobble, y: t) : CGPoint(x: t, y: base + wobble)
+                if first { path.move(to: point); first = false } else { path.addLine(to: point) }
+                t += 4
+            }
+        }
+        return path
     }
 }
 

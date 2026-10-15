@@ -30,7 +30,7 @@ final class OnboardingTests: XCTestCase {
     }
 
     func testUnknownCandidatesAreSkipped() {
-        // 目录里没有的种类（比如还没上线的“完美一天”）不会被选中。
+        // 目录里没有的种类（这里故意不给“小熊猫的竹篮”）不会被选中。
         let kinds = Onboarding.kinds(for: [OnboardingUse.health], available: ["water", "posture"])
         XCTAssertEqual(kinds, ["water", "posture"])
         XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.health], available: []), [])
@@ -99,5 +99,44 @@ final class OnboardingTests: XCTestCase {
                 XCTAssertNotEqual(Onboarding.symbol(for: kind), "square.grid.2x2.fill", kind)
             }
         }
+    }
+
+    // MARK: 靠岸动画
+
+    func testWidgetsDockOneAfterAnother() {
+        let count = 4
+        XCTAssertEqual(Onboarding.dockingFraction(index: 0, count: count, progress: 0), 0)
+        XCTAssertEqual(Onboarding.dockedCount(count: count, progress: 0), 0)
+        // 第一个先出发，后面的还在画面外。
+        XCTAssertGreaterThan(Onboarding.dockingFraction(index: 0, count: count, progress: 0.2), 0)
+        XCTAssertEqual(Onboarding.dockingFraction(index: 3, count: count, progress: 0.2), 0)
+        // 进度走满时全部靠岸，在那之前最后一个还没停好。
+        XCTAssertLessThan(Onboarding.dockingFraction(index: 3, count: count, progress: 0.99), 1)
+        XCTAssertEqual(Onboarding.dockedCount(count: count, progress: 1), count)
+        XCTAssertEqual(Onboarding.dockedCount(count: count, progress: 1.5), count, "progress is clamped")
+    }
+
+    func testDockingIsMonotonicAndOrdered() {
+        let count = 6
+        var previous = Array(repeating: 0.0, count: count)
+        for step in 0...100 {
+            let progress = Double(step) / 100
+            let now = (0..<count).map { Onboarding.dockingFraction(index: $0, count: count, progress: progress) }
+            for index in 0..<count {
+                XCTAssertGreaterThanOrEqual(now[index], previous[index], "never sails backwards")
+                if index > 0 { XCTAssertLessThanOrEqual(now[index], now[index - 1], "queued in order") }
+            }
+            XCTAssertEqual(Onboarding.dockedCount(count: count, progress: progress), now.filter { $0 >= 1 }.count)
+            previous = now
+        }
+    }
+
+    func testDockingEdgeCases() {
+        XCTAssertEqual(Onboarding.dockingFraction(index: 0, count: 1, progress: 0.45), 1, "a lone widget takes the whole span")
+        XCTAssertEqual(Onboarding.dockingFraction(index: 0, count: 0, progress: 0.5), 0)
+        XCTAssertEqual(Onboarding.dockingFraction(index: 5, count: 3, progress: 0.5), 0)
+        XCTAssertEqual(Onboarding.dockingFraction(index: -1, count: 3, progress: 0.5), 0)
+        XCTAssertEqual(Onboarding.dockedCount(count: 0, progress: 1), 0)
+        XCTAssertEqual(Onboarding.symbol(for: "perfect-day"), "leaf.fill")
     }
 }

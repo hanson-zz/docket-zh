@@ -65,7 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 专注计时面板的“近七天”：每轮专注结束时记下分钟数，同样从启动起就看着。
         FocusLogStore.shared.start()
 
-        // 完美一天 reads 喝水, 习惯打卡 and 专注计时 wherever they sit, so it
+        // 小熊猫的竹篮 reads 喝水, 习惯打卡 and 专注计时 wherever they sit, so it
         // is handed every widget on every layout. Focus minutes come from
         // FocusLogStore, started above.
         PerfectDayCenter.shared.widgets = { [state] in
