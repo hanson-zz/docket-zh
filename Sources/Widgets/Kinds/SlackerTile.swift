@@ -48,6 +48,8 @@ private struct SlackerTileBody: View, Equatable {
                 if SlackerClock.look(config) == .liquid {
                     SlackerWater(phase: reading.phase, level: SlackerClock.waterLevel(reading.phase, settings: settings),
                                  animates: animates)
+                        // 撑满整张卡片：不然水只有中间文字那么大，左右和上下会露出底色的黑边。
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(.horizontal, -WidgetStyle.inset)
                         .clipShape(.rect(cornerRadius: WidgetStyle.corner, style: .continuous))
                 }
@@ -206,8 +208,10 @@ struct SlackerWater: View {
         let rect = CGRect(origin: .zero, size: size)
         let level = min(max(level, 0), 1)
         guard level > 0 else { return }
-        // 满水时留一点空，波浪不会顶出卡片上沿。
-        let baseY = rect.minY + rect.height * (1 - level * 0.94)
+        // 上班途中水面最高到 94%，波浪不会顶出卡片上沿；下班和周末是满水，
+        // 水面略高过上沿，整张卡都盖住，不在顶上留一条底色的黑边。
+        let fill = level >= 1 ? 1.04 : level * 0.94
+        let baseY = rect.minY + rect.height * (1 - fill)
         let steps = 32
         var front = Path()
         for layer in [1, 0] {
