@@ -25,6 +25,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let state = AppState()
         self.state = state
 
+        // 新手引导只给全新安装：在装默认布局之前看一眼，已经有布局或状态文件的
+        // 是升级上来的老用户，不弹。
+        let hadSavedSetup = !state.state.profiles.isEmpty
+            || FileManager.default.fileExists(atPath: Store().url.path(percentEncoded: false))
+
         // A first run with nothing saved should still show something, or the
         // app looks broken. An empty shelf with a visible Add Widget affordance
         // is better than no window at all.
@@ -101,6 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if state.state.setup != .macOSDockOnly {
             shelf.show()
         }
+
+        OnboardingWindow.shared.showIfFirstLaunch(app: state, hadSavedSetup: hadSavedSetup)
 
         if ProcessInfo.processInfo.environment["PLINTH_OPEN_LIBRARY"] != nil {
             LibraryWindow.shared.show(app: state)

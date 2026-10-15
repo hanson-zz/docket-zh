@@ -136,7 +136,8 @@ final class SettingsWindow: HostedWindow {
                 onDeleteProfile: { if let id = $0 { app.deleteProfile(id) } },
                 lastError: app.lastError,
                 onClearError: { app.clearError() },
-                onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } }
+                onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } },
+                onShowOnboarding: { OnboardingWindow.shared.show(app: app) }
             ),
             title: "码头设置",
             // Taller and resizable, because the Widgets tab is not a fixed

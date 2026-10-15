@@ -52,6 +52,8 @@ struct SettingsView: View {
     /// Puts Apple's Dock back the way it was before Docket first wrote to it.
     /// Only offered once there is something to go back to.
     var onRestoreOriginalDock: () -> Void
+    /// 重新打开首次启动时的新手引导。
+    var onShowOnboarding: () -> Void = {}
 
     /// Which tab is showing, held outside the view.
     ///
@@ -361,6 +363,16 @@ struct SettingsView: View {
             }
 
             islandSection
+
+            Section {
+                LabeledContent {
+                    Button("重新显示", action: onShowOnboarding)
+                } label: {
+                    subtitled("重新显示新手引导", "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。")
+                }
+            } header: {
+                Text("新手引导")
+            }
 
             Section("更新") {
                 // The consent alert promises this control exists, so it does.
