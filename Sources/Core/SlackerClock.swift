@@ -27,6 +27,7 @@ public enum SlackerClock {
     public static let fontKey = "font"
     public static let tintKey = "tint"
     public static let holidaysKey = "holidays"
+    public static let lookKey = "look"
     /// 只在面板里改，不出现在设置的通用控件里。
     public static let backgroundKey = "background"
     public static let backgroundImageKey = "backgroundImage"
@@ -100,6 +101,25 @@ public enum SlackerClock {
     }
 
     public static let maxItems = 4
+
+    /// 卡片外观：小熊猫插画（默认）或液态。液态在插画后面加一层水，
+    /// 水位是今天的工作进度，越接近下班越满，下班那一分钟水面闪金光，
+    /// 不上班的日子水满且静止。小熊猫和文字都还在。
+    public enum Look: String, CaseIterable, Sendable {
+        case illustrated, liquid
+
+        public var title: String {
+            switch self {
+            case .illustrated: "小熊猫"
+            case .liquid: "液态"
+            }
+        }
+    }
+
+    /// 没有这个键的旧卡片和新加的卡片都是小熊猫插画。
+    public static func look(_ config: WidgetConfig) -> Look {
+        Look(rawValue: config.string(lookKey, default: Look.illustrated.rawValue)) ?? .illustrated
+    }
 
     // MARK: Settings
 
@@ -522,6 +542,38 @@ public enum SlackerClock {
             return Cell(item: item, label: "今天赚了", value: money(earnedToday(phase: phase, settings: settings)),
                         unit: "¥")
         }
+    }
+
+    // MARK: Liquid
+
+    /// 液态的水位 0...1：上班前空，上班中按已工作的比例，下班后满，
+    /// 不上班的日子也是满的（休息满格）。
+    public static func waterLevel(_ phase: Phase, settings: Settings) -> Double {
+        switch phase {
+        case .beforeWork: return 0
+        case .afterWork, .dayOff: return 1
+        case .working(let left):
+            let total = settings.workSeconds
+            guard total > 0 else { return 0 }
+            return min(max((total - Double(left)) / total, 0), 1)
+        }
+    }
+
+    /// 下班后多少秒内水面闪金光。
+    public static let goldenSeconds = 60
+
+    /// 刚下班的这一分钟。
+    public static func isGolden(_ phase: Phase) -> Bool {
+        if case .afterWork(let since) = phase { return since < goldenSeconds }
+        return false
+    }
+
+    /// 液态的帧率，nil 表示一张静止的图：减少动态效果、卡片看不见、
+    /// 或者不上班的日子（水面静止）都不动；闪金光时 30 帧，平时 10 帧的慢波纹。
+    public static func liquidFPS(_ phase: Phase, visible: Bool, reduceMotion: Bool) -> Double? {
+        guard visible, !reduceMotion else { return nil }
+        if case .dayOff = phase { return nil }
+        return isGolden(phase) ? 30 : 10
     }
 
     // MARK: Look

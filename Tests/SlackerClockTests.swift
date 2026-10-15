@@ -308,4 +308,43 @@ final class SlackerClockTests: XCTestCase {
         }
         for text in texts { XCTAssertFalse(text.contains("\u{2014}"), text) }
     }
+
+    // MARK: 液态
+
+    func testLookDefaultsToIllustratedAndReadsLiquid() {
+        XCTAssertEqual(SlackerClock.look(WidgetConfig()), .illustrated)
+        var config = WidgetConfig()
+        config.set(SlackerClock.lookKey, .string("liquid"))
+        XCTAssertEqual(SlackerClock.look(config), .liquid)
+        config.set(SlackerClock.lookKey, .string("nonsense"))
+        XCTAssertEqual(SlackerClock.look(config), .illustrated)
+        XCTAssertEqual(SlackerClock.Look.liquid.title, "液态")
+    }
+
+    func testWaterLevelFollowsTheWorkday() {
+        // 2026-10-14 是周三。
+        let before = SlackerClock.phase(now: at(2026, 10, 14, 8), settings: standard, calendar: calendar, known: known)
+        let noon = SlackerClock.phase(now: at(2026, 10, 14, 13, 30), settings: standard, calendar: calendar, known: known)
+        let after = SlackerClock.phase(now: at(2026, 10, 14, 19), settings: standard, calendar: calendar, known: known)
+        let saturday = SlackerClock.phase(now: at(2026, 10, 17, 10), settings: standard, calendar: calendar, known: known)
+        XCTAssertEqual(SlackerClock.waterLevel(before, settings: standard), 0)
+        XCTAssertEqual(SlackerClock.waterLevel(noon, settings: standard), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(SlackerClock.waterLevel(after, settings: standard), 1)
+        XCTAssertEqual(SlackerClock.waterLevel(saturday, settings: standard), 1)
+    }
+
+    func testGoldenOnlyInTheFirstMinuteAfterWork() {
+        XCTAssertTrue(SlackerClock.isGolden(.afterWork(secondsSince: 0)))
+        XCTAssertTrue(SlackerClock.isGolden(.afterWork(secondsSince: 59)))
+        XCTAssertFalse(SlackerClock.isGolden(.afterWork(secondsSince: 60)))
+        XCTAssertFalse(SlackerClock.isGolden(.working(secondsLeft: 1)))
+    }
+
+    func testLiquidMotionSavesPower() {
+        XCTAssertEqual(SlackerClock.liquidFPS(.working(secondsLeft: 100), visible: true, reduceMotion: false), 10)
+        XCTAssertEqual(SlackerClock.liquidFPS(.afterWork(secondsSince: 5), visible: true, reduceMotion: false), 30)
+        XCTAssertNil(SlackerClock.liquidFPS(.working(secondsLeft: 100), visible: false, reduceMotion: false))
+        XCTAssertNil(SlackerClock.liquidFPS(.working(secondsLeft: 100), visible: true, reduceMotion: true))
+        XCTAssertNil(SlackerClock.liquidFPS(.dayOff(greeting: "周末快乐"), visible: true, reduceMotion: false))
+    }
 }

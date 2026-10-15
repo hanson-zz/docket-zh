@@ -19,7 +19,8 @@ struct SlackerTile: View {
         SlackerTileBody(config: instance.config,
                         now: visible ? now : SlackerSamples.minute(now),
                         known: HolidayService.shared.known,
-                        vertical: context.position.isVertical)
+                        vertical: context.position.isVertical,
+                        animates: visible && !context.isPreview)
             .equatable()
             .onAppear { if !context.isPreview { HolidayService.shared.refresh() } }
     }
@@ -31,9 +32,11 @@ private struct SlackerTileBody: View, Equatable {
     var now: Date
     var known: [Int: [HolidayDay]]
     var vertical: Bool
+    var animates: Bool
 
     nonisolated static func == (a: SlackerTileBody, b: SlackerTileBody) -> Bool {
-        a.now == b.now && a.vertical == b.vertical && a.config == b.config && a.known == b.known
+        a.now == b.now && a.vertical == b.vertical && a.animates == b.animates
+            && a.config == b.config && a.known == b.known
     }
 
     var body: some View {
@@ -41,10 +44,18 @@ private struct SlackerTileBody: View, Equatable {
         let reading = SlackerClock.reading(now: now, settings: settings, known: known)
         let look = SlackerLook(config: config, art: reading.art)
         WidgetSurface(fill: look.background, image: look.image, scrim: look.image == nil ? 0 : 0.18) {
-            if vertical {
-                column(reading, look)
-            } else {
-                SlackerFace(reading: reading, look: look, metrics: .shelf)
+            ZStack {
+                if SlackerClock.look(config) == .liquid {
+                    SlackerWater(phase: reading.phase, level: SlackerClock.waterLevel(reading.phase, settings: settings),
+                                 animates: animates)
+                        .padding(.horizontal, -WidgetStyle.inset)
+                        .clipShape(.rect(cornerRadius: WidgetStyle.corner, style: .continuous))
+                }
+                if vertical {
+                    column(reading, look)
+                } else {
+                    SlackerFace(reading: reading, look: look, metrics: .shelf)
+                }
             }
         }
         .accessibilityElement(children: .ignore)
@@ -165,6 +176,68 @@ struct SlackerCellView: View {
                     RoundedRectangle(cornerRadius: metrics.cellHeight * 0.26, style: .continuous)
                         .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
                 }
+        }
+    }
+}
+
+/// 液态外观的水：两层波浪从卡片底部涨到今天的工作进度，刚下班的那一分钟
+/// 水面闪金光，不上班的日子水满而且不动。只在卡片看得见时动（10 帧的慢
+/// 波纹），减少动态效果时是一张静止的图。
+struct SlackerWater: View {
+    var phase: SlackerClock.Phase
+    var level: Double
+    var animates: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let fps = SlackerClock.liquidFPS(phase, visible: animates, reduceMotion: reduceMotion)
+        TimelineView(.animation(minimumInterval: 1 / (fps ?? 10), paused: fps == nil)) { timeline in
+            let t = fps == nil ? 0 : timeline.date.timeIntervalSinceReferenceDate
+            Canvas { context, size in
+                draw(&context, size: size, t: t)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func draw(_ context: inout GraphicsContext, size: CGSize, t: Double) {
+        let rect = CGRect(origin: .zero, size: size)
+        let level = min(max(level, 0), 1)
+        guard level > 0 else { return }
+        // 满水时留一点空，波浪不会顶出卡片上沿。
+        let baseY = rect.minY + rect.height * (1 - level * 0.94)
+        let steps = 32
+        var front = Path()
+        for layer in [1, 0] {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+            for i in 0...steps {
+                let x = Double(i) / Double(steps)
+                let lift = BatteryMotion.surface(x: x, t: t, level: max(level * 0.94, 0.3), layer: layer, speed: 0.6)
+                path.addLine(to: CGPoint(x: rect.minX + x * rect.width, y: baseY - lift * rect.height * 0.6))
+            }
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.closeSubpath()
+            if layer == 1 {
+                context.fill(path, with: .color(.white.opacity(0.10)))
+            } else {
+                front = path
+                context.fill(path, with: .linearGradient(
+                    Gradient(colors: [.white.opacity(0.26), .white.opacity(0.12)]),
+                    startPoint: CGPoint(x: rect.midX, y: baseY),
+                    endPoint: CGPoint(x: rect.midX, y: rect.maxY)))
+                context.stroke(front, with: .color(.white.opacity(0.35)), lineWidth: 0.8)
+            }
+        }
+
+        // 刚下班：水面染上一层金色，一起一伏地闪。
+        if SlackerClock.isGolden(phase) {
+            let glow = reduceMotion ? 0.6 : 0.5 + 0.5 * sin(t * 4)
+            let gold = Color(red: 1, green: 0.82, blue: 0.3)
+            context.fill(front, with: .color(gold.opacity(0.35 * glow)))
+            context.stroke(front, with: .color(gold.opacity(0.9 * glow)), lineWidth: 1.5)
         }
     }
 }

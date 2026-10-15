@@ -113,7 +113,7 @@ final class WidgetOptionTests: XCTestCase {
             .podcast: ["notify"],
             .toggles: ["actions"],
             .clock: ["seconds"],
-            .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint"],
+            .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 
         for kind in WidgetKind.allCases {

@@ -101,7 +101,8 @@ public enum WidgetCatalog {
                            SlackerClock.incomeKey: .number(SlackerClock.defaultIncome),
                            SlackerClock.itemsKey: .list(SlackerClock.Item.allCases.map { .string($0.rawValue) }),
                            SlackerClock.fontKey: .string(SlackerClock.FontChoice.system.rawValue),
-                           SlackerClock.tintKey: .bool(true)]),
+                           SlackerClock.tintKey: .bool(true),
+                           SlackerClock.lookKey: .string(SlackerClock.Look.illustrated.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         Entry(kind: .alarm, name: "闹钟", category: .clocks,

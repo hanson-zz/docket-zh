@@ -32,6 +32,7 @@ struct SlackerDetail: View {
                         hoursRow
                         backgroundSection
                         textColorRow
+                        lookRow
                         fontRow
                         itemsRow
                         paydayRow
@@ -67,6 +68,11 @@ struct SlackerDetail: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .overlay(Color.black.opacity(0.18))
+                        }
+                        if SlackerClock.look(config) == .liquid {
+                            SlackerWater(phase: reading.phase,
+                                         level: SlackerClock.waterLevel(reading.phase, settings: settings),
+                                         animates: !context.isPreview)
                         }
                     }
                 }
@@ -210,6 +216,21 @@ struct SlackerDetail: View {
         }
         .padding(10)
         .glassPane(cornerRadius: 10)
+    }
+
+    private var lookRow: some View {
+        row("外观") {
+            Picker("", selection: Binding(
+                get: { SlackerClock.look(config) },
+                set: { look in write { $0.set(SlackerClock.lookKey, .string(look.rawValue)) } })) {
+                ForEach(SlackerClock.Look.allCases, id: \.self) { look in
+                    Text(look.title).tag(look)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+        }
     }
 
     private var fontRow: some View {
