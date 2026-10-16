@@ -413,6 +413,8 @@ enum WidgetDetail {
         case .perfectDay: 380
         // A large copy of the card and the settings rows under it.
         case .slacker: 400
+        // The question box, the target picker and a row of buttons.
+        case .aiAssistant: 380
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
         default: 300

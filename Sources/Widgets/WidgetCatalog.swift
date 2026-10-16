@@ -282,6 +282,16 @@ public enum WidgetCatalog {
                                             .map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // AI 助手：小熊猫是提问入口，后面是勾选的 AI 服务字牌，末尾“＋”添加。
+        // 显示哪些、顺序、默认服务和自定义服务（services、customServices、
+        // defaultService）在卡片和面板里改，不在这里的默认值里，读的时候
+        // 用 AIServices 的默认；所以设置页里没有它们。
+        Entry(kind: .aiAssistant, name: "AI 助手", category: .tools,
+              defaults: c(["layout": .string(AIServices.wideLayout)]),
+              variants: [("横排", ["layout": .string(AIServices.wideLayout)]),
+                         ("方块", ["layout": .string(AIServices.squareLayout)])],
+              supportsCompact: false, selfContained: true),
+
         Entry(kind: .search, name: "搜索", category: .tools,
               defaults: c(["layout": .string("web"), "engine": .string("bing")]),
               variants: [("网页搜索", ["layout": .string("web")]),
@@ -516,6 +526,7 @@ public enum WidgetCatalog {
         case .podcast: "#25B4E1"
         case .perfectDay: PerfectDay.bambooHex
         case .slacker: SlackerClock.workHex
+        case .aiAssistant: ShelfColor.redPanda.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
              .alarm, .music, .battery, .shortcut, .airdrop, .weather:
@@ -688,7 +699,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant:
             nil
         }
     }
@@ -852,6 +863,9 @@ public enum WidgetCatalog {
         case .perfectDay: return CGSize(width: 196, height: 62)
         case .slacker:
             return CGSize(width: SlackerClock.tileWidth(count: SlackerClock.Settings(config: cfg).items.count), height: 62)
+        case .aiAssistant:
+            return CGSize(width: AIServices.tileWidth(count: AIServices.enabled(in: cfg).count,
+                                                      square: AIServices.isSquare(cfg)), height: 62)
         }
     }
 
@@ -966,6 +980,10 @@ public enum WidgetCatalog {
         // Two lines of title, the panda, and the cells two to a row.
         case .slacker:
             return SlackerClock.columnHeight(count: SlackerClock.Settings(config: cfg).items.count)
+        // The panda on top, the letter tiles two to a row, then the plus.
+        case .aiAssistant:
+            return AIServices.columnHeight(count: AIServices.enabled(in: cfg).count,
+                                           square: AIServices.isSquare(cfg))
         default:
             return 76
         }

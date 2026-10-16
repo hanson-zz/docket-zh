@@ -490,6 +490,11 @@ struct DockShelfView: View {
         .onAppear { measureScreen() }
         .onReceive(NotificationCenter.default.publisher(
             for: NSApplication.didChangeScreenParametersNotification)) { _ in measureScreen() }
+        // AI 助手的小熊猫、“自定义…”和选完 App 回来，都要这条扩展栏来开面板：
+        // 锚点在这里。
+        .onReceive(NotificationCenter.default.publisher(for: AIPanelState.openRequest)) { note in
+            openAIPanel(note, solved)
+        }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
         .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
         .onChange(of: WidgetConditionMonitor.conditionalKinds(in: app.customProfile?.items ?? []),
@@ -1016,6 +1021,28 @@ struct DockShelfView: View {
         AppCatalog.shared.open(entry.item) { _ in stopBounce(entry.id) }
     }
 
+    /// Opens an AI 助手's panel in the given mode, or switches the open one.
+    private func showAIPanel(_ entry: Entry, mode: AIPanelState.Mode) {
+        AIPanelState.shared.mode = mode
+        if entry.item.widget?.id != WidgetDetailWindow.shared.openWidgetID { open(entry) }
+    }
+
+    /// A request from an AI 助手 tile or panel. Only the shelf holding that
+    /// widget, on the screen the pointer is on, answers it.
+    private func openAIPanel(_ note: Notification, _ solved: Solved) {
+        guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
+              let entry = solved.entries.first(where: { $0.item.widget?.id == id }) else { return }
+        let mouse = NSEvent.mouseLocation
+        if let screen = shelfWindow?.screen, !screen.frame.contains(mouse),
+           NSScreen.screens.contains(where: { $0.frame.contains(mouse) }) { return }
+        let toggle = note.userInfo?["toggle"] as? Bool ?? false
+        if WidgetDetailWindow.shared.openWidgetID == id {
+            if toggle { WidgetDetailWindow.shared.close() }
+            return
+        }
+        open(entry)
+    }
+
     /// Apple's Dock bounces until the app checks in: the same height every
     /// time, about one a second, never a decaying flourish that stops while
     /// the app is still starting.
@@ -1384,6 +1411,11 @@ struct DockShelfView: View {
             if entry.item.fileRef != nil {
                 Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }
+        }
+        if let widget = entry.item.widget, widget.kind == .aiAssistant {
+            Divider()
+            Button("打开提问面板") { showAIPanel(entry, mode: .ask) }
+            Button("管理字牌…") { showAIPanel(entry, mode: .manage) }
         }
         // Top level, not tucked under Options: grouping is a primary action
         // here, and Options is where the Dock keeps its pin and file commands.

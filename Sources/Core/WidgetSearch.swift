@@ -66,6 +66,7 @@ public enum WidgetSearch {
         "pet": ["pet", "tamagotchi", "red panda", "宠物", "小熊猫", "养成"],
         "perfect-day": ["bamboo", "basket", "leaf", "badge", "竹篮", "竹叶", "金竹叶", "小熊猫", "满篮", "满篮一天", "丰收一天", "小有收获", "打卡汇总", "徽章", "成就"],
         "slacker": ["slacker", "moyu", "mo yu", "my", "摸鱼", "下班", "上班", "倒计时", "下班倒计时", "发薪", "发工资", "工资", "薪水", "周五", "周末", "打工", "打工人", "赚钱"],
+        "ai-assistant": ["ai assistant", "assistant", "chat", "ask", "deepseek", "kimi", "doubao", "豆包", "通义", "千问", "元宝", "文心", "智谱", "gemini", "perplexity", "grok", "提问", "问答", "对话", "大模型", "小熊猫"],
         "podcast": ["podcast", "podcasts", "bokee", "bk", "小宇宙", "xiaoyuzhou", "xyz", "订阅", "单集", "节目"],
     ]
 

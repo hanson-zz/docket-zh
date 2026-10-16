@@ -114,6 +114,7 @@ final class WidgetOptionTests: XCTestCase {
             .podcast: ["notify"],
             .toggles: ["actions"],
             .clock: ["seconds"],
+            .aiAssistant: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 
