@@ -10,6 +10,8 @@ import SwiftUI
 /// back where it was (a star stays starred, a recent copy stays in the
 /// history) and can then be copied again like any other entry.
 ///
+/// 搜索框旁边可以切到“货架”排法：卡片一层层立在搁板上（见 `ClipboardShelf`）。
+///
 /// The history is kept in memory only and gone when Docket quits; the
 /// footnote says so. Starred texts are the exception, because keeping them
 /// is the point: they are saved with the widget (see `ClipboardPins`).
@@ -24,6 +26,8 @@ struct ClipboardDetail: View {
     @State private var editing: EditTarget?
     @State private var draft = ""
     @FocusState private var editorFocused: Bool
+    /// 列表还是货架排法，存在本机偏好里。
+    @AppStorage("clipboard.shelfLayout") private var shelfLayout = false
 
     /// What the editor is changing: a starred text by its words, or a
     /// recent copy by its id.
@@ -61,8 +65,11 @@ struct ClipboardDetail: View {
                 } else {
                     PanelHeader(symbol: "list.clipboard", title: "剪贴板",
                                 subtitle: pastes ? "点按即可粘贴到前台应用" : "点按即可重新拷贝 · 星标保留常用文本")
-                    searchField
-                    list
+                    HStack(spacing: 6) {
+                        searchField
+                        layoutToggle
+                    }
+                    if shelfLayout { shelf } else { list }
                     HStack(spacing: 8) {
                         PanelButton(title: "清除历史", symbol: "trash") {
                             guard !context.isPreview else { return }
@@ -191,17 +198,27 @@ struct ClipboardDetail: View {
         .glassPane(cornerRadius: 9)
     }
 
-    @ViewBuilder
-    private var list: some View {
-        let shownPins = pins.filter { ClipboardPins.matches($0, query: query) }
-        let shownEntries = context.isPreview ? [] : history.entries.filter { entry in
+    private var shownPins: [String] { pins.filter { ClipboardPins.matches($0, query: query) } }
+
+    private var shownEntries: [ClipboardHistory.Entry] {
+        context.isPreview ? [] : history.entries.filter { entry in
             if case .text(let text) = entry.content, ClipboardPins.isPinned(text, in: pins) { return false }
             return ClipboardPins.matches(entry.preview, query: query)
         }
+    }
+
+    private var emptyNote: some View {
+        PanelNote(symbol: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass",
+                  text: query.isEmpty ? "拷贝的文本和图片会显示在这里。点星标可以把常用文本留下来。" : "没有找到“\(query)”。")
+            .frame(height: 248)
+    }
+
+    @ViewBuilder
+    private var list: some View {
+        let shownPins = self.shownPins
+        let shownEntries = self.shownEntries
         if shownPins.isEmpty && shownEntries.isEmpty {
-            PanelNote(symbol: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass",
-                      text: query.isEmpty ? "拷贝的文本和图片会显示在这里。点星标可以把常用文本留下来。" : "没有找到“\(query)”。")
-                .frame(height: 248)
+            emptyNote
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 4) {
@@ -244,16 +261,29 @@ struct ClipboardDetail: View {
             editButton(.pin(text), text: text)
             starButton(text, pinned: true)
         } tap: {
-            put(text)
-            copied = "pin:" + text
+            tapPin(text)
         }
-        .contextMenu {
-            Button("拷贝") { put(text, paste: false) }
-            Button("编辑") { beginEditing(.pin(text), text: text) }
-            Button("上移") { savePins(ClipboardPins.moving(text, by: -1, in: pins)) }
-            Button("下移") { savePins(ClipboardPins.moving(text, by: 1, in: pins)) }
-            Button("取消星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
-        }
+        .contextMenu { pinMenu(text) }
+    }
+
+    @ViewBuilder
+    private func pinMenu(_ text: String) -> some View {
+        Button("拷贝") { put(text, paste: false) }
+        Button("编辑") { beginEditing(.pin(text), text: text) }
+        Button("上移") { savePins(ClipboardPins.moving(text, by: -1, in: pins)) }
+        Button("下移") { savePins(ClipboardPins.moving(text, by: 1, in: pins)) }
+        Button("取消星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
+    }
+
+    private func tapPin(_ text: String) {
+        put(text)
+        copied = "pin:" + text
+    }
+
+    private func tapEntry(_ entry: ClipboardHistory.Entry) {
+        history.copy(entry)
+        if pastes { Self.pasteSoon() }
+        copied = history.entries.first?.id.uuidString
     }
 
     private func entryRow(_ entry: ClipboardHistory.Entry) -> some View {
@@ -270,18 +300,135 @@ struct ClipboardDetail: View {
                 starButton(text, pinned: false)
             }
         } tap: {
-            history.copy(entry)
-            if pastes { Self.pasteSoon() }
-            copied = history.entries.first?.id.uuidString
+            tapEntry(entry)
         }
-        .contextMenu {
-            Button("拷贝") { history.copy(entry) }
-            if let text {
-                Button("编辑") { beginEditing(.entry(entry.id), text: text) }
-                Button("加星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
+        .contextMenu { entryMenu(entry) }
+    }
+
+    @ViewBuilder
+    private func entryMenu(_ entry: ClipboardHistory.Entry) -> some View {
+        Button("拷贝") { history.copy(entry) }
+        if let text = Self.text(of: entry) {
+            Button("编辑") { beginEditing(.entry(entry.id), text: text) }
+            Button("加星标") { savePins(ClipboardPins.toggling(text, in: pins)) }
+        }
+        Button("删除") { history.remove(entry) }
+    }
+
+    // MARK: Shelf
+
+    /// 列表和货架之间切换的两个小图标。
+    private var layoutToggle: some View {
+        HStack(spacing: 2) {
+            layoutButton(symbol: "list.bullet", on: !shelfLayout, help: "列表") { shelfLayout = false }
+            layoutButton(symbol: "square.grid.3x2", on: shelfLayout, help: "货架") { shelfLayout = true }
+        }
+        .padding(2)
+        .glassPane(cornerRadius: 9)
+    }
+
+    private func layoutButton(symbol: String, on: Bool, help: String, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.25)) { action() }
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(on ? 1 : 0.5))
+                .frame(width: 26, height: 22)
+                .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(.white.opacity(on ? 0.2 : 0)))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(help)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// 货架排法：星标一层层放在上面，最近的放在下面，每层三张卡片立在搁板上。
+    /// 新拷贝的东西从左边滑进来，把后面的往右、往下一层挤。
+    @ViewBuilder
+    private var shelf: some View {
+        let shownPins = self.shownPins
+        let shownEntries = self.shownEntries
+        if shownPins.isEmpty && shownEntries.isEmpty {
+            emptyNote
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !shownPins.isEmpty {
+                        sectionLabel("星标")
+                        shelfRows(shownPins.map { "pin:" + $0 }) { index in
+                            pinCard(shownPins[index], index: index)
+                        }
+                    }
+                    if !shownEntries.isEmpty {
+                        sectionLabel("最近")
+                        shelfRows(shownEntries.map(\.id.uuidString)) { index in
+                            entryCard(shownEntries[index], index: index)
+                        }
+                    }
+                }
+                .padding(.top, 6)
+                .padding(.bottom, 4)
             }
-            Button("删除") { history.remove(entry) }
+            .scrollIndicators(.never)
+            .frame(height: 248)
         }
+    }
+
+    private func shelfRows<Card: View>(_ ids: [String], @ViewBuilder card: @escaping (Int) -> Card) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(ClipboardShelf.rows(count: ids.count), id: \.lowerBound) { range in
+                VStack(spacing: 0) {
+                    HStack(alignment: .bottom, spacing: 8) {
+                        ForEach(Array(range), id: \.self) { index in
+                            card(index)
+                                .id(ids[index])
+                                .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                                        removal: .scale(scale: 0.6).combined(with: .opacity)))
+                        }
+                        ForEach(range.count..<ClipboardShelf.perRow, id: \.self) { _ in
+                            Color.clear.frame(maxWidth: .infinity).frame(height: 1)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    ShelfLedge()
+                }
+            }
+        }
+        .animation(.spring(duration: 0.35, bounce: 0.25), value: ids)
+    }
+
+    private func pinCard(_ text: String, index: Int) -> some View {
+        ShelfClipCard(title: ClipboardShelf.excerpt(text), caption: "星标",
+                      tilt: ClipboardShelf.tilt(index: index),
+                      flashed: copied == "pin:" + text, flashText: pastes ? "已粘贴" : "已拷贝") {
+            Image(systemName: "text.quote")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.opacity(0.1))
+        } accessory: {
+            starButton(text, pinned: true)
+        }
+        .onTapGesture { tapPin(text) }
+        .contextMenu { pinMenu(text) }
+        .help(text)
+    }
+
+    private func entryCard(_ entry: ClipboardHistory.Entry, index: Int) -> some View {
+        let text = Self.text(of: entry)
+        return ShelfClipCard(title: ClipboardShelf.excerpt(entry.preview),
+                             caption: RelativeAge.caption(entry.date, now: context.now),
+                             tilt: ClipboardShelf.tilt(index: index),
+                             flashed: copied == entry.id.uuidString, flashText: pastes ? "已粘贴" : "已拷贝") {
+            thumbnail(entry)
+        } accessory: {
+            if let text { starButton(text, pinned: false) }
+        }
+        .onTapGesture { tapEntry(entry) }
+        .contextMenu { entryMenu(entry) }
     }
 
     private func rowShell<Thumb: View, Star: View>(
