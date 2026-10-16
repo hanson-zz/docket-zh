@@ -28,6 +28,8 @@ final class FolderFeed {
 
     let source: Source
     private(set) var files: [ListedFile] = []
+    /// 还没下完的文件和进度（只有“下载”有），用来在图标上画进度。
+    private(set) var downloading: [ActiveDownload] = []
     private(set) var folder: URL
     /// `nil` until the first listing finished.
     private(set) var loadedAt: Date?
@@ -82,7 +84,7 @@ final class FolderFeed {
         switch source {
         case .pictures: 120
         case .screenshots: 3
-        case .downloads: 5
+        case .downloads: DownloadProgress.pollInterval(downloading: !downloading.isEmpty, idle: 5)
         }
     }
 
@@ -119,10 +121,12 @@ final class FolderFeed {
             switch result {
             case .success(let listed):
                 error = nil
-                if listed != files { files = listed }
+                if listed.files != files { files = listed.files }
+                if listed.downloading != downloading { downloading = listed.downloading }
             case .failure(let message):
                 error = message.text
                 files = []
+                downloading = []
             }
         }
     }
@@ -143,6 +147,11 @@ final class FolderFeed {
 
     struct Failure: Error, Sendable { var text: String }
 
+    struct Listing: Sendable {
+        var files: [ListedFile]
+        var downloading: [ActiveDownload] = []
+    }
+
     nonisolated private static let queue = DispatchQueue(label: "com.docket-zh.folderfeed", qos: .utility)
 
     nonisolated private static func offMain<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
@@ -157,7 +166,7 @@ final class FolderFeed {
     ]
 
     nonisolated private static func list(_ source: Source, folder: URL,
-                                         customPrefix: String?) -> Result<[ListedFile], Failure> {
+                                         customPrefix: String?) -> Result<Listing, Failure> {
         let fm = FileManager.default
         var isDirectory: ObjCBool = false
         guard fm.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -165,7 +174,7 @@ final class FolderFeed {
         }
         switch source {
         case .pictures:
-            return .success(pictures(in: folder))
+            return .success(Listing(files: pictures(in: folder)))
         case .screenshots, .downloads:
             let contents: [URL]
             do {
@@ -175,16 +184,23 @@ final class FolderFeed {
                 return .failure(Failure(text: denied(folder)))
             }
             var listed: [ListedFile] = []
+            var partial: [ListedFile] = []
             for url in contents {
                 guard let file = describe(url) else { continue }
                 if source == .screenshots {
                     guard !file.isDirectory, isCapture(url, customPrefix: customPrefix) else { continue }
                 } else if file.isPartialDownload {
+                    partial.append(file)
                     continue
                 }
                 listed.append(file)
             }
-            return .success(ListedFile.newestFirst(listed, limit: source == .screenshots ? 60 : 50))
+            // 正在下载的最多看 6 个，每个读一次扩展属性或 Safari 的 Info.plist。
+            let downloading = ListedFile.newestFirst(partial, limit: 6).map {
+                ActiveDownload(file: $0, fraction: DownloadProgress.read($0.url))
+            }
+            return .success(Listing(files: ListedFile.newestFirst(listed, limit: source == .screenshots ? 60 : 50),
+                                    downloading: downloading))
         }
     }
 

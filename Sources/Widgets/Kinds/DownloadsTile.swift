@@ -7,6 +7,8 @@ struct DownloadsTile: View {
 
     private var feed: FolderFeed { FolderFeed.shared(.downloads) }
     private var latest: ListedFile? { context.isPreview ? nil : feed.files.first }
+    /// 正在下载时卡片显示它，图标上画进度。
+    private var active: ActiveDownload? { context.isPreview ? nil : feed.downloading.first }
 
     var body: some View {
         let column = context.position.isVertical
@@ -34,19 +36,23 @@ struct DownloadsTile: View {
 
     private var title: String {
         if context.isPreview { return "发票.pdf" }
+        if let active { return active.finalName }
         if let latest { return latest.name }
         return feed.error != nil ? "无法访问" : "下载"
     }
 
     private var caption: String {
         if context.isPreview { return "下载 · 刚刚" }
+        if let active { return "下载中 · \(DownloadProgress.caption(active.fraction))" }
         guard let latest else { return feed.loadedAt == nil ? "正在读取" : "空" }
         return "下载 · \(RelativeAge.caption(latest.date, now: context.now))"
     }
 
     private func badge(size: CGFloat) -> some View {
         TileBadge(size: size) {
-            if let latest {
+            if let active {
+                DownloadProgressIcon(download: active, size: size * 0.86)
+            } else if let latest {
                 FileThumb(url: latest.url, pixels: 120, fill: latest.isImage)
                     .clipShape(.rect(cornerRadius: size * 0.22, style: .continuous))
                     .padding(latest.isImage ? 0 : 2)
