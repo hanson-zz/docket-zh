@@ -20,10 +20,10 @@ struct ChargeLimitSection: View {
                     .toggleStyle(.switch)
                     .controlSize(.mini)
                     .labelsHidden()
-                    .disabled(state != .running)
                     .accessibilityLabel("充电上限")
             }
-            if state == .running {
+            // 上限和缓冲随时能调，先存进设置文件；助手装好跑起来后照这个执行。
+            Group {
                 HStack(spacing: 8) {
                     Text("\(config.limit)%")
                         .font(WidgetStyle.value(17))
@@ -35,7 +35,6 @@ struct ChargeLimitSection: View {
                            in: 50...100, step: 5)
                         .controlSize(.mini)
                         .tint(.white)
-                        .disabled(!config.enabled)
                 }
                 HStack(spacing: 6) {
                     Text("低于")
@@ -51,7 +50,6 @@ struct ChargeLimitSection: View {
                 }
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(.white.opacity(0.7))
-                .disabled(!config.enabled)
             }
             Text(caption(state, config: config))
                 .font(WidgetStyle.caption(11))
@@ -93,13 +91,13 @@ struct ChargeLimitSection: View {
     private func caption(_ state: ChargeLimitService.State, config: ChargeLimitConfig) -> String {
         switch state {
         case .notInstalled:
-            return "充到上限就暂停充电、只用电源供电，延长电池寿命。需要先安装一个后台助手（要输入一次管理员密码）。"
+            return "上限可以先调好。真正暂停充电要先安装一个后台助手（输入一次管理员密码），装好后马上按 \(config.limit)% 执行。"
         case .starting:
-            return "助手正在启动…如果一直停在这里，试试卸载后重新安装。"
+            return "助手正在启动，上限暂未生效。超过 10 秒还停在这里，试试卸载后重新安装。"
         case .unsupported:
             return "这台 Mac 不支持控制充电（目前只支持 Apple 芯片的 Mac）。"
         case .needsUpdate:
-            return "码头更新了，助手也要更新一下。"
+            return "码头更新了，助手也要更新一下，更新前上限暂不生效。"
         case .running:
             guard config.enabled, config.isActive else {
                 return "已关闭，电池照常充满。macOS 自带的“优化电池充电”仍然有效。"
