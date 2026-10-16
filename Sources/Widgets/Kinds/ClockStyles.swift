@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The clock's other faces: a full analogue dial, flip cards, and a dot
-/// matrix. Each is the same time from the same tick, only drawn differently.
+/// The clock's other faces: a full analogue dial, flip cards, folding flip
+/// cards, and a dot matrix. Each is the same time from the same tick, only drawn differently.
 struct ClockStyleReadout: View {
     var style: String
     var now: Date
@@ -23,6 +23,7 @@ struct ClockStyleReadout: View {
             switch style {
             case "analog": analog
             case "flip": flip
+            case FoldFlip.clockLayout: fold
             case "digital": digital
             case "ring": ring
             case "words": words
@@ -82,6 +83,37 @@ struct ClockStyleReadout: View {
                     FlipCard(text: hours, size: seconds ? 22 : 26)
                     FlipCard(text: minutes, size: seconds ? 22 : 26)
                     if seconds { FlipCard(text: secondText, size: 22) }
+                    if let meridiem = parts.meridiem {
+                        Text(meridiem)
+                            .font(WidgetStyle.label(10))
+                            .foregroundStyle(WidgetStyle.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Folding flip
+
+    /// 每个数字一张会折的翻页卡片：时、分（和秒）各一对，数字变时上半张
+    /// 往下折、下半张落下来。横排一行，侧边栏竖排三行。
+    private var fold: some View {
+        let digits = parts.time.split(separator: ":").map(String.init)
+        let hours = digits.first ?? "--"
+        let minutes = digits.count > 1 ? digits[1] : "--"
+        // 12 小时制的“9:05”补成两位，卡片数不跟着时间变。
+        let paddedHours = hours.count == 1 ? "0" + hours : hours
+        return Group {
+            if vertical {
+                VStack(spacing: 3) {
+                    FoldFlipText(text: paddedHours, size: seconds ? 15 : 19, maxWidth: 56)
+                    FoldFlipText(text: minutes, size: seconds ? 15 : 19, maxWidth: 56)
+                    if seconds { FoldFlipText(text: secondText, size: 15, maxWidth: 56) }
+                }
+            } else {
+                HStack(spacing: 4) {
+                    FoldFlipText(text: seconds ? "\(paddedHours):\(minutes):\(secondText)" : "\(paddedHours):\(minutes)",
+                                 size: seconds ? 22 : 28, maxWidth: parts.meridiem == nil ? 146 : 120)
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
                             .font(WidgetStyle.label(10))

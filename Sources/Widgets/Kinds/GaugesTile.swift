@@ -65,7 +65,8 @@ struct GaugesTile: View {
                                   tint: r.tint,
                                   track: r.known ? r.tint.opacity(0.16) : Color.primary.opacity(0.10),
                                   diameter: diameter,
-                                  lineWidth: diameter > 36 ? 4.5 : 4) {
+                                  lineWidth: diameter > 36 ? 4.5 : 4,
+                                  laps: true) {
             Image(systemName: r.symbol)
                 .font(.system(size: diameter * 0.32, weight: .regular))
                 .foregroundStyle(r.known ? r.tint : WidgetStyle.secondary)

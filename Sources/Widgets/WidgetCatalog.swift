@@ -57,6 +57,7 @@ public enum WidgetCatalog {
               variants: [("标准", ["layout": .string("standard")]),
                          ("模拟表盘", ["layout": .string("analog")]),
                          ("翻页", ["layout": .string("flip")]),
+                         ("折叠翻页", ["layout": .string(FoldFlip.clockLayout)]),
                          ("像素", ["layout": .string("pixel")]),
                          ("大号数字", ["layout": .string("digital")]),
                          ("秒圈", ["layout": .string("ring")]),
@@ -87,8 +88,10 @@ public enum WidgetCatalog {
                          ("液态", ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: true, selfContained: true),
 
+        // 倒计时没有样式选择，数字的外观（普通或折叠翻页）用 look 键，默认普通。
         Entry(kind: .countdown, name: "倒计时", category: .clocks,
-              defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([])]),
+              defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([]),
+                           FoldFlip.countdownLookKey: .string(FoldFlip.CountdownLook.plain.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 摸鱼时钟：工作日倒数下班，周末祝周末快乐，四个小格是发薪、周五、

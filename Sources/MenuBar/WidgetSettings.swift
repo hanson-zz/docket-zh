@@ -496,6 +496,7 @@ struct WidgetSettingsSections: View {
         "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
         "podcast.notify": "有新单集时通知",
         "battery.look": "外观",
+        "countdown.look": "数字外观",
         "slacker.start": "上班时间",
         "slacker.end": "下班时间（要晚于上班时间）",
         "slacker.look": "外观",
@@ -628,6 +629,7 @@ struct WidgetSettingsSections: View {
         "slacker.font": SlackerClock.FontChoice.allCases.map { ($0.title, $0.rawValue) },
         "slacker.look": SlackerClock.Look.allCases.map { ($0.title, $0.rawValue) },
         "timer.look": LiquidMotion.TimerLook.allCases.map { ($0.title, $0.rawValue) },
+        "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)
