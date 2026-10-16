@@ -14,6 +14,7 @@ struct TrashTile: View {
     @State private var targeted = false
     @State private var scaredAt: Date?
     @State private var hovering = false
+    @State private var swallowAt: Date?
 
     private var threshold: Int64 {
         TrashFlies.thresholdBytes(instance.config.string("threshold", default: TrashFlies.defaultThreshold))
@@ -63,6 +64,16 @@ struct TrashTile: View {
         }
         .onAppear { if !context.isPreview { monitor.start(threshold: threshold) } }
         .onChange(of: threshold) { _, now in monitor.start(threshold: now) }
+        .onChange(of: items) { before, now in
+            // Emptied, here or in Finder: the bin swallows its paper.
+            if !context.isPreview, before > 0, now == 0 { swallowAt = .now }
+        }
+        .task(id: swallowAt) {
+            guard swallowAt != nil else { return }
+            try? await Task.sleep(for: .seconds(SwallowMotion.duration))
+            guard !Task.isCancelled else { return }
+            swallowAt = nil
+        }
         .help(targeted ? "松开即可移到废纸篓" : "把文件拖到这里即可移到废纸篓")
         .accessibilityElement(children: .combine)
         .accessibilityLabel("废纸篓，\(value)，\(caption)")
@@ -81,11 +92,13 @@ struct TrashTile: View {
 
     private func bin(size: CGFloat) -> some View {
         TileBadge(size: size) {
-            Image(systemName: items > 0 ? "trash.fill" : "trash")
-                .font(.system(size: size * 0.42, weight: .medium))
-                .foregroundStyle(targeted ? Color.red : WidgetStyle.primary)
-                .scaleEffect(targeted ? 1.15 : 1)
-                .animation(.snappy(duration: 0.2), value: targeted)
+            SwallowingBin(startedAt: swallowAt, binSize: size * 0.42) {
+                Image(systemName: items > 0 ? "trash.fill" : "trash")
+                    .font(.system(size: size * 0.42, weight: .medium))
+                    .foregroundStyle(targeted ? Color.red : WidgetStyle.primary)
+                    .scaleEffect(targeted ? 1.15 : 1)
+                    .animation(.snappy(duration: 0.2), value: targeted)
+            }
         }
         .overlay {
             FlySwarm(count: flies, scaredAt: scaredAt, hovering: hovering, animated: !context.isPreview)

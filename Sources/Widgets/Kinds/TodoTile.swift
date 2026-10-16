@@ -10,6 +10,8 @@ struct TodoTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @State private var celebrateAt: Date?
+
     private var items: [TodoItem] {
         if context.isPreview {
             return [TodoItem(id: "s1", text: "回复产品评审意见"),
@@ -29,6 +31,7 @@ struct TodoTile: View {
             if context.position.isVertical {
                 VStack(spacing: 4) {
                     TileBadge(size: 34) { badge(open: open.count, progress: progress, size: 13) }
+                        .overlay { cheer(size: 60) }
                     Text(open.isEmpty ? "无待办" : "\(open.count) 项")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
@@ -39,6 +42,7 @@ struct TodoTile: View {
             } else {
                 HStack(spacing: 10) {
                     TileBadge { badge(open: open.count, progress: progress, size: 15) }
+                        .overlay { cheer(size: 70) }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(open.first?.text ?? (all.isEmpty ? "没有待办" : "都做完了"))
                             .font(.system(size: 14, weight: .semibold))
@@ -58,6 +62,22 @@ struct TodoTile: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(open.first.map { "快速待办：\($0.text)" } ?? "快速待办")
+        .task(id: celebrateAt) {
+            guard celebrateAt != nil else { return }
+            try? await Task.sleep(for: .seconds(CheerMotion.duration))
+            guard !Task.isCancelled else { return }
+            celebrateAt = nil
+        }
+    }
+
+    /// The red panda popping out of the badge when the card's check closes
+    /// the last task.
+    @ViewBuilder
+    private func cheer(size: CGFloat) -> some View {
+        if let celebrateAt {
+            TodoCheer(startedAt: celebrateAt, compact: true)
+                .frame(width: size, height: size)
+        }
     }
 
     private func badge(open: Int, progress: Double, size: CGFloat) -> some View {
@@ -88,7 +108,9 @@ struct TodoTile: View {
     private func checkButton(_ item: TodoItem?, size: CGFloat) -> some View {
         if let item {
             TileGlyph(symbol: "checkmark", size: size, action: context.isPreview ? nil : {
+                let finishing = QuickTodo.finishesAll(toggling: item.id, in: QuickTodo.items(instance.config))
                 withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance) }
+                if finishing { celebrateAt = .now }
             })
             .help("完成“\(item.text)”")
             .accessibilityLabel("完成 \(item.text)")

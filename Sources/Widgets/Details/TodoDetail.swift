@@ -5,6 +5,8 @@ import SwiftUI
 ///
 /// Return adds and keeps the caret in the field, so a run of tasks can be
 /// typed one after another. Double-clicking a task's words edits them.
+/// Dragging a row to the left deletes it, with a few seconds to undo, and
+/// checking the last open task brings out the red panda to celebrate.
 struct TodoDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -13,6 +15,15 @@ struct TodoDetail: View {
     @State private var editing: String?
     @State private var editDraft = ""
     @FocusState private var focus: Field?
+    @State private var celebrateAt: Date?
+    @State private var undo: Undo?
+
+    /// The task just deleted and where it was, kept for the undo bar.
+    private struct Undo: Equatable {
+        var item: TodoItem
+        var index: Int
+        var token = UUID()
+    }
 
     private enum Field: Hashable {
         case add
@@ -51,7 +62,14 @@ struct TodoDetail: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 2) {
-                            ForEach(shown) { item in row(item) }
+                            ForEach(shown) { item in
+                                row(item)
+                                    .swipeToDelete(enabled: !context.isPreview && editing != item.id) {
+                                        delete(item, animated: false)
+                                    }
+                                    .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .leading)),
+                                                            removal: .opacity))
+                            }
                         }
                     }
                     .frame(maxHeight: 280)
@@ -76,9 +94,31 @@ struct TodoDetail: View {
                         .foregroundStyle(.white.opacity(0.8))
                     }
                 }
+                if let undo {
+                    TodoUndoBar(text: undo.item.text) { restore() }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .overlay {
+                if let celebrateAt {
+                    TodoCheer(startedAt: celebrateAt)
+                        .frame(width: 220, height: 200)
+                }
             }
         }
         .onAppear { if !context.isPreview { focus = .add } }
+        .task(id: undo?.token) {
+            guard undo != nil else { return }
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(.snappy(duration: 0.25)) { undo = nil }
+        }
+        .task(id: celebrateAt) {
+            guard celebrateAt != nil else { return }
+            try? await Task.sleep(for: .seconds(CheerMotion.duration))
+            guard !Task.isCancelled else { return }
+            celebrateAt = nil
+        }
     }
 
     private func header(open: Int, done: Int) -> some View {
@@ -122,8 +162,7 @@ struct TodoDetail: View {
     private func row(_ item: TodoItem) -> some View {
         HStack(spacing: 8) {
             Button {
-                guard !context.isPreview else { return }
-                withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance) }
+                toggle(item)
             } label: {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 16))
@@ -156,10 +195,7 @@ struct TodoDetail: View {
             }
 
             Button {
-                guard !context.isPreview else { return }
-                withAnimation(.snappy(duration: 0.3)) {
-                    TodoLog.change(instance) { QuickTodo.removing(item.id, from: $0) }
-                }
+                delete(item, animated: true)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .semibold))
@@ -169,6 +205,7 @@ struct TodoDetail: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("删除 \(item.text)")
+            .help("删除，也可以把这一行往左拖")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -183,6 +220,33 @@ struct TodoDetail: View {
         }
         draft = ""
         focus = .add
+    }
+
+    private func toggle(_ item: TodoItem) {
+        guard !context.isPreview else { return }
+        let finishing = QuickTodo.finishesAll(toggling: item.id, in: QuickTodo.items(instance.config))
+        withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance) }
+        if finishing { celebrateAt = .now }
+    }
+
+    /// Removes the task and offers it back for a few seconds. A swipe has
+    /// already slid the row away, so it is not animated a second time.
+    private func delete(_ item: TodoItem, animated: Bool) {
+        guard !context.isPreview else { return }
+        let index = QuickTodo.items(instance.config).firstIndex { $0.id == item.id } ?? 0
+        if editing == item.id { editing = nil }
+        withAnimation(animated ? Animation.snappy(duration: 0.3) : nil) {
+            TodoLog.change(instance) { QuickTodo.removing(item.id, from: $0) }
+        }
+        withAnimation(.snappy(duration: 0.25)) { undo = Undo(item: item, index: index) }
+    }
+
+    private func restore() {
+        guard let undo else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            TodoLog.change(instance) { QuickTodo.restoring(undo.item, at: undo.index, in: $0) }
+            self.undo = nil
+        }
     }
 
     private func beginEditing(_ item: TodoItem) {

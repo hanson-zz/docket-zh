@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The bin at reading size, with its flies, what is in it, and the two
-/// things to do about it.
+/// things to do about it. When the Trash goes from something to nothing
+/// (emptied here or in Finder), the bin swallows a few sheets of paper.
 struct TrashDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -10,6 +11,7 @@ struct TrashDetail: View {
     @State private var scaredAt: Date?
     @State private var hovering = false
     @State private var targeted = false
+    @State private var swallowAt: Date?
 
     private var thresholdValue: String { instance.config.string("threshold", default: TrashFlies.defaultThreshold) }
     private var threshold: Int64 { TrashFlies.thresholdBytes(thresholdValue) }
@@ -27,9 +29,11 @@ struct TrashDetail: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 16) {
                     ZStack {
-                        Image(systemName: items > 0 ? "trash.fill" : "trash")
-                            .font(.system(size: 44, weight: .regular))
-                            .foregroundStyle(targeted ? Color.red : .white)
+                        SwallowingBin(startedAt: swallowAt, binSize: 44) {
+                            Image(systemName: items > 0 ? "trash.fill" : "trash")
+                                .font(.system(size: 44, weight: .regular))
+                                .foregroundStyle(targeted ? Color.red : .white)
+                        }
                         FlySwarm(count: flies, scaredAt: scaredAt, hovering: hovering,
                                  animated: !context.isPreview, flySize: 1.6)
                             .frame(width: 130, height: 110)
@@ -90,6 +94,15 @@ struct TrashDetail: View {
             return monitor.trash(urls)
         } isTargeted: { targeted = $0 }
         .onAppear { if !context.isPreview { monitor.start(threshold: threshold) } }
+        .onChange(of: items) { before, now in
+            if !context.isPreview, before > 0, now == 0 { swallowAt = .now }
+        }
+        .task(id: swallowAt) {
+            guard swallowAt != nil else { return }
+            try? await Task.sleep(for: .seconds(SwallowMotion.duration))
+            guard !Task.isCancelled else { return }
+            swallowAt = nil
+        }
     }
 
     private var fliesLine: String {
