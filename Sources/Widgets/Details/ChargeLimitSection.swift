@@ -95,7 +95,7 @@ struct ChargeLimitSection: View {
         case .starting:
             return "助手正在启动，上限暂未生效。超过 10 秒还停在这里，试试卸载后重新安装。"
         case .unsupported:
-            return "这台 Mac 不支持控制充电（目前只支持 Apple 芯片的 Mac）。"
+            return "助手在这台 Mac 上找不到能控制充电的芯片接口（CHTE、CH0B/CH0C 都读不到），暂时没法限制充电。Intel Mac 也不支持。"
         case .needsUpdate:
             return "码头更新了，助手也要更新一下，更新前上限暂不生效。"
         case .running:
