@@ -137,7 +137,7 @@ struct MusicTile: View {
             let side: CGFloat = context.position.isVertical ? 15 : 13
             if let playing, !context.isPreview {
                 TileGlyph(symbol: playing.isPlaying ? "pause.fill" : "play.fill",
-                          size: side) { toggle(playing) }
+                          size: side, morphs: true) { toggle(playing) }
                     .accessibilityLabel(playing.isPlaying ? "暂停" : "播放")
             } else {
                 // Nothing playing is nothing to toggle, so the chip shows what
@@ -336,6 +336,7 @@ struct MusicTile: View {
     private func button(_ symbol: String, _ size: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: { if !context.isPreview { action() } }) {
             Image(systemName: symbol)
+                .playPauseMorph(symbol)
                 .font(.system(size: size, weight: .medium))
                 .foregroundStyle(ink)
                 .frame(minWidth: size)
@@ -554,6 +555,7 @@ private struct Artwork: View {
                         // semi-transparent glyph over a dark placeholder was
                         // invisible in practice - it read as no control at all.
                         Image(systemName: control ? "pause.fill" : "play.fill")
+                            .playPauseMorph(control ? "pause.fill" : "play.fill")
                             .font(.system(size: side * 0.46, weight: .bold))
                             .foregroundStyle(.white)
                             .shadow(color: .black.opacity(0.6), radius: 2)

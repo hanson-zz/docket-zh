@@ -40,6 +40,7 @@ struct CurrencyDetail: View {
                 HStack(spacing: 8) {
                     Text(converted(to))
                         .font(.system(size: 28, weight: .bold).monospacedDigit())
+                        .rollingValue(converted(to))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)

@@ -261,6 +261,7 @@ struct PodcastDetail: View {
             action()
         } label: {
             Image(systemName: symbol)
+                .playPauseMorph(symbol)
                 .font(.system(size: size * 0.4, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
@@ -324,6 +325,7 @@ struct PodcastDetail: View {
         let isNew = !context.isPreview && service.library.unheard(show.id).contains { $0.id == episode.id }
         return HStack(spacing: 8) {
             Image(systemName: current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                .playPauseMorph(current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .font(.system(size: 20))
                 .foregroundStyle(current ? PodcastCover.accent : .white.opacity(0.75))
             VStack(alignment: .leading, spacing: 2) {

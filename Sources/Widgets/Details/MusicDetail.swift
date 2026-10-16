@@ -323,6 +323,7 @@ struct MusicDetail: View {
                 // shoved to one side inside a circle. Pause is symmetric and
                 // needs none.
                 .offset(x: playing ? 0 : 1.5)
+                .playPauseMorph(playing ? "pause.fill" : "play.fill")
         }
         .buttonStyle(TransportButton(primary: true, ink: ink, compact: compact))
         .accessibilityLabel(playing ? "暂停" : "播放")

@@ -114,6 +114,7 @@ struct PodcastTile: View {
     private func playButton(size: CGFloat) -> some View {
         TileGlyph(symbol: playing ? "pause.fill" : "play.fill", size: size,
                   tint: playing ? PodcastCover.accent : WidgetStyle.primary,
+                  morphs: true,
                   action: context.isPreview || episode?.audioURL == nil ? nil : {
             if let episode, let show { player.toggle(episode, show: show.id) }
         })

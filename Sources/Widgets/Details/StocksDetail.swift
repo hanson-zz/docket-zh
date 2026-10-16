@@ -186,6 +186,7 @@ struct StocksDetail: View {
             .font(WidgetStyle.label(10))
             .foregroundStyle(.white.opacity(0.85))
             .monospacedDigit()
+            .rollingValue(value)
             .shadow(color: .black.opacity(0.4), radius: 2)
     }
 

@@ -58,11 +58,13 @@ struct CryptoTile: View {
                             .font(WidgetStyle.label(9))
                             .foregroundStyle(ink(quote))
                             .monospacedDigit()
+                            .rollingValue(quote?.change24h)
                     }
                     Text(quote.map { CryptoMarket.priceText($0.price, currency: currency) } ?? "-")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
+                        .rollingValue(quote?.price)
                     if showsChart {
                         spark(quote).frame(height: 12)
                     }
@@ -88,11 +90,13 @@ struct CryptoTile: View {
                             .font(WidgetStyle.label(8))
                             .foregroundStyle(ink(quote))
                             .monospacedDigit()
+                            .rollingValue(quote?.change24h)
                     }
                     Text(quote.map { CryptoMarket.priceText($0.price, currency: currency) } ?? "-")
                         .font(WidgetStyle.value(12))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
+                        .rollingValue(quote?.price)
                     if showsChart {
                         spark(quote).frame(height: 10).padding(.top, 1)
                     }

@@ -61,10 +61,12 @@ struct WatchlistTile: View {
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
+                        .rollingValue(quote?.priceText ?? "-")
                     Text(quote?.percentText ?? "")
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(accent(quote))
                         .monospacedDigit()
+                        .rollingValue(quote?.percentText ?? "")
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
@@ -89,11 +91,13 @@ struct WatchlistTile: View {
                             .font(WidgetStyle.label(9))
                             .foregroundStyle(accent(quote))
                             .monospacedDigit()
+                            .rollingValue(quote?.percentText ?? "")
                     }
                     Text(quote?.priceText ?? "-")
                         .font(WidgetStyle.value(13))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
+                        .rollingValue(quote?.priceText ?? "-")
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)

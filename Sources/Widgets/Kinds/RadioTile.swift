@@ -68,6 +68,7 @@ struct RadioTile: View {
     private func playButton(size: CGFloat) -> some View {
         TileGlyph(symbol: playing ? "pause.fill" : "play.fill", size: size,
                   tint: playing ? RadioIcon.glow.mix(with: WidgetStyle.primary, by: 0.2) : WidgetStyle.primary,
+                  morphs: true,
                   action: context.isPreview || station == nil ? nil : {
             if let station { player.toggle(station, volume: volume) }
         })

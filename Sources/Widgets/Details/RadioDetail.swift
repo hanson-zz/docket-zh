@@ -201,6 +201,7 @@ struct RadioDetail: View {
             action()
         } label: {
             Image(systemName: symbol)
+                .playPauseMorph(symbol)
                 .font(.system(size: size * 0.36, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)

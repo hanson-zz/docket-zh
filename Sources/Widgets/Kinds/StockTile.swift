@@ -114,10 +114,12 @@ struct StockTile: View {
                 .font(.system(size: price, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
+                .rollingValue(quote?.priceText ?? "-")
             Text(quote?.percentText ?? "")
                 .font(WidgetStyle.label(percent))
                 .foregroundStyle(accent)
                 .monospacedDigit()
+                .rollingValue(quote?.percentText ?? "")
         }
         .lineLimit(1)
         .minimumScaleFactor(0.6)
