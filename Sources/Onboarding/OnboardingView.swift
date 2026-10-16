@@ -8,6 +8,7 @@ import SwiftUI
 /// 六步：欢迎、选位置、选用途、权限、布置中（小组件一个个靠岸停进扩展栏）、完成。顶部是分段进度条和返回按钮，
 /// 标题左对齐，选项是大卡片，底部一个大圆角的主按钮。位置一选就生效；
 /// 小组件在“布置中”这一步真正写进当前布局（只追加，不删除已有的）。
+/// 欢迎页可以点“先带我看看”，用聚光灯依次照出进度、跳过和开始按钮（见 `SpotlightOverlay`）。
 struct OnboardingView: View {
     let app: AppState
     var onFinish: () -> Void
@@ -18,6 +19,8 @@ struct OnboardingView: View {
     @State private var built = false
     @State private var progress: Double = 0
     @State private var added: [String] = []
+    /// 聚光灯导览走到第几站；nil 是没在导览。
+    @State private var tourStop: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// - Parameter startPosition: 选位置一步默认选中的边。首次启动是底部；
@@ -65,6 +68,9 @@ struct OnboardingView: View {
         }
         .frame(width: 560, height: 640)
         .background(.background)
+        .overlayPreferenceValue(SpotlightAnchorKey.self) { anchors in
+            SpotlightOverlay(stops: SpotlightTour.onboarding, anchors: anchors, index: $tourStop)
+        }
     }
 
     // MARK: - 顶部：返回 + 分段进度条 + 跳过
@@ -85,12 +91,14 @@ struct OnboardingView: View {
 
             SegmentedProgress(total: OnboardingStep.allCases.count, filled: step.filledSegments)
                 .frame(height: 6)
+                .spotlightTarget("progress")
 
             Button("跳过", action: skip)
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .opacity(step == .done ? 0 : 1)
-                .disabled(step == .done)
+                .disabled(step == .done || tourStop != nil)
+                .spotlightTarget("skip")
         }
     }
 
@@ -109,7 +117,9 @@ struct OnboardingView: View {
         }
         .buttonStyle(.plain)
         .disabled(!primaryEnabled)
-        .keyboardShortcut(.defaultAction)
+        // 导览开着时回车留给导览卡片的“下一步”，不要直接翻到下一页。
+        .keyboardShortcut(tourStop == nil ? KeyboardShortcut.defaultAction : nil)
+        .spotlightTarget("primary")
     }
 
     private var primaryTitle: String {
@@ -174,6 +184,15 @@ struct OnboardingView: View {
             Text("接下来用不到一分钟，帮你把码头布置好。")
                 .font(.system(size: 13))
                 .foregroundStyle(.tertiary)
+            Button {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) { tourStop = 0 }
+            } label: {
+                Label("先带我看看", systemImage: "sparkles")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+            .help("用聚光灯依次指出进度、跳过和开始按钮")
             Spacer()
         }
     }
