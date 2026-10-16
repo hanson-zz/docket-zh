@@ -3,7 +3,8 @@ import SwiftUI
 /// 习惯面板顶部的两列卡片：每个习惯一张，末尾一张“新建习惯”。
 ///
 /// 卡片左上角是彩色圆形图标，右上角是今天的打卡按钮（计数习惯显示进度环），
-/// 中间是名称和今天的状态，底部是大号的每日目标和单位。点卡片打开编辑弹层，
+/// 中间是名称和今天的状态，底部左边是大号的每日目标和单位，右边是最近十周的周格子
+/// （像贡献图，一列一周，做满最深）。点卡片打开编辑弹层，
 /// 右键可以编辑、上移、下移和删除。思路借鉴 Grow 的习惯卡片网格。
 struct HabitGrid: View {
     var habits: [Habit]
@@ -88,7 +89,16 @@ struct HabitCard: View {
     var isPreview: Bool
     var onTap: () -> Void
 
-    static let height: CGFloat = 118
+    static let height: CGFloat = 136
+    /// 卡片右下角的周格子画几周。
+    static let weekCount = 10
+
+    /// 最近几周每天做了多少，做满最深，做了一部分浅一些。
+    private var weeks: [[ContributionGrid.Cell]] {
+        ContributionGrid.columns(weeks: Self.weekCount, today: now, calendar: HabitTracker.calendar,
+                                 count: { HabitTracker.count(habit, on: $0) },
+                                 level: { ContributionGrid.level(count: $0, goal: habit.goal) })
+    }
 
     var body: some View {
         let color = HabitStyle.color(habit)
@@ -110,19 +120,19 @@ struct HabitCard: View {
                 .monospacedDigit()
                 .lineLimit(1)
             Spacer(minLength: 0)
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text("\(habit.goal)")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .monospacedDigit()
-                Text("\(habit.unitName)/天")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .lineLimit(1)
+            HStack(alignment: .bottom, spacing: 6) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(habit.goal)")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                    Text("\(habit.unitName)/天")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.4))
+                ContributionGridView(columns: weeks, color: color, cell: 4, spacing: 1.5, unit: habit.unitName)
             }
         }
         .padding(10)

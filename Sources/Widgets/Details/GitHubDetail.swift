@@ -96,6 +96,7 @@ struct GitHubDetail: View {
                                            retry: reconnect)
                     }
                     statsGrid(stats)
+                    activityGrid
                     feedSection
                     if let release { releaseCard(release) }
                 } else if !context.isPreview, service.isOffline(current) {
@@ -201,6 +202,43 @@ struct GitHubDetail: View {
             StatChip(label: "通知",
                      value: context.isPreview ? "-" : service.notifications.map { "\($0)" } ?? "-")
         }
+    }
+
+    // MARK: Activity
+
+    /// 最近五周每天来了几条议题、拉取请求和评论，画成贡献图那样的周格子：
+    /// 一列一周，周一在上，那几周里最热闹的一天最深。
+    private var activityGrid: some View {
+        let tally = ContributionGrid.tally(items.map(\.createdAt))
+        let weeks = ContributionGrid.columns(weeks: 5, today: context.now,
+                                             count: { tally[$0] ?? 0 }, level: { $0 })
+        let busiest = weeks.joined().map(\.count).max() ?? 0
+        let leveled = weeks.map { column in
+            column.map { cell in
+                var cell = cell
+                cell.level = cell.isFuture ? 0 : ContributionGrid.level(count: cell.count, busiest: busiest)
+                return cell
+            }
+        }
+        let total = weeks.joined().reduce(0) { $0 + $1.count }
+        let green = Color(hex: "39D353")
+        return HStack(alignment: .center, spacing: 12) {
+            ContributionGridView(columns: leveled, color: green, cell: 11, spacing: 3, unit: "条")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("近 5 周动静")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white)
+                Text(total == 0 ? "这几周没有新的议题、拉取请求或评论。" : "共 \(total) 条议题、拉取请求和评论")
+                    .font(WidgetStyle.caption(10))
+                    .foregroundStyle(.white.opacity(0.65))
+                    .fixedSize(horizontal: false, vertical: true)
+                ContributionLegend(color: green)
+                    .padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 12)
     }
 
     // MARK: Feedback
