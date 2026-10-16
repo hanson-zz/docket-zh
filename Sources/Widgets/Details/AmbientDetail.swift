@@ -105,6 +105,8 @@ struct AmbientDetail: View {
                 .buttonStyle(.plain)
                 .disabled(sounds.isEmpty)
                 .accessibilityLabel(playing ? "暂停环境音" : "播放环境音")
+
+                BreathPacerView(isPreview: context.isPreview)
             }
         }
     }
