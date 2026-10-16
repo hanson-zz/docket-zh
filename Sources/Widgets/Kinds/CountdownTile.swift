@@ -15,6 +15,9 @@ struct CountdownTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    /// 设置里的“数字外观”选了折叠翻页。
+    private var folding: Bool { FoldFlip.countdownLook(instance.config) == .fold }
+
     var body: some View {
         let duration = max(0, instance.config.double("duration", default: 300))
         let name = instance.config.string("name")
@@ -26,12 +29,17 @@ struct CountdownTile: View {
                 // carries the tile and the name captions it. The glyph goes
                 // under both - the clock already fills the column's width.
                 VStack(spacing: 1) {
-                    Text(docketClockString(remaining(duration: duration)))
-                        .font(WidgetStyle.value(19))
-                        .monospacedDigit()
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                    if folding {
+                        FoldFlipText(text: docketClockString(remaining(duration: duration)),
+                                     size: 15, maxWidth: 58)
+                    } else {
+                        Text(docketClockString(remaining(duration: duration)))
+                            .font(WidgetStyle.value(19))
+                            .monospacedDigit()
+                            .foregroundStyle(WidgetStyle.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
                     Text(title)
                         .font(WidgetStyle.caption(9))
                         .foregroundStyle(WidgetStyle.secondary)
@@ -48,8 +56,21 @@ struct CountdownTile: View {
                 // control is the tile's mark here, the way the artwork is
                 // Now Playing's.
                 HStack(spacing: 8) {
-                    TileReading(value: docketClockString(remaining(duration: duration)),
-                                caption: title)
+                    if folding {
+                        // 折叠翻页：读数换成一排会折的卡片，名称照旧在下面。
+                        VStack(alignment: .leading, spacing: 2) {
+                            FoldFlipText(text: docketClockString(remaining(duration: duration)),
+                                         size: 18, maxWidth: isRunning ? 112 : 88)
+                            Text(title)
+                                .font(.system(size: 12))
+                                .foregroundStyle(WidgetStyle.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
+                        }
+                    } else {
+                        TileReading(value: docketClockString(remaining(duration: duration)),
+                                    caption: title)
+                    }
                     Spacer(minLength: 0)
                     if !isRunning { startButton(title: title, size: 12) }
                 }

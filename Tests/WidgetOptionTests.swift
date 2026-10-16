@@ -73,7 +73,7 @@ final class WidgetOptionTests: XCTestCase {
             .world: ["city", "zone"],
             .progress: ["period"],
             .timer: ["look"],
-            .countdown: ["duration", "name", "presets"],
+            .countdown: ["duration", "name", "presets", "look"],
             .alarm: ["time", "name"],
             .calendar: ["allDay", "calendars"],
             .reminders: ["list"],

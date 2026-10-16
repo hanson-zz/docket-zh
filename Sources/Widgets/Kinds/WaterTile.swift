@@ -60,12 +60,14 @@ struct WaterTile: View {
         let day = today
         let level = WaterIntake.progress(total: day.total, goal: day.goal)
         let done = day.isMet
+        // 圆环样式超过目标时画第二圈，角色的水位照旧满了就停。
+        let lap = RingLap.progress(total: day.total, goal: day.goal)
         return WidgetSurface {
             Group {
                 if context.position.isVertical {
-                    column(day, level: level, done: done)
+                    column(day, level: level, lap: lap, done: done)
                 } else {
-                    wide(day, level: level, done: done)
+                    wide(day, level: level, lap: lap, done: done)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -82,10 +84,10 @@ struct WaterTile: View {
 
     // MARK: Wide
 
-    private func wide(_ day: WaterDay, level: Double, done: Bool) -> some View {
+    private func wide(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
         HStack(spacing: 10) {
             if isRing {
-                ring(level: level, done: done, diameter: 40)
+                ring(level: lap, done: done, diameter: 40)
             } else {
                 WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 40)
             }
@@ -109,10 +111,10 @@ struct WaterTile: View {
     // MARK: Column
 
     /// 56pt across: the character (or ring), the amount, the goal, the "+".
-    private func column(_ day: WaterDay, level: Double, done: Bool) -> some View {
+    private func column(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
         VStack(spacing: 3) {
             if isRing {
-                ring(level: level, done: done, diameter: 34)
+                ring(level: lap, done: done, diameter: 34)
             } else {
                 WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 34)
             }
@@ -136,11 +138,13 @@ struct WaterTile: View {
     // MARK: Pieces
 
     /// The Codex tile's ring, in the water's blue, with the percentage inside;
-    /// a check when the day is done.
+    /// a check when the day is done. 超过目标时不封顶：满圈上面再画第二圈，
+    /// `level` 是不封顶的进度（见 `RingLap`）。
     private func ring(level: Double, done: Bool, diameter: CGFloat) -> some View {
         let tint = WaterStyle.water
         return MetricProgressRing(progress: level, tint: tint, track: tint.opacity(0.16),
-                                  diameter: diameter, lineWidth: diameter > 36 ? 4.5 : 4) {
+                                  diameter: diameter, lineWidth: diameter > 36 ? 4.5 : 4,
+                                  laps: true) {
             if done {
                 Image(systemName: "checkmark")
                     .font(.system(size: diameter * 0.32, weight: .bold))

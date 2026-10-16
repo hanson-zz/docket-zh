@@ -433,6 +433,9 @@ struct MetricProgressRing<Content: View>: View {
     /// all along that nothing on the tile ever drew. One tick costs no space
     /// and turns an instant into a direction.
     var peak: Double?
+    /// 超过 100% 时不封顶，在满圈上面再画第二圈（最多两圈，见 `RingLap`）。
+    /// 只有喝水和圆环仪表打开；其余读数本来就不会超过一圈。
+    var laps: Bool
     var content: Content
 
     init(progress: Double,
@@ -441,6 +444,7 @@ struct MetricProgressRing<Content: View>: View {
          diameter: CGFloat,
          lineWidth: CGFloat,
          peak: Double? = nil,
+         laps: Bool = false,
          @ViewBuilder content: () -> Content) {
         self.progress = progress
         self.tint = tint
@@ -448,6 +452,7 @@ struct MetricProgressRing<Content: View>: View {
         self.diameter = diameter
         self.lineWidth = lineWidth
         self.peak = peak
+        self.laps = laps
         self.content = content()
     }
 
@@ -460,6 +465,7 @@ struct MetricProgressRing<Content: View>: View {
     var body: some View {
         let sweep: Double = 320
         let clamped = min(max(progress, 0), 1)
+        let lap = laps ? RingLap.split(progress).second : 0
         let fraction = sweep / 360
         // Rotated so the gap is centred on the bottom of the ring.
         let rotation = Angle.degrees(90 + (360 - sweep) / 2)
@@ -482,7 +488,18 @@ struct MetricProgressRing<Content: View>: View {
             if clamped > 0 {
                 Circle()
                     .trim(from: 0, to: fraction * clamped)
+                    // 套圈时第一圈稍微淡一点，叠在上面的第二圈才分得出来。
+                    .stroke(lap > 0 ? tint.opacity(0.55) : tint,
+                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .rotationEffect(rotation)
+            }
+            if lap > 0 {
+                // 第二圈从同一个起点再走一遍，压在第一圈上面；头上带一点阴影，
+                // 看得出它是叠上去的一圈而不是同一条弧。
+                Circle()
+                    .trim(from: 0, to: fraction * lap)
                     .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .shadow(color: .black.opacity(0.35), radius: lineWidth * 0.35)
                     .rotationEffect(rotation)
             }
             content
