@@ -502,9 +502,11 @@ private struct AICustomForm: View {
 
     /// 选 App：系统的打开面板，从“应用程序”开始，只能选 App。码头是辅助
     /// 应用，不临时升到前台的话打开面板会出现在别的窗口后面（和选文件夹
-    /// 一样的做法）。点进打开面板会收起提问面板，选完再请扩展栏打开回来。
+    /// 一样的做法）。提问面板在码头的层级上，比打开面板高，开着会把它挡住，
+    /// 所以先收起，选完（或取消）再请扩展栏打开回来；填了一半的在 state 里。
     private func chooseApp() {
         guard !context.isPreview else { return }
+        WidgetDetailWindow.shared.close()
         let policy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)

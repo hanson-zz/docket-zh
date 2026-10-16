@@ -313,7 +313,7 @@ public enum AIServices {
             case .invalidAddress: "网址要以 http:// 或 https:// 开头（不写协议会补 https）。"
             case .missingTarget: "填一个网址，或者选一个 App。"
             case .duplicateName: "已经有同名的服务了。"
-            case .duplicateAddress: "这个地址已经添加过了。"
+            case .duplicateAddress: "这个地址或 App 已经添加过了。"
             case .tooMany: "自定义服务最多 \(AIServices.maxCustom) 个。"
             }
         }
@@ -351,19 +351,33 @@ public enum AIServices {
         guard !address.isEmpty, !address.contains(where: \.isWhitespace) else { return nil }
         let lower = address.lowercased()
         if !lower.hasPrefix("http://") && !lower.hasPrefix("https://") {
-            guard !lower.contains("://") else { return nil }
+            guard !lower.contains("://"), !hasOtherScheme(lower) else { return nil }
             address = "https://" + address
         }
         return webURL(address) == nil ? nil : address
     }
 
-    /// 只收 http(s)，而且要有像样的域名（带点，或 localhost）。
+    /// 只收 http(s)，而且要有像样的域名（带点，或 localhost）；带用户名的
+    /// （`https://mailto:a@b.com` 这种）不收。
     public static func webURL(_ text: String) -> URL? {
         guard !text.isEmpty, let url = URL(string: text),
               let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http",
               let host = url.host(), !host.isEmpty,
-              host.contains(".") || host == "localhost" else { return nil }
+              host.contains(".") || host == "localhost",
+              URLComponents(url: url, resolvingAgainstBaseURL: false)?.user == nil else { return nil }
         return url
+    }
+
+    /// `javascript:alert(1)`、`mailto:a@b.com`、`data:…`、`file:/x` 这类没写
+    /// `//` 的协议。`metaso.cn:8080`、`localhost:3000` 冒号后面是端口，不算。
+    static func hasOtherScheme(_ lower: String) -> Bool {
+        guard let colon = lower.firstIndex(of: ":") else { return false }
+        let scheme = lower[..<colon]
+        guard let first = scheme.first, first.isLetter, first.isASCII,
+              scheme.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "+.-".contains($0)) })
+        else { return false }
+        let rest = lower[lower.index(after: colon)...]
+        return !(rest.first?.isNumber ?? false)
     }
 
     /// 字牌上的字：中文取第一个字；英文取首字母大写。
@@ -381,6 +395,11 @@ public enum AIServices {
         }
         if let path = service.appPath,
            others.contains(where: { $0.id != service.id && $0.appPath == path }) {
+            return .duplicateAddress
+        }
+        // 选的 App 和已有服务是同一个（比如内置 ChatGPT 的 com.openai.chat）。
+        if let bundle = service.appBundleID, !bundle.isEmpty,
+           others.contains(where: { $0.id != service.id && $0.appBundleID?.lowercased() == bundle.lowercased() }) {
             return .duplicateAddress
         }
         return nil
@@ -501,7 +520,7 @@ public enum AIAsk {
     public static func hint(after plan: Plan, service: AIService) -> String? {
         switch plan {
         case .blocked: "先写下要问的问题。"
-        case .openWithQuestion: "已在浏览器打开 \(service.title)，问题已带过去，回答在那边看。"
+        case .openWithQuestion: "已在浏览器打开 \(service.title)，问题放在了网址里。"
         case .copyThenOpen: "已复制，到 \(service.title) 里粘贴即可。"
         }
     }

@@ -22,7 +22,8 @@ enum AIServiceOpener {
     @discardableResult
     static func open(_ service: AIService) -> Bool {
         if let app = installedApp(service) {
-            NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration()) { _, _ in }
+            NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration(),
+                                               completionHandler: nil)
             return true
         }
         guard let url = service.homeURL else { return false }

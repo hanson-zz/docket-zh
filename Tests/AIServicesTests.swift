@@ -169,6 +169,26 @@ final class AIServicesTests: XCTestCase {
         XCTAssertEqual(app?.initial, "C")
     }
 
+    func testCustomOnlyAcceptsWebAddresses() {
+        for bad in ["javascript:alert(1)", "JavaScript:alert('a.b')", "javascript://example.com/%0Aalert(1)",
+                    "file:///etc/hosts", "file:/Applications/Safari.app", "mailto:me@example.com",
+                    "data:text/html,hi.example.com", "user:pass@example.com", "https://me@example.com",
+                    "ftp://example.com", "about:blank"] {
+            XCTAssertEqual(AIServices.custom(title: "坏", address: bad, id: "x"), .failure(.invalidAddress), bad)
+            XCTAssertNil(AIServices.normalizedAddress(bad), bad)
+        }
+        XCTAssertEqual(AIServices.normalizedAddress("localhost:3000"), "https://localhost:3000")
+        XCTAssertEqual(AIServices.normalizedAddress("metaso.cn:8443/search"), "https://metaso.cn:8443/search")
+        XCTAssertEqual(AIServices.normalizedAddress("HTTP://Metaso.cn"), "HTTP://Metaso.cn")
+        XCTAssertEqual(AIServices.normalizedAddress("metaso.cn/?q=a:b"), "https://metaso.cn/?q=a:b")
+    }
+
+    func testCustomAppThatIsAlreadyABuiltInIsADuplicate() {
+        XCTAssertEqual(AIServices.custom(title: "我的 GPT", address: "", appPath: "/Applications/ChatGPT.app",
+                                         appBundleID: "com.openai.chat", id: "g"),
+                       .failure(.duplicateAddress))
+    }
+
     func testCustomRejectsDuplicates() {
         XCTAssertEqual(AIServices.custom(title: "kimi", address: "https://k.example.com", id: "a"),
                        .failure(.duplicateName))
@@ -279,6 +299,8 @@ final class AIServicesTests: XCTestCase {
                 XCTAssertFalse(hint.contains("已发送"), hint)
                 XCTAssertFalse(hint.contains("已回答"), hint)
                 XCTAssertFalse(hint.contains("回答如下"), hint)
+                XCTAssertFalse(hint.contains("回答在"), hint)
+                XCTAssertFalse(hint.contains("已提交"), hint)
             }
         }
     }
