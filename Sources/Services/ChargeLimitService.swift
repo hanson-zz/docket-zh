@@ -33,8 +33,10 @@ final class ChargeLimitService {
     }
 
     func state(now: Date = .now) -> State {
-        guard installed else { return .notInstalled }
-        guard let status, status.isFresh(now: now) else { return .starting }
+        // 助手在按时写状态就说明它在跑，哪怕码头这边看不到安装的文件。
+        let fresh = status.map { $0.isFresh(now: now) } ?? false
+        guard installed || fresh else { return .notInstalled }
+        guard let status, fresh else { return .starting }
         if !status.supported { return .unsupported }
         if status.version != ChargeHelperFiles.helperVersion { return .needsUpdate }
         return .running
@@ -105,11 +107,37 @@ final class ChargeLimitService {
             return
         }
         let script = ChargeHelperFiles.installScript(helper: helper, plist: plist.path, user: NSUserName())
-        if runAsAdmin(script, prompt: "码头要安装充电助手，用来在充到上限时暂停充电。") {
-            save()
-        }
+        let ok = runAsAdmin(script, prompt: "码头要安装充电助手，用来在充到上限时暂停充电。")
+        if ok { save() }
         try? FileManager.default.removeItem(at: plist)
         refresh()
+        if ok && !installed {
+            problem = "授权完成了，但没在 /Library/PrivilegedHelperTools 和 /Library/LaunchDaemons 找到助手文件。"
+                + "可以点“复制诊断”把结果发给开发者。"
+        }
+    }
+
+    /// 把排查用的信息拷进剪贴板：文件在不在、状态文件内容、应用包里的助手。
+    func copyDiagnostics(now: Date = .now) {
+        let fm = FileManager.default
+        func line(_ path: String) -> String { "\(fm.fileExists(atPath: path) ? "有" : "没有")  \(path)" }
+        var lines = [
+            "码头充电上限诊断 \(now.formatted(.iso8601))",
+            "状态：\(state(now: now))",
+            line(ChargeHelperFiles.installedPath),
+            line(ChargeHelperFiles.plistPath),
+            line(ChargeHelperFiles.configPath),
+            line(ChargeHelperFiles.statusPath),
+            "应用包助手：\(bundledHelper ?? "没有")",
+            "应用位置：\(Bundle.main.bundleURL.path)",
+        ]
+        if let data = fm.contents(atPath: ChargeHelperFiles.statusPath),
+           let text = String(data: data, encoding: .utf8) {
+            lines.append("状态文件：\(text)")
+        }
+        if let problem { lines.append("最近的错误：\(problem)") }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
     }
 
     func uninstall() {

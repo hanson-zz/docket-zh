@@ -73,6 +73,9 @@ struct ChargeLimitSection: View {
                 if state != .notInstalled {
                     button("卸载助手") { service.uninstall() }
                 }
+                if state != .running {
+                    button("复制诊断") { service.copyDiagnostics(now: now) }
+                }
                 if service.working { ProgressView().controlSize(.small) }
                 Spacer()
             }
