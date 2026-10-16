@@ -36,6 +36,36 @@ final class DownloadProgressTests: XCTestCase {
         XCTAssertEqual(DownloadProgress.caption(2), "100%")
     }
 
+    func testTileCaptionDoesNotRepeat() {
+        XCTAssertEqual(DownloadProgress.tileCaption(nil), "下载中")
+        XCTAssertEqual(DownloadProgress.tileCaption(0.456), "下载中 · 45%")
+    }
+
+    func testStaleLeftoversAreNotActive() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertTrue(DownloadProgress.isActive(lastWrite: now.addingTimeInterval(-5), now: now))
+        XCTAssertTrue(DownloadProgress.isActive(lastWrite: now.addingTimeInterval(30), now: now))
+        XCTAssertFalse(DownloadProgress.isActive(lastWrite: now.addingTimeInterval(-DownloadProgress.staleAfter), now: now))
+        XCTAssertFalse(DownloadProgress.isActive(lastWrite: now.addingTimeInterval(-86_400 * 30), now: now))
+        XCTAssertFalse(DownloadProgress.isActive(lastWrite: nil, now: now))
+    }
+
+    func testLastWriteLooksInsideSafariBundle() throws {
+        let fm = FileManager.default
+        let bundle = fm.temporaryDirectory.appendingPathComponent("docket-\(UUID().uuidString).zip.download")
+        try fm.createDirectory(at: bundle, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: bundle) }
+        let old = Date(timeIntervalSince1970: 1_000_000)
+        try fm.setAttributes([.modificationDate: old], ofItemAtPath: bundle.path)
+        let inner = bundle.appendingPathComponent("a.zip")
+        try Data("x".utf8).write(to: inner)
+        let fresh = Date(timeIntervalSince1970: 2_000_000)
+        try fm.setAttributes([.modificationDate: fresh], ofItemAtPath: inner.path)
+        try fm.setAttributes([.modificationDate: old], ofItemAtPath: bundle.path)
+        let seen = try XCTUnwrap(DownloadProgress.lastWrite(bundle))
+        XCTAssertEqual(seen.timeIntervalSince1970, fresh.timeIntervalSince1970, accuracy: 1)
+    }
+
     func testPollFasterOnlyWhileDownloading() {
         XCTAssertEqual(DownloadProgress.pollInterval(downloading: true, idle: 5), 1.5)
         XCTAssertEqual(DownloadProgress.pollInterval(downloading: false, idle: 5), 5)

@@ -43,7 +43,7 @@ struct DownloadsTile: View {
 
     private var caption: String {
         if context.isPreview { return "下载 · 刚刚" }
-        if let active { return "下载中 · \(DownloadProgress.caption(active.fraction))" }
+        if let active { return DownloadProgress.tileCaption(active.fraction) }
         guard let latest else { return feed.loadedAt == nil ? "正在读取" : "空" }
         return "下载 · \(RelativeAge.caption(latest.date, now: context.now))"
     }

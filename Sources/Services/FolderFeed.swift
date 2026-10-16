@@ -196,7 +196,10 @@ final class FolderFeed {
                 listed.append(file)
             }
             // 正在下载的最多看 6 个，每个读一次扩展属性或 Safari 的 Info.plist。
-            let downloading = ListedFile.newestFirst(partial, limit: 6).map {
+            // 很久没再写入的是下失败或暂停后留下的残件，不算正在下载。
+            let now = Date.now
+            let active = partial.filter { DownloadProgress.isActive(lastWrite: DownloadProgress.lastWrite($0.url), now: now) }
+            let downloading = ListedFile.newestFirst(active, limit: 6).map {
                 ActiveDownload(file: $0, fraction: DownloadProgress.read($0.url))
             }
             return .success(Listing(files: ListedFile.newestFirst(listed, limit: source == .screenshots ? 60 : 50),

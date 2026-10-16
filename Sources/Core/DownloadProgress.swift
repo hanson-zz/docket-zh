@@ -66,6 +66,22 @@ public enum DownloadProgress {
         return "\(Int((min(max(fraction, 0), 1) * 100).rounded(.down)))%"
     }
 
+    /// 卡片上的说明：“下载中 · 45%”；不知道进度时只写“下载中”，不重复两遍。
+    public static func tileCaption(_ fraction: Double?) -> String {
+        guard fraction != nil else { return caption(nil) }
+        return "下载中 · \(caption(fraction))"
+    }
+
+    /// 多久没再写入就不算“正在下载”。下到一半失败或被暂停的 .crdownload、.download
+    /// 会一直留在“下载”里，不能让卡片永远显示“下载中”、一直放动画、一直加快轮询。
+    public static let staleAfter: TimeInterval = 10 * 60
+
+    /// 最近一次写入在 `staleAfter` 之内才算还在下载。读不到时间的不算。
+    public static func isActive(lastWrite: Date?, now: Date) -> Bool {
+        guard let lastWrite else { return false }
+        return now.timeIntervalSince(lastWrite) < staleAfter
+    }
+
     /// 有正在下载的文件时，“下载”文件夹多久看一次，让进度走得顺一些。
     public static func pollInterval(downloading: Bool, idle: Double) -> Double {
         downloading ? min(idle, 1.5) : idle
@@ -83,6 +99,21 @@ public enum DownloadProgress {
             return fraction(safariInfo: plist)
         }
         return nil
+    }
+
+    /// 最近一次写入的时间。Safari 的 `.download` 是个包，真正在写的是里面的文件，
+    /// 所以包里第一层的文件也一起看，取最新的。在后台线程调用。
+    public static func lastWrite(_ url: URL) -> Date? {
+        let key: Set<URLResourceKey> = [.contentModificationDateKey]
+        var newest = (try? url.resourceValues(forKeys: key))?.contentModificationDate
+        if let children = try? FileManager.default.contentsOfDirectory(
+            at: url, includingPropertiesForKeys: Array(key)) {
+            for child in children.prefix(16) {
+                guard let date = (try? child.resourceValues(forKeys: key))?.contentModificationDate else { continue }
+                if newest.map({ date > $0 }) ?? true { newest = date }
+            }
+        }
+        return newest
     }
 
     static func attribute(_ name: String, of url: URL) -> String? {
