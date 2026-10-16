@@ -69,7 +69,6 @@ private struct AIAskView: View {
     var services: [AIService]
 
     @State private var targetID: String?
-    @State private var focusTick = 0
 
     private var state: AIPanelState { AIPanelState.shared }
 

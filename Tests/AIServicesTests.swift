@@ -1,5 +1,4 @@
 import XCTest
-@testable import Docket
 
 /// AI 助手的纯逻辑：内置服务、显示哪些、默认服务、自定义服务、提问方式和卡片尺寸。
 final class AIServicesTests: XCTestCase {
