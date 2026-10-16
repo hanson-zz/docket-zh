@@ -30,6 +30,9 @@ final class GitHubService {
         var comments: [GitHubFeedItem] = []
         var releases: [GitHubRelease]?
         var error: String?
+        /// 最近一次读这个仓库时没连上 GitHub（断网或请求失败）。有旧数据时照常显示，
+        /// 面板据此在上面加一条“离线”的插头横幅。
+        var offline = false
         var updated: Date?
 
         var items: [GitHubFeedItem] { GitHubFeed.merged([issues, comments]) }
@@ -164,7 +167,9 @@ final class GitHubService {
             stats.openPulls = state.stats?.openPulls
             state.stats = stats
             state.error = nil
+            state.offline = false
         case .failed(let status):
+            state.offline = false
             state.error = switch status {
             case 404: "找不到这个仓库（或它是私有仓库）"
             case 401: "令牌无效"
@@ -173,10 +178,12 @@ final class GitHubService {
             states[key] = state
             return
         case .limited(let until):
+            state.offline = false
             state.error = GitHubRateLimit.waitText(until: until, now: .now)
             states[key] = state
             return
         case .offline:
+            state.offline = true
             state.error = state.stats == nil ? "无法连接 GitHub" : nil
             states[key] = state
             return
@@ -309,6 +316,17 @@ final class GitHubService {
             return GitHubRateLimit.waitText(until: limitedUntil, now: .now)
         }
         return state(for: slug)?.error
+    }
+
+    /// 最近一次读这个仓库时没连上 GitHub。
+    func isOffline(_ slug: String) -> Bool {
+        state(for: slug)?.offline == true
+    }
+
+    /// 这个仓库正在读或排在队里。
+    func isLoading(_ slug: String) -> Bool {
+        guard let parsed = GitHubWatch.slug(from: slug) else { return false }
+        return loading.contains(GitHubWatch.key(parsed)) || queue.contains(parsed)
     }
 
     func seenState(for slug: String) -> GitHubSeen? {

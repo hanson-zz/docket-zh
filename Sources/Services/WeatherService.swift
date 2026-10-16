@@ -62,6 +62,11 @@ final class WeatherService {
     /// Where the forecast is for, so sunrise and sunset can be worked out
     /// for the same place without a request of their own.
     private(set) var place: Coordinate?
+    /// 最近一次请求没连上（断网、超时或 MET 返回错误）。成功或 304 时清掉。
+    /// 之前的数据照常保留，面板据此显示“离线”的插头状态。
+    private(set) var offline = false
+    /// 正在请求 MET，面板的插头这时插着。
+    private(set) var fetching = false
 
     @ObservationIgnored private var coordinate: Coordinate?
     @ObservationIgnored private var city = ""
@@ -86,6 +91,7 @@ final class WeatherService {
             // A new place must not keep showing the old place's numbers.
             current = nil
             hourly = []
+            offline = false
             lastAttempt = nil
             lastModified = nil
         }
@@ -99,8 +105,12 @@ final class WeatherService {
         if let lastAttempt, Date.now.timeIntervalSince(lastAttempt) < Self.minimumInterval { return }
 
         loading = true
+        fetching = true
         lastAttempt = .now
-        defer { loading = false }
+        defer {
+            loading = false
+            fetching = false
+        }
 
         var components = URLComponents(string: "https://api.met.no/weatherapi/locationforecast/2.0/compact")
         // MET rejects more than 4 decimals and dedupes cache entries by them.
@@ -116,20 +126,43 @@ final class WeatherService {
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else { return }
+            guard let http = response as? HTTPURLResponse else {
+                offline = true
+                return
+            }
             // 304: what we already show is current.
-            guard http.statusCode != 304 else { return }
-            guard http.statusCode == 200 else { return }
+            guard http.statusCode != 304 else {
+                offline = false
+                return
+            }
+            guard http.statusCode == 200 else {
+                offline = true
+                return
+            }
 
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             decoder.dateDecodingStrategy = .iso8601
             apply(try decoder.decode(Forecast.self, from: data))
             lastModified = http.value(forHTTPHeaderField: "Last-Modified")
+            offline = false
         } catch {
             // Offline, throttled or malformed - keep the last good values.
+            offline = true
         }
     }
+
+    /// 面板上点“重新连接”：只有上次没连上时才放行，并且离上次尝试至少 30 秒，
+    /// 不会把 MET 要求的 15 分钟节流变成可以随手连点的按钮。
+    func retry() async {
+        guard offline else { return }
+        if let lastAttempt, Date.now.timeIntervalSince(lastAttempt) < Self.retryInterval { return }
+        lastAttempt = nil
+        await refresh()
+    }
+
+    /// 两次手动重连之间至少隔这么久。
+    static let retryInterval: TimeInterval = 30
 
     // MARK: - Parsing
 

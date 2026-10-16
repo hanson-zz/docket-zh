@@ -21,10 +21,24 @@ struct WeatherDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    /// 拖动逐小时预报时手指所在的位置（小数下标），松手回到 nil，也就是“现在”。
+    @State private var scrub: Double?
+    /// 逐小时那一排的宽度，用来把手指的横坐标换成第几个小时。
+    @State private var stripWidth: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         // The condition's own sky, with its symbol as the light source.
+        // 拖动逐小时预报时，天空换成那个小时的天气，并按离日出日落多远变暗或泛暖色。
         DetailCard {
-            WeatherBackdrop(symbol: weather?.symbolName ?? "cloud.fill")
+            let symbol = scrubbedHour?.symbolName ?? weather?.symbolName ?? "cloud.fill"
+            ZStack {
+                WeatherBackdrop(symbol: symbol)
+                    .id(symbol)
+                    .transition(.opacity)
+                skyTint
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: symbol)
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 if layout == "cities" {
@@ -33,6 +47,11 @@ struct WeatherDetail: View {
                     noPlace
                 } else if let weather {
                     now(weather)
+                    if offlineNow {
+                        ReconnectStateView(title: "离线", detail: "这次没连上天气服务，显示的是上次的数据",
+                                           loading: WeatherService.shared.fetching, style: .compact,
+                                           retry: retryWeather)
+                    }
                 } else {
                     unavailable
                 }
@@ -252,13 +271,25 @@ struct WeatherDetail: View {
                 Text(city)
                     .font(WidgetStyle.label(15))
                     .foregroundStyle(WidgetStyle.primary)
-                temperature(weather.temperatureC)
+                // 拖动时大数字跟着手指走，在相邻两小时之间平滑过渡。
+                temperature(scrubbedTemperature ?? weather.temperatureC)
                 // The hourly layout shows neither the condition nor the city,
                 // so on the shelf this widget is a bare number - both lines
                 // are what the panel is for.
-                Text(weather.condition)
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white.opacity(0.8))
+                if let hour = scrubbedHour {
+                    HStack(spacing: 5) {
+                        Image(systemName: hour.symbolName)
+                            .symbolRenderingMode(.multicolor)
+                            .font(.system(size: 12))
+                        Text("\(hourLabel(hour.date)) 的预报")
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                } else {
+                    Text(weather.condition)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             }
             // A city typed in full ("Thiruvananthapuram") truncates rather
             // than pushing the panel's fixed width around.
@@ -325,6 +356,9 @@ struct WeatherDetail: View {
     // MARK: Hours
 
     /// Every hour the service holds, where the tile's strip stops at five.
+    ///
+    /// 按住在这一排上左右拖，就像拨时间轴：手指下的那一小时亮起来，
+    /// 上面的大数字、天气和天空都换成那个时刻，松手回到现在。
     private var strip: some View {
         HStack(spacing: 0) {
             ForEach(hours, id: \.date) { hour in
@@ -348,6 +382,97 @@ struct WeatherDetail: View {
                 .frame(maxWidth: .infinity)
             }
         }
+        .padding(.vertical, 3)
+        .background(alignment: .leading) { scrubMarker }
+        .contentShape(.rect)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stripWidth = $0 }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { drag in
+                    guard hours.count > 1 else { return }
+                    scrub = HourScrub.position(x: drag.location.x, width: stripWidth, count: hours.count)
+                }
+                .onEnded { _ in
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8)) {
+                        scrub = nil
+                    }
+                }
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityHint("左右拖动查看每小时的天气")
+    }
+
+    /// 跟着手指滑动的亮块，落在两小时之间时也跟着停在中间。
+    @ViewBuilder private var scrubMarker: some View {
+        if let scrub, hours.count > 1, stripWidth > 0 {
+            let column = stripWidth / CGFloat(hours.count)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.white.opacity(0.16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(.white.opacity(0.25), lineWidth: 0.5)
+                }
+                .frame(width: column)
+                .offset(x: column * CGFloat(scrub))
+                .transition(.opacity)
+        }
+    }
+
+    // MARK: Scrub
+
+    /// 手指下最近的那一小时。
+    private var scrubbedHour: WeatherHour? {
+        guard let scrub, !hours.isEmpty, layout != "cities" else { return nil }
+        return hours[HourScrub.index(position: scrub, count: hours.count)]
+    }
+
+    /// 在相邻两小时之间插值的温度。
+    private var scrubbedTemperature: Double? {
+        guard let scrub, layout != "cities" else { return nil }
+        return HourScrub.interpolate(hours.map(\.temperatureC), at: scrub)
+    }
+
+    /// 手指所在的时刻（同样在两小时之间插值），天色按它来算。
+    private var scrubbedDate: Date? {
+        guard let scrub, layout != "cities" else { return nil }
+        let stamps = hours.map(\.date.timeIntervalSinceReferenceDate)
+        return HourScrub.interpolate(stamps, at: scrub).map(Date.init(timeIntervalSinceReferenceDate:))
+    }
+
+    /// 叠在天空上的夜色和朝霞晚霞。不拖的时候完全透明，原来的天空不变。
+    @ViewBuilder private var skyTint: some View {
+        let shade = scrubbedDate.flatMap(skyShade) ?? (night: 0, glow: 0)
+        ZStack {
+            Color(red: 0.03, green: 0.04, blue: 0.14)
+                .opacity(shade.night * 0.55)
+            LinearGradient(colors: [.clear, Color(red: 1, green: 0.55, blue: 0.25)],
+                           startPoint: .top, endPoint: .bottom)
+                .opacity(shade.glow * 0.35)
+        }
+        .allowsHitTesting(false)
+    }
+
+    /// 那个时刻在当地离日出日落多远。极昼全亮，极夜全暗，算不出来时不加色。
+    private func skyShade(_ date: Date) -> (night: Double, glow: Double)? {
+        guard let place = WeatherSun.place(preview: context.isPreview),
+              let day = SunTimes.on(date, latitude: place.lat, longitude: place.lon, zone: place.zone)
+        else { return nil }
+        switch day {
+        case .normal(let rise, let set):
+            return (HourScrub.night(at: date, rise: rise, set: set), HourScrub.glow(at: date, rise: rise, set: set))
+        case .polarDay:
+            return (0, 0)
+        case .polarNight:
+            return (1, 0)
+        }
+    }
+
+    /// “14:00”，按那个地方自己的时钟。
+    private func hourLabel(_ date: Date) -> String {
+        let zone = WeatherSun.place(preview: context.isPreview)?.zone ?? .current
+        var style = Date.FormatStyle.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)
+        style.timeZone = zone
+        return date.formatted(style)
     }
 
     /// The span of the strip beside it, named with the hours it actually
@@ -357,14 +482,29 @@ struct WeatherDetail: View {
         let temperatures = hours.map(\.temperatureC)
         if let low = temperatures.min(), let high = temperatures.max() {
             HStack(spacing: 12) {
-                Text(hours.count == 1 ? "未来 1 小时" : "未来 \(hours.count) 小时")
-                    .font(WidgetStyle.caption(12))
-                    .foregroundStyle(WidgetStyle.secondary)
-                Spacer(minLength: 0)
-                Text(low == high ? degrees(low) : "\(degrees(low)) – \(degrees(high))")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .monospacedDigit()
+                if let hour = scrubbedHour {
+                    // 拖动时这一行换成手指下那一小时的降水。
+                    Text(hourLabel(hour.date))
+                        .font(WidgetStyle.caption(12))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                    Spacer(minLength: 0)
+                    Text(hour.precipitationMM > 0
+                         ? "降水 \(hour.precipitationMM.formatted(.number.precision(.fractionLength(0...1)))) 毫米"
+                         : "无降水")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                } else {
+                    Text(hours.count == 1 ? "未来 1 小时" : "未来 \(hours.count) 小时 · 拖动查看")
+                        .font(WidgetStyle.caption(12))
+                        .foregroundStyle(WidgetStyle.secondary)
+                    Spacer(minLength: 0)
+                    Text(low == high ? degrees(low) : "\(degrees(low)) – \(degrees(high))")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                }
             }
             .lineLimit(1)
         }
@@ -397,11 +537,31 @@ struct WeatherDetail: View {
     }
 
     /// A missing reading is either a first fetch still in flight or one that
-    /// failed with nothing cached behind it. The service keeps the last good
-    /// values and reports no error, so it cannot tell those apart - and
-    /// neither does this. The panel observes the service, so the number
-    /// appears here the moment it lands.
-    private var unavailable: some View {
+    /// failed with nothing cached behind it. 服务现在会记下最近一次有没有连上：
+    /// 没连上时换成共用的插头状态，可以点“重新连接”；还在读的时候照旧显示“暂无数据”。
+    /// The panel observes the service, so the number appears here the moment it lands.
+    @ViewBuilder private var unavailable: some View {
+        if offlineNow {
+            ReconnectStateView(title: "连不上天气服务",
+                               detail: "\(city) 暂无数据，可能是网络断开了。",
+                               loading: WeatherService.shared.fetching,
+                               retry: retryWeather)
+        } else {
+            waiting
+        }
+    }
+
+    /// 天气服务最近一次没连上。示例卡片永远在线。
+    private var offlineNow: Bool {
+        !context.isPreview && WeatherService.shared.offline
+    }
+
+    private func retryWeather() {
+        guard !context.isPreview else { return }
+        Task { await WeatherService.shared.retry() }
+    }
+
+    private var waiting: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(city)
                 .font(WidgetStyle.label(13))

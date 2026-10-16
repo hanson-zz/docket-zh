@@ -89,9 +89,21 @@ struct GitHubDetail: View {
                     limitNote(limit)
                 }
                 if let stats {
+                    if !context.isPreview, service.isOffline(current) {
+                        // 还有上次的数据，只是这次没连上：一条细横幅，可以直接重连。
+                        ReconnectStateView(title: "离线", detail: "这次没连上 GitHub，显示的是上次的数据",
+                                           loading: service.isLoading(current), style: .compact,
+                                           retry: reconnect)
+                    }
                     statsGrid(stats)
                     feedSection
                     if let release { releaseCard(release) }
+                } else if !context.isPreview, service.isOffline(current) {
+                    // 一次都没读到：共用的断网状态，插头拔着，点“重新连接”推回去。
+                    ReconnectStateView(title: "无法连接 GitHub",
+                                       detail: "可能是网络断开了，或者 GitHub 暂时访问不了。",
+                                       loading: service.isLoading(current),
+                                       retry: reconnect)
                 } else {
                     PanelNote(symbol: "network", text: service.error(for: current) ?? "正在读取…").frame(height: 90)
                 }
@@ -112,6 +124,12 @@ struct GitHubDetail: View {
             }
         }
         .onAppear { if !context.isPreview { service.refreshAll(repos) } }
+    }
+
+    /// 重新连接：跳过刷新间隔，立刻再读一次。
+    private func reconnect() {
+        guard !context.isPreview else { return }
+        service.refreshAll(repos, force: true)
     }
 
     private var subtitle: String {
