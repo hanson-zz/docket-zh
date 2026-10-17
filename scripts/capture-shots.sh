@@ -31,9 +31,21 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# SHOTS_LANG picks the interface language the shots are taken in: zh-Hans (the
+# default, the app's own source language) or en. Each language has its own
+# folder under docs/images, which is what README.md and README.en.md read.
+SHOTS_LANG="${SHOTS_LANG:-zh-Hans}"
+case "$SHOTS_LANG" in
+  zh|zh-Hans|zh_CN) SHOTS_LANG="zh-Hans"; LANG_DIR="zh"; LOCALE="zh_CN" ;;
+  en|en-US|en_US)   SHOTS_LANG="en";      LANG_DIR="en"; LOCALE="en_US" ;;
+  *) printf 'capture-shots: SHOTS_LANG must be zh-Hans or en, not %s\n' "$SHOTS_LANG" >&2; exit 1 ;;
+esac
+export SHOTS_LANG
+
 # SHOTS_OUT sends the images somewhere other than the README's folder, for
 # looking at a change before it replaces what is published.
-OUT_DIR="${SHOTS_OUT:-$ROOT/docs/images}"
+OUT_DIR="${SHOTS_OUT:-$ROOT/docs/images/$LANG_DIR}"
 DERIVED="${TMPDIR:-/tmp}/docket-shots-build"
 
 fail() { printf 'capture-shots: %s\n' "$1" >&2; exit 1; }
@@ -60,6 +72,24 @@ BIN="$PRODUCTS/Shots"
 [ -x "$BIN" ] || fail "built, but no executable at $BIN"
 
 mkdir -p "$OUT_DIR"
+
+# The Shots tool is a bare executable, not an app bundle, so the String Catalog
+# the app ships compiled into its Resources is not next to it. Bundle.main for
+# a bare executable is the folder it sits in, which is where an en.lproj is
+# looked for. English gets one, written from Localizable.xcstrings; Chinese,
+# the source language, needs none, and any left over from an English run is
+# removed so a Chinese run cannot fall back to it.
+rm -rf "$PRODUCTS"/*.lproj
+if [ "$SHOTS_LANG" = "en" ]; then
+  command -v python3 >/dev/null || fail "python3 not found; it writes the English strings for the tool."
+  mkdir -p "$PRODUCTS/en.lproj"
+  python3 "$ROOT/scripts/strings-from-catalog.py" \
+          "$ROOT/Resources/Localization/Localizable.xcstrings" en \
+          "$PRODUCTS/en.lproj/Localizable.strings" \
+    || fail "could not write the English strings."
+  plutil -lint "$PRODUCTS/en.lproj/Localizable.strings" >/dev/null \
+    || fail "the English strings written for the tool do not parse."
+fi
 
 # Two named pipes rather than a sleep: the tool prints a frame, waits, and only
 # tears the window down once this script says the capture came back. A fixed

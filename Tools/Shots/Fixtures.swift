@@ -22,6 +22,21 @@ import SwiftUI
 // screenshot workflow sets on its CI runner. Anywhere else those two panels
 // are captured from their own sample state and say so.
 
+/// The language a run photographs, from SHOTS_LANG, which capture-shots.sh
+/// sets alongside the matching AppleLanguages. The interface follows the
+/// String Catalog on its own; this is for the few words the tool itself
+/// writes: file names, a note's text, what it copies.
+enum ShotsLanguage {
+    static var isEnglish: Bool {
+        ProcessInfo.processInfo.environment["SHOTS_LANG"]?.hasPrefix("en") == true
+    }
+
+    /// The Chinese or the English, whichever this run is in.
+    static func pick(_ chinese: String, _ english: String) -> String {
+        isEnglish ? english : chinese
+    }
+}
+
 @MainActor
 enum Fixtures {
     /// A throwaway machine: CI, nothing of anybody's on it.
@@ -38,7 +53,7 @@ enum Fixtures {
     }()
 
     /// The folder the photo frame is pointed at.
-    static var pictures: URL { root.appending(path: "图片", directoryHint: .isDirectory) }
+    static var pictures: URL { root.appending(path: ShotsLanguage.pick("图片", "Pictures"), directoryHint: .isDirectory) }
 
     /// Palettes for the drawn pictures: sky top, sky bottom, land.
     private static let palettes: [(NSColor, NSColor, NSColor)] = [
@@ -151,18 +166,24 @@ enum Fixtures {
     /// The photo frame's folder: six drawn pictures.
     static func makePictures() {
         for index in 0..<6 {
-            write(landscape(index), to: pictures.appending(path: "风景 \(index + 1).png"),
+            write(landscape(index), to: pictures.appending(path: ShotsLanguage.pick("风景", "Landscape") + " \(index + 1).png"),
                   age: Double(index) * 3600)
         }
     }
 
     /// Three files for the file shelf to hold. Returns their paths.
     static func makeShelfFiles() -> [String] {
-        let folder = root.appending(path: "暂存", directoryHint: .isDirectory)
+        let pick = ShotsLanguage.pick
+        let folder = root.appending(path: pick("暂存", "Shelf"), directoryHint: .isDirectory)
+        let report = pick("季度报告", "Quarterly Report")
+        let notes = pick("会议纪要", "Meeting Notes")
         let files: [(URL, Data?)] = [
-            (folder.appending(path: "季度报告.pdf"), document(title: "季度报告")),
-            (folder.appending(path: "海报草图.png"), landscape(2, size: CGSize(width: 800, height: 1000))),
-            (folder.appending(path: "会议纪要.txt"), Data("会议纪要\n\n1. 确认发布日期\n2. 整理反馈\n".utf8)),
+            (folder.appending(path: "\(report).pdf"), document(title: report)),
+            (folder.appending(path: pick("海报草图.png", "Poster Sketch.png")),
+             landscape(2, size: CGSize(width: 800, height: 1000))),
+            (folder.appending(path: "\(notes).txt"),
+             Data(pick("会议纪要\n\n1. 确认发布日期\n2. 整理反馈\n",
+                       "Meeting Notes\n\n1. Confirm the release date\n2. Sort the feedback\n").utf8)),
         ]
         for (url, data) in files { write(data, to: url) }
         return files.map { $0.0.path }
@@ -172,11 +193,15 @@ enum Fixtures {
     static func makeDownloads() {
         guard disposable else { return }
         let folder = FolderFeed.folder(for: .downloads)
-        write(document(title: "发票"), to: folder.appending(path: "发票.pdf"), age: 60)
-        write(landscape(1), to: folder.appending(path: "壁纸.png"), age: 600)
-        write(document(title: "使用说明"), to: folder.appending(path: "使用说明.pdf"), age: 3600)
-        write(Data("名称,数量\n苹果,3\n香蕉,5\n".utf8), to: folder.appending(path: "清单.csv"), age: 7200)
-        write(landscape(4), to: folder.appending(path: "旅行照片.png"), age: 86_400)
+        let pick = ShotsLanguage.pick
+        let invoice = pick("发票", "Invoice")
+        let manual = pick("使用说明", "User Guide")
+        write(document(title: invoice), to: folder.appending(path: "\(invoice).pdf"), age: 60)
+        write(landscape(1), to: folder.appending(path: pick("壁纸.png", "Wallpaper.png")), age: 600)
+        write(document(title: manual), to: folder.appending(path: "\(manual).pdf"), age: 3600)
+        write(Data(pick("名称,数量\n苹果,3\n香蕉,5\n", "Name,Count\nApples,3\nBananas,5\n").utf8),
+              to: folder.appending(path: pick("清单.csv", "List.csv")), age: 7200)
+        write(landscape(4), to: folder.appending(path: pick("旅行照片.png", "Trip Photo.png")), age: 86_400)
     }
 
     /// Screenshots of Docket, named the way macOS names them, wherever
@@ -185,13 +210,15 @@ enum Fixtures {
         guard disposable else { return }
         let folder = FolderFeed.folder(for: .screenshots)
         let names = DateFormatter()
-        names.locale = Locale(identifier: "zh_CN")
-        names.dateFormat = "yyyy-MM-dd ah.mm.ss"
+        let english = ShotsLanguage.isEnglish
+        names.locale = Locale(identifier: english ? "en_US" : "zh_CN")
+        names.dateFormat = english ? "yyyy-MM-dd 'at' h.mm.ss a" : "yyyy-MM-dd ah.mm.ss"
+        let prefix = english ? "Screenshot " : "截屏"
         let kinds: [WidgetKind] = [.weather, .clock, .calendar, .music, .system]
         for (index, kind) in kinds.enumerated() {
             let age = Double(index) * 900 + 120
             let stamp = names.string(from: Date().addingTimeInterval(-age))
-            write(screenshotOfDocket(kind), to: folder.appending(path: "截屏\(stamp).png"), age: age)
+            write(screenshotOfDocket(kind), to: folder.appending(path: "\(prefix)\(stamp).png"), age: age)
         }
     }
 
@@ -201,8 +228,12 @@ enum Fixtures {
         guard disposable else { return }
         ClipboardHistory.shared.start()
         let board = NSPasteboard.general
-        for text in ["Docket 中文版 v0.4.0", "#0A84FF", "https://github.com/hanson-zz/docket-zh",
-                     "明天上午十点开会"] {
+        let texts = ShotsLanguage.isEnglish
+            ? ["Dockling v0.4.0", "#0A84FF", "https://github.com/hanson-zz/docket-zh",
+               "Meeting at 10 am tomorrow"]
+            : ["Docket 中文版 v0.4.0", "#0A84FF", "https://github.com/hanson-zz/docket-zh",
+               "明天上午十点开会"]
+        for text in texts {
             board.clearContents()
             board.setString(text, forType: .string)
             try? await Task.sleep(for: .seconds(1.2))

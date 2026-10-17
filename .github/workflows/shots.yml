@@ -11,6 +11,10 @@ on:
         description: "Comma separated shot names to retake (empty: all)"
         required: false
         default: ""
+      languages:
+        description: "Interface languages, comma separated: zh-Hans, en"
+        required: false
+        default: "zh-Hans,en"
 
 permissions:
   contents: read
@@ -24,7 +28,9 @@ jobs:
     name: Capture screenshots
     # The same image the main CI builds on: macOS 26 is the deployment target.
     runs-on: macos-26
-    timeout-minutes: 45
+    # Two languages, each a full pass with its network waits and the minute
+    # of system history.
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v7
@@ -140,14 +146,35 @@ jobs:
           ls -la "$RUNNER_TEMP/check"
           sips -g pixelWidth -g pixelHeight "$RUNNER_TEMP/check/fullscreen.png" || true
 
+      # One pass per language, each into its own folder (zh, en), the same
+      # two folders README.md and README.en.md read. The files the first pass
+      # wrote into Downloads and the screenshot folder are cleared before the
+      # next, or the English panels would list the Chinese file names too.
+      # A failed language does not stop the other; the step fails at the end.
       - name: Capture
         env:
           SHOTS_DISPOSABLE: "1"
           SHOTS_ONLY: ${{ inputs.only }}
+          SHOTS_LANGUAGES: ${{ inputs.languages }}
         run: |
           if [ -z "$SHOTS_ONLY" ]; then unset SHOTS_ONLY; fi
-          mkdir -p "$RUNNER_TEMP/shots"
-          SHOTS_OUT="$RUNNER_TEMP/shots" scripts/capture-shots.sh
+          failed=""
+          for lang in $(printf '%s' "${SHOTS_LANGUAGES:-zh-Hans,en}" | tr ',' ' '); do
+            case "$lang" in
+              en*) dir=en ;;
+              *) dir=zh ;;
+            esac
+            rm -rf "$HOME/Downloads/"* "$HOME/Desktop/"*.png
+            mkdir -p "$RUNNER_TEMP/shots/$dir"
+            echo "::group::capture $lang"
+            SHOTS_LANG="$lang" SHOTS_OUT="$RUNNER_TEMP/shots/$dir" scripts/capture-shots.sh \
+              || failed="$failed $lang"
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error title=Capture failed::languages:$failed"
+            exit 1
+          fi
 
       - name: Upload screenshots
         if: always()

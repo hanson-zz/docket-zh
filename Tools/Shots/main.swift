@@ -106,7 +106,7 @@ private func shots(since started: Date) -> [Shot] {
         // real overlap between here and Tokyo at the moment of capture.
         Shot(name: "world-clock",
              instance: widget(.world, ["zone": .string("Asia/Tokyo"),
-                                       "city": .string("东京")]),
+                                       "city": .string(tr("东京"))]),
              isPreview: false, source: .live),
 
         // Live: the calendar and nothing else, so the three bars are exactly
@@ -172,7 +172,7 @@ private func shots(since started: Date) -> [Shot] {
         // The note's own words, which are the widget's content rather than a
         // reading of anything.
         Shot(name: "sticky-note",
-             instance: widget(.notes, ["text": .string("续费域名")]),
+             instance: widget(.notes, ["text": .string(tr("续费域名"))]),
              isPreview: false, source: .live),
 
         // Sample data. A live read would list this machine's own accessories,
@@ -664,6 +664,16 @@ private func run() async {
         exit(1)
     }
 
+    // The interface language comes from the String Catalog, which only an
+    // English run has beside the tool. A run asked for English that still
+    // reads Chinese would photograph the wrong README's images, so it stops
+    // here rather than after a few minutes of captures.
+    if ShotsLanguage.isEnglish != L10n.isEnglish {
+        log("asked for \(ShotsLanguage.isEnglish ? "English" : "Chinese") but the interface reads \(L10n.isEnglish ? "English" : "Chinese"); is en.lproj beside the tool?")
+        exit(1)
+    }
+    log("interface language: \(L10n.isEnglish ? "en" : "zh-Hans")")
+
     let started = Date()
     // Started first thing so the buffer is filling all through the run, and
     // the system panel - captured last of the panels - has a full minute to
@@ -698,6 +708,25 @@ private func run() async {
         await captureShelf(shelf, on: screen)
     }
 
+    // Surfaces that are not a widget's panel: the library, the paywall and
+    // the AI conversation under the notch. After the shelves, because two of
+    // them read the keychain, and a machine that answers that with a prompt
+    // should cost these three images rather than every shelf.
+    for shot in viewShots() where only?.contains(shot.name) ?? true {
+        await shot.prepare()
+        guard let (window, _) = makeWindow(shot.view(), shadow: true, on: screen) else {
+            log("\(shot.name): measured empty, skipping")
+            continue
+        }
+        try? await Task.sleep(for: settle + shot.linger)
+        let carryOn = capture(shot.name, window.frame, shot.source, on: screen)
+        window.orderOut(nil)
+        guard carryOn else {
+            backdrop.orderOut(nil)
+            exit(0)
+        }
+    }
+
     backdrop.orderOut(nil)
     log("done")
     exit(0)
@@ -728,10 +757,10 @@ private func shelves() -> [ShelfShot] {
         ShelfShot(name: "shelf-showcase",
                   widgets: [widget(.clock),
                             widget(.world, ["zone": .string("Asia/Tokyo"),
-                                            "city": .string("东京")]),
+                                            "city": .string(tr("东京"))]),
                             widget(.system, ["metrics": .list([.string("cpu"),
                                                                .string("memory")])]),
-                            widget(.notes, ["text": .string("续费域名")])],
+                            widget(.notes, ["text": .string(tr("续费域名"))])],
                   apps: ["com.apple.finder", "com.apple.Safari", "com.apple.mail",
                          "com.apple.Terminal", "com.apple.systempreferences"],
                   sample: false),
@@ -744,7 +773,7 @@ private func shelves() -> [ShelfShot] {
         // 生产力和日常专注
         ShelfShot(name: "shelf-productivity",
                   widgets: [widget(.calendar), widget(.reminders), widget(.timer),
-                            widget(.water), widget(.notes, ["text": .string("周五前提交报告")])],
+                            widget(.water), widget(.notes, ["text": .string(ShotsLanguage.pick("周五前提交报告", "Report due Friday"))])],
                   sample: true),
         // Mac 控制和系统工具
         ShelfShot(name: "shelf-system",
@@ -755,7 +784,7 @@ private func shelves() -> [ShelfShot] {
         ShelfShot(name: "shelf-tools",
                   widgets: [widget(.clipboard), widget(.converter), widget(.emoji),
                             widget(.weather), widget(.world, ["zone": .string("Asia/Tokyo"),
-                                                              "city": .string("东京")])],
+                                                              "city": .string(tr("东京"))])],
                   sample: true),
         // 图片与截图
         ShelfShot(name: "shelf-images",
@@ -778,7 +807,7 @@ private func shelves() -> [ShelfShot] {
         ShelfShot(name: "shelf-styles",
                   widgets: [widget(.clock, ["layout": .string("analog")]),
                             widget(.weather, ["layout": .string("sky")]),
-                            widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string("东京")]),
+                            widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string(tr("东京"))]),
                             widget(.calculator)],
                   sample: true, look: .darkGlass, monochrome: true),
         // v0.4.1：圆环仪表、麦克风、久坐提醒，以及一个隐藏了背景和边框的时钟
@@ -800,6 +829,114 @@ private func shelves() -> [ShelfShot] {
                   widgets: [widget(.aiUsage), widget(.aiUsage, ["show": .string("remaining")]),
                             widget(.clock), widget(.system)],
                   sample: true),
+        // 液态外观：时间进度、喝水、专注计时、系统活动和电池都是一杯水。
+        // Pro 专属，示例数据（取样的预览本来就不上锁）。
+        ShelfShot(name: "shelf-liquid",
+                  widgets: [widget(.progress, ["layout": .string(LiquidMotion.layout)]),
+                            widget(.water, ["layout": .string(LiquidMotion.layout)]),
+                            widget(.timer, [LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.liquid.rawValue)]),
+                            widget(.system, ["layout": .string(LiquidMotion.layout)]),
+                            widget(.battery, [BatteryLook.key: .string(BatteryLook.liquid.rawValue)])],
+                  sample: true),
+        // 颜色与背景：几种预设主色，加渐变、磨砂、网点、线条和深色卡片背景。
+        ShelfShot(name: "shelf-colors",
+                  widgets: [widget(.countdown, tinted(.pink, .gradient)),
+                            widget(.water, tinted(.mint, .frosted)),
+                            widget(.todo, tinted(.purple, .dots)),
+                            widget(.progress, tinted(.orange, .gradient, ["layout": .string("ring")])),
+                            widget(.habit, tinted(.sky, .lines)),
+                            widget(.calendar, tinted(.blue, .dark))],
+                  sample: true),
+        // 世界时钟：本机时钟加四座城市，时间是拍摄这一刻的真实时间。
+        ShelfShot(name: "shelf-world",
+                  widgets: [widget(.clock),
+                            widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string(tr("东京"))]),
+                            widget(.world, ["zone": .string("Europe/London"), "city": .string(tr("伦敦"))]),
+                            widget(.world, ["zone": .string("America/New_York"), "city": .string(tr("纽约"))]),
+                            widget(.world, ["zone": .string("America/Los_Angeles"), "city": .string(tr("旧金山"))])],
+                  sample: false),
+        // 快速开关的新工具：截图识字、二维码、取色器、镜子、演示模式、只锁键盘，
+        // 旁边是 AI 助手卡片和截图工具。
+        ShelfShot(name: "shelf-quick-tools",
+                  widgets: [widget(.toggles, [QuickToggle.key: .list(quickTools())]),
+                            widget(.aiAssistant),
+                            widget(.capture)],
+                  sample: true),
+    ]
+}
+
+/// The quick switches the newer tools added, then two of the originals.
+private func quickTools() -> [WidgetConfig.Value] {
+    let toggles: [QuickToggle] = [.textCapture, .qrCode, .colorPicker, .mirror,
+                                  .presentation, .keyboardLock, .darkMode, .keepAwake]
+    return toggles.map { WidgetConfig.Value.string($0.rawValue) }
+}
+
+/// A tint preset and a card background, in the two keys the colour panel
+/// writes, over any other overrides.
+private func tinted(_ preset: WidgetTint.Preset, _ background: WidgetTint.Background,
+                    _ values: [String: WidgetConfig.Value] = [:]) -> [String: WidgetConfig.Value] {
+    values.merging([WidgetTint.key: .string(preset.rawValue),
+                    WidgetTint.backgroundKey: .string(background.rawValue)]) { _, new in new }
+}
+
+// MARK: - Surfaces that are not a panel
+
+/// One window that is neither a widget's panel nor a shelf.
+@MainActor
+private struct ViewShot {
+    var name: String
+    var source: Source
+    var view: @MainActor () -> AnyView
+    var prepare: @MainActor () async -> Void = {}
+    var linger: Duration = .zero
+}
+
+/// Holds what the AI panel reads for as long as the run lasts:
+/// `AIChatCenter.app` is weak, and a shelf nobody holds is gone at once.
+@MainActor
+private enum AINotchFixture {
+    static var shelf: AppState?
+    static let model = AINotchPanelModel()
+}
+
+@MainActor
+private func viewShots() -> [ViewShot] {
+    [
+        // The Add Widget sheet as it opens, on 所有小组件 with the category
+        // sidebar beside it. Every card is the widget's own preview, and the
+        // Pro capsules are fixed labels that do not depend on a licence.
+        ViewShot(name: "widget-library", source: .sample, view: {
+            AnyView(WidgetLibraryView(onAdd: { _ in }, onClose: {})
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
+        }, linger: .seconds(1)),
+
+        // Live: the paywall reads this machine's licence state, which on a
+        // machine that has never had one is the free state with the trial
+        // still available. The prices are the ones the app is built with.
+        ViewShot(name: "pro-paywall", source: .live, view: {
+            AnyView(ProPaywallView(onClose: {})
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
+        }, prepare: { ProLicenseManager.shared.refreshState() }),
+
+        // The conversation panel that grows out of the notch, opened on a
+        // throwaway shelf holding the catalog's own AI assistant card. Every
+        // service is set to 跳转, the one mode that needs no account, no key
+        // and no web page signed in to, so the panel shows the app rather
+        // than somebody's chat history.
+        ViewShot(name: "ai-notch", source: .sample, view: {
+            AnyView(AIChatPanelView(center: AIChatCenter.shared, model: AINotchFixture.model,
+                                    close: {}))
+        }, prepare: {
+            let assistant = widget(.aiAssistant)
+            guard let shelf = makeShelfState(widgets: [assistant], apps: [], sample: true) else { return }
+            for service in AIServices.enabled(in: assistant.config) {
+                shelf.state.aiNotch.modes[service.id] = .jump
+            }
+            AINotchFixture.shelf = shelf
+            AIChatCenter.shared.app = shelf
+            AINotchFixture.model.isOpen = true
+        }, linger: .seconds(1)),
     ]
 }
 
