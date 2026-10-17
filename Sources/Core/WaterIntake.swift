@@ -6,8 +6,10 @@ import Foundation
 /// tracker's check-ins: `days` is the log (the widget's contents, so never a
 /// catalog default and never a text field in Settings), and the options
 /// (`goal`, `cupSize`, `remindEvery`, `start`, `end`, `unit`) sit beside it.
-/// The panel also keeps `weight` (for the suggested goal) and `customFactor`
-/// (how much a 自定义 drink counts), neither of which is a Settings row.
+/// The panel also keeps `customFactor` (how much a 自定义 drink counts) and
+/// the inputs of the personal goal (`weight`, `sex`, `age` and the rest, see
+/// WaterGoal), none of which is a Settings row; `goal` is only the goal set
+/// by hand.
 ///
 /// One string per day: `yyyyMMdd|goal|entries`.
 ///
@@ -189,7 +191,7 @@ public enum WaterIntake {
     public static let detailDays = 7
     /// A day is a shelf of glasses, not a spreadsheet.
     public static let maxEntriesPerDay = 60
-    /// 体重 x 35 毫升.
+    /// 体重 x 35 毫升, the old suggestion; kept to recognise a goal it set.
     public static let millilitresPerKilogram = 35
     public static let quickAmounts = [100, 250, 500]
     /// 15, 20, 180 and 240 came with the old 喝水提醒, whose interval was
@@ -202,8 +204,12 @@ public enum WaterIntake {
 
     // MARK: Options
 
-    public static func goal(_ config: WidgetConfig) -> Int {
-        clampGoal(config.int("goal", default: defaultGoal))
+    /// Today's goal: the one set by hand, or the personal recommendation
+    /// (see WaterGoal). `now` matters because today's exercise and 发烧或腹泻
+    /// count only on the day they were set.
+    public static func goal(_ config: WidgetConfig, now: Date = .now,
+                            calendar: Calendar = WaterIntake.calendar) -> Int {
+        WaterGoal.result(config, now: now, calendar: calendar).goal
     }
 
     public static func clampGoal(_ value: Int) -> Int {
@@ -330,7 +336,7 @@ public enum WaterIntake {
 
     public static func today(_ config: WidgetConfig, now: Date = .now,
                              calendar: Calendar = WaterIntake.calendar) -> WaterDay {
-        today(days(config), goal: goal(config), now: now, calendar: calendar)
+        today(days(config), goal: goal(config, now: now, calendar: calendar), now: now, calendar: calendar)
     }
 
     /// Replaces today's record in the log, adding it if it is new.
@@ -504,8 +510,10 @@ public enum WaterIntake {
 
     // MARK: Goal suggestion
 
-    /// 体重 x 35 毫升, to the nearest 50 and inside the goal range. Nil for a
-    /// weight no adult has.
+    /// The old suggestion: 体重 x 35 毫升, to the nearest 50 and inside the
+    /// goal range. Nil for a weight no adult has. The goal now comes from
+    /// WaterGoal; this only tells whether an old saved goal was the old
+    /// suggestion (see `WaterGoal.manualGoal`).
     public static func suggestedGoal(weightKilograms: Double) -> Int? {
         guard weightKilograms.isFinite, (20...250).contains(weightKilograms) else { return nil }
         let raw = weightKilograms * Double(millilitresPerKilogram)
@@ -660,7 +668,7 @@ public struct WaterReminder: Equatable, Sendable {
         guard stamp > 0, WaterIntake.reminderMinutes(config) > 0 else { return nil }
         let at = Date(timeIntervalSince1970: stamp)
         guard at > now else { return nil }
-        let today = WaterIntake.today(WaterIntake.days(config), goal: WaterIntake.goal(config),
+        let today = WaterIntake.today(WaterIntake.days(config), goal: WaterIntake.goal(config, now: now, calendar: calendar),
                                       now: now, calendar: calendar)
         return WaterIntake.isMet(total: today.total, goal: today.goal) ? nil : at
     }
@@ -677,7 +685,7 @@ public struct WaterReminder: Equatable, Sendable {
                            calendar: Calendar = WaterIntake.calendar) -> Due {
         if let picked = override(config, now: now, calendar: calendar) { return .upcoming(picked) }
         let days = WaterIntake.days(config)
-        let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
+        let today = WaterIntake.today(days, goal: WaterIntake.goal(config, now: now, calendar: calendar), now: now, calendar: calendar)
         return WaterReminder(config: config).due(now: now, lastDrink: WaterIntake.lastDrink(days, calendar: calendar),
                                                   todayTotal: today.total, goal: today.goal, calendar: calendar)
     }
@@ -686,7 +694,7 @@ public struct WaterReminder: Equatable, Sendable {
                             calendar: Calendar = WaterIntake.calendar) -> Date? {
         if let picked = override(config, now: now, calendar: calendar) { return picked }
         let days = WaterIntake.days(config)
-        let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
+        let today = WaterIntake.today(days, goal: WaterIntake.goal(config, now: now, calendar: calendar), now: now, calendar: calendar)
         return WaterReminder(config: config).next(now: now, lastDrink: WaterIntake.lastDrink(days, calendar: calendar),
                                                    todayTotal: today.total, goal: today.goal, calendar: calendar)
     }
@@ -814,7 +822,7 @@ public enum WaterMood: String, CaseIterable, Sendable {
 
     public static func at(_ now: Date, config: WidgetConfig, calendar: Calendar = WaterIntake.calendar) -> WaterMood {
         let days = WaterIntake.days(config)
-        let today = WaterIntake.today(days, goal: WaterIntake.goal(config), now: now, calendar: calendar)
+        let today = WaterIntake.today(days, goal: WaterIntake.goal(config, now: now, calendar: calendar), now: now, calendar: calendar)
         let logged = config.double("loggedAt")
         return at(now, loggedAt: logged > 0 ? Date(timeIntervalSince1970: logged) : nil,
                   lastDrink: WaterIntake.lastDrink(days, calendar: calendar), met: today.isMet,

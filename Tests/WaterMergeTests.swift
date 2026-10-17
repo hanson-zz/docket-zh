@@ -65,7 +65,8 @@ final class WaterMergeTests: XCTestCase {
         XCTAssertEqual(WaterIntake.reminderMinutes(migrated.config), 45)
         // Drawn with water's defaults filled in.
         let drawn = migrated.config.merging(defaults: WidgetCatalog.entry(.water)!.defaults)
-        XCTAssertEqual(WaterIntake.goal(drawn), 2000)
+        // No hand-set goal: the personal recommendation with nothing filled in.
+        XCTAssertEqual(WaterIntake.goal(drawn), 1600)
         XCTAssertEqual(WaterCharacter.from(drawn), .redPanda)
     }
 

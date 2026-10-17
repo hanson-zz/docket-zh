@@ -20,7 +20,10 @@ struct WaterTile: View {
 
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
-    private var goal: Int { WaterIntake.goal(instance.config) }
+    /// The library's preview draws the sample week against its own 2000 ml.
+    private var goal: Int {
+        context.isPreview ? WaterIntake.defaultGoal : WaterIntake.goal(instance.config, now: context.now)
+    }
     /// A locked 赞助者专属 character is drawn as the red panda; the library's
     /// preview shows the real one, as the clock's supporter faces do.
     private var character: WaterCharacter {
@@ -41,8 +44,7 @@ struct WaterTile: View {
     }
 
     private var missedDays: Int {
-        WaterIntake.missedDays(WaterIntake.days(instance.config), goal: WaterIntake.goal(instance.config),
-                               today: context.now)
+        WaterIntake.missedDays(WaterIntake.days(instance.config), goal: goal, today: context.now)
     }
 
     private func publishMissed() {
@@ -206,11 +208,26 @@ enum WaterLog {
         change(instance) { days, goal in WaterIntake.removing(at: index, in: days, goal: goal, now: .now) }
     }
 
+    /// A goal picked by hand, replacing the recommendation.
     static func setGoal(_ goal: Int, in instance: WidgetInstance) {
-        let clamped = WaterIntake.clampGoal(goal)
+        profile(instance) { config, _ in WaterGoal.settingManual(goal, in: &config) }
+    }
+
+    /// 恢复推荐: the hand-picked goal goes, the recommendation is back.
+    static func useRecommended(in instance: WidgetInstance) {
+        profile(instance) { config, _ in WaterGoal.followingRecommendation(in: &config) }
+    }
+
+    /// Changes something the goal is worked out from, then moves today's
+    /// stored goal along with it so the day is frozen at the right number
+    /// once it is over. Finished days are left alone.
+    static func profile(_ instance: WidgetInstance, _ edit: (inout WidgetConfig, Date) -> Void) {
+        let now = Date.now
         WidgetWriter.write(instance) { config in
-            config.set("goal", .number(Double(clamped)))
-            WaterIntake.store(WaterIntake.settingGoal(clamped, in: WaterIntake.days(config), now: .now), in: &config)
+            edit(&config, now)
+            let goal = WaterIntake.goal(config, now: now)
+            WaterIntake.store(WaterIntake.settingGoal(goal, in: WaterIntake.days(config), now: now),
+                              in: &config, now: now)
         }
     }
 
@@ -218,18 +235,19 @@ enum WaterLog {
         WidgetWriter.write(instance) { $0.set(key, value) }
     }
 
-    /// 复位: the goal, weight and reminder schedule back to the catalog's
-    /// defaults. The drink log, the character and the unit stay.
+    /// 复位: the personal details, the hand-picked goal and the reminder
+    /// schedule back to the defaults, so the goal follows the recommendation
+    /// again. The drink log, the character and the unit stay.
     static func resetSettings(in instance: WidgetInstance) {
         let defaults = WidgetCatalog.entry(.water)?.defaults ?? WidgetConfig()
-        WidgetWriter.write(instance) { config in
+        profile(instance) { config, _ in
             for key in ["remindEvery", "start", "end", "cupSize"] {
                 config.set(key, defaults[key])
             }
-            config.set("weight", nil)
+            for key in WaterGoal.Key.profile { config.set(key, nil) }
+            WaterGoal.followingRecommendation(in: &config)
             config.set(WaterReminder.overrideKey, nil)
         }
-        setGoal(WaterIntake.clampGoal(defaults.int("goal", default: 2000)), in: instance)
     }
 }
 

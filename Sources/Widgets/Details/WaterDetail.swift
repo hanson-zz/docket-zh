@@ -8,23 +8,26 @@ import SwiftUI
 /// and the amounts, because logging is what the panel is opened for. The
 /// rest sits under three tabs so the panel stays the height of its
 /// neighbours: 今天 (the list, with undo), 统计 (seven bars and the month's
-/// dots) and 设置 (the character, the goal, the weight suggestion and the
-/// reminder hours).
+/// dots), 目标 (the personal recommendation, its breakdown, the details it
+/// is worked out from and a goal set by hand) and 设置 (the character and
+/// the reminder hours).
 struct WaterDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private enum Tab: Hashable { case today, history, goal }
+    private enum Tab: Hashable { case today, history, target, goal }
 
     @State private var tab: Tab = .today
     @State private var drink: DrinkType = .water
     @State private var customAmount = ""
     @State private var editingCustom = false
     @State private var weightText = ""
+    @State private var ageText = ""
+    @State private var heightText = ""
     @State private var confirmReset = false
     @FocusState private var focus: Field?
 
-    private enum Field: Hashable { case amount, weight }
+    fileprivate enum Field: Hashable { case amount, weight, age, height }
 
     private static let weekdays = ["一", "二", "三", "四", "五", "六", "日"]
 
@@ -42,15 +45,32 @@ struct WaterDetail: View {
         TimelineView(.periodic(from: .now, by: 30)) { tick in
             content(now: context.isPreview ? context.now : tick.date)
         }
-        .onAppear {
-            let weight = instance.config.double("weight")
-            if weight > 0 { weightText = weight.formatted(.number.precision(.fractionLength(0...1))) }
+        .onAppear(perform: loadProfileText)
+        .onChange(of: focus) { old, _ in
+            // Leaving a field saves it, as Return does.
+            switch old {
+            case .weight?: saveWeight()
+            case .age?: saveAge()
+            case .height?: saveHeight()
+            default: break
+            }
         }
+    }
+
+    private func loadProfileText() {
+        let weight = instance.config.double(WaterGoal.Key.weight)
+        weightText = weight > 0 ? weight.formatted(.number.precision(.fractionLength(0...1)).grouping(.never)) : ""
+        let age = instance.config.int(WaterGoal.Key.age)
+        ageText = age > 0 ? "\(age)" : ""
+        let height = instance.config.double(WaterGoal.Key.height)
+        heightText = height > 0 ? height.formatted(.number.precision(.fractionLength(0...1)).grouping(.never)) : ""
     }
 
     private func content(now: Date) -> some View {
         let all = days
-        let goal = WaterIntake.goal(instance.config)
+        let result = WaterGoal.result(instance.config, now: now)
+        // The library's preview draws the sample week against its own 2000 ml.
+        let goal = context.isPreview ? WaterIntake.defaultGoal : result.goal
         let today = WaterIntake.today(all, goal: goal, now: now)
         let streak = WaterIntake.streak(all, goal: goal, today: now)
         return DetailCard {
@@ -64,6 +84,7 @@ struct WaterDetail: View {
                 Picker("", selection: $tab) {
                     Text("今天").tag(Tab.today)
                     Text("统计").tag(Tab.history)
+                    Text("目标").tag(Tab.target)
                     Text("设置").tag(Tab.goal)
                 }
                 .pickerStyle(.segmented)
@@ -73,7 +94,8 @@ struct WaterDetail: View {
                 switch tab {
                 case .today: entries(today, all: all, now: now)
                 case .history: history(all, goal: goal, now: now, streak: streak)
-                case .goal: goalSettings(goal)
+                case .target: target(result)
+                case .goal: goalSettings()
                 }
 
                 WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now)
@@ -510,75 +532,12 @@ struct WaterDetail: View {
         .help(day.isFuture ? "" : WaterIntake.amount(day.total, ounces: ounces))
     }
 
-    // MARK: 目标
+    // MARK: 设置
 
-    private func goalSettings(_ goal: Int) -> some View {
-        let weight = Double(weightText.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
-        let suggestion = weight.flatMap { WaterIntake.suggestedGoal(weightKilograms: $0) }
+    private func goalSettings() -> some View {
         let reminder = WaterReminder(config: instance.config)
         return VStack(alignment: .leading, spacing: 10) {
             characterPicker
-
-            Stepper(value: Binding(
-                get: { goal },
-                set: { value in
-                    guard !context.isPreview else { return }
-                    WaterLog.setGoal(value, in: instance)
-                }), in: WaterIntake.goalRange, step: 100) {
-                    HStack {
-                        Text("每日目标")
-                            .font(WidgetStyle.label(12))
-                            .foregroundStyle(.white.opacity(0.85))
-                        Spacer()
-                        Text(WaterIntake.amount(goal, ounces: ounces))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .monospacedDigit()
-                    }
-                }
-                .padding(.horizontal, 10)
-                .frame(height: 36)
-                .glassPane(cornerRadius: 10)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text("体重")
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.85))
-                    TextField("", text: $weightText, prompt: Text("60"))
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 50)
-                        .focused($focus, equals: .weight)
-                        .onSubmit { saveWeight(weight) }
-                    Text("公斤")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
-                    Spacer()
-                    Button {
-                        guard let suggestion, !context.isPreview else { return }
-                        saveWeight(weight)
-                        WaterLog.setGoal(suggestion, in: instance)
-                    } label: {
-                        Text(suggestion.map { "设为 \(WaterIntake.amount($0, ounces: ounces))" } ?? "按体重建议")
-                            .font(WidgetStyle.label(11))
-                            .foregroundStyle(.white.opacity(suggestion == nil ? 0.4 : 1))
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(suggestion == nil ? Color.white.opacity(0.08) : accent.opacity(0.7)))
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(suggestion == nil || suggestion == goal || context.isPreview)
-                }
-                Text("建议量按体重 x \(WaterIntake.millilitresPerKilogram) 毫升估算，只作参考。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            .padding(10)
-            .glassPane(cornerRadius: 10)
 
             reminderSettings(reminder)
 
@@ -599,10 +558,12 @@ struct WaterDetail: View {
                 Button("复位", role: .destructive) {
                     WaterLog.resetSettings(in: instance)
                     weightText = ""
+                    ageText = ""
+                    heightText = ""
                 }
                 Button("取消", role: .cancel) {}
             } message: {
-                Text("每日目标、体重、提醒间隔、时段和下次提醒恢复默认，喝水记录、角色和单位保留。")
+                Text("手动目标、体重、性别、年龄、身高、活动量、今日运动、气候、特殊状态、提醒间隔、时段和下次提醒恢复默认，每日目标回到推荐值，喝水记录、角色和单位保留。")
             }
 
             Text("达标后当天不再提醒，刚喝过水也会顺延。一杯的容量和单位可以在设置的小组件页里改。")
@@ -789,8 +750,333 @@ struct WaterDetail: View {
         .glassPane(cornerRadius: 10)
     }
 
-    private func saveWeight(_ weight: Double?) {
-        guard !context.isPreview, let weight, (20...250).contains(weight) else { return }
-        WaterLog.set("weight", .number(weight), in: instance)
+    // MARK: Saving the details
+
+    private static func parse(_ text: String) -> Double? {
+        Double(text.replacingOccurrences(of: ",", with: ".").replacingOccurrences(of: "，", with: ".")
+            .trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Empty clears the value; anything outside the range is put back.
+    private func saveNumber(_ text: String, key: String, range: ClosedRange<Double>, reload: () -> Void) {
+        guard !context.isPreview else { return }
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty {
+            if instance.config[key] != nil { WaterLog.profile(instance) { config, _ in config.set(key, nil) } }
+            return
+        }
+        guard let value = Self.parse(trimmed), value.isFinite, range.contains(value) else { reload(); return }
+        let stored = (value * 10).rounded() / 10
+        guard instance.config.double(key) != stored else { return }
+        WaterLog.profile(instance) { config, _ in config.set(key, .number(stored)) }
+    }
+
+    private func saveWeight() {
+        saveNumber(weightText, key: WaterGoal.Key.weight, range: WaterGoal.weightRange, reload: loadProfileText)
+    }
+
+    private func saveAge() {
+        // Whole years; anything outside the range goes through as typed and
+        // is put back by saveNumber.
+        let range = Double(WaterGoal.ageRange.lowerBound)...Double(WaterGoal.ageRange.upperBound)
+        var text = ageText
+        if let value = Self.parse(ageText), value.isFinite, range.contains(value) {
+            text = "\(Int(value.rounded(.down)))"
+        }
+        saveNumber(text, key: WaterGoal.Key.age, range: range, reload: loadProfileText)
+    }
+
+    private func saveHeight() {
+        saveNumber(heightText, key: WaterGoal.Key.height, range: WaterGoal.heightRange, reload: loadProfileText)
+    }
+
+    private func setProfile(_ key: String, _ value: WidgetConfig.Value?) {
+        guard !context.isPreview else { return }
+        WaterLog.profile(instance) { config, _ in config.set(key, value) }
+    }
+
+}
+
+// MARK: - 目标
+
+/// The personal goal: what it comes to and why, a goal set by hand on top
+/// with a way back, and the details the recommendation is worked out from.
+/// All in one scrolling page so the panel keeps its height.
+extension WaterDetail {
+    private var currentProfile: WaterProfile { WaterProfile(config: instance.config) }
+
+    func target(_ result: WaterGoalResult) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                goalSummary(result)
+                breakdown(result)
+                bodyDetails
+                todayDetails
+                Text("推荐量只是日常参考，不是医疗建议。心脏、肾脏疾病需要限水的人请遵医嘱。")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxHeight: 340)
+        .scrollIndicators(.automatic)
+    }
+
+    /// The goal in use, the stepper that sets one by hand, and 恢复推荐.
+    private func goalSummary(_ result: WaterGoalResult) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Stepper(value: Binding(
+                get: { result.goal },
+                set: { value in
+                    guard !context.isPreview else { return }
+                    WaterLog.setGoal(value, in: instance)
+                }), in: WaterIntake.goalRange, step: 50) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("每日目标")
+                                .font(WidgetStyle.label(12))
+                                .foregroundStyle(.white.opacity(0.85))
+                            Text(result.isManual ? "已手动设置" : "按个人情况推荐")
+                                .font(.system(size: 10))
+                                .foregroundStyle(result.isManual ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.55))
+                        }
+                        Spacer()
+                        Text(WaterIntake.amount(result.goal, ounces: ounces))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                    }
+                }
+                .controlSize(.small)
+            if result.isManual {
+                HStack(spacing: 6) {
+                    Text("推荐目标 \(WaterIntake.amount(result.recommended, ounces: ounces))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .monospacedDigit()
+                    Spacer(minLength: 0)
+                    Button {
+                        guard !context.isPreview else { return }
+                        WaterLog.useRecommended(in: instance)
+                    } label: {
+                        Label("恢复推荐", systemImage: "arrow.uturn.backward")
+                            .font(WidgetStyle.label(11))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(accent.opacity(0.7)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(context.isPreview)
+                }
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    /// 基数 + 各项加减 = 推荐目标, always in millilitres: the rules are.
+    private func breakdown(_ result: WaterGoalResult) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("计算明细")
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            ForEach(result.lines) { line in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(line.title)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.9))
+                        if !line.detail.isEmpty {
+                            Text(line.detail)
+                                .font(.system(size: 9.5))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    }
+                    Spacer(minLength: 4)
+                    Text(WaterGoal.signed(line))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                }
+            }
+            Rectangle().fill(.white.opacity(0.2)).frame(height: 0.5)
+            HStack {
+                Text("推荐目标")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                Spacer()
+                Text("\(result.recommended) 毫升")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
+            if let manual = result.manual {
+                HStack {
+                    Text("已手动设置")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                    Spacer()
+                    Text("\(manual) 毫升")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                        .monospacedDigit()
+                }
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    /// Who is drinking: changes rarely.
+    private var bodyDetails: some View {
+        let profile = currentProfile
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("个人情况")
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            numberField("体重", text: $weightText, unit: "公斤", prompt: "60", field: .weight, save: saveWeight)
+            optionRow("性别") {
+                Picker("", selection: Binding(
+                    get: { profile.sex },
+                    set: { setProfile(WaterGoal.Key.sex, $0 == .unset ? nil : .string($0.rawValue)) })) {
+                        ForEach(WaterSex.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+            }
+            numberField("年龄", text: $ageText, unit: "岁", prompt: "30", field: .age, save: saveAge)
+            numberField("身高", text: $heightText, unit: "厘米", prompt: "170", field: .height, save: saveHeight)
+            optionRow("日常活动量") {
+                Picker("", selection: Binding(
+                    get: { profile.activity },
+                    set: { setProfile(WaterGoal.Key.activity, $0 == .sedentary ? nil : .string($0.rawValue)) })) {
+                        ForEach(WaterActivity.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+            }
+            optionRow("气候") {
+                Picker("", selection: Binding(
+                    get: { profile.climate },
+                    set: { setProfile(WaterGoal.Key.climate, $0 == .mild ? nil : .string($0.rawValue)) })) {
+                        ForEach(WaterClimate.allCases) { Text($0.title).tag($0) }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+            }
+            optionRow("特殊状态") {
+                Picker("", selection: Binding(
+                    get: { profile.condition },
+                    set: { setProfile(WaterGoal.Key.condition, $0 == .none ? nil : .string($0.rawValue)) })) {
+                        ForEach(WaterCondition.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                    .disabled(profile.sex == .male || context.isPreview)
+            }
+            if profile.sex == .male, profile.condition != .none {
+                Text("性别为男时不计特殊状态。")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Text("都可以不填：没填体重时按膳食指南（2022）的成人基准估算。")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    /// Today only: cleared on its own tomorrow.
+    private var todayDetails: some View {
+        let profile = currentProfile
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("今天")
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            Stepper(value: Binding(
+                get: { profile.exerciseMinutes },
+                set: { value in
+                    guard !context.isPreview else { return }
+                    WaterLog.profile(instance) { config, now in
+                        WaterGoal.settingExercise(value, in: &config, now: now)
+                    }
+                }), in: 0...WaterGoal.maxExerciseMinutes, step: 10) {
+                    HStack {
+                        Text("今日运动")
+                            .font(WidgetStyle.label(12))
+                            .foregroundStyle(.white.opacity(0.85))
+                        Spacer()
+                        Text(profile.exerciseMinutes == 0 ? "没有" : "\(profile.exerciseMinutes) 分钟")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                    }
+                }
+                .controlSize(.small)
+            Toggle(isOn: Binding(
+                get: { profile.unwell },
+                set: { on in
+                    guard !context.isPreview else { return }
+                    WaterLog.profile(instance) { config, now in
+                        WaterGoal.settingUnwell(on, in: &config, now: now)
+                    }
+                })) {
+                    Text("发烧或腹泻")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .disabled(context.isPreview)
+            Text("今日运动和发烧或腹泻只算今天，明天自动清零。")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.5))
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    private func optionRow<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
+                .fixedSize()
+            Spacer(minLength: 4)
+            content()
+        }
+        .controlSize(.small)
+        .disabled(context.isPreview)
+    }
+
+    fileprivate func numberField(_ title: String, text: Binding<String>, unit: String, prompt: String,
+                             field: Field, save: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            Spacer(minLength: 4)
+            TextField("", text: text, prompt: Text(prompt))
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 56)
+                .focused($focus, equals: field)
+                .onSubmit(save)
+                .disabled(context.isPreview)
+            Text(unit)
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 28, alignment: .leading)
+        }
     }
 }

@@ -399,9 +399,11 @@ public enum WidgetCatalog {
 
         // Today's glasses under `days`, with the chosen `character` (the red
         // panda by default) filling up toward the goal; reminders between
-        // `start` and `end`. See WaterIntake.
+        // `start` and `end`. See WaterIntake. No `goal` here: the goal is the
+        // personal recommendation unless one is set by hand in the panel,
+        // and a default would read as a hand-set 2000 (see WaterGoal).
         Entry(kind: .water, name: "喝水", category: .reminders,
-              defaults: c(["layout": .string("character"), "goal": .number(2000),
+              defaults: c(["layout": .string("character"),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
                            "unit": .string("ml"), "character": .string("panda")]),

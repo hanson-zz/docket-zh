@@ -278,7 +278,7 @@ public enum PerfectDay {
         // the one furthest along speaks for the day.
         let candidates = configs.map { config -> WaterDay in
             let days = WaterIntake.days(config)
-            let goal = WaterIntake.goal(config)
+            let goal = WaterIntake.goal(config, now: date, calendar: calendar)
             if isToday { return WaterIntake.today(days, goal: goal, now: date, calendar: calendar) }
             return days.first { $0.key == key } ?? WaterDay(key: key, goal: goal)
         }

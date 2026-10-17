@@ -87,7 +87,8 @@ final class WaterIntakeTests: XCTestCase {
         XCTAssertEqual(WaterIntake.amount(250, ounces: true), "8.5 盎司")
         XCTAssertEqual(WaterIntake.remainingLine(total: 1200, goal: 2000, ounces: false), "还差 800 毫升")
         XCTAssertEqual(WaterIntake.remainingLine(total: 2000, goal: 2000, ounces: false), "今天达标啦")
-        XCTAssertEqual(WaterIntake.goal(WidgetConfig()), 2000)
+        // Nothing set: the personal recommendation's guideline base (see WaterGoalTests).
+        XCTAssertEqual(WaterIntake.goal(WidgetConfig()), 1600)
         XCTAssertEqual(WaterIntake.goal(WidgetConfig(["goal": .number(99_999)])), WaterIntake.goalRange.upperBound)
         XCTAssertEqual(WaterIntake.cupSize(WidgetConfig()), 250)
     }
