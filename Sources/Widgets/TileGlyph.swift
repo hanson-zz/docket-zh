@@ -56,13 +56,33 @@ extension View {
     /// notifications, outside any animation transaction, so the transition
     /// alone would still hard-cut; the animation keyed on the symbol is what
     /// gives it a transaction to run in. Magic Replace where the two glyphs
-    /// share a shape, a quick down-up swap where they do not. Reduce Motion
-    /// is honoured by the symbol effect itself.
+    /// share a shape, a quick down-up swap where they do not. 打开“减少动态效果”
+    /// 时不变形也不上下换，两个图标原地淡入淡出，不指望符号动效自己去判断。
     func playPauseMorph(_ symbol: String, enabled: Bool = true) -> some View {
-        contentTransition(enabled
-                          ? .symbolEffect(.replace.magic(fallback: .replace.downUp.byLayer))
-                          : .identity)
-            .animation(enabled ? .snappy(duration: 0.3) : nil, value: symbol)
+        modifier(PlayPauseMorph(symbol: symbol, enabled: enabled))
+    }
+}
+
+private struct PlayPauseMorph: ViewModifier {
+    var symbol: String
+    var enabled: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(transition)
+            .animation(animation, value: symbol)
+    }
+
+    private var transition: ContentTransition {
+        guard enabled else { return .identity }
+        if reduceMotion { return .opacity }
+        return .symbolEffect(.replace.magic(fallback: .replace.downUp.byLayer))
+    }
+
+    private var animation: Animation? {
+        guard enabled else { return nil }
+        return reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.3)
     }
 }
 

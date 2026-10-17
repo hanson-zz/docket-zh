@@ -263,9 +263,21 @@ public extension View {
     /// text instantly, which is what made the widgets look inert next to the
     /// rest of the shelf. `numericText` is Apple's own transition for exactly
     /// this, and it is the difference between a readout and a live one.
-    func rollingValue(_ value: some Equatable) -> some View {
-        contentTransition(.numericText())
-            .animation(.snappy(duration: 0.28), value: value)
+    ///
+    /// 打开“减少动态效果”时数字不滚动，新旧两个数字原地淡入淡出。
+    func rollingValue<Value: Equatable>(_ value: Value) -> some View {
+        modifier(RollingValue(value: value))
+    }
+}
+
+private struct RollingValue<Value: Equatable>: ViewModifier {
+    var value: Value
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(reduceMotion ? ContentTransition.opacity : ContentTransition.numericText())
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.28), value: value)
     }
 }
 
@@ -281,6 +293,10 @@ public extension View {
 @MainActor
 public enum WidgetWriter {
     public static var update: (WidgetInstance) -> Void = { _ in }
+    /// The widget as it is saved right now, for a write made a while after
+    /// the view last read it (the end of an animation), so it never writes
+    /// back a stale copy over a change made in between.
+    public static var current: (UUID) -> WidgetInstance? = { _ in nil }
 
     /// Applies a change to one widget's config.
     public static func write(_ instance: WidgetInstance,

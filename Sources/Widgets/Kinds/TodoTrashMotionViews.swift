@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Shown by the to-do tile and panel the moment the last open task is
 /// checked. The curves are `CheerMotion`'s. With Reduce Motion on, the panda
-/// simply appears and goes, with no pop, hops or sparks.
+/// only fades in and out, with no pop, hops or sparks.
 struct TodoCheer: View {
     var startedAt: Date
     var compact = false
@@ -12,9 +12,9 @@ struct TodoCheer: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: reduceMotion)) { timeline in
-            let t = reduceMotion ? 1.0 : timeline.date.timeIntervalSince(startedAt)
-            content(t: t)
+        // 减少动态效果：不弹、不跳、不撒星点，只按同一条曲线淡入淡出，帧率也降下来。
+        TimelineView(.animation(minimumInterval: reduceMotion ? 1.0 / 20 : 1.0 / 60)) { timeline in
+            content(t: timeline.date.timeIntervalSince(startedAt))
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -44,7 +44,7 @@ struct TodoCheer: View {
                 }
             }
         }
-        .opacity(reduceMotion ? 1 : CheerMotion.opacity(t))
+        .opacity(CheerMotion.opacity(t))
     }
 
     @ViewBuilder
@@ -109,6 +109,9 @@ struct SwipeToDelete: ViewModifier {
     @State private var offset: CGFloat = 0
     @State private var width: CGFloat = 1
     @State private var tracking = false
+    /// 减少动态效果时删除不滑出去，改成原地淡掉。
+    @State private var fade: Double = 1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         let progress = SwipeDelete.progress(offset: offset, width: width)
@@ -121,13 +124,15 @@ struct SwipeToDelete: ViewModifier {
                         Image(systemName: "trash.fill")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
-                            .scaleEffect(progress >= 1 ? 1.2 : 0.9)
-                            .animation(.snappy(duration: 0.15), value: progress >= 1)
+                            .scaleEffect(reduceMotion ? 1 : (progress >= 1 ? 1.2 : 0.9))
+                            .opacity(reduceMotion ? 0.6 + 0.4 * progress : 1)
+                            .animation(reduceMotion ? nil : .snappy(duration: 0.15), value: progress >= 1)
                             .padding(.trailing, 12)
                     }
                     .opacity(offset < 0 ? 1 : 0)
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = max(1, $0) }
+            .opacity(fade)
             .gesture(drag, including: enabled ? .all : .subviews)
     }
 
@@ -143,13 +148,24 @@ struct SwipeToDelete: ViewModifier {
                 guard tracking else { return }
                 tracking = false
                 if SwipeDelete.shouldDelete(offset: offset, predicted: value.predictedEndTranslation.width, width: width) {
-                    withAnimation(.easeIn(duration: 0.16), completionCriteria: .logicallyComplete) {
-                        offset = -width - 24
-                    } completion: {
-                        onDelete()
+                    if reduceMotion {
+                        withAnimation(.easeOut(duration: 0.15), completionCriteria: .logicallyComplete) {
+                            fade = 0
+                        } completion: {
+                            onDelete()
+                        }
+                    } else {
+                        withAnimation(.easeIn(duration: 0.16), completionCriteria: .logicallyComplete) {
+                            offset = -width - 24
+                        } completion: {
+                            onDelete()
+                        }
                     }
                 } else {
-                    withAnimation(.spring(duration: 0.32, bounce: 0.35)) { offset = 0 }
+                    // 不够远：弹回去；减少动态效果时不回弹，平平地退回原位。
+                    withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.32, bounce: 0.35)) {
+                        offset = 0
+                    }
                 }
             }
     }
@@ -161,23 +177,26 @@ extension View {
     }
 }
 
-/// 删除后在清单下面停几秒的一条：说删了什么，点“撤销”放回原处。
+/// 删除或完成后在清单下面停几秒的一条：说最近一步做了什么，点“撤销”放回原处；
+/// 还有更早的几步时按钮上带着数字，可以一步步接着撤销。
 struct TodoUndoBar: View {
-    var text: String
+    var step: TodoUndoStep
+    /// 这一步之外还能再撤销几步。
+    var more: Int
     var undo: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "trash")
+            Image(systemName: step.kind == .deleted ? "trash" : "checkmark.circle")
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.7))
-            Text("已删除“\(text)”")
+            Text(step.caption)
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
-            Button("撤销", action: undo)
+            Button(more > 0 ? "撤销（还有 \(more) 步）" : "撤销", action: undo)
                 .buttonStyle(.plain)
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(Color(hex: PaletteColor.orange.hex))

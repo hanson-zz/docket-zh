@@ -9,11 +9,27 @@ import SwiftUI
 final class OnboardingWindow: HostedWindow {
     static let shared = OnboardingWindow()
 
+    /// 首次启动时已经排好、还没弹出来的引导。
+    private var pending = false
+    /// 引导最近一次关掉的时刻，给“检查更新”提示框排队用。
+    private(set) var closedAt: Date?
+    private var closeObserver: NSObjectProtocol?
+
+    /// 引导是否还在（或马上要弹）。关掉窗口（点“开始使用”“跳过”或红色关闭按钮）后为 false。
+    var isActive: Bool { pending || window?.isVisible == true }
+
+    /// 首次启动时“检查更新”的提示框现在能不能弹，见 `Onboarding.mayPromptForUpdates`。
+    var allowsUpdatePrompt: Bool {
+        Onboarding.mayPromptForUpdates(onboardingActive: isActive, closedAt: closedAt, now: .now)
+    }
+
     /// - Parameter firstRun: 首次启动时默认选底部；从设置里打开时默认选扩展栏现在的位置。
     func show(app: AppState, firstRun: Bool = false) {
         // 一出现就记为看过：中途退出也不会下次启动再弹，想再看可以去设置里打开。
         UserDefaults.standard.set(true, forKey: Onboarding.seenKey)
         close()
+        pending = false
+        closedAt = nil
         present(
             OnboardingView(app: app,
                            startPosition: firstRun ? .bottom : app.effectivePosition,
@@ -21,6 +37,19 @@ final class OnboardingWindow: HostedWindow {
             title: "欢迎使用码头",
             size: NSSize(width: 560, height: 640)
         )
+        watchClose()
+    }
+
+    /// 记下引导窗口关掉的时刻，不管是走完、跳过还是点了红色关闭按钮。
+    private func watchClose() {
+        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
+        closeObserver = nil
+        guard let window else { return }
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.closedAt = .now }
+        }
     }
 
     /// 启动时调用：只有全新安装才弹出。
@@ -33,7 +62,9 @@ final class OnboardingWindow: HostedWindow {
             if hadSavedSetup { UserDefaults.standard.set(true, forKey: Onboarding.seenKey) }
             return
         }
-        // 稍等扩展栏先出现，引导里选位置时能直接看到它移动。
+        // 稍等扩展栏先出现，引导里选位置时能直接看到它移动。排好的这段时间也算
+        // 引导开着，“检查更新”的提示框不会抢在它前面弹出来。
+        pending = true
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(800))
             self?.show(app: app, firstRun: true)

@@ -42,6 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             state.updateWidget(instance)
             WidgetDetailWindow.shared.refresh(instance)
         }
+        WidgetWriter.current = { [state] id in
+            func find(_ items: [DockItem]) -> WidgetInstance? {
+                for item in items {
+                    switch item {
+                    case .widget(let widget) where widget.id == id: return widget
+                    case .group(let group): if let found = find(group.items) { return found }
+                    default: continue
+                    }
+                }
+                return nil
+            }
+            return find(state.customProfile?.items ?? [])
+        }
 
         shelf = DockPanelController(app: state)
         menuBar = MenuBarController(app: state)
@@ -210,7 +223,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(5))
+            // 首次启动时新手引导还开着就先不问，等引导关掉（再缓两秒）再弹，
+            // 免得模态提示框盖住引导。
+            while !OnboardingWindow.shared.allowsUpdatePrompt {
+                try? await Task.sleep(for: .seconds(1))
+                guard self != nil, !Task.isCancelled else { return }
+            }
             guard self != nil else { return }
+            // 等的这段时间里也许已经在设置里选过了。
+            guard state.state.checkForUpdates == nil else {
+                if state.state.checkForUpdates == true { UpdateService.shared.start() }
+                return
+            }
             let alert = NSAlert()
             alert.messageText = "要检查码头的新版本吗？"
             alert.informativeText = """

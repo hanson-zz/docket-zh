@@ -5,8 +5,9 @@ import SwiftUI
 ///
 /// Return adds and keeps the caret in the field, so a run of tasks can be
 /// typed one after another. Double-clicking a task's words edits them.
-/// Dragging a row to the left deletes it, with a few seconds to undo, and
-/// checking the last open task brings out the red panda to celebrate.
+/// Dragging a row to the left deletes it, and deleting or checking a task can
+/// be undone for a few seconds, the last five steps one at a time, each put
+/// back where it was. Checking the last open task brings out the red panda.
 struct TodoDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -16,14 +17,11 @@ struct TodoDetail: View {
     @State private var editDraft = ""
     @FocusState private var focus: Field?
     @State private var celebrateAt: Date?
-    @State private var undo: Undo?
-
-    /// The task just deleted and where it was, kept for the undo bar.
-    private struct Undo: Equatable {
-        var item: TodoItem
-        var index: Int
-        var token = UUID()
-    }
+    /// 最近几步删除和完成，撤销条按后进先出一步步退回。
+    @State private var undo = TodoUndoStack()
+    /// 每记一步换一个，撤销条从最后一次改动起再停几秒。
+    @State private var undoToken = UUID()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Field: Hashable {
         case add
@@ -67,8 +65,10 @@ struct TodoDetail: View {
                                     .swipeToDelete(enabled: !context.isPreview && editing != item.id) {
                                         delete(item, animated: false)
                                     }
-                                    .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .leading)),
-                                                            removal: .opacity))
+                                    .transition(reduceMotion
+                                                ? .opacity
+                                                : .asymmetric(insertion: .opacity.combined(with: .move(edge: .leading)),
+                                                              removal: .opacity))
                             }
                         }
                     }
@@ -94,9 +94,9 @@ struct TodoDetail: View {
                         .foregroundStyle(.white.opacity(0.8))
                     }
                 }
-                if let undo {
-                    TodoUndoBar(text: undo.item.text) { restore() }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                if let step = undo.last {
+                    TodoUndoBar(step: step, more: undo.count - 1) { restore() }
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .overlay {
@@ -107,17 +107,19 @@ struct TodoDetail: View {
             }
         }
         .onAppear { if !context.isPreview { focus = .add } }
-        .task(id: undo?.token) {
-            guard undo != nil else { return }
-            try? await Task.sleep(for: .seconds(4))
+        .task(id: undoToken) {
+            guard !undo.isEmpty else { return }
+            try? await Task.sleep(for: .seconds(6))
             guard !Task.isCancelled else { return }
-            withAnimation(.snappy(duration: 0.25)) { undo = nil }
+            withAnimation(barAnimation) { undo.clear() }
         }
         .task(id: celebrateAt) {
             guard celebrateAt != nil else { return }
             try? await Task.sleep(for: .seconds(CheerMotion.duration))
             guard !Task.isCancelled else { return }
             celebrateAt = nil
+            // 卡片会在到点时清掉记号；面板也清一次，卡片恰好不在屏幕上时也不会卡住。
+            if !context.isPreview { TodoLog.endCheer(instance) }
         }
     }
 
@@ -222,10 +224,17 @@ struct TodoDetail: View {
         focus = .add
     }
 
+    private var listAnimation: Animation? { reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.3) }
+    private var barAnimation: Animation? { reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.25) }
+
+    /// 勾掉一项会记进撤销栈；把已完成的重新打开不记。
     private func toggle(_ item: TodoItem) {
         guard !context.isPreview else { return }
-        let finishing = QuickTodo.finishesAll(toggling: item.id, in: QuickTodo.items(instance.config))
-        withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance) }
+        let current = QuickTodo.items(instance.config)
+        let finishing = QuickTodo.finishesAll(toggling: item.id, in: current)
+        let completing = current.first(where: { $0.id == item.id })?.done == false
+        withAnimation(listAnimation) { TodoLog.toggle(item.id, in: instance, cheering: finishing) }
+        if completing { record { $0.recordCompletion(of: item.id, in: current) } }
         if finishing { celebrateAt = .now }
     }
 
@@ -233,20 +242,26 @@ struct TodoDetail: View {
     /// already slid the row away, so it is not animated a second time.
     private func delete(_ item: TodoItem, animated: Bool) {
         guard !context.isPreview else { return }
-        let index = QuickTodo.items(instance.config).firstIndex { $0.id == item.id } ?? 0
+        let current = QuickTodo.items(instance.config)
         if editing == item.id { editing = nil }
-        withAnimation(animated ? Animation.snappy(duration: 0.3) : nil) {
+        withAnimation(animated ? listAnimation : nil) {
             TodoLog.change(instance) { QuickTodo.removing(item.id, from: $0) }
         }
-        withAnimation(.snappy(duration: 0.25)) { undo = Undo(item: item, index: index) }
+        record { $0.recordDeletion(of: item.id, in: current) }
     }
 
+    private func record(_ change: (inout TodoUndoStack) -> Void) {
+        withAnimation(barAnimation) { change(&undo) }
+        undoToken = UUID()
+    }
+
+    /// 退回最近的一步，放回它原来的位置；栈里还有就继续显示撤销条。
     private func restore() {
-        guard let undo else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            TodoLog.change(instance) { QuickTodo.restoring(undo.item, at: undo.index, in: $0) }
-            self.undo = nil
+        guard !context.isPreview, let step = undo.pop() else { return }
+        withAnimation(listAnimation) {
+            TodoLog.change(instance) { TodoUndoStack.undoing(step, in: $0) }
         }
+        undoToken = UUID()
     }
 
     private func beginEditing(_ item: TodoItem) {

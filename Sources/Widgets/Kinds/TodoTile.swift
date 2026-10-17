@@ -68,6 +68,24 @@ struct TodoTile: View {
             guard !Task.isCancelled else { return }
             celebrateAt = nil
         }
+        // 设成“有未完成的待办时显示”时，全部完成后卡片要等庆祝播完才收起：
+        // 勾掉最后一项时记下了截止时刻，到点由卡片自己清掉，扩展栏随即把它收起。
+        // 放在卡片上而不只在面板里，面板中途关掉时也照样会清。
+        .task(id: cheerDeadline) {
+            guard let cheerDeadline, !context.isPreview else { return }
+            let left = cheerDeadline - Date().timeIntervalSince1970
+            if left > 0 {
+                try? await Task.sleep(for: .seconds(min(left, QuickTodo.cheerHold + 1)))
+                guard !Task.isCancelled else { return }
+            }
+            TodoLog.endCheer(instance)
+        }
+    }
+
+    /// 庆祝的截止时刻，没有时为 nil。
+    private var cheerDeadline: Double? {
+        if case .number(let until) = instance.config[QuickTodo.cheerKey] { return until }
+        return nil
     }
 
     /// The red panda popping out of the badge when the card's check closes
@@ -109,7 +127,7 @@ struct TodoTile: View {
         if let item {
             TileGlyph(symbol: "checkmark", size: size, action: context.isPreview ? nil : {
                 let finishing = QuickTodo.finishesAll(toggling: item.id, in: QuickTodo.items(instance.config))
-                withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance) }
+                withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance, cheering: finishing) }
                 if finishing { celebrateAt = .now }
             })
             .help("完成“\(item.text)”")
@@ -131,7 +149,19 @@ enum TodoLog {
         }
     }
 
-    static func toggle(_ id: String, in instance: WidgetInstance) {
-        change(instance) { QuickTodo.toggling(id, in: $0) }
+    /// - Parameter cheering: 这一下勾掉了最后一项。同一次写入里记下庆祝的截止
+    ///   时刻，免得“有未完成的待办时显示”在动效播出来之前就把卡片收走。
+    static func toggle(_ id: String, in instance: WidgetInstance, cheering: Bool = false) {
+        WidgetWriter.write(instance) { config in
+            QuickTodo.store(QuickTodo.toggling(id, in: QuickTodo.items(config)), in: &config)
+            if cheering { QuickTodo.startCheer(in: &config) }
+        }
+    }
+
+    /// 庆祝播完：清掉记号。读的是现在保存着的那份，不会把中途的改动写回去。
+    static func endCheer(_ instance: WidgetInstance) {
+        let latest = WidgetWriter.current(instance.id) ?? instance
+        guard latest.config[QuickTodo.cheerKey] != nil else { return }
+        WidgetWriter.write(latest) { QuickTodo.endCheer(in: &$0) }
     }
 }

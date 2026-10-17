@@ -112,7 +112,8 @@ public enum WidgetVisibility {
 
     /// Whether the condition holds, or nil when it cannot be told.
     public static func conditionHolds(_ instance: WidgetInstance,
-                                      _ conditions: WidgetConditions) -> Bool? {
+                                      _ conditions: WidgetConditions,
+                                      now: Date = Date()) -> Bool? {
         switch instance.kind {
         case .music:
             return conditions.musicPlaying
@@ -122,9 +123,10 @@ public enum WidgetVisibility {
             return conditions.mailUnread.map { $0 > 0 }
         case .aiUsage:
             return conditions.codexActive
-        // Read from the widget's own list, so it needs no monitor.
+        // Read from the widget's own list, so it needs no monitor. 勾掉最后一项
+        // 后的庆祝还没播完时仍算满足，播完再收起（见 `QuickTodo.cheerKey`）。
         case .todo:
-            return QuickTodo.openCount(instance.config) > 0
+            return QuickTodo.openCount(instance.config) > 0 || QuickTodo.isCheering(instance.config, now: now)
         case .anniversary:
             return Anniversary.hasSoon(instance.config)
         case .water:

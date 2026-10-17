@@ -28,6 +28,7 @@ struct ClipboardDetail: View {
     @FocusState private var editorFocused: Bool
     /// 列表还是货架排法，存在本机偏好里。
     @AppStorage("clipboard.shelfLayout") private var shelfLayout = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// What the editor is changing: a starred text by its words, or a
     /// recent copy by its id.
@@ -329,7 +330,7 @@ struct ClipboardDetail: View {
 
     private func layoutButton(symbol: String, on: Bool, help: String, action: @escaping () -> Void) -> some View {
         Button {
-            withAnimation(.snappy(duration: 0.25)) { action() }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.25)) { action() }
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .semibold))
@@ -385,8 +386,11 @@ struct ClipboardDetail: View {
                         ForEach(Array(range), id: \.self) { index in
                             card(index)
                                 .id(ids[index])
-                                .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                                                        removal: .scale(scale: 0.6).combined(with: .opacity)))
+                                // 减少动态效果：卡片不滑进来、不缩小，原地淡入淡出。
+                                .transition(reduceMotion
+                                            ? .opacity
+                                            : .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                                          removal: .scale(scale: 0.6).combined(with: .opacity)))
                         }
                         ForEach(range.count..<ClipboardShelf.perRow, id: \.self) { _ in
                             Color.clear.frame(maxWidth: .infinity).frame(height: 1)
@@ -397,7 +401,7 @@ struct ClipboardDetail: View {
                 }
             }
         }
-        .animation(.spring(duration: 0.35, bounce: 0.25), value: ids)
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.35, bounce: 0.25), value: ids)
     }
 
     private func pinCard(_ text: String, index: Int) -> some View {

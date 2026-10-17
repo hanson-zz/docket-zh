@@ -51,7 +51,8 @@ struct DownloadProgressIcon: View {
                         .offset(y: -level)
                 }
             }
-            .animation(.easeInOut(duration: 0.8), value: fraction)
+            // 减少动态效果：水位直接跳到新进度，不慢慢涨。
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.8), value: fraction)
     }
 
     private func sweep(_ icon: Image, now: Date) -> some View {
@@ -78,6 +79,7 @@ struct DownloadProgressIcon: View {
 /// 面板里“正在下载”的一排：图标灌水、名字、百分比。
 struct DownloadingStrip: View {
     var downloads: [ActiveDownload]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -97,8 +99,7 @@ struct DownloadingStrip: View {
                         Text(DownloadProgress.caption(download.fraction))
                             .font(.system(size: 10, weight: .semibold).monospacedDigit())
                             .foregroundStyle(.white.opacity(0.6))
-                            .contentTransition(.numericText())
-                            .animation(.snappy, value: download.fraction)
+                            .rollingValue(download.fraction)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -107,6 +108,6 @@ struct DownloadingStrip: View {
                 }
             }
         }
-        .transition(.opacity.combined(with: .move(edge: .top)))
+        .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
     }
 }

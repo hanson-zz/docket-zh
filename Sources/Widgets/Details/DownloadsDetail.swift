@@ -9,6 +9,7 @@ struct DownloadsDetail: View {
     var context: WidgetContext
 
     private var feed: FolderFeed { FolderFeed.shared(.downloads) }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         DetailCard {
@@ -37,7 +38,7 @@ struct DownloadsDetail: View {
                 }
             }
         }
-        .animation(.snappy(duration: 0.25), value: feed.downloading.map(\.id))
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .snappy(duration: 0.25), value: feed.downloading.map(\.id))
         .onAppear {
             guard !context.isPreview else { return }
             feed.start()

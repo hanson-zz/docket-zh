@@ -97,6 +97,21 @@ public enum Onboarding {
         !seen && !hasSavedSetup
     }
 
+    /// 引导关掉以后再等多久才问“要检查码头的新版本吗？”（秒），免得窗口一关
+    /// 提示框就迎面弹出来。
+    public static let updatePromptSettle: Double = 2
+
+    /// 首次启动时“检查更新”的提示框现在能不能弹。
+    ///
+    /// 新手引导还开着（或已经排好、马上要弹）时不弹，免得模态提示框盖住引导；
+    /// 引导关掉后再等 `updatePromptSettle` 秒。从来没开过引导的（老用户）
+    /// `closedAt` 为 nil，照常弹。
+    public static func mayPromptForUpdates(onboardingActive: Bool, closedAt: Date?, now: Date) -> Bool {
+        guard !onboardingActive else { return false }
+        guard let closedAt else { return true }
+        return now.timeIntervalSince(closedAt) >= updatePromptSettle
+    }
+
     /// 选中的用途对应要追加的小组件，按用途的固定顺序排列。
     ///
     /// - Parameters:
