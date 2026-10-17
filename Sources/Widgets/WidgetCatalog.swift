@@ -406,7 +406,8 @@ public enum WidgetCatalog {
               defaults: c(["layout": .string("character"),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
-                           "unit": .string("ml"), "character": .string("panda")]),
+                           "unit": .string("ml"), "character": .string("panda"),
+                           WaterParched.key: .bool(true)]),
               // The red panda's card names its character, so a 柴犬 config is
               // not also matched by it; the other five are 赞助者专属.
               variants: [("小熊猫", ["layout": .string("character"), "character": .string("panda")]),
@@ -415,7 +416,8 @@ public enum WidgetCatalog {
                          ("企鹅", ["layout": .string("character"), "character": .string("penguin")]),
                          ("水獭", ["layout": .string("character"), "character": .string("otter")]),
                          ("章鱼", ["layout": .string("character"), "character": .string("octopus")]),
-                         ("圆环", ["layout": .string("ring")])],
+                         ("圆环", ["layout": .string("ring")]),
+                         ("液态", ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: false, selfContained: true),
 
         // A pet of its own: four needs kept with the time they were true, so
@@ -437,8 +439,9 @@ public enum WidgetCatalog {
         // PerfectDayCenter (see PerfectDay). No options: the focus goal is
         // the 专注计时 panel's. The kind stays perfect-day so widgets already
         // placed keep working.
+        // 唯一的选项是外观：竹叶（默认）或液态，见 LiquidLooks。
         Entry(kind: .perfectDay, name: "小熊猫的竹篮", category: .reminders,
-              defaults: c([:]),
+              defaults: c([LiquidLooks.key: .string(LiquidLooks.BasketLook.leaf.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // This week from EventKit, Monday first; see WeekAgenda. Same
@@ -485,7 +488,9 @@ public enum WidgetCatalog {
         // ~/.codex, and what Codex is doing from its newest session log.
         Entry(kind: .aiUsage, name: "Codex 用量", category: .system,
               defaults: c(["show": .string("used"), "notify": .bool(true), "alertAt": .number(80),
-                           "notifyDone": .bool(true), "extras": .bool(false)]),
+                           "notifyDone": .bool(true), "extras": .bool(false),
+                           // 外观：圆环（默认）或液态小圆杯，见 LiquidLooks。
+                           LiquidLooks.key: .string(LiquidLooks.CodexLook.ring.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
     ]
 
@@ -608,6 +613,9 @@ public enum WidgetCatalog {
         // 仅图标 draws bare glyphs; there is no gauge for a look to change.
         case (.battery, BatteryLook.key):
             config.string("layout", default: "status") != "icon"
+        // 渴成骷髅只画在角色上；圆环和液态没有角色。
+        case (.water, WaterParched.key):
+            config.string("layout", default: "character") == "character"
         default:
             true
         }

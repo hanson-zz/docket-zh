@@ -17,7 +17,8 @@ import Foundation
 /// the last focus session it was fed for), `sleepNightly` (1 while it is in
 /// its own night's sleep), `wokeAt` (when it was last woken by hand, so a pet
 /// woken at midnight stays up) and `lastActionFull` (1 when the last thing done
-/// was not needed: fed full, played with happy, washed clean). `character` is
+/// was not needed: fed full, played with happy, washed clean), `touchedAt`
+/// (when someone last did something for it by hand, for 积灰). `character` is
 /// the one option.
 public enum PetNeed: String, CaseIterable, Sendable, Identifiable {
     case food, mood, energy, clean
@@ -110,6 +111,10 @@ public enum PetLook: String, CaseIterable, Sendable {
     case idle, cheer, rest, eat, hungry, sick
     /// 喝水连续 3 天没达标：渴成骷髅，喝够一天就复活。
     case dried
+    /// 很久没人陪它（`VirtualPet.dustyAfterHours`）：身上积灰长蘑菇，摸一下就好。
+    case dusty
+    /// Mac 过热、CPU 一直很忙或外面太热（见 `PetHeat`）：化成一滩，凉下来就好。
+    case melted
 
     public var title: String {
         switch self {
@@ -120,6 +125,8 @@ public enum PetLook: String, CaseIterable, Sendable {
         case .hungry: "饿了"
         case .sick: "生病了"
         case .dried: "渴成骷髅了"
+        case .dusty: "积灰了"
+        case .melted: "热化了"
         }
     }
 }
@@ -176,11 +183,14 @@ public struct PetState: Equatable, Sendable {
     public var wokeAt: Date?
     /// The last action was not needed, so it is turned down rather than acted out.
     public var lastActionFull: Bool
+    /// When someone last did something for it by hand (a treat from 喝水 or
+    /// 习惯打卡 does not count): how long it has sat gathering dust.
+    public var touchedAt: Date?
 
     public init(food: Double = 80, mood: Double = 80, energy: Double = 80, clean: Double = 80,
                 at: Date, sleepSince: Date? = nil, lastAction: PetAction? = nil, lastActionAt: Date? = nil,
                 cared: Set<String> = [], focusCredited: Date? = nil, sleepNightly: Bool = false,
-                wokeAt: Date? = nil, lastActionFull: Bool = false) {
+                wokeAt: Date? = nil, lastActionFull: Bool = false, touchedAt: Date? = nil) {
         self.food = VirtualPet.clamp(food)
         self.mood = VirtualPet.clamp(mood)
         self.energy = VirtualPet.clamp(energy)
@@ -194,6 +204,7 @@ public struct PetState: Equatable, Sendable {
         self.sleepNightly = sleepNightly
         self.wokeAt = wokeAt
         self.lastActionFull = lastActionFull
+        self.touchedAt = touchedAt
     }
 
     public subscript(need: PetNeed) -> Double {
@@ -281,7 +292,8 @@ public enum VirtualPet {
                         focusCredited: date("focusCredited"),
                         sleepNightly: config.double("sleepNightly") > 0 && date("sleepSince") != nil,
                         wokeAt: date("wokeAt"),
-                        lastActionFull: config.double("lastActionFull") > 0)
+                        lastActionFull: config.double("lastActionFull") > 0,
+                        touchedAt: date("touchedAt"))
     }
 
     public static func store(_ state: PetState, in config: inout WidgetConfig, now: Date = .now,
@@ -299,6 +311,7 @@ public enum VirtualPet {
         config.set("sleepNightly", .number(state.sleepNightly && state.isSleeping ? 1 : 0))
         config.set("wokeAt", .number(state.wokeAt?.timeIntervalSince1970 ?? 0))
         config.set("lastActionFull", .number(state.lastActionFull ? 1 : 0))
+        config.set("touchedAt", .number(state.touchedAt?.timeIntervalSince1970 ?? 0))
         let cutoff = calendar.date(byAdding: .day, value: -keptDays, to: now)
             .map { HabitTracker.dayKey($0, calendar: calendar) } ?? ""
         config.set("cared", .list(state.cared.filter { $0 > cutoff }.sorted().map { .string($0) }))
@@ -419,6 +432,8 @@ public enum VirtualPet {
     public static func performing(_ action: PetAction, on state: PetState, now: Date,
                                   calendar: Calendar = HabitTracker.calendar) -> PetState {
         var s = advanced(state, to: now, calendar: calendar)
+        // Anything done by hand, even turned down, brushes the dust off.
+        if action != .treat { s.touchedAt = now }
         if isFull(action, s) {
             s.lastAction = action
             s.lastActionAt = now
@@ -480,8 +495,9 @@ public enum VirtualPet {
     // MARK: Readings
 
     /// Acting out what was just done beats everything for a few seconds, then
-    /// sleep, then sick, hungry and happy.
-    public static func look(_ state: PetState, now: Date, dried: Bool = false) -> PetLook {
+    /// 渴成骷髅, 热化了, sleep, sick, 积灰, hungry and happy.
+    public static func look(_ state: PetState, now: Date, dried: Bool = false,
+                            melted: Bool = false) -> PetLook {
         if let action = state.lastAction, let when = state.lastActionAt, !state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
@@ -491,11 +507,31 @@ public enum VirtualPet {
             }
         }
         if dried { return .dried }
+        if melted { return .melted }
         if state.isSleeping { return .rest }
         if isSick(state) { return .sick }
+        if isDusty(state, now: now) { return .dusty }
         if state.food < lowLine { return .hungry }
         if PetNeed.allCases.allSatisfy({ state[$0] >= happyLine }) { return .cheer }
         return .idle
+    }
+
+    /// 积灰：这么久没人亲手照顾它。比离开超过 `awayAfterHours` 更久，所以
+    /// 一晚上不碰不会积灰，出门一整天回来才会。
+    public static let dustyAfterHours: Double = 24
+
+    /// When it was last looked after by hand. A pet saved before `touchedAt`
+    /// existed falls back to its last action unless that was a treat; one
+    /// with neither has never been touched and is not dusty yet.
+    public static func lastTouched(_ state: PetState) -> Date? {
+        if let touched = state.touchedAt { return touched }
+        if let action = state.lastAction, action != .treat { return state.lastActionAt }
+        return nil
+    }
+
+    public static func isDusty(_ state: PetState, now: Date) -> Bool {
+        guard let touched = lastTouched(state) else { return false }
+        return now.timeIntervalSince(touched) >= dustyAfterHours * 3600
     }
 
     /// Any need below `sickLine`.
@@ -548,7 +584,8 @@ public enum VirtualPet {
     }
 
     /// The tile's one line: what it is doing, or the lowest need.
-    public static func statusLine(_ state: PetState, now: Date, dried: Bool = false) -> String {
+    public static func statusLine(_ state: PetState, now: Date, dried: Bool = false,
+                                  melted: Bool = false) -> String {
         if let action = state.lastAction, let when = state.lastActionAt, state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
@@ -565,10 +602,14 @@ public enum VirtualPet {
         case .healing: return "好多了"
         default: break
         }
-        let look = look(state, now: now, dried: dried)
+        let look = look(state, now: now, dried: dried, melted: melted)
         switch look {
         case .dried:
             return "渴成骷髅了，快喝水"
+        case .dusty:
+            return "积灰了，摸摸它"
+        case .melted:
+            return "热化了，歇一歇"
         case .idle:
             if state.clean < lowLine { return "有点脏了" }
             if state.mood < lowLine { return "有点无聊" }
@@ -624,10 +665,13 @@ public enum VirtualPet {
     /// all six of its own, full body, since 喝水's is the app icon's head.
     public static func imageName(_ character: WaterCharacter, _ look: PetLook) -> String {
         if look == .dried { return "pet-\(character.rawValue)-skeleton" }
+        // Every character, the red panda too, has its own 积灰 and 化成一滩.
+        if look == .dusty { return "pet-\(character.rawValue)-dusty" }
+        if look == .melted { return "pet-\(character.rawValue)-melt" }
         if character == .redPanda { return "pet-panda-\(look.rawValue)" }
         switch look {
         case .idle, .cheer, .rest: return "water-\(character.rawValue)-\(look.rawValue)"
-        case .eat, .hungry, .sick, .dried: return "pet-\(character.rawValue)-\(look.rawValue)"
+        case .eat, .hungry, .sick, .dried, .dusty, .melted: return "pet-\(character.rawValue)-\(look.rawValue)"
         }
     }
 

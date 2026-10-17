@@ -10,14 +10,21 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     case darkMode, keepAwake, lock, screenSaver, emptyTrash
     case hiddenFiles, hideDesktop, extensions, muteMic
     case ejectDisks, clearClipboard, cleanScreen, quitApps
-    // 第二批工具，都不在默认里，用户在设置里自己勾。
+    // 第二批工具。截图识字、取色器、演示模式在新放的卡片默认里，其余用户在设置里自己勾。
     case textCapture, colorPicker, presentation, keyboardLock
     case qrCode, mirror, lowPower, restartDock
 
     public var id: String { rawValue }
 
     public static let key = "actions"
-    public static let defaults: [QuickToggle] = [.darkMode, .keepAwake, .lock, .emptyTrash]
+    /// 新放的快速开关带的按钮（`WidgetCatalog` 用它作默认值）：原来的四个，
+    /// 加上清洁屏幕和键盘、截图识字、取色器和演示模式。已经放好的卡片存着
+    /// 自己的列表，不受影响。
+    public static let defaults: [QuickToggle] = [.darkMode, .keepAwake, .lock, .emptyTrash,
+                                                 .cleanScreen, .textCapture, .colorPicker, .presentation]
+
+    /// 存着空列表（全取消勾选）的旧卡片一直退回这四个，保持不变。
+    public static let emptyFallback: [QuickToggle] = [.darkMode, .keepAwake, .lock, .emptyTrash]
 
     public var title: String {
         switch self {
@@ -108,13 +115,15 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     }
 
     /// The chosen switches in their saved order, unknown names dropped and
-    /// repeats removed. An empty choice falls back to the defaults, since a
-    /// card with no buttons is just an empty card.
+    /// repeats removed. No list at all is a new card and gets the defaults; an
+    /// empty choice falls back to the original four (`emptyFallback`), since a
+    /// card with no buttons is just an empty card and an existing card should
+    /// not grow four more buttons by itself.
     public static func chosen(_ config: WidgetConfig) -> [QuickToggle] {
         guard config[key] != nil else { return defaults }
         var seen = Set<QuickToggle>()
         let list = config.strings(key).compactMap(QuickToggle.init(rawValue:)).filter { seen.insert($0).inserted }
-        return list.isEmpty ? defaults : list
+        return list.isEmpty ? emptyFallback : list
     }
 
     /// Room for the round buttons in a row, or a column on a side shelf.

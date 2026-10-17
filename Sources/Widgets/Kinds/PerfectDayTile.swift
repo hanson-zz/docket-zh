@@ -28,7 +28,9 @@ struct PerfectDayTile: View {
         let tier = PerfectDay.record(items, key: "").tier
         return WidgetSurface {
             Group {
-                if context.position.isVertical {
+                if LiquidLooks.basketLook(instance.config) == .liquid {
+                    liquid(items, tier: tier)
+                } else if context.position.isVertical {
                     column(items, tier: tier)
                 } else {
                     wide(items, tier: tier)
@@ -56,6 +58,24 @@ struct PerfectDayTile: View {
                 }
             }
             Spacer(minLength: 0)
+        }
+    }
+
+    /// 液态：整张卡片是一篮竹叶色的水，水位是今天参加的几项的平均进度，
+    /// 满了水面盖过上沿（满篮那天就是满的）。竹叶、标题和三个小圆环浮在水上。
+    /// 不闪金光：满篮会持续一整天，一直 30 帧太费电。只在卡片可见时动，
+    /// 见 `LiquidWater`。
+    private func liquid(_ items: [PerfectDayProgress], tier: PerfectDayTier?) -> some View {
+        let vertical = context.position.isVertical
+        return ZStack {
+            LiquidWater(level: LiquidLooks.basketLevel(items), tint: Color(hex: PerfectDay.bambooHex),
+                        visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+                .fillingCard()
+            if vertical {
+                column(items, tier: tier)
+            } else {
+                wide(items, tier: tier)
+            }
         }
     }
 

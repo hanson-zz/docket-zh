@@ -289,7 +289,22 @@ final class QuickToggleListTests: XCTestCase {
         config.set(QuickToggle.key, .list([.string("lock"), .string("nope"), .string("keepAwake"), .string("lock")]))
         XCTAssertEqual(QuickToggle.chosen(config), [.lock, .keepAwake])
         config.set(QuickToggle.key, .list([]))
-        XCTAssertEqual(QuickToggle.chosen(config), QuickToggle.defaults)
+        XCTAssertEqual(QuickToggle.chosen(config), QuickToggle.emptyFallback, "空列表的旧卡片还是原来四个")
+    }
+
+    /// 新放的卡片多了清洁屏幕和键盘、截图识字、取色器和演示模式，原来四个
+    /// 排在前面不变；已经存了列表的旧卡片照旧。
+    func testNewCardDefaultsAddFourTools() {
+        XCTAssertEqual(QuickToggle.defaults, [.darkMode, .keepAwake, .lock, .emptyTrash,
+                                              .cleanScreen, .textCapture, .colorPicker, .presentation])
+        XCTAssertEqual(Array(QuickToggle.defaults.prefix(4)), QuickToggle.emptyFallback)
+        let made = WidgetCatalog.make(.toggles)!
+        XCTAssertEqual(QuickToggle.chosen(made.config), QuickToggle.defaults)
+        XCTAssertEqual(WidgetCatalog.naturalSize(made).width, QuickToggle.length(count: 8))
+        var old = WidgetConfig()
+        old.set(QuickToggle.key, .list(QuickToggle.emptyFallback.map { .string($0.rawValue) }))
+        XCTAssertEqual(QuickToggle.chosen(old), QuickToggle.emptyFallback)
+        XCTAssertEqual(QuickToggle.length(count: 8), 260)
     }
 
     func testEverySwitchIsNamed() {

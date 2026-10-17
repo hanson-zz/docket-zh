@@ -29,6 +29,11 @@ struct PetTile: View {
         !context.isPreview && VirtualPet.isDried(instance.config, missedDays: missedDays)
     }
 
+    /// 热化了：Mac 过热、CPU 一直很忙或外面太热，见 `PetHeat`。
+    private var melted: Bool {
+        !context.isPreview && PetMelt.now
+    }
+
     private var state: PetState {
         if context.isPreview { return VirtualPet.sample(now: context.now) }
         return VirtualPet.advanced(VirtualPet.state(instance.config, now: context.now), to: context.now)
@@ -36,7 +41,7 @@ struct PetTile: View {
 
     var body: some View {
         let s = state
-        let look = VirtualPet.look(s, now: context.now, dried: dried)
+        let look = VirtualPet.look(s, now: context.now, dried: dried, melted: melted)
         return WidgetSurface {
             Group {
                 if context.position.isVertical {
@@ -48,7 +53,7 @@ struct PetTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried))")
+        .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
         .onAppear { collectTreats() }
         .onChange(of: context.now) { _, _ in collectTreats() }
         // Rescheduled when the stored state changes (something was done for
@@ -79,7 +84,7 @@ struct PetTile: View {
                 Text(character.title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
-                Text(VirtualPet.statusLine(s, now: context.now, dried: dried))
+                Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
                     .font(.system(size: 11))
                     .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 PetBar(value: s.health, height: 4)
@@ -96,7 +101,7 @@ struct PetTile: View {
         VStack(spacing: 4) {
             PetFigure(character: character, look: look, height: 40,
                       effect: VirtualPet.effect(s, now: context.now))
-            Text(VirtualPet.statusLine(s, now: context.now, dried: dried))
+            Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
                 .font(WidgetStyle.caption(9))
                 .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 .lineLimit(1)
@@ -429,6 +434,17 @@ enum PetLog {
     }
 }
 
+/// 读 `PetHeat` 要的三个读数：系统的热状态、系统活动在跑时的 CPU 记录、
+/// 天气取到的气温。都是别处已经有的，这里不开任何采样。
+@MainActor
+enum PetMelt {
+    static var now: Bool {
+        PetHeat.isMelting(thermal: ProcessInfo.processInfo.thermalState.rawValue,
+                          cpuHistory: SystemMetrics.shared.cpuHistory,
+                          outdoorCelsius: WeatherService.shared.current?.temperatureC)
+    }
+}
+
 @MainActor
 enum PetArt {
     private static var cache: [String: NSImage] = [:]
@@ -460,7 +476,7 @@ enum PetStyle {
 
     static func tint(look: PetLook, health: Double) -> Color {
         switch look {
-        case .sick, .hungry, .dried: Color(hex: PaletteColor.red.hex)
+        case .sick, .hungry, .dried, .melted: Color(hex: PaletteColor.red.hex)
         case .cheer, .eat: accent
         default: health < 30 ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary
         }

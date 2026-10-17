@@ -42,8 +42,9 @@ struct LiquidWater: View {
         }
         let level = LiquidMotion.level(level)
         guard level > 0 else { return }
-        // 满的时候留一点空，波浪不会顶出上沿。
-        let fill = shape == .rect ? level * 0.94 : level
+        // 没满时留一点空，波浪不会顶出上沿；满了水面略高过上沿，
+        // 整张卡片盖住，不在顶上留一条底色的黑边（见 `LiquidLooks.cardFill`）。
+        let fill = shape == .rect ? LiquidLooks.cardFill(level) : level
         let baseY = rect.minY + rect.height * (1 - fill)
         let steps = shape == .rect ? 32 : 20
         let amp = shape == .rect ? 0.6 : 1.0
@@ -53,7 +54,7 @@ struct LiquidWater: View {
             path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
             for i in 0...steps {
                 let x = Double(i) / Double(steps)
-                let lift = BatteryMotion.surface(x: x, t: t, level: shape == .rect ? max(fill, 0.3) : fill,
+                let lift = BatteryMotion.surface(x: x, t: t, level: shape == .rect ? min(max(fill, 0.3), 1) : fill,
                                                  layer: layer, speed: 0.6 * speed)
                 path.addLine(to: CGPoint(x: rect.minX + x * rect.width, y: baseY - lift * rect.height * amp))
             }
@@ -84,9 +85,11 @@ struct LiquidWater: View {
 }
 
 extension LiquidWater {
-    /// 铺满整张卡片：抵消 `WidgetSurface` 的左右内边距，并按卡片圆角裁切。
+    /// 铺满整张卡片：先撑满可用的地方（不然水只有中间文字那么大，左右和
+    /// 上下会露出底色），再抵消 `WidgetSurface` 的左右内边距，按卡片圆角裁切。
     func fillingCard() -> some View {
-        self.padding(.horizontal, -WidgetStyle.inset)
+        self.frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, -WidgetStyle.inset)
             .clipShape(.rect(cornerRadius: WidgetStyle.corner, style: .continuous))
     }
 }

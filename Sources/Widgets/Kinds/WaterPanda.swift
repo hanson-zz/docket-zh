@@ -22,11 +22,18 @@ struct WaterPanda: View {
     var phase: Double = 0.3
     var celebrating: Bool = false
     var height: CGFloat
+    /// 渴成骷髅（见 `WaterParched`）：换成骷髅图，水照样从底下涨。
+    var parched: Bool = false
+
+    private var picture: NSImage? {
+        if parched, let skeleton = WaterArt.skeleton(character) { return skeleton }
+        return WaterArt.image(character, mood)
+    }
 
     var body: some View {
         let width = height * CGFloat(character.aspect)
         ZStack {
-            if let image = WaterArt.image(character, mood) {
+            if let image = picture {
                 art(image)
                     .saturation(0.15)
                     .opacity(0.5)
@@ -48,9 +55,10 @@ struct WaterPanda: View {
         .animation(.smooth(duration: 0.6), value: level)
         // A new mood swaps the picture with a short cross-fade.
         .animation(.easeInOut(duration: 0.25), value: mood)
+        .animation(.easeInOut(duration: 0.35), value: parched)
         .overlay(alignment: .topTrailing) {
             // The other characters' cheer picture has its own confetti.
-            if celebrating, !character.hasMoods {
+            if celebrating, !parched, !character.hasMoods {
                 Image(systemName: "sparkles")
                     .font(.system(size: max(8, height * 0.26), weight: .semibold))
                     .foregroundStyle(Color(hex: PaletteColor.yellow.hex))
@@ -142,7 +150,15 @@ enum WaterArt {
 
     /// Loose PNGs in the bundle's Resources, like the radio's; read once.
     static func image(_ character: WaterCharacter, _ mood: WaterMood) -> NSImage? {
-        let name = character.imageName(mood)
+        named(character.imageName(mood))
+    }
+
+    /// 渴成骷髅的图：小熊猫是趴姿的 WaterPanda-skeleton，其他角色借宠物的骷髅图。
+    static func skeleton(_ character: WaterCharacter) -> NSImage? {
+        named(WaterParched.imageName(character))
+    }
+
+    private static func named(_ name: String) -> NSImage? {
         if let image = cache[name] { return image }
         guard !missing.contains(name),
               let url = Bundle.main.url(forResource: name, withExtension: "png"),

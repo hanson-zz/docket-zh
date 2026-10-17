@@ -75,7 +75,39 @@ struct CodexUsageTile: View {
         }
     }
 
+    /// 圆环（默认）或液态小圆杯，见 `LiquidLooks`。
+    private var isLiquid: Bool { LiquidLooks.codexLook(instance.config) == .liquid }
+
+    @ViewBuilder
     private func ring(_ w: CodexLimitWindow, diameter: CGFloat) -> some View {
+        if isLiquid {
+            cup(w, diameter: diameter)
+        } else {
+            progressRing(w, diameter: diameter)
+        }
+    }
+
+    /// 液态：一个小圆杯，水位是圆环原来显示的数（已用或剩余），颜色和圆环
+    /// 一样按用掉多少变绿、橙、红；快用完时水波更急。只在卡片可见时动。
+    private func cup(_ w: CodexLimitWindow, diameter: CGFloat) -> some View {
+        let level = LiquidLooks.codexLevel(usedFraction: w.usedFraction, showsRemaining: showsRemaining)
+        let tint = CodexStyle.tint(used: w.usedFraction)
+        return ZStack {
+            LiquidWater(level: level, tint: tint, shape: .circle,
+                        visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                        speed: LiquidMotion.busySpeed(w.usedFraction))
+            Text("\(Int((level * 100).rounded()))")
+                .font(.system(size: diameter * 0.32, weight: .semibold, design: .rounded))
+                .foregroundStyle(WidgetStyle.primary)
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .shadow(color: .black.opacity(0.35), radius: 1)
+        }
+        .frame(width: diameter, height: diameter)
+        .opacity(report?.isStale(now: context.now) == true && !context.isPreview ? 0.55 : 1)
+    }
+
+    private func progressRing(_ w: CodexLimitWindow, diameter: CGFloat) -> some View {
         let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
         let tint = CodexStyle.tint(used: w.usedFraction)
         return MetricProgressRing(progress: fraction, tint: tint, track: tint.opacity(0.16),

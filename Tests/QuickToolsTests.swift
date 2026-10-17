@@ -4,13 +4,16 @@ import XCTest
 /// 只锁键盘的计时和低电量模式的 pmset 解析。
 final class QuickToolsTests: XCTestCase {
 
-    // MARK: 新开关默认不打开，旧配置照常读取
+    // MARK: 新开关只有三个进默认，旧配置照常读取
 
     func testNewTogglesAreNotDefaultAndOldConfigStillReads() {
         let added: [QuickToggle] = [.textCapture, .colorPicker, .presentation, .keyboardLock,
                                     .qrCode, .mirror, .lowPower, .restartDock]
+        // 截图识字、取色器、演示模式进了新卡片的默认，其余仍要自己勾。
+        let inDefaults: Set<QuickToggle> = [.textCapture, .colorPicker, .presentation]
         for toggle in added {
-            XCTAssertFalse(QuickToggle.defaults.contains(toggle))
+            XCTAssertEqual(QuickToggle.defaults.contains(toggle), inDefaults.contains(toggle), "\(toggle)")
+            XCTAssertFalse(QuickToggle.emptyFallback.contains(toggle))
             XCTAssertTrue(QuickToggle.allCases.contains(toggle))
         }
         XCTAssertEqual(Set(QuickToggle.allCases.map(\.rawValue)).count, QuickToggle.allCases.count)

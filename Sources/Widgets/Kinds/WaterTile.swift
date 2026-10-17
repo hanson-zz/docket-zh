@@ -19,6 +19,14 @@ struct WaterTile: View {
     var context: WidgetContext
 
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
+    /// 液态：整张卡片是一杯水，水位是今天的进度（见 `LiquidLooks`）。
+    private var isLiquid: Bool { LiquidLooks.waterIsLiquid(instance.config) }
+    /// 很久没喝或进度很低时角色渴成骷髅（见 `WaterParched`），喝一杯就复活。
+    private var parched: Bool {
+        !context.isPreview && WaterParched.isParched(instance.config, now: context.now)
+    }
+    /// 只有角色样式画骷髅；刚喝下那几秒举着杯子，先不变。
+    private var showsSkeleton: Bool { parched && !isRing && !isLiquid && mood != .drink }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
     /// The library's preview draws the sample week against its own 2000 ml.
     private var goal: Int {
@@ -66,7 +74,9 @@ struct WaterTile: View {
         let lap = RingLap.progress(total: day.total, goal: day.goal)
         return WidgetSurface {
             Group {
-                if context.position.isVertical {
+                if isLiquid {
+                    liquid(day, done: done)
+                } else if context.position.isVertical {
                     column(day, level: level, lap: lap, done: done)
                 } else {
                     wide(day, level: level, lap: lap, done: done)
@@ -75,7 +85,7 @@ struct WaterTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("喝水，\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))")
+        .accessibilityLabel("喝水，\(showsSkeleton ? "渴成骷髅了，" : "")\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))")
         .onAppear { WaterNotifier.shared.update(instance, next: nextReminder) }
         .onChange(of: nextReminder) { _, next in WaterNotifier.shared.update(instance, next: next) }
         // The pet's 渴成骷髅 reads this; written from here so it needs no
@@ -91,7 +101,8 @@ struct WaterTile: View {
             if isRing {
                 ring(level: lap, done: done, diameter: 40)
             } else {
-                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 40)
+                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 40,
+                           parched: showsSkeleton)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
@@ -99,9 +110,12 @@ struct WaterTile: View {
                     .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
                     .rollingValue(day.total)
-                Text(done ? "今天达标啦" : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                Text(done ? "今天达标啦"
+                     : showsSkeleton ? "渴成骷髅了 · \(WaterIntake.percent(total: day.total, goal: day.goal))%"
+                     : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                     .font(.system(size: 12))
-                    .foregroundStyle(done ? WaterStyle.water : WidgetStyle.secondary)
+                    .foregroundStyle(done ? WaterStyle.water
+                                     : showsSkeleton ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.6)
@@ -118,7 +132,8 @@ struct WaterTile: View {
             if isRing {
                 ring(level: lap, done: done, diameter: 34)
             } else {
-                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 34)
+                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 34,
+                           parched: showsSkeleton)
             }
             VStack(spacing: 0) {
                 Text(WaterIntake.figure(day.total, ounces: ounces))
@@ -134,6 +149,54 @@ struct WaterTile: View {
             .lineLimit(1)
             .minimumScaleFactor(0.6)
             drinkButton(size: 10)
+        }
+    }
+
+    // MARK: Liquid
+
+    /// 整张卡片是一杯水：水位是今天的进度，满了水面盖过上沿，达标的那一刻
+    /// 起水面闪几秒金光（和喝了一杯举杯子的时间一样）。数字和 + 浮在水上。
+    private func liquid(_ day: WaterDay, done: Bool) -> some View {
+        let level = LiquidLooks.waterLevel(total: day.total, goal: day.goal)
+        let vertical = context.position.isVertical
+        return ZStack {
+            LiquidWater(level: level, tint: WaterStyle.water,
+                        visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                        golden: done && mood == .drink)
+                .fillingCard()
+            if vertical {
+                VStack(spacing: 3) {
+                    Text(WaterIntake.figure(day.total, ounces: ounces))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                        .rollingValue(day.total)
+                    Text(done ? "达标啦" : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                        .font(WidgetStyle.caption(10))
+                        .foregroundStyle(WidgetStyle.primary.opacity(0.75))
+                        .monospacedDigit()
+                    drinkButton(size: 10)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            } else {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .monospacedDigit()
+                            .rollingValue(day.total)
+                        Text(done ? "今天达标啦" : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                            .font(.system(size: 12))
+                            .foregroundStyle(WidgetStyle.primary.opacity(0.75))
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    Spacer(minLength: 0)
+                    drinkButton(size: 12)
+                }
+            }
         }
     }
 

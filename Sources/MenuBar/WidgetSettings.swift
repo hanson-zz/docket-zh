@@ -501,6 +501,9 @@ struct WidgetSettingsSections: View {
         "slacker.end": "下班时间（要晚于上班时间）",
         "slacker.look": "外观",
         "timer.look": "外观",
+        "ai-usage.look": "外观",
+        "perfect-day.look": "外观",
+        "water.dryUp": "很久没喝水时角色渴成骷髅",
     ]
 
     static func label(_ key: String) -> String {
@@ -629,6 +632,8 @@ struct WidgetSettingsSections: View {
         "slacker.font": SlackerClock.FontChoice.allCases.map { ($0.title, $0.rawValue) },
         "slacker.look": SlackerClock.Look.allCases.map { ($0.title, $0.rawValue) },
         "timer.look": LiquidMotion.TimerLook.allCases.map { ($0.title, $0.rawValue) },
+        "ai-usage.look": LiquidLooks.CodexLook.allCases.map { ($0.title, $0.rawValue) },
+        "perfect-day.look": LiquidLooks.BasketLook.allCases.map { ($0.title, $0.rawValue) },
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
     ]
 

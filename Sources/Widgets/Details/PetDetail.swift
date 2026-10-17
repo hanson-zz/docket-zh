@@ -27,12 +27,13 @@ struct PetDetail: View {
         let state = context.isPreview
             ? VirtualPet.sample(now: now)
             : VirtualPet.advanced(VirtualPet.state(instance.config, now: now), to: now)
-        let look = VirtualPet.look(state, now: now, dried: dried)
+        let melted = !context.isPreview && PetMelt.now
+        let look = VirtualPet.look(state, now: now, dried: dried, melted: melted)
         return DetailCard {
             MeshBackdrop(color: accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                hero(state, look: look, now: now)
+                hero(state, look: look, now: now, melted: melted)
                 needs(state)
                 if VirtualPet.isSick(state) { healButton }
                 actions(state)
@@ -49,7 +50,7 @@ struct PetDetail: View {
 
     // MARK: Hero
 
-    private func hero(_ state: PetState, look: PetLook, now: Date) -> some View {
+    private func hero(_ state: PetState, look: PetLook, now: Date, melted: Bool) -> some View {
         let streak = VirtualPet.streak(state, today: now)
         return HStack(alignment: .center, spacing: 14) {
             PetFigure(character: character, look: look, height: 110,
@@ -62,9 +63,9 @@ struct PetDetail: View {
                 Text(character.title)
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(VirtualPet.statusLine(state, now: now, dried: dried))
+                Text(VirtualPet.statusLine(state, now: now, dried: dried, melted: melted))
                     .font(WidgetStyle.label(12))
-                    .foregroundStyle(look == .sick || look == .hungry || look == .dried
+                    .foregroundStyle(look == .sick || look == .hungry || look == .dried || look == .melted
                                      ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
                                      : .white.opacity(0.85))
                 Text("整体 \(Int(state.health.rounded()))%")
