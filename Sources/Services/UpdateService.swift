@@ -38,10 +38,13 @@ public final class UpdateService {
     }
 
     /// 中文本地化分支：检查本分支自己的 Releases，而不是上游英文版的 Releases，
-    /// 否则会提示用户“更新”到英文版。发布前请把 hanson-zz/docket-zh
-    /// 改成本分支实际的 GitHub 仓库路径。占位符中的下划线在 GitHub 用户名里不合法，
-    /// 因此在替换之前请求只会返回 404，检查会静默失败，不会被他人抢注冒用。
-    nonisolated static let releasesRepository = "hanson-zz/docket-zh"
+    /// 否则会提示用户“更新”到英文版。
+    ///
+    /// 仓库名在构建时写进 Info.plist（见 UpdateFeed），默认仍是
+    /// hanson-zz/docket-zh；要换成单独的发布仓库，改 release.yml 用的仓库变量
+    /// UPDATE_FEED_REPOSITORY 再打包即可，不用改这里。
+    nonisolated static let releasesRepository = UpdateFeed.repository(
+        from: Bundle.main.object(forInfoDictionaryKey: UpdateFeed.infoKey))
 
     private let endpoint = URL(string:
         "https://api.github.com/repos/\(UpdateService.releasesRepository)/releases/latest")!

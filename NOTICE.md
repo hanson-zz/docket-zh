@@ -381,3 +381,6 @@ affiliated with Docket, and none of them have endorsed it.
 Docket itself is released under the MIT License - see [LICENSE](LICENSE).
 That licence covers Docket's source only. It does not extend to any third-party
 data or service named above, each of which carries its own terms.
+
+码头在原作之外新增的部分另有许可说明，见 [LICENSING.md](LICENSING.md)；
+安装包的使用条款见 [EULA.md](EULA.md)。

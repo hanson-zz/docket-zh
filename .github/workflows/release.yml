@@ -41,6 +41,13 @@ jobs:
     # empty on a release event, so the fallback picks the tag out of the event.
     env:
       TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      # 闭源准备：App 检查新版本时查询的仓库，写进 Info.plist。没设仓库变量
+      # UPDATE_FEED_REPOSITORY 时保持 hanson-zz/docket-zh，已有用户的更新源不变。
+      # 切换到发布仓库时，在 Settings > Secrets and variables > Actions >
+      # Variables 里新建 UPDATE_FEED_REPOSITORY = hanson-zz/docket-release。
+      UPDATE_FEED: ${{ vars.UPDATE_FEED_REPOSITORY || 'hanson-zz/docket-zh' }}
+      # 安装包同时发到的公开发布仓库。需要 secret RELEASE_REPO_TOKEN 才会上传。
+      RELEASE_REPO: ${{ vars.RELEASE_REPOSITORY || 'hanson-zz/docket-release' }}
 
     steps:
       - uses: actions/checkout@v7
@@ -91,11 +98,12 @@ jobs:
 
       - name: Build Release
         run: |
-          echo "Building $TAG as CFBundleShortVersionString=${TAG#v} CFBundleVersion=$BUILD"
+          echo "Building $TAG as CFBundleShortVersionString=${TAG#v} CFBundleVersion=$BUILD, update feed $UPDATE_FEED"
           xcodebuild build \
             -project Docket.xcodeproj \
             -scheme Docket \
             CURRENT_PROJECT_VERSION="$BUILD" \
+            DOCKLING_UPDATE_REPOSITORY="$UPDATE_FEED" \
             -configuration Release \
             -derivedDataPath build \
             MARKETING_VERSION="${TAG#v}" \
@@ -208,3 +216,43 @@ jobs:
             printf '\n---\n\n%s\n' "$FOOTER"
           } > notes.md
           gh release edit "$TAG" --notes-file notes.md
+
+      # 闭源准备：同一套 dmg 和 zip 再发一份到公开的发布仓库（默认
+      # hanson-zz/docket-release）的同名 tag Release，用户以后从那里下载。
+      #
+      # 需要仓库 secret RELEASE_REPO_TOKEN：一个只授权发布仓库、Contents 读写的
+      # 细粒度 PAT。默认的 GITHUB_TOKEN 只能写本仓库，写不了别的仓库。没有这个
+      # secret 时整步跳过、不报错，上面发布到本仓库的行为完全不变。
+      #
+      # 发布仓库里的 Release 跟着本仓库的这一个走：草稿还是草稿，预发布还是
+      # 预发布，说明文字用上一步补好页脚的同一份。已经有同名 Release 时只替换
+      # 安装包和说明，不改它的草稿或预发布状态。
+      - name: Mirror the build to the release repository
+        env:
+          RELEASE_REPO_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_REPO_TOKEN" ]; then
+            echo "No RELEASE_REPO_TOKEN secret, so nothing goes to $RELEASE_REPO. The release in this repository is complete."
+            exit 0
+          fi
+          # 先用本仓库的 token 读这个 Release 的标题和状态。
+          read -r DRAFT PRE <<< "$(GH_TOKEN="${{ github.token }}" gh release view "$TAG" --json isDraft,isPrerelease --jq '"\(.isDraft) \(.isPrerelease)"')"
+          TITLE="$(GH_TOKEN="${{ github.token }}" gh release view "$TAG" --json name --jq '.name')"
+          FLAGS=()
+          if [ "$DRAFT" = true ]; then FLAGS+=(--draft); fi
+          if [ "$PRE" = true ]; then FLAGS+=(--prerelease); fi
+          export GH_TOKEN="$RELEASE_REPO_TOKEN"
+          if gh release view "$TAG" -R "$RELEASE_REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" -R "$RELEASE_REPO" --notes-file notes.md
+          else
+            DEFAULT_BRANCH="$(gh repo view "$RELEASE_REPO" --json defaultBranchRef --jq .defaultBranchRef.name)"
+            gh release create "$TAG" -R "$RELEASE_REPO" \
+              --title "${TITLE:-$TAG}" \
+              --notes-file notes.md \
+              --target "${DEFAULT_BRANCH:-main}" \
+              "${FLAGS[@]}"
+          fi
+          gh release upload "$TAG" -R "$RELEASE_REPO" \
+            "Dockling-${TAG}.dmg" \
+            "Dockling-${TAG}.zip" \
+            --clobber

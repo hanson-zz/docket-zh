@@ -3,10 +3,14 @@ name: CI
 # Pull requests are the gate. Pushes are checked only on main, because a run
 # on a branch push and a run on the pull request containing it are the same
 # build twice.
+#
+# workflow_dispatch: run the whole thing by hand on any branch, from the
+# Actions tab, whatever CI_MACOS says below.
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -113,8 +117,69 @@ jobs:
 
           echo "Clean."
 
+  # Decides whether the macOS job runs. The repository variable CI_MACOS
+  # (Settings > Secrets and variables > Actions > Variables) picks the mode:
+  #
+  #   unset or "always"  every push to main and every pull request, as before.
+  #   "code"             only when the change touches something that can break
+  #                      the build: Sources, Tests, Resources, Tools, scripts,
+  #                      project.yml or this file. Docs and README only changes
+  #                      skip it.
+  #   "manual"           only when started by hand (workflow_dispatch).
+  #
+  # Unset is the default and changes nothing. The other two exist because
+  # macOS minutes cost ten times Linux minutes once the repository is private;
+  # release.yml still does a full Release build of every tag either way.
+  scope:
+    name: Decide what to build
+    runs-on: ubuntu-latest
+    outputs:
+      macos: ${{ steps.decide.outputs.macos }}
+
+    steps:
+      - uses: actions/checkout@v7
+        if: vars.CI_MACOS == 'code'
+        with:
+          fetch-depth: 0
+
+      - name: Decide
+        id: decide
+        env:
+          MODE: ${{ vars.CI_MACOS }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          mode="${MODE:-always}"
+          macos=true
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            macos=true
+          elif [ "$mode" = manual ]; then
+            macos=false
+          elif [ "$mode" = code ]; then
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              range="$BASE_SHA $HEAD_SHA"
+            else
+              range="$BEFORE $GITHUB_SHA"
+            fi
+            # A new branch has an all-zero "before" and a force push one that
+            # is no longer in the history; git diff fails on both, and then
+            # it builds.
+            if changed=$(git diff --name-only $range 2>/dev/null); then
+              if printf '%s\n' "$changed" | grep -Eq '^(Sources/|Tests/|Resources/|Tools/|scripts/|project\.yml$|\.github/workflows/ci\.yml$)'; then
+                macos=true
+              else
+                macos=false
+              fi
+            fi
+          fi
+          echo "CI_MACOS=$mode, event $GITHUB_EVENT_NAME: macOS build and test = $macos"
+          echo "macos=$macos" >> "$GITHUB_OUTPUT"
+
   build-and-test:
     name: Build and test
+    needs: scope
+    if: needs.scope.outputs.macos == 'true'
     # macOS 26 is the deployment target, and the SDK has to match.
     runs-on: macos-26
 

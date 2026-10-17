@@ -15,7 +15,8 @@
 	<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSMinimumSystemVersion</key><string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key><true/>
-	<key>NSHumanReadableCopyright</key><string></string>
+	<key>NSHumanReadableCopyright</key><string>原作 © 2026 Naman Parashar（MIT）。码头新增部分 © 2026 Hanson，保留所有权利。</string>
+	<key>DocklingUpdateRepository</key><string>$(DOCKLING_UPDATE_REPOSITORY)</string>
 	<key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoadsForMedia</key><true/></dict>
 	<key>NSCalendarsFullAccessUsageDescription</key><string>码头会在程序坞小组件中显示你即将到来的日程。</string>
 	<key>NSRemindersFullAccessUsageDescription</key><string>码头会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。</string>

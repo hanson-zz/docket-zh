@@ -110,6 +110,8 @@ struct SupportSections: View {
             Button("发送反馈…") { Support.openFeedback() }
                 .buttonStyle(.link)
         }
+
+        LicenseSection()
     }
 }
 
