@@ -569,6 +569,19 @@ struct SettingsView: View {
             }
 
             SupportSections()
+
+            // 退出放在通用最下面：菜单栏图标关掉、扩展栏菜单也找不到时，
+            // 设置窗口是唯一入口。保存交给 applicationWillTerminate。
+            Section {
+                LabeledContent {
+                    Button("退出码头", role: .destructive) {
+                        NSApp.terminate(nil)
+                    }
+                    .keyboardShortcut("q", modifiers: [.command])
+                } label: {
+                    subtitled("退出码头", "关闭扩展栏和所有小组件。设置和数据已保存，下次打开会原样恢复。")
+                }
+            }
         }
         .formStyle(.grouped)
     }
