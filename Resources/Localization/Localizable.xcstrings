@@ -2146,6 +2146,28 @@
         }
       }
     },
+    "AI 任意门（横版）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Portal (Wide)"
+          }
+        }
+      }
+    },
+    "AI 任意门（竖版）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Portal (Tall)"
+          }
+        }
+      }
+    },
     "AI 助手" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2186,28 +2208,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI Assistant: click to open the chat"
-          }
-        }
-      }
-    },
-    "AI 字牌横排" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Tiles Row"
-          }
-        }
-      }
-    },
-    "AI 小熊猫方块" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Panda Square"
           }
         }
       }
@@ -23335,13 +23335,13 @@
         }
       }
     },
-    "相册方框" : {
+    "相册标准" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Frame"
+            "value" : "Standard Photo Frame"
           }
         }
       }

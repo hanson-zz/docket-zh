@@ -258,7 +258,7 @@ public enum WidgetCatalog {
                            "interval": .number(30), "shuffle": .bool(false)]),
               // 卡片名突出是相册，和时钟的“标准”分得开；layout 值不变，
               // 已经放好的卡片不受影响。
-              variants: [(tr("相册方框"), ["layout": .string("standard")]),
+              variants: [(tr("相册标准"), ["layout": .string("standard")]),
                          (tr("相册宽幅"), ["layout": .string("wide")])],
               supportsCompact: false, selfContained: true),
 
@@ -302,8 +302,8 @@ public enum WidgetCatalog {
         Entry(kind: .aiAssistant, name: tr("AI 助手"), category: .ai,
               defaults: c(["layout": .string(AIServices.wideLayout)]),
               // 卡片名说清是什么：横排是一排 AI 字牌，方块是小熊猫。layout 值不变。
-              variants: [(tr("AI 字牌横排"), ["layout": .string(AIServices.wideLayout)]),
-                         (tr("AI 小熊猫方块"), ["layout": .string(AIServices.squareLayout)])],
+              variants: [(tr("AI 任意门（横版）"), ["layout": .string(AIServices.wideLayout)]),
+                         (tr("AI 任意门（竖版）"), ["layout": .string(AIServices.squareLayout)])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .search, name: tr("搜索"), category: .ai,
