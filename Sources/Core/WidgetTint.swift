@@ -214,7 +214,7 @@ public enum WidgetTint {
         case .paddle: Palette("#FFD43B", "#5B5BD6")
         case .shopify: Palette("#5EC26A", "#8E5CF0")
         // 行情：红涨绿跌，主色红、对比色绿。
-        case .stock: Palette("#FF4D4F", "#34C759")
+        case .stock: Palette("#F0443A", "#34C759")
         case .watchlist: Palette("#FF5A5F", "#30D158")
         case .photos: Palette("#FF9F45", "#4F8DF5")
         case .screenshots: Palette("#64D2FF", "#FF8A3D")
