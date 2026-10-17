@@ -417,16 +417,30 @@ private func makeBackdrop(on screen: NSScreen) -> NSWindow {
 /// - Parameter shadow: whether the *window* casts one. A panel needs it, since
 ///   its surface draws none of its own; the shelf's plate already draws one
 ///   inside its bounds and would get two.
+/// A borderless window that may become key when asked to.
+///
+/// Borderless windows refuse key status, and a window that is not key draws
+/// its controls inactive: a prominent button comes out grey instead of in its
+/// tint. The paywall, the library and the AI panel are key windows in the
+/// app, so they are photographed as key windows here.
+private final class ShotWindow: NSWindow {
+    var keyable = false
+    override var canBecomeKey: Bool { keyable }
+    override var canBecomeMain: Bool { keyable }
+}
+
 @MainActor
 private func makeWindow<Content: View>(_ content: Content, shadow: Bool,
-                                       on screen: NSScreen) -> (NSWindow, NSHostingView<Content>)? {
+                                       on screen: NSScreen,
+                                       key: Bool = false) -> (NSWindow, NSHostingView<Content>)? {
     let hosting = NSHostingView(rootView: content)
     hosting.sizingOptions = [.intrinsicContentSize]
     let size = hosting.fittingSize
     guard size.width > 1, size.height > 1 else { return nil }
 
-    let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
-                          styleMask: .borderless, backing: .buffered, defer: false)
+    let window = ShotWindow(contentRect: CGRect(origin: .zero, size: size),
+                            styleMask: .borderless, backing: .buffered, defer: false)
+    window.keyable = key
     window.contentView = hosting
     window.isOpaque = false
     window.backgroundColor = .clear
@@ -437,6 +451,10 @@ private func makeWindow<Content: View>(_ content: Content, shadow: Bool,
     window.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
     centre(window, size: size, on: screen)
     window.orderFrontRegardless()
+    if key {
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+    }
     return (window, hosting)
 }
 
@@ -714,7 +732,7 @@ private func run() async {
     // should cost these three images rather than every shelf.
     for shot in viewShots() where only?.contains(shot.name) ?? true {
         await shot.prepare()
-        guard let (window, _) = makeWindow(shot.view(), shadow: true, on: screen) else {
+        guard let (window, _) = makeWindow(shot.view(), shadow: true, on: screen, key: true) else {
             log("\(shot.name): measured empty, skipping")
             continue
         }
@@ -903,11 +921,14 @@ private enum AINotchFixture {
 @MainActor
 private func viewShots() -> [ViewShot] {
     [
-        // The Add Widget sheet as it opens, on 所有小组件 with the category
-        // sidebar beside it. Every card is the widget's own preview, and the
-        // Pro capsules are fixed labels that do not depend on a licence.
+        // The Add Widget sheet with its category sidebar, opened on 健康与习惯:
+        // 所有小组件 opens on the app and folder shortcuts, which fill the
+        // first screen, and this category is where most Pro capsules sit
+        // (the liquid looks and the characters). Every card is the widget's
+        // own preview, and the capsules are fixed labels that do not depend
+        // on a licence.
         ViewShot(name: "widget-library", source: .sample, view: {
-            AnyView(WidgetLibraryView(onAdd: { _ in }, onClose: {})
+            AnyView(WidgetLibraryView(onAdd: { _ in }, onClose: {}, initialCategory: .health)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
         }, linger: .seconds(1)),
 

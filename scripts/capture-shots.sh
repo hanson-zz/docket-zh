@@ -80,6 +80,16 @@ mkdir -p "$OUT_DIR"
 # the source language, needs none, and any left over from an English run is
 # removed so a Chinese run cannot fall back to it.
 rm -rf "$PRODUCTS"/*.lproj
+
+# The pictures the app bundles as plain resources (the red panda the AI
+# assistant, Water, the virtual pet and the Slacker Clock draw, the radio) are
+# looked up with Bundle.main too, so they go beside the tool the same way, flat,
+# as they sit in the app's Resources. Without them those views draw their
+# fallback glyphs instead of the art.
+for folder in Pet Water Radio Slacker AppIcons; do
+  [ -d "$ROOT/Resources/$folder" ] && cp -f "$ROOT/Resources/$folder"/*.png "$PRODUCTS/" 2>/dev/null || true
+done
+
 if [ "$SHOTS_LANG" = "en" ]; then
   command -v python3 >/dev/null || fail "python3 not found; it writes the English strings for the tool."
   mkdir -p "$PRODUCTS/en.lproj"

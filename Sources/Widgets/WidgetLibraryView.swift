@@ -172,16 +172,21 @@ struct WidgetLibraryView: View {
     var onRemove: (UUID) -> Void
     var onClose: () -> Void
 
+    /// - Parameter initialCategory: the sidebar row the sheet opens on; nil
+    ///   is 所有小组件, which is what the app always uses. The README's
+    ///   screenshot tool opens it on a category instead.
     init(onAdd: @escaping (WidgetInstance) -> Void,
          onAddItem: @escaping (DockItem) -> Void = { _ in },
          placed: @escaping () -> [WidgetInstance] = { [] },
          onRemove: @escaping (UUID) -> Void = { _ in },
-         onClose: @escaping () -> Void) {
+         onClose: @escaping () -> Void,
+         initialCategory: WidgetCategory? = nil) {
         self.onAdd = onAdd
         self.onAddItem = onAddItem
         self.placed = placed
         self.onRemove = onRemove
         self.onClose = onClose
+        _selection = State(initialValue: initialCategory.map { LibrarySelection.category($0) } ?? .all)
     }
 
     private static let sidebarWidth: CGFloat = 175
