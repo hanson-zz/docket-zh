@@ -309,7 +309,7 @@ struct SlackerLook {
     /// 读屏念的一句：“距离下班 02:35:18，发薪 3 天，周五 1 天”。
     static func spoken(_ reading: SlackerClock.Reading) -> String {
         let cells = reading.cells.map { "\($0.label) \($0.value) \($0.unit)".trimmingCharacters(in: .whitespaces) }
-        return ([tr("摸鱼时钟，\(reading.title)")] + cells).joined(separator: "，")
+        return ([tr("摸鱼时钟，\(reading.title)")] + cells).joined(separator: tr("，"))
     }
 }
 

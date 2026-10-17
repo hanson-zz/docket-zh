@@ -67,7 +67,7 @@ struct PostureDetail: View {
                 HStack(spacing: 8) {
                     StatChip(label: tr("今日起身"), value: tr("\(breaks(now: now)) 次"))
                     StatChip(label: tr("提醒时段"), value: hours)
-                    StatChip(label: tr("间隔"), value: spelled(schedule.interval))
+                    StatChip(label: tr("间隔", context: "interval"), value: spelled(schedule.interval))
                 }
 
                 Button {

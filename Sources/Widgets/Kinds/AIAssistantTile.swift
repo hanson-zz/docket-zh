@@ -125,7 +125,7 @@ struct AIAssistantTile: View {
             Button("右移") { change { AIServices.move(service.id, by: 1, in: &$0) } }
                 .disabled(!AIServices.canMove(service.id, by: 1, in: config))
             Divider()
-            Button("隐藏", role: .destructive) { change { AIServices.hide(service.id, in: &$0) } }
+            Button(tr("隐藏", context: "verb"), role: .destructive) { change { AIServices.hide(service.id, in: &$0) } }
         }
     }
 

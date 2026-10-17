@@ -36,6 +36,17 @@ public enum AIQuickAction: String, CaseIterable, Sendable {
         }
     }
 
+    /// 面板按钮上的短名字。英文的“Summarize”放不下一排，按钮用更短的说法，
+    /// 提示和读屏仍然用 `title`。
+    public var chipTitle: String {
+        switch self {
+        case .translate: tr("翻译", context: "chip")
+        case .summarize: tr("总结", context: "chip")
+        case .polish: tr("润色", context: "chip")
+        case .explain: tr("解释", context: "chip")
+        }
+    }
+
     public var symbol: String {
         switch self {
         case .translate: "character.bubble"

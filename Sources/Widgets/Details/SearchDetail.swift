@@ -242,7 +242,7 @@ private struct AddSearchSite: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !available.isEmpty {
-                Text("常用").font(.headline)
+                Text(tr("常用", context: "sites")).font(.headline)
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(64), spacing: 6), count: 4), spacing: 10) {
                     ForEach(available) { site in
                         Button { add(site) } label: {

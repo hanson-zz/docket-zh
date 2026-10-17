@@ -15,7 +15,7 @@ private struct ProPerk: Identifiable {
         let kinds = ProFeatures.proKinds
             .compactMap { WidgetCatalog.entry($0)?.name }
             .sorted()
-            .joined(separator: "、")
+            .joined(separator: tr("、"))
         return [
             ProPerk(id: "kinds", symbol: "square.grid.2x2.fill", title: tr("Pro 小组件"), detail: kinds),
             ProPerk(id: "liquid", symbol: "drop.fill", title: tr("液态外观"),

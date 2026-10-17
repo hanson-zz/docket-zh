@@ -63,7 +63,7 @@ struct AppSwitcherDetail: View {
         .contextMenu {
             if !context.isPreview {
                 Button("切换到此应用") { _ = catalog.activate(bundleID: app.id) }
-                Button("隐藏") { _ = running(app)?.hide() }
+                Button(tr("隐藏", context: "verb")) { _ = running(app)?.hide() }
                 Divider()
                 Button("退出") { _ = running(app)?.terminate() }
             }

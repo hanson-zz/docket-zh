@@ -271,16 +271,16 @@ private struct AIPromptBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 if mode != .web {
-                    chip(tr("剪贴板"), symbol: "doc.on.clipboard", enabled: center.clipboardText != nil,
+                    chip(tr("剪贴板", context: "chip"), symbol: "doc.on.clipboard", enabled: center.clipboardText != nil,
                          help: center.clipboardPreview.map { tr("带进输入框：\($0)") } ?? tr("剪贴板里没有文字"),
                          label: tr("把剪贴板文字带进输入框")) {
                         center.pasteClipboard()
                     }
                 }
                 ForEach(AIQuickAction.allCases, id: \.self) { action in
-                    chip(action.title, symbol: nil, enabled: true,
+                    chip(action.chipTitle, symbol: nil, enabled: true,
                          help: helpText(action.title), label: tr("\(action.title)输入框或剪贴板里的文字")) {
                         guard !AskTextView.keyWindowIsComposing else { return }
                         center.run(action)
@@ -373,10 +373,13 @@ private struct AIPromptBar: View {
                 if let symbol {
                     Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
                 }
+                // 英文按钮比中文宽，挤的时候先缩小字号，不截成“Transl…”。
                 Text(title).font(.system(size: 11.5))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.35))
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 7)
             .frame(height: 22)
             .background(Capsule().fill(.white.opacity(0.08)))
             .contentShape(Capsule())
@@ -492,7 +495,7 @@ private struct AIAPIChatPane: View {
                 action(tr("停止生成"), symbol: "stop.circle") { center.stop() }
             } else {
                 if !last.text.isEmpty {
-                    action(tr("复制"), symbol: "doc.on.doc") { center.copy(last.text) }
+                    action(tr("复制", context: "copy"), symbol: "doc.on.doc") { center.copy(last.text) }
                 }
                 action(tr("重试"), symbol: "arrow.clockwise") { center.retry() }
                 action(tr("新对话"), symbol: "square.and.pencil") { center.clear() }

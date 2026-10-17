@@ -281,7 +281,7 @@ public enum AppVolumeText {
     public static func caption(names: [String], permissionNeeded: Bool) -> String {
         if permissionNeeded { return tr("需要录音权限") }
         guard !names.isEmpty else { return tr("播放声音的应用会出现在这里") }
-        let shown = names.prefix(2).joined(separator: "、")
+        let shown = names.prefix(2).joined(separator: tr("、"))
         return names.count > 2 ? tr("\(shown) 等 \(names.count) 个") : shown
     }
 }

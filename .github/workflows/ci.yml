@@ -117,6 +117,13 @@ jobs:
 
           echo "Clean."
 
+      # English strings carry no Chinese characters or Chinese punctuation
+      # (a stray "、" once reached the paywall), context keys keep their
+      # Chinese values, and placeholders match the key. The few strings that
+      # quote Chinese on purpose are allowlisted in the script.
+      - name: English strings
+        run: python3 scripts/check-en-strings.py
+
   # Decides whether the macOS job runs. The repository variable CI_MACOS
   # (Settings > Secrets and variables > Actions > Variables) picks the mode:
   #

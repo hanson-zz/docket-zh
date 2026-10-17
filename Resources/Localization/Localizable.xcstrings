@@ -513,7 +513,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ pts"
+            "value" : "%@ min"
           }
         }
       }
@@ -1063,7 +1063,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ shelf colors, 4 clock faces (Neon, Photo, Simple, Minimal), plus 5 Water characters: Shiba, Ginger cat, Penguin, Otter, Octopus. Dockling doesn't verify online; it's on your honor."
+            "value" : "%@ shelf colors, 4 clock faces (Neon, Photo, Simple, Minimal), plus 5 Water characters: Shiba, Tabby, Penguin, Otter, Octopus. Dockling doesn't verify online; it's on your honor."
           }
         }
       }
@@ -4865,7 +4865,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stood up today"
+            "value" : "Stands today"
           }
         }
       }
@@ -6185,7 +6185,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ALL DAY"
+            "value" : "All day"
           }
         }
       }
@@ -7274,7 +7274,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Free"
+            "value" : "Remaining"
           }
         }
       }
@@ -7341,6 +7341,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clipboard"
+          }
+        }
+      }
+    },
+    "剪贴板 (chip)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板"
           }
         }
       }
@@ -10157,6 +10186,35 @@
         }
       }
     },
+    "复制 (copy)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        }
+      }
+    },
     "复制并在刘海打开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12366,7 +12424,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Got "
+            "value" : "Collected "
           }
         }
       }
@@ -12752,6 +12810,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prompts"
+          }
+        }
+      }
+    },
+    "常用 (sites)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popular"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
           }
         }
       }
@@ -13881,6 +13968,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Summarize"
+          }
+        }
+      }
+    },
+    "总结 (chip)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sum up"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总结"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总结"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总结"
           }
         }
       }
@@ -15464,7 +15580,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reminder hours"
+            "value" : "Hours"
           }
         }
       }
@@ -17220,7 +17336,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neon, Photo, Simple and Minimal clock faces; Shiba, Ginger cat, Penguin, Otter and Octopus for Water and the virtual pet"
+            "value" : "Neon, Photo, Simple and Minimal clock faces; Shiba, Tabby, Penguin, Otter and Octopus for Water and the virtual pet"
           }
         }
       }
@@ -19625,7 +19741,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ginger cat"
+            "value" : "Tabby"
           }
         }
       }
@@ -20565,6 +20681,35 @@
         }
       }
     },
+    "没有 (amount)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有"
+          }
+        }
+      }
+    },
     "没有剩余日程" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21111,6 +21256,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Polish"
+          }
+        }
+      }
+    },
+    "润色 (chip)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polish"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "润色"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "润色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "润色"
           }
         }
       }
@@ -25141,6 +25315,35 @@
         }
       }
     },
+    "翻译 (chip)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻译"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻译"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻译"
+          }
+        }
+      }
+    },
     "翻译 · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26274,6 +26477,35 @@
         }
       }
     },
+    "解释 (chip)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解释"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解释"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解释"
+          }
+        }
+      }
+    },
     "解锁码头 Pro…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26511,7 +26743,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set"
+            "value" : "Settings"
           }
         }
       }
@@ -28898,7 +29130,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo, Simple, Minimal; characters are in the Water widget: Shiba, Ginger cat, Penguin, Otter, Octopus."
+            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo, Simple, Minimal; characters are in the Water widget: Shiba, Tabby, Penguin, Otter, Octopus."
           }
         }
       }
@@ -29365,6 +29597,35 @@
         }
       }
     },
+    "间隔 (interval)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interval"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "间隔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "间隔"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "间隔"
+          }
+        }
+      }
+    },
     "闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29658,6 +29919,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide %@"
+          }
+        }
+      }
+    },
+    "隐藏 (verb)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏"
           }
         }
       }
@@ -30725,6 +31015,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "(local time)"
+          }
+        }
+      }
+    },
+    "，" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", "
           }
         }
       }

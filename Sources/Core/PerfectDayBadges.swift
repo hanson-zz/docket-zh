@@ -537,7 +537,7 @@ public struct PerfectBadgeStatus: Equatable, Hashable, Sendable, Identifiable {
     /// 收下过的年份跟在后面。
     public var festivalLine: String? {
         guard badge.category == .festival else { return nil }
-        let collected = years.isEmpty ? nil : tr("已收 ") + years.map(String.init).joined(separator: "、")
+        let collected = years.isEmpty ? nil : tr("已收 ") + years.map(String.init).joined(separator: tr("、"))
         let head: String
         switch phase {
         case .earned: head = tr("今年已收下")

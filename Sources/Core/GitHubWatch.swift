@@ -425,7 +425,7 @@ public enum GitHubFeed {
         if pulls > 0 { parts.append(tr("\(pulls) 个拉取请求")) }
         if comments > 0 { parts.append(tr("\(comments) 条评论")) }
         return (tr("\(repo) 有 \(items.count) 条新反馈"),
-                tr("新增 ") + parts.joined(separator: "、") + tr("。最新：\(first.title)"))
+                tr("新增 ") + parts.joined(separator: tr("、")) + tr("。最新：\(first.title)"))
     }
 
     // MARK: Relative time

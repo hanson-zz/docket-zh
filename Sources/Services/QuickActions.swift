@@ -317,7 +317,7 @@ final class QuickActions {
                 && $0.processIdentifier != front && !$0.isTerminated
         }
         guard !targets.isEmpty else { return }
-        let names = targets.prefix(6).compactMap(\.localizedName).joined(separator: "、")
+        let names = targets.prefix(6).compactMap(\.localizedName).joined(separator: tr("、"))
         let more = targets.count > 6 ? tr(" 等 \(targets.count) 个应用") : ""
         guard Self.confirm(tr("要退出其他 \(targets.count) 个应用吗？"),
                            tr("\(names)\(more)。当前使用的应用和访达会保留；有未存储内容的应用会照常询问。"),

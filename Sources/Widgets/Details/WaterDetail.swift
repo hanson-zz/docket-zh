@@ -1013,7 +1013,7 @@ extension WaterDetail {
                             .font(WidgetStyle.label(12))
                             .foregroundStyle(.white.opacity(0.85))
                         Spacer()
-                        Text(profile.exerciseMinutes == 0 ? tr("没有") : tr("\(profile.exerciseMinutes) 分钟"))
+                        Text(profile.exerciseMinutes == 0 ? tr("没有", context: "amount") : tr("\(profile.exerciseMinutes) 分钟"))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
                             .monospacedDigit()

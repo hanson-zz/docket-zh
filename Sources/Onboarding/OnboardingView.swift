@@ -270,7 +270,7 @@ struct OnboardingView: View {
         previewKinds
             .filter { WidgetSearch.permissions[$0] == permission }
             .compactMap { WidgetKind(rawValue: $0).flatMap { WidgetCatalog.entry($0)?.name } }
-            .joined(separator: "、")
+            .joined(separator: tr("、"))
     }
 
     // MARK: - ⑤ 布置中
@@ -374,7 +374,7 @@ struct OnboardingView: View {
         if names.isEmpty {
             return tr("扩展栏已经放在屏幕\(position.displayName)。你选的小组件都已经在布局里了，没有重复添加。")
         }
-        return tr("扩展栏已经放在屏幕\(position.displayName)，并添加了 \(names.count) 个小组件：\(names.joined(separator: "、"))。")
+        return tr("扩展栏已经放在屏幕\(position.displayName)，并添加了 \(names.count) 个小组件：\(names.joined(separator: tr("、")))。")
     }
 }
 
