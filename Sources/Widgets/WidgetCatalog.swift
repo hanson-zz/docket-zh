@@ -80,12 +80,16 @@ public enum WidgetCatalog {
               defaults: c([LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.ring.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
+        // 默认值里的 layout 仍是进度条：没存 layout 的旧卡片补默认值时保持
+        // 原样。新放上去的卡片在 `make` 里换成圆环（推荐默认），所以圆环排第一。
         Entry(kind: .progress, name: "时间进度", category: .clocks,
-              defaults: c(["layout": .string("bars"), "period": .string("year")]),
-              variants: [("进度条", ["layout": .string("bars")]),
-                         ("圆环", ["layout": .string("ring")]),
+              defaults: c([TimeProgress.layoutKey: .string(TimeProgress.legacyLayout),
+                           TimeProgress.periodKey: .string("year"),
+                           TimeProgress.motionKey: .bool(true)]),
+              variants: [("圆环", ["layout": .string("ring")]),
                          ("百分比", ["layout": .string("percentage")]),
-                         ("液态", ["layout": .string(LiquidMotion.layout)])],
+                         ("液态", ["layout": .string(LiquidMotion.layout)]),
+                         ("进度条", ["layout": .string("bars")])],
               supportsCompact: true, selfContained: true),
 
         // 倒计时没有样式选择，数字的外观（普通或折叠翻页）用 look 键，默认普通。
@@ -613,6 +617,9 @@ public enum WidgetCatalog {
         // 仅图标 draws bare glyphs; there is no gauge for a look to change.
         case (.battery, BatteryLook.key):
             config.string("layout", default: "status") != "icon"
+        // 水面动效只有液态外观有。
+        case (.progress, TimeProgress.motionKey):
+            TimeProgress.layout(config) == LiquidMotion.layout
         // 渴成骷髅只画在角色上；圆环和液态没有角色。
         case (.water, WaterParched.key):
             config.string("layout", default: "character") == "character"
@@ -722,6 +729,7 @@ public enum WidgetCatalog {
         guard let entry = byKind[kind] else { return nil }
         var config = entry.defaults
         if kind == .battery { config.set(BatteryLook.key, .string(BatteryLook.newWidgetDefault.rawValue)) }
+        if kind == .progress { config.set(TimeProgress.layoutKey, .string(TimeProgress.newWidgetLayout)) }
         for (k, v) in overrides { config.set(k, v) }
         return WidgetInstance(kind: kind, expanded: true, config: config)
     }
@@ -744,9 +752,8 @@ public enum WidgetCatalog {
         case .timer: return CGSize(width: 168, height: 124)
         case .progress:
             switch cfg.string("layout", default: "bars") {
-            case "ring": return CGSize(width: 148, height: 76)
-            case "percentage": return CGSize(width: 112, height: 62)
-            case LiquidMotion.layout: return CGSize(width: 132, height: 72)
+            // 圆环、百分比、液态一样宽（方案的 176pt），留白一致。
+            case "ring", "percentage", LiquidMotion.layout: return CGSize(width: 176, height: 76)
             default: return CGSize(width: 176, height: 78)
             }
         case .countdown: return CGSize(width: 140, height: 72)
@@ -806,7 +813,8 @@ public enum WidgetCatalog {
             return cfg.bool("chart") ? CGSize(width: 160, height: 84) : CGSize(width: 100, height: 62)
         case .aiUsage: return CGSize(width: 244, height: 62)
         case .shortcut: return CGSize(width: 140, height: 76)
-        case .airdrop: return CGSize(width: 100, height: 76)
+        // 横排：左边图标，右边“隔空投送”和一行说明。
+        case .airdrop: return CGSize(width: 176, height: 76)
         case .weather:
             switch cfg.string("layout", default: "current") {
             case "hourly": return CGSize(width: 216, height: 132)

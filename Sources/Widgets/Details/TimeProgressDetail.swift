@@ -1,11 +1,11 @@
 import Foundation
 import SwiftUI
 
-/// All three spans at once - which is the one thing the tile cannot do.
+/// All four spans at once - which is the one thing the tile cannot do.
 ///
-/// Its period name is a button that pages day → month → year, so a card only
-/// ever answers one of the three questions and you have to click twice to see
-/// the other two. Here they stack, and the comparison is the point: a day
+/// Its period name is a button that pages day → week → month → year, so a card
+/// only ever answers one of the four questions and you have to click on to see
+/// the others. Here they stack, and the comparison is the point: a day
 /// three quarters gone sitting above a year barely past three quarters is a
 /// different feeling from either number alone.
 ///
@@ -170,7 +170,7 @@ struct TimeProgressDetail: View {
             let minutes = Int((max(0, end.timeIntervalSince(now)) / 60).rounded(.up))
             return minutes >= 60 ? "剩余 \(minutes / 60) 小时 \(minutes % 60) 分钟"
                                  : "剩余 \(minutes) 分钟"
-        case .month, .year:
+        case .week, .month, .year:
             // Counted in calendar days from the start of today, so today
             // counts as a day you still have and a DST change cannot shave one
             // off an otherwise whole month.
@@ -200,38 +200,13 @@ struct TimeProgressDetail: View {
         }
     }
 
-    /// The tile's three spans, raw values included: both sides read the same
-    /// config key, so a span added there has to be added here too or the panel
-    /// silently drops it.
-    private enum Span: String, CaseIterable {
-        case day, month, year
+    /// The tile's spans, from Core, so the panel and the card can never
+    /// disagree about which spans exist.
+    private typealias Span = TimeProgress.Period
+}
 
-        var component: Calendar.Component {
-            switch self {
-            case .day: .day
-            case .month: .month
-            case .year: .year
-            }
-        }
-
-        /// The tile's label for the span - the weekday, the month's name, the
-        /// year - rather than the abstract word for it.
-        func title(_ now: Date) -> String {
-            switch self {
-            case .day: now.formatted(.dateTime.weekday(.wide))
-            case .month: now.formatted(.dateTime.month(.wide))
-            case .year: now.formatted(.dateTime.year())
-            }
-        }
-
-        /// "September" means nothing read aloud out of context; this is what
-        /// the row is actually about.
-        var spoken: String {
-            switch self {
-            case .day: "今天"
-            case .month: "本月"
-            case .year: "今年"
-            }
-        }
-    }
+private extension TimeProgress.Period {
+    /// The tile's label for the span - 周六, 第42周, 10月, 2026年 - rather
+    /// than the abstract word for it.
+    func title(_ now: Date) -> String { TimeProgress.label(self, now: now) }
 }

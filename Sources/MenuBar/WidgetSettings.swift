@@ -504,6 +504,7 @@ struct WidgetSettingsSections: View {
         "ai-usage.look": "外观",
         "perfect-day.look": "外观",
         "water.dryUp": "很久没喝水时角色渴成骷髅",
+        "progress.liquidMotion": "水面动效（波纹和气泡）",
     ]
 
     static func label(_ key: String) -> String {
@@ -614,7 +615,7 @@ struct WidgetSettingsSections: View {
     static let stringChoices: [String: [(title: String, value: String)]] = [
         "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
         "battery.look": BatteryLook.allCases.map { ($0.title, $0.rawValue) },
-        "progress.period": [("日", "day"), ("月", "month"), ("年", "year")],
+        "progress.period": TimeProgress.Period.allCases.map { ($0.title, $0.rawValue) },
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
         "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],
         "search.engine": SearchSites.builtIn.map { ($0.title, $0.id) },

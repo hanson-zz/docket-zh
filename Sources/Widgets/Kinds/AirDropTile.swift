@@ -1,52 +1,226 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// Presentational for now - the drop target lands with file handling.
+/// 隔空投送：把文件拖到卡片上，松手交给系统的隔空投送面板。
+///
+/// - 普通态横排：左边圆角方底的同心弧图标，右边「隔空投送」和「拖文件到这里」。
+/// - 拖着文件停在卡片上：蓝色虚线高亮，文字换成「松手发送」和「N 个文件」。
+/// - 竖排只在空间不够时用（竖排货架或窄卡）：图标在上，「隔空投送」拆两行。
+/// - 用不了（系统没有隔空投送服务）或拖来的不是文件时整张灰掉。
+///
+/// 发送交给 `NSSharingService(named: .sendViaAirDrop)`，选设备、发送进度和
+/// 结果都在系统面板里，卡片上不显示发送成功。状态和文字在 Core 的
+/// `AirDropDrop`，这里只负责画和接住拖放。
 struct AirDropTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.widgetHovered) private var hovered
+    @Environment(\.colorScheme) private var scheme
+
+    @State private var dragging = false
+    @State private var files = 0
+
+    /// 系统隔空投送的蓝。
+    static let blue = Color(hex: "#0A84FF")
+
+    /// 系统有没有隔空投送服务，启动后不会变，读一次。
+    @MainActor private static let available = NSSharingService(named: .sendViaAirDrop) != nil
+
+    private var state: AirDropDrop.State {
+        AirDropDrop.state(available: context.isPreview || Self.available,
+                          dragging: dragging, files: files)
+    }
+
+    private var column: Bool {
+        AirDropDrop.usesColumn(vertical: context.position.isVertical,
+                               width: WidgetCatalog.contentSize(instance, position: context.position).width)
+    }
+
     var body: some View {
-        // A column is narrower, not different: same glyph over the same
-        // caption, just sized for 56pt of usable width.
-        let column = context.position.isVertical
-        return WidgetSurface {
-            // 高度够就上下叠（图标在上、字在下）；货架矮或小组件库的缩略图
-            // 只有一点高时改成左右排，图标不再顶出卡片上沿。
-            ViewThatFits(in: .vertical) {
-                VStack(spacing: 5) {
-                    badge(size: column ? 32 : 34)
-                    caption(size: column ? 12 : 13)
+        WidgetSurface {
+            Group {
+                if column {
+                    columnLayout
+                } else {
+                    // 小组件库的缩略图很矮时退成只有标题的一行，图标不顶出卡片。
+                    ViewThatFits(in: .vertical) {
+                        rowLayout
+                        HStack(spacing: 8) {
+                            badge(size: 26)
+                            title(13)
+                            Spacer(minLength: 0)
+                        }
+                    }
                 }
-                HStack(spacing: 8) {
-                    badge(size: 26)
-                    caption(size: 13)
-                }
-                caption(size: 12)
             }
+            .opacity(state.disabled ? 0.45 : 1)
+            .animation(.snappy(duration: 0.18), value: state)
         }
+        .overlay { highlight }
+        .onDrop(of: [.fileURL, .item], delegate: AirDropDropDelegate(
+            enabled: !context.isPreview && Self.available,
+            update: { inside, count in
+                dragging = inside
+                files = count
+            },
+            send: Self.send))
+        .help(state.disabled ? state.caption : "把文件拖到这里，用隔空投送发送")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(state.title)，\(state.caption)")
+    }
+
+    // MARK: Layouts
+
+    /// 横排：图标和其它卡片一样是 40pt 的圆角方底，文字两级。
+    private var rowLayout: some View {
+        HStack(spacing: 10) {
+            badge(size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                title(15)
+                Text(state.caption)
+                    .font(WidgetStyle.caption(11))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// 竖排：图标在上，标题拆两行。
+    private var columnLayout: some View {
+        VStack(spacing: 4) {
+            badge(size: 32)
+            Text(state.highlighted ? "松手\n发送" : AirDropDrop.columnTitle)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(state.highlighted ? Self.blue : WidgetStyle.primary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(0)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func title(_ size: CGFloat) -> some View {
+        Text(state.title)
+            .font(WidgetStyle.label(size))
+            .foregroundStyle(state.highlighted ? Self.blue : WidgetStyle.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    /// 悬停或拖入时图标变蓝、微微放大；灰掉时是次要色。
+    private var glyphColor: Color {
+        if state.disabled { return WidgetStyle.secondary }
+        return state.highlighted || (hovered && !context.isPreview) ? Self.blue : WidgetStyle.primary
     }
 
     private func badge(size: CGFloat) -> some View {
         // 和货架其他卡片一样的中性玻璃底，不用苹果的蓝色应用图标。
         TileBadge(size: size) {
             AirDropGlyph()
-                .stroke(WidgetStyle.primary, style: StrokeStyle(lineWidth: max(1.4, size * 0.05), lineCap: .round))
+                .stroke(glyphColor, style: StrokeStyle(lineWidth: max(1.4, size * 0.05), lineCap: .round))
                 .frame(width: size * 0.56, height: size * 0.56)
                 .overlay(alignment: .center) {
                     Circle()
-                        .fill(WidgetStyle.primary)
+                        .fill(glyphColor)
                         .frame(width: size * 0.1, height: size * 0.1)
                         .offset(y: size * 0.56 * 0.08)
                 }
         }
+        .scaleEffect(state.highlighted ? 1.06 : 1)
+        .animation(.snappy(duration: 0.18), value: state.highlighted)
+        .animation(.easeOut(duration: 0.15), value: hovered)
     }
 
-    private func caption(size: CGFloat) -> some View {
-        Text("隔空投送")
-            .font(.system(size: size, weight: .semibold))
-            .foregroundStyle(WidgetStyle.primary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+    /// 拖入态：蓝色虚线框，底下垫一层很淡的蓝。
+    private var highlight: some View {
+        RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
+            .fill(Self.blue.opacity(scheme == .dark ? 0.14 : 0.10))
+            .overlay {
+                RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
+                    .strokeBorder(Self.blue.opacity(0.9),
+                                  style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+            }
+            .opacity(state.highlighted ? 1 : 0)
+            .animation(.snappy(duration: 0.15), value: state.highlighted)
+            .allowsHitTesting(false)
+    }
+
+    // MARK: Sending
+
+    /// 交给系统的隔空投送面板。先把码头带到前台，面板才不会躲在别的窗口后面。
+    @MainActor
+    private static func send(_ urls: [URL]) {
+        guard !urls.isEmpty,
+              let service = NSSharingService(named: .sendViaAirDrop),
+              service.canPerform(withItems: urls) else {
+            NSSound.beep()
+            return
+        }
+        NSApp.activate()
+        service.perform(withItems: urls)
+    }
+}
+
+/// 接住拖放：数拖进来的文件个数给卡片显示，松手后读出文件地址再发送。
+@MainActor
+private struct AirDropDropDelegate: DropDelegate {
+    var enabled: Bool
+    var update: @MainActor (Bool, Int) -> Void
+    var send: @MainActor ([URL]) -> Void
+
+    private func count(_ info: DropInfo) -> Int {
+        info.itemProviders(for: [.fileURL]).count
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard enabled else { return }
+        update(true, count(info))
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        guard enabled else { return DropProposal(operation: .forbidden) }
+        let files = count(info)
+        update(true, files)
+        return DropProposal(operation: files > 0 ? .copy : .forbidden)
+    }
+
+    func dropExited(info: DropInfo) {
+        update(false, 0)
+    }
+
+    func validateDrop(info: DropInfo) -> Bool {
+        enabled && info.hasItemsConforming(to: [.fileURL])
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        update(false, 0)
+        let providers = info.itemProviders(for: [.fileURL])
+        guard enabled, !providers.isEmpty else { return false }
+        let send = self.send
+        Task { @MainActor in
+            var urls: [URL] = []
+            for provider in providers {
+                if let url = await Self.load(provider) { urls.append(url) }
+            }
+            send(urls)
+        }
+        return true
+    }
+
+    /// 文件地址在拖放里是一段 file URL 的数据。
+    @MainActor
+    private static func load(_ provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
+                let url = data.flatMap { URL(dataRepresentation: $0, relativeTo: nil) }
+                continuation.resume(returning: url?.isFileURL == true ? url : nil)
+            }
+        }
     }
 }
 

@@ -64,5 +64,30 @@ public enum LiquidMotion {
 
     public static let hotThreshold = 0.85
 
+    /// 水里的一颗气泡：`x` 横向位置（0...1），`rise` 从水底往上走了多少
+    /// （0 在水底、1 到水面），`radius` 半径占卡片高度的比例。
+    public struct Bubble: Equatable, Sendable {
+        public var x: Double
+        public var rise: Double
+        public var radius: Double
+    }
+
+    /// 几颗慢慢往上冒的气泡。每颗有自己的位置、大小和速度，周期错开，
+    /// 不会一起冒出来；`t` 不变（静止）时就是固定的一张图。
+    public static func bubbles(count: Int, t: Double) -> [Bubble] {
+        guard count > 0 else { return [] }
+        return (0..<count).map { index in
+            let seed = Double(index)
+            // 黄金角错开横向位置，看起来散而不乱。
+            let x = 0.12 + 0.76 * (seed * 0.618_034).truncatingRemainder(dividingBy: 1)
+            let period = 4.5 + 1.3 * (seed.truncatingRemainder(dividingBy: 3))
+            let phase = (seed * 0.37).truncatingRemainder(dividingBy: 1)
+            let raw = (t.isFinite ? t : 0) / period + phase
+            let rise = raw - raw.rounded(.down)
+            let radius = 0.022 + 0.012 * (seed.truncatingRemainder(dividingBy: 2))
+            return Bubble(x: x, rise: rise, radius: radius)
+        }
+    }
+
     public static func isHot(_ load: Double) -> Bool { level(load) >= hotThreshold }
 }

@@ -14,6 +14,10 @@ struct LiquidWater: View {
     var golden: Bool = false
     /// 波速倍数，系统活动用占用率调。
     var speed: Double = 1
+    /// 水面一道亮线（时间进度的液态用）。
+    var shine: Bool = false
+    /// 水里慢慢往上冒的气泡数，0 不画。位置由 `LiquidMotion.bubbles` 算。
+    var bubbles: Int = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -49,6 +53,7 @@ struct LiquidWater: View {
         let steps = shape == .rect ? 32 : 20
         let amp = shape == .rect ? 0.6 : 1.0
         var front = Path()
+        var surface = Path()
         for layer in [1, 0] {
             var path = Path()
             path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
@@ -56,7 +61,11 @@ struct LiquidWater: View {
                 let x = Double(i) / Double(steps)
                 let lift = BatteryMotion.surface(x: x, t: t, level: shape == .rect ? min(max(fill, 0.3), 1) : fill,
                                                  layer: layer, speed: 0.6 * speed)
-                path.addLine(to: CGPoint(x: rect.minX + x * rect.width, y: baseY - lift * rect.height * amp))
+                let point = CGPoint(x: rect.minX + x * rect.width, y: baseY - lift * rect.height * amp)
+                path.addLine(to: point)
+                if layer == 0 {
+                    if i == 0 { surface.move(to: point) } else { surface.addLine(to: point) }
+                }
             }
             path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
             path.closeSubpath()
@@ -74,6 +83,24 @@ struct LiquidWater: View {
                     context.stroke(front, with: .color(tint.opacity(0.4)), lineWidth: 0.8)
                 }
             }
+        }
+        if bubbles > 0, baseY < rect.maxY - 6 {
+            // 气泡只在水里：从底边冒到水面下一点，快到水面时淡掉。
+            var water = context
+            water.clip(to: front)
+            let depth = rect.maxY - baseY
+            for bubble in LiquidMotion.bubbles(count: bubbles, t: t) {
+                let r = max(1.2, bubble.radius * rect.height)
+                let y = rect.maxY - r - bubble.rise * max(0, depth - 2 * r)
+                let x = rect.minX + bubble.x * rect.width
+                let fade = bubble.rise > 0.8 ? (1 - bubble.rise) / 0.2 : min(1, bubble.rise / 0.1 + 0.2)
+                let dot = Path(ellipseIn: CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r))
+                water.fill(dot, with: .color(.white.opacity(0.18 * fade)))
+                water.stroke(dot, with: .color(.white.opacity(0.55 * fade)), lineWidth: 0.7)
+            }
+        }
+        if shine, level < 1 {
+            context.stroke(surface, with: .color(.white.opacity(0.7)), lineWidth: 1.2)
         }
         if golden {
             let glow = reduceMotion || !visible ? 0.6 : 0.5 + 0.5 * sin(t * 4)
