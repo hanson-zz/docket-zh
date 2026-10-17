@@ -16,7 +16,8 @@ final class PetDustMeltTests: XCTestCase {
     // MARK: 积灰
 
     func testDustAfterADayWithoutBeingTouched() {
-        let played = VirtualPet.performing(.play, on: PetState(food: 60, mood: 50, energy: 60, clean: 60, at: at(14)),
+        // 吃饱玩好地走开一天：十二小时后的离开保底让它不至于生病。
+        let played = VirtualPet.performing(.play, on: PetState(food: 100, mood: 80, energy: 100, clean: 100, at: at(14)),
                                            now: at(14), calendar: calendar)
         XCTAssertEqual(played.touchedAt, at(14))
         XCTAssertFalse(VirtualPet.isDusty(played, now: at(15, 11)))

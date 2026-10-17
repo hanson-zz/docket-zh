@@ -177,7 +177,7 @@ final class WaterMergeTests: XCTestCase {
         let locked = entry.variants.filter { WidgetCatalog.isSupporterOnly($0.overrides) }.map(\.title)
         XCTAssertEqual(locked, ["柴犬", "橘猫", "企鹅", "水獭", "章鱼"])
         let free = entry.variants.filter { !WidgetCatalog.isSupporterOnly($0.overrides) }.map(\.title)
-        XCTAssertEqual(free, ["小熊猫", "圆环"])
+        XCTAssertEqual(free, ["小熊猫", "圆环", "液态"])
         let shiba = WidgetCatalog.make(.water, overrides: ["layout": .string("character"),
                                                            "character": .string("shiba")])!
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: shiba.config, kind: .water), "柴犬")
