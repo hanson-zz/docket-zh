@@ -95,7 +95,7 @@ private struct AIAskView: View {
                 HStack(spacing: 8) {
                     picker
                     Spacer(minLength: 0)
-                    Button(action: submit) {
+                    Button(action: submitFromButton) {
                         Text(buttonTitle)
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(.white)
@@ -203,6 +203,12 @@ private struct AIAskView: View {
         case .web: "复制并在刘海打开"
         case .jump: AIAsk.buttonTitle(for: target)
         }
+    }
+
+    /// 点按钮不会让输入法先确认选字，还有没确认的字时不交出去。
+    private func submitFromButton() {
+        guard AIAsk.canSubmit(state.draft(instance.id), hasMarkedText: AskTextView.keyWindowIsComposing) else { return }
+        submit()
     }
 
     private func submit() {
@@ -446,7 +452,7 @@ private struct AICustomForm: View {
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 8) {
                 field("名字", text: Binding(get: { state.form.name }, set: { state.form.name = $0 }),
-                      prompt: "例如 秘塔")
+                      prompt: "例如 秘塔", focus: true)
                     .frame(width: 96)
                 field("打开地址", text: Binding(get: { state.form.address }, set: { state.form.address = $0 }),
                       prompt: "https://metaso.cn")
@@ -470,13 +476,13 @@ private struct AICustomForm: View {
                     .accessibilityLabel("不用这个 App")
                 }
                 Spacer(minLength: 0)
-                Button("取消") {
-                    state.form = AIPanelState.Form()
-                    error = nil
-                    close()
+                Button("取消", action: cancel)
+                Button("添加") {
+                    // 点按钮不会让输入法先确认选字。
+                    guard !AskTextView.keyWindowIsComposing else { return }
+                    add()
                 }
-                Button("添加", action: add)
-                    .keyboardShortcut(.defaultAction)
+                .keyboardShortcut(.defaultAction)
             }
             if let error {
                 Text(error)
@@ -494,16 +500,23 @@ private struct AICustomForm: View {
         .glassPane(cornerRadius: 12)
     }
 
-    private func field(_ title: String, text: Binding<String>, prompt: String) -> some View {
+    private func field(_ title: String, text: Binding<String>, prompt: String, focus: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(.system(size: 10.5))
                 .foregroundStyle(.white.opacity(0.55))
-            TextField(title, text: text, prompt: Text(prompt))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12))
-                .accessibilityLabel(title)
+            AIFormField(text: text, placeholder: prompt, label: title, focusOnAppear: focus,
+                        onSubmit: add, onCancel: cancel)
+                .frame(height: 22)
         }
+    }
+
+    /// 取消编辑：清掉填了一半的内容，收起表单，面板留着。Esc 也走这里；
+    /// 表单收起后再按 Esc 就是关面板。
+    private func cancel() {
+        state.form = AIPanelState.Form()
+        error = nil
+        close()
     }
 
     private func add() {
@@ -535,9 +548,16 @@ private struct AICustomForm: View {
     /// 应用，不临时升到前台的话打开面板会出现在别的窗口后面（和选文件夹
     /// 一样的做法）。提问面板在码头的层级上，比打开面板高，开着会把它挡住，
     /// 所以先收起，选完（或取消）再请扩展栏打开回来；填了一半的在 state 里。
+    ///
+    /// 多显示器时打开面板可能出现在另一块屏幕上，选完指针也常停在那里；
+    /// 回来时带上收起前面板的位置，由原来那块屏幕上的扩展栏打开，面板从
+    /// 原来那张卡片长出来，还是管理页和展开的自定义表单。
     private func chooseApp() {
         guard !context.isPreview else { return }
+        let origin = WidgetDetailWindow.shared.openCenter
+        state.holdingForAppChooser = true
         WidgetDetailWindow.shared.close()
+        defer { state.holdingForAppChooser = false }
         let policy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -554,7 +574,7 @@ private struct AICustomForm: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
         let id = instance.id
         guard panel.runModal() == .OK, let url = panel.url else {
-            state.requestPanel(id, mode: .manage, customForm: true)
+            state.requestPanel(id, mode: .manage, customForm: true, origin: origin)
             return
         }
         state.form.appPath = url.path
@@ -563,7 +583,7 @@ private struct AICustomForm: View {
             state.form.name = FileManager.default.displayName(atPath: url.path)
                 .replacingOccurrences(of: ".app", with: "")
         }
-        state.requestPanel(id, mode: .manage, customForm: true)
+        state.requestPanel(id, mode: .manage, customForm: true, origin: origin)
     }
 }
 
@@ -643,6 +663,15 @@ final class AskTextView: NSTextView {
     var onCancel: (() -> Void)?
     private var keyObserver: NSObjectProtocol?
 
+    /// 拿着键盘的窗口里，正在输入的框（这个输入框，或者单行输入框的字段
+    /// 编辑器）还有输入法没确认的字。点按钮不会让输入法先确认选字，所以
+    /// 提交按钮自己看一眼，有就不提交。
+    static var keyWindowIsComposing: Bool {
+        NSApp.windows.contains { window in
+            window.isKeyWindow && (window.firstResponder as? NSTextView)?.hasMarkedText() == true
+        }
+    }
+
     override func keyDown(with event: NSEvent) {
         let isReturn = event.keyCode == 36 || event.keyCode == 76
         guard isReturn else { return super.keyDown(with: event) }
@@ -678,5 +707,80 @@ final class AskTextView: NSTextView {
     private func focusIfIdle() {
         guard let window, window.firstResponder === window || window.firstResponder == nil else { return }
         window.makeFirstResponder(self)
+    }
+}
+
+/// 自定义表单里的单行输入框。NSTextField 而不是 SwiftUI 的 TextField：
+/// 字段编辑器把 Esc 当作“补全”吃掉，到不了面板，TextField 上挂的
+/// `onExitCommand` 也收不到。这里在 `doCommandBy` 里把 Esc 交给 `onCancel`，
+/// 回车交给 `onSubmit`；输入法选字时 Esc 和回车都由输入法先处理，到不了这里。
+struct AIFormField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var label: String
+    var focusOnAppear = false
+    var onSubmit: () -> Void
+    var onCancel: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField(string: text)
+        field.placeholderString = placeholder
+        field.isBezeled = true
+        field.bezelStyle = .roundedBezel
+        field.font = .systemFont(ofSize: 12)
+        field.lineBreakMode = .byTruncatingTail
+        field.usesSingleLineMode = true
+        field.cell?.isScrollable = true
+        field.delegate = context.coordinator
+        field.setAccessibilityLabel(label)
+        if focusOnAppear {
+            // 下一轮再放光标：这时字段才进了窗口。别的控件正在输入时不抢。
+            Task { @MainActor [weak field] in
+                guard let field, let window = field.window else { return }
+                if window.firstResponder === window || window.firstResponder == nil {
+                    window.makeFirstResponder(field)
+                }
+            }
+        }
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        context.coordinator.parent = self
+        // 输入法正在选字时不要改它的字，会把候选打断。
+        let composing = (field.currentEditor() as? NSTextView)?.hasMarkedText() == true
+        if field.stringValue != text, !composing {
+            field.stringValue = text
+        }
+        field.placeholderString = placeholder
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: AIFormField
+
+        init(_ parent: AIFormField) { self.parent = parent }
+
+        func controlTextDidChange(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            if textView.hasMarkedText() { return false }
+            switch selector {
+            case #selector(NSResponder.cancelOperation(_:)):
+                parent.onCancel()
+                return true
+            case #selector(NSResponder.insertNewline(_:)):
+                parent.text = textView.string
+                parent.onSubmit()
+                return true
+            default:
+                return false
+            }
+        }
     }
 }

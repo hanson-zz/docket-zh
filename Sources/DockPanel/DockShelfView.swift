@@ -1028,16 +1028,34 @@ struct DockShelfView: View {
     }
 
     /// A request from an AI 助手 tile or panel. Only the shelf holding that
-    /// widget, on the screen the pointer is on, answers it.
+    /// widget answers it: the one on the screen the panel was on when the
+    /// request carries that (coming back from the app chooser), otherwise the
+    /// one on the screen the pointer is on. See `AIPanelReturn`.
     private func openAIPanel(_ note: Notification, _ solved: Solved) {
         guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
               let entry = solved.entries.first(where: { $0.item.widget?.id == id }) else { return }
-        let mouse = NSEvent.mouseLocation
-        if let screen = shelfWindow?.screen, !screen.frame.contains(mouse),
-           NSScreen.screens.contains(where: { $0.frame.contains(mouse) }) { return }
+        let origin = (note.userInfo?["origin"] as? NSValue)?.pointValue
+        guard AIPanelReturn.shouldAnswer(shelfScreen: shelfWindow?.screen?.frame, origin: origin,
+                                         pointer: NSEvent.mouseLocation,
+                                         screens: NSScreen.screens.map(\.frame)) else { return }
         let toggle = note.userInfo?["toggle"] as? Bool ?? false
         if WidgetDetailWindow.shared.openWidgetID == id {
             if toggle { WidgetDetailWindow.shared.close() }
+            return
+        }
+        // Coming back from the app chooser: the pointer is wherever the open
+        // panel left it, so `hoverAnchor` may name another tile. Grow from the
+        // tile the panel was last shown from instead.
+        if origin != nil, let widget = entry.item.widget,
+           let anchor = WidgetDetailWindow.shared.lastAnchor(for: id) {
+            TooltipWindow.shared.hide()
+            GroupWindow.shared.close()
+            WidgetDetailWindow.shared.toggle(
+                widget,
+                context: WidgetContext(position: position, now: app.now),
+                anchor: anchor,
+                edge: position,
+                host: shelfWindow?.frame ?? .zero)
             return
         }
         open(entry)

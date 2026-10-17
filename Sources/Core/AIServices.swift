@@ -489,6 +489,12 @@ public enum AIAsk {
         return .submit
     }
 
+    /// 点提交按钮能不能交出去：输入法还有没确认的字（marked text）时不行，
+    /// 那些字还在选，不是用户要问的；空白也不行。
+    public static func canSubmit(_ text: String, hasMarkedText: Bool) -> Bool {
+        !hasMarkedText && question(text) != nil
+    }
+
     /// 去掉首尾空白后的问题；空白时为 nil，面板不提交。
     public static func question(_ text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -523,5 +529,30 @@ public enum AIAsk {
         case .openWithQuestion: "已在浏览器打开 \(service.title)，问题放在了网址里。"
         case .copyThenOpen: "已复制，到 \(service.title) 里粘贴即可。"
         }
+    }
+}
+
+// MARK: - AI 助手：面板回到哪块屏幕
+
+/// 打开 AI 卡片面板的请求由哪条扩展栏来接。
+///
+/// 平时按指针：指针在哪块屏幕，那块屏幕上的扩展栏开。选 App 时面板被
+/// 收起，系统的打开面板可能出现在另一块屏幕，选完指针也常停在那里；这时
+/// 请求里带着收起前面板的位置，回到原来那块屏幕，而不是跟着指针跑。
+public enum AIPanelReturn {
+    /// - Parameters:
+    ///   - shelfScreen: 这条扩展栏所在屏幕的范围；不知道时为 nil。
+    ///   - origin: 请求里带的、收起前面板的中心点；没有时为 nil。
+    ///   - pointer: 指针的位置。
+    ///   - screens: 现在所有屏幕的范围。
+    public static func shouldAnswer(shelfScreen: CGRect?, origin: CGPoint?,
+                                    pointer: CGPoint, screens: [CGRect]) -> Bool {
+        guard let shelfScreen else { return true }
+        // 原来的屏幕还在：只有那块屏幕上的扩展栏接。拔掉了就按指针。
+        if let origin, screens.contains(where: { $0.contains(origin) }) {
+            return shelfScreen.contains(origin)
+        }
+        if shelfScreen.contains(pointer) { return true }
+        return !screens.contains { $0.contains(pointer) }
     }
 }

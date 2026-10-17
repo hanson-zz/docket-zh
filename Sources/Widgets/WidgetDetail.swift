@@ -40,7 +40,30 @@ final class WidgetDetailWindow {
 
     private init() {}
 
+    /// 面板关上，或者换成了另一个小组件的面板。`object` 是原来那个小组件的 id。
+    static let didClose = Notification.Name("com.docket-zh.widget-detail.did-close")
+
     var isOpen: Bool { openWidgetID != nil && panel?.isVisible == true }
+
+    /// 开着的面板的中心点（屏幕坐标），关着时为 nil。
+    var openCenter: CGPoint? {
+        guard isOpen, let frame = panel?.frame else { return nil }
+        return CGPoint(x: frame.midX, y: frame.midY)
+    }
+
+    /// The tile the last panel grew from, kept so a panel that closed itself
+    /// for a moment (AI 助手 hiding while the app chooser is up) can come back
+    /// pointing at the same tile, rather than at whichever tile the pointer
+    /// last crossed on its way back.
+    private var lastShownAnchor: (id: UUID, point: CGPoint)?
+
+    func lastAnchor(for id: UUID) -> CGPoint? {
+        lastShownAnchor?.id == id ? lastShownAnchor?.point : nil
+    }
+
+    private func announceClosed(_ id: UUID) {
+        NotificationCenter.default.post(name: Self.didClose, object: id)
+    }
 
     /// Moves the open panel up or down with a top shelf stepping aside for
     /// 灵动提示, inside the shelf's own animation. See
@@ -112,8 +135,9 @@ final class WidgetDetailWindow {
     }
 
     func close() {
-        guard openWidgetID != nil else { return }
+        guard let closing = openWidgetID else { return }
         openWidgetID = nil
+        announceClosed(closing)
         shown = nil
         stopWatching()
         guard panel?.isVisible == true else { return }
@@ -145,7 +169,9 @@ final class WidgetDetailWindow {
         // and `toggle` would then answer every later click by closing a panel
         // that was never up.
         guard size.width > 1, size.height > 1 else { return }
+        if let previous = openWidgetID, previous != instance.id { announceClosed(previous) }
         openWidgetID = instance.id
+        lastShownAnchor = (instance.id, anchor)
 
         // Almost touching the tile: the panel's own padding already includes
         // the tail's depth, so this is the gap between the tail's tip and the

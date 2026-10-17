@@ -139,7 +139,17 @@ struct AIChatPanelView: View {
             .onAppear(perform: enter)
             .onChange(of: model.session) { _, _ in
                 appeared = false
+                center.notice = nil
                 Task { @MainActor in enter() }
+            }
+            // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
+            // 收起时不读。
+            .task(id: model.isOpen) {
+                guard model.isOpen else { return }
+                while !Task.isCancelled {
+                    center.refreshClipboard()
+                    try? await Task.sleep(for: .seconds(1))
+                }
             }
     }
 
@@ -159,6 +169,9 @@ struct AIChatPanelView: View {
                 chips
             }
             Rectangle().fill(.white.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 14)
+            if let service = center.current {
+                AIPromptBar(center: center, service: service, close: close)
+            }
             Group {
                 if let service = center.current {
                     switch center.mode(for: service) {
@@ -239,6 +252,139 @@ struct AIChatPanelView: View {
             .padding(.horizontal, 14)
         }
         .padding(.bottom, 10)
+    }
+}
+
+// MARK: - 剪贴板接力、快捷指令和常用提示词
+
+/// 服务字牌下面的一排：剪贴板接力、翻译、总结、润色、解释和“常用”菜单，
+/// 下面一行是剪贴板预览或者刚才做了什么。
+///
+/// 文字先取输入框，空着时取剪贴板。API 直接发出去流式回答；网页模式没有
+/// 输入框，复制套好的提示词，到网页里粘贴；跳转和平时提问一样。
+private struct AIPromptBar: View {
+    var center: AIChatCenter
+    var service: AIService
+    var close: () -> Void
+
+    private var mode: AIOpenMode { center.mode(for: service) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                if mode != .web {
+                    chip("剪贴板", symbol: "doc.on.clipboard", enabled: center.clipboardText != nil,
+                         help: center.clipboardPreview.map { "带进输入框：\($0)" } ?? "剪贴板里没有文字",
+                         label: "把剪贴板文字带进输入框") {
+                        center.pasteClipboard()
+                    }
+                }
+                ForEach(AIQuickAction.allCases, id: \.self) { action in
+                    chip(action.title, symbol: nil, enabled: true,
+                         help: helpText(action.title), label: "\(action.title)输入框或剪贴板里的文字") {
+                        guard !AskTextView.keyWindowIsComposing else { return }
+                        center.run(action)
+                    }
+                }
+                Spacer(minLength: 0)
+                promptMenu
+            }
+            statusLine
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder private var statusLine: some View {
+        if let notice = center.notice {
+            Text(notice)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.75))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.updatesFrequently)
+        } else if let preview = center.clipboardPreview {
+            Button {
+                if mode != .web { center.pasteClipboard() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.on.clipboard")
+                    Text("剪贴板：\(preview)")
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(mode == .web)
+            .help(mode == .web ? "网页模式下，快捷指令会用剪贴板里的文字" : "点一下带进输入框")
+            .accessibilityLabel("剪贴板预览：\(preview)")
+        }
+    }
+
+    private var promptMenu: some View {
+        Menu {
+            if center.prompts.isEmpty {
+                Text("还没有常用提示词")
+            }
+            ForEach(center.prompts) { prompt in
+                Button(prompt.name) {
+                    guard !AskTextView.keyWindowIsComposing else { return }
+                    center.run(prompt)
+                }
+            }
+            Divider()
+            Button("管理常用提示词…") {
+                guard let app = center.app else { return }
+                close()
+                SettingsWindow.shared.show(app: app, tab: "General")
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Text("常用")
+                    .font(.system(size: 11.5, weight: .medium))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+            }
+            .foregroundStyle(.white.opacity(0.75))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("常用提示词：内容里的 {文本} 换成输入框或剪贴板里的文字")
+        .accessibilityLabel("常用提示词")
+    }
+
+    private func helpText(_ title: String) -> String {
+        switch mode {
+        case .api: "\(title)输入框里的文字（空着时用剪贴板），直接发给 \(service.title)"
+        case .web: "\(title)剪贴板里的文字：复制套好的提示词，到网页里粘贴"
+        case .jump: "\(title)输入框里的文字（空着时用剪贴板），再打开 \(service.title)"
+        }
+    }
+
+    private func chip(_ title: String, symbol: String?, enabled: Bool, help: String, label: String,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
+                }
+                Text(title).font(.system(size: 11.5))
+            }
+            .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.35))
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(Capsule().fill(.white.opacity(0.08)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .help(help)
+        .accessibilityLabel(label)
     }
 }
 
@@ -456,7 +602,12 @@ private struct AIChatInput: View {
             }
             .padding(.top, 10)
             Button {
-                generating ? stop() : submit()
+                if generating {
+                    stop()
+                } else if AIAsk.canSubmit(center.draft, hasMarkedText: AskTextView.keyWindowIsComposing) {
+                    // 输入法还有没确认的字时不发：点按钮不会让输入法先确认选字。
+                    submit()
+                }
             } label: {
                 Image(systemName: generating ? "stop.fill" : "arrow.up")
                     .font(.system(size: 12, weight: .bold))
@@ -610,6 +761,7 @@ private struct AIJumpPane: View {
                     .foregroundStyle(.white.opacity(0.65))
                 Spacer(minLength: 0)
                 Button {
+                    guard !AskTextView.keyWindowIsComposing else { return }
                     center.jump()
                 } label: {
                     Text(AIAsk.buttonTitle(for: service))

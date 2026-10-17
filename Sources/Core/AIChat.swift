@@ -55,11 +55,13 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
     public var endpoints: [String: AIEndpoint] = [:]
     /// 上次在刘海里用的服务。
     public var lastServiceID: String?
+    /// 用户自己存的常用提示词，按显示顺序。见 `AIPrompts`。
+    public var prompts: [AIPrompt] = []
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case enabled, mainScreenOnly, hotKey, modes, endpoints, lastServiceID
+        case enabled, mainScreenOnly, hotKey, modes, endpoints, lastServiceID, prompts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -71,6 +73,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         modes = raw.compactMapValues(AIOpenMode.init(rawValue:))
         endpoints = (try? c.decodeIfPresent([String: AIEndpoint].self, forKey: .endpoints)) ?? [:]
         lastServiceID = try? c.decodeIfPresent(String.self, forKey: .lastServiceID)
+        prompts = AIPrompts.sanitized((try? c.decodeIfPresent([AIPrompt].self, forKey: .prompts)) ?? [])
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -81,6 +84,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         try c.encode(modes.mapValues(\.rawValue), forKey: .modes)
         try c.encode(endpoints, forKey: .endpoints)
         try c.encodeIfPresent(lastServiceID, forKey: .lastServiceID)
+        try c.encode(prompts, forKey: .prompts)
     }
 
     /// 只有带 Control、Option 或 Command 的组合才注册，Shift 单独不算。

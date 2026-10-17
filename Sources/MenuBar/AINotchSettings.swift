@@ -79,6 +79,8 @@ struct AINotchSettingsSection: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+
+        AIPromptsSection(prompts: $state.aiNotch.prompts)
     }
 }
 

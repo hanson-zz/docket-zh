@@ -69,8 +69,28 @@ final class AIPanelState {
     var form = Form()
     private(set) var drafts: [UUID: String] = [:]
     private(set) var hints: [UUID: String] = [:]
+    /// 选 App 时面板是自己收起的，选完要原样回来，这一次关闭不重置。
+    var holdingForAppChooser = false
 
-    private init() {}
+    @ObservationIgnored private var closeObserver: NSObjectProtocol?
+
+    private init() {
+        // 面板关上（点外面、Esc、再点卡片）就回到提问页，“管理字牌”和填了
+        // 一半的“自定义…”都不留到下次。同步收通知：选 App 的流程紧接着就
+        // 要把模式设回管理页。
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: WidgetDetailWindow.didClose, object: nil, queue: nil) { _ in
+            MainActor.assumeIsolated { AIPanelState.shared.panelClosed() }
+        }
+    }
+
+    /// 面板关了：回到提问页，收起自定义表单。草稿和提示另算，照旧保留。
+    func panelClosed() {
+        guard !holdingForAppChooser else { return }
+        mode = .ask
+        wantsCustomForm = false
+        if form != Form() { form = Form() }
+    }
 
     func draft(_ id: UUID) -> String { drafts[id] ?? "" }
 
@@ -87,10 +107,14 @@ final class AIPanelState {
     /// 请扩展栏打开（或关掉）这张卡片的面板。扩展栏手里有锚点，所以由它来开。
     static let openRequest = Notification.Name("com.docket-zh.ai-assistant.open")
 
-    func requestPanel(_ id: UUID, mode: Mode, toggle: Bool = false, customForm: Bool = false) {
+    /// - Parameter origin: 收起前面板的中心点。带上时由那块屏幕上的扩展栏
+    ///   来开，不跟着指针跑（见 `AIPanelReturn`）。
+    func requestPanel(_ id: UUID, mode: Mode, toggle: Bool = false, customForm: Bool = false,
+                      origin: CGPoint? = nil) {
         self.mode = mode
         wantsCustomForm = customForm
-        NotificationCenter.default.post(name: Self.openRequest, object: nil,
-                                        userInfo: ["id": id.uuidString, "toggle": toggle])
+        var info: [String: Any] = ["id": id.uuidString, "toggle": toggle]
+        if let origin { info["origin"] = NSValue(point: origin) }
+        NotificationCenter.default.post(name: Self.openRequest, object: nil, userInfo: info)
     }
 }

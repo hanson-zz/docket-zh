@@ -28,7 +28,12 @@ final class AIChatCenter {
     private(set) var loading: Set<String> = []
     /// 密钥改过就加一，让读“有没有密钥”的界面重画。
     private(set) var keyRevision = 0
+    /// 剪贴板里现在的文字（只在面板开着时读），没有文字时为 nil。
+    private(set) var clipboardText: String?
+    /// 快捷指令和常用提示词做完之后的一句话（网页模式下尤其要说清楚）。
+    var notice: String?
 
+    @ObservationIgnored private var clipboardChangeCount = -1
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var webViews: [String: WKWebView] = [:]
     @ObservationIgnored private var webDelegates: [String: AIWebDelegate] = [:]
@@ -104,6 +109,7 @@ final class AIChatCenter {
         guard services.contains(where: { $0.id == id }) else { return }
         selectedID = id
         jumpHint = nil
+        notice = nil
         if settings.lastServiceID != id { updateSettings { $0.lastServiceID = id } }
     }
 
@@ -231,12 +237,80 @@ final class AIChatCenter {
         if isLoading { loading.insert(serviceID) } else { loading.remove(serviceID) }
     }
 
+    // MARK: 剪贴板接力
+
+    /// 重新读一下剪贴板。剪贴板没变过就不读内容。
+    func refreshClipboard() {
+        let board = NSPasteboard.general
+        guard board.changeCount != clipboardChangeCount else { return }
+        clipboardChangeCount = board.changeCount
+        let text = board.string(forType: .string)
+        clipboardText = AIAsk.question(text ?? "") == nil ? nil : text
+    }
+
+    /// 剪贴板一行预览，太长的截断。
+    var clipboardPreview: String? { AIClipboard.preview(clipboardText, limit: 48) }
+
+    /// 把剪贴板文字带进输入框：输入框空着就换成它，否则另起一行接在后面。
+    func pasteClipboard() {
+        refreshClipboard()
+        guard let clip = clipboardText else {
+            notice = "剪贴板里没有文字。"
+            return
+        }
+        draft = AIClipboard.insert(clip, into: draft)
+        jumpHint = nil
+        notice = AIClipboard.isTruncated(clip)
+            ? "剪贴板太长，只带进了前 \(AIClipboard.insertLimit) 个字。" : nil
+    }
+
+    // MARK: 快捷指令和常用提示词
+
+    var prompts: [AIPrompt] { settings.prompts }
+
+    func run(_ action: AIQuickAction) { run(template: action.template, name: action.title) }
+
+    func run(_ prompt: AIPrompt) { run(template: prompt.content, name: prompt.name) }
+
+    /// 把输入框（空着时用剪贴板）的文字套进提示词，交给当前服务：API 直接
+    /// 发出去流式回答；网页复制提示词，到网页里粘贴；跳转和平时提问一样，
+    /// 能带问题的带着打开，其余复制再打开。网页模式没有输入框，只用剪贴板。
+    func run(template: String, name: String) {
+        guard let service = current else { return }
+        refreshClipboard()
+        let mode = self.mode(for: service)
+        let source = mode == .web ? "" : draft
+        guard let prompt = AIPrompts.compose(template, draft: source, clipboard: clipboardText) else {
+            notice = mode == .web ? "先复制要处理的文字。" : "先在输入框里写字，或者复制要处理的文字。"
+            return
+        }
+        switch mode {
+        case .api:
+            guard !generating.contains(service.id) else {
+                notice = "还在回答，先停止或等它答完。"
+                return
+            }
+            notice = nil
+            draft = prompt
+            send()
+        case .web:
+            AIServiceOpener.copy(prompt)
+            _ = webView(for: service)
+            notice = "“\(name)”的提示词已复制，在 \(service.title) 的输入框里粘贴发送。"
+        case .jump:
+            notice = nil
+            jump(prompt)
+        }
+    }
+
     // MARK: 跳转
 
     /// 跳转模式：服务正式支持的带着问题开浏览器，其余复制问题再打开 App 或网页。
-    func jump() {
+    func jump() { jump(draft) }
+
+    private func jump(_ text: String) {
         guard let service = current else { return }
-        let plan = AIAsk.plan(draft, service: service)
+        let plan = AIAsk.plan(text, service: service)
         switch plan {
         case .blocked:
             jumpHint = AIAsk.hint(after: plan, service: service)
