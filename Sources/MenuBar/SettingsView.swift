@@ -469,8 +469,12 @@ struct SettingsView: View {
             icon(for: item)
                 .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 1) {
-                Text(item.displayName)
-                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Text(item.displayName)
+                        .lineLimit(1)
+                    // 整种是 Pro，或现在用的外观是 Pro（液态、Pro 表盘等）。
+                    if ProFeatures.isPro(widget) { ProBadge() }
+                }
                 if mode == .conditional, let condition = WidgetVisibility.conditionTitle(widget.kind, config: widget.config) {
                     Text(condition)
                         .font(.caption)
@@ -1468,7 +1472,7 @@ final class ShortcutKeyRecorder {
     }
 }
 
-/// 赞助者专属配色: swatches that tint the plate, locked until the sponsor
+/// Pro 专属配色: swatches that tint the plate, locked until the sponsor
 /// window's thank-you button has been pressed on this Mac.
 private struct SupporterColorPicker: View {
     @Binding var selection: String
@@ -1495,7 +1499,7 @@ private struct SupporterColorPicker: View {
             }
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.45)
-            Text(unlocked ? "给扩展栏底板染一层颜色，“透明”外观下不生效。" : "赞助者专属：给扩展栏换上小熊猫橙、樱花粉等配色。")
+            Text(unlocked ? "给扩展栏底板染一层颜色，“透明”外观下不生效。" : "Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

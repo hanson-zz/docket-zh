@@ -24,7 +24,7 @@ struct NetworkActivityTile: View {
         .onAppear { if !context.isPreview { NetworkMetrics.shared.start() } }
     }
 
-    /// A Wi-Fi layout, with a locked 赞助者专属 style drawn as 经典; the
+    /// A Wi-Fi layout, with a locked Pro 专属 style drawn as 经典; the
     /// library's preview shows the real one, as the clock faces do.
     private var wifiStyle: WifiRingStyle? {
         WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),

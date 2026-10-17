@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 赞助者专属表盘：霓虹、实景（辉光管）、简约（液晶）、极简（翻页）。
+/// Pro 专属表盘：霓虹、实景（辉光管）、简约（液晶）、极简（翻页）。
 ///
 /// Each face is drawn at one fixed design size and scaled as a whole to the
 /// space the tile has, then centred. Laying them out with flexible stacks let

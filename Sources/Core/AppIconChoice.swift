@@ -12,7 +12,7 @@ public struct AppIconOption: Identifiable, Equatable, Sendable {
     public let title: String
     /// bundle 里 PNG 的文件名（不含扩展名）。同名的 `-512`、`-256` 小尺寸可选。
     public let resourceName: String?
-    /// 赞助者专属的图标未解锁时显示经典。
+    /// Pro 专属的图标未解锁时显示经典。
     public let isSupporterOnly: Bool
 
     public init(id: String, title: String, resourceName: String?, isSupporterOnly: Bool) {
@@ -55,7 +55,7 @@ public enum AppIconCatalog {
         return all.first { $0.id == id } ?? defaultOption
     }
 
-    /// 实际使用的图标：赞助者专属而未解锁时回退经典。
+    /// 实际使用的图标：Pro 专属而未解锁时回退经典。
     public static func shown(_ id: String?, unlocked: Bool) -> AppIconOption {
         let chosen = option(id)
         return chosen.isSupporterOnly && !unlocked ? defaultOption : chosen

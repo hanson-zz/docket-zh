@@ -471,14 +471,9 @@ struct WidgetLibraryView: View {
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                if WidgetCatalog.isSupporterOnly(card.overrides) {
-                    Text("赞助者专属")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1.5)
-                        .background(Capsule().fill(Color(hex: ShelfColor.redPanda.hex)))
-                        .fixedSize()
+                // Pro 标识固定显示，不随解锁状态变；判断统一在 ProFeatures。
+                if ProFeatures.isPro(card.kind, overrides: card.overrides) {
+                    ProBadge()
                 }
                 if WidgetCatalog.isNew(card.kind) {
                     Text("新")

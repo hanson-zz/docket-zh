@@ -2,7 +2,7 @@ import Foundation
 
 /// The four Wi-Fi ring styles of 网络活动, stored as the widget's `layout`.
 ///
-/// 经典 is free; the other three are 赞助者专属 appearances, like the
+/// 经典 is free; the other three are Pro 专属 appearances, like the
 /// supporter clock faces. Every style reads the same signal, so locking one
 /// never hides information.
 public enum WifiRingStyle: String, CaseIterable, Sendable {

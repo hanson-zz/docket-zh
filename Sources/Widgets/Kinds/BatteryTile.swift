@@ -224,7 +224,7 @@ struct BatteryTile: View {
 
     private var layout: String { instance.config.string("layout", default: "status") }
 
-    /// The widget's 外观, with a locked 赞助者专属 look drawn as 经典; the
+    /// The widget's 外观, with a locked Pro 专属 look drawn as 经典; the
     /// library's preview shows the real one, as the Wi-Fi rings do.
     private var chosenLook: BatteryLook {
         BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)

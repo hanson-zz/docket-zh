@@ -263,8 +263,8 @@ struct PetDetail: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
-                    .help(locked ? "\(option.title)（赞助者专属）" : option.title)
-                    .accessibilityLabel(locked ? "角色：\(option.title)，赞助者专属" : "角色：\(option.title)")
+                    .help(locked ? "\(option.title)：\(ProFeatures.help)" : option.title)
+                    .accessibilityLabel(locked ? "角色：\(option.title)，Pro 专属" : "角色：\(option.title)")
                 }
             }
         }

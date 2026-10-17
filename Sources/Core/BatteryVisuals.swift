@@ -2,7 +2,7 @@ import Foundation
 
 /// The five 电池 looks, stored as the widget's `look`.
 ///
-/// 经典 and 液态 are free; 像素电池, 能量粒子 and 小熊猫抱电池 are 赞助者专属
+/// 经典 and 液态 are free; 像素电池, 能量粒子 and 小熊猫抱电池 are Pro 专属
 /// appearances, like the Wi-Fi rings. Every look reads the same battery, so
 /// a locked one never hides information: it draws as 经典 instead.
 ///

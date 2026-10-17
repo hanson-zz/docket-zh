@@ -84,7 +84,7 @@ private struct AppIconCard: View {
             .contentShape(.rect(cornerRadius: 10))
         }
         .buttonStyle(.plain)
-        .help(locked ? "赞助者专属图标，在“支持码头”窗口解锁后可用。" : option.title)
+        .help(locked ? "码头 Pro 专属图标，现在在“支持码头”窗口解锁，正式版推出后需要激活码解锁。" : option.title)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(option.title)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)

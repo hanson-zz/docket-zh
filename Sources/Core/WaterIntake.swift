@@ -757,7 +757,7 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
     /// Whether it has a picture per mood.
     public var hasMoods: Bool { self != .redPanda }
 
-    /// 赞助者专属: every character but the red panda, unlocked from the
+    /// Pro 专属: every character but the red panda, unlocked from the
     /// sponsor window like the supporter clock faces.
     public var isSupporterOnly: Bool { self != .redPanda }
 

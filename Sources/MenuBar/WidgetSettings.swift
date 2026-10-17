@@ -244,7 +244,9 @@ struct WidgetSettingsSections: View {
     /// only by `chart`, so tagging by layout gave two rows the same tag and
     /// the picker could neither tell them apart nor show the right one.
     private func stylePicker(_ entry: WidgetCatalog.Entry, _ instance: WidgetInstance) -> some View {
-        Picker("样式", selection: Binding(
+        let currentIsPro = entry.variants.first { $0.title == selectedVariant(entry, instance) }
+            .map { ProFeatures.isProStyle($0.overrides) } ?? false
+        return Picker(selection: Binding(
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
@@ -256,12 +258,15 @@ struct WidgetSettingsSections: View {
                     for (key, value) in variant.overrides { config.set(key, value) }
                 }
             })) {
+                // 菜单项里放不下胶囊，Pro 样式在名字后标“（Pro 专属）”；
+                // 选中的是 Pro 样式时，“样式”旁边固定显示 Pro 标识。
                 ForEach(entry.variants.indices, id: \.self) { index in
                     let variant = entry.variants[index]
-                    Text(WidgetCatalog.isSupporterOnly(variant.overrides) && !Supporter.isUnlocked
-                         ? "\(variant.title)（赞助者专属）" : variant.title)
+                    Text(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(variant.overrides)))
                         .tag(variant.title)
                 }
+            } label: {
+                ProLabel(title: "样式", isPro: currentIsPro)
             }
     }
 
@@ -335,10 +340,13 @@ struct WidgetSettingsSections: View {
             // through to the default silently, so the setting looked broken
             // rather than rejected.
             if let choices = Self.stringChoices(entry.kind, key) {
-                // A 赞助者专属 choice (a 喝水 character) reads as locked and
-                // opens the sponsor window instead of being written, as the
-                // style picker does for the supporter clock faces.
-                Picker(Self.label(key, kind: entry.kind), selection: Binding(
+                // A supporter-locked choice (a 喝水 character) still opens the
+                // sponsor window instead of being written, as the style picker
+                // does for the clock faces. Every Pro choice (those, and 液态)
+                // is marked “（Pro 专属）”, and the label carries the badge
+                // while a Pro value is selected.
+                let current = instance.config.string(key, default: fallback)
+                Picker(selection: Binding(
                     get: { instance.config.string(key, default: fallback) },
                     set: { value in
                         if WidgetCatalog.isSupporterOnly([key: .string(value)]), !Supporter.isUnlocked {
@@ -348,10 +356,13 @@ struct WidgetSettingsSections: View {
                         write(instance) { $0.set(key, .string(value)) }
                     })) {
                     ForEach(choices, id: \.value) { choice in
-                        Text(WidgetCatalog.isSupporterOnly([key: .string(choice.value)]) && !Supporter.isUnlocked
-                             ? "\(choice.title)（赞助者专属）" : choice.title)
+                        Text(ProFeatures.menuTitle(choice.title,
+                                                   isPro: ProFeatures.isProChoice(key: key, value: choice.value)))
                             .tag(choice.value)
                     }
+                } label: {
+                    ProLabel(title: Self.label(key, kind: entry.kind),
+                             isPro: ProFeatures.isProChoice(key: key, value: current))
                 }
             } else {
                 // Bordered, and in a LabeledContent rather than carrying its
@@ -384,7 +395,7 @@ struct WidgetSettingsSections: View {
                     .foregroundStyle(.secondary)
                 // Which of a fixed set: one toggle each.
                 ForEach(choices, id: \.value) { choice in
-                    Toggle(choice.title, isOn: Binding(
+                    Toggle(isOn: Binding(
                         get: { instance.config.strings(key, default: Self.strings(fallback))
                                 .contains(choice.value) },
                         set: { on in
@@ -394,7 +405,11 @@ struct WidgetSettingsSections: View {
                             // Never leave it with nothing to show.
                             guard !list.isEmpty else { return }
                             write(instance) { $0.set(key, .list(list.map { .string($0) })) }
-                        }))
+                        })) {
+                        // 快速开关里的 Pro 工具旁固定显示 Pro 标识。
+                        ProLabel(title: choice.title,
+                                 isPro: ProFeatures.isProListChoice(key: key, value: choice.value))
+                    }
                 }
             } else {
                 // Open-ended, so it is typed rather than chosen. This branch

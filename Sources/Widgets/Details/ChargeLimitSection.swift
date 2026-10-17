@@ -14,6 +14,7 @@ struct ChargeLimitSection: View {
                 Text("充电上限")
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.75))
+                ProBadge()
                 Spacer()
                 Toggle("", isOn: Binding(get: { config.enabled },
                                          set: { on in service.update { $0.enabled = on } }))

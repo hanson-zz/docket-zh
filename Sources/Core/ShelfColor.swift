@@ -1,6 +1,6 @@
 import Foundation
 
-/// 赞助者专属配色：给扩展栏底板染一层颜色。
+/// Pro 专属配色：给扩展栏底板染一层颜色。
 ///
 /// A thank-you for supporting Docket, unlocked from the sponsor window. It
 /// is on the honour system on purpose: Docket is open source and has no

@@ -32,21 +32,24 @@ public enum WidgetCatalog {
     /// `WidgetLibraryGroups` 里，这里只是目录上的入口。
     public static func isNew(_ kind: WidgetKind) -> Bool { WidgetLibraryGroups.isNew(kind) }
 
-    /// 赞助者专属表盘, unlocked from the sponsor window like the shelf colours.
-    public static let supporterClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
+    /// Pro 专属表盘（原来的赞助者表盘），仍从“支持码头”窗口解锁，清单在 `ProFeatures`。
+    public static let supporterClockLayouts: Set<String> = ProFeatures.proClockLayouts
 
-    /// 赞助者专属角色 for 喝水: every character but the red panda.
+    /// Pro 专属角色 for 喝水: every character but the red panda.
     public static let supporterWaterCharacters: Set<String> =
         Set(WaterCharacter.allCases.filter(\.isSupporterOnly).map(\.rawValue))
 
     /// Whether a variant's overrides (or one option's value) pick a
-    /// supporter-only clock face or 喝水 character.
+    /// supporter-unlocked clock face, 喝水 character, Wi-Fi ring or battery
+    /// look. Only these are locked by `Supporter.isUnlocked`; the wider Pro
+    /// list (whole kinds, 液态) is only badged, see `ProFeatures`.
     public static func isSupporterOnly(_ overrides: [String: WidgetConfig.Value]) -> Bool {
-        if case .string(let layout) = overrides["layout"], supporterClockLayouts.contains(layout) { return true }
-        if case .string(let character) = overrides["character"], supporterWaterCharacters.contains(character) { return true }
-        if case .string(let layout) = overrides["layout"], WifiRingStyle.from(layout: layout)?.isSupporterOnly == true { return true }
-        if case .string(let look) = overrides[BatteryLook.key], BatteryLook.from(look)?.isSupporterOnly == true { return true }
-        return false
+        ProFeatures.isSupporterStyle(overrides)
+    }
+
+    /// `isSupporterOnly` 的新名字，意思一样。
+    public static func isProLocked(_ overrides: [String: WidgetConfig.Value]) -> Bool {
+        isSupporterOnly(overrides)
     }
 
     /// 网络活动's four Wi-Fi rings, one variant each.
@@ -190,7 +193,7 @@ public enum WidgetCatalog {
         // presumably meant now exists and always draws its history.
         // The Wi-Fi rings share the card: same shelf slot, a different
         // reading of the same link. 经典 is free, the other three are
-        // 赞助者专属 appearances.
+        // Pro 专属 appearances.
         Entry(kind: .network, name: "网络活动", category: .system,
               defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false)]),
               variants: [("仅数字", ["layout": .string("speed"), "chart": .bool(false)]),
@@ -417,7 +420,7 @@ public enum WidgetCatalog {
                            "unit": .string("ml"), "character": .string("panda"),
                            WaterParched.key: .bool(true)]),
               // The red panda's card names its character, so a 柴犬 config is
-              // not also matched by it; the other five are 赞助者专属.
+              // not also matched by it; the other five are Pro 专属.
               variants: [("小熊猫", ["layout": .string("character"), "character": .string("panda")]),
                          ("柴犬", ["layout": .string("character"), "character": .string("shiba")]),
                          ("橘猫", ["layout": .string("character"), "character": .string("cat")]),
@@ -431,7 +434,7 @@ public enum WidgetCatalog {
         // A pet of its own: four needs kept with the time they were true, so
         // they run down without anything running (see VirtualPet), and the
         // same six characters as 喝水 under `character`, the red panda free
-        // and the other five 赞助者专属.
+        // and the other five Pro 专属.
         Entry(kind: .pet, name: "电子宠物", category: .health,
               defaults: c(["character": .string("panda")]),
               variants: [("小熊猫", ["character": .string("panda")]),

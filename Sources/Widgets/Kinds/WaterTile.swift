@@ -35,7 +35,7 @@ struct WaterTile: View {
     private var goal: Int {
         context.isPreview ? WaterIntake.defaultGoal : WaterIntake.goal(instance.config, now: context.now)
     }
-    /// A locked 赞助者专属 character is drawn as the red panda; the library's
+    /// A locked Pro 专属 character is drawn as the red panda; the library's
     /// preview shows the real one, as the clock's supporter faces do.
     private var character: WaterCharacter {
         WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)

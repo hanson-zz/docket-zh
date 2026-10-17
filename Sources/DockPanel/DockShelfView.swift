@@ -1450,7 +1450,7 @@ struct DockShelfView: View {
                 ForEach(catalog.variants.indices, id: \.self) { index in
                     let variant = catalog.variants[index]
                     let locked = WidgetCatalog.isSupporterOnly(variant.overrides) && !Supporter.isUnlocked
-                    Button(locked ? "\(variant.title)（赞助者专属）" : variant.title) {
+                    Button(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(variant.overrides))) {
                         if locked { SponsorWindow.shared.show(); return }
                         var updated = widget
                         for (key, value) in variant.overrides { updated.config.set(key, value) }

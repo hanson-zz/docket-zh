@@ -741,8 +741,8 @@ struct WaterDetail: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
-                    .help(locked ? "\(character.title)（赞助者专属）" : character.title)
-                    .accessibilityLabel(locked ? "角色：\(character.title)，赞助者专属" : "角色：\(character.title)")
+                    .help(locked ? "\(character.title)：\(ProFeatures.help)" : character.title)
+                    .accessibilityLabel(locked ? "角色：\(character.title)，Pro 专属" : "角色：\(character.title)")
                 }
             }
         }

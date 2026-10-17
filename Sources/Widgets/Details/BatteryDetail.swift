@@ -51,7 +51,7 @@ struct BatteryDetail: View {
 
     // MARK: Mac
 
-    /// The widget's 外观, with a locked 赞助者专属 look drawn as 经典.
+    /// The widget's 外观, with a locked Pro 专属 look drawn as 经典.
     private var look: BatteryLook {
         BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
     }
