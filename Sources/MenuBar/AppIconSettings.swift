@@ -4,7 +4,9 @@ import SwiftUI
 /// 设置 ▸ 通用 ▸ 应用图标：每个图标一张可点选的缩略图卡片，选中的打勾。
 struct AppIconSection: View {
     @AppStorage(AppIconCatalog.key) private var choice = AppIconCatalog.defaultOption.id
-    @AppStorage(Supporter.key) private var unlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    private var unlocked: Bool { supporter || licenseUnlocked }
     @AppStorage("appIcon.finderFailed") private var finderFailed = false
 
     var body: some View {

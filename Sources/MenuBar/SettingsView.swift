@@ -69,7 +69,7 @@ struct SettingsView: View {
 
     /// “关于”里的图标：所选的应用图标，经典时是 bundle 自带的图标。
     private var aboutIcon: NSImage {
-        let option = AppIconCatalog.shown(appIconChoice, unlocked: Supporter.isUnlocked)
+        let option = AppIconCatalog.shown(appIconChoice, unlocked: ProAccess.isUnlocked)
         if let image = AppIconSwitcher.image(for: option) { return image }
         return NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
     }
@@ -113,6 +113,7 @@ struct SettingsView: View {
         ("AI", "AI", "sparkles"),
         ("Shortcuts", "快捷键", "command"),
         ("General", "通用", "gearshape"),
+        ("Pro", "码头 Pro", "crown"),
     ]
 
     var body: some View {
@@ -155,6 +156,7 @@ struct SettingsView: View {
         case "AI": ai
         case "Shortcuts": shortcuts
         case "General": general
+        case "Pro": ProSettingsPane()
         default: shelf
         }
     }
@@ -1476,7 +1478,9 @@ final class ShortcutKeyRecorder {
 /// window's thank-you button has been pressed on this Mac.
 private struct SupporterColorPicker: View {
     @Binding var selection: String
-    @AppStorage(Supporter.key) private var unlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    private var unlocked: Bool { supporter || licenseUnlocked }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1489,7 +1493,7 @@ private struct SupporterColorPicker: View {
                 }
                 Spacer()
                 if !unlocked {
-                    Button("支持码头后解锁…") { SponsorWindow.shared.show() }
+                    Button("解锁码头 Pro…") { PaywallWindow.shared.show() }
                         .controlSize(.small)
                 }
             }

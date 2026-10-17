@@ -48,7 +48,7 @@ struct NetworkDetail: View {
 
     private var wifiStyle: WifiRingStyle? {
         WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
-                            unlocked: Supporter.isUnlocked || context.isPreview)
+                            unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     private var wifiRSSI: Int? { context.isPreview ? -52 : WifiMetrics.shared.rssi }

@@ -12,7 +12,7 @@ struct PetDetail: View {
     private var accent: Color { PetStyle.accent }
 
     private var character: WaterCharacter {
-        WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+        WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     var body: some View {
@@ -229,10 +229,10 @@ struct PetDetail: View {
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { option in
                     let selected = option == chosen
-                    let locked = option.isSupporterOnly && !Supporter.isUnlocked && !context.isPreview
+                    let locked = option.isSupporterOnly && !ProAccess.isUnlocked && !context.isPreview
                     Button {
                         guard !context.isPreview else { return }
-                        if locked { SponsorWindow.shared.show(); return }
+                        if locked { PaywallWindow.shared.show(); return }
                         withAnimation(.snappy(duration: 0.25)) {
                             PetLog.set("character", .string(option.rawValue), in: instance)
                         }

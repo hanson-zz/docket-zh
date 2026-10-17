@@ -53,7 +53,7 @@ struct BatteryDetail: View {
 
     /// The widget's 外观, with a locked Pro 专属 look drawn as 经典.
     private var look: BatteryLook {
-        BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+        ProLicenseGate.batteryLook(config: instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     private func gaugeState(_ device: Item) -> BatteryGaugeState {

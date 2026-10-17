@@ -28,7 +28,7 @@ struct NetworkActivityTile: View {
     /// library's preview shows the real one, as the clock faces do.
     private var wifiStyle: WifiRingStyle? {
         WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
-                            unlocked: Supporter.isUnlocked || context.isPreview)
+                            unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     // MARK: Pieces

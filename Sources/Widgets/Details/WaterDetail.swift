@@ -115,7 +115,7 @@ struct WaterDetail: View {
             // tile's surface stands still, the panel's moves.
             TimelineView(.animation(minimumInterval: 1.0 / 24, paused: context.isPreview)) { tick in
                 WaterPanda(character: WaterCharacter.shown(instance.config,
-                                                           unlocked: Supporter.isUnlocked || context.isPreview),
+                                                           unlocked: ProAccess.isUnlocked || context.isPreview),
                            mood: context.isPreview ? .idle : WaterMood.at(tick.date, config: instance.config),
                            level: level,
                            phase: context.isPreview ? 0.3 : tick.date.timeIntervalSinceReferenceDate,
@@ -698,7 +698,7 @@ struct WaterDetail: View {
 
     /// Six faces in a row; the chosen one sits on the accent.
     private var characterPicker: some View {
-        let chosen = WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+        let chosen = WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
         return VStack(alignment: .leading, spacing: 6) {
             Text("角色")
                 .font(WidgetStyle.label(12))
@@ -706,10 +706,10 @@ struct WaterDetail: View {
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { character in
                     let selected = character == chosen
-                    let locked = character.isSupporterOnly && !Supporter.isUnlocked && !context.isPreview
+                    let locked = character.isSupporterOnly && !ProAccess.isUnlocked && !context.isPreview
                     Button {
                         guard !context.isPreview else { return }
-                        if locked { SponsorWindow.shared.show(); return }
+                        if locked { PaywallWindow.shared.show(); return }
                         withAnimation(.snappy(duration: 0.25)) {
                             WaterLog.set("character", .string(character.rawValue), in: instance)
                         }

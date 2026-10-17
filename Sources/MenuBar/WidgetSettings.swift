@@ -250,8 +250,8 @@ struct WidgetSettingsSections: View {
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
-                if WidgetCatalog.isSupporterOnly(variant.overrides), !Supporter.isUnlocked {
-                    SponsorWindow.shared.show()
+                if !ProLicenseGate.canChoose(variant.overrides, unlocked: ProAccess.isUnlocked) {
+                    PaywallWindow.shared.show()
                     return
                 }
                 write(instance) { config in
@@ -349,8 +349,8 @@ struct WidgetSettingsSections: View {
                 Picker(selection: Binding(
                     get: { instance.config.string(key, default: fallback) },
                     set: { value in
-                        if WidgetCatalog.isSupporterOnly([key: .string(value)]), !Supporter.isUnlocked {
-                            SponsorWindow.shared.show()
+                        if !ProLicenseGate.canChoose([key: .string(value)], unlocked: ProAccess.isUnlocked) {
+                            PaywallWindow.shared.show()
                             return
                         }
                         write(instance) { $0.set(key, .string(value)) }

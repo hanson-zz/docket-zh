@@ -170,6 +170,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startUpdateChecks(state)
 
+        // 码头 Pro：从钥匙串算出试用或激活状态，按需联网校验。不会自动开始试用。
+        ProLicenseManager.shared.start()
+
         SystemDockSettings.shared.start()
         // Reads the wallpaper, not the screen, so it needs no permission.
         DesktopLuminance.shared.start()

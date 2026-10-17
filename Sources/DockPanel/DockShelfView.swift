@@ -605,7 +605,7 @@ struct DockShelfView: View {
                                radius: chrome.radius,
                                tint: settings.glassTint,
                                opaque: settings.reduceTransparency,
-                               color: Supporter.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
+                               color: ProAccess.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
         }
         .overlay {
             // allowsHitTesting(false) is essential: an overlay takes part in
@@ -1449,9 +1449,9 @@ struct DockShelfView: View {
             Menu("样式") {
                 ForEach(catalog.variants.indices, id: \.self) { index in
                     let variant = catalog.variants[index]
-                    let locked = WidgetCatalog.isSupporterOnly(variant.overrides) && !Supporter.isUnlocked
+                    let locked = !ProLicenseGate.canChoose(variant.overrides, unlocked: ProAccess.isUnlocked)
                     Button(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(variant.overrides))) {
-                        if locked { SponsorWindow.shared.show(); return }
+                        if locked { PaywallWindow.shared.show(); return }
                         var updated = widget
                         for (key, value) in variant.overrides { updated.config.set(key, value) }
                         withAnimation(.snappy(duration: 0.26)) { app.updateWidget(updated) }
@@ -1691,6 +1691,8 @@ private struct TileContent<Menu: View>: View, Equatable {
                 // identity and is left alone.
                 .saturation(monochrome ? 0 : 1)
                 .environment(\.widgetPlateHidden, WidgetPlate.isHidden(widget.config))
+                // 没解锁时 Pro 小组件不删除，盖小锁遮罩，点一下弹付费墙。
+                .proLocked(widget, isPreview: isPreview)
         } else {
             DockItemView(item: item, scale: scale, position: position,
                          isRunning: isRunning, showRunningDot: true)

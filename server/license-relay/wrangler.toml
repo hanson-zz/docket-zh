@@ -1,0 +1,13 @@
+name = "dockling-license"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# 只认码头 Pro 的 Creem 产品。拾掇（prod_632G8EgQJWLL6m9M5JaBXv）的许可证在这里会被当作不存在。
+PRODUCT_ID = "prod_XYf9P2X55fvYZQOLhs3Lr"
+
+# 兑换码存储：在 Cloudflare ▸ 存储和数据库 ▸ KV 新建命名空间（建议叫 dockling-gifts，
+# 不要和拾掇共用），再在 Worker ▸ 设置 ▸ 绑定 里以 GIFTS 绑定；或者把 ID 填到下面并取消注释。
+# [[kv_namespaces]]
+# binding = "GIFTS"
+# id = "<KV 命名空间 ID>"

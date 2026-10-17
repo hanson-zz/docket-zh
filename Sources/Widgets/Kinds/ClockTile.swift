@@ -15,7 +15,7 @@ struct ClockTile: View {
     /// config copied from another Mac still shows the time.
     private var style: String {
         let layout = instance.config.string("layout", default: "standard")
-        if WidgetCatalog.supporterClockLayouts.contains(layout), !Supporter.isUnlocked, !context.isPreview { return "flip" }
+        if WidgetCatalog.supporterClockLayouts.contains(layout), !ProAccess.isUnlocked, !context.isPreview { return "flip" }
         return layout
     }
 

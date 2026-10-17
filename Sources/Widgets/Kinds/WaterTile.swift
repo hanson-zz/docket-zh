@@ -38,7 +38,7 @@ struct WaterTile: View {
     /// A locked Pro 专属 character is drawn as the red panda; the library's
     /// preview shows the real one, as the clock's supporter faces do.
     private var character: WaterCharacter {
-        WaterCharacter.shown(instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+        WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     /// Re-read every tick, so the cup goes down three seconds after a drink

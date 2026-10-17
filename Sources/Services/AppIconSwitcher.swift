@@ -14,7 +14,7 @@ enum AppIconSwitcher {
     /// 现在保存的选择，未解锁的赞助者图标按经典处理。
     static var current: AppIconOption {
         AppIconCatalog.shown(UserDefaults.standard.string(forKey: AppIconCatalog.key),
-                             unlocked: Supporter.isUnlocked)
+                             unlocked: ProAccess.isUnlocked)
     }
 
     /// 启动时调用一次：套用保存的选择。码头在需要前台时会临时切成普通应用，
@@ -36,7 +36,7 @@ enum AppIconSwitcher {
     /// 保存并立即套用。
     static func choose(_ option: AppIconOption) {
         UserDefaults.standard.set(option.id, forKey: AppIconCatalog.key)
-        let shown = AppIconCatalog.shown(option.id, unlocked: Supporter.isUnlocked)
+        let shown = AppIconCatalog.shown(option.id, unlocked: ProAccess.isUnlocked)
         apply(shown)
         syncFinder(shown)
     }

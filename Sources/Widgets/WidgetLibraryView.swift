@@ -614,8 +614,9 @@ struct WidgetLibraryView: View {
     }
 
     private func add(_ card: LibraryCard) {
-        if WidgetCatalog.isSupporterOnly(card.overrides), !Supporter.isUnlocked {
-            SponsorWindow.shared.show()
+        // 没解锁时点 Pro 卡片（整种 Pro 或 Pro 样式）弹付费墙，不添加。
+        if !ProLicenseGate.canAdd(card.kind, overrides: card.overrides, unlocked: ProAccess.isUnlocked) {
+            PaywallWindow.shared.show()
             return
         }
         guard let instance = WidgetCatalog.make(card.kind, overrides: card.overrides) else { return }

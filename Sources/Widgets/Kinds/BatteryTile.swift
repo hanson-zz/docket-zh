@@ -227,7 +227,7 @@ struct BatteryTile: View {
     /// The widget's 外观, with a locked Pro 专属 look drawn as 经典; the
     /// library's preview shows the real one, as the Wi-Fi rings do.
     private var chosenLook: BatteryLook {
-        BatteryLook.shown(config: instance.config, unlocked: Supporter.isUnlocked || context.isPreview)
+        ProLicenseGate.batteryLook(config: instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     /// The panda holds the Mac's battery; any other slot in that look gets
