@@ -340,7 +340,7 @@ private struct AIPromptBar: View {
             Button("管理常用提示词…") {
                 guard let app = center.app else { return }
                 close()
-                SettingsWindow.shared.show(app: app, tab: "General")
+                SettingsWindow.shared.show(app: app, tab: "AI")
             }
         } label: {
             HStack(spacing: 3) {
@@ -782,7 +782,7 @@ private struct AIJumpPane: View {
                 .foregroundStyle(.white.opacity(center.jumpHint == nil ? 0.5 : 0.8))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            Text("想直接在这里对话：到“设置 ▸ 通用 ▸ AI 助手”把它改成网页或 API。")
+            Text("想直接在这里对话：到“设置 ▸ AI”把它改成网页或 API。")
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)

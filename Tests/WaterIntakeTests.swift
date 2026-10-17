@@ -250,7 +250,7 @@ final class WaterIntakeTests: XCTestCase {
     func testWaterIsWiredIntoTheCatalogAndVisibility() {
         let entry = WidgetCatalog.entry(.water)
         XCTAssertEqual(entry?.name, "喝水")
-        XCTAssertEqual(entry?.category, .reminders)
+        XCTAssertEqual(entry?.category, .health)
         XCTAssertTrue(WidgetVisibility.supportsCondition(.water))
         var widget = WidgetCatalog.make(.water)!
         XCTAssertEqual(WidgetVisibility.conditionTitle(.water, config: widget.config), "今天未达标时显示")

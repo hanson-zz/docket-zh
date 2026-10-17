@@ -199,7 +199,7 @@ final class TranslateTests: XCTestCase {
     func testTheWidgetIsAToolWithItsOwnSizes() {
         let entry = WidgetCatalog.entry(.translate)
         XCTAssertEqual(entry?.name, "翻译")
-        XCTAssertEqual(entry?.category, .tools)
+        XCTAssertEqual(entry?.category, .ai)
         XCTAssertEqual(WidgetCatalog.configurableKeys(.translate), ["autoDirection", "clickAction"])
         let widget = WidgetCatalog.make(.translate)!
         XCTAssertEqual(WidgetCatalog.contentSize(widget, position: .bottom).height, 58)

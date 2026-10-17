@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// 设置 ▸ 通用 ▸ AI 助手：刘海入口的开关、快捷键、拾掇的说明，以及每个
+/// 设置 ▸ AI：刘海入口的开关、快捷键（在“快捷键”页录制）、拾掇的说明，以及每个
 /// 服务的打开方式（网页 / API / 跳转）和 API 的密钥、地址、模型。
 struct AINotchSettingsSection: View {
     @Binding var state: PersistedState
@@ -17,27 +17,13 @@ struct AINotchSettingsSection: View {
             Toggle("只在主屏显示", isOn: $state.aiNotch.mainScreenOnly)
                 .disabled(!state.aiNotch.enabled)
                 .help("关掉时每块屏幕都有入口；打开后只在带菜单栏的那块屏幕上显示。")
-            LabeledContent {
-                HStack(spacing: 6) {
-                    ShortcutRecorder(combo: state.aiNotch.hotKey) { state.aiNotch.hotKey = $0 }
-                    if state.aiNotch.hotKey != nil {
-                        Button("清除") { state.aiNotch.hotKey = nil }
-                            .controlSize(.small)
-                    }
+            // 快捷键本身在“设置 ▸ 快捷键”里录制，这里只说现在是什么。
+            LabeledContent("展开对话的快捷键") {
+                Button(state.aiNotch.hotKey?.displayString ?? "未设置") {
+                    SettingsSelection.shared.current = "Shortcuts"
                 }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("展开对话的快捷键")
-                    Text("默认不设。建议避开 ChatGPT 桌面版的 Option+空格。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            if let warning = AIHotKeyAdvice.warning(for: state.aiNotch.hotKey) {
-                Label(warning, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
+                .buttonStyle(.link)
+                .help("到“快捷键”页录制或清除。")
             }
             if shiduoRunning {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {

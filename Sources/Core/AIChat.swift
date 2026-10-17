@@ -424,7 +424,7 @@ public enum AIChatFailure: Error, Equatable, Sendable {
         case .offline: return "没有连上网络，检查网络后重试。"
         case .cannotConnect: return "连不上服务器，检查接口地址或网络。"
         case .secureConnection: return "安全连接失败，检查接口地址或网络代理。"
-        case .missingKey: return "还没有填这个服务的密钥，到“设置 ▸ 通用 ▸ AI 助手”里填写。"
+        case .missingKey: return "还没有填这个服务的密钥，到“设置 ▸ AI”里填写。"
         case .missingEndpoint: return "接口地址或模型名没填全（豆包要填接入点 ID 作为模型名）。"
         case .badURL: return "接口地址不对，要以 https:// 开头。"
         case .emptyReply: return "服务没有返回内容，可以点“重试”。"

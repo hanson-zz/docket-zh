@@ -272,7 +272,7 @@ final class AnniversaryTests: XCTestCase {
     func testCatalogEntryAndSizes() {
         let entry = WidgetCatalog.entry(.anniversary)
         XCTAssertEqual(entry?.name, "纪念日")
-        XCTAssertEqual(entry?.category, .reminders)
+        XCTAssertEqual(entry?.category, .todo)
         var widget = WidgetCatalog.make(.anniversary)!
         XCTAssertEqual(widget.config.string("layout"), "single")
         XCTAssertGreaterThanOrEqual(WidgetCatalog.verticalHeight(widget), 76)

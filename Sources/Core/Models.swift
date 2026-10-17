@@ -265,23 +265,46 @@ public enum WidgetTarget: Equatable, Sendable {
 }
 
 public enum WidgetCategory: String, Codable, Sendable, CaseIterable {
-    case clocks = "Clocks"
-    case reminders = "Reminders"
-    case calendar = "Calendar"
-    case notes = "Sticky Notes"
+    /// 小组件库侧栏里和常用应用、文件夹放在一起的小组件（应用切换器、快捷指令）。
+    case appsAndFolders = "Apps and Folders"
+    case time = "Time"
+    case todo = "Todo"
+    case health = "Health"
+    case ai = "AI"
+    case tools = "Tools"
     case media = "Media"
+    case files = "Files"
     case system = "System"
     case weather = "Weather"
-    case business = "Business"
     case stocks = "Stocks"
-    case files = "Files"
-    case tools = "Tools"
 
-    /// Library sidebar order.
+    /// Library sidebar order. 应用和文件夹 has a row of its own above the
+    /// rest, drawn with the app and folder shortcuts, but is listed here so
+    /// every category stays reachable.
     public static let ordered: [WidgetCategory] = [
-        .clocks, .reminders, .calendar, .notes, .media, .files, .tools, .system, .weather,
-        .business, .stocks,
+        .appsAndFolders, .time, .todo, .health, .ai, .tools, .media, .files, .system, .weather, .stocks,
     ]
+
+    /// 旧版本的原始值（Clocks、Reminders、Calendar、Sticky Notes、Business）
+    /// 对应的新分类，以及新分类自己的原始值。认不出的返回 nil。
+    public init?(legacy raw: String) {
+        if let known = WidgetCategory(rawValue: raw) {
+            self = known
+            return
+        }
+        switch raw {
+        case "Clocks", "Calendar": self = .time
+        case "Reminders", "Sticky Notes": self = .todo
+        case "Business": self = .stocks
+        default: return nil
+        }
+    }
+
+    /// 解码时兼容旧原始值；完全认不出的值退回“小工具”，不让旧配置读不出来。
+    public init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = WidgetCategory(legacy: raw) ?? .tools
+    }
 }
 
 // MARK: - Widget configuration
@@ -1190,17 +1213,34 @@ public extension WidgetCategory {
     /// 小组件库侧边栏中显示的类别名称。
     var displayName: String {
         switch self {
-        case .clocks: "时钟"
-        case .reminders: "提醒"
-        case .calendar: "日历"
-        case .notes: "便签"
+        case .appsAndFolders: "应用和文件夹"
+        case .time: "时间与日历"
+        case .todo: "待办与笔记"
+        case .health: "健康与习惯"
+        case .ai: "AI 与效率"
+        case .tools: "小工具"
         case .media: "媒体"
+        case .files: "文件"
         case .system: "系统"
         case .weather: "天气"
-        case .business: "商业"
-        case .stocks: "股票"
-        case .files: "文件"
-        case .tools: "工具"
+        case .stocks: "行情"
+        }
+    }
+
+    /// 侧边栏的 SF Symbols 图标。
+    var symbol: String {
+        switch self {
+        case .appsAndFolders: "app.badge"
+        case .time: "clock"
+        case .todo: "checklist"
+        case .health: "heart.text.square"
+        case .ai: "sparkles"
+        case .tools: "wrench.and.screwdriver"
+        case .media: "play.rectangle"
+        case .files: "folder"
+        case .system: "cpu"
+        case .weather: "cloud.sun"
+        case .stocks: "chart.line.uptrend.xyaxis"
         }
     }
 }

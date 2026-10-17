@@ -107,7 +107,11 @@ struct SettingsView: View {
     private static let sections: [(id: String, title: String, symbol: String)] = [
         ("Shelf", "扩展栏", "rectangle.bottomthird.inset.filled"),
         ("Widgets", "小组件", "square.grid.2x2"),
+        ("WidgetManager", "小组件管理", "slider.horizontal.3"),
         ("Layouts", "布局", "square.stack.3d.up"),
+        // AI 和快捷键各自一页，不再堆在“通用”里。
+        ("AI", "AI", "sparkles"),
+        ("Shortcuts", "快捷键", "command"),
         ("General", "通用", "gearshape"),
     ]
 
@@ -146,7 +150,10 @@ struct SettingsView: View {
     @ViewBuilder private var pane: some View {
         switch selection.current {
         case "Widgets": widgets
+        case "WidgetManager": widgetManager
         case "Layouts": layouts
+        case "AI": ai
+        case "Shortcuts": shortcuts
         case "General": general
         default: shelf
         }
@@ -341,6 +348,151 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - AI
+
+    /// 刘海入口、每个服务的打开方式和常用提示词。展开对话的快捷键在“快捷键”页。
+    private var ai: some View {
+        Form {
+            AINotchSettingsSection(state: $state)
+        }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Shortcuts
+
+    /// 码头里所有的全局快捷键：展开 AI 对话，以及切换到每个布局。
+    /// 布局的快捷键和“布局”页里的是同一份，在哪边改都一样。
+    private var shortcuts: some View {
+        Form {
+            Section {
+                LabeledContent {
+                    HStack(spacing: 6) {
+                        ShortcutRecorder(combo: state.aiNotch.hotKey) { state.aiNotch.hotKey = $0 }
+                        if state.aiNotch.hotKey != nil {
+                            Button("清除") { state.aiNotch.hotKey = nil }
+                                .controlSize(.small)
+                        }
+                    }
+                } label: {
+                    subtitled("展开 AI 对话", "默认不设。建议避开 ChatGPT 桌面版的 Option+空格。")
+                }
+                if let warning = AIHotKeyAdvice.warning(for: state.aiNotch.hotKey) {
+                    Label(warning, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } header: {
+                Text("AI 助手")
+            }
+
+            shortcutList(.customDock, title: "切换扩展栏布局")
+                .disabled(state.setup == .macOSDockOnly)
+            shortcutList(.macOSDock, title: "切换系统程序坞布局")
+
+            Section {
+                Text("点按右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func shortcutList(_ kind: ProfileKind, title: String) -> some View {
+        let mine = state.profiles(of: kind)
+        if !mine.isEmpty {
+            Section {
+                ForEach(mine) { profile in
+                    LabeledContent(profile.name) {
+                        ShortcutRecorder(combo: profile.shortcut) { combo in
+                            state.assignShortcut(combo, to: profile.id)
+                        }
+                    }
+                }
+            } header: {
+                Text(title)
+            }
+        }
+    }
+
+    // MARK: - Widget manager
+
+    /// 当前扩展栏布局里的小组件：开关显示、拖动排序。
+    ///
+    /// 用的都是已有的数据：开关就是小组件配置里的“隐藏”（扩展栏右键菜单
+    /// “已隐藏的小组件”里也能放回来），顺序就是布局本身的顺序。应用、文件夹
+    /// 和分组不在这里，挪动小组件时它们留在原位。
+    @ViewBuilder private var widgetManager: some View {
+        let widgets = WidgetManagement.widgets(activeItems)
+        if state.setup == .macOSDockOnly {
+            ContentUnavailableView("扩展栏已关闭", systemImage: "rectangle.bottomthird.inset.filled",
+                                   description: Text("打开扩展栏后，这里会列出上面的小组件。"))
+        } else if widgets.isEmpty {
+            ContentUnavailableView("当前布局里还没有小组件", systemImage: "square.grid.2x2",
+                                   description: Text("点按扩展栏末端的 + 添加小组件。"))
+        } else {
+            List {
+                Section {
+                    ForEach(widgets) { widget in
+                        widgetManagerRow(widget)
+                    }
+                    .onMove { source, destination in
+                        guard let index = activeProfileIndex else { return }
+                        withAnimation(.smooth(duration: 0.2)) {
+                            state.profiles[index].items = WidgetManagement.move(
+                                widgetsAt: source, to: destination, in: state.profiles[index].items)
+                        }
+                    }
+                } header: {
+                    Text("\(state.activeCustomProfile?.name ?? "扩展栏") · \(widgets.count) 个小组件")
+                } footer: {
+                    Text("拖动排序，关掉开关会把小组件从扩展栏上隐藏，设置保留，随时可以再打开。应用、文件夹和分组的位置不受影响。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listStyle(.inset)
+        }
+    }
+
+    private func widgetManagerRow(_ widget: WidgetInstance) -> some View {
+        let item = DockItem.widget(widget)
+        let mode = WidgetVisibility.mode(widget.config)
+        return HStack(spacing: 9) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .help("拖动排序")
+            icon(for: item)
+                .frame(width: 20, height: 20)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.displayName)
+                    .lineLimit(1)
+                if mode == .conditional, let condition = WidgetVisibility.conditionTitle(widget.kind, config: widget.config) {
+                    Text(condition)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            Toggle("显示", isOn: Binding(
+                get: { WidgetManagement.isShown(widget) },
+                set: { on in
+                    guard let index = activeProfileIndex else { return }
+                    state.profiles[index].items = WidgetManagement.setShown(
+                        on, id: widget.id, in: state.profiles[index].items)
+                }))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .labelsHidden()
+        }
+        .padding(.vertical, 2)
+    }
+
     // MARK: - General
 
     private var general: some View {
@@ -375,8 +527,6 @@ struct SettingsView: View {
             }
 
             islandSection
-
-            AINotchSettingsSection(state: $state)
 
             Section {
                 LabeledContent {

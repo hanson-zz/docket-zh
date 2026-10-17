@@ -334,7 +334,7 @@ final class AIServicesTests: XCTestCase {
     func testCatalogEntry() throws {
         let entry = try XCTUnwrap(WidgetCatalog.entry(.aiAssistant))
         XCTAssertEqual(entry.name, "AI 助手")
-        XCTAssertEqual(entry.category, .tools)
+        XCTAssertEqual(entry.category, .ai)
         XCTAssertEqual(WidgetKind.aiAssistant.rawValue, "ai-assistant")
         XCTAssertNil(WidgetCatalog.openTarget(.aiAssistant), "点卡片打开面板")
         XCTAssertEqual(WidgetCatalog.configurableKeys(.aiAssistant), [], "字牌在卡片和面板里管，不进设置页")

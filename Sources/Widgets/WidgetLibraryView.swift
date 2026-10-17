@@ -28,8 +28,14 @@ private struct LibraryCard: Identifiable {
 }
 
 /// Only self-contained kinds: the rest cannot be rendered in this build.
+/// Sorted by `WidgetLibraryGroups.displayOrder`, so each category lists its
+/// widgets in the order the categories were drawn up in; the sort is stable,
+/// so a kind's variants keep their own order.
 private let libraryCards: [LibraryCard] = WidgetCatalog.entries
     .filter(\.selfContained)
+    .enumerated()
+    .sorted { (WidgetLibraryGroups.rank($0.element.kind), $0.offset) < (WidgetLibraryGroups.rank($1.element.kind), $1.offset) }
+    .map(\.element)
     .flatMap { entry -> [LibraryCard] in
         let variants = entry.variants.isEmpty
             ? [(title: entry.name, overrides: [String: WidgetConfig.Value]())]
@@ -46,24 +52,26 @@ private let libraryCards: [LibraryCard] = WidgetCatalog.entries
         }
     }
 
-private func symbol(for category: WidgetCategory) -> String {
-    switch category {
-    case .clocks: "clock"
-    case .reminders: "checklist"
-    case .calendar: "calendar"
-    case .notes: "note.text"
-    case .media: "play.rectangle"
-    case .system: "desktopcomputer"
-    case .weather: "cloud.sun"
-    case .business: "chart.line.uptrend.xyaxis"
-    case .stocks: "chart.xyaxis.line"
-    case .files: "folder"
-    case .tools: "wrench.and.screwdriver"
-    }
+/// How many widgets (not variants) a set of cards holds.
+private func widgetCount(_ cards: [LibraryCard]) -> Int {
+    WidgetLibraryGroups.kindCount(cards.map(\.kind))
 }
+
+/// 推荐：精选加标“新”的，每个小组件只放第一张卡片（默认样式）。
+private let recommendedCards: [LibraryCard] = {
+    let kinds = WidgetLibraryGroups.recommended(available: libraryCards.map(\.kind))
+    return kinds.compactMap { kind in libraryCards.first { $0.kind == kind } }
+}()
+
+/// Categories with at least one widget, in sidebar order. 应用和文件夹 has
+/// its own row, so it is left out here.
+private let sidebarCategories: [WidgetCategory] =
+    WidgetLibraryGroups.visibleCategories(libraryCards.map(\.category), alwaysShown: [])
+        .filter { $0 != .appsAndFolders }
 
 private enum LibrarySelection: Hashable {
     case all
+    case recommended
     case appsAndFolders
     case category(WidgetCategory)
 }
@@ -102,9 +110,15 @@ private struct LibraryShortcut: Identifiable {
         return WidgetSearch.matches(query, names: [title, english], kind: "")
     }
 
+    /// Apps without their ".app", and the home folder as 个人 rather than
+    /// the account's short name.
     private static func named(_ url: URL, folder: Bool) -> LibraryShortcut {
-        LibraryShortcut(id: url.path, title: FileManager.default.displayName(atPath: url.path),
-                        url: url, isFolder: folder)
+        let system = FileManager.default.displayName(atPath: url.path)
+        let title = folder
+            ? WidgetLibraryGroups.folderTitle(path: url.path, systemName: system,
+                                              homePath: FileManager.default.homeDirectoryForCurrentUser.path)
+            : WidgetLibraryGroups.appTitle(system)
+        return LibraryShortcut(id: url.path, title: title, url: url, isFolder: folder)
     }
 
     static let apps: [LibraryShortcut] = {
@@ -190,17 +204,25 @@ struct WidgetLibraryView: View {
                 .padding(10)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
+                    // Counts are widgets, not variants: 时钟 is one widget
+                    // however many faces it offers.
                     row(.all, symbol: "square.grid.2x2", title: "所有小组件",
-                        count: libraryCards.count, enabled: true)
-                    row(.appsAndFolders, symbol: "app.badge", title: "应用和文件夹",
-                        count: LibraryShortcut.all.filter { $0.url != nil }.count, enabled: true)
-                    ForEach(WidgetCategory.ordered, id: \.self) { category in
-                        let count = libraryCards.filter { $0.category == category }.count
-                        row(.category(category), symbol: symbol(for: category),
-                            title: category.displayName, count: count,
-                            // Categories whose kinds all need permissions or
-                            // network have nothing to show in this build.
-                            enabled: count > 0)
+                        count: widgetCount(libraryCards), enabled: true)
+                    if !recommendedCards.isEmpty {
+                        row(.recommended, symbol: "star", title: "推荐",
+                            count: recommendedCards.count, enabled: true)
+                    }
+                    row(.appsAndFolders, symbol: WidgetCategory.appsAndFolders.symbol,
+                        title: WidgetCategory.appsAndFolders.displayName,
+                        count: LibraryShortcut.all.filter { $0.url != nil }.count
+                            + widgetCount(libraryCards.filter { $0.category == .appsAndFolders }),
+                        enabled: true)
+                    // A category with nothing in it is not listed at all.
+                    ForEach(sidebarCategories, id: \.self) { category in
+                        row(.category(category), symbol: category.symbol,
+                            title: category.displayName,
+                            count: widgetCount(libraryCards.filter { $0.category == category }),
+                            enabled: true)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -271,10 +293,8 @@ struct WidgetLibraryView: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        // Three categories are permanently greyed out, and used to say
-        // nothing about why: Business has no widgets built yet, Calendar and
-        // Reminders have them but they are not finished. A row that is dim
-        // for ever with no explanation reads as a fault in the app.
+        // Empty categories are no longer listed, so every row is enabled
+        // today; the explanation stays for any row that ever is not.
         .help(enabled ? "" : "这里还没有小组件。")
         .accessibilityHint(enabled ? "" : "此类别中还没有小组件。")
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
@@ -291,7 +311,7 @@ struct WidgetLibraryView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
                 Text("添加小组件").font(.system(size: 14, weight: .semibold))
-                Text("\(libraryCards.count)")
+                Text("\(widgetCount(libraryCards))")
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6)
@@ -412,7 +432,7 @@ struct WidgetLibraryView: View {
         if !query.isEmpty { return LibraryShortcut.all.filter { $0.matches(query) } }
         switch selection {
         case .all, .appsAndFolders: return LibraryShortcut.all
-        case .category: return []
+        case .category, .recommended: return []
         }
     }
 
@@ -451,6 +471,17 @@ struct WidgetLibraryView: View {
                         .padding(.vertical, 1.5)
                         .background(Capsule().fill(Color(hex: ShelfColor.redPanda.hex)))
                         .fixedSize()
+                }
+                if WidgetCatalog.isNew(card.kind) {
+                    Text("新")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Capsule().fill(Color.accentColor))
+                        .fixedSize()
+                        .help("近期新增的小组件")
+                        .accessibilityLabel("新")
                 }
                 if let permission = card.permission {
                     Image(systemName: "lock.fill")
@@ -506,13 +537,19 @@ struct WidgetLibraryView: View {
         let categories: [WidgetCategory] = {
             switch selection {
             case .category(let c): return [c]
-            case .appsAndFolders: return []
+            case .appsAndFolders: return [.appsAndFolders]
+            case .recommended: return []
             case .all: return WidgetCategory.ordered
             }
         }()
+        if selection == .recommended {
+            return [(title: "推荐", cards: recommendedCards)]
+        }
         return categories.compactMap { category in
             let cards = libraryCards.filter { $0.category == category }
-            return cards.isEmpty ? nil : (title: category.displayName, cards: cards)
+            // The shortcuts above already carry the 应用和文件夹 heading.
+            let title = category == .appsAndFolders ? "应用小组件" : category.displayName
+            return cards.isEmpty ? nil : (title: title, cards: cards)
         }
     }
 

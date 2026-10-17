@@ -293,7 +293,7 @@ final class VirtualPetTests: XCTestCase {
     func testPetIsWiredIntoTheCatalogAndVisibility() {
         let entry = WidgetCatalog.entry(.pet)
         XCTAssertEqual(entry?.name, "电子宠物")
-        XCTAssertEqual(entry?.category, .reminders)
+        XCTAssertEqual(entry?.category, .health)
         XCTAssertTrue(WidgetVisibility.supportsCondition(.pet))
         var widget = WidgetCatalog.make(.pet)!
         XCTAssertEqual(WidgetVisibility.conditionTitle(.pet, config: widget.config), "需要照顾时显示")

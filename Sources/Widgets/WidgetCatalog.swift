@@ -28,6 +28,10 @@ public enum WidgetCatalog {
         public var selfContained: Bool
     }
 
+    /// 近期新增的小组件，在添加面板的卡片上标“新”。名单和推荐列表在
+    /// `WidgetLibraryGroups` 里，这里只是目录上的入口。
+    public static func isNew(_ kind: WidgetKind) -> Bool { WidgetLibraryGroups.isNew(kind) }
+
     /// 赞助者专属表盘, unlocked from the sponsor window like the shelf colours.
     public static let supporterClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
 
@@ -52,7 +56,7 @@ public enum WidgetCatalog {
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
-        Entry(kind: .clock, name: "时钟", category: .clocks,
+        Entry(kind: .clock, name: "时钟", category: .time,
               defaults: c(["layout": .string("standard"), "seconds": .bool(true)]),
               variants: [("标准", ["layout": .string("standard")]),
                          ("模拟表盘", ["layout": .string("analog")]),
@@ -68,21 +72,21 @@ public enum WidgetCatalog {
                          ("极简", ["layout": .string("minimal")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .world, name: "世界时钟", category: .clocks,
+        Entry(kind: .world, name: "世界时钟", category: .time,
               defaults: c(["city": .string("伦敦"), "zone": .string("Europe/London")]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .stopwatch, name: "秒表", category: .clocks, defaults: c([:]),
+        Entry(kind: .stopwatch, name: "秒表", category: .time, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // 专注计时没有样式选择，外观（圆环或液态）用 look 键，默认圆环。
-        Entry(kind: .timer, name: "专注计时", category: .clocks,
+        Entry(kind: .timer, name: "专注计时", category: .health,
               defaults: c([LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.ring.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // 默认值里的 layout 仍是进度条：没存 layout 的旧卡片补默认值时保持
         // 原样。新放上去的卡片在 `make` 里换成圆环（推荐默认），所以圆环排第一。
-        Entry(kind: .progress, name: "时间进度", category: .clocks,
+        Entry(kind: .progress, name: "时间进度", category: .time,
               defaults: c([TimeProgress.layoutKey: .string(TimeProgress.legacyLayout),
                            TimeProgress.periodKey: .string("year"),
                            TimeProgress.motionKey: .bool(true)]),
@@ -93,7 +97,7 @@ public enum WidgetCatalog {
               supportsCompact: true, selfContained: true),
 
         // 倒计时没有样式选择，数字的外观（普通或折叠翻页）用 look 键，默认普通。
-        Entry(kind: .countdown, name: "倒计时", category: .clocks,
+        Entry(kind: .countdown, name: "倒计时", category: .time,
               defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([]),
                            FoldFlip.countdownLookKey: .string(FoldFlip.CountdownLook.plain.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
@@ -102,7 +106,7 @@ public enum WidgetCatalog {
         // 下一个节日和今天赚的钱，全部由 SlackerClock 算。背景色、背景图和
         // 字体颜色只在面板里改（background、backgroundImage、textColor），
         // 所以不在这里的默认值里，读的时候用 SlackerClock 的默认。
-        Entry(kind: .slacker, name: "摸鱼时钟", category: .clocks,
+        Entry(kind: .slacker, name: "摸鱼时钟", category: .time,
               defaults: c([SlackerClock.workdaysKey: .list(SlackerClock.weekdays.map { .string(String($0)) }),
                            SlackerClock.startKey: .string("09:00"),
                            SlackerClock.endKey: .string("18:00"),
@@ -115,14 +119,14 @@ public enum WidgetCatalog {
                            SlackerClock.lookKey: .string(SlackerClock.Look.illustrated.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .alarm, name: "闹钟", category: .clocks,
+        Entry(kind: .alarm, name: "闹钟", category: .time,
               defaults: c(["time": .string("14:30"), "name": .string("给小王回电话")]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // No `showCallButton`: read by nothing. A join-call affordance needs
         // the event's conference URL and a row to put it in, neither of which
         // exists, so the switch promised something that was never built.
-        Entry(kind: .calendar, name: "日历", category: .calendar,
+        Entry(kind: .calendar, name: "日历", category: .time,
               defaults: c(["layout": .string("nextEvent"), "allDay": .bool(true),
                            "calendars": .list([])]),
               variants: [("下一个日程", ["layout": .string("nextEvent")]),
@@ -131,14 +135,14 @@ public enum WidgetCatalog {
                          ("日期", ["layout": .string("date")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .reminders, name: "提醒事项", category: .reminders,
+        Entry(kind: .reminders, name: "提醒事项", category: .todo,
               defaults: c(["layout": .string("list"), "list": .string("")]),
               variants: [("列表", ["layout": .string("list")]),
                          ("下一个提醒", ["layout": .string("next")]),
                          ("数量", ["layout": .string("count")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .notes, name: "便签", category: .notes,
+        Entry(kind: .notes, name: "便签", category: .todo,
               defaults: c(["text": .string(""), "color": .string("yellow")]),
               variants: PaperColor.picker.map { ($0.title, ["color": .string($0.rawValue)]) },
               supportsCompact: false, selfContained: true),
@@ -194,11 +198,11 @@ public enum WidgetCatalog {
                 + wifiVariants,
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .shortcut, name: "快捷指令", category: .system,
+        Entry(kind: .shortcut, name: "快捷指令", category: .appsAndFolders,
               defaults: c(["name": .string("")]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .airdrop, name: "隔空投送", category: .system, defaults: c([:]),
+        Entry(kind: .airdrop, name: "隔空投送", category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // `period`, `metric`, `reference` and `style` were offered here and
@@ -265,7 +269,7 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Starred texts live under `pins`, contents rather than a setting.
-        Entry(kind: .clipboard, name: "剪贴板", category: .tools, defaults: c(["pasteOnClick": .bool(false)]),
+        Entry(kind: .clipboard, name: "剪贴板", category: .ai, defaults: c(["pasteOnClick": .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Recent colours live under `recent`, not a default, for the same
@@ -290,13 +294,13 @@ public enum WidgetCatalog {
         // 显示哪些、顺序、默认服务和自定义服务（services、customServices、
         // defaultService）在卡片和面板里改，不在这里的默认值里，读的时候
         // 用 AIServices 的默认；所以设置页里没有它们。
-        Entry(kind: .aiAssistant, name: "AI 助手", category: .tools,
+        Entry(kind: .aiAssistant, name: "AI 助手", category: .ai,
               defaults: c(["layout": .string(AIServices.wideLayout)]),
               variants: [("横排", ["layout": .string(AIServices.wideLayout)]),
                          ("方块", ["layout": .string(AIServices.squareLayout)])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .search, name: "搜索", category: .tools,
+        Entry(kind: .search, name: "搜索", category: .ai,
               defaults: c(["layout": .string("web"), "engine": .string("bing")]),
               variants: [("网页搜索", ["layout": .string("web")]),
                          ("查找文件", ["layout": .string("files")])],
@@ -306,21 +310,21 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Which switches, in order; see QuickToggle.
-        Entry(kind: .toggles, name: "快速开关", category: .system,
+        Entry(kind: .toggles, name: "快速开关", category: .tools,
               defaults: c([QuickToggle.key: .list(QuickToggle.defaults.map { .string($0.rawValue) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
-        Entry(kind: .wallpaper, name: "壁纸切换", category: .media,
+        Entry(kind: .wallpaper, name: "壁纸切换", category: .system,
               defaults: c(["folder": .string(""), "allScreens": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // What Command-Tab lists: the regular apps that are open.
-        Entry(kind: .appSwitcher, name: "应用切换器", category: .system, defaults: c([:]),
+        Entry(kind: .appSwitcher, name: "应用切换器", category: .appsAndFolders, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Each link is "标题 网址" or just the address; see Bookmark.
-        Entry(kind: .bookmarks, name: "书签", category: .tools,
+        Entry(kind: .bookmarks, name: "书签", category: .ai,
               defaults: c(["links": .list(["GitHub https://github.com/hanson-zz/docket-zh",
                                               "必应 https://cn.bing.com",
                                               "哔哩哔哩 https://www.bilibili.com",
@@ -333,7 +337,7 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Read from Mail over AppleScript, and only while Mail is open.
-        Entry(kind: .mail, name: "邮件", category: .tools, defaults: c([:]),
+        Entry(kind: .mail, name: "邮件", category: .ai, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // The last sum is kept under `expression`, written by the panel.
@@ -343,7 +347,7 @@ public enum WidgetCatalog {
         // Apple's on-device Translation: free, no key, nothing leaves the Mac.
         // The languages and the last translations (`source`, `target`,
         // `history`) are kept by the panel; see Translate.
-        Entry(kind: .translate, name: "翻译", category: .tools,
+        Entry(kind: .translate, name: "翻译", category: .ai,
               defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -357,7 +361,7 @@ public enum WidgetCatalog {
         // and a higher request limit. Up to eight repositories under `repos`
         // (an old `repo` is moved there on load, see GitHubWatch); what was
         // last seen of each is kept by GitHubService, not in the config.
-        Entry(kind: .github, name: "GitHub", category: .tools,
+        Entry(kind: .github, name: "GitHub", category: .ai,
               defaults: c(["repos": .list([.string(GitHubWatch.defaultRepo)]),
                            "notify": .bool(false),
                            "interval": .string("\(GitHubWatch.defaultInterval)")]),
@@ -376,26 +380,26 @@ public enum WidgetCatalog {
 
         // A ring that fills between breaks, with active hours, a
         // notification and a count of today's breaks.
-        Entry(kind: .posture, name: "久坐提醒", category: .reminders,
+        Entry(kind: .posture, name: "久坐提醒", category: .health,
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
                            "end": .string("18:00"), "notify": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A list of its own under `items`, never the system's Reminders.
-        Entry(kind: .todo, name: "快速待办", category: .reminders,
+        Entry(kind: .todo, name: "快速待办", category: .todo,
               defaults: c(["showDone": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Habits of its own under `habits`, with each day they were done;
         // see HabitTracker.
-        Entry(kind: .habit, name: "习惯打卡", category: .reminders,
+        Entry(kind: .habit, name: "习惯打卡", category: .health,
               defaults: c(["showStreak": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Dates of its own under `events`, counted down or up, by the solar
         // or the lunar calendar; the single card's event is `pinned`, chosen
         // in the panel. See Anniversary.
-        Entry(kind: .anniversary, name: "纪念日", category: .reminders,
+        Entry(kind: .anniversary, name: "纪念日", category: .todo,
               defaults: c(["layout": .string("single"), "showRing": .bool(true)]),
               variants: [("单个", ["layout": .string("single")]),
                          ("多个", ["layout": .string("multi")])],
@@ -406,7 +410,7 @@ public enum WidgetCatalog {
         // `start` and `end`. See WaterIntake. No `goal` here: the goal is the
         // personal recommendation unless one is set by hand in the panel,
         // and a default would read as a hand-set 2000 (see WaterGoal).
-        Entry(kind: .water, name: "喝水", category: .reminders,
+        Entry(kind: .water, name: "喝水", category: .health,
               defaults: c(["layout": .string("character"),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
@@ -428,7 +432,7 @@ public enum WidgetCatalog {
         // they run down without anything running (see VirtualPet), and the
         // same six characters as 喝水 under `character`, the red panda free
         // and the other five 赞助者专属.
-        Entry(kind: .pet, name: "电子宠物", category: .reminders,
+        Entry(kind: .pet, name: "电子宠物", category: .health,
               defaults: c(["character": .string("panda")]),
               variants: [("小熊猫", ["character": .string("panda")]),
                          ("柴犬", ["character": .string("shiba")]),
@@ -444,18 +448,18 @@ public enum WidgetCatalog {
         // the 专注计时 panel's. The kind stays perfect-day so widgets already
         // placed keep working.
         // 唯一的选项是外观：竹叶（默认）或液态，见 LiquidLooks。
-        Entry(kind: .perfectDay, name: "小熊猫的竹篮", category: .reminders,
+        Entry(kind: .perfectDay, name: "小熊猫的竹篮", category: .health,
               defaults: c([LiquidLooks.key: .string(LiquidLooks.BasketLook.leaf.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
-        Entry(kind: .week, name: "一周日程", category: .calendar,
+        Entry(kind: .week, name: "一周日程", category: .time,
               defaults: c(["allDay": .bool(true), "calendars": .list([])]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
-        Entry(kind: .lunar, name: "农历与假期", category: .calendar,
+        Entry(kind: .lunar, name: "农历与假期", category: .time,
               defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -490,7 +494,7 @@ public enum WidgetCatalog {
 
         // Codex's own rate limits, read with the sign-in Codex keeps in
         // ~/.codex, and what Codex is doing from its newest session log.
-        Entry(kind: .aiUsage, name: "Codex 用量", category: .system,
+        Entry(kind: .aiUsage, name: "Codex 用量", category: .ai,
               defaults: c(["show": .string("used"), "notify": .bool(true), "alertAt": .number(80),
                            "notifyDone": .bool(true), "extras": .bool(false),
                            // 外观：圆环（默认）或液态小圆杯，见 LiquidLooks。
