@@ -22,10 +22,10 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     public var caption: String {
         switch self {
         case .productivity: "待办、日历、专注计时、习惯"
-        case .health: "喝水、久坐提醒、小熊猫的竹篮"
+        case .health: "喝水、久坐提醒"
         case .system: "电池、网络、系统活动"
-        case .fun: "音乐、收音机、播客、电子宠物"
-        case .developer: "GitHub、Codex 用量"
+        case .fun: "音乐、收音机"
+        case .developer: "剪贴板、取色器"
         }
     }
 
@@ -49,14 +49,14 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
         }
     }
 
-    /// 候选小组件，靠前的优先。
+    /// 候选小组件，靠前的优先。只放免费的：码头 Pro 的小组件不在引导里自动添加。
     public var candidates: [String] {
         switch self {
         case .productivity: ["todo", "calendar", "timer", "habit", "reminders"]
-        case .health: ["water", "posture", "perfect-day"]
+        case .health: ["water", "posture"]
         case .system: ["battery", "network", "system", "gauges"]
-        case .fun: ["music", "radio", "podcast", "pet"]
-        case .developer: ["github", "ai-usage"]
+        case .fun: ["music", "radio"]
+        case .developer: ["clipboard", "color-picker"]
         }
     }
 }
@@ -117,6 +117,7 @@ public enum Onboarding {
     /// - Parameters:
     ///   - uses: 选中的用途，顺序和重复都不影响结果。
     ///   - available: 目录里存在、可以添加的种类。不在其中的候选直接跳过。
+    ///     码头 Pro 的小组件（`ProFeatures.isProKind`）也一律跳过。
     ///   - existing: 当前布局里已经有的种类。已有的不重复添加，空出的名额由
     ///     后面的候选补上。
     /// - Returns: 不重复的种类列表，每个用途至多 `maxPerUse` 个。
@@ -129,13 +130,26 @@ public enum Onboarding {
         for use in OnboardingUse.allCases where chosen.contains(use) {
             var count = 0
             for kind in use.candidates where count < maxPerUse {
-                guard available.contains(kind), !taken.contains(kind) else { continue }
+                guard available.contains(kind), !taken.contains(kind), !isPro(kind) else { continue }
                 picked.append(kind)
                 taken.insert(kind)
                 count += 1
             }
         }
         return picked
+    }
+
+    /// 码头 Pro 的小组件，引导不自动添加。
+    public static func isPro(_ kind: String) -> Bool {
+        WidgetKind(rawValue: kind).map(ProFeatures.isProKind) ?? false
+    }
+
+    /// 引导添加的小组件要改成的外观：默认是 Pro 外观的（目前只有电池新建时的
+    /// 液态），改用免费的经典外观。只返回要改的键；默认已是免费外观的返回空。
+    public static func freeLookOverrides(_ values: [String: WidgetConfig.Value]) -> [String: WidgetConfig.Value] {
+        guard case .string(let raw) = values[BatteryLook.key], BatteryLook.from(raw) != nil,
+              ProFeatures.isProChoice(key: BatteryLook.key, value: raw) else { return [:] }
+        return [BatteryLook.key: .string(BatteryLook.legacyDefault.rawValue)]
     }
 
     /// 这些小组件真正需要的权限，按出现顺序去重。
@@ -208,6 +222,8 @@ public enum Onboarding {
         "pet": "pawprint.fill",
         "github": "chevron.left.forwardslash.chevron.right",
         "ai-usage": "sparkles",
+        "clipboard": "doc.on.clipboard",
+        "color-picker": "eyedropper",
     ]
 
     private static let colors: [String: String] = [
@@ -229,5 +245,7 @@ public enum Onboarding {
         "pet": PaletteColor.red.hex,
         "github": PaletteColor.graphite.hex,
         "ai-usage": PaletteColor.indigo.hex,
+        "clipboard": PaletteColor.indigo.hex,
+        "color-picker": PaletteColor.pink.hex,
     ]
 }

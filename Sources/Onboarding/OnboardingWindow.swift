@@ -115,8 +115,11 @@ extension AppState {
     func addOnboardingWidgets(for uses: Set<OnboardingUse>) -> [String] {
         let available = Set(WidgetCatalog.shippable.map(\.kind.rawValue))
         let kinds = Onboarding.kinds(for: uses, available: available, existing: onboardingExistingKinds)
-        let widgets = kinds.compactMap { raw in
-            WidgetKind(rawValue: raw).flatMap { WidgetCatalog.make($0) }
+        let widgets = kinds.compactMap { raw -> WidgetInstance? in
+            guard var widget = WidgetKind(rawValue: raw).flatMap({ WidgetCatalog.make($0) }) else { return nil }
+            // 引导不用 Pro 外观做默认（电池新建默认液态，这里改回经典）。
+            for (key, value) in Onboarding.freeLookOverrides(widget.config.values) { widget.config.set(key, value) }
+            return widget
         }
         guard !widgets.isEmpty else { return [] }
 

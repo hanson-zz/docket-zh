@@ -158,14 +158,8 @@ struct SponsorView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Button {
-                            unlocked = true
-                        } label: {
-                            Label("我已赞助，解锁专属配色、表盘和角色", systemImage: "paintpalette")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color(hex: ShelfColor.redPanda.hex))
-                        Text("\(ShelfColor.allCases.count) 种扩展栏配色，霓虹、实景、简约、极简 4 款时钟表盘，加上喝水小组件的柴犬、橘猫、企鹅、水獭、章鱼 5 个角色。码头不联网验证，全凭你的诚信。")
+                        // “我已赞助”凭诚信解锁已停用，老赞助者改领兑换码；按过的照旧算解锁。
+                        Label("老赞助者请联系作者领取码头 Pro 兑换码，在 设置 ▸ 码头 Pro 输入即可解锁。", systemImage: "gift")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

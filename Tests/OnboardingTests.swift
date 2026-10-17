@@ -53,6 +53,45 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(kinds, ["network", "gauges"])
     }
 
+    func testNoProWidgetsAreAdded() {
+        // 引导只加免费小组件，竹篮、播客、电子宠物、GitHub、Codex 用量等 Pro 小组件都不加。
+        let kinds = Onboarding.kinds(for: OnboardingUse.allCases, available: catalog)
+        for kind in kinds {
+            XCTAssertFalse(ProFeatures.isProKind(WidgetKind(rawValue: kind)!), kind)
+        }
+        for use in OnboardingUse.allCases {
+            for kind in use.candidates {
+                XCTAssertFalse(Onboarding.isPro(kind), kind)
+            }
+        }
+        // 就算候选里混进 Pro 的，也会被跳过。
+        XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.developer],
+                                        available: ["github", "ai-usage", "clipboard", "color-picker"]),
+                       ["clipboard", "color-picker"])
+        XCTAssertTrue(Onboarding.isPro("perfect-day"))
+        XCTAssertFalse(Onboarding.isPro("water"))
+    }
+
+    func testDeveloperUseStillAddsFreeWidgets() {
+        XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.developer], available: catalog),
+                       ["clipboard", "color-picker"])
+    }
+
+    func testOnboardingWidgetsUseFreeLooks() {
+        // 电池新建默认液态（Pro），引导里改回经典；其他小组件的默认外观本来就免费。
+        let kinds = Onboarding.kinds(for: OnboardingUse.allCases, available: catalog)
+        XCTAssertTrue(kinds.contains("battery"))
+        for kind in kinds {
+            var widget = WidgetCatalog.make(WidgetKind(rawValue: kind)!)!
+            for (key, value) in Onboarding.freeLookOverrides(widget.config.values) { widget.config.set(key, value) }
+            XCTAssertFalse(ProFeatures.isPro(widget), kind)
+        }
+        XCTAssertEqual(Onboarding.freeLookOverrides([BatteryLook.key: .string("liquid")]),
+                       [BatteryLook.key: .string("classic")])
+        XCTAssertEqual(Onboarding.freeLookOverrides([BatteryLook.key: .string("classic")]), [:])
+        XCTAssertEqual(Onboarding.freeLookOverrides([:]), [:])
+    }
+
     func testNothingSelectedAddsNothing() {
         XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse](), available: catalog), [])
     }
