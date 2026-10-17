@@ -134,6 +134,10 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
   <sub>Clipboard: recent copies, searchable, with starred items</sub>
 </p>
 
+## In development (next version)
+
+- **Dockling Pro covers more, and Add Widget groups cards by widget**: App Volume, Recorder, Stocks, Watchlist, Crypto, Wallpaper, Radio, File Shelf, Translate and Habits are now Pro, alongside Slacker Clock, Time Progress, Ambient Sound, Podcasts, Trash, GitHub, App Switcher, Codex Usage, the Red Panda's Basket and Virtual Pet: 20 Pro widgets and 40 free ones. The multi-city Weather style and the Battery percentage ring are Pro, badged in the library and the style menus; a placed one shows the small lock until Pro is unlocked. Sticky Note keeps its five lightest papers free (Cream, Mint, Peach, Lavender and the default Lemon), the other ten are Pro, and a placed note on a Pro paper falls back to Lemon. In Settings, Widgets, Colors and Background, the presets stay free while the custom color and the gradient background are Pro. Clearer card names: AI Tiles Row and AI Panda Square for the AI Assistant, Photo Frame and Wide Photo Frame for the photo frame; only the names changed, placed widgets are untouched. Each category in Add Widget now shows one small heading per widget (with a Pro capsule for whole Pro widgets and a style count), separated by a thin line; search results and Recommended stay flat, and the up and down arrow keys follow the rows as drawn. Not yet verified on a real Mac.
+
 ## Install
 
 1. Download the latest `.dmg` or `.zip` from the [Releases page](../../releases)

@@ -21,10 +21,10 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     /// 卡片上的一行说明。
     public var caption: String {
         switch self {
-        case .productivity: tr("待办、日历、专注计时、习惯")
+        case .productivity: tr("待办、日历、专注计时")
         case .health: tr("喝水、久坐提醒")
         case .system: tr("电池、网络、系统活动")
-        case .fun: tr("音乐、收音机")
+        case .fun: tr("音乐、相册")
         case .developer: tr("剪贴板、取色器")
         }
     }
@@ -52,10 +52,10 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     /// 候选小组件，靠前的优先。只放免费的：码头 Pro 的小组件不在引导里自动添加。
     public var candidates: [String] {
         switch self {
-        case .productivity: ["todo", "calendar", "timer", "habit", "reminders"]
+        case .productivity: ["todo", "calendar", "timer", "reminders"]
         case .health: ["water", "posture"]
         case .system: ["battery", "network", "system", "gauges"]
-        case .fun: ["music", "radio"]
+        case .fun: ["music", "photos"]
         case .developer: ["clipboard", "color-picker"]
         }
     }

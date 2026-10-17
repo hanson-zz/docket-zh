@@ -24,8 +24,8 @@ private struct ProPerk: Identifiable {
                     detail: tr("时钟的霓虹、实景、简约、极简表盘；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼")),
             ProPerk(id: "looks", symbol: "battery.100percent.bolt", title: tr("Wi-Fi 和电池外观"),
                     detail: tr("数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池")),
-            ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("扩展栏专属配色"),
-                    detail: tr("小熊猫橙、樱花粉等底板配色")),
+            ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("专属配色和样式"),
+                    detail: tr("小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池百分比圆环")),
         ]
     }
 }
@@ -114,7 +114,7 @@ struct ProPaywallView: View {
             }
         }
         .padding(24)
-        .frame(width: 480, height: 640, alignment: .top)
+        .frame(width: 480, height: 700, alignment: .top)
         .background {
             ZStack {
                 Rectangle().fill(.regularMaterial)
@@ -192,7 +192,7 @@ final class PaywallWindow: HostedWindow {
     func show() {
         ProLicenseManager.shared.refreshState()
         present(ProPaywallView(onClose: { [weak self] in self?.close() }),
-                title: tr("码头 Pro"), size: NSSize(width: 480, height: 640), chromeless: true)
+                title: tr("码头 Pro"), size: NSSize(width: 480, height: 700), chromeless: true)
     }
 }
 

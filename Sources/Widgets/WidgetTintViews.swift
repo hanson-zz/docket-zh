@@ -22,11 +22,13 @@ struct WidgetTintStyle: Equatable, Sendable {
     var kindPalette: WidgetTint.Palette
     var background: WidgetTint.Background
 
-    init(kind: WidgetKind, config: WidgetConfig) {
-        choice = WidgetTint.choice(config)
+    /// 没解锁码头 Pro 时，自定义颜色退回默认、渐变背景退回无背景
+    /// （`WidgetTint.shownChoice`、`shownBackground`）。
+    init(kind: WidgetKind, config: WidgetConfig, unlocked: Bool = ProAccess.isUnlocked) {
+        choice = WidgetTint.shownChoice(config, unlocked: unlocked)
         palette = WidgetTint.palette(choice, kind: kind)
         kindPalette = WidgetTint.defaultPalette(kind)
-        background = WidgetTint.offersBackground(kind) ? WidgetTint.background(config) : .plain
+        background = WidgetTint.offersBackground(kind) ? WidgetTint.shownBackground(config, unlocked: unlocked) : .plain
     }
 
     /// 用户在颜色面板里自己选过（不是默认）。
@@ -159,6 +161,11 @@ struct WidgetTintPicker: View {
     private var choice: WidgetTint.Choice { WidgetTint.choice(instance.config) }
     private var background: WidgetTint.Background { WidgetTint.background(instance.config) }
 
+    /// 让试用到期、激活或解绑时色块的小锁立刻跟着变。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+    private var unlocked: Bool { licenseUnlocked || supporter }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if WidgetTint.offersColor(instance.kind) {
@@ -182,6 +189,16 @@ struct WidgetTintPicker: View {
                     .foregroundStyle(.secondary)
             }
 
+            if WidgetTint.offersColor(instance.kind) || WidgetTint.offersBackground(instance.kind) {
+                // 预设免费；自定义取色和渐变背景是码头 Pro，没解锁时点了弹付费墙。
+                HStack(spacing: 5) {
+                    ProBadge()
+                    Text("自定义颜色和渐变背景为 Pro 专属，预设颜色免费")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if WidgetTint.offersBackground(instance.kind) {
                 Text("背景")
                     .font(.caption)
@@ -189,9 +206,16 @@ struct WidgetTintPicker: View {
                 HStack(spacing: 6) {
                     ForEach(WidgetTint.Background.allCases) { option in
                         VStack(spacing: 3) {
-                            swatchButton(selected: background == option, help: option.title,
+                            swatchButton(selected: background == option,
+                                         help: ProFeatures.menuTitle(option.title,
+                                                                     isPro: WidgetTint.isProBackground(option)),
                                          action: { pickBackground(option) }) {
                                 backgroundDisc(option)
+                                    .overlay(alignment: .bottomTrailing) {
+                                        if !ProLicenseGate.canChooseBackground(option, unlocked: unlocked) {
+                                            lockMark
+                                        }
+                                    }
                             }
                             Text(option.title)
                                 .font(.system(size: 9))
@@ -271,17 +295,30 @@ struct WidgetTintPicker: View {
                 .overlay { Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5) }
                 .padding(3)
                 .overlay { Circle().strokeBorder(Self.ring, lineWidth: 2).opacity(selectedCode != nil ? 1 : 0) }
-            ColorPicker("", selection: Binding(
-                get: { selectedCode.map { Color(code: $0) } ?? Color(code: WidgetTint.defaultPalette(instance.kind).main) },
-                set: { color in
-                    if let code = Self.code(color) { pick(.custom(code)) }
-                }), supportsOpacity: false)
-                .labelsHidden()
-                .frame(width: Self.swatch + 6, height: Self.swatch + 6)
-                .opacity(0.02)
+            if unlocked {
+                ColorPicker("", selection: Binding(
+                    get: { selectedCode.map { Color(code: $0) } ?? Color(code: WidgetTint.defaultPalette(instance.kind).main) },
+                    set: { color in
+                        if let code = Self.code(color) { pick(.custom(code)) }
+                    }), supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: Self.swatch + 6, height: Self.swatch + 6)
+                    .opacity(0.02)
+            } else {
+                // 自定义取色是码头 Pro：没解锁时不开取色器，点了弹付费墙。
+                Button { PaywallWindow.shared.show() } label: {
+                    Color.clear
+                        .frame(width: Self.swatch + 6, height: Self.swatch + 6)
+                        .contentShape(.circle)
+                }
+                .buttonStyle(.plain)
+                lockMark
+                    .frame(width: Self.swatch + 6, height: Self.swatch + 6, alignment: .bottomTrailing)
+                    .allowsHitTesting(false)
+            }
         }
-        .help("自定义颜色")
-        .accessibilityLabel("自定义颜色")
+        .help(ProFeatures.menuTitle(tr("自定义颜色"), isPro: true))
+        .accessibilityLabel(ProFeatures.menuTitle(tr("自定义颜色"), isPro: true))
     }
 
     /// 跟随系统强调色。
@@ -352,7 +389,21 @@ struct WidgetTintPicker: View {
 
     // MARK: 写回
 
+    /// 没解锁的 Pro 色块右下角的小锁。
+    private var lockMark: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 7, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(2.5)
+            .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex)))
+            .accessibilityHidden(true)
+    }
+
     private func pick(_ choice: WidgetTint.Choice) {
+        if !ProLicenseGate.canChooseTint(choice, unlocked: unlocked) {
+            PaywallWindow.shared.show()
+            return
+        }
         write { config in
             let raw = choice.raw
             config.set(WidgetTint.key, raw.isEmpty ? nil : .string(raw))
@@ -360,6 +411,10 @@ struct WidgetTintPicker: View {
     }
 
     private func pickBackground(_ option: WidgetTint.Background) {
+        if !ProLicenseGate.canChooseBackground(option, unlocked: unlocked) {
+            PaywallWindow.shared.show()
+            return
+        }
         write { config in
             config.set(WidgetTint.backgroundKey, option == .plain ? nil : .string(option.rawValue))
         }

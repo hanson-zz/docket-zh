@@ -245,12 +245,12 @@ struct WidgetSettingsSections: View {
     /// the picker could neither tell them apart nor show the right one.
     private func stylePicker(_ entry: WidgetCatalog.Entry, _ instance: WidgetInstance) -> some View {
         let currentIsPro = entry.variants.first { $0.title == selectedVariant(entry, instance) }
-            .map { ProFeatures.isProStyle($0.overrides) } ?? false
+            .map { ProFeatures.isProStyle(entry.kind, $0.overrides) } ?? false
         return Picker(selection: Binding(
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
-                if !ProLicenseGate.canChoose(variant.overrides, unlocked: ProAccess.isUnlocked) {
+                if !ProLicenseGate.canChoose(entry.kind, variant.overrides, unlocked: ProAccess.isUnlocked) {
                     PaywallWindow.shared.show()
                     return
                 }
@@ -262,7 +262,7 @@ struct WidgetSettingsSections: View {
                 // 选中的是 Pro 样式时，“样式”旁边固定显示 Pro 标识。
                 ForEach(entry.variants.indices, id: \.self) { index in
                     let variant = entry.variants[index]
-                    Text(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(variant.overrides)))
+                    Text(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(entry.kind, variant.overrides)))
                         .tag(variant.title)
                 }
             } label: {
@@ -349,7 +349,7 @@ struct WidgetSettingsSections: View {
                 Picker(selection: Binding(
                     get: { instance.config.string(key, default: fallback) },
                     set: { value in
-                        if !ProLicenseGate.canChoose([key: .string(value)], unlocked: ProAccess.isUnlocked) {
+                        if !ProLicenseGate.canChoose(entry.kind, [key: .string(value)], unlocked: ProAccess.isUnlocked) {
                             PaywallWindow.shared.show()
                             return
                         }
@@ -357,12 +357,12 @@ struct WidgetSettingsSections: View {
                     })) {
                     ForEach(choices, id: \.value) { choice in
                         Text(ProFeatures.menuTitle(choice.title,
-                                                   isPro: ProFeatures.isProChoice(key: key, value: choice.value)))
+                                                   isPro: ProFeatures.isProChoice(kind: entry.kind, key: key, value: choice.value)))
                             .tag(choice.value)
                     }
                 } label: {
                     ProLabel(title: Self.label(key, kind: entry.kind),
-                             isPro: ProFeatures.isProChoice(key: key, value: current))
+                             isPro: ProFeatures.isProChoice(kind: entry.kind, key: key, value: current))
                 }
             } else {
                 // Bordered, and in a LabeledContent rather than carrying its

@@ -1456,8 +1456,8 @@ struct DockShelfView: View {
             Menu("样式") {
                 ForEach(catalog.variants.indices, id: \.self) { index in
                     let variant = catalog.variants[index]
-                    let locked = !ProLicenseGate.canChoose(variant.overrides, unlocked: ProAccess.isUnlocked)
-                    Button(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(variant.overrides))) {
+                    let locked = !ProLicenseGate.canChoose(widget.kind, variant.overrides, unlocked: ProAccess.isUnlocked)
+                    Button(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(widget.kind, variant.overrides))) {
                         if locked { PaywallWindow.shared.show(); return }
                         var updated = widget
                         for (key, value) in variant.overrides { updated.config.set(key, value) }

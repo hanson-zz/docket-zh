@@ -65,7 +65,8 @@ struct FocusTimerTile: View {
     /// 否则是专注计时自己的绿（`WidgetTint.timerPalette`）。跟随系统强调色时
     /// 用系统的。
     private func sessionTint(for state: TimerState) -> Color {
-        guard let palette = WidgetTint.timerPalette(WidgetTint.choice(instance.config), session: state.color) else {
+        guard let palette = WidgetTint.timerPalette(WidgetTint.shownChoice(instance.config, unlocked: ProAccess.isUnlocked),
+                                                     session: state.color) else {
             return .accentColor
         }
         return Color(code: WidgetTint.readable(palette.main, dark: scheme == .dark))

@@ -69,6 +69,14 @@ private let sidebarCategories: [WidgetCategory] =
     WidgetLibraryGroups.visibleCategories(libraryCards.map(\.category), alwaysShown: [])
         .filter { $0 != .appsAndFolders }
 
+/// 一个分区里的一组卡片。分类里每种小组件一组，带小标题；搜索结果和推荐
+/// 不分组，整个分区是一组，`kind` 为 nil，不画小标题。
+private struct LibraryGroup: Identifiable {
+    var id: String
+    var kind: WidgetKind?
+    var cards: [LibraryCard]
+}
+
 private enum LibrarySelection: Hashable {
     case all
     case recommended
@@ -377,11 +385,25 @@ struct WidgetLibraryView: View {
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
-                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.cardWidth), spacing: 12),
-                                                     count: Self.columns),
-                                      alignment: .leading, spacing: 12) {
-                                ForEach(section.cards) { card in
-                                    cardView(card)
+                            // 分类里每种小组件一组：小标题是种类名，组与组之间一条细线，
+                            // 一眼能看出这个分类里有几种小组件、每种有几个样式。
+                            ForEach(Array(section.groups.enumerated()), id: \.element.id) { index, group in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if index > 0, group.kind != nil {
+                                        Divider()
+                                            .padding(.top, 4)
+                                            .padding(.bottom, 2)
+                                    }
+                                    if let kind = group.kind {
+                                        groupHeader(kind, styles: group.cards.count)
+                                    }
+                                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.cardWidth), spacing: 12),
+                                                             count: Self.columns),
+                                              alignment: .leading, spacing: 12) {
+                                        ForEach(group.cards) { card in
+                                            cardView(card)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -393,6 +415,27 @@ struct WidgetLibraryView: View {
                 if case .card(let id) = new { withAnimation { proxy.scrollTo(id, anchor: .center) } }
             }
         }
+    }
+
+    /// 一组的小标题：种类名称，整种是 Pro 时带 Pro 角标，有多个样式时后面
+    /// 标样式个数。
+    private func groupHeader(_ kind: WidgetKind, styles: Int) -> some View {
+        let name = WidgetCatalog.entry(kind)?.name ?? kind.rawValue
+        return HStack(spacing: 5) {
+            Text(name)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.85))
+            if ProFeatures.isProKind(kind) {
+                ProBadge()
+            }
+            if styles > 1 {
+                Text(tr("\(styles) 种样式"))
+                    .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     private var shortcutsSection: some View {
@@ -545,8 +588,8 @@ struct WidgetLibraryView: View {
         .onKeyPress(.space) { add(card); return .handled }
         .onKeyPress(.leftArrow) { move(from: card, by: -1) }
         .onKeyPress(.rightArrow) { move(from: card, by: 1) }
-        .onKeyPress(.upArrow) { move(from: card, by: -Self.columns) }
-        .onKeyPress(.downArrow) { move(from: card, by: Self.columns) }
+        .onKeyPress(.upArrow) { moveVertically(from: card, by: -1) }
+        .onKeyPress(.downArrow) { moveVertically(from: card, by: 1) }
         .id(card.id)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
@@ -556,11 +599,12 @@ struct WidgetLibraryView: View {
 
     // MARK: Data
 
-    private var sections: [(title: String, cards: [LibraryCard])] {
+    private var sections: [(title: String, groups: [LibraryGroup])] {
         let query = search.trimmingCharacters(in: .whitespaces)
         // Searching flattens the category grouping into one list.
         guard query.isEmpty else {
-            return [(title: tr("搜索结果"), cards: libraryCards.filter { $0.matches(query) })]
+            let found = libraryCards.filter { $0.matches(query) }
+            return [(title: tr("搜索结果"), groups: [LibraryGroup(id: "search", kind: nil, cards: found)])]
         }
         let categories: [WidgetCategory] = {
             switch selection {
@@ -571,27 +615,40 @@ struct WidgetLibraryView: View {
             }
         }()
         if selection == .recommended {
-            return [(title: tr("推荐"), cards: recommendedCards)]
+            return [(title: tr("推荐"), groups: [LibraryGroup(id: "recommended", kind: nil, cards: recommendedCards)])]
         }
         return categories.compactMap { category in
             let cards = libraryCards.filter { $0.category == category }
             // The shortcuts above already carry the 应用和文件夹 heading.
             let title = category == .appsAndFolders ? tr("应用小组件") : category.displayName
-            return cards.isEmpty ? nil : (title: title, cards: cards)
+            let groups = WidgetLibraryGroups.groupedByKind(cards, kind: \.kind).map { run in
+                LibraryGroup(id: "\(category.rawValue)/\(run[0].id)", kind: run[0].kind, cards: run)
+            }
+            return cards.isEmpty ? nil : (title: title, groups: groups)
         }
     }
 
     /// Visible cards in reading order - the basis for arrow-key navigation.
-    private var flatCards: [LibraryCard] { sections.flatMap(\.cards) }
+    private var flatCards: [LibraryCard] { sections.flatMap { $0.groups.flatMap(\.cards) } }
 
-    // ponytail: arrow keys walk the flat list, so a vertical hop across a
-    // section boundary lands near, not exactly above/below. Track per-section
-    // rows if that ever reads wrong.
+    /// 左右方向键沿整个列表走；上下方向键按画出来的行走，每组从新的一行开始，
+    /// 跨组时落到上一组或下一组同一列（那一行短时落到最后一张）。
     private func move(from card: LibraryCard, by delta: Int) -> KeyPress.Result {
         let cards = flatCards
         guard let index = cards.firstIndex(where: { $0.id == card.id }) else { return .ignored }
         let target = index + delta
         guard cards.indices.contains(target) else { return .ignored }
+        focus = .card(cards[target].id)
+        return .handled
+    }
+
+    private func moveVertically(from card: LibraryCard, by delta: Int) -> KeyPress.Result {
+        let cards = flatCards
+        guard let index = cards.firstIndex(where: { $0.id == card.id }) else { return .ignored }
+        let sizes = sections.flatMap { $0.groups.map(\.cards.count) }
+        let rows = WidgetLibraryGroups.gridRows(groupSizes: sizes, columns: Self.columns)
+        guard let target = WidgetLibraryGroups.verticalMove(from: index, rows: rows, by: delta),
+              cards.indices.contains(target) else { return .ignored }
         focus = .card(cards[target].id)
         return .handled
     }

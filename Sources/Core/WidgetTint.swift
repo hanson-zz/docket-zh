@@ -2,6 +2,7 @@ import Foundation
 
 /// 小组件的颜色主题：每种小组件自己的默认主题色（主色加一个对比辅助色）、
 /// 颜色面板里的十五种预设、自定义取色、跟随系统强调色，以及卡片背景。
+/// 预设免费；自定义取色和渐变背景是码头 Pro，见 `isProChoice`、`isProBackground`。
 ///
 /// 存在小组件自己的配置里，两个键都不在目录默认值里：没设置时读出来是
 /// “默认”，用这种小组件自己的颜色，所以旧卡片什么都不用迁移。
@@ -141,6 +142,31 @@ public enum WidgetTint {
 
     public static func choice(_ config: WidgetConfig) -> Choice {
         Choice(raw: config.string(key))
+    }
+
+    // MARK: Pro
+
+    /// 自定义取色是码头 Pro；默认、跟随系统和十五种预设免费。
+    public static func isProChoice(_ choice: Choice) -> Bool {
+        if case .custom = choice { return true }
+        return false
+    }
+
+    /// 渐变背景是码头 Pro；无、深色、磨砂、网点、线条免费。
+    public static func isProBackground(_ background: Background) -> Bool {
+        background == .gradient
+    }
+
+    /// 卡片实际用的颜色：没解锁时自定义颜色退回默认。
+    public static func shownChoice(_ config: WidgetConfig, unlocked: Bool) -> Choice {
+        let chosen = choice(config)
+        return !unlocked && isProChoice(chosen) ? .kindDefault : chosen
+    }
+
+    /// 卡片实际用的背景：没解锁时渐变退回无背景。
+    public static func shownBackground(_ config: WidgetConfig, unlocked: Bool) -> Background {
+        let chosen = background(config)
+        return !unlocked && isProBackground(chosen) ? .plain : chosen
     }
 
     // MARK: 配色

@@ -1,18 +1,23 @@
 import XCTest
 
-/// Pro 专属的清单：整种 Pro 的小组件、原来的赞助者样式、液态外观、快速开关里的工具。
+/// Pro 专属的清单：整种 Pro 的小组件、原来的赞助者样式、液态外观、只属于某种小组件的
+/// Pro 样式（天气多城市、电池百分比圆环、便签纸色）、颜色与背景、快速开关里的工具。
 final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsMatchTheAgreedList() {
         XCTAssertEqual(ProFeatures.proKinds, [
             .slacker, .progress, .ambient, .podcast, .trash,
             .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
+            .appVolume, .recorder, .stock, .watchlist, .crypto,
+            .wallpaper, .radio, .fileShelf, .translate, .habit,
         ])
+        XCTAssertEqual(ProFeatures.proKinds.count, 20)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))
         }
-        for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar] {
+        for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar,
+                     .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume] {
             XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind) 不是整种 Pro")
             XCTAssertFalse(ProFeatures.isPro(kind, overrides: [:]))
         }
@@ -82,6 +87,146 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertTrue(ProFeatures.isPro(slacker))
         let battery = WidgetInstance(kind: .battery, config: WidgetConfig([BatteryLook.key: .string("liquid")]))
         XCTAssertTrue(ProFeatures.isPro(battery))
+    }
+
+    func testWholeKindsAddedInThisRoundAreLocked() {
+        for kind in [WidgetKind.appVolume, .recorder, .stock, .watchlist, .crypto,
+                     .wallpaper, .radio, .fileShelf, .translate, .habit] {
+            XCTAssertTrue(ProFeatures.isProKind(kind), "\(kind)")
+            XCTAssertFalse(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: false), "\(kind)")
+            XCTAssertTrue(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: true), "\(kind)")
+            let placed = WidgetInstance(kind: kind, config: WidgetConfig())
+            XCTAssertTrue(ProLicenseGate.needsLockOverlay(placed, unlocked: false), "\(kind)")
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: true), "\(kind)")
+        }
+    }
+
+    func testFreeAndProCountsOfTheLibrary() {
+        let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
+        let pro = kinds.filter(ProFeatures.isProKind)
+        XCTAssertEqual(pro.count, 20)
+        XCTAssertEqual(kinds.count - pro.count, 40, "官网和 README 写的免费小组件数量")
+    }
+
+    func testWeatherCitiesIsPro() {
+        let cities: [String: WidgetConfig.Value] = ["layout": .string("cities")]
+        XCTAssertTrue(ProFeatures.isProStyle(.weather, cities))
+        XCTAssertTrue(ProFeatures.isPro(.weather, overrides: cities))
+        XCTAssertFalse(ProLicenseGate.canAdd(.weather, overrides: cities, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.canChoose(.weather, cities, unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canChoose(.weather, cities, unlocked: true))
+        // 只对天气算：同样的值放在别的小组件上不是 Pro。
+        XCTAssertFalse(ProFeatures.isProStyle(cities))
+        XCTAssertFalse(ProFeatures.isProStyle(.clock, cities))
+        for layout in ["current", "conditions", "hourly", "sky", "week", "tenDays"] {
+            XCTAssertFalse(ProFeatures.isPro(.weather, overrides: ["layout": .string(layout)]), layout)
+        }
+        let placed = WidgetInstance(kind: .weather, config: WidgetConfig(cities))
+        XCTAssertTrue(ProFeatures.isPro(placed))
+        XCTAssertTrue(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: true))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false, isPreview: true))
+        let current = WidgetInstance(kind: .weather, config: WidgetConfig(["layout": .string("current")]))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(current, unlocked: false))
+        XCTAssertTrue(ProFeatures.isProChoice(kind: .weather, key: "layout", value: "cities"))
+    }
+
+    func testBatteryGaugeIsPro() {
+        let gauge: [String: WidgetConfig.Value] = ["layout": .string("gauge")]
+        XCTAssertTrue(ProFeatures.isProStyle(.battery, gauge))
+        XCTAssertFalse(ProLicenseGate.canAdd(.battery, overrides: gauge, unlocked: false))
+        XCTAssertFalse(ProFeatures.isProStyle(gauge))
+        XCTAssertFalse(ProFeatures.isProStyle(.system, gauge))
+        for layout in ["status", "icon"] {
+            XCTAssertFalse(ProFeatures.isPro(.battery, overrides: ["layout": .string(layout)]), layout)
+        }
+        // 百分比圆环没有同样大小的免费样式可退，没解锁时盖小锁遮罩。
+        let placed = WidgetInstance(kind: .battery, config: WidgetConfig(gauge))
+        XCTAssertTrue(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: true))
+        let status = WidgetInstance(kind: .battery, config: WidgetConfig(["layout": .string("status"),
+                                                                          BatteryLook.key: .string("liquid")]))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(status, unlocked: false), "液态电池照旧退回经典，不盖")
+    }
+
+    func testCatalogStylesAreBadgedForTheirKind() {
+        var proStyles: [String] = []
+        for entry in WidgetCatalog.entries {
+            for variant in entry.variants where ProFeatures.isKindProStyle(entry.kind, variant.overrides) {
+                proStyles.append("\(entry.kind.rawValue):\(variant.title)")
+            }
+        }
+        XCTAssertTrue(proStyles.contains("weather:多城市"))
+        XCTAssertTrue(proStyles.contains("battery:百分比圆环"))
+        // 便签十五种纸色里，免费五种，其余十种是 Pro。
+        XCTAssertEqual(proStyles.filter { $0.hasPrefix("notes:") }.count, PaperColor.picker.count - 5)
+    }
+
+    func testNoteColorsSplitIntoFreeAndPro() {
+        XCTAssertEqual(ProFeatures.freeNoteColors, [.cream, .mint, .peach, .lavender, .yellow])
+        XCTAssertTrue(ProFeatures.freeNoteColors.contains(.yellow), "默认的柠檬黄免费")
+        for color in ProFeatures.freeNoteColors {
+            XCTAssertTrue(PaperColor.picker.contains(color), "\(color) 在纸色列表里")
+        }
+        // 免费的五种是列表里最浅的五种。
+        let byLightness = PaperColor.picker.sorted {
+            WidgetTint.luminance(ColorCode(hex: $0.hex)!) > WidgetTint.luminance(ColorCode(hex: $1.hex)!)
+        }
+        XCTAssertEqual(Set(byLightness.prefix(5)), ProFeatures.freeNoteColors)
+        for color in PaperColor.picker {
+            let free = ProFeatures.freeNoteColors.contains(color)
+            let overrides: [String: WidgetConfig.Value] = ["color": .string(color.rawValue)]
+            XCTAssertEqual(ProFeatures.isPro(.notes, overrides: overrides), !free, "\(color)")
+            XCTAssertEqual(ProLicenseGate.canChoose(.notes, overrides, unlocked: false), free, "\(color)")
+            XCTAssertEqual(ProFeatures.isProChoice(kind: .notes, key: "color", value: color.rawValue), !free)
+            // 已放好的便签不盖遮罩，Pro 纸色退回柠檬黄。
+            let config = WidgetConfig(overrides)
+            let placed = WidgetInstance(kind: .notes, config: config)
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
+            XCTAssertEqual(ProLicenseGate.noteColor(config: config, unlocked: false), free ? color : .yellow)
+            XCTAssertEqual(ProLicenseGate.noteColor(config: config, unlocked: true), color)
+        }
+        XCTAssertFalse(ProFeatures.isPro(WidgetCatalog.make(.notes)!), "新便签默认柠檬黄，免费")
+        XCTAssertFalse(ProFeatures.isProNoteColor("nope"))
+        XCTAssertEqual(ProLicenseGate.noteColor(config: WidgetConfig(), unlocked: false), .yellow)
+        // 同样的颜色键放在别的小组件上不是 Pro。
+        XCTAssertFalse(ProFeatures.isProStyle(.habit, ["color": .string("coral")]))
+        XCTAssertFalse(ProFeatures.isProStyle(["color": .string("coral")]))
+    }
+
+    func testCustomTintAndGradientBackgroundArePro() {
+        XCTAssertTrue(WidgetTint.isProChoice(.custom(ColorCode(hex: "#123456")!)))
+        XCTAssertFalse(WidgetTint.isProChoice(.kindDefault))
+        XCTAssertFalse(WidgetTint.isProChoice(.system))
+        for preset in WidgetTint.Preset.allCases {
+            XCTAssertFalse(WidgetTint.isProChoice(.preset(preset)), "预设色免费")
+            XCTAssertTrue(ProLicenseGate.canChooseTint(.preset(preset), unlocked: false))
+        }
+        XCTAssertFalse(ProLicenseGate.canChooseTint(.custom(ColorCode(hex: "#123456")!), unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canChooseTint(.custom(ColorCode(hex: "#123456")!), unlocked: true))
+        for background in WidgetTint.Background.allCases {
+            XCTAssertEqual(WidgetTint.isProBackground(background), background == .gradient)
+            XCTAssertEqual(ProLicenseGate.canChooseBackground(background, unlocked: false), background != .gradient)
+            XCTAssertTrue(ProLicenseGate.canChooseBackground(background, unlocked: true))
+        }
+        // 没解锁时已选的自定义颜色和渐变背景退回默认显示。
+        let config = WidgetConfig([WidgetTint.key: .string("#123456"), WidgetTint.backgroundKey: .string("gradient")])
+        XCTAssertEqual(WidgetTint.shownChoice(config, unlocked: false), .kindDefault)
+        XCTAssertEqual(WidgetTint.shownChoice(config, unlocked: true), .custom(ColorCode(hex: "#123456")!))
+        XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: false), .plain)
+        XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: true), .gradient)
+        let preset = WidgetConfig([WidgetTint.key: .string("blue"), WidgetTint.backgroundKey: .string("dots")])
+        XCTAssertEqual(WidgetTint.shownChoice(preset, unlocked: false), .preset(.blue))
+        XCTAssertEqual(WidgetTint.shownBackground(preset, unlocked: false), .dots)
+    }
+
+    func testRenamedCardsKeepTheirLayouts() {
+        let ai = WidgetCatalog.entry(.aiAssistant)!.variants
+        XCTAssertEqual(ai.map(\.title), ["AI 字牌横排", "AI 小熊猫方块"])
+        XCTAssertEqual(ai.map { $0.overrides["layout"] }, [.string(AIServices.wideLayout), .string(AIServices.squareLayout)])
+        let photos = WidgetCatalog.entry(.photos)!.variants
+        XCTAssertEqual(photos.map(\.title), ["相册方框", "相册宽幅"])
+        XCTAssertEqual(photos.map { $0.overrides["layout"] }, [.string("standard"), .string("wide")])
     }
 
     func testProTools() {

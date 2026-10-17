@@ -1068,6 +1068,17 @@
         }
       }
     },
+    "%@ 种样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ styles"
+          }
+        }
+      }
+    },
     "%@ 秒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2175,6 +2186,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI Assistant: click to open the chat"
+          }
+        }
+      }
+    },
+    "AI 字牌横排" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Tiles Row"
+          }
+        }
+      }
+    },
+    "AI 小熊猫方块" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Panda Square"
           }
         }
       }
@@ -3722,6 +3755,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exclusive colors"
+          }
+        }
+      }
+    },
+    "专属配色和样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusive colors and styles"
           }
         }
       }
@@ -11340,6 +11384,17 @@
         }
       }
     },
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池百分比圆环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather and the battery percentage ring"
+          }
+        }
+      }
+    },
     "小熊猫的竹篮" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13572,6 +13627,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To-dos"
+          }
+        }
+      }
+    },
+    "待办、日历、专注计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-dos, calendar, focus timer"
           }
         }
       }
@@ -23258,6 +23324,28 @@
         }
       }
     },
+    "相册宽幅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wide Photo Frame"
+          }
+        }
+      }
+    },
+    "相册方框" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Frame"
+          }
+        }
+      }
+    },
     "相册：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25703,6 +25791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Custom color"
+          }
+        }
+      }
+    },
+    "自定义颜色和渐变背景为 Pro 专属，预设颜色免费" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom colors and the gradient background are Pro. Preset colors are free."
           }
         }
       }
@@ -30465,6 +30564,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Music, radio, podcasts, virtual pet"
+          }
+        }
+      }
+    },
+    "音乐、相册" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music, photo frame"
           }
         }
       }

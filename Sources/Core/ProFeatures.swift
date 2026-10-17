@@ -2,9 +2,7 @@ import Foundation
 
 /// 码头 Pro 专属的范围：哪些小组件整种是 Pro，哪些样式、外观、工具和设置是 Pro。
 ///
-/// 现在只用来在界面上统一标“Pro”，不加新的锁：原来的赞助者解锁
-/// （`Supporter.isUnlocked`）照旧管原来那几样外观，其余只是标识。以后有了
-/// 激活码，判断哪些东西要解锁也从这里读。
+/// 界面上的“Pro”标识和 `ProLicenseGate` 的锁都从这里读哪些东西是 Pro。
 ///
 /// 清单按用户定的来：
 /// - 原来的赞助者专属样式：时钟的霓虹、实景、简约、极简表盘，喝水和电子宠物
@@ -13,6 +11,9 @@ import Foundation
 /// - 整种是 Pro 的小组件，见 `proKinds`。
 /// - 快速开关里的截图识字、二维码、演示模式、只锁键盘、低电量模式。
 /// - 所有小组件的“液态”外观（`layout` 或 `look` 为 liquid）。
+/// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
+///   百分比圆环、便签除最浅五种以外的纸色。
+/// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
 /// - AI 刘海对话的设置和电池面板里的充电上限。
 public enum ProFeatures {
 
@@ -23,12 +24,26 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件：摸鱼时钟、时间进度、环境音、播客、废纸篓、
-    /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物。
+    /// 整种都是 Pro 的小组件，共 20 种：摸鱼时钟、时间进度、环境音、播客、
+    /// 废纸篓、GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及
+    /// 后来加进来的应用音量、录音、股票、自选股、加密货币行情、壁纸切换、
+    /// 收音机、文件暂存、翻译、习惯打卡。
     public static let proKinds: Set<WidgetKind> = [
         .slacker, .progress, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
+        .appVolume, .recorder, .stock, .watchlist, .crypto,
+        .wallpaper, .radio, .fileShelf, .translate, .habit,
     ]
+
+    /// 天气的多城市样式（`layout` 为 cities）是 Pro。
+    public static let weatherCitiesLayout = "cities"
+    /// 电池的百分比圆环样式（`layout` 为 gauge）是 Pro。
+    public static let batteryGaugeLayout = "gauge"
+    /// 便签存纸色的键。
+    public static let noteColorKey = "color"
+    /// 便签免费的纸色：按亮度挑的最浅五种（奶油白、薄荷绿、蜜桃、薰衣草、
+    /// 柠檬黄），默认的柠檬黄在里面。其余纸色都是 Pro。
+    public static let freeNoteColors: Set<PaperColor> = [.cream, .mint, .peach, .lavender, .yellow]
 
     /// 原来的赞助者专属表盘（时钟的 layout）。
     public static let proClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
@@ -82,9 +97,36 @@ public enum ProFeatures {
         isSupporterStyle(overrides) || isLiquid(overrides)
     }
 
+    /// 只对某一种小组件才算 Pro 的样式：同一个值放在别的小组件上是免费的
+    /// （比如 `layout` 为 gauge、`color` 为 coral），所以要带上种类判断。
+    public static func isKindProStyle(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value]) -> Bool {
+        switch kind {
+        case .weather:
+            if case .string(let layout) = overrides["layout"] { return layout == weatherCitiesLayout }
+        case .battery:
+            if case .string(let layout) = overrides["layout"] { return layout == batteryGaugeLayout }
+        case .notes:
+            if case .string(let raw) = overrides[noteColorKey] { return isProNoteColor(raw) }
+        default:
+            break
+        }
+        return false
+    }
+
+    /// 便签的这个纸色是不是 Pro。认不出的值按默认的柠檬黄读，所以是免费的。
+    public static func isProNoteColor(_ raw: String) -> Bool {
+        guard let color = PaperColor(rawValue: raw) else { return false }
+        return !freeNoteColors.contains(color)
+    }
+
+    /// 这种小组件的一组样式覆盖是不是 Pro：通用的 Pro 样式，或只属于它的。
+    public static func isProStyle(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value]) -> Bool {
+        isProStyle(overrides) || isKindProStyle(kind, overrides)
+    }
+
     /// 一张小组件卡片（种类加样式）要不要标 Pro。
     public static func isPro(_ kind: WidgetKind, overrides: [String: WidgetConfig.Value]) -> Bool {
-        isProKind(kind) || isProStyle(overrides)
+        isProKind(kind) || isProStyle(kind, overrides)
     }
 
     /// 一个已经放好的小组件现在要不要标 Pro：整种是 Pro，或现在用的外观是 Pro。
@@ -95,6 +137,11 @@ public enum ProFeatures {
     /// 设置里某个单选项的一个值是不是 Pro（如外观选“液态”、喝水选柴犬）。
     public static func isProChoice(key: String, value: String) -> Bool {
         isProStyle([key: .string(value)])
+    }
+
+    /// 同上，带上种类，便签的纸色这类只属于一种小组件的选项也算。
+    public static func isProChoice(kind: WidgetKind, key: String, value: String) -> Bool {
+        isProStyle(kind, [key: .string(value)])
     }
 
     /// 快速开关的一个工具（存的 rawValue）是不是 Pro。

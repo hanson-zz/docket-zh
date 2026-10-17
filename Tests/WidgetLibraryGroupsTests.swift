@@ -169,4 +169,48 @@ final class WidgetLibraryGroupsTests: XCTestCase {
         XCTAssertEqual(WidgetManagement.move(widgetsAt: [5], to: 0, in: items), items)
         XCTAssertEqual(WidgetManagement.move(widgetsAt: [0], to: 9, in: items), items)
     }
+
+    // MARK: 分类里按种类分组
+
+    func testGroupedByKindKeepsOrderAndSplitsRuns() {
+        let items: [(WidgetKind, Int)] = [(.todo, 0), (.reminders, 1), (.reminders, 2), (.notes, 3), (.notes, 4), (.notes, 5)]
+        let groups = WidgetLibraryGroups.groupedByKind(items) { $0.0 }
+        XCTAssertEqual(groups.map { $0.map(\.1) }, [[0], [1, 2], [3, 4, 5]])
+        XCTAssertEqual(WidgetLibraryGroups.groupedByKind([(WidgetKind, Int)]()) { $0.0 }.count, 0)
+        // 同一种不连续出现时各成一组，不重排。
+        let split: [WidgetKind] = [.clock, .world, .clock]
+        XCTAssertEqual(WidgetLibraryGroups.groupedByKind(split) { $0 }, [[.clock], [.world], [.clock]])
+    }
+
+    func testEveryCategoryGroupsEachKindOnce() {
+        // 目录按 displayOrder 排好后，每个分类里同一种小组件只成一组。
+        let sorted = WidgetCatalog.entries.enumerated()
+            .sorted { (WidgetLibraryGroups.rank($0.element.kind), $0.offset) < (WidgetLibraryGroups.rank($1.element.kind), $1.offset) }
+            .map(\.element)
+        for category in WidgetCategory.allCases {
+            let kinds = sorted.filter { $0.category == category }.map(\.kind)
+            let groups = WidgetLibraryGroups.groupedByKind(kinds) { $0 }
+            XCTAssertEqual(groups.count, Set(kinds).count, "\(category)")
+        }
+    }
+
+    func testGridRowsStartEachGroupOnANewRow() {
+        let rows = WidgetLibraryGroups.gridRows(groupSizes: [1, 4, 0, 3], columns: 3)
+        XCTAssertEqual(rows, [[0], [1, 2, 3], [4], [5, 6, 7]])
+        XCTAssertEqual(WidgetLibraryGroups.gridRows(groupSizes: [], columns: 3), [])
+    }
+
+    func testVerticalMoveKeepsTheColumnAcrossGroups() {
+        let rows = WidgetLibraryGroups.gridRows(groupSizes: [1, 4, 3], columns: 3)
+        // 第一组只有一张，往下落到下一组的第一列。
+        XCTAssertEqual(WidgetLibraryGroups.verticalMove(from: 0, rows: rows, by: 1), 1)
+        // 第二列往下，下一行只有一张，落到那一张。
+        XCTAssertEqual(WidgetLibraryGroups.verticalMove(from: 2, rows: rows, by: 1), 4)
+        XCTAssertEqual(WidgetLibraryGroups.verticalMove(from: 4, rows: rows, by: 1), 5)
+        XCTAssertEqual(WidgetLibraryGroups.verticalMove(from: 7, rows: rows, by: -1), 4)
+        XCTAssertEqual(WidgetLibraryGroups.verticalMove(from: 3, rows: rows, by: -1), 0)
+        XCTAssertNil(WidgetLibraryGroups.verticalMove(from: 0, rows: rows, by: -1))
+        XCTAssertNil(WidgetLibraryGroups.verticalMove(from: 6, rows: rows, by: 1))
+        XCTAssertNil(WidgetLibraryGroups.verticalMove(from: 99, rows: rows, by: 1))
+    }
 }

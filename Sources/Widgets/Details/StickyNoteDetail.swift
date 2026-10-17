@@ -18,7 +18,8 @@ struct StickyNoteDetail: View {
     private var ink: Color { Color(hex: swatch.inkHex) }
 
     private var swatch: PaperColor {
-        PaperColor(rawValue: instance.config.string("color", default: "yellow")) ?? .yellow
+        // 没解锁码头 Pro 时，Pro 纸色退回默认的柠檬黄（最浅的五种免费）。
+        ProLicenseGate.noteColor(config: instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     /// What is being typed, kept apart from the stored note so the profile is

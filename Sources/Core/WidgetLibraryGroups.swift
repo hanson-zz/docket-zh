@@ -47,6 +47,51 @@ public enum WidgetLibraryGroups {
         return (featured + newKinds).filter { offered.contains($0) && seen.insert($0).inserted }
     }
 
+    /// 分类里按种类分组：把已经按种类排好的卡片切成连续的几组，每种小组件
+    /// 一组，组内和组间都保持原来的顺序。同一种不连续出现时各成一组，不重排。
+    public static func groupedByKind<T>(_ items: [T], kind: (T) -> WidgetKind) -> [[T]] {
+        var groups: [[T]] = []
+        var current: WidgetKind?
+        for item in items {
+            let k = kind(item)
+            if k == current, !groups.isEmpty {
+                groups[groups.count - 1].append(item)
+            } else {
+                groups.append([item])
+                current = k
+            }
+        }
+        return groups
+    }
+
+    /// 方向键用的行：每组从新的一行开始，按 `columns` 列折行。返回每行里卡片
+    /// 在整个列表（所有组连起来）中的下标。
+    public static func gridRows(groupSizes: [Int], columns: Int) -> [[Int]] {
+        let width = max(1, columns)
+        var rows: [[Int]] = []
+        var start = 0
+        for size in groupSizes where size > 0 {
+            var offset = 0
+            while offset < size {
+                let end = min(size, offset + width)
+                rows.append(Array((start + offset)..<(start + end)))
+                offset = end
+            }
+            start += size
+        }
+        return rows
+    }
+
+    /// 上下方向键：从下标 `index` 移到上一行（`delta` 为 -1）或下一行（1）的
+    /// 同一列；那一行没这么多列时落到它的最后一张。没有那一行时返回 nil。
+    public static func verticalMove(from index: Int, rows: [[Int]], by delta: Int) -> Int? {
+        guard let row = rows.firstIndex(where: { $0.contains(index) }),
+              let column = rows[row].firstIndex(of: index) else { return nil }
+        let target = row + delta
+        guard rows.indices.contains(target), let last = rows[target].last else { return nil }
+        return column < rows[target].count ? rows[target][column] : last
+    }
+
     /// 侧栏的数字：小组件个数，同一个小组件的多个样式只算一个。
     public static func kindCount(_ kinds: [WidgetKind]) -> Int { Set(kinds).count }
 

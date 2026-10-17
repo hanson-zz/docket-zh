@@ -41,8 +41,8 @@ public enum WidgetCatalog {
 
     /// Whether a variant's overrides (or one option's value) pick a
     /// supporter-unlocked clock face, 喝水 character, Wi-Fi ring or battery
-    /// look. Only these are locked by `Supporter.isUnlocked`; the wider Pro
-    /// list (whole kinds, 液态) is only badged, see `ProFeatures`.
+    /// look. These fall back to a free look when locked; the wider Pro list
+    /// (whole kinds, 液态, kind-only styles) is in `ProFeatures`.
     public static func isSupporterOnly(_ overrides: [String: WidgetConfig.Value]) -> Bool {
         ProFeatures.isSupporterStyle(overrides)
     }
@@ -256,8 +256,10 @@ public enum WidgetCatalog {
         Entry(kind: .photos, name: tr("相册"), category: .media,
               defaults: c(["layout": .string("standard"), "folder": .string(""),
                            "interval": .number(30), "shuffle": .bool(false)]),
-              variants: [(tr("标准"), ["layout": .string("standard")]),
-                         (tr("宽幅"), ["layout": .string("wide")])],
+              // 卡片名突出是相册，和时钟的“标准”分得开；layout 值不变，
+              // 已经放好的卡片不受影响。
+              variants: [(tr("相册方框"), ["layout": .string("standard")]),
+                         (tr("相册宽幅"), ["layout": .string("wide")])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .screenshots, name: tr("最近截图"), category: .files, defaults: c([:]),
@@ -299,8 +301,9 @@ public enum WidgetCatalog {
         // 用 AIServices 的默认；所以设置页里没有它们。
         Entry(kind: .aiAssistant, name: tr("AI 助手"), category: .ai,
               defaults: c(["layout": .string(AIServices.wideLayout)]),
-              variants: [(tr("横排"), ["layout": .string(AIServices.wideLayout)]),
-                         (tr("方块"), ["layout": .string(AIServices.squareLayout)])],
+              // 卡片名说清是什么：横排是一排 AI 字牌，方块是小熊猫。layout 值不变。
+              variants: [(tr("AI 字牌横排"), ["layout": .string(AIServices.wideLayout)]),
+                         (tr("AI 小熊猫方块"), ["layout": .string(AIServices.squareLayout)])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .search, name: tr("搜索"), category: .ai,
