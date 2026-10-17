@@ -105,6 +105,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         IslandController.shared.apply(state.state.island)
         state.onIslandChanged = { island in IslandController.shared.apply(island) }
 
+        // AI 助手的刘海对话：入口、展开面板和快捷键。会话状态和货架上的
+        // AI 卡片共用一份。
+        AIChatCenter.shared.app = state
+        AINotchController.shared.apply(state.state.aiNotch)
+        state.onAINotchChanged = { settings in AINotchController.shared.apply(settings) }
+
         // Layout hotkeys. Registered now and again whenever a layout gains,
         // loses or changes its combination; the service ignores a list that
         // has not changed, so the didSet that reports it can be generous.

@@ -89,10 +89,14 @@ struct AIAssistantTile: View {
 
     // MARK: Pieces
 
-    /// 小熊猫：点开提问面板，再点一次关上（面板开着时扩展栏照常切换）。
+    /// 小熊猫：当前服务是网页或 API 时打开刘海对话（和刘海入口是同一个会话），
+    /// 否则点开提问面板，再点一次关上（面板开着时扩展栏照常切换）。
     private func pandaButton(size: CGFloat) -> some View {
         Button {
             guard !context.isPreview else { return }
+            // 当前服务是网页或 API：打开刘海里的同一个对话。是跳转时照旧
+            // 打开原来的提问面板。
+            if AINotchController.shared.openFromShelf(instance) { return }
             AIPanelState.shared.requestPanel(instance.id, mode: .ask, toggle: true)
         } label: {
             AIPandaAvatar(size: size)

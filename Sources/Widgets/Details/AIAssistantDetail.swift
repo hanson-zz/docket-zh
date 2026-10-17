@@ -96,7 +96,7 @@ private struct AIAskView: View {
                     picker
                     Spacer(minLength: 0)
                     Button(action: submit) {
-                        Text(AIAsk.buttonTitle(for: target))
+                        Text(buttonTitle)
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
@@ -105,10 +105,12 @@ private struct AIAskView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSubmit)
-                    .help(target?.supportsAsk == true
+                    .help(targetMode == .api ? "在刘海对话里用 API 直接问 \(target?.title ?? "")"
+                          : targetMode == .web ? "复制问题，在刘海对话里打开 \(target?.title ?? "") 的网页"
+                          : target?.supportsAsk == true
                           ? "在浏览器打开 \(target?.title ?? "")，问题会带过去"
                           : "把问题复制到剪贴板，再打开 \(target?.title ?? "")")
-                    .accessibilityLabel(AIAsk.buttonTitle(for: target))
+                    .accessibilityLabel(buttonTitle)
                 }
                 if let hint = state.hint(instance.id) {
                     Text(hint)
@@ -190,8 +192,37 @@ private struct AIAskView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// 这个服务在刘海对话里的打开方式。不是跳转时，问题交给刘海对话。
+    private var targetMode: AIOpenMode {
+        target.map { AIChatCenter.shared.mode(for: $0) } ?? .jump
+    }
+
+    private var buttonTitle: String {
+        switch targetMode {
+        case .api: "在刘海里问"
+        case .web: "复制并在刘海打开"
+        case .jump: AIAsk.buttonTitle(for: target)
+        }
+    }
+
     private func submit() {
         guard !context.isPreview, let service = target else { return }
+        let mode = targetMode
+        if mode != .jump, let question = AIAsk.question(state.draft(instance.id)) {
+            let center = AIChatCenter.shared
+            center.select(service.id)
+            center.draft = question
+            state.setDraft("", for: instance.id)
+            WidgetDetailWindow.shared.close()
+            AINotchController.shared.open()
+            if mode == .api {
+                center.send()
+            } else {
+                // 网页里没法替用户填字，复制好让用户粘贴。
+                AIServiceOpener.copy(question)
+            }
+            return
+        }
         let plan = AIAsk.plan(state.draft(instance.id), service: service)
         switch plan {
         case .blocked:

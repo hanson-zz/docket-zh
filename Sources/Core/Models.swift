@@ -978,6 +978,8 @@ public struct PersistedState: Codable, Sendable {
     public var island = IslandSettings()
     /// 添加和移除小组件时的音效. On by default.
     public var widgetSounds = WidgetSoundSettings()
+    /// AI 助手的刘海对话：入口、快捷键、每个服务的打开方式和接口。密钥不在这里。
+    public var aiNotch = AINotchSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1004,6 +1006,7 @@ public struct PersistedState: Codable, Sendable {
         focusRevert = try c.decodeIfPresent(FocusRevert.self, forKey: .focusRevert)
         island = try c.decodeIfPresent(IslandSettings.self, forKey: .island) ?? IslandSettings()
         widgetSounds = try c.decodeIfPresent(WidgetSoundSettings.self, forKey: .widgetSounds) ?? WidgetSoundSettings()
+        aiNotch = (try? c.decodeIfPresent(AINotchSettings.self, forKey: .aiNotch)) ?? AINotchSettings()
     }
 
     public init() {}

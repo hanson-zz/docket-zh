@@ -376,6 +376,8 @@ struct SettingsView: View {
 
             islandSection
 
+            AINotchSettingsSection(state: $state)
+
             Section {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)
@@ -1194,7 +1196,7 @@ private struct LayoutRow<Preview: View>: View {
 /// Settings behave, rather than a text field: a field would show characters
 /// for the keys, and typing into it would be indistinguishable from naming
 /// the layout.
-private struct ShortcutRecorder: View {
+struct ShortcutRecorder: View {
     let combo: KeyCombo?
     let onChange: (KeyCombo?) -> Void
 
@@ -1255,6 +1257,7 @@ final class ShortcutKeyRecorder {
         isRecording = true
         rejected = false
         HotKeyService.shared.suspend()
+        AIHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1269,6 +1272,7 @@ final class ShortcutKeyRecorder {
         isRecording = false
         rejected = false
         HotKeyService.shared.resume()
+        AIHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

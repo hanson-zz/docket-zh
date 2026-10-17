@@ -45,6 +45,9 @@ public final class AppState {
             if state.island != oldValue.island {
                 onIslandChanged?(state.island)
             }
+            if state.aiNotch != oldValue.aiNotch {
+                onAINotchChanged?(state.aiNotch)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them
@@ -69,6 +72,8 @@ public final class AppState {
     @ObservationIgnored public var onTimerChanged: (@MainActor (TimerState) -> Void)?
     /// 灵动提示, for the controller that owns the floating capsule.
     @ObservationIgnored public var onIslandChanged: (@MainActor (IslandSettings) -> Void)?
+    /// AI 助手的刘海入口和快捷键。
+    @ObservationIgnored public var onAINotchChanged: (@MainActor (AINotchSettings) -> Void)?
     /// Layout hotkeys, for the service that registers them with the system.
     @ObservationIgnored public var onShortcutsChanged: (@MainActor ([ShortcutBinding]) -> Void)?
 
