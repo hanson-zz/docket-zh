@@ -98,6 +98,10 @@ final class LibraryWindow: HostedWindow {
                 onAddItem: { item in
                     withAnimation(.snappy(duration: 0.25)) { app.addItem(item) }
                 },
+                placed: { app.effectiveItems.compactMap(\.widget) },
+                onRemove: { id in
+                    withAnimation(.snappy(duration: 0.25)) { app.removeItem(id) }
+                },
                 onClose: { [weak self] in self?.close() }
             ),
             title: "添加小组件",

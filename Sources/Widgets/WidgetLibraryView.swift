@@ -166,13 +166,21 @@ private struct LibraryShortcut: Identifiable {
 struct WidgetLibraryView: View {
     var onAdd: (WidgetInstance) -> Void
     var onAddItem: (DockItem) -> Void
+    /// Widgets sitting directly on the active shelf, read in `body` so the
+    /// library's minus buttons follow additions and removals as they happen.
+    var placed: () -> [WidgetInstance]
+    var onRemove: (UUID) -> Void
     var onClose: () -> Void
 
     init(onAdd: @escaping (WidgetInstance) -> Void,
          onAddItem: @escaping (DockItem) -> Void = { _ in },
+         placed: @escaping () -> [WidgetInstance] = { [] },
+         onRemove: @escaping (UUID) -> Void = { _ in },
          onClose: @escaping () -> Void) {
         self.onAdd = onAdd
         self.onAddItem = onAddItem
+        self.placed = placed
+        self.onRemove = onRemove
         self.onClose = onClose
     }
 
@@ -491,6 +499,26 @@ struct WidgetLibraryView: View {
                         .accessibilityLabel("需要\(permission)权限")
                 }
                 Spacer(minLength: 2)
+                let onShelf = placedInstances(for: card)
+                if !onShelf.isEmpty {
+                    Button { remove(card) } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 10, weight: .bold))
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(.quaternary))
+                    }
+                    .buttonStyle(.plain)
+                    .help(onShelf.count > 1
+                          ? "扩展栏上有 \(onShelf.count) 个，移除最后添加的那个"
+                          : "从扩展栏移除")
+                    .accessibilityLabel("移除“\(card.title)”")
+                    if onShelf.count > 1 {
+                        Text("\(onShelf.count)")
+                            .font(.system(size: 10, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Button { add(card) } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 10, weight: .bold))
@@ -566,6 +594,28 @@ struct WidgetLibraryView: View {
         guard cards.indices.contains(target) else { return .ignored }
         focus = .card(cards[target].id)
         return .handled
+    }
+
+    /// The shelf's widgets that came from this card, oldest first. A widget
+    /// belongs to the card of its kind whose overrides it matches most
+    /// specifically, so a variant's minus never removes a sibling variant.
+    /// Widgets inside groups are left alone: removing from a group is done
+    /// on the group itself.
+    private func placedInstances(for card: LibraryCard) -> [WidgetInstance] {
+        let siblings = libraryCards.filter { $0.kind == card.kind }
+        func fits(_ c: LibraryCard, _ w: WidgetInstance) -> Bool {
+            c.overrides.allSatisfy { w.config[$0.key] == $0.value }
+        }
+        return placed().filter { widget in
+            guard widget.kind == card.kind, fits(card, widget) else { return false }
+            let best = siblings.filter { fits($0, widget) }.max { $0.overrides.count < $1.overrides.count }
+            return best?.id == card.id
+        }
+    }
+
+    private func remove(_ card: LibraryCard) {
+        guard let last = placedInstances(for: card).last else { return }
+        onRemove(last.id)
     }
 
     private func add(_ card: LibraryCard) {
