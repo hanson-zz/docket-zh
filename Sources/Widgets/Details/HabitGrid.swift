@@ -250,9 +250,18 @@ struct HabitEditor: View {
                     section(tr("颜色")) { colorRow }
                     section(tr("每日目标")) { goalRow }
                 }
-                .padding(.bottom, 2)
+                .padding(.bottom, 14)
             }
-            .scrollIndicators(.automatic)
+            // 面板是深色的，系统“始终显示滚动条”或接了鼠标时，滚动条会画成一根
+            // 浅色竖条压在右侧图标和颜色上。改为不画滚动条，底部淡出提示还能往下滚。
+            .scrollIndicators(.never)
+            .mask {
+                VStack(spacing: 0) {
+                    Color.black
+                    LinearGradient(colors: [.black, .black.opacity(0)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 14)
+                }
+            }
 
             HStack {
                 if let original {

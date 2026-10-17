@@ -73,7 +73,7 @@ struct TodoDetail: View {
                         }
                     }
                     .frame(maxHeight: 280)
-                    .scrollIndicators(.automatic)
+                    .scrollIndicators(.never)
                 }
                 if !done.isEmpty {
                     HStack {

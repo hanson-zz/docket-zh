@@ -94,7 +94,7 @@ struct WeekDetail: View {
             }
         }
         .frame(maxHeight: 440)
-        .scrollIndicators(.automatic)
+        .scrollIndicators(.never)
     }
 
     private func dayBlock(_ day: WeekDay) -> some View {

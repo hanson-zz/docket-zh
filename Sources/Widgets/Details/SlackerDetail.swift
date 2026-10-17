@@ -41,7 +41,7 @@ struct SlackerDetail: View {
                     }
                     .padding(.bottom, 4)
                 }
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
                 .frame(height: 360)
             }
             .disabled(context.isPreview)

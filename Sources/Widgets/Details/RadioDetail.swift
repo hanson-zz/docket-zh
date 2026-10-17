@@ -300,7 +300,7 @@ struct RadioDetail: View {
                     }
                 }
                 .frame(maxHeight: 150)
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
             }
         }
     }
@@ -429,7 +429,7 @@ struct RadioDetail: View {
                     }
                 }
                 .frame(maxHeight: 170)
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
             }
         }
         .onAppear {

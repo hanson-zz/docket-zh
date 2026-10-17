@@ -28,7 +28,7 @@ struct HabitDetail: View {
                     list(all)
                 }
                 .frame(maxHeight: 420)
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
 
                 if !all.isEmpty {
                     HabitWeeklyReport(habits: all, accent: accent, now: context.now)

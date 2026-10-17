@@ -64,7 +64,7 @@ struct PerfectDayDetail: View {
                 .padding(.bottom, 2)
             }
             .frame(maxHeight: 600)
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.never)
         }
         .onAppear { if !context.isPreview { center.refresh(now: context.now) } }
     }

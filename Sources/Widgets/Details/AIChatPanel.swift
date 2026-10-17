@@ -443,7 +443,7 @@ private struct AIAPIChatPane: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
             }
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.never)
             .onAppear { proxy.scrollTo("bottom", anchor: .bottom) }
             .onChange(of: messages.last?.text) { _, _ in proxy.scrollTo("bottom", anchor: .bottom) }
             .onChange(of: messages.count) { _, _ in

@@ -121,7 +121,7 @@ struct AnniversaryDetail: View {
                 .padding(.vertical, 2)
             }
             .frame(maxHeight: 420)
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.never)
             .onAppear { proxy.scrollTo("today", anchor: .center) }
         }
     }

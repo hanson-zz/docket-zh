@@ -314,7 +314,7 @@ struct WaterDetail: View {
                     }
                 }
                 .frame(maxHeight: 140)
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
             }
         }
     }
@@ -819,7 +819,7 @@ extension WaterDetail {
             }
         }
         .frame(maxHeight: 340)
-        .scrollIndicators(.automatic)
+        .scrollIndicators(.never)
     }
 
     /// The goal in use, the stepper that sets one by hand, and 恢复推荐.

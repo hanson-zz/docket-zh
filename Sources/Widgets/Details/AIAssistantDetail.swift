@@ -319,7 +319,7 @@ private struct AIManageView: View {
             }
             .padding(.bottom, 6)
         }
-        .scrollIndicators(.automatic)
+        .scrollIndicators(.never)
         .disabled(context.isPreview)
         .onAppear(perform: openFormIfAsked)
         .onChange(of: state.wantsCustomForm) { _, _ in openFormIfAsked() }
