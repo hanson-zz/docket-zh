@@ -325,6 +325,11 @@ final class AINotchEntryHost: NSHostingView<AINotchEntryView> {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
+    /// 点击总是落在宿主自己身上，不交给 SwiftUI 里面的子视图。
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        frame.contains(point) ? self : nil
+    }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let area { removeTrackingArea(area) }
