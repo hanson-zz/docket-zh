@@ -8,7 +8,7 @@ import Vision
 
 // 快速开关的第二批工具里需要窗口、摄像头、截屏和识别的部分。
 // 纯逻辑（预览文字、网址判断、二维码放大倍数、演示模式的恢复计算、
-// pmset 输出解析）在 Core/QuickTools.swift，有测试。
+// pmset 输出解析）在 Core/QuickToolLogic.swift，有测试。
 
 // MARK: - 轻提示
 
