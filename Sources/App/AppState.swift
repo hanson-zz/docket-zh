@@ -451,6 +451,20 @@ public final class AppState {
                                                settings: state.widgetSounds)
     }
 
+    /// 一次移除程序坞上所有间隔（不进分组里找，分组里放不进间隔）。
+    public func removeAllSpacers(from profileID: UUID? = nil) {
+        if profileID == nil, mirroringApps { adoptSystemApps() }
+        let target = profileID ?? state.customDock.profileID
+        guard let target, let index = index(of: target) else { return }
+        let before = state.profiles[index].items
+        state.profiles[index].items.removeAll {
+            if case .spacer = $0 { return true }
+            return false
+        }
+        WidgetSoundEffects.shared.shelfChanged(from: before, to: state.profiles[index].items,
+                                               settings: state.widgetSounds)
+    }
+
     public func moveItem(from source: Int, to destination: Int, in profileID: UUID? = nil) {
         let target = profileID ?? state.customDock.profileID
         guard let target, let index = index(of: target) else { return }

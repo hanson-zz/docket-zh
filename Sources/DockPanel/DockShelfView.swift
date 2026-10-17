@@ -1360,6 +1360,13 @@ struct DockShelfView: View {
     /// Space, and both are private to Apple - a menu item that silently does
     /// nothing is worse than one that is not there.
     private func menu(for entry: Entry) -> some View {
+        if case .spacer = entry.item {
+            Button("移除间隔", role: .destructive) { remove(entry) }
+            Button("移除所有间隔", role: .destructive) {
+                withAnimation(.snappy(duration: 0.24)) { app.removeAllSpacers() }
+            }
+            Divider()
+        }
         Menu("选项") {
             if entry.isRunningApp {
                 Button("在程序坞中保留") {

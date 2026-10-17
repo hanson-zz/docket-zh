@@ -10,6 +10,7 @@ struct DockItemView: View {
     var showRunningDot: Bool
 
     @Environment(\.colorScheme) private var scheme
+    @State private var spacerHovered = false
 
     private var geo: Geometry.IconGeometry {
         Geometry.iconGeometry(scale: scale, vertical: position.isVertical)
@@ -18,9 +19,15 @@ struct DockItemView: View {
     var body: some View {
         switch item {
         case .spacer(_, let size):
-            Color.clear
+            // 透明但要能点中：没有 contentShape 时右键、拖出都落空，
+            // 间隔就成了删不掉的空白。鼠标停上去显示虚线框，右键可移除。
+            SpacerSlot(hovering: spacerHovered)
                 .frame(width: position.isVertical ? geo.width : spacerLength(size),
                        height: position.isVertical ? spacerLength(size) : geo.height)
+                .contentShape(.rect)
+                .onHover { spacerHovered = $0 }
+                .help(tr("间隔：右键可移除，也可拖出程序坞"))
+                .accessibilityLabel(tr("间隔"))
         default:
             tile
                 .frame(width: geo.width, height: geo.height)
@@ -147,5 +154,19 @@ struct DockItemView: View {
             .offset(x: position == .left ? -geo.dotOffset : position == .right ? geo.dotOffset : 0,
                     y: position == .bottom ? geo.dotBottom
                        : position == .top ? -geo.dotBottom : 0)
+    }
+}
+
+
+/// 间隔平时看不见，鼠标停上去露出一圈虚线框，让人知道这里有东西可删。
+private struct SpacerSlot: View {
+    var hovering: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .foregroundStyle(Color.primary.opacity(hovering ? 0.35 : 0))
+            .padding(.vertical, 6)
+            .animation(.easeOut(duration: 0.14), value: hovering)
     }
 }

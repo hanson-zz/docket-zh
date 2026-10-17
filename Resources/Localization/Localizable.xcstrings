@@ -23984,6 +23984,28 @@
         }
       }
     },
+    "移除所有间隔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove All Spacers"
+          }
+        }
+      }
+    },
+    "移除间隔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Spacer"
+          }
+        }
+      }
+    },
     "程序坞上的小组件没有可调整的设置。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29622,6 +29644,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "间隔"
+          }
+        }
+      }
+    },
+    "间隔：右键可移除，也可拖出程序坞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spacer: right-click to remove, or drag it off the Dock"
           }
         }
       }
