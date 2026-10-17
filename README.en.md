@@ -17,9 +17,9 @@ or use it in place of the Dock.
 
 <br>
 
-<img src="docs/images/zh/shelf-showcase.png" alt="The Dockling shelf: clock, world clock, system activity, a sticky note, then a row of app icons" width="100%">
+<img src="docs/images/en/shelf-showcase.png" alt="The Dockling shelf: clock, world clock, system activity, a sticky note, then a row of app icons" width="100%">
 
-<sub>Screenshots show the app's own interface (currently in Chinese), taken on macOS by the screenshot tool in this repository.</sub>
+<sub>Screenshots show the app's own English interface, taken on macOS by the screenshot tool in this repository (see "How the screenshots are made" below).</sub>
 
 </div>
 
@@ -61,6 +61,79 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 - **Live Alerts**: a small capsule below the notch for volume, brightness and upcoming meetings.
 - **Dockling Pro**: a one-time purchase that unlocks extra widgets and looks. The basics are always free.
 
+## Screenshots
+
+<sub>Widgets on the shelves below show the widget library's own sample data, so nothing is read from the capture machine's calendar, music or files. Panels marked "sample data" do the same; the rest are live readings taken at capture time.</sub>
+
+**Apps, files and quick access**
+
+<img src="docs/images/en/shelf-files.png" alt="Shelf with Downloads, Recent Screenshots, File Shelf, Search, AirDrop and app icons (sample data)" width="100%">
+
+**Productivity and focus**
+
+<img src="docs/images/en/shelf-productivity.png" alt="Shelf with Calendar, Reminders, Focus Timer, Water and a sticky note (sample data)" width="100%">
+
+**Mac control and system**
+
+<img src="docs/images/en/shelf-system.png" alt="Shelf with Now Playing, Volume, Quick Toggles, System Activity and Battery (sample data)" width="100%">
+
+**Handy tools**
+
+<img src="docs/images/en/shelf-tools.png" alt="Shelf with Clipboard, Unit Converter, Emoji, Weather and a Tokyo world clock (sample data)" width="100%">
+
+**Shelf looks**: dark glass with monochrome widgets.
+
+<img src="docs/images/en/shelf-styles.png" alt="Dark glass shelf in monochrome: analog clock, weather with wind and sunrise, Tokyo world clock and calculator (sample data)" width="100%">
+
+**Liquid looks** (Dockling Pro): Time Progress, Water, Focus Timer, System Activity and Battery as a glass of water that fills with progress, load or charge.
+
+<img src="docs/images/en/shelf-liquid.png" alt="Shelf with the liquid looks of Time Progress, Water, Focus Timer, System Activity and Battery (sample data)" width="100%">
+
+**Colors and backgrounds**: fifteen preset colors, a custom color or the system accent, on a dark, frosted, gradient, dotted or lined card.
+
+<img src="docs/images/en/shelf-colors.png" alt="Shelf with a pink gradient countdown, mint frosted Water, purple dotted to-do, orange gradient Time Progress ring, sky blue lined Habits and a blue Calendar on a dark card (sample data)" width="100%">
+
+**World clocks with a city picker**
+
+<img src="docs/images/en/shelf-world.png" alt="Shelf with the local clock and world clocks for Tokyo, London, New York and San Francisco" width="100%">
+
+**New quick tools**: Text from Screen, QR Code, Color Picker, Mirror, Presentation Mode and Keyboard Lock, next to the AI Assistant card and Capture.
+
+<img src="docs/images/en/shelf-quick-tools.png" alt="Shelf with Quick Toggles (Text from Screen, QR Code, Color Picker, Mirror, Presentation Mode, Keyboard Lock, Dark Mode, Keep Awake), the AI Assistant card and Capture (sample data)" width="100%">
+
+<p align="center">
+  <img src="docs/images/en/widget-library.png" alt="Add Widget sheet: category sidebar on the left, Health and Habits on the right, with orange Pro capsules on the liquid look and the extra characters (sample data)" width="100%"><br>
+  <sub>Add Widget: category sidebar and Pro capsules</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/time-progress.png" alt="Time Progress panel: how much of today, this week, this month and this year has passed" width="100%">
+      <p align="center"><sub>Time Progress: day, week, month and year</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/battery.png" alt="Battery panel: the Mac, AirPods Pro and Magic Mouse charge levels (sample data)" width="100%">
+      <p align="center"><sub>Battery: the Mac and accessories (sample data)</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/ai-notch.png" alt="AI notch chat panel: red panda, service chips, clipboard and quick action buttons, and the question box in Jump mode" width="100%">
+      <p align="center"><sub>AI chat that grows out of the notch (Jump mode)</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/pro-paywall.png" alt="Dockling Pro paywall: the Pro feature list, a 7 day free trial, buy and early bird price, and the license key field" width="100%">
+      <p align="center"><sub>Dockling Pro: features, trial, purchase and license key</sub></p>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/images/en/clipboard.png" alt="Clipboard panel: the four most recent copies" width="50%"><br>
+  <sub>Clipboard: recent copies, searchable, with starred items</sub>
+</p>
+
 ## Install
 
 1. Download the latest `.dmg` or `.zip` from the [Releases page](../../releases)
@@ -96,6 +169,12 @@ xcodebuild -scheme Docket -configuration Release build
 ```
 
 Interface text lives in String Catalogs under `Resources/Localization`. Simplified Chinese is the source language and English is the translation. At runtime the development region in Info.plist is English, so languages Dockling does not ship fall back to English, and the Traditional Chinese and Hong Kong tables carry the Simplified text.
+
+## How the screenshots are made
+
+Every image in this README is taken by the screenshot tool in this repository: `Tools/Shots` puts the app's real shelf and panels in real windows on screen, and `scripts/capture-shots.sh` captures them with `screencapture`. They are not mockups and no number is edited by hand.
+
+Run `scripts/capture-shots.sh` for the Chinese interface (written to `docs/images/zh`) or `SHOTS_LANG=en scripts/capture-shots.sh` for English (written to `docs/images/en`). It needs Screen Recording permission for your terminal and takes a few minutes. The **Actions > Screenshots** workflow takes both sets on a GitHub macOS runner and uploads them as an artifact.
 
 ## License
 

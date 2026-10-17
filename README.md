@@ -98,12 +98,12 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/images/zh/focus-timer.png" alt="专注计时详情面板：正在进行的专注时段" width="100%">
+      <img src="docs/images/zh/focus-timer.png" alt="专注计时详情面板：刚开始的 25 分钟专注时段，下面是近七天报告" width="100%">
       <p align="center"><sub>专注计时：专注、休息、长休息交替进行</sub></p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/images/zh/time-progress.png" alt="时间进度详情面板：今天、本月和今年已过去的比例" width="100%">
-      <p align="center"><sub>时间进度：今天、本月、今年过去了多少</sub></p>
+      <img src="docs/images/zh/time-progress.png" alt="时间进度详情面板：今天、本周、本月和今年已过去的比例" width="100%">
+      <p align="center"><sub>时间进度：今天、本周、本月、今年过去了多少</sub></p>
     </td>
   </tr>
 </table>
@@ -323,6 +323,45 @@ OpenAI 随时可能改动，到时小组件会提示“接口有变动”。用 
 
 尚未在真机上验证。
 
+### 新功能配图：液态外观、颜色与背景、世界时钟、快速开关新工具、AI 刘海对话、码头 Pro
+
+下面是“开发中（下一版）”里几项新功能的实拍。扩展栏上的小组件用的是小组件库自带的示例数据，
+世界时钟和码头 Pro 付费墙是拍摄时的真实状态。
+
+**液态外观**（Pro 专属）：时间进度、喝水、专注计时、系统活动和电池都能换成一杯水，水位就是进度、占用或电量。
+
+<img src="docs/images/zh/shelf-liquid.png" alt="扩展栏：液态外观的时间进度、喝水、专注计时、系统活动和电池（示例数据）" width="100%">
+
+**颜色与背景**：每个小组件可以选十五种预设主色、自定义颜色或跟随系统强调色，背景可选深色、磨砂、渐变、网点、线条。
+
+<img src="docs/images/zh/shelf-colors.png" alt="扩展栏：粉色渐变背景的倒计时、薄荷绿磨砂的喝水、紫色网点的快速待办、橙色渐变的时间进度圆环、天蓝线条的习惯打卡、蓝色深色背景的日历（示例数据）" width="100%">
+
+**世界时钟选城市**：从可搜索的城市列表里选，一张卡片一个城市。
+
+<img src="docs/images/zh/shelf-world.png" alt="扩展栏：本机时钟，以及东京、伦敦、纽约、旧金山四张世界时钟卡片" width="100%">
+
+**快速开关的新工具**：截图识字、二维码、取色器、镜子、演示模式、只锁键盘，旁边是 AI 助手卡片和截图工具。
+
+<img src="docs/images/zh/shelf-quick-tools.png" alt="扩展栏：快速开关（截图识字、二维码、取色器、镜子、演示模式、只锁键盘、深色模式、保持唤醒）、AI 助手和截图工具（示例数据）" width="100%">
+
+<p align="center">
+  <img src="docs/images/zh/widget-library.png" alt="添加小组件面板：左侧分类栏，右侧健康与习惯分类，液态和赞助者角色卡片名称旁有橙色 Pro 角标（示例数据）" width="100%"><br>
+  <sub>添加小组件面板：分类侧栏和 Pro 角标</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/ai-notch.png" alt="AI 刘海对话面板：小熊猫、服务字牌、剪贴板和快捷指令按钮、跳转模式的提问框" width="100%">
+      <p align="center"><sub>AI 刘海对话：从刘海长出的对话面板（跳转模式）</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/pro-paywall.png" alt="码头 Pro 付费墙：Pro 功能清单、开始 7 天免费试用、购买和早鸟价、输入激活码" width="100%">
+      <p align="center"><sub>码头 Pro 付费墙：功能清单、试用、购买和激活码</sub></p>
+    </td>
+  </tr>
+</table>
+
 ### 开发中（下一版）
 
 - **英文界面**：同一个码头，界面新增英文（Dockling），默认跟随系统语言：系统是中文显示中文，系统是英文显示英文。设置 ▸ 通用 新增“语言”，可选跟随系统、简体中文或 English，切换后提示重启，点“立即重启”就换过来。菜单栏菜单、设置、小组件库和小组件卡片、详情面板、通知、弹窗、错误提示、新手引导、码头 Pro 和付费墙、权限说明（InfoPlist）、快捷指令的专注模式过滤条件都已翻译，约 2800 条，放在 String Catalog（Localizable.xcstrings、InfoPlist.xcstrings）里，开发语言仍是简体中文。英文名 Dockling，码头 Pro 叫 Dockling Pro，小熊猫叫 red panda。农历日期、节气、“中文”时钟表盘、小组件库的中文搜索别名和最终用户许可协议保持中文。仓库新增英文说明 README.en.md。跟随系统时，系统首选语言里既没有中文也没有英文（比如法语、日语、德语）就显示英文，繁体中文和香港、台湾显示简体中文，显示名和权限说明同样如此：Info.plist 的开发区域改为英文，另附内容为简体的繁体中文、香港中文资源，启动时再按规则核对一次，不一致只给本次进程临时指定语言，不改用户设置。尚未在真机上验证。
@@ -511,12 +550,13 @@ README 里的图片都由仓库自带的截图工具拍摄：`Tools/Shots` 把�
 1. 安装 Xcode 和 XcodeGen（`brew install xcodegen`），在仓库目录运行 `xcodegen generate`。
 2. 在 **系统设置 > 隐私与安全性 > 录屏与系统录音** 中允许你使用的终端应用（例如“终端”），
    然后重新打开终端。
-3. 运行 `SHOTS_OUT=docs/images/zh scripts/capture-shots.sh`。拍摄需要几分钟，
+3. 运行 `scripts/capture-shots.sh`，拍中文界面，图片写入 `docs/images/zh`；运行
+   `SHOTS_LANG=en scripts/capture-shots.sh` 拍英文界面，写入 `docs/images/en`。拍摄需要几分钟，
    期间屏幕会被一张背景盖住，请不要操作电脑，等它打印出汇总。
 4. 只想重拍其中几张时，可以加上 `SHOTS_ONLY=photos,shelf-files`。
 
 也可以在本仓库的 **Actions > Screenshots** 中手动运行工作流，在 GitHub 的 macOS
-虚拟机上拍摄，拍好的图片会作为构件（artifact）上传，下载后检查再提交。
+虚拟机上拍摄，默认中文、英文各拍一套（`zh`、`en` 两个文件夹），拍好的图片会作为构件（artifact）上传，下载后检查再提交。
 
 ---
 
