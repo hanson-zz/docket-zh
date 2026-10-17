@@ -13,7 +13,7 @@ struct AINotchSettingsSection: View {
     var body: some View {
         Section {
             Toggle("在刘海显示 AI 助手", isOn: $state.aiNotch.enabled)
-                .help("刘海左边显示小熊猫，右边显示当前服务的字牌；没有刘海的屏幕在顶部正中放一个小胶囊。")
+                .help("点一下刘海展开对话，刘海两侧不多出任何东西；没有刘海的屏幕在菜单栏下方正中放一个小胶囊。")
             Toggle("只在主屏显示", isOn: $state.aiNotch.mainScreenOnly)
                 .disabled(!state.aiNotch.enabled)
                 .help("关掉时每块屏幕都有入口；打开后只在带菜单栏的那块屏幕上显示。")
@@ -40,15 +40,22 @@ struct AINotchSettingsSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if shiduoRunning {
-                Label(AIShiduo.explanation, systemImage: "rectangle.on.rectangle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Label(AIShiduo.explanation, systemImage: "rectangle.on.rectangle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if state.aiNotch.hotKey == nil {
+                        Spacer(minLength: 0)
+                        ShortcutRecorder(combo: nil) { state.aiNotch.hotKey = $0 }
+                            .help("还没设快捷键：拾掇运行时刘海上没有入口，设一个快捷键就能随时展开对话。")
+                    }
+                }
             }
         } header: {
             Text("AI 助手")
         } footer: {
-            Text("指针移过去入口只会轻微变宽，点一下或按快捷键才展开。入口只认点击和快捷键，不响应悬停和拖拽；「拾掇」在运行时，入口改放在刘海右侧的小胶囊里，不挡它的悬浮暂存架。灵动提示出现时入口暂时让位。货架上 AI 卡片的小熊猫打开的是同一个对话。")
+            Text("入口就是刘海本身，不占菜单栏的地方：指针移到刘海上，刘海下面会长出一小条显示小熊猫，点一下刘海或按快捷键才展开；回答生成中那一小条里是三个跳动的小点。外接屏的入口是菜单栏下方正中的小胶囊，平时半透明。「拾掇」在运行时刘海让给拾掇，码头不在刘海上放入口，请用快捷键或货架上 AI 卡片的小熊猫。灵动提示出现时入口暂时让位。货架上 AI 卡片的小熊猫打开的是同一个对话。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -4,13 +4,15 @@ import SwiftUI
 
 /// AI 助手的刘海入口和展开的对话面板。
 ///
-/// 入口：有刘海的屏幕上贴着刘海，左边小熊猫、右边当前服务的字牌，黑色和
-/// 刘海连成一体；没有刘海的屏幕（外接屏）在顶部正中放一个小胶囊。指针
-/// 移过去只是轻微变宽，不会展开；点一下或按用户自设的快捷键才展开。
+/// 入口：有刘海的屏幕上入口就是刘海本身，不向两侧多出黑块，不占菜单栏的
+/// 水平空间。点一下刘海或按用户自设的快捷键才展开。指针移到刘海上时，刘海
+/// 下沿往下长出一条和刘海同宽的黑色小条，里面是小熊猫，离开约 0.3 秒后收
+/// 回；回答生成中这条小条里是三个跳动的小点。小条只盖在菜单栏下方，不响应
+/// 鼠标。没有刘海的屏幕（外接屏）在菜单栏下沿正下方放一个小胶囊。
 ///
 /// 和拾掇共处：拾掇的悬浮暂存架在指针碰到刘海、或者拖文件到刘海时弹出。
-/// 入口窗口不注册任何拖放类型、不因悬停做任何事；拾掇在运行时入口干脆
-/// 离开刘海，改成刘海右边隔一段距离的小胶囊，不和刘海重叠。
+/// 拾掇在运行时码头不在刘海上放任何入口窗口，刘海的点击和悬停都让给拾掇，
+/// 入口改为快捷键和货架上 AI 卡片的小熊猫。
 ///
 /// 和灵动提示共处：灵动提示出现在同一块屏幕时入口淡出让位，收起后恢复。
 @MainActor
@@ -19,6 +21,7 @@ final class AINotchController {
 
     private var settings = AINotchSettings()
     private var entries: [UInt32: AINotchEntryWindow] = [:]
+    private var strips: [UInt32: AINotchStripWindow] = [:]
     private var panel: KeyablePanel?
     private let panelModel = AINotchPanelModel()
     private var monitors: [Any] = []
@@ -90,22 +93,36 @@ final class AINotchController {
     /// 按设置、屏幕、拾掇和灵动提示重新摆一遍入口。
     private func layout() {
         let wanted = settings.enabled ? AINotchLayout.screens(described, mainOnly: settings.mainScreenOnly) : []
-        let ids = Set(wanted.map(\.id))
-        for (id, window) in entries where !ids.contains(id) {
+        let island = IslandOccupancy.shared.frame
+        var placed: [UInt32: (AINotchEntry, Bool)] = [:]
+        for screen in wanted {
+            guard let entry = AINotchLayout.entry(for: screen, shiduoRunning: shiduoRunning) else { continue }
+            let islandHere = island.map { $0.intersects(screen.frame) } ?? false
+            placed[screen.id] = (entry, AINotchLayout.isVisible(enabled: settings.enabled, islandShowing: islandHere))
+        }
+        for (id, window) in entries where placed[id] == nil {
             window.orderOut(nil)
             entries[id] = nil
         }
-        let island = IslandOccupancy.shared.frame
-        for screen in wanted {
-            let entry = AINotchLayout.entry(for: screen, shiduoRunning: shiduoRunning)
-            let islandHere = island.map { $0.intersects(screen.frame) } ?? false
-            let visible = AINotchLayout.isVisible(enabled: settings.enabled, islandShowing: islandHere)
-            let window = entries[screen.id] ?? makeEntry(screen.id)
+        for (id, strip) in strips {
+            if case .notch = placed[id]?.0 { continue }
+            strip.orderOut(nil)
+            strips[id] = nil
+        }
+        for (id, value) in placed {
+            let (entry, visible) = value
+            let window = entries[id] ?? makeEntry(id)
             window.model.entry = entry
             window.model.visible = visible
+            if !visible { window.model.hovering = false }
             window.ignoresMouseEvents = !visible
             if window.frame != entry.frame { window.setFrame(entry.frame, display: true) }
             window.orderFrontRegardless()
+            if case .notch(_, let stripFrame) = entry {
+                let strip = strips[id] ?? makeStrip(id, entry: window.model)
+                if strip.frame != stripFrame { strip.setFrame(stripFrame, display: true) }
+                strip.orderFrontRegardless()
+            }
         }
     }
 
@@ -119,10 +136,17 @@ final class AINotchController {
         return window
     }
 
+    private func makeStrip(_ id: UInt32, entry: AINotchEntryModel) -> AINotchStripWindow {
+        let strip = AINotchStripWindow.make(entry: entry, panel: panelModel)
+        strips[id] = strip
+        return strip
+    }
+
     // MARK: 面板
 
-    /// 指针所在屏幕（或主屏）上入口的位置。入口关着时按设置算一个，面板
-    /// 照样从那里长出来（货架上的小熊猫也能打开同一个对话）。
+    /// 指针所在屏幕（或主屏）上入口的位置。入口关着或拾掇占着刘海时按屏幕
+    /// 算一个，面板照样从刘海下面长出来（快捷键和货架上的小熊猫打开同一个
+    /// 对话）。
     private func anchor(onScreenWithPointer: Bool) -> (entry: CGRect, screen: CGRect)? {
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return nil }
@@ -134,8 +158,7 @@ final class AINotchController {
         if let window = entries[description.id], window.model.visible {
             return (window.frame, target.frame)
         }
-        let entry = AINotchLayout.entry(for: description, shiduoRunning: shiduoRunning)
-        return (entry.frame, target.frame)
+        return (AINotchLayout.anchor(for: description, shiduoRunning: shiduoRunning), target.frame)
     }
 
     func toggle(onScreenWithPointer: Bool = false) {
@@ -269,17 +292,19 @@ final class AINotchPanelModel {
 /// 入口画什么，SwiftUI 那边读。
 @MainActor @Observable
 final class AINotchEntryModel {
-    var entry: AINotchEntry = .capsule(frame: .zero, aside: false)
+    var entry: AINotchEntry = .capsule(frame: .zero)
     var visible = true
     var hovering = false
 }
 
-/// 入口窗口：无边框、不抢焦点、在菜单栏之上。只认点击：不注册拖放类型，
-/// 悬停只让黑色部分轻微变宽。
+/// 入口窗口：无边框、不抢焦点、在菜单栏之上，大小正好是刘海（或外接屏的
+/// 小胶囊）。只认点击：不注册拖放类型，悬停只让刘海下沿长出提示条（或让
+/// 胶囊完全显示），不会展开。
 @MainActor
 final class AINotchEntryWindow: NSPanel {
     let model = AINotchEntryModel()
     var onClick: (() -> Void)?
+    private var leaveTask: Task<Void, Never>?
 
     /// 用继承来的 init 建好再配置：自己写指定构造器就得连 init(coder:) 一起写。
     static func make() -> AINotchEntryWindow {
@@ -302,15 +327,32 @@ final class AINotchEntryWindow: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
         let host = AINotchEntryHost(rootView: AINotchEntryView(model: model, center: AIChatCenter.shared))
         host.onClick = { [weak self] in self?.onClick?() }
-        host.onHover = { [weak self] inside in
-            guard let self else { return }
-            let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-            withAnimation(reduce ? nil : .spring(response: 0.28, dampingFraction: 0.8)) {
-                self.model.hovering = inside
-            }
-        }
+        host.onHover = { [weak self] inside in self?.hover(inside) }
         host.autoresizingMask = [.width, .height]
         contentView = host
+    }
+
+    /// 进来马上显示；离开后等一小会儿再收回，指针擦过刘海边缘不会闪。
+    private func hover(_ inside: Bool) {
+        leaveTask?.cancel()
+        leaveTask = nil
+        if inside {
+            set(hovering: true)
+            return
+        }
+        leaveTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(AINotchLayout.stripLinger))
+            guard !Task.isCancelled else { return }
+            self?.set(hovering: false)
+        }
+    }
+
+    private func set(hovering: Bool) {
+        guard model.hovering != hovering else { return }
+        let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        withAnimation(reduce ? nil : .spring(response: 0.3, dampingFraction: 0.82)) {
+            model.hovering = hovering
+        }
     }
 
     override var canBecomeKey: Bool { false }
@@ -351,4 +393,33 @@ final class AINotchEntryHost: NSHostingView<AINotchEntryView> {
     }
 
     override func rightMouseDown(with event: NSEvent) {}
+}
+
+// MARK: - 刘海下沿的提示条
+
+/// 刘海下沿那一条：在菜单栏下方，和刘海同宽，不响应鼠标（点击穿过去落到
+/// 下面的窗口上）。悬停时显示小熊猫，回答生成中显示三个跳动的小点。
+@MainActor
+final class AINotchStripWindow: NSPanel {
+    static func make(entry: AINotchEntryModel, panel: AINotchPanelModel) -> AINotchStripWindow {
+        let window = AINotchStripWindow(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
+                                        backing: .buffered, defer: false)
+        window.level = .statusBar
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = false
+        window.isMovable = false
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        window.animationBehavior = .none
+        window.ignoresMouseEvents = true
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+        let host = NSHostingView(rootView: AINotchStripView(entry: entry, panel: panel, center: AIChatCenter.shared))
+        host.autoresizingMask = [.width, .height]
+        window.contentView = host
+        return window
+    }
+
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
 }

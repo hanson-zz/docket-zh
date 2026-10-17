@@ -24,29 +24,43 @@ public struct AINotchScreen: Equatable, Sendable {
 
 /// 入口长什么样。
 public enum AINotchEntry: Equatable, Sendable {
-    /// 贴着刘海：左右各多出一截黑色，和刘海连成一体。`frame` 是窗口（按
-    /// 指针移过去变宽后的大小留足），`notch` 是刘海本身。
-    case notch(frame: CGRect, notch: CGRect)
-    /// 顶部的小胶囊。`aside` 为 true 时是为了避让拾掇，放在刘海右边。
-    case capsule(frame: CGRect, aside: Bool)
+    /// 刘海本身：窗口正好盖住刘海那一段，不向两侧多出一点，不占菜单栏的
+    /// 水平空间。点一下展开对话；提示从刘海下沿往下长出一条（见 `strip`）。
+    case notch(frame: CGRect, strip: CGRect)
+    /// 没有刘海的屏幕：菜单栏下沿正下方的小胶囊，不在菜单栏里。
+    case capsule(frame: CGRect)
 
     public var frame: CGRect {
         switch self {
         case .notch(let frame, _): frame
-        case .capsule(let frame, _): frame
+        case .capsule(let frame): frame
         }
     }
 }
 
+/// 刘海下沿那一条里显示什么。
+public enum AINotchStripContent: Equatable, Sendable {
+    /// 指针在刘海上：小熊猫。
+    case panda
+    /// 回答生成中：三个跳动的小点。
+    case dots
+}
+
 public enum AINotchLayout {
-    /// 刘海两边各多出的宽度（放小熊猫和字牌）。
-    public static let wing: CGFloat = 34
-    /// 指针移过去时每边再宽出这么多。只是视觉，不展开。
-    public static let hoverGrow: CGFloat = 5
-    /// 小胶囊静止时的大小。
-    public static let capsuleSize = CGSize(width: 66, height: 22)
-    /// 避让拾掇时，胶囊离刘海右边的距离（变宽后也不会碰到刘海）。
-    public static let asideGap: CGFloat = 16
+    /// 刘海下沿往下长出的那一条的高度。宽度和刘海一样。
+    public static let stripHeight: CGFloat = 18
+    /// 那一条里小熊猫的大小。
+    public static let stripPandaSize: CGFloat = 14
+    /// 指针离开刘海后，那一条过多久收回。
+    public static let stripLinger: TimeInterval = 0.3
+    /// 外接屏胶囊的大小。
+    public static let capsuleSize = CGSize(width: 44, height: 18)
+    /// 外接屏胶囊离菜单栏下沿的距离。
+    public static let capsuleGap: CGFloat = 2
+    /// 外接屏胶囊平时的不透明度，指针移上去或回答生成中时完全显示。
+    public static let capsuleRestingOpacity: Double = 0.4
+    /// 菜单栏自动隐藏（量出来是 0）时按这个高度避开它。
+    public static let fallbackMenuBarHeight: CGFloat = 24
     /// 展开的对话面板。
     public static let panelSize = CGSize(width: 420, height: 520)
     /// 面板离屏幕边缘至少留的距离。
@@ -62,6 +76,14 @@ public enum AINotchLayout {
                       width: rightArea.minX - leftArea.maxX, height: topInset)
     }
 
+    /// 菜单栏这一条（量不到高度时按刘海高度，再不行按默认高度）。
+    public static func menuBar(of screen: AINotchScreen) -> CGRect {
+        var height = screen.menuBarHeight
+        if height <= 0 { height = screen.notch?.height ?? fallbackMenuBarHeight }
+        return CGRect(x: screen.frame.minX, y: screen.frame.maxY - height,
+                      width: screen.frame.width, height: height)
+    }
+
     /// 哪几块屏幕要放入口。“只在主屏显示”时只留主屏；找不到主屏时用第一块。
     public static func screens(_ all: [AINotchScreen], mainOnly: Bool) -> [AINotchScreen] {
         guard mainOnly else { return all }
@@ -75,36 +97,49 @@ public enum AINotchLayout {
         enabled && !islandShowing
     }
 
-    /// 一块屏幕上的入口。
+    /// 一块屏幕上的入口，没有入口时为 nil。
     ///
-    /// 有刘海并且拾掇没在运行：贴着刘海。拾掇在运行：刘海右边隔一段距离的
-    /// 小胶囊，不和刘海重叠，免得挡住拾掇在刘海上的悬停和拖放。没有刘海：
-    /// 顶部正中的小胶囊。
-    public static func entry(for screen: AINotchScreen, shiduoRunning: Bool) -> AINotchEntry {
-        let band = max(screen.menuBarHeight, capsuleSize.height + 2)
-        let capsuleY = screen.frame.maxY - band + (band - capsuleSize.height) / 2
-        let width = capsuleSize.width + hoverGrow * 2
+    /// 有刘海：入口就是刘海那一段（左右正好到两块可用区域的边上，高度是菜单
+    /// 栏高度），下沿条在菜单栏下方。拾掇在运行时刘海让给拾掇，这块屏幕上
+    /// 不放入口（改用快捷键和货架上的小熊猫）。没有刘海：菜单栏下沿正下方
+    /// 正中的小胶囊。
+    public static func entry(for screen: AINotchScreen, shiduoRunning: Bool) -> AINotchEntry? {
+        let bar = menuBar(of: screen)
         if let notch = screen.notch {
-            if shiduoRunning {
-                // 菜单栏右边的状态图标是靠右排的，紧挨刘海右边通常是空的。
-                return .capsule(frame: CGRect(x: notch.maxX + asideGap, y: capsuleY,
-                                              width: width, height: capsuleSize.height),
-                                aside: true)
-            }
-            let side = wing + hoverGrow
-            return .notch(frame: CGRect(x: notch.minX - side, y: notch.minY,
-                                        width: notch.width + side * 2, height: notch.height),
-                          notch: notch)
+            if shiduoRunning { return nil }
+            let frame = CGRect(x: notch.minX, y: bar.minY, width: notch.width, height: bar.height)
+            let strip = CGRect(x: notch.minX, y: bar.minY - stripHeight, width: notch.width, height: stripHeight)
+            return .notch(frame: frame, strip: strip)
         }
-        return .capsule(frame: CGRect(x: screen.frame.midX - width / 2, y: capsuleY,
-                                      width: width, height: capsuleSize.height),
-                        aside: false)
+        let size = capsuleSize
+        return .capsule(frame: CGRect(x: screen.frame.midX - size.width / 2,
+                                      y: bar.minY - capsuleGap - size.height,
+                                      width: size.width, height: size.height))
     }
 
-    /// 画出来的黑色部分有多宽：静止时比窗口窄，指针移过去时撑满窗口。
-    public static func visibleWidth(_ entry: AINotchEntry, hovering: Bool) -> CGFloat {
-        let grow = hovering ? 0 : hoverGrow * 2
-        return entry.frame.width - grow
+    /// 面板从哪里长出来。有入口时就是入口；拾掇占着刘海时没有入口，快捷键
+    /// 和货架打开的面板仍然接在刘海下面（只是打开，不在刘海上放常驻窗口）。
+    public static func anchor(for screen: AINotchScreen, shiduoRunning: Bool) -> CGRect {
+        if let entry = entry(for: screen, shiduoRunning: shiduoRunning) { return entry.frame }
+        let bar = menuBar(of: screen)
+        if let notch = screen.notch {
+            return CGRect(x: notch.minX, y: bar.minY, width: notch.width, height: bar.height)
+        }
+        return CGRect(x: screen.frame.midX, y: bar.minY, width: 0, height: bar.height)
+    }
+
+    /// 刘海下沿那一条显示什么，nil 表示收起。回答生成中优先显示小点（不需要
+    /// 悬停）；否则指针在刘海上时显示小熊猫。入口隐藏或面板开着时不显示。
+    public static func stripContent(visible: Bool, panelOpen: Bool,
+                                    hovering: Bool, generating: Bool) -> AINotchStripContent? {
+        guard visible, !panelOpen else { return nil }
+        if generating { return .dots }
+        return hovering ? .panda : nil
+    }
+
+    /// 外接屏胶囊的不透明度。
+    public static func capsuleOpacity(hovering: Bool, generating: Bool) -> Double {
+        hovering || generating ? 1 : capsuleRestingOpacity
     }
 
     /// 展开的面板：从入口正下方长出来，水平对着入口中间，超出屏幕时往里收。
@@ -113,7 +148,7 @@ public enum AINotchLayout {
         x = min(max(x, screen.minX + margin), screen.maxX - size.width - margin)
         var top = entry.minY
         // 胶囊下面空一点，刘海下面直接接上。
-        if entry.height < 30 { top -= 4 }
+        if entry.height < 22 { top -= 4 }
         var y = top - size.height
         y = max(y, screen.minY + margin)
         return CGRect(x: x, y: y, width: size.width, height: size.height)
@@ -123,8 +158,7 @@ public enum AINotchLayout {
 // MARK: - 避让拾掇
 
 /// 拾掇（另一个 App）的悬浮暂存架在指针碰到刘海、或者拖文件到刘海时弹出。
-/// 码头的 AI 入口不响应悬停和拖拽，只认点击和快捷键；拾掇在运行时入口
-/// 离开刘海。
+/// 拾掇在运行时码头不在刘海上放任何入口窗口，刘海的点击和悬停都让给拾掇。
 public enum AIShiduo {
     /// 拾掇的 bundle id（它的 project.yml 里的 PRODUCT_BUNDLE_IDENTIFIER）。
     public static let bundleID = "io.github.hanson-zz.shiduo"
@@ -134,5 +168,5 @@ public enum AIShiduo {
     }
 
     public static let explanation =
-        "检测到「拾掇」正在运行：拾掇的悬浮暂存架在指针碰到刘海或把文件拖到刘海时弹出，为了不挡住它，AI 入口不贴刘海，改放在刘海右侧的小胶囊里。码头的 AI 入口只认点击和快捷键，不响应悬停和拖拽。"
+        "检测到「拾掇」正在运行：拾掇的悬浮暂存架在指针碰到刘海或把文件拖到刘海时弹出，为了不和它抢，码头不在刘海上放任何 AI 入口，刘海的点击和悬停都让给拾掇。这时请用快捷键或货架上 AI 卡片的小熊猫展开对话。"
 }

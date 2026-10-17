@@ -4,25 +4,26 @@ import WebKit
 
 // MARK: - 刘海入口
 
-/// 刘海入口：左边小熊猫，右边当前服务的字牌；回答生成中右边换成三个跳动
-/// 的小点。黑色，贴着刘海时和刘海连成一体，没有刘海时是小胶囊。
+/// 入口窗口里画的东西。贴刘海时是一块和刘海重合的纯黑（刘海本身就是入口，
+/// 提示在下沿那一条里）；外接屏是菜单栏下方的小胶囊，平时半透明，指针移上去或回答
+/// 生成中完全显示。
 struct AINotchEntryView: View {
     var model: AINotchEntryModel
     var center: AIChatCenter
 
     var body: some View {
-        let entry = model.entry
-        let width = AINotchLayout.visibleWidth(entry, hovering: model.hovering)
-        return VStack(spacing: 0) {
-            switch entry {
-            case .notch(let frame, let notch):
-                notchShape(width: width, height: frame.height, notchWidth: notch.width)
-            case .capsule(let frame, _):
-                capsule(width: width, height: frame.height)
+        Group {
+            switch model.entry {
+            case .notch:
+                // 和刘海一样的纯黑，看起来就是刘海本身。不能用全透明：窗口服务器
+                // 会让点击穿过透明的像素，刘海就点不到了。
+                UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8, style: .continuous)
+                    .fill(.black)
+            case .capsule(let frame):
+                capsule(size: frame.size)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .opacity(model.visible ? 1 : 0)
         .animation(.easeInOut(duration: 0.2), value: model.visible)
         .environment(\.colorScheme, .dark)
@@ -33,44 +34,60 @@ struct AINotchEntryView: View {
         .help("AI 助手：点一下展开对话")
     }
 
-    private func notchShape(width: CGFloat, height: CGFloat, notchWidth: CGFloat) -> some View {
-        let wing = (width - notchWidth) / 2
-        return HStack(spacing: 0) {
-            AIPandaAvatar(size: min(20, height - 8))
-                .frame(width: wing, alignment: .center)
-            Spacer(minLength: notchWidth)
-            trailing(size: min(17, height - 12))
-                .frame(width: wing, alignment: .center)
+    private func capsule(size: CGSize) -> some View {
+        let generating = center.isGenerating
+        return ZStack {
+            if generating {
+                AIBouncingDots(dot: 3)
+            } else {
+                AIPandaAvatar(size: AINotchLayout.stripPandaSize)
+            }
         }
-        .frame(width: width, height: height)
-        .background(UnevenRoundedRectangle(bottomLeadingRadius: 10, bottomTrailingRadius: 10,
-                                           style: .continuous).fill(.black))
-    }
-
-    private func capsule(width: CGFloat, height: CGFloat) -> some View {
-        HStack(spacing: 4) {
-            AIPandaAvatar(size: height - 5)
-            Spacer(minLength: 0)
-            trailing(size: height - 7)
-        }
-        .padding(.horizontal, 6)
-        .frame(width: width, height: height)
+        .frame(width: size.width, height: size.height)
         .background {
             Capsule(style: .continuous)
                 .fill(.black)
                 .overlay { Capsule(style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.5) }
         }
+        .opacity(AINotchLayout.capsuleOpacity(hovering: model.hovering, generating: generating))
     }
+}
 
-    @ViewBuilder private func trailing(size: CGFloat) -> some View {
-        if center.isGenerating {
-            AIBouncingDots(dot: max(3, size * 0.24))
-                .frame(width: size * 1.6, height: size)
-        } else if let service = center.current {
-            AIGlyph(initial: service.initial, size: size, style: .panel)
-        } else {
-            Color.clear.frame(width: size, height: size)
+/// 刘海下沿往下长出的那一条：和刘海同宽、底部圆角，悬停时是小熊猫，回答
+/// 生成中是三个跳动的小点。打开“减少动态效果”时不做伸缩，直接显示或隐藏。
+struct AINotchStripView: View {
+    var entry: AINotchEntryModel
+    var panel: AINotchPanelModel
+    var center: AIChatCenter
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let shape = UnevenRoundedRectangle(bottomLeadingRadius: 9, bottomTrailingRadius: 9,
+                                                      style: .continuous)
+
+    var body: some View {
+        let content = AINotchLayout.stripContent(visible: entry.visible, panelOpen: panel.isOpen,
+                                                 hovering: entry.hovering, generating: center.isGenerating)
+        let height = AINotchLayout.stripHeight
+        return VStack(spacing: 0) {
+            ZStack {
+                if content == .dots {
+                    AIBouncingDots(dot: 3)
+                } else if content == .panda {
+                    AIPandaAvatar(size: AINotchLayout.stripPandaSize)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background(Self.shape.fill(.black))
+            .frame(height: content == nil ? 0 : height, alignment: .bottom)
+            .clipped()
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85), value: content)
+        .environment(\.colorScheme, .dark)
+        .accessibilityHidden(true)
     }
 }
 

@@ -1,7 +1,7 @@
 import XCTest
 
-/// 刘海入口放在哪：贴刘海、外接屏的小胶囊、避让拾掇、灵动提示让位、
-/// 展开面板的位置。
+/// 刘海入口放在哪：入口就是刘海本身、下沿条、外接屏胶囊、避让拾掇、
+/// 灵动提示让位、展开面板的位置。
 final class AINotchLayoutTests: XCTestCase {
     /// 14 英寸 MacBook Pro 的样子：1512 x 982，刘海约 185 宽、32 高。
     private let laptop = CGRect(x: 0, y: 0, width: 1512, height: 982)
@@ -13,12 +13,20 @@ final class AINotchLayoutTests: XCTestCase {
                                 rightArea: CGRect(x: 848, y: 950, width: 664, height: 32))!
     }
 
-    private var laptopScreen: AINotchScreen {
-        AINotchScreen(id: 1, frame: laptop, notch: notch, menuBarHeight: 32, isMain: true)
+    private func laptopScreen(menuBar: CGFloat = 32) -> AINotchScreen {
+        AINotchScreen(id: 1, frame: laptop, notch: notch, menuBarHeight: menuBar, isMain: true)
     }
 
-    private var externalScreen: AINotchScreen {
-        AINotchScreen(id: 2, frame: external, notch: nil, menuBarHeight: 24, isMain: false)
+    private func externalScreen(menuBar: CGFloat = 24) -> AINotchScreen {
+        AINotchScreen(id: 2, frame: external, notch: nil, menuBarHeight: menuBar, isMain: false)
+    }
+
+    /// 菜单栏里刘海以外的部分，也就是菜单和状态图标所在的地方。
+    private func iconAreas(of screen: AINotchScreen) -> [CGRect] {
+        let bar = AINotchLayout.menuBar(of: screen)
+        guard let notch = screen.notch else { return [bar] }
+        return [CGRect(x: bar.minX, y: bar.minY, width: notch.minX - bar.minX, height: bar.height),
+                CGRect(x: notch.maxX, y: bar.minY, width: bar.maxX - notch.maxX, height: bar.height)]
     }
 
     func testNotchIsTheGapBetweenTheTwoAuxiliaryAreas() {
@@ -28,48 +36,93 @@ final class AINotchLayoutTests: XCTestCase {
                                              rightArea: CGRect(x: 848, y: 950, width: 664, height: 32)))
     }
 
-    func testHugsTheNotchWithAWingOnEachSide() {
-        let entry = AINotchLayout.entry(for: laptopScreen, shiduoRunning: false)
-        guard case .notch(let frame, let inner) = entry else { return XCTFail("应当贴着刘海") }
-        XCTAssertEqual(inner, notch)
-        XCTAssertTrue(frame.contains(notch))
-        XCTAssertEqual(frame.midX, notch.midX)
-        XCTAssertEqual(frame.maxY, laptop.maxY)
-        XCTAssertEqual(frame.height, notch.height)
-        XCTAssertEqual(frame.width, notch.width + 2 * (AINotchLayout.wing + AINotchLayout.hoverGrow))
+    func testEntryIsTheNotchItselfWithNoWings() {
+        for menuBar: CGFloat in [32, 37, 0] {
+            let screen = laptopScreen(menuBar: menuBar)
+            guard case .notch(let frame, _) = AINotchLayout.entry(for: screen, shiduoRunning: false) else {
+                return XCTFail("有刘海时入口是刘海本身")
+            }
+            XCTAssertGreaterThanOrEqual(frame.minX, notch.minX, "不向左超出刘海")
+            XCTAssertLessThanOrEqual(frame.maxX, notch.maxX, "不向右超出刘海")
+            XCTAssertEqual(frame.width, notch.width)
+            XCTAssertEqual(frame.maxY, laptop.maxY)
+            XCTAssertEqual(frame.height, AINotchLayout.menuBar(of: screen).height, "高度是菜单栏高度")
+        }
     }
 
-    func testHoverOnlyWidensALittle() {
-        let entry = AINotchLayout.entry(for: laptopScreen, shiduoRunning: false)
-        let rest = AINotchLayout.visibleWidth(entry, hovering: false)
-        let hover = AINotchLayout.visibleWidth(entry, hovering: true)
-        XCTAssertEqual(hover - rest, AINotchLayout.hoverGrow * 2)
-        XCTAssertEqual(hover, entry.frame.width, "变宽后正好撑满窗口，不会被裁掉")
+    func testStripHangsBelowTheMenuBar() {
+        let screen = laptopScreen(menuBar: 37)
+        guard case .notch(let frame, let strip) = AINotchLayout.entry(for: screen, shiduoRunning: false) else {
+            return XCTFail("有刘海时入口是刘海本身")
+        }
+        let bar = AINotchLayout.menuBar(of: screen)
+        XCTAssertEqual(strip.maxY, bar.minY, "和刘海下沿连成一体")
+        XCTAssertLessThanOrEqual(strip.maxY, bar.minY, "在菜单栏下方")
+        XCTAssertFalse(strip.intersects(bar))
+        XCTAssertEqual(strip.height, AINotchLayout.stripHeight)
+        XCTAssertEqual(strip.minX, notch.minX)
+        XCTAssertEqual(strip.width, notch.width, "和刘海同宽")
+        XCTAssertEqual(strip.maxY, frame.minY)
     }
 
-    func testExternalScreenGetsACapsuleAtTheTopCentre() {
-        let entry = AINotchLayout.entry(for: externalScreen, shiduoRunning: false)
-        guard case .capsule(let frame, let aside) = entry else { return XCTFail("没有刘海时是胶囊") }
-        XCTAssertFalse(aside)
-        XCTAssertEqual(frame.midX, external.midX)
-        XCTAssertLessThanOrEqual(frame.maxY, external.maxY)
-        XCTAssertGreaterThanOrEqual(frame.minY, external.maxY - 24, "在菜单栏这一条里")
+    func testStripContent() {
+        XCTAssertNil(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: false, generating: false))
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: false), .panda)
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: false, generating: true), .dots,
+                       "生成中不需要悬停")
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: true), .dots)
+        XCTAssertNil(AINotchLayout.stripContent(visible: true, panelOpen: true, hovering: true, generating: true),
+                     "面板开着时不显示")
+        XCTAssertNil(AINotchLayout.stripContent(visible: false, panelOpen: false, hovering: true, generating: true))
     }
 
-    func testShiduoMovesTheEntryOffTheNotch() {
-        let entry = AINotchLayout.entry(for: laptopScreen, shiduoRunning: true)
-        guard case .capsule(let frame, let aside) = entry else { return XCTFail("拾掇在运行时不贴刘海") }
-        XCTAssertTrue(aside)
-        XCTAssertFalse(frame.intersects(notch), "不和刘海区域重叠")
-        XCTAssertFalse(frame.intersects(notch.insetBy(dx: -8, dy: 0)), "还留出一点距离")
-        XCTAssertGreaterThan(frame.minX, notch.maxX)
-        XCTAssertLessThanOrEqual(frame.maxY, laptop.maxY)
-        XCTAssertLessThan(frame.maxX, laptop.maxX)
+    func testExternalScreenCapsuleSitsBelowTheMenuBar() {
+        for menuBar: CGFloat in [24, 0] {
+            let screen = externalScreen(menuBar: menuBar)
+            guard case .capsule(let frame) = AINotchLayout.entry(for: screen, shiduoRunning: false) else {
+                return XCTFail("没有刘海时是胶囊")
+            }
+            let bar = AINotchLayout.menuBar(of: screen)
+            XCTAssertFalse(frame.intersects(bar), "不在菜单栏里")
+            XCTAssertLessThanOrEqual(frame.maxY, bar.minY)
+            XCTAssertGreaterThanOrEqual(frame.maxY, bar.minY - 4, "紧挨菜单栏下沿")
+            XCTAssertEqual(frame.midX, external.midX)
+            XCTAssertEqual(frame.size, CGSize(width: 44, height: 18))
+        }
+    }
+
+    func testCapsuleOpacity() {
+        XCTAssertEqual(AINotchLayout.capsuleOpacity(hovering: false, generating: false), 0.4)
+        XCTAssertEqual(AINotchLayout.capsuleOpacity(hovering: true, generating: false), 1)
+        XCTAssertEqual(AINotchLayout.capsuleOpacity(hovering: false, generating: true), 1)
+    }
+
+    func testShiduoGetsNoNotchEntry() {
+        XCTAssertNil(AINotchLayout.entry(for: laptopScreen(), shiduoRunning: true), "拾掇运行时刘海上不放入口")
+        XCTAssertNil(AINotchLayout.entry(for: laptopScreen(menuBar: 0), shiduoRunning: true))
     }
 
     func testShiduoDoesNotMatterWithoutANotch() {
-        XCTAssertEqual(AINotchLayout.entry(for: externalScreen, shiduoRunning: true),
-                       AINotchLayout.entry(for: externalScreen, shiduoRunning: false))
+        XCTAssertEqual(AINotchLayout.entry(for: externalScreen(), shiduoRunning: true),
+                       AINotchLayout.entry(for: externalScreen(), shiduoRunning: false))
+    }
+
+    /// 任何状态下入口窗口和下沿条都不碰菜单栏里放菜单和状态图标的地方。
+    func testNeverCoversMenuBarIcons() {
+        let screens = [laptopScreen(), laptopScreen(menuBar: 37), laptopScreen(menuBar: 0),
+                       externalScreen(), externalScreen(menuBar: 0)]
+        for screen in screens {
+            for shiduo in [false, true] {
+                guard let entry = AINotchLayout.entry(for: screen, shiduoRunning: shiduo) else { continue }
+                var rects = [entry.frame]
+                if case .notch(_, let strip) = entry { rects.append(strip) }
+                for rect in rects {
+                    for area in iconAreas(of: screen) {
+                        XCTAssertFalse(rect.intersects(area), "\(rect) 压到了菜单栏图标区域 \(area)")
+                    }
+                }
+            }
+        }
     }
 
     func testShiduoDetection() {
@@ -81,10 +134,10 @@ final class AINotchLayoutTests: XCTestCase {
     }
 
     func testMainScreenOnly() {
-        let both = [externalScreen, laptopScreen]
+        let both = [externalScreen(), laptopScreen()]
         XCTAssertEqual(AINotchLayout.screens(both, mainOnly: false).count, 2)
         XCTAssertEqual(AINotchLayout.screens(both, mainOnly: true).map(\.id), [1])
-        XCTAssertEqual(AINotchLayout.screens([externalScreen], mainOnly: true).map(\.id), [2],
+        XCTAssertEqual(AINotchLayout.screens([externalScreen()], mainOnly: true).map(\.id), [2],
                        "找不到主屏时用第一块")
         XCTAssertEqual(AINotchLayout.screens([], mainOnly: true), [])
     }
@@ -96,16 +149,30 @@ final class AINotchLayoutTests: XCTestCase {
     }
 
     func testPanelGrowsDownFromTheNotch() {
-        let entry = AINotchLayout.entry(for: laptopScreen, shiduoRunning: false).frame
+        let entry = AINotchLayout.entry(for: laptopScreen(), shiduoRunning: false)!.frame
         let panel = AINotchLayout.panelFrame(below: entry, screen: laptop)
         XCTAssertEqual(panel.size, CGSize(width: 420, height: 520))
         XCTAssertEqual(panel.maxY, notch.minY, "接在刘海下面")
         XCTAssertEqual(panel.midX, notch.midX)
     }
 
-    func testPanelStaysOnScreenNextToAnAsideCapsule() {
+    func testPanelStillGrowsFromTheNotchWhileShiduoRuns() {
+        let anchor = AINotchLayout.anchor(for: laptopScreen(), shiduoRunning: true)
+        XCTAssertEqual(anchor.midX, notch.midX)
+        let panel = AINotchLayout.panelFrame(below: anchor, screen: laptop)
+        XCTAssertEqual(panel.maxY, notch.minY)
+    }
+
+    func testPanelHangsBelowTheExternalCapsule() {
+        let entry = AINotchLayout.entry(for: externalScreen(), shiduoRunning: false)!.frame
+        let panel = AINotchLayout.panelFrame(below: entry, screen: external)
+        XCTAssertLessThan(panel.maxY, entry.minY)
+        XCTAssertEqual(panel.midX, external.midX)
+    }
+
+    func testPanelStaysOnScreen() {
         let narrow = CGRect(x: 0, y: 0, width: 1000, height: 700)
-        let entry = CGRect(x: 900, y: 678, width: 76, height: 22)
+        let entry = CGRect(x: 950, y: 656, width: 44, height: 18)
         let panel = AINotchLayout.panelFrame(below: entry, screen: narrow)
         XCTAssertLessThanOrEqual(panel.maxX, narrow.maxX - AINotchLayout.margin)
         XCTAssertLessThan(panel.maxY, entry.minY)
