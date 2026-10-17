@@ -31,6 +31,8 @@ Dockling (formerly Docket 中文版) is an **unofficial fork** of [Docket](https
 an MIT licensed open source macOS app. It started as a Simplified Chinese localization and has grown into its own app:
 
 - The interface is available in **Simplified Chinese and English** and follows the system language.
+  If your preferred languages include neither Chinese nor English (French, Japanese, German and so on),
+  Dockling shows English; Traditional Chinese, Hong Kong and Taiwan show Simplified Chinese.
   You can also pick a language in **Settings ▸ General ▸ Language**.
 - It builds for anyone who clones it: ad-hoc signing and its own bundle ID (`com.docket-zh.app`),
   so it can be installed next to upstream Docket.
@@ -93,7 +95,7 @@ xcodegen generate
 xcodebuild -scheme Docket -configuration Release build
 ```
 
-Interface text lives in String Catalogs under `Resources/Localization`. Simplified Chinese is the development language and English is the translation.
+Interface text lives in String Catalogs under `Resources/Localization`. Simplified Chinese is the source language and English is the translation. At runtime the development region in Info.plist is English, so languages Dockling does not ship fall back to English, and the Traditional Chinese and Hong Kong tables carry the Simplified text.
 
 ## License
 

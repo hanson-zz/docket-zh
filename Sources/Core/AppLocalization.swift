@@ -116,6 +116,41 @@ enum AppLanguage: String, CaseIterable, Sendable {
         return .system
     }
 
+    /// 跟随系统时该显示哪种语言。按系统首选语言的顺序找第一个中文（任何 zh 变体，
+    /// 繁体和香港、台湾也显示简体）或英文；两者都没有（法语、日语、德语这类）时显示英文。
+    static func resolved(preferredLanguages: [String]) -> AppLanguage {
+        for identifier in preferredLanguages {
+            switch Self.languageCode(identifier) {
+            case "zh": return .simplifiedChinese
+            case "en": return .english
+            default: continue
+            }
+        }
+        return .english
+    }
+
+    /// 本次启动是否要给进程临时指定界面语言，返回要指定的语言代码。
+    ///
+    /// 只在跟随系统时才可能需要：手动选择已经写进 AppleLanguages。Info.plist 的开发区域是
+    /// 英文，并带简体中文、繁体中文和香港中文（内容都是简体）三份资源，系统自己挑出来的通常
+    /// 就对；`bundlePick` 是系统按首选语言挑出的那份，和规则不一致时才返回要指定的语言。
+    static func launchOverride(stored: AppLanguage, preferredLanguages: [String], bundlePick: String?) -> String? {
+        guard stored == .system else { return nil }
+        let wanted = resolved(preferredLanguages: preferredLanguages)
+        let picked: AppLanguage? = switch bundlePick.map(Self.languageCode) {
+        case "zh": .simplifiedChinese
+        case "en": .english
+        default: nil
+        }
+        return picked == wanted ? nil : wanted.rawValue
+    }
+
+    /// “zh-Hant-TW”“zh_HK”“en-CN”这类标识的语言部分，小写。
+    static func languageCode(_ identifier: String) -> String {
+        let head = identifier.split(whereSeparator: { $0 == "-" || $0 == "_" }).first ?? ""
+        return head.lowercased()
+    }
+
     func apply(_ defaults: UserDefaults = .standard) {
         switch self {
         case .system: defaults.removeObject(forKey: Self.defaultsKey)

@@ -29,7 +29,7 @@ struct LanguageSection: View {
                 }
             }
         } footer: {
-            Text("默认跟随系统语言。")
+            Text("默认跟随系统语言；系统语言不是中文或英文时显示英文。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

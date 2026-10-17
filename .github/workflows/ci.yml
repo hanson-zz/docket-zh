@@ -217,6 +217,46 @@ jobs:
             DEVELOPMENT_TEAM="" \
             ENABLE_HARDENED_RUNTIME=NO
 
+      # Following the system language falls back to English for anyone whose
+      # preferred languages hold neither Chinese nor English. That rests on the
+      # built bundle, not on code the tests can reach: English as the
+      # development region, and a Traditional Chinese and a Hong Kong table
+      # (both carrying the Simplified text) so those users still get Chinese.
+      - name: Check the app's localizations
+        run: |
+          dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
+          app="$dir/Dockling.app"
+          res="$app/Contents/Resources"
+          ls -d "$res"/*.lproj
+          region=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDevelopmentRegion' "$app/Contents/Info.plist")
+          echo "CFBundleDevelopmentRegion = $region"
+          fail=0
+          if [ "$region" != en ]; then
+            echo "::error title=Development region::CFBundleDevelopmentRegion is $region, expected en."
+            fail=1
+          fi
+          for lang in en zh-Hans zh-Hant zh-HK; do
+            for table in InfoPlist Localizable; do
+              file="$res/$lang.lproj/$table.strings"
+              if [ -f "$file" ]; then
+                echo "$lang/$table: $(plutil -convert json -o - "$file" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))') entries"
+              else
+                echo "::error title=Missing localization::$lang.lproj/$table.strings is not in the app."
+                fail=1
+              fi
+            done
+          done
+          for lang in zh-Hans zh-Hant zh-HK; do
+            name=$(plutil -extract CFBundleDisplayName raw -o - "$res/$lang.lproj/InfoPlist.strings" 2>/dev/null || true)
+            echo "$lang display name: $name"
+            [ "$name" = "码头" ] || { echo "::error title=Display name::$lang display name is '$name'."; fail=1; }
+          done
+          name=$(plutil -extract CFBundleDisplayName raw -o - "$res/en.lproj/InfoPlist.strings" 2>/dev/null || true)
+          echo "en display name: $name"
+          [ "$name" = "Dockling" ] || { echo "::error title=Display name::en display name is '$name'."; fail=1; }
+          exit $fail
+
       # A separate step because DocketTests compiles only the pure core, not
       # the app's own sources - a break in the app would not show up here.
       #

@@ -4,6 +4,8 @@ import SwiftUI
 @main
 struct DocketMain {
     static func main() {
+        // 在任何界面文字查表之前定下本次的界面语言，见 LanguageBootstrap。
+        LanguageBootstrap.apply()
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
@@ -11,6 +13,28 @@ struct DocketMain {
         // only permanent UI is its status item.
         app.setActivationPolicy(.accessory)
         app.run()
+    }
+}
+
+/// 跟随系统时的兜底：系统按首选语言挑出的资源和“有中文显示简体、有英文显示英文、
+/// 都没有显示英文”的规则不一致时，只给这一次进程临时指定 AppleLanguages。
+///
+/// 写在参数域（和命令行 `-AppleLanguages (en)` 同一处），不落盘、不碰用户的设置，
+/// 下次启动重新判断。通常用不上：Info.plist 的开发区域是英文，系统自己就会把法语、
+/// 日语这类退回英文，繁体和香港中文也有一份内容是简体的资源。
+enum LanguageBootstrap {
+    static func apply() {
+        let defaults = UserDefaults.standard
+        let preferred = Locale.preferredLanguages
+        let pick = Bundle.preferredLocalizations(from: Bundle.main.localizations, forPreferences: preferred).first
+        guard let code = AppLanguage.launchOverride(
+            stored: AppLanguage.current(defaults), preferredLanguages: preferred, bundlePick: pick
+        ) else { return }
+        var arguments = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        arguments[AppLanguage.defaultsKey] = [code]
+        // 同名的易失域已存在时直接设置会抛异常，先移除再放回（原有的启动参数一并保留）。
+        defaults.removeVolatileDomain(forName: UserDefaults.argumentDomain)
+        defaults.setVolatileDomain(arguments, forName: UserDefaults.argumentDomain)
     }
 }
 
