@@ -68,11 +68,11 @@ public struct CurrencyRates: Codable, Equatable, Sendable {
 /// reader in China is most likely to want them.
 public enum CurrencyNames {
     public static let common: [(code: String, name: String)] = [
-        ("CNY", "人民币"), ("USD", "美元"), ("EUR", "欧元"), ("JPY", "日元"),
-        ("HKD", "港币"), ("GBP", "英镑"), ("KRW", "韩元"), ("TWD", "新台币"),
-        ("MOP", "澳门元"), ("SGD", "新加坡元"), ("AUD", "澳元"), ("CAD", "加元"),
-        ("CHF", "瑞士法郎"), ("THB", "泰铢"), ("RUB", "卢布"), ("NZD", "新西兰元"),
-        ("MYR", "马来西亚林吉特"), ("VND", "越南盾"), ("INR", "印度卢比"), ("AED", "阿联酋迪拉姆"),
+        ("CNY", tr("人民币")), ("USD", tr("美元")), ("EUR", tr("欧元")), ("JPY", tr("日元")),
+        ("HKD", tr("港币")), ("GBP", tr("英镑")), ("KRW", tr("韩元")), ("TWD", tr("新台币")),
+        ("MOP", tr("澳门元")), ("SGD", tr("新加坡元")), ("AUD", tr("澳元")), ("CAD", tr("加元")),
+        ("CHF", tr("瑞士法郎")), ("THB", tr("泰铢")), ("RUB", tr("卢布")), ("NZD", tr("新西兰元")),
+        ("MYR", tr("马来西亚林吉特")), ("VND", tr("越南盾")), ("INR", tr("印度卢比")), ("AED", tr("阿联酋迪拉姆")),
     ]
 
     public static func name(_ code: String) -> String {

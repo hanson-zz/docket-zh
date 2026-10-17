@@ -378,13 +378,13 @@ public enum HolidaySchedule {
         guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return nil }
         let today = kind(of: now, known: known)
         let next = kind(of: tomorrow, known: known)
-        if case .makeupWorkday = today { return "今天调休上班" }
-        if case .makeupWorkday = next { return "明天调休，要上班" }
+        if case .makeupWorkday = today { return tr("今天调休上班") }
+        if case .makeupWorkday = next { return tr("明天调休，要上班") }
         if case .holiday(let name) = next {
             if case .holiday = today { return nil }
-            return "明天开始放\(shortName(name))假"
+            return tr("明天开始放\(trKey(shortName(name)))假")
         }
-        if case .holiday = today, case .workday = next { return "假期最后一天" }
+        if case .holiday = today, case .workday = next { return tr("假期最后一天") }
         return nil
     }
 
@@ -397,10 +397,10 @@ public enum HolidaySchedule {
     /// 距元旦还有 80 天, 国庆假期第 3 天, 今天是元旦.
     public static func countdown(_ item: HolidayBreak, now: Date) -> String {
         let days = ChineseCalendar.days(from: now, to: item.start)
-        let name = shortName(item.name)
-        if days > 0 { return "距\(name)还有 \(days) 天" }
-        if item.length <= 1 { return "今天是\(name)" }
-        return "\(name)假期第 \(1 - days) 天"
+        let name = trKey(shortName(item.name))
+        if days > 0 { return tr("距\(name)还有 \(days) 天") }
+        if item.length <= 1 { return tr("今天是\(name)") }
+        return tr("\(name)假期第 \(1 - days) 天")
     }
 
     /// 10月1日起 放 8 天, with 调休 dates.
@@ -408,13 +408,13 @@ public enum HolidaySchedule {
         let calendar = ChineseCalendar.gregorian
         let month = calendar.component(.month, from: item.start)
         let day = calendar.component(.day, from: item.start)
-        if item.estimated { return "\(month)月\(day)日 · 放假安排未公布" }
-        var text = item.length > 1 ? "\(month)月\(day)日起 放 \(item.length) 天" : "\(month)月\(day)日 放 1 天"
+        if item.estimated { return tr("\(month)月\(day)日 · 放假安排未公布") }
+        var text = item.length > 1 ? tr("\(month)月\(day)日起 放 \(item.length) 天") : tr("\(month)月\(day)日 放 1 天")
         if !item.workdays.isEmpty {
             let dates = item.workdays.sorted().map {
-                "\(calendar.component(.month, from: $0))月\(calendar.component(.day, from: $0))日"
+                tr("\(calendar.component(.month, from: $0))月\(calendar.component(.day, from: $0))日")
             }
-            text += " · \(dates.joined(separator: "、"))上班"
+            text += tr(" · \(dates.joined(separator: tr("、")))上班")
         }
         return text
     }

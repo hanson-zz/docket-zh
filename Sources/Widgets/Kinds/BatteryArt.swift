@@ -582,9 +582,9 @@ struct BatteryDayChart: View {
             }
             .frame(height: 64)
             HStack {
-                ForEach(["0 时", "6 时", "12 时", "18 时", "24 时"], id: \.self) { label in
+                ForEach([tr("0 时"), tr("6 时"), tr("12 时"), tr("18 时"), tr("24 时")], id: \.self) { label in
                     Text(label)
-                    if label != "24 时" { Spacer(minLength: 0) }
+                    if label != tr("24 时") { Spacer(minLength: 0) }
                 }
             }
             .font(.system(size: 9))

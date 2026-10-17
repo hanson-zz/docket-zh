@@ -35,7 +35,7 @@ struct PhotoFrameTile: View {
             }
             .animation(.easeInOut(duration: 0.9), value: current.url)
             .background { warmNext }
-            .accessibilityLabel("相册：\(current.name)")
+            .accessibilityLabel(tr("相册：\(current.name)"))
         } else {
             empty
         }
@@ -65,7 +65,7 @@ struct PhotoFrameTile: View {
 
     private var empty: some View {
         let column = context.position.isVertical
-        let message = feed.error != nil ? "无法访问" : feed.loadedAt == nil ? "正在读取" : "没有图片"
+        let message = feed.error != nil ? tr("无法访问") : feed.loadedAt == nil ? tr("正在读取") : tr("没有图片")
         return VStack(spacing: 4) {
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: column ? 15 : 16, weight: .medium))

@@ -93,7 +93,7 @@ struct AnniversaryDetail: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(next.map { "\($0.event.title) \($0.sentence)" } ?? "添加第一个纪念日")
+                Text(next.map { "\($0.event.title) \($0.sentence)" } ?? tr("添加第一个纪念日"))
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -134,7 +134,7 @@ struct AnniversaryDetail: View {
             let previous = index > 0 ? calendar.component(.year, from: readings[index - 1].timelineDate) : nil
             VStack(alignment: .leading, spacing: 6) {
                 if year != previous {
-                    Text("\(String(year)) 年")
+                    Text(tr("\(String(year)) 年"))
                         .font(WidgetStyle.label(12))
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.top, index > 0 ? 4 : 0)
@@ -172,7 +172,7 @@ struct AnniversaryDetail: View {
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
-                Text("\(calendar.component(.month, from: reading.timelineDate))月")
+                Text(tr("\(calendar.component(.month, from: reading.timelineDate))月"))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(.white.opacity(0.55))
             }
@@ -227,7 +227,7 @@ struct AnniversaryDetail: View {
                     .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
-            Text(reading.anniversaryNote.map { "\($0) · 今天" } ?? reading.sentence)
+            Text(reading.anniversaryNote.map { tr("\($0) · 今天") } ?? reading.sentence)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
                 .monospacedDigit()
@@ -265,7 +265,7 @@ struct AnniversaryDetail: View {
         Button {
             beginNew()
         } label: {
-            Label(count >= Anniversary.maxEvents ? "最多 \(Anniversary.maxEvents) 个纪念日" : "添加纪念日",
+            Label(count >= Anniversary.maxEvents ? tr("最多 \(Anniversary.maxEvents) 个纪念日") : tr("添加纪念日"),
                   systemImage: "plus")
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(.white.opacity(count >= Anniversary.maxEvents ? 0.45 : 0.9))
@@ -282,7 +282,7 @@ struct AnniversaryDetail: View {
 
     private func editor(_ current: Draft) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(current.isNew ? "添加纪念日" : "编辑纪念日")
+            Text(current.isNew ? tr("添加纪念日") : tr("编辑纪念日"))
                 .font(.system(size: 10, weight: .semibold))
                 .tracking(0.8)
                 .foregroundStyle(.white.opacity(0.7))
@@ -381,7 +381,7 @@ struct AnniversaryDetail: View {
                 .fixedSize()
             }
             .controlSize(.small)
-            Text("\(Anniversary.lunarText(current.date))，每年按这个农历日子计算，闰月按平月，没有三十的月份算廿九。")
+            Text(tr("\(Anniversary.lunarText(current.date))，每年按这个农历日子计算，闰月按平月，没有三十的月份算廿九。"))
                 .font(WidgetStyle.caption(10))
                 .foregroundStyle(.white.opacity(0.55))
                 .fixedSize(horizontal: false, vertical: true)
@@ -420,7 +420,7 @@ struct AnniversaryDetail: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(color == nil ? "默认颜色" : "")
+        .help(color == nil ? tr("默认颜色") : "")
     }
 
     // MARK: Editing

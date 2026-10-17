@@ -41,7 +41,7 @@ struct ChargeLimitSection: View {
                     Text("低于")
                     Menu("\(config.limit - config.buffer)%") {
                         ForEach(ChargeLimitConfig.buffers, id: \.self) { b in
-                            Button("\(config.limit - b)%（缓冲 \(b)%）") { service.update { $0.buffer = b } }
+                            Button(tr("\(config.limit - b)%（缓冲 \(b)%）")) { service.update { $0.buffer = b } }
                         }
                     }
                     .menuStyle(.borderlessButton)
@@ -65,17 +65,17 @@ struct ChargeLimitSection: View {
             HStack(spacing: 8) {
                 switch state {
                 case .notInstalled:
-                    button("安装助手") { service.install() }
+                    button(tr("安装助手")) { service.install() }
                 case .needsUpdate:
-                    button("更新助手") { service.install() }
+                    button(tr("更新助手")) { service.install() }
                 case .starting, .unsupported, .running:
                     EmptyView()
                 }
                 if state != .notInstalled {
-                    button("卸载助手") { service.uninstall() }
+                    button(tr("卸载助手")) { service.uninstall() }
                 }
                 if state != .running {
-                    button("复制诊断") { service.copyDiagnostics(now: now) }
+                    button(tr("复制诊断")) { service.copyDiagnostics(now: now) }
                 }
                 if service.working { ProgressView().controlSize(.small) }
                 Spacer()
@@ -95,21 +95,21 @@ struct ChargeLimitSection: View {
     private func caption(_ state: ChargeLimitService.State, config: ChargeLimitConfig) -> String {
         switch state {
         case .notInstalled:
-            return "上限可以先调好。真正暂停充电要先安装一个后台助手（输入一次管理员密码），装好后马上按 \(config.limit)% 执行。"
+            return tr("上限可以先调好。真正暂停充电要先安装一个后台助手（输入一次管理员密码），装好后马上按 \(config.limit)% 执行。")
         case .starting:
-            return "助手正在启动，上限暂未生效。超过 10 秒还停在这里，试试卸载后重新安装。"
+            return tr("助手正在启动，上限暂未生效。超过 10 秒还停在这里，试试卸载后重新安装。")
         case .unsupported:
-            return "助手在这台 Mac 上找不到能控制充电的芯片接口（CHTE、CH0B/CH0C 都读不到），暂时没法限制充电。Intel Mac 也不支持。"
+            return tr("助手在这台 Mac 上找不到能控制充电的芯片接口（CHTE、CH0B/CH0C 都读不到），暂时没法限制充电。Intel Mac 也不支持。")
         case .needsUpdate:
-            return "码头更新了，助手也要更新一下，更新前上限暂不生效。"
+            return tr("码头更新了，助手也要更新一下，更新前上限暂不生效。")
         case .running:
             guard config.enabled, config.isActive else {
-                return "已关闭，电池照常充满。macOS 自带的“优化电池充电”仍然有效。"
+                return tr("已关闭，电池照常充满。macOS 自带的“优化电池充电”仍然有效。")
             }
             if let status = service.status, status.inhibited {
-                return "已到 \(config.limit)%，暂停充电中，电源直接供电。"
+                return tr("已到 \(config.limit)%，暂停充电中，电源直接供电。")
             }
-            return "充到 \(config.limit)% 自动暂停，掉到 \(config.limit - config.buffer)% 再继续充。"
+            return tr("充到 \(config.limit)% 自动暂停，掉到 \(config.limit - config.buffer)% 再继续充。")
         }
     }
 

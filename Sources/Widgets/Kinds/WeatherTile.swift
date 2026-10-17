@@ -10,7 +10,7 @@ struct WeatherTile: View {
     /// the tint is part of how it reads at a glance.
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "多云",
+                                           condition: tr("多云"),
                                            windSpeed: 4.2, windFrom: 45, humidity: 62)
 
     private var layout: String { instance.config.string("layout", default: "current") }
@@ -36,7 +36,7 @@ struct WeatherTile: View {
     private var placeCaption: String {
         if !city.isEmpty { return city }
         let service = LocationService.shared
-        return (service.denied || service.unavailable) ? "设置城市…" : "正在定位…"
+        return (service.denied || service.unavailable) ? tr("设置城市…") : tr("正在定位…")
     }
 
     /// The library has no live data, so it shows the reference sample.
@@ -140,10 +140,10 @@ struct WeatherTile: View {
         var parts: [String] = []
         if let weather, let speed = weather.windSpeed {
             let force = Wind.beaufort(speed)
-            parts.append(force == 0 ? "无风" : "\(Wind.direction(weather.windFrom ?? 0)) \(force) 级")
+            parts.append(force == 0 ? tr("无风") : tr("\(Wind.direction(weather.windFrom ?? 0)) \(force) 级"))
         }
         if let next = WeatherSun.next(after: context.now, preview: context.isPreview) {
-            parts.append("\(next.rising ? "日出" : "日落") \(WeatherSun.time(next.date, zone: next.zone))")
+            parts.append("\(next.rising ? tr("日出") : tr("日落")) \(WeatherSun.time(next.date, zone: next.zone))")
         }
         return parts.isEmpty ? placeCaption : parts.joined(separator: " · ")
     }
@@ -252,7 +252,7 @@ struct WeatherTile: View {
             }
             .accessibilityLabel(mm >= 0.05
                                 ? "\(mm.formatted(.number.precision(.fractionLength(1))))mm"
-                                : "无降水")
+                                : tr("无降水"))
     }
 
     private static let rainBlue = Color(hex: "#5AC8FA")
@@ -349,7 +349,7 @@ struct WeatherTile: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(DailyForecast.weekdayLabel(day.key, today: today))，"
                                         + "\(WMOWeather.condition(day.code))，"
-                                        + "最高 \(degrees(day.highC))，最低 \(degrees(day.lowC))")
+                                        + tr("最高 \(degrees(day.highC))，最低 \(degrees(day.lowC))"))
                 }
             }
         }
@@ -613,6 +613,6 @@ enum WeatherSun {
 
     /// "（当地时间）" when the place keeps a different clock from this Mac.
     static func localNote(_ zone: TimeZone, at date: Date) -> String {
-        zone.secondsFromGMT(for: date) == TimeZone.current.secondsFromGMT(for: date) ? "" : "（当地时间）"
+        zone.secondsFromGMT(for: date) == TimeZone.current.secondsFromGMT(for: date) ? "" : tr("（当地时间）")
     }
 }

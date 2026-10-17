@@ -284,7 +284,7 @@ struct BatteryTile: View {
         var name: String {
             switch self {
             case .fixed(.pods, let source?): source.displayName
-            case .fixed(.podsCase, let source?): "\(source.displayName) 充电盒"
+            case .fixed(.podsCase, let source?): tr("\(source.displayName) 充电盒")
             case .fixed(let kind, _): kind.name
             case .accessory(let device): device.displayName
             }
@@ -312,7 +312,7 @@ struct BatteryTile: View {
             // The 状态 style previews as itself; the others show what an
             // accessory slot looks like.
             if layout != "status" || devices.count > 1 {
-                result.append(.accessory(BluetoothBattery(id: "preview.mouse", name: "妙控鼠标",
+                result.append(.accessory(BluetoothBattery(id: "preview.mouse", name: tr("妙控鼠标"),
                                                           kind: .mouse, main: 64)))
             }
             return result
@@ -358,12 +358,12 @@ struct BatteryTile: View {
     }
 
     private func caption(_ reading: Reading) -> String {
-        guard reading.present else { return "未连接" }
-        if reading.charging { return "正在充电" }
+        guard reading.present else { return tr("未连接") }
+        if reading.charging { return tr("正在充电") }
         // On the adapter and not charging: full, or held back. It is not
         // running on battery, whatever the old caption said.
-        if reading.onPower { return reading.level >= 0.995 ? "已充满" : "已接电源" }
-        return "使用电池"
+        if reading.onPower { return reading.level >= 0.995 ? tr("已充满") : tr("已接电源") }
+        return tr("使用电池")
     }
 
     @ViewBuilder
@@ -400,10 +400,10 @@ extension BatteryDeviceKind {
     /// Spoken by the screen reader, since the gauge shows only a glyph.
     var name: String {
         switch self {
-        case .mac: "电池"
+        case .mac: tr("电池")
         case .pods: "AirPods"
-        case .podsCase: "AirPods 充电盒"
-        case .keyboard: "键盘"
+        case .podsCase: tr("AirPods 充电盒")
+        case .keyboard: tr("键盘")
         }
     }
 

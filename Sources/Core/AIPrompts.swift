@@ -29,10 +29,10 @@ public enum AIQuickAction: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .translate: "翻译"
-        case .summarize: "总结"
-        case .polish: "润色"
-        case .explain: "解释"
+        case .translate: tr("翻译")
+        case .summarize: tr("总结")
+        case .polish: tr("润色")
+        case .explain: tr("解释")
         }
     }
 
@@ -48,13 +48,13 @@ public enum AIQuickAction: String, CaseIterable, Sendable {
     public var template: String {
         switch self {
         case .translate:
-            "把下面的文字翻译成简体中文；如果原文已经是中文，就翻译成英文。只给出译文，不要解释。\n\n{文本}"
+            tr("把下面的文字翻译成简体中文；如果原文已经是中文，就翻译成英文。只给出译文，不要解释。\n\n{文本}")
         case .summarize:
-            "用简体中文总结下面的内容：先用一句话概括，再分条列出要点。\n\n{文本}"
+            tr("用简体中文总结下面的内容：先用一句话概括，再分条列出要点。\n\n{文本}")
         case .polish:
-            "润色下面的文字，让它更通顺、自然、准确，保持原意和原来的语言。只给出润色后的结果。\n\n{文本}"
+            tr("润色下面的文字，让它更通顺、自然、准确，保持原意和原来的语言。只给出润色后的结果。\n\n{文本}")
         case .explain:
-            "用通俗易懂的简体中文解释下面的内容，必要时举个例子。\n\n{文本}"
+            tr("用通俗易懂的简体中文解释下面的内容，必要时举个例子。\n\n{文本}")
         }
     }
 }
@@ -116,12 +116,12 @@ public enum AIPrompts {
 
         public var message: String {
             switch self {
-            case .emptyName: "给提示词起个名字。"
-            case .emptyContent: "提示词内容不能为空。"
-            case .nameTooLong: "名字最多 \(AIPrompts.nameLimit) 个字。"
-            case .contentTooLong: "内容最多 \(AIPrompts.contentLimit) 个字。"
-            case .duplicateName: "已经有同名的提示词了。"
-            case .full: "最多存 \(AIPrompts.maxCount) 条常用提示词。"
+            case .emptyName: tr("给提示词起个名字。")
+            case .emptyContent: tr("提示词内容不能为空。")
+            case .nameTooLong: tr("名字最多 \(AIPrompts.nameLimit) 个字。")
+            case .contentTooLong: tr("内容最多 \(AIPrompts.contentLimit) 个字。")
+            case .duplicateName: tr("已经有同名的提示词了。")
+            case .full: tr("最多存 \(AIPrompts.maxCount) 条常用提示词。")
             }
         }
     }

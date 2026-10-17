@@ -149,23 +149,28 @@ public enum TilePermission {
     /// 权限名本身已经以“权限”结尾（完全磁盘访问权限）时不再重复；
     /// 带括号的（自动化（邮件））把“权限”放在括号前面，读起来顺。
     public static func prompt(_ permission: String, compact: Bool = false) -> String {
-        compact ? "需要权限" : "需要\(noun(permission)) · 去开启"
+        compact ? tr("需要权限") : tr("需要\(noun(permission)) · 去开启")
     }
 
     /// 「日历权限」「完全磁盘访问权限」「自动化权限（邮件）」。
     public static func noun(_ permission: String) -> String {
+        // 英文界面：权限名查表后直接用，“Full Disk Access”本身已是完整说法，其余补 access。
+        let display = trKey(permission)
+        if display != permission {
+            return display.hasSuffix("Access") ? display : "\(display) access"
+        }
         if permission.hasSuffix("权限") { return permission }
         if let open = permission.firstIndex(of: "（"), permission.hasSuffix("）") {
             let head = permission[..<open]
             let tail = permission[open...]
-            return "\(head)权限\(tail)"
+            return tr("\(head)权限\(tail)")
         }
-        return "\(permission)权限"
+        return tr("\(permission)权限")
     }
 
     /// 读屏念的完整说法。
     public static func accessibilityLabel(_ permission: String) -> String {
-        "需要\(noun(permission))，点按去开启"
+        tr("需要\(noun(permission))，点按去开启")
     }
 }
 
@@ -199,11 +204,11 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
     /// 一句话。`compact` 是竖排货架的短说法。
     public func line(compact: Bool = false) -> String {
         switch self {
-        case .todo: compact ? "无待办" : "没有待办，歇会儿"
-        case .todoDone: compact ? "做完了" : "都做完了"
-        case .clipboard: compact ? "空" : "还没拷贝过东西"
-        case .downloads: compact ? "空" : "下载文件夹是空的"
-        case .fileShelf: compact ? "拖入" : "把文件拖到这里"
+        case .todo: compact ? tr("无待办") : tr("没有待办，歇会儿")
+        case .todoDone: compact ? tr("做完了") : tr("都做完了")
+        case .clipboard: compact ? tr("空") : tr("还没拷贝过东西")
+        case .downloads: compact ? tr("空") : tr("下载文件夹是空的")
+        case .fileShelf: compact ? tr("拖入") : tr("把文件拖到这里")
         }
     }
 

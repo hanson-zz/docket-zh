@@ -47,8 +47,8 @@ public enum ChangeColors: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .redUp: "红涨绿跌"
-        case .greenUp: "绿涨红跌"
+        case .redUp: tr("红涨绿跌")
+        case .greenUp: tr("绿涨红跌")
         }
     }
 
@@ -69,7 +69,7 @@ public enum ChangeTone: Equatable, Sendable {
 /// Data from CoinGecko's free public API (no key), credited in the panel and
 /// in NOTICE.md as its terms ask.
 public enum CryptoMarket {
-    public static let attribution = "数据来自 CoinGecko"
+    public static let attribution = tr("数据来自 CoinGecko")
     public static let attributionURL = URL(string: "https://www.coingecko.com")!
 
     public static let defaultCoins = ["BTC", "ETH", "SOL"]

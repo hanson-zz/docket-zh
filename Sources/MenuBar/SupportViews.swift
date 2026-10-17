@@ -7,7 +7,7 @@ enum Support {
     static let email = "694561981@qq.com"
     static let repoURL = URL(string: "https://github.com/\(UpdateService.releasesRepository)")!
     static let kofiURL = URL(string: "https://ko-fi.com/hanson528")!
-    static let shareText = "码头 Dockling：免费开源的 Mac 程序坞扩展栏，把常用 App、文件夹和小组件放在屏幕边上。"
+    static let shareText = tr("码头 Dockling：免费开源的 Mac 程序坞扩展栏，把常用 App、文件夹和小组件放在屏幕边上。")
 
     static func mailURL(subject: String, body: String = "") -> URL {
         var c = URLComponents()
@@ -21,13 +21,13 @@ enum Support {
     static var feedbackURL: URL {
         let os = ProcessInfo.processInfo.operatingSystemVersionString
         #if arch(arm64)
-        let chip = "Apple 芯片"
+        let chip = tr("Apple 芯片")
         #else
         let chip = "Intel"
         #endif
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"
-        let body = "\n\n\n---\n码头 \(version) · macOS \(os) · \(chip)"
-        return mailURL(subject: "码头反馈", body: body)
+        let body = tr("\n\n\n---\n码头 \(version) · macOS \(os) · \(chip)")
+        return mailURL(subject: tr("码头反馈"), body: body)
     }
 
     static func openFeedback() { NSWorkspace.shared.open(feedbackURL) }
@@ -44,7 +44,25 @@ enum Support {
         return NSImage(contentsOf: url)
     }
 
-    static let sponsorLetter = """
+    /// 赞助信按界面语言选中文或英文。
+    static var sponsorLetter: String { L10n.isEnglish ? sponsorLetterEnglish : sponsorLetterChinese }
+
+    static let sponsorLetterEnglish = """
+    Hi everyone, I'm Hanson 👋
+
+    I like making small, handy tools for the Mac 💻. Dockling is one of them: completely free, open source, collects no data, and just wants your favorite apps, folders and widgets within reach ⚓️.
+
+    I build it in evenings and on weekends. I'd love more time to polish it, fix more bugs, add the features people actually want 🚀, and keep making useful open source tools 🌱.
+
+    If Dockling makes your Mac nicer to use, feel free to buy me a coffee ☕. The amount doesn't matter; every bit of support is trust and encouragement. If sponsoring isn't convenient, that's totally fine too. Sharing it with friends or starring it on GitHub means just as much to me 💖.
+
+    Thank you.
+
+    Best,
+    Hanson
+    """
+
+    static let sponsorLetterChinese = """
     大家好，我是 Hanson 👋
 
     我喜欢给 Mac 💻 做一些小而顺手的工具。码头就是其中之一：完全免费、开源，不收集任何数据，只想让你的常用 App、文件夹和小组件伸手就能拿到 ⚓️。
@@ -69,7 +87,7 @@ struct SupportSections: View {
                     .contextMenu { Button("拷贝链接") { Support.copy(Support.repoURL.absoluteString) } }
             }
             LabeledContent("邮箱") {
-                Link(Support.email, destination: Support.mailURL(subject: "关于码头"))
+                Link(Support.email, destination: Support.mailURL(subject: tr("关于码头")))
                     .contextMenu { Button("拷贝邮箱") { Support.copy(Support.email) } }
             }
         } header: {
@@ -218,7 +236,7 @@ struct SponsorView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("用\(method.title)扫一扫，金额随意")
+                    Text(tr("用\(method.title)扫一扫，金额随意"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -234,6 +252,6 @@ final class SponsorWindow: HostedWindow {
     static let shared = SponsorWindow()
 
     func show() {
-        present(SponsorView(), title: "支持码头", size: NSSize(width: 660, height: 500))
+        present(SponsorView(), title: tr("支持码头"), size: NSSize(width: 660, height: 500))
     }
 }

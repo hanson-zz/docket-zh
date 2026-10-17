@@ -70,26 +70,26 @@ public enum Translate {
     /// for them. The panel shows the ones the Mac's Translation actually
     /// supports, and any further ones it supports after these.
     public static let common: [TranslateLanguage] = [
-        TranslateLanguage(code: "zh-Hans", name: "简体中文", short: "中"),
-        TranslateLanguage(code: "zh-Hant", name: "繁体中文", short: "繁"),
-        TranslateLanguage(code: "en", name: "英语", short: "英"),
-        TranslateLanguage(code: "ja", name: "日语", short: "日"),
-        TranslateLanguage(code: "ko", name: "韩语", short: "韩"),
-        TranslateLanguage(code: "fr", name: "法语", short: "法"),
-        TranslateLanguage(code: "de", name: "德语", short: "德"),
-        TranslateLanguage(code: "es", name: "西班牙语", short: "西"),
-        TranslateLanguage(code: "it", name: "意大利语", short: "意"),
-        TranslateLanguage(code: "pt", name: "葡萄牙语", short: "葡"),
-        TranslateLanguage(code: "ru", name: "俄语", short: "俄"),
-        TranslateLanguage(code: "ar", name: "阿拉伯语", short: "阿"),
-        TranslateLanguage(code: "th", name: "泰语", short: "泰"),
-        TranslateLanguage(code: "vi", name: "越南语", short: "越"),
-        TranslateLanguage(code: "id", name: "印度尼西亚语", short: "印尼"),
-        TranslateLanguage(code: "tr", name: "土耳其语", short: "土"),
-        TranslateLanguage(code: "nl", name: "荷兰语", short: "荷"),
-        TranslateLanguage(code: "pl", name: "波兰语", short: "波"),
-        TranslateLanguage(code: "uk", name: "乌克兰语", short: "乌"),
-        TranslateLanguage(code: "hi", name: "印地语", short: "印地"),
+        TranslateLanguage(code: "zh-Hans", name: tr("简体中文"), short: "中"),
+        TranslateLanguage(code: "zh-Hant", name: tr("繁体中文"), short: "繁"),
+        TranslateLanguage(code: "en", name: tr("英语"), short: "英"),
+        TranslateLanguage(code: "ja", name: tr("日语"), short: "日"),
+        TranslateLanguage(code: "ko", name: tr("韩语"), short: "韩"),
+        TranslateLanguage(code: "fr", name: tr("法语"), short: "法"),
+        TranslateLanguage(code: "de", name: tr("德语"), short: "德"),
+        TranslateLanguage(code: "es", name: tr("西班牙语"), short: "西"),
+        TranslateLanguage(code: "it", name: tr("意大利语"), short: "意"),
+        TranslateLanguage(code: "pt", name: tr("葡萄牙语"), short: "葡"),
+        TranslateLanguage(code: "ru", name: tr("俄语"), short: "俄"),
+        TranslateLanguage(code: "ar", name: tr("阿拉伯语"), short: "阿"),
+        TranslateLanguage(code: "th", name: tr("泰语"), short: "泰"),
+        TranslateLanguage(code: "vi", name: tr("越南语"), short: "越"),
+        TranslateLanguage(code: "id", name: tr("印度尼西亚语"), short: "印尼"),
+        TranslateLanguage(code: "tr", name: tr("土耳其语"), short: "土"),
+        TranslateLanguage(code: "nl", name: tr("荷兰语"), short: "荷"),
+        TranslateLanguage(code: "pl", name: tr("波兰语"), short: "波"),
+        TranslateLanguage(code: "uk", name: tr("乌克兰语"), short: "乌"),
+        TranslateLanguage(code: "hi", name: tr("印地语"), short: "印地"),
     ]
 
     public static let chinese = "zh-Hans"
@@ -121,12 +121,17 @@ public enum Translate {
     /// 英语 for `en`, and the code itself for a language we have no name for
     /// (the panel asks the system's locale for those instead).
     public static func name(_ code: String) -> String {
-        if code == auto { return "自动检测" }
+        if code == auto { return tr("自动检测") }
         return language(code)?.name ?? code
     }
 
     public static func short(_ code: String) -> String {
-        if code == auto { return "自动" }
+        if code == auto { return tr("自动") }
+        // 英文界面用语言代码的前两个字母（ZH、JA、EN），中文界面用一个字（中、日、英）。
+        if L10n.isEnglish {
+            let base = code.split(separator: "-").first.map(String.init) ?? code
+            return code == "zh-Hant" ? "TC" : base.prefix(2).uppercased()
+        }
         return language(code)?.short ?? code
     }
 
@@ -365,8 +370,8 @@ public enum Translate {
 
         public var title: String {
             switch self {
-            case .panel: "打开面板"
-            case .clipboard: "翻译剪贴板"
+            case .panel: tr("打开面板")
+            case .clipboard: tr("翻译剪贴板")
             }
         }
     }

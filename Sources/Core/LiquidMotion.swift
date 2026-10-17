@@ -47,8 +47,8 @@ public enum LiquidMotion {
 
         public var title: String {
             switch self {
-            case .ring: "圆环"
-            case .liquid: "液态"
+            case .ring: tr("圆环")
+            case .liquid: tr("液态")
             }
         }
     }

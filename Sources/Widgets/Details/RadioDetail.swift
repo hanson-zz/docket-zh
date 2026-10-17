@@ -73,7 +73,7 @@ struct RadioDetail: View {
                 volumeRow
                 timerRow(now: now)
                 Picker("", selection: $tab) {
-                    Text("我的收藏 \(stations.count)").tag(Tab.favourites)
+                    Text(tr("我的收藏 \(stations.count)")).tag(Tab.favourites)
                     Text("搜索电台").tag(Tab.search)
                 }
                 .pickerStyle(.segmented)
@@ -115,10 +115,10 @@ struct RadioDetail: View {
     }
 
     private var statusText: String {
-        if context.isPreview { return "正在收听" }
-        guard playing else { return "已暂停" }
-        if player.isBuffering { return "正在连接…" }
-        return "正在收听"
+        if context.isPreview { return tr("正在收听") }
+        guard playing else { return tr("已暂停") }
+        if player.isBuffering { return tr("正在连接…") }
+        return tr("正在收听")
     }
 
     private var readout: some View {
@@ -141,7 +141,7 @@ struct RadioDetail: View {
                     .font(.system(size: 9, weight: .semibold, design: .monospaced))
                     .foregroundStyle(accent)
                 }
-                Text(station?.name ?? "还没有电台")
+                Text(station?.name ?? tr("还没有电台"))
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -164,10 +164,10 @@ struct RadioDetail: View {
     }
 
     private var subline: String {
-        guard let station else { return "在“搜索电台”里找一个，或粘贴串流地址" }
+        guard let station else { return tr("在“搜索电台”里找一个，或粘贴串流地址") }
         if !context.isPreview, playing {
             if let problem = player.problem { return problem }
-            if let title = player.nowTitle { return "正在播放：\(title)" }
+            if let title = player.nowTitle { return tr("正在播放：\(title)") }
         }
         return station.detail
     }
@@ -177,16 +177,16 @@ struct RadioDetail: View {
     private var transport: some View {
         HStack(spacing: 22) {
             Spacer()
-            roundButton("backward.end.fill", size: 34, label: "上一个电台") {
+            roundButton("backward.end.fill", size: 34, label: tr("上一个电台")) {
                 RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
             }
             .disabled(stations.count < 2)
-            roundButton(playing ? "pause.fill" : "play.fill", size: 48, label: playing ? "暂停" : "收听",
+            roundButton(playing ? "pause.fill" : "play.fill", size: 48, label: playing ? tr("暂停") : tr("收听"),
                         filled: true) {
                 if let station { player.toggle(station, volume: volume) }
             }
             .disabled(station == nil)
-            roundButton("forward.end.fill", size: 34, label: "下一个电台") {
+            roundButton("forward.end.fill", size: 34, label: tr("下一个电台")) {
                 RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
             }
             .disabled(stations.count < 2)
@@ -251,7 +251,7 @@ struct RadioDetail: View {
                     .foregroundStyle(.white.opacity(0.6))
                 Spacer()
                 if let end = player.stopAt, player.isPlaying, !context.isPreview {
-                    Text("\(RadioSleep.remaining(until: end, now: now)) 后停止")
+                    Text(tr("\(RadioSleep.remaining(until: end, now: now)) 后停止"))
                         .font(.system(size: 10, weight: .semibold).monospacedDigit())
                         .foregroundStyle(accent)
                 }
@@ -335,7 +335,7 @@ struct RadioDetail: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .help("收听 \(item.name)")
+            .help(tr("收听 \(item.name)"))
 
             Button {
                 guard !context.isPreview else { return }
@@ -348,7 +348,7 @@ struct RadioDetail: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("从收藏中移除 \(item.name)")
+            .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
@@ -412,16 +412,16 @@ struct RadioDetail: View {
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
                     Spacer()
-                    if !trimmedQuery.isEmpty { chip("搜索") { run() } }
+                    if !trimmedQuery.isEmpty { chip(tr("搜索")) { run() } }
                 }
             }
 
             if searchFailed {
-                note("连不上电台目录，请检查网络后再试。")
+                note(tr("连不上电台目录，请检查网络后再试。"))
             } else if searched, results.isEmpty, !searching {
                 note(shownQuery?.name.isEmpty == false
-                     ? "\((shownQuery?.region ?? region).title)里没有找到这个电台，换个关键词或地区试试。"
-                     : "\((shownQuery?.region ?? region).title)暂时没有可收听的电台。")
+                     ? tr("\((shownQuery?.region ?? region).title)里没有找到这个电台，换个关键词或地区试试。")
+                     : tr("\((shownQuery?.region ?? region).title)暂时没有可收听的电台。"))
             } else if !results.isEmpty {
                 ScrollView {
                     VStack(spacing: 2) {
@@ -444,7 +444,7 @@ struct RadioDetail: View {
     /// "中文电台 · 热门电台" for the top list, "“音乐” · 香港" for a search.
     private var listTitle: String {
         let shown = shownQuery ?? RadioDirectory.Query(name: "", region: region)
-        if shown.name.isEmpty { return "\(shown.region.title) · 热门电台" }
+        if shown.name.isEmpty { return tr("\(shown.region.title) · 热门电台") }
         return "“\(shown.name)” · \(shown.region.title)"
     }
 
@@ -473,7 +473,7 @@ struct RadioDetail: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help(option == .global ? "不限地区和语言" : "只看\(option.title)")
+        .help(option == .global ? tr("不限地区和语言") : tr("只看\(option.title)"))
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
@@ -487,7 +487,7 @@ struct RadioDetail: View {
                 .frame(height: 26)
                 .glassPane(cornerRadius: 8)
                 .onSubmit(addCustom)
-            chip("添加自定义地址", action: addCustom)
+            chip(tr("添加自定义地址"), action: addCustom)
         }
     }
 
@@ -528,7 +528,7 @@ struct RadioDetail: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(saved ? "已在收藏中" : "加入收藏")
+            .accessibilityLabel(saved ? tr("已在收藏中") : tr("加入收藏"))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
@@ -708,7 +708,7 @@ struct RadioArcDial: View {
         .help("拖动刻度换台")
         .accessibilityElement()
         .accessibilityLabel("调谐刻度")
-        .accessibilityValue(count > 0 ? "第 \(index + 1) 个电台，共 \(count) 个" : "没有电台")
+        .accessibilityValue(count > 0 ? tr("第 \(index + 1) 个电台，共 \(count) 个") : tr("没有电台"))
     }
 }
 

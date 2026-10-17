@@ -48,7 +48,7 @@ struct LunarTile: View {
         }
         .onAppear { if !context.isPreview { holidays.refresh() } }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("农历\(reading.lunar.short)，\(reading.caption)")
+        .accessibilityLabel(tr("农历\(reading.lunar.short)，\(reading.caption)"))
     }
 
     private var tint: Color { Color(hex: PaletteColor.red.hex).mix(with: WidgetStyle.primary, by: 0.15) }
@@ -92,10 +92,10 @@ struct LunarReading {
 
     /// For the narrow column: 80 天, or the alert squeezed.
     var shortCountdown: String {
-        if alert != nil { return "调休" }
+        if alert != nil { return tr("调休") }
         guard let next else { return "" }
         let days = ChineseCalendar.days(from: today, to: next.start)
-        return days > 0 ? "\(days) 天" : HolidaySchedule.shortName(next.name)
+        return days > 0 ? tr("\(days) 天") : HolidaySchedule.shortName(next.name)
     }
 
     static func weekday(_ date: Date) -> String {

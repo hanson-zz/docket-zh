@@ -94,9 +94,9 @@ struct BatteryDetail: View {
             let health = metrics.health
             if !health.isEmpty {
                 HStack(spacing: 6) {
-                    if let percent = health.capacityPercent { stat("最大容量", "\(percent)%") }
-                    if let cycles = health.cycles { stat("循环次数", "\(cycles)") }
-                    if let celsius = health.celsius { stat("温度", BatteryHealth.celsiusText(celsius)) }
+                    if let percent = health.capacityPercent { stat(tr("最大容量"), "\(percent)%") }
+                    if let cycles = health.cycles { stat(tr("循环次数"), "\(cycles)") }
+                    if let celsius = health.celsius { stat(tr("温度"), BatteryHealth.celsiusText(celsius)) }
                 }
             }
 
@@ -257,7 +257,7 @@ struct BatteryDetail: View {
         if context.isPreview {
             return [BluetoothBattery(id: "preview.pods", name: "AirPods Pro", kind: .airpodsPro,
                                      left: 85, right: 82, caseLevel: 32),
-                    BluetoothBattery(id: "preview.mouse", name: "妙控鼠标", kind: .mouse, main: 64)]
+                    BluetoothBattery(id: "preview.mouse", name: tr("妙控鼠标"), kind: .mouse, main: 64)]
         }
         return BatteryMetrics.shared.accessories
     }
@@ -310,16 +310,16 @@ struct BatteryDetail: View {
     /// "充电中 · 67W · 约 48 分钟充满", "已充满", "使用电池 · 还能用约 2 小时".
     private func heroCaption(_ device: Item) -> String {
         if device.isMac, device.present {
-            if context.isPreview { return "使用电池 · 还能用约 5 小时" }
+            if context.isPreview { return tr("使用电池 · 还能用约 5 小时") }
             if let line = BatteryMetrics.shared.statusLine { return line }
         }
         return caption(device)
     }
 
     private func caption(_ device: Item) -> String {
-        guard device.present else { return "未连接" }
-        if let parts = device.parts { return device.charging ? "正在充电 · \(parts)" : parts }
-        return device.charging ? "正在充电" : "使用电池"
+        guard device.present else { return tr("未连接") }
+        if let parts = device.parts { return device.charging ? tr("正在充电 · \(parts)") : parts }
+        return device.charging ? tr("正在充电") : tr("使用电池")
     }
 
     @ViewBuilder

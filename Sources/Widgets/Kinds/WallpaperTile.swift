@@ -35,7 +35,7 @@ struct WallpaperTile: View {
         } else if let url = wallpaper.current {
             FileThumb(url: url, pixels: 480)
                 .id(url)
-                .accessibilityLabel("当前壁纸：\(url.lastPathComponent)")
+                .accessibilityLabel(tr("当前壁纸：\(url.lastPathComponent)"))
         } else {
             Image(systemName: "photo.on.rectangle")
                 .font(.system(size: 16, weight: .medium))
@@ -89,9 +89,9 @@ struct WallpaperTile: View {
 
     static func title(_ step: WallpaperCycle.Step) -> String {
         switch step {
-        case .previous: "上一张"
-        case .next: "下一张"
-        case .random: "随机"
+        case .previous: tr("上一张")
+        case .next: tr("下一张")
+        case .random: tr("随机")
         }
     }
 }

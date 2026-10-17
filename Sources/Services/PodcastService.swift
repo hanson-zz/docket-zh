@@ -37,9 +37,9 @@ final class PodcastService {
 
         var message: String {
             switch self {
-            case .notALink: "这不是小宇宙的节目或单集链接。"
-            case .network: "连不上小宇宙，请检查网络后再试。"
-            case .unreadable: "读不出这个节目的信息，页面可能已变更。"
+            case .notALink: tr("这不是小宇宙的节目或单集链接。")
+            case .network: tr("连不上小宇宙，请检查网络后再试。")
+            case .unreadable: tr("读不出这个节目的信息，页面可能已变更。")
             }
         }
     }
@@ -228,10 +228,10 @@ final class PodcastService {
         let center = UNUserNotificationCenter.current()
         if center.delegate == nil { center.delegate = presenter }
         let content = UNMutableNotificationContent()
-        content.title = "\(show.title) 有新单集"
+        content.title = tr("\(show.title) 有新单集")
         content.body = episodes.count == 1
             ? episodes[0].title
-            : "\(episodes[0].title) 等 \(episodes.count) 集"
+            : tr("\(episodes[0].title) 等 \(episodes.count) 集")
         content.sound = .default
         let request = UNNotificationRequest(identifier: "docket.podcast.\(show.id).\(episodes[0].id)",
                                             content: content, trigger: nil)

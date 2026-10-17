@@ -120,7 +120,7 @@ struct SpotlightOverlay: View {
                 Button {
                     advance()
                 } label: {
-                    Text(SpotlightTour.next(after: current, total: stops.count) == nil ? "知道了" : "下一步")
+                    Text(SpotlightTour.next(after: current, total: stops.count) == nil ? tr("知道了") : tr("下一步"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)

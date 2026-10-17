@@ -104,7 +104,7 @@ final class LibraryWindow: HostedWindow {
                 },
                 onClose: { [weak self] in self?.close() }
             ),
-            title: "添加小组件",
+            title: tr("添加小组件"),
             size: NSSize(width: 760, height: 470),
             chromeless: true
         )
@@ -133,7 +133,7 @@ final class SettingsWindow: HostedWindow {
                 onRestore: { Self.restore(app) },
                 onCreateProfile: { kind in
                     app.createProfile(kind: kind,
-                                      named: kind == .customDock ? "新扩展栏" : "新程序坞")
+                                      named: kind == .customDock ? tr("新扩展栏") : tr("新程序坞"))
                 },
                 onRenameProfile: { app.renameProfile($0, to: $1) },
                 onDuplicateProfile: { if let id = $0 { app.duplicateProfile(id) } },
@@ -143,7 +143,7 @@ final class SettingsWindow: HostedWindow {
                 onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } },
                 onShowOnboarding: { OnboardingWindow.shared.show(app: app) }
             ),
-            title: "码头设置",
+            title: tr("码头设置"),
             // Taller and resizable, because the Widgets tab is not a fixed
             // form: it grows by one section per widget on the shelf. At the
             // old fixed 520x460 a shelf with four widgets showed two of them
@@ -167,14 +167,14 @@ final class SettingsWindow: HostedWindow {
         panel.nameFieldStringValue = Backup.suggestedName()
         panel.allowedContentTypes = []
         panel.canCreateDirectories = true
-        panel.message = "保存你的布局、其中的项目以及小组件设置。"
+        panel.message = tr("保存你的布局、其中的项目以及小组件设置。")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
             try Backup.encode(app.state).write(to: url, options: .atomic)
         } catch {
-            report("无法保存备份。", error)
+            report(tr("无法保存备份。"), error)
         }
     }
 
@@ -183,7 +183,7 @@ final class SettingsWindow: HostedWindow {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.message = "选择一个码头布局备份文件。"
+        panel.message = tr("选择一个码头布局备份文件。")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
@@ -197,16 +197,16 @@ final class SettingsWindow: HostedWindow {
             let added = state.profiles.count - before
             let updated = payload.profiles.count - added
             let alert = NSAlert()
-            alert.messageText = "已恢复 \(payload.profiles.count) 个布局。"
+            alert.messageText = tr("已恢复 \(payload.profiles.count) 个布局。")
             // Says what it did rather than just that it worked: a merge that
             // replaced something should not look identical to one that only
             // added.
             alert.informativeText = updated > 0
-                ? "从备份中新增 \(added) 个，替换 \(updated) 个。"
-                : "新增 \(added) 个。"
+                ? tr("从备份中新增 \(added) 个，替换 \(updated) 个。")
+                : tr("新增 \(added) 个。")
             alert.runModal()
         } catch {
-            report("无法读取该备份。", error)
+            report(tr("无法读取该备份。"), error)
         }
     }
 

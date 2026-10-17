@@ -53,7 +53,7 @@ struct PetTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
+        .accessibilityLabel(tr("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))"))
         .onAppear { collectTreats() }
         .onChange(of: context.now) { _, _ in collectTreats() }
         // Rescheduled when the stored state changes (something was done for

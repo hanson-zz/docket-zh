@@ -22,12 +22,12 @@ public enum SpotlightTour {
 
     /// 欢迎页上“先带我看看”走的三站。
     public static let onboarding: [SpotlightStop] = [
-        SpotlightStop(id: "progress", title: "一共六步",
-                      message: "顶上这排小格是进度，走到哪一步就亮到哪一格，左边的箭头可以回到上一步。"),
-        SpotlightStop(id: "skip", title: "随时可以跳过",
-                      message: "现在不想设置就点“跳过”。以后想再看，在“设置 ▸ 通用”里重新打开这份引导。"),
-        SpotlightStop(id: "primary", title: "准备好了就开始",
-                      message: "底部的大按钮带你走下一步，选位置、选用途，再把小组件一个个放进扩展栏。"),
+        SpotlightStop(id: "progress", title: tr("一共六步"),
+                      message: tr("顶上这排小格是进度，走到哪一步就亮到哪一格，左边的箭头可以回到上一步。")),
+        SpotlightStop(id: "skip", title: tr("随时可以跳过"),
+                      message: tr("现在不想设置就点“跳过”。以后想再看，在“设置 ▸ 通用”里重新打开这份引导。")),
+        SpotlightStop(id: "primary", title: tr("准备好了就开始"),
+                      message: tr("底部的大按钮带你走下一步，选位置、选用途，再把小组件一个个放进扩展栏。")),
     ]
 
     public enum Placement: Equatable, Sendable { case above, below }

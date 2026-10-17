@@ -13,9 +13,9 @@ public enum PerfectBadgeCategory: String, CaseIterable, Sendable, Hashable, Iden
 
     public var title: String {
         switch self {
-        case .basic: "初级"
-        case .hidden: "隐藏"
-        case .festival: "节日限定"
+        case .basic: tr("初级")
+        case .hidden: tr("隐藏")
+        case .festival: tr("节日限定")
         }
     }
 }
@@ -175,27 +175,27 @@ public struct FestivalWindow: Equatable, Hashable, Sendable {
     public var text: String {
         switch kind {
         case .solarTerm:
-            return "\(term ?? "")当天"
+            return tr("\(term ?? "")当天")
         case .gregorian:
-            if start == end, leadDays == 0 { return "公历\(start.month)月\(start.day)日" }
-            return "公历\(start.month)月\(start.day)日至\(end.month)月\(end.day)日"
+            if start == end, leadDays == 0 { return tr("公历\(start.month)月\(start.day)日") }
+            return tr("公历\(start.month)月\(start.day)日至\(end.month)月\(end.day)日")
         case .chinese:
             let leap = leapMonth ? "闰" : ""
             let from = (leadDays == 1 && start == MonthDay(1, 1) && !leapMonth)
-                ? "除夕" : "\(leap)\(Self.lunarMonth(start.month))\(Self.lunarDay(start.day))"
-            if start == end, leadDays == 0 { return "农历\(from)" }
-            return "农历\(from)至\(leap)\(Self.lunarMonth(end.month))\(Self.lunarDay(end.day))"
+                ? tr("除夕") : "\(leap)\(Self.lunarMonth(start.month))\(Self.lunarDay(start.day))"
+            if start == end, leadDays == 0 { return tr("农历\(from)") }
+            return tr("农历\(from)至\(leap)\(Self.lunarMonth(end.month))\(Self.lunarDay(end.day))")
         }
     }
 
     static func lunarMonth(_ month: Int) -> String {
-        let names = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"]
-        return names.indices.contains(month - 1) ? names[month - 1] : "\(month)月"
+        let names = [tr("正月"), tr("二月"), tr("三月"), tr("四月"), tr("五月"), tr("六月"), tr("七月"), tr("八月"), tr("九月"), tr("十月"), tr("冬月"), tr("腊月")]
+        return names.indices.contains(month - 1) ? names[month - 1] : tr("\(month)月")
     }
 
     static func lunarDay(_ day: Int) -> String {
         let digits = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-        guard (1...30).contains(day) else { return "\(day)日" }
+        guard (1...30).contains(day) else { return tr("\(day)日") }
         switch day {
         case 10: return "初十"
         case 20: return "二十"
@@ -253,66 +253,66 @@ public enum PerfectBadge: String, CaseIterable, Sendable, Hashable, Identifiable
 
     public var title: String {
         switch self {
-        case .firstFullBasket: "第一只满篮"
-        case .leafStreak3: "三日靠岸"
-        case .leafStreak7: "七日航程"
-        case .leafStreak30: "码头常客"
-        case .goldMonth10: "金叶之月"
-        case .leaves50: "竹林小仓"
-        case .water7: "潮水七日"
-        case .habit7: "七日打卡"
-        case .focus10h: "静心 10 小时"
-        case .focus100h: "静心 100 小时"
-        case .nightOwl: "夜猫子"
-        case .earlyWater: "早起竹笋"
-        case .comeback: "失而复得"
-        case .goldWeek: "金色一周"
-        case .fullMonth: "整月满篮"
-        case .cups1000: "千杯不醉"
-        case .focus200h: "两百小时"
-        case .leapDay: "闰日竹叶"
-        case .festNewYear: "元旦"
-        case .festSpring: "春节"
-        case .festLantern: "元宵"
-        case .festArbor: "植树节"
-        case .festWaterDay: "世界水日"
-        case .festQingming: "清明"
-        case .festDragonBoat: "端午"
-        case .festQixi: "七夕"
-        case .festMidAutumn: "中秋"
-        case .festNational: "国庆"
-        case .festDoubleNinth: "重阳"
-        case .festWinterSolstice: "冬至"
+        case .firstFullBasket: tr("第一只满篮")
+        case .leafStreak3: tr("三日靠岸")
+        case .leafStreak7: tr("七日航程")
+        case .leafStreak30: tr("码头常客")
+        case .goldMonth10: tr("金叶之月")
+        case .leaves50: tr("竹林小仓")
+        case .water7: tr("潮水七日")
+        case .habit7: tr("七日打卡")
+        case .focus10h: tr("静心 10 小时")
+        case .focus100h: tr("静心 100 小时")
+        case .nightOwl: tr("夜猫子")
+        case .earlyWater: tr("早起竹笋")
+        case .comeback: tr("失而复得")
+        case .goldWeek: tr("金色一周")
+        case .fullMonth: tr("整月满篮")
+        case .cups1000: tr("千杯不醉")
+        case .focus200h: tr("两百小时")
+        case .leapDay: tr("闰日竹叶")
+        case .festNewYear: tr("元旦")
+        case .festSpring: tr("春节")
+        case .festLantern: tr("元宵")
+        case .festArbor: tr("植树节")
+        case .festWaterDay: tr("世界水日")
+        case .festQingming: tr("清明")
+        case .festDragonBoat: tr("端午")
+        case .festQixi: tr("七夕")
+        case .festMidAutumn: tr("中秋")
+        case .festNational: tr("国庆")
+        case .festDoubleNinth: tr("重阳")
+        case .festWinterSolstice: tr("冬至")
         }
     }
 
     /// What it takes, shown under a locked badge (a hidden one only once unlocked).
     public var condition: String {
         switch self {
-        case .firstFullBasket: "得到第一个\(PerfectDayTier.gold.title)"
-        case .leafStreak3: "连续 3 天收到竹叶"
-        case .leafStreak7: "连续 7 天收到竹叶"
-        case .leafStreak30: "连续 30 天收到竹叶"
-        case .goldMonth10: "一个月内 10 个\(PerfectDayTier.gold.title)"
-        case .leaves50: "累计收到 50 片竹叶"
-        case .water7: "喝水连续 7 天达标"
-        case .habit7: "习惯连续 7 天全部完成"
-        case .focus10h: "专注累计 10 小时"
-        case .focus100h: "专注累计 100 小时"
-        case .nightOwl: "晚上 23 点以后完成一轮专注"
-        case .earlyWater: "早上 7 点前喝下当天第一杯水"
-        case .comeback: "断了 3 天以上，又回来收到竹叶"
-        case .goldWeek: "连续 7 天都是\(PerfectDayTier.gold.leafName)"
-        case .fullMonth: "一个自然月每天都收到竹叶"
-        case .cups1000: "累计喝水 1000 杯"
-        case .focus200h: "专注累计 200 小时"
-        case .leapDay: "2 月 29 日收到竹叶"
-        case .festWaterDay: "当天喝水达标"
-        case .festDragonBoat: "当天收到竹叶，包成粽叶"
+        case .firstFullBasket: tr("得到第一个\(PerfectDayTier.gold.title)")
+        case .leafStreak3: tr("连续 3 天收到竹叶")
+        case .leafStreak7: tr("连续 7 天收到竹叶")
+        case .leafStreak30: tr("连续 30 天收到竹叶")
+        case .goldMonth10: tr("一个月内 10 个\(PerfectDayTier.gold.title)")
+        case .leaves50: tr("累计收到 50 片竹叶")
+        case .water7: tr("喝水连续 7 天达标")
+        case .habit7: tr("习惯连续 7 天全部完成")
+        case .focus10h: tr("专注累计 10 小时")
+        case .focus100h: tr("专注累计 100 小时")
+        case .nightOwl: tr("晚上 23 点以后完成一轮专注")
+        case .earlyWater: tr("早上 7 点前喝下当天第一杯水")
+        case .comeback: tr("断了 3 天以上，又回来收到竹叶")
+        case .goldWeek: tr("连续 7 天都是\(PerfectDayTier.gold.leafName)")
+        case .fullMonth: tr("一个自然月每天都收到竹叶")
+        case .cups1000: tr("累计喝水 1000 杯")
+        case .focus200h: tr("专注累计 200 小时")
+        case .leapDay: tr("2 月 29 日收到竹叶")
+        case .festWaterDay: tr("当天喝水达标")
+        case .festDragonBoat: tr("当天收到竹叶，包成粽叶")
         case .festNewYear, .festSpring, .festLantern, .festArbor, .festQingming, .festQixi,
              .festMidAutumn, .festDoubleNinth, .festWinterSolstice:
-            "当天收到任意竹叶"
-        case .festNational: "期间任意一天收到竹叶"
+            tr("当天收到任意竹叶")
+        case .festNational: tr("期间任意一天收到竹叶")
         }
     }
 
@@ -404,14 +404,14 @@ public enum PerfectBadge: String, CaseIterable, Sendable, Hashable, Identifiable
     /// 隐藏徽章未解锁时显示的一句提示。其他分类没有。
     public var hint: String? {
         switch self {
-        case .nightOwl: "月亮出来以后"
-        case .earlyWater: "天亮前的第一口"
-        case .comeback: "回来就好"
-        case .goldWeek: "一整周都闪闪发光"
-        case .fullMonth: "一天都不落下"
-        case .cups1000: "喝了好多好多水"
-        case .focus200h: "坐得住的小熊猫"
-        case .leapDay: "四年一遇"
+        case .nightOwl: tr("月亮出来以后")
+        case .earlyWater: tr("天亮前的第一口")
+        case .comeback: tr("回来就好")
+        case .goldWeek: tr("一整周都闪闪发光")
+        case .fullMonth: tr("一天都不落下")
+        case .cups1000: tr("喝了好多好多水")
+        case .focus200h: tr("坐得住的小熊猫")
+        case .leapDay: tr("四年一遇")
         default: nil
         }
     }
@@ -424,13 +424,13 @@ public enum PerfectBadge: String, CaseIterable, Sendable, Hashable, Identifiable
         case .festLantern: FestivalWindow(.chinese, on: .init(1, 15))
         case .festArbor: FestivalWindow(.gregorian, on: .init(3, 12))
         case .festWaterDay: FestivalWindow(.gregorian, on: .init(3, 22))
-        case .festQingming: FestivalWindow(solarTerm: "清明")
+        case .festQingming: FestivalWindow(solarTerm: tr("清明"))
         case .festDragonBoat: FestivalWindow(.chinese, on: .init(5, 5))
         case .festQixi: FestivalWindow(.chinese, on: .init(7, 7))
         case .festMidAutumn: FestivalWindow(.chinese, on: .init(8, 15))
         case .festNational: FestivalWindow(.gregorian, from: .init(10, 1), to: .init(10, 7))
         case .festDoubleNinth: FestivalWindow(.chinese, on: .init(9, 9))
-        case .festWinterSolstice: FestivalWindow(solarTerm: "冬至")
+        case .festWinterSolstice: FestivalWindow(solarTerm: tr("冬至"))
         default: nil
         }
     }
@@ -537,12 +537,12 @@ public struct PerfectBadgeStatus: Equatable, Hashable, Sendable, Identifiable {
     /// 收下过的年份跟在后面。
     public var festivalLine: String? {
         guard badge.category == .festival else { return nil }
-        let collected = years.isEmpty ? nil : "已收 " + years.map(String.init).joined(separator: "、")
+        let collected = years.isEmpty ? nil : tr("已收 ") + years.map(String.init).joined(separator: "、")
         let head: String
         switch phase {
-        case .earned: head = "今年已收下"
+        case .earned: head = tr("今年已收下")
         case .missed: head = PerfectBadges.missedText
-        case .open: head = "今天收到竹叶就能拿到"
+        case .open: head = tr("今天收到竹叶就能拿到")
         case .upcoming, .none: head = badge.festivalWindow?.text ?? ""
         }
         return [head, collected].compactMap { $0 }.joined(separator: "\n")
@@ -551,8 +551,8 @@ public struct PerfectBadgeStatus: Equatable, Hashable, Sendable, Identifiable {
     /// "3/7", or "4/10 小时" for the focus badges.
     public var progressText: String {
         switch badge {
-        case .focus10h, .focus100h, .focus200h: "\(current / 60)/\(badge.target / 60) 小时"
-        case .cups1000: "\(current)/\(badge.target) 杯"
+        case .focus10h, .focus100h, .focus200h: tr("\(current / 60)/\(badge.target / 60) 小时")
+        case .cups1000: tr("\(current)/\(badge.target) 杯")
         default: "\(current)/\(badge.target)"
         }
     }
@@ -568,7 +568,7 @@ public struct PerfectBadgeGroup: Equatable, Sendable, Identifiable {
 
 public enum PerfectBadges {
     /// 错过今年节日窗口时的文字。
-    public static let missedText = "明年再来"
+    public static let missedText = tr("明年再来")
     /// 断了几天以上再回来算“失而复得”。
     public static let comebackGapDays = 3
     /// 清早的第一杯水：4:00 到 6:59（4 点前算熬夜，不算早起）。
@@ -808,7 +808,7 @@ public enum PerfectBadges {
 
     /// 未解锁的隐藏徽章显示的名称和默认提示。
     public static let concealedTitle = "？？？"
-    public static let concealedHint = "还没被发现的徽章"
+    public static let concealedHint = tr("还没被发现的徽章")
 
     public static func isConcealed(category: PerfectBadgeCategory, unlocked: Bool) -> Bool {
         category == .hidden && !unlocked

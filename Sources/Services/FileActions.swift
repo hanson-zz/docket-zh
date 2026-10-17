@@ -55,7 +55,7 @@ enum FileActions {
 
         let panel = NSOpenPanel()
         panel.message = title
-        panel.prompt = "选择"
+        panel.prompt = tr("选择")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false

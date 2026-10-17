@@ -28,13 +28,13 @@ public enum Calculator {
 
         public var message: String {
             switch self {
-            case .empty: "请输入算式"
-            case .incomplete: "算式不完整"
-            case .unexpected(let c): "无法识别“\(c)”"
-            case .unbalanced: "括号不匹配"
-            case .divisionByZero: "不能除以零"
-            case .tooLong: "算式太长"
-            case .notFinite: "结果超出范围"
+            case .empty: tr("请输入算式")
+            case .incomplete: tr("算式不完整")
+            case .unexpected(let c): tr("无法识别“\(c)”")
+            case .unbalanced: tr("括号不匹配")
+            case .divisionByZero: tr("不能除以零")
+            case .tooLong: tr("算式太长")
+            case .notFinite: tr("结果超出范围")
             }
         }
     }

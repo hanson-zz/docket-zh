@@ -72,7 +72,7 @@ final class ChargeLimitService {
             try data.write(to: URL(fileURLWithPath: ChargeHelperFiles.configPath), options: .atomic)
             problem = nil
         } catch {
-            problem = "设置没存上：\(ChargeHelperFiles.directory) 不可写。重新安装助手可以修好。"
+            problem = tr("设置没存上：\(ChargeHelperFiles.directory) 不可写。重新安装助手可以修好。")
         }
     }
 
@@ -95,7 +95,7 @@ final class ChargeLimitService {
 
     func install() {
         guard let helper = bundledHelper else {
-            problem = "应用包里没有找到充电助手，重新下载码头试试。"
+            problem = tr("应用包里没有找到充电助手，重新下载码头试试。")
             return
         }
         let plist = FileManager.default.temporaryDirectory
@@ -103,45 +103,45 @@ final class ChargeLimitService {
         do {
             try ChargeHelperFiles.launchdPlist().write(to: plist, atomically: true, encoding: .utf8)
         } catch {
-            problem = "临时文件写不进去，没能安装助手。"
+            problem = tr("临时文件写不进去，没能安装助手。")
             return
         }
         let script = ChargeHelperFiles.installScript(helper: helper, plist: plist.path, user: NSUserName())
-        let ok = runAsAdmin(script, prompt: "码头要安装充电助手，用来在充到上限时暂停充电。")
+        let ok = runAsAdmin(script, prompt: tr("码头要安装充电助手，用来在充到上限时暂停充电。"))
         if ok { save() }
         try? FileManager.default.removeItem(at: plist)
         refresh()
         if ok && !installed {
-            problem = "授权完成了，但没在 /Library/PrivilegedHelperTools 和 /Library/LaunchDaemons 找到助手文件。"
-                + "可以点“复制诊断”把结果发给开发者。"
+            problem = tr("授权完成了，但没在 /Library/PrivilegedHelperTools 和 /Library/LaunchDaemons 找到助手文件。")
+                + tr("可以点“复制诊断”把结果发给开发者。")
         }
     }
 
     /// 把排查用的信息拷进剪贴板：文件在不在、状态文件内容、应用包里的助手。
     func copyDiagnostics(now: Date = .now) {
         let fm = FileManager.default
-        func line(_ path: String) -> String { "\(fm.fileExists(atPath: path) ? "有" : "没有")  \(path)" }
+        func line(_ path: String) -> String { "\(fm.fileExists(atPath: path) ? tr("有") : tr("没有"))  \(path)" }
         var lines = [
-            "码头充电上限诊断 \(now.formatted(.iso8601))",
-            "状态：\(state(now: now))",
+            tr("码头充电上限诊断 \(now.formatted(.iso8601))"),
+            tr("状态：\(state(now: now))"),
             line(ChargeHelperFiles.installedPath),
             line(ChargeHelperFiles.plistPath),
             line(ChargeHelperFiles.configPath),
             line(ChargeHelperFiles.statusPath),
-            "应用包助手：\(bundledHelper ?? "没有")",
-            "应用位置：\(Bundle.main.bundleURL.path)",
+            tr("应用包助手：\(bundledHelper ?? tr("没有"))"),
+            tr("应用位置：\(Bundle.main.bundleURL.path)"),
         ]
         if let data = fm.contents(atPath: ChargeHelperFiles.statusPath),
            let text = String(data: data, encoding: .utf8) {
-            lines.append("状态文件：\(text)")
+            lines.append(tr("状态文件：\(text)"))
         }
-        if let problem { lines.append("最近的错误：\(problem)") }
+        if let problem { lines.append(tr("最近的错误：\(problem)")) }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
     }
 
     func uninstall() {
-        _ = runAsAdmin(ChargeHelperFiles.uninstallScript(), prompt: "码头要卸载充电助手，并恢复正常充电。")
+        _ = runAsAdmin(ChargeHelperFiles.uninstallScript(), prompt: tr("码头要卸载充电助手，并恢复正常充电。"))
         refresh()
     }
 
@@ -158,7 +158,7 @@ final class ChargeLimitService {
             return true
         }
         let code = error[NSAppleScript.errorNumber] as? Int
-        problem = code == -128 ? nil : "没能完成：\(error[NSAppleScript.errorMessage] as? String ?? "未知错误")"
+        problem = code == -128 ? nil : tr("没能完成：\(error[NSAppleScript.errorMessage] as? String ?? tr("未知错误"))")
         return false
     }
 }

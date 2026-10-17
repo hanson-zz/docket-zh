@@ -10,7 +10,7 @@ struct ContributionGridView: View {
     var cell: CGFloat = 8
     var spacing: CGFloat = 2
     /// 悬停提示和读屏里数量后面的单位，比如“次”“条”。
-    var unit: String = "次"
+    var unit: String = tr("次")
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
@@ -77,7 +77,7 @@ struct ContributionGridView: View {
     private var summary: String {
         let past = columns.joined().filter { !$0.isFuture }
         let active = past.filter { $0.count > 0 }.count
-        return "最近 \(columns.count) 周，有记录的 \(active) 天"
+        return tr("最近 \(columns.count) 周，有记录的 \(active) 天")
     }
 }
 

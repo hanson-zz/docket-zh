@@ -190,8 +190,8 @@ struct CalendarDetail: View {
     private var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(access == .notDetermined
-                 ? "码头尚未获得访问你日历的权限。"
-                 : "码头的日历访问权限已关闭。")
+                 ? tr("码头尚未获得访问你日历的权限。")
+                 : tr("码头的日历访问权限已关闭。"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)
@@ -199,9 +199,9 @@ struct CalendarDetail: View {
             // prompt on screen, so the only button worth drawing is the one
             // that goes where the answer can be changed.
             if access == .notDetermined {
-                action("允许访问") { request() }
+                action(tr("允许访问")) { request() }
             } else {
-                action("打开系统设置") { openPrivacySettings() }
+                action(tr("打开系统设置")) { openPrivacySettings() }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -344,7 +344,7 @@ private struct DayEvent: Identifiable, Hashable {
         // part of it or two occurrences on one day collide in the list.
         self.id = "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)"
         // An untitled event is a real event; the calendar apps call it this.
-        self.title = title.isEmpty ? "新日程" : title
+        self.title = title.isEmpty ? tr("新日程") : title
         self.start = start
         self.end = event.endDate ?? start
         self.isAllDay = event.isAllDay

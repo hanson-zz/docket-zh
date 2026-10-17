@@ -162,7 +162,7 @@ enum AIKeyStore {
             var add = match
             add[kSecValueData as String] = data
             add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-            add[kSecAttrLabel as String] = "码头 AI 助手密钥（\(serviceID)）"
+            add[kSecAttrLabel as String] = tr("码头 AI 助手密钥（\(serviceID)）")
             status = SecItemAdd(add as CFDictionary, nil)
         }
         known[serviceID] = nil

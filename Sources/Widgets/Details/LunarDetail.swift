@@ -30,10 +30,10 @@ struct LunarDetail: View {
 
                 HStack(spacing: 8) {
                     if let term = ChineseCalendar.nextTerm(after: now) {
-                        StatChip(label: "下一个节气", value: termLine(term, now: now))
+                        StatChip(label: tr("下一个节气"), value: termLine(term, now: now))
                     }
                     if let alert = reading.alert {
-                        StatChip(label: "提醒", value: alert)
+                        StatChip(label: tr("提醒"), value: alert)
                     }
                 }
 
@@ -66,7 +66,7 @@ struct LunarDetail: View {
                     .minimumScaleFactor(0.7)
             }
             Spacer(minLength: 0)
-            Text(days > 0 ? "\(days) 天后" : "放假中")
+            Text(days > 0 ? tr("\(days) 天后") : tr("放假中"))
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .foregroundStyle(days > 0 ? .white.opacity(0.8) : Color(hex: PaletteColor.red.hex))
         }
@@ -79,11 +79,11 @@ struct LunarDetail: View {
         let calendar = ChineseCalendar.gregorian
         let month = calendar.component(.month, from: date)
         let day = calendar.component(.day, from: date)
-        return "\(month)月\(day)日 星期" + String(LunarReading.weekday(date).dropFirst())
+        return tr("\(month)月\(day)日 星期") + String(LunarReading.weekday(date).dropFirst())
     }
 
     private func termLine(_ term: ChineseCalendar.SolarTerm, now: Date) -> String {
         let days = ChineseCalendar.days(from: now, to: term.day)
-        return days == 0 ? "今天\(term.name)" : "\(term.name) · \(days) 天后"
+        return days == 0 ? tr("今天\(term.name)") : tr("\(term.name) · \(days) 天后")
     }
 }

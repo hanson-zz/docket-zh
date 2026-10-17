@@ -88,7 +88,7 @@ struct WaterTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("喝水，\(showsSkeleton ? "渴成骷髅了，" : "")\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))")
+        .accessibilityLabel(tr("喝水，\(showsSkeleton ? tr("渴成骷髅了，") : "")\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))"))
         .onAppear { WaterNotifier.shared.update(instance, next: nextReminder) }
         .onChange(of: nextReminder) { _, next in WaterNotifier.shared.update(instance, next: next) }
         // The pet's 渴成骷髅 reads this; written from here so it needs no
@@ -113,8 +113,8 @@ struct WaterTile: View {
                     .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
                     .rollingValue(day.total)
-                Text(done ? "今天达标啦"
-                     : showsSkeleton ? "渴成骷髅了 · \(WaterIntake.percent(total: day.total, goal: day.goal))%"
+                Text(done ? tr("今天达标啦")
+                     : showsSkeleton ? tr("渴成骷髅了 · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                      : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                     .font(.system(size: 12))
                     .foregroundStyle(done ? WaterStyle.water
@@ -144,7 +144,7 @@ struct WaterTile: View {
                     .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
                     .rollingValue(day.total)
-                Text(done ? "达标啦" : "/ \(WaterIntake.figure(day.goal, ounces: ounces))")
+                Text(done ? tr("达标啦") : "/ \(WaterIntake.figure(day.goal, ounces: ounces))")
                     .font(WidgetStyle.caption(9))
                     .foregroundStyle(done ? WaterStyle.water : WidgetStyle.secondary)
                     .monospacedDigit()
@@ -175,7 +175,7 @@ struct WaterTile: View {
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
                         .rollingValue(day.total)
-                    Text(done ? "达标啦" : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                    Text(done ? tr("达标啦") : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(WidgetStyle.primary.opacity(0.75))
                         .monospacedDigit()
@@ -191,7 +191,7 @@ struct WaterTile: View {
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                             .rollingValue(day.total)
-                        Text(done ? "今天达标啦" : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                        Text(done ? tr("今天达标啦") : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                             .font(.system(size: 12))
                             .foregroundStyle(WidgetStyle.primary.opacity(0.75))
                     }
@@ -238,8 +238,8 @@ struct WaterTile: View {
                 WaterLog.drink(.water, amount: cup, in: instance)
             }
         })
-        .help("喝了一杯水（\(WaterIntake.amount(cup, ounces: ounces))）")
-        .accessibilityLabel("记录一杯水，\(WaterIntake.amount(cup, ounces: ounces))")
+        .help(tr("喝了一杯水（\(WaterIntake.amount(cup, ounces: ounces))）"))
+        .accessibilityLabel(tr("记录一杯水，\(WaterIntake.amount(cup, ounces: ounces))"))
     }
 }
 

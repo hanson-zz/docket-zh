@@ -11,13 +11,13 @@ public enum AccessoryKind: String, CaseIterable, Codable, Sendable {
         case .airpods: "AirPods"
         case .airpodsPro: "AirPods Pro"
         case .airpodsMax: "AirPods Max"
-        case .headphones: "耳机"
-        case .mouse: "鼠标"
-        case .trackpad: "触控板"
-        case .keyboard: "键盘"
-        case .speaker: "音箱"
-        case .gameController: "游戏手柄"
-        case .other: "蓝牙设备"
+        case .headphones: tr("耳机")
+        case .mouse: tr("鼠标")
+        case .trackpad: tr("触控板")
+        case .keyboard: tr("键盘")
+        case .speaker: tr("音箱")
+        case .gameController: tr("游戏手柄")
+        case .other: tr("蓝牙设备")
         }
     }
 
@@ -151,13 +151,13 @@ public enum AccessoryClassifier {
     /// brand words last.
     static func fromName(_ name: String) -> AccessoryKind? {
         func has(_ words: [String]) -> Bool { words.contains { name.contains($0) } }
-        if has(["trackpad", "touchpad", "触控板", "妙控板"]) { return .trackpad }
-        if has(["mouse", "鼠标", "mx master", "mx anywhere"]) { return .mouse }
-        if has(["keyboard", "键盘", "keychron"]) { return .keyboard }
-        if has(["headphone", "headset", "earphone", "earbud", "耳机", "耳麦"]) { return .headphones }
-        if has(["controller", "gamepad", "手柄", "xbox", "dualsense", "dualshock", "joy-con",
+        if has(["trackpad", "touchpad", tr("触控板"), tr("妙控板")]) { return .trackpad }
+        if has(["mouse", tr("鼠标"), "mx master", "mx anywhere"]) { return .mouse }
+        if has(["keyboard", tr("键盘"), "keychron"]) { return .keyboard }
+        if has(["headphone", "headset", "earphone", "earbud", tr("耳机"), tr("耳麦")]) { return .headphones }
+        if has(["controller", "gamepad", tr("手柄"), "xbox", "dualsense", "dualshock", "joy-con",
                 "8bitdo"]) { return .gameController }
-        if has(["speaker", "音箱", "音响", "soundbar", "soundlink", "beats pill", "homepod",
+        if has(["speaker", tr("音箱"), tr("音响"), "soundbar", "soundlink", "beats pill", "homepod",
                 "jbl flip", "jbl charge", "jbl go", "megaboom", "wonderboom"]) { return .speaker }
         if has(["buds", "beats", "powerbeats", "wh-1000", "wf-1000", "quietcomfort", "freebuds"]) {
             return .headphones
@@ -223,7 +223,7 @@ public struct BluetoothBattery: Identifiable, Equatable, Sendable {
 
     /// "左 80% · 右 78% · 盒 45%", only the parts that reported.
     public var partsCaption: String? {
-        let parts = [("左", left), ("右", right), ("盒", caseLevel)]
+        let parts = [(tr("左"), left), (tr("右"), right), (tr("盒"), caseLevel)]
             .compactMap { label, value in value.map { "\(label) \($0)%" } }
         guard hasBuds || caseLevel != nil else { return nil }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
@@ -414,7 +414,7 @@ public enum BluetoothBatteries {
             }
             if let caseLevel = device.caseLevel {
                 readings.append(AccessoryReading(id: "bt.\(device.id).case",
-                                                 name: "\(device.displayName) 充电盒", percent: caseLevel))
+                                                 name: tr("\(device.displayName) 充电盒"), percent: caseLevel))
             }
         }
         return readings

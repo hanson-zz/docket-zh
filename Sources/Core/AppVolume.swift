@@ -274,14 +274,14 @@ public enum SampleGain {
 /// The tile's words.
 public enum AppVolumeText {
     public static func value(playing: Int) -> String {
-        playing == 0 ? "没有声音" : "\(playing) 个应用"
+        playing == 0 ? tr("没有声音") : tr("\(playing) 个应用")
     }
 
     /// The first two names, then how many more.
     public static func caption(names: [String], permissionNeeded: Bool) -> String {
-        if permissionNeeded { return "需要录音权限" }
-        guard !names.isEmpty else { return "播放声音的应用会出现在这里" }
+        if permissionNeeded { return tr("需要录音权限") }
+        guard !names.isEmpty else { return tr("播放声音的应用会出现在这里") }
         let shown = names.prefix(2).joined(separator: "、")
-        return names.count > 2 ? "\(shown) 等 \(names.count) 个" : shown
+        return names.count > 2 ? tr("\(shown) 等 \(names.count) 个") : shown
     }
 }

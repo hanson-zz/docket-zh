@@ -29,7 +29,7 @@ public extension ColorCode {
     /// 取色后的轻提示：`已复制 #1C1C1E（RGB 28, 28, 30）`。
     var copiedHint: String {
         let b = bytes
-        return "已复制 \(hex)（RGB \(b.r), \(b.g), \(b.b)）"
+        return tr("已复制 \(hex)（RGB \(b.r), \(b.g), \(b.b)）")
     }
 }
 
@@ -183,7 +183,7 @@ public enum KeyboardLockTiming {
     /// 浮窗上的剩余时间，例如 `9:05 后自动解锁`。
     public static func remainingText(_ seconds: Double) -> String {
         let total = max(0, Int(seconds.rounded(.up)))
-        return String(format: "%d:%02d 后自动解锁", total / 60, total % 60)
+        return String(format: tr("%d:%02d 后自动解锁"), total / 60, total % 60)
     }
 }
 

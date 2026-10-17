@@ -48,7 +48,7 @@ struct WeatherDetail: View {
                 } else if let weather {
                     now(weather)
                     if offlineNow {
-                        ReconnectStateView(title: "离线", detail: "这次没连上天气服务，显示的是上次的数据",
+                        ReconnectStateView(title: tr("离线"), detail: tr("这次没连上天气服务，显示的是上次的数据"),
                                            loading: WeatherService.shared.fetching, style: .compact,
                                            retry: retryWeather)
                     }
@@ -128,7 +128,7 @@ struct WeatherDetail: View {
         let today = forecast?.todayKey(now: context.now) ?? ""
         let scale = DailyForecast.scale(days)
         return VStack(alignment: .leading, spacing: 6) {
-            Text(days.count == 1 ? "未来 1 天" : "未来 \(days.count) 天")
+            Text(days.count == 1 ? tr("未来 1 天") : tr("未来 \(days.count) 天"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(WidgetStyle.secondary)
             ForEach(days, id: \.key) { day in
@@ -162,7 +162,7 @@ struct WeatherDetail: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(DailyForecast.weekdayLabel(day.key, today: today))，"
                                     + "\(WMOWeather.condition(day.code))，"
-                                    + "最低 \(degrees(day.lowC))，最高 \(degrees(day.highC))")
+                                    + tr("最低 \(degrees(day.lowC))，最高 \(degrees(day.highC))"))
             }
         }
         .padding(10)
@@ -216,7 +216,7 @@ struct WeatherDetail: View {
                         Text(city)
                             .font(WidgetStyle.label(13))
                             .foregroundStyle(WidgetStyle.primary)
-                        Text(place?.current.map { WMOWeather.condition($0.code) } ?? "暂无数据")
+                        Text(place?.current.map { WMOWeather.condition($0.code) } ?? tr("暂无数据"))
                             .font(WidgetStyle.caption(11))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
@@ -226,7 +226,7 @@ struct WeatherDetail: View {
                             .font(.system(size: 22, weight: .light))
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
-                        Text(today.map { "最高 \(degrees($0.highC)) 最低 \(degrees($0.lowC))" } ?? " ")
+                        Text(today.map { tr("最高 \(degrees($0.highC)) 最低 \(degrees($0.lowC))") } ?? " ")
                             .font(WidgetStyle.caption(11))
                             .foregroundStyle(WidgetStyle.secondary)
                             .monospacedDigit()
@@ -281,7 +281,7 @@ struct WeatherDetail: View {
                         Image(systemName: hour.symbolName)
                             .symbolRenderingMode(.multicolor)
                             .font(.system(size: 12))
-                        Text("\(hourLabel(hour.date)) 的预报")
+                        Text(tr("\(hourLabel(hour.date)) 的预报"))
                             .font(WidgetStyle.label(13))
                             .foregroundStyle(.white.opacity(0.8))
                     }
@@ -331,22 +331,22 @@ struct WeatherDetail: View {
                         .rotationEffect(.degrees((weather?.windFrom ?? 0) + 180))
                         .frame(width: 22, height: 22)
                         .background(Circle().fill(.white.opacity(0.12)))
-                    StatChip(label: "风", value: Wind.summary(speed: speed, from: weather?.windFrom ?? 0))
+                    StatChip(label: tr("风"), value: Wind.summary(speed: speed, from: weather?.windFrom ?? 0))
                 }
             }
             if let humidity = weather?.humidity {
-                StatChip(label: "湿度", value: "\(Int(humidity.rounded()))%")
+                StatChip(label: tr("湿度"), value: "\(Int(humidity.rounded()))%")
             }
             switch sun?.day {
             case .normal(let rise, let set)?:
                 let zone = sun?.zone ?? .current
                 let note = WeatherSun.localNote(zone, at: rise)
-                StatChip(label: "日出" + note, value: WeatherSun.time(rise, zone: zone))
-                StatChip(label: "日落" + note, value: WeatherSun.time(set, zone: zone))
+                StatChip(label: tr("日出") + note, value: WeatherSun.time(rise, zone: zone))
+                StatChip(label: tr("日落") + note, value: WeatherSun.time(set, zone: zone))
             case .polarDay?:
-                StatChip(label: "日照", value: "极昼")
+                StatChip(label: tr("日照"), value: tr("极昼"))
             case .polarNight?:
-                StatChip(label: "日照", value: "极夜")
+                StatChip(label: tr("日照"), value: tr("极夜"))
             case nil:
                 EmptyView()
             }
@@ -490,13 +490,13 @@ struct WeatherDetail: View {
                         .monospacedDigit()
                     Spacer(minLength: 0)
                     Text(hour.precipitationMM > 0
-                         ? "降水 \(hour.precipitationMM.formatted(.number.precision(.fractionLength(0...1)))) 毫米"
-                         : "无降水")
+                         ? tr("降水 \(hour.precipitationMM.formatted(.number.precision(.fractionLength(0...1)))) 毫米")
+                         : tr("无降水"))
                         .font(WidgetStyle.label(12))
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
                 } else {
-                    Text(hours.count == 1 ? "未来 1 小时" : "未来 \(hours.count) 小时 · 拖动查看")
+                    Text(hours.count == 1 ? tr("未来 1 小时") : tr("未来 \(hours.count) 小时 · 拖动查看"))
                         .font(WidgetStyle.caption(12))
                         .foregroundStyle(WidgetStyle.secondary)
                     Spacer(minLength: 0)
@@ -518,12 +518,12 @@ struct WeatherDetail: View {
     /// the field that settles both.
     private var noPlace: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(locating ? "正在定位…" : "未设置城市")
+            Text(locating ? tr("正在定位…") : tr("未设置城市"))
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
             Text(locating
-                 ? "正在等待获取你的位置。在“设置 ▸ 小组件”中输入城市即可跳过定位。"
-                 : "请在“设置 ▸ 小组件”中输入城市。")
+                 ? tr("正在等待获取你的位置。在“设置 ▸ 小组件”中输入城市即可跳过定位。")
+                 : tr("请在“设置 ▸ 小组件”中输入城市。"))
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(WidgetStyle.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -542,8 +542,8 @@ struct WeatherDetail: View {
     /// The panel observes the service, so the number appears here the moment it lands.
     @ViewBuilder private var unavailable: some View {
         if offlineNow {
-            ReconnectStateView(title: "连不上天气服务",
-                               detail: "\(city) 暂无数据，可能是网络断开了。",
+            ReconnectStateView(title: tr("连不上天气服务"),
+                               detail: tr("\(city) 暂无数据，可能是网络断开了。"),
                                loading: WeatherService.shared.fetching,
                                retry: retryWeather)
         } else {
@@ -589,11 +589,11 @@ struct WeatherDetail: View {
     // The library has no live data. The tile's own sample is private to it,
     // and these numbers only have to agree with it by eye.
 
-    private static let sampleCity = "奥斯陆"
+    private static let sampleCity = tr("奥斯陆")
 
     private static let sample = WeatherNow(temperatureC: 18,
                                            symbolName: "cloud.sun.fill",
-                                           condition: "多云",
+                                           condition: tr("多云"),
                                            windSpeed: 4.2, windFrom: 45, humidity: 62)
 
     private static func sampleHours(from date: Date) -> [WeatherHour] {

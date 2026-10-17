@@ -14,10 +14,10 @@ struct RecorderDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.red))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "waveform", title: "录音",
-                            subtitle: context.isPreview ? "保存到“下载”" : "保存到“\(recorder.folder.lastPathComponent)”")
+                PanelHeader(symbol: "waveform", title: tr("录音"),
+                            subtitle: context.isPreview ? tr("保存到“下载”") : tr("保存到“\(recorder.folder.lastPathComponent)”"))
                 HStack(spacing: 8) {
-                    PanelButton(title: recording ? "停止" : "开始录音",
+                    PanelButton(title: recording ? tr("停止") : tr("开始录音"),
                                 symbol: recording ? "stop.fill" : "mic.fill", prominent: true) {
                         guard !context.isPreview else { return }
                         recorder.toggle(folderPath: folderPath)
@@ -35,13 +35,13 @@ struct RecorderDetail: View {
                             .font(WidgetStyle.caption(11))
                             .foregroundStyle(.white.opacity(0.75))
                             .fixedSize(horizontal: false, vertical: true)
-                        PanelButton(title: "打开隐私设置", symbol: "lock") { recorder.openPrivacySettings() }
+                        PanelButton(title: tr("打开隐私设置"), symbol: "lock") { recorder.openPrivacySettings() }
                     }
                 }
                 list
                 HStack(spacing: 8) {
-                    PanelButton(title: "选择文件夹…", symbol: "folder", action: choose)
-                    PanelButton(title: "在访达中打开", symbol: nil) {
+                    PanelButton(title: tr("选择文件夹…"), symbol: "folder", action: choose)
+                    PanelButton(title: tr("在访达中打开"), symbol: nil) {
                         guard !context.isPreview else { return }
                         FileActions.openFolder(recorder.folder)
                     }
@@ -58,7 +58,7 @@ struct RecorderDetail: View {
         let items: [VoiceRecorder.Recording] = context.isPreview ? [] : recorder.recordings
         if items.isEmpty {
             PanelNote(symbol: "waveform",
-                      text: "还没有录音。录音以 .m4a 格式保存，文件名以“录音”开头。")
+                      text: tr("还没有录音。录音以 .m4a 格式保存，文件名以“录音”开头。"))
                 .frame(height: 120)
         } else {
             ScrollView {
@@ -108,7 +108,7 @@ struct RecorderDetail: View {
     private func choose() {
         guard !context.isPreview else { return }
         let item = instance
-        guard let url = FileActions.chooseFolder(title: "选择录音的保存位置", startingAt: recorder.folder) else { return }
+        guard let url = FileActions.chooseFolder(title: tr("选择录音的保存位置"), startingAt: recorder.folder) else { return }
         WidgetWriter.write(item) { $0.set("folder", .string(url.path)) }
         recorder.use(folderPath: url.path)
     }

@@ -210,7 +210,7 @@ final class AIChatCenter {
         let delegate = AIWebDelegate(serviceID: service.id, home: home, center: self)
         view.navigationDelegate = delegate
         view.uiDelegate = delegate
-        view.setAccessibilityLabel("\(service.title) 网页")
+        view.setAccessibilityLabel(tr("\(service.title) 网页"))
         webViews[service.id] = view
         webDelegates[service.id] = delegate
         view.load(URLRequest(url: home))
@@ -255,13 +255,13 @@ final class AIChatCenter {
     func pasteClipboard() {
         refreshClipboard()
         guard let clip = clipboardText else {
-            notice = "剪贴板里没有文字。"
+            notice = tr("剪贴板里没有文字。")
             return
         }
         draft = AIClipboard.insert(clip, into: draft)
         jumpHint = nil
         notice = AIClipboard.isTruncated(clip)
-            ? "剪贴板太长，只带进了前 \(AIClipboard.insertLimit) 个字。" : nil
+            ? tr("剪贴板太长，只带进了前 \(AIClipboard.insertLimit) 个字。") : nil
     }
 
     // MARK: 快捷指令和常用提示词
@@ -281,13 +281,13 @@ final class AIChatCenter {
         let mode = self.mode(for: service)
         let source = mode == .web ? "" : draft
         guard let prompt = AIPrompts.compose(template, draft: source, clipboard: clipboardText) else {
-            notice = mode == .web ? "先复制要处理的文字。" : "先在输入框里写字，或者复制要处理的文字。"
+            notice = mode == .web ? tr("先复制要处理的文字。") : tr("先在输入框里写字，或者复制要处理的文字。")
             return
         }
         switch mode {
         case .api:
             guard !generating.contains(service.id) else {
-                notice = "还在回答，先停止或等它答完。"
+                notice = tr("还在回答，先停止或等它答完。")
                 return
             }
             notice = nil
@@ -296,7 +296,7 @@ final class AIChatCenter {
         case .web:
             AIServiceOpener.copy(prompt)
             _ = webView(for: service)
-            notice = "“\(name)”的提示词已复制，在 \(service.title) 的输入框里粘贴发送。"
+            notice = tr("“\(name)”的提示词已复制，在 \(service.title) 的输入框里粘贴发送。")
         case .jump:
             notice = nil
             jump(prompt)
@@ -317,13 +317,13 @@ final class AIChatCenter {
             return
         case .openWithQuestion(let url):
             guard AIServiceOpener.open(url) else {
-                jumpHint = "没能打开 \(service.title)。"
+                jumpHint = tr("没能打开 \(service.title)。")
                 return
             }
         case .copyThenOpen(let question):
             AIServiceOpener.copy(question)
             guard AIServiceOpener.open(service) else {
-                jumpHint = "已复制，但没能打开 \(service.title)。"
+                jumpHint = tr("已复制，但没能打开 \(service.title)。")
                 return
             }
         }
@@ -334,7 +334,7 @@ final class AIChatCenter {
     /// 只打开服务，不带问题。
     func openService() {
         guard let service = current else { return }
-        if !AIServiceOpener.open(service) { jumpHint = "没能打开 \(service.title)。" }
+        if !AIServiceOpener.open(service) { jumpHint = tr("没能打开 \(service.title)。") }
     }
 }
 

@@ -6,7 +6,7 @@ struct WifiReading: Equatable {
 
     var percent: Int { rssi.map(WifiQuality.percent(rssi:)) ?? 0 }
     var bars: Int { rssi.map(WifiQuality.bars(rssi:)) ?? 0 }
-    var label: String { rssi.map(WifiQuality.label(rssi:)) ?? "未连接" }
+    var label: String { rssi.map(WifiQuality.label(rssi:)) ?? tr("未连接") }
 }
 
 /// The signal as a three-quarter ring with the Wi-Fi glyph inside and four
@@ -82,7 +82,7 @@ struct WifiRingView: View {
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Wi-Fi 信号")
-        .accessibilityValue(reading.rssi.map { "\(reading.label)，\($0) dBm" } ?? "未连接")
+        .accessibilityValue(reading.rssi.map { "\(reading.label)，\($0) dBm" } ?? tr("未连接"))
     }
 }
 

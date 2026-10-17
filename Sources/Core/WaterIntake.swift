@@ -39,13 +39,13 @@ public enum DrinkType: String, CaseIterable, Sendable, Hashable, Identifiable {
 
     public var title: String {
         switch self {
-        case .water: "水"
-        case .tea: "茶"
-        case .coffee: "咖啡"
-        case .milk: "牛奶"
-        case .juice: "果汁"
-        case .soda: "汽水"
-        case .custom: "自定义"
+        case .water: tr("水")
+        case .tea: tr("茶")
+        case .coffee: tr("咖啡")
+        case .milk: tr("牛奶")
+        case .juice: tr("果汁")
+        case .soda: tr("汽水")
+        case .custom: tr("自定义")
         }
     }
 
@@ -522,7 +522,7 @@ public enum WaterIntake {
 
     // MARK: Words
 
-    public static func unitLabel(ounces: Bool) -> String { ounces ? "盎司" : "毫升" }
+    public static func unitLabel(ounces: Bool) -> String { ounces ? tr("盎司") : tr("毫升") }
 
     /// The figure alone: "1200", or "40.6" in ounces.
     public static func figure(_ millilitres: Int, ounces: Bool) -> String {
@@ -543,8 +543,8 @@ public enum WaterIntake {
 
     /// What is left, or that the day is done.
     public static func remainingLine(total: Int, goal: Int, ounces: Bool) -> String {
-        guard !isMet(total: total, goal: goal) else { return "今天达标啦" }
-        return "还差 \(amount(goal - total, ounces: ounces))"
+        guard !isMet(total: total, goal: goal) else { return tr("今天达标啦") }
+        return tr("还差 \(amount(goal - total, ounces: ounces))")
     }
 
     public static func percent(total: Int, goal: Int) -> Int {
@@ -705,11 +705,11 @@ public struct WaterReminder: Equatable, Sendable {
         -> (title: String, body: String) {
         let left = WaterIntake.amount(max(0, goal - total), ounces: ounces)
         let lines: [(String, String)] = [
-            ("小熊猫举起了水杯", "咕嘟咕嘟，陪我喝一口吧！今天还差 \(left)。"),
-            ("小熊猫有点渴了", "尾巴都蔫了，喝杯水让我们一起满血复活。还差 \(left)。"),
-            ("该喝水啦", "小熊猫已经把杯子推到你面前了，还差 \(left) 就装满啦。"),
-            ("小熊猫敲了敲屏幕", "别光顾着忙，抿一口水再继续。今天还差 \(left)。"),
-            ("补水时间到", "小熊猫说：喝水的人运气不会太差。还差 \(left)。"),
+            (tr("小熊猫举起了水杯"), tr("咕嘟咕嘟，陪我喝一口吧！今天还差 \(left)。")),
+            (tr("小熊猫有点渴了"), tr("尾巴都蔫了，喝杯水让我们一起满血复活。还差 \(left)。")),
+            (tr("该喝水啦"), tr("小熊猫已经把杯子推到你面前了，还差 \(left) 就装满啦。")),
+            (tr("小熊猫敲了敲屏幕"), tr("别光顾着忙，抿一口水再继续。今天还差 \(left)。")),
+            (tr("补水时间到"), tr("小熊猫说：喝水的人运气不会太差。还差 \(left)。")),
         ]
         let index = Int(date.timeIntervalSince1970 / 60) % lines.count
         let pick = lines[(index + lines.count) % lines.count]
@@ -745,12 +745,12 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .redPanda: "小熊猫"
-        case .shiba: "柴犬"
-        case .cat: "橘猫"
-        case .penguin: "企鹅"
-        case .otter: "水獭"
-        case .octopus: "章鱼"
+        case .redPanda: tr("小熊猫")
+        case .shiba: tr("柴犬")
+        case .cat: tr("橘猫")
+        case .penguin: tr("企鹅")
+        case .otter: tr("水獭")
+        case .octopus: tr("章鱼")
         }
     }
 

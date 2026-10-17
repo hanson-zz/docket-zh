@@ -186,7 +186,7 @@ public enum Xiaoyuzhou {
             let episodes = (self.episodes ?? []).compactMap(\.episode)
                 .sorted { ($0.pubDate ?? .distantPast) > ($1.pubDate ?? .distantPast) }
             return PodcastShow(id: pid,
-                               title: (title?.isEmpty == false ? title : nil) ?? "未命名节目",
+                               title: (title?.isEmpty == false ? title : nil) ?? tr("未命名节目"),
                                author: author ?? "",
                                summary: description ?? "",
                                imageURL: image?.url,
@@ -225,7 +225,7 @@ public enum Xiaoyuzhou {
                 .map { PodcastChapters.parse($0, duration: seconds) }
             let chapters = candidates.max { $0.count < $1.count } ?? []
             return PodcastEpisode(id: eid,
-                                  title: (title?.isEmpty == false ? title : nil) ?? "未命名单集",
+                                  title: (title?.isEmpty == false ? title : nil) ?? tr("未命名单集"),
                                   pubDate: Xiaoyuzhou.date(pubDate),
                                   duration: Int(seconds),
                                   audioURL: audio,
@@ -376,11 +376,11 @@ public enum PodcastPlayback {
 
     /// "1 小时 5 分钟", "45 分钟", "不到 1 分钟".
     public static func durationText(_ seconds: Int) -> String {
-        guard seconds >= 60 else { return seconds > 0 ? "不到 1 分钟" : "" }
+        guard seconds >= 60 else { return seconds > 0 ? tr("不到 1 分钟") : "" }
         let minutes = (seconds + 30) / 60
         let h = minutes / 60, m = minutes % 60
-        if h == 0 { return "\(m) 分钟" }
-        return m == 0 ? "\(h) 小时" : "\(h) 小时 \(m) 分钟"
+        if h == 0 { return tr("\(m) 分钟") }
+        return m == 0 ? tr("\(h) 小时") : tr("\(h) 小时 \(m) 分钟")
     }
 
     /// "10月13日" this year, "2024年10月13日" otherwise, in `calendar`'s zone.
@@ -389,7 +389,7 @@ public enum PodcastPlayback {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         let thisYear = calendar.component(.year, from: now)
         guard let y = parts.year, let m = parts.month, let d = parts.day else { return "" }
-        return y == thisYear ? "\(m)月\(d)日" : "\(y)年\(m)月\(d)日"
+        return y == thisYear ? tr("\(m)月\(d)日") : tr("\(y)年\(m)月\(d)日")
     }
 
     /// Hourly; a show nobody updates more than daily loses nothing by it.

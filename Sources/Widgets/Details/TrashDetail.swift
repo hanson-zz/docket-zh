@@ -47,11 +47,11 @@ struct TrashDetail: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(!context.isPreview && monitor.needsAccess ? "需要权限" : TrashFlies.format(bytes: bytes))
+                        Text(!context.isPreview && monitor.needsAccess ? tr("需要权限") : TrashFlies.format(bytes: bytes))
                             .font(.system(size: 26, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                             .monospacedDigit()
-                        Text(items == 0 ? "废纸篓是空的" : "\(items) 个项目")
+                        Text(items == 0 ? tr("废纸篓是空的") : tr("\(items) 个项目"))
                             .font(WidgetStyle.label(12))
                             .foregroundStyle(.white.opacity(0.75))
                         Text(fliesLine)
@@ -67,17 +67,17 @@ struct TrashDetail: View {
                         .font(WidgetStyle.caption(11))
                         .foregroundStyle(.white.opacity(0.75))
                         .fixedSize(horizontal: false, vertical: true)
-                    PanelButton(title: "打开隐私设置", symbol: "lock.shield", prominent: true) {
+                    PanelButton(title: tr("打开隐私设置"), symbol: "lock.shield", prominent: true) {
                         monitor.openAccessSettings()
                     }
                 }
 
                 HStack(spacing: 8) {
-                    PanelButton(title: "打开废纸篓", symbol: "folder") {
+                    PanelButton(title: tr("打开废纸篓"), symbol: "folder") {
                         guard !context.isPreview else { return }
                         monitor.open()
                     }
-                    PanelButton(title: "清空…", symbol: "trash", prominent: items > 0) {
+                    PanelButton(title: tr("清空…"), symbol: "trash", prominent: items > 0) {
                         guard !context.isPreview else { return }
                         monitor.empty()
                     }
@@ -106,9 +106,9 @@ struct TrashDetail: View {
     }
 
     private var fliesLine: String {
-        guard instance.config.bool("flies", default: true) else { return "苍蝇已关闭" }
+        guard instance.config.bool("flies", default: true) else { return tr("苍蝇已关闭") }
         let label = TrashFlies.thresholds.first { $0.value == thresholdValue }?.label ?? "100 MB"
-        if flies == 0 { return thresholdValue == "any" ? "有东西就会招来苍蝇" : "超过 \(label) 会招来苍蝇" }
-        return "\(flies) 只苍蝇，放得越久越多"
+        if flies == 0 { return thresholdValue == "any" ? tr("有东西就会招来苍蝇") : tr("超过 \(label) 会招来苍蝇") }
+        return tr("\(flies) 只苍蝇，放得越久越多")
     }
 }

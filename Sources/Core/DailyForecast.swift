@@ -148,7 +148,7 @@ public struct DailyForecast: Equatable, Sendable {
     /// "今天" for today, otherwise "周一" to "周日". A key that does not
     /// parse is returned as it came, which at least says which day it is.
     public static func weekdayLabel(_ key: String, today: String) -> String {
-        if key == today { return "今天" }
+        if key == today { return tr("今天") }
         let parts = key.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3 else { return key }
         var calendar = Calendar(identifier: .gregorian)
@@ -156,7 +156,7 @@ public struct DailyForecast: Equatable, Sendable {
         guard let date = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
         else { return key }
         // Calendar's weekday is 1 for Sunday.
-        let names = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        let names = [tr("周日"), tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六")]
         return names[(calendar.component(.weekday, from: date) - 1) % 7]
     }
 
@@ -246,32 +246,32 @@ public enum WMOWeather {
     /// where the two overlap ("晴", "多云", "阴").
     public static func condition(_ code: Int) -> String {
         switch code {
-        case 0: "晴"
-        case 1: "少云"
-        case 2: "多云"
-        case 3: "阴"
-        case 45: "雾"
-        case 48: "雾凇"
-        case 51: "小毛毛雨"
-        case 53: "毛毛雨"
-        case 55: "大毛毛雨"
-        case 56, 57: "冻毛毛雨"
-        case 61: "小雨"
-        case 63: "中雨"
-        case 65: "大雨"
-        case 66, 67: "冻雨"
-        case 71: "小雪"
-        case 73: "中雪"
-        case 75: "大雪"
-        case 77: "雪粒"
-        case 80: "小阵雨"
-        case 81: "阵雨"
-        case 82: "强阵雨"
-        case 85: "小阵雪"
-        case 86: "大阵雪"
-        case 95: "雷阵雨"
-        case 96, 99: "雷阵雨伴有冰雹"
-        default: "未知"
+        case 0: tr("晴")
+        case 1: tr("少云")
+        case 2: tr("多云")
+        case 3: tr("阴")
+        case 45: tr("雾")
+        case 48: tr("雾凇")
+        case 51: tr("小毛毛雨")
+        case 53: tr("毛毛雨")
+        case 55: tr("大毛毛雨")
+        case 56, 57: tr("冻毛毛雨")
+        case 61: tr("小雨")
+        case 63: tr("中雨")
+        case 65: tr("大雨")
+        case 66, 67: tr("冻雨")
+        case 71: tr("小雪")
+        case 73: tr("中雪")
+        case 75: tr("大雪")
+        case 77: tr("雪粒")
+        case 80: tr("小阵雨")
+        case 81: tr("阵雨")
+        case 82: tr("强阵雨")
+        case 85: tr("小阵雪")
+        case 86: tr("大阵雪")
+        case 95: tr("雷阵雨")
+        case 96, 99: tr("雷阵雨伴有冰雹")
+        default: tr("未知")
         }
     }
 }

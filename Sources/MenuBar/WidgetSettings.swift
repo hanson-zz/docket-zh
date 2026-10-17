@@ -166,13 +166,13 @@ struct WidgetSettingsSections: View {
                     }
                 }
             }
-            Toggle("蓝牙设备电量低于 \(BatteryAlertSettings.accessoryLevel)%", isOn: Binding(
+            Toggle(tr("蓝牙设备电量低于 \(BatteryAlertSettings.accessoryLevel)%"), isOn: Binding(
                 get: { settings.accessory },
                 set: { on in write(instance) { $0.set(BatteryAlertSettings.accessoryKey, .bool(on)) } }))
             Toggle("充满后仍插着电超过 2 小时", isOn: Binding(
                 get: { settings.full },
                 set: { on in write(instance) { $0.set(BatteryAlertSettings.fullKey, .bool(on)) } }))
-            Toggle("电池温度高于 \(Int(BatteryAlertSettings.hotCelsius))°C", isOn: Binding(
+            Toggle(tr("电池温度高于 \(Int(BatteryAlertSettings.hotCelsius))°C"), isOn: Binding(
                 get: { settings.hot },
                 set: { on in write(instance) { $0.set(BatteryAlertSettings.hotKey, .bool(on)) } }))
             Text("每一档每次充电或放电只提醒一次，发通知时电池卡片会闪一下。蓝牙设备包括 AirPods、妙控键盘、鼠标和触控板。")
@@ -214,7 +214,7 @@ struct WidgetSettingsSections: View {
                     get: { WidgetVisibility.batteryThreshold(instance.config) },
                     set: { value in write(instance) { $0.set(WidgetVisibility.thresholdKey, .number(Double(value))) } })) {
                     ForEach(WidgetVisibility.thresholdChoices, id: \.self) { value in
-                        Text(value >= 100 ? "任意电量" : "不高于 \(value)%").tag(value)
+                        Text(value >= 100 ? tr("任意电量") : tr("不高于 \(value)%")).tag(value)
                     }
                 }
             }
@@ -266,7 +266,7 @@ struct WidgetSettingsSections: View {
                         .tag(variant.title)
                 }
             } label: {
-                ProLabel(title: "样式", isPro: currentIsPro)
+                ProLabel(title: tr("样式"), isPro: currentIsPro)
             }
     }
 
@@ -290,7 +290,7 @@ struct WidgetSettingsSections: View {
     /// 世界时钟的“选择城市”：按钮上是现在的城市和时区，点开是城市列表。
     private func worldCityControl(_ instance: WidgetInstance) -> some View {
         let zone = instance.config.string("zone", default: "Europe/London")
-        let city = instance.config.string("city", default: "伦敦")
+        let city = instance.config.string("city", default: tr("伦敦"))
         return LabeledContent("城市与时区") {
             Button {
                 cityPickerFor = instance.id
@@ -462,109 +462,109 @@ struct WidgetSettingsSections: View {
     /// Deriving labels is still the rule, and this is the short list of keys
     /// the rule reads badly for.
     private static let labels: [String: String] = [
-        "fahrenheit": "以华氏度显示温度",
-        "city": "城市",
-        "cities": "城市列表（最多 3 个）",
-        "skip": "快进/快退秒数",
-        "mini": "紧凑布局",
-        "chart": "显示图表",
-        "expanded": "加宽显示",
-        "name": "名称",
-        "text": "便签内容",
-        "zone": "时区",
-        "symbols": "股票代码列表",
+        "fahrenheit": tr("以华氏度显示温度"),
+        "city": tr("城市"),
+        "cities": tr("城市列表（最多 3 个）"),
+        "skip": tr("快进/快退秒数"),
+        "mini": tr("紧凑布局"),
+        "chart": tr("显示图表"),
+        "expanded": tr("加宽显示"),
+        "name": tr("名称"),
+        "text": tr("便签内容"),
+        "zone": tr("时区"),
+        "symbols": tr("股票代码列表"),
         // 中文本地化分支：为其余选项补充中文标签，避免回退到英文键名。
-        "symbol": "股票代码",
-        "duration": "时长",
-        "presets": "预设时长",
-        "time": "时间",
-        "list": "列表",
-        "allDay": "显示全天日程",
-        "calendars": "日历",
-        "color": "颜色",
-        "period": "时段",
-        "display": "显示内容",
-        "previous": "显示“上一首”按钮",
-        "next": "显示“下一首”按钮",
-        "backward": "显示“后退”按钮",
-        "forward": "显示“快进”按钮",
+        "symbol": tr("股票代码"),
+        "duration": tr("时长"),
+        "presets": tr("预设时长"),
+        "time": tr("时间"),
+        "list": tr("列表"),
+        "allDay": tr("显示全天日程"),
+        "calendars": tr("日历"),
+        "color": tr("颜色"),
+        "period": tr("时段"),
+        "display": tr("显示内容"),
+        "previous": tr("显示“上一首”按钮"),
+        "next": tr("显示“下一首”按钮"),
+        "backward": tr("显示“后退”按钮"),
+        "forward": tr("显示“快进”按钮"),
         "spotify": "Spotify",
-        "apple": "Apple 音乐",
-        "netease": "网易云音乐",
-        "xiaoyuzhou": "小宇宙",
-        "browsers": "浏览器标签页",
-        "devices": "设备",
-        "bluetooth": "显示蓝牙设备（耳机、鼠标、触控板等）",
-        "metrics": "读数",
-        "folder": "文件夹",
-        "interval": "切换间隔",
-        "shuffle": "随机顺序",
-        "emoji": "常用表情",
-        "engine": "搜索引擎",
-        "allScreens": "应用到所有显示器",
-        "links": "网址",
-        "from": "原币种",
-        "to": "目标币种",
-        "amount": "金额",
-        "repo": "仓库",
-        "repos": "仓库列表",
-        "rings": "圆环",
-        "start": "开始时间",
-        "end": "结束时间",
-        "notify": "发送通知",
-        "show": "圆环显示",
-        "alertAt": "首次提醒阈值",
-        "notifyDone": "任务完成时通知",
-        "extras": "显示 Spark 与代码审查额度",
-        "showDone": "显示已完成的待办",
-        "sounds": "声音",
-        "volume": "音量",
-        "showTerm": "显示当天的节气",
-        "seconds": "显示秒（数字类样式）",
-        "workAlert": "提醒调休上班和放假",
-        "flies": "垃圾多了招来苍蝇",
-        "threshold": "苍蝇出现的大小",
-        "pasteOnClick": "点按后直接粘贴（需要辅助功能权限）",
-        "actions": "开关",
-        "showStreak": "显示连续打卡天数",
-        "showRing": "显示进度圈（单个样式）",
-        "coins": "币种（BTC、ETH 等代码，或 CoinGecko ID）",
-        "currency": "计价货币",
-        "colors": "涨跌颜色",
-        "goal": "每日目标",
-        "cupSize": "一杯的容量（卡片上的 +）",
-        "remindEvery": "喝水提醒",
-        "unit": "单位",
-        "character": "角色形象",
-        "clickAction": "点按卡片时",
-        "autoDirection": "智能方向（中文译成英语，其他译成中文）",
-        "workdays": "工作日",
-        "payday": "发薪日",
-        "income": "每天的收入",
-        "more": "显示更多",
-        "font": "字体",
-        "tint": "背景随状态变色（上班橙、下班绿、周末蓝）",
-        "holidays": "按法定节假日和调休",
+        "apple": tr("Apple 音乐"),
+        "netease": tr("网易云音乐"),
+        "xiaoyuzhou": tr("小宇宙"),
+        "browsers": tr("浏览器标签页"),
+        "devices": tr("设备"),
+        "bluetooth": tr("显示蓝牙设备（耳机、鼠标、触控板等）"),
+        "metrics": tr("读数"),
+        "folder": tr("文件夹"),
+        "interval": tr("切换间隔"),
+        "shuffle": tr("随机顺序"),
+        "emoji": tr("常用表情"),
+        "engine": tr("搜索引擎"),
+        "allScreens": tr("应用到所有显示器"),
+        "links": tr("网址"),
+        "from": tr("原币种"),
+        "to": tr("目标币种"),
+        "amount": tr("金额"),
+        "repo": tr("仓库"),
+        "repos": tr("仓库列表"),
+        "rings": tr("圆环"),
+        "start": tr("开始时间"),
+        "end": tr("结束时间"),
+        "notify": tr("发送通知"),
+        "show": tr("圆环显示"),
+        "alertAt": tr("首次提醒阈值"),
+        "notifyDone": tr("任务完成时通知"),
+        "extras": tr("显示 Spark 与代码审查额度"),
+        "showDone": tr("显示已完成的待办"),
+        "sounds": tr("声音"),
+        "volume": tr("音量"),
+        "showTerm": tr("显示当天的节气"),
+        "seconds": tr("显示秒（数字类样式）"),
+        "workAlert": tr("提醒调休上班和放假"),
+        "flies": tr("垃圾多了招来苍蝇"),
+        "threshold": tr("苍蝇出现的大小"),
+        "pasteOnClick": tr("点按后直接粘贴（需要辅助功能权限）"),
+        "actions": tr("开关"),
+        "showStreak": tr("显示连续打卡天数"),
+        "showRing": tr("显示进度圈（单个样式）"),
+        "coins": tr("币种（BTC、ETH 等代码，或 CoinGecko ID）"),
+        "currency": tr("计价货币"),
+        "colors": tr("涨跌颜色"),
+        "goal": tr("每日目标"),
+        "cupSize": tr("一杯的容量（卡片上的 +）"),
+        "remindEvery": tr("喝水提醒"),
+        "unit": tr("单位"),
+        "character": tr("角色形象"),
+        "clickAction": tr("点按卡片时"),
+        "autoDirection": tr("智能方向（中文译成英语，其他译成中文）"),
+        "workdays": tr("工作日"),
+        "payday": tr("发薪日"),
+        "income": tr("每天的收入"),
+        "more": tr("显示更多"),
+        "font": tr("字体"),
+        "tint": tr("背景随状态变色（上班橙、下班绿、周末蓝）"),
+        "holidays": tr("按法定节假日和调休"),
     ]
 
     /// Where one key means something different in one widget: `interval`
     /// is the photo frame's seconds between pictures but GitHub's minutes
     /// between checks.
     private static let kindLabels: [String: String] = [
-        "github.interval": "检查间隔",
-        "github.notify": "有新议题、拉取请求或评论时通知",
-        "github.repos": "关注的项目（最多 \(GitHubWatch.maxRepos) 个）",
-        "podcast.notify": "有新单集时通知",
-        "battery.look": "外观",
-        "countdown.look": "数字外观",
-        "slacker.start": "上班时间",
-        "slacker.end": "下班时间（要晚于上班时间）",
-        "slacker.look": "外观",
-        "timer.look": "外观",
-        "ai-usage.look": "外观",
-        "perfect-day.look": "外观",
-        "water.dryUp": "很久没喝水时角色渴成骷髅",
-        "progress.liquidMotion": "水面动效（波纹和气泡）",
+        "github.interval": tr("检查间隔"),
+        "github.notify": tr("有新议题、拉取请求或评论时通知"),
+        "github.repos": tr("关注的项目（最多 \(GitHubWatch.maxRepos) 个）"),
+        "podcast.notify": tr("有新单集时通知"),
+        "battery.look": tr("外观"),
+        "countdown.look": tr("数字外观"),
+        "slacker.start": tr("上班时间"),
+        "slacker.end": tr("下班时间（要晚于上班时间）"),
+        "slacker.look": tr("外观"),
+        "timer.look": tr("外观"),
+        "ai-usage.look": tr("外观"),
+        "perfect-day.look": tr("外观"),
+        "water.dryUp": tr("很久没喝水时角色渴成骷髅"),
+        "progress.liquidMotion": tr("水面动效（波纹和气泡）"),
     ]
 
     static func label(_ key: String) -> String {
@@ -577,28 +577,28 @@ struct WidgetSettingsSections: View {
 
     /// What a run of toggles is choosing between.
     private static let groupLabels: [String: String] = [
-        "metrics": "要显示的读数",
-        "sources": "要读取的播放器",
-        "devices": "要显示的设备",
-        "rings": "要显示的圆环",
-        "sounds": "要混合的声音",
-        "actions": "要显示的开关",
-        "workdays": "工作日",
-        "more": "显示更多（卡片下方的小格）",
+        "metrics": tr("要显示的读数"),
+        "sources": tr("要读取的播放器"),
+        "devices": tr("要显示的设备"),
+        "rings": tr("要显示的圆环"),
+        "sounds": tr("要混合的声音"),
+        "actions": tr("要显示的开关"),
+        "workdays": tr("工作日"),
+        "more": tr("显示更多（卡片下方的小格）"),
     ]
 
     static func groupLabel(_ key: String) -> String {
-        groupLabels[key] ?? "显示"
+        groupLabels[key] ?? tr("显示")
     }
 
     static func prompt(_ key: String) -> String {
         switch key {
-        case "city": "当前位置"
-        case "cities": "北京, 上海, 广州"
-        case "folder": "图片"
-        case "links": "标题 网址, …"
-        case "repo": "用户/仓库"
-        case "repos": "用户/仓库, 用户/仓库"
+        case "city": tr("当前位置")
+        case "cities": tr("北京, 上海, 广州")
+        case "folder": tr("图片")
+        case "links": tr("标题 网址, …")
+        case "repo": tr("用户/仓库")
+        case "repos": tr("用户/仓库, 用户/仓库")
         case "start": "09:00"
         case "end": "18:00"
         case "coins": "BTC, ETH, SOL"
@@ -637,21 +637,21 @@ struct WidgetSettingsSections: View {
     static func format(_ key: String, _ value: Double) -> String {
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "amount" { return UnitConverter.format(value) }
-        if key == "goal" || key == "cupSize" { return "\(Int(value)) 毫升" }
-        if key == "payday" { return "每月 \(Int(value)) 日" }
-        if key == "income" { return "\(Int(value)) 元" }
-        guard key == "duration" else { return "\(Int(value)) 秒" }
+        if key == "goal" || key == "cupSize" { return tr("\(Int(value)) 毫升") }
+        if key == "payday" { return tr("每月 \(Int(value)) 日") }
+        if key == "income" { return tr("\(Int(value)) 元") }
+        guard key == "duration" else { return tr("\(Int(value)) 秒") }
         let minutes = Int(value) / 60
-        return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分钟" : "\(minutes) 分钟"
+        return minutes >= 60 ? tr("\(minutes / 60) 小时 \(minutes % 60) 分钟") : tr("\(minutes) 分钟")
     }
 
     /// The fixed sets behind the list-valued options.
     static let choices: [String: [(title: String, value: String)]] = [
-        "metrics": [("CPU", "cpu"), ("内存", "memory"),
-                    ("磁盘", "disk"), ("电池", "battery")],
-        "devices": [("这台 Mac", "mac"), ("AirPods", "pods"),
-                    ("AirPods 充电盒", "case"), ("键盘", "keyboard")],
-        "rings": [("存储空间", "storage"), ("电池", "battery")],
+        "metrics": [("CPU", "cpu"), (tr("内存"), "memory"),
+                    (tr("磁盘"), "disk"), (tr("电池"), "battery")],
+        "devices": [(tr("这台 Mac"), "mac"), ("AirPods", "pods"),
+                    (tr("AirPods 充电盒"), "case"), (tr("键盘"), "keyboard")],
+        "rings": [(tr("存储空间"), "storage"), (tr("电池"), "battery")],
         "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
         "actions": QuickToggle.allCases.map { ($0.title, $0.rawValue) },
         "workdays": SlackerClock.weekdayChoices,
@@ -673,23 +673,23 @@ struct WidgetSettingsSections: View {
     /// Only sets that were read out of the code that consumes them. A key
     /// missing here keeps its text field, which is the honest fallback.
     static let stringChoices: [String: [(title: String, value: String)]] = [
-        "network.display": [("两者", "both"), ("下载", "download"), ("上传", "upload")],
+        "network.display": [(tr("两者"), "both"), (tr("下载"), "download"), (tr("上传"), "upload")],
         "battery.look": BatteryLook.allCases.map { ($0.title, $0.rawValue) },
         "progress.period": TimeProgress.Period.allCases.map { ($0.title, $0.rawValue) },
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
-        "ai-usage.show": [("已用", "used"), ("剩余", "remaining")],
+        "ai-usage.show": [(tr("已用"), "used"), (tr("剩余"), "remaining")],
         "search.engine": SearchSites.builtIn.map { ($0.title, $0.id) },
         "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
-        "crypto.currency": [("人民币 CNY", "cny"), ("美元 USD", "usd")],
+        "crypto.currency": [(tr("人民币 CNY"), "cny"), (tr("美元 USD"), "usd")],
         "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
-        "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? "关闭" : "每 \($0) 分钟", "\($0)") },
-        "water.unit": [("毫升", "ml"), ("盎司", "oz")],
+        "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? tr("关闭") : tr("每 \($0) 分钟"), "\($0)") },
+        "water.unit": [(tr("毫升"), "ml"), (tr("盎司"), "oz")],
         "water.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
         "pet.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
         "translate.clickAction": Translate.ClickAction.allCases.map { ($0.title, $0.rawValue) },
-        "github.interval": GitHubWatch.intervalChoices.map { ("每 \($0) 分钟", "\($0)") },
+        "github.interval": GitHubWatch.intervalChoices.map { (tr("每 \($0) 分钟"), "\($0)") },
         "slacker.font": SlackerClock.FontChoice.allCases.map { ($0.title, $0.rawValue) },
         "slacker.look": SlackerClock.Look.allCases.map { ($0.title, $0.rawValue) },
         "timer.look": LiquidMotion.TimerLook.allCases.map { ($0.title, $0.rawValue) },

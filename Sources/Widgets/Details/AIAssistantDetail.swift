@@ -43,11 +43,11 @@ struct AIAssistantDetail: View {
     private var header: some View {
         HStack(spacing: 8) {
             AIPandaAvatar(size: 28)
-            Text(state.mode == .manage ? "管理字牌" : "问问 AI")
+            Text(state.mode == .manage ? tr("管理字牌") : tr("问问 AI"))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
             Spacer(minLength: 0)
-            Button(state.mode == .manage ? "完成" : "管理字牌") {
+            Button(state.mode == .manage ? tr("完成") : tr("管理字牌")) {
                 state.mode = state.mode == .manage ? .ask : .manage
             }
             .buttonStyle(.plain)
@@ -56,7 +56,7 @@ struct AIAssistantDetail: View {
             .padding(.horizontal, 10)
             .frame(height: 24)
             .background(Capsule().fill(.white.opacity(0.12)))
-            .accessibilityLabel(state.mode == .manage ? "完成管理，回到提问" : "管理字牌")
+            .accessibilityLabel(state.mode == .manage ? tr("完成管理，回到提问") : tr("管理字牌"))
         }
     }
 }
@@ -105,11 +105,11 @@ private struct AIAskView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSubmit)
-                    .help(targetMode == .api ? "在刘海对话里用 API 直接问 \(target?.title ?? "")"
-                          : targetMode == .web ? "复制问题，在刘海对话里打开 \(target?.title ?? "") 的网页"
+                    .help(targetMode == .api ? tr("在刘海对话里用 API 直接问 \(target?.title ?? "")")
+                          : targetMode == .web ? tr("复制问题，在刘海对话里打开 \(target?.title ?? "") 的网页")
                           : target?.supportsAsk == true
-                          ? "在浏览器打开 \(target?.title ?? "")，问题会带过去"
-                          : "把问题复制到剪贴板，再打开 \(target?.title ?? "")")
+                          ? tr("在浏览器打开 \(target?.title ?? "")，问题会带过去")
+                          : tr("把问题复制到剪贴板，再打开 \(target?.title ?? "")"))
                     .accessibilityLabel(buttonTitle)
                 }
                 if let hint = state.hint(instance.id) {
@@ -120,8 +120,8 @@ private struct AIAskView: View {
                         .accessibilityAddTraits(.updatesFrequently)
                 } else {
                     Text(target?.supportsAsk == true
-                         ? "Enter 提交，Shift+Enter 换行。会在浏览器打开 \(target?.title ?? "")。"
-                         : "Enter 提交，Shift+Enter 换行。\(target?.title ?? "这个服务")不支持带问题打开，会先复制问题。")
+                         ? tr("Enter 提交，Shift+Enter 换行。会在浏览器打开 \(target?.title ?? "")。")
+                         : tr("Enter 提交，Shift+Enter 换行。\(target?.title ?? tr("这个服务"))不支持带问题打开，会先复制问题。"))
                         .font(.system(size: 11.5))
                         .foregroundStyle(.white.opacity(0.55))
                         .fixedSize(horizontal: false, vertical: true)
@@ -167,7 +167,7 @@ private struct AIAskView: View {
             HStack(spacing: 6) {
                 if let target {
                     AIGlyph(initial: target.initial, size: 20, style: .panel)
-                    Text("发给 \(target.title)")
+                    Text(tr("发给 \(target.title)"))
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(.white)
                 }
@@ -179,12 +179,12 @@ private struct AIAskView: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .accessibilityLabel("选择提问的服务，当前是 \(target?.title ?? "无")")
+        .accessibilityLabel(tr("选择提问的服务，当前是 \(target?.title ?? tr("无"))"))
     }
 
     private var empty: some View {
         VStack(spacing: 12) {
-            PanelNote(symbol: "plus.square.dashed", text: "卡片上还没有 AI 字牌。")
+            PanelNote(symbol: "plus.square.dashed", text: tr("卡片上还没有 AI 字牌。"))
             Button("添加字牌") { state.mode = .manage }
                 .buttonStyle(.borderedProminent)
                 .accessibilityLabel("添加 AI 字牌")
@@ -199,8 +199,8 @@ private struct AIAskView: View {
 
     private var buttonTitle: String {
         switch targetMode {
-        case .api: "在刘海里问"
-        case .web: "复制并在刘海打开"
+        case .api: tr("在刘海里问")
+        case .web: tr("复制并在刘海打开")
         case .jump: AIAsk.buttonTitle(for: target)
         }
     }
@@ -236,13 +236,13 @@ private struct AIAskView: View {
             return
         case .openWithQuestion(let url):
             guard AIServiceOpener.open(url) else {
-                state.setHint("没能打开 \(service.title)。", for: instance.id)
+                state.setHint(tr("没能打开 \(service.title)。"), for: instance.id)
                 return
             }
         case .copyThenOpen(let question):
             AIServiceOpener.copy(question)
             guard AIServiceOpener.open(service) else {
-                state.setHint("已复制，但没能打开 \(service.title)。", for: instance.id)
+                state.setHint(tr("已复制，但没能打开 \(service.title)。"), for: instance.id)
                 return
             }
         }
@@ -270,12 +270,12 @@ private struct AIManageView: View {
         let custom = AIServices.custom(in: config)
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("勾选的显示在卡片上，最多 \(AIServices.maxCount) 个。点“设为默认”改蓝点。")
+                Text(tr("勾选的显示在卡片上，最多 \(AIServices.maxCount) 个。点“设为默认”改蓝点。"))
                     .font(.system(size: 11.5))
                     .foregroundStyle(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
                 if !enabled.isEmpty {
-                    section("卡片上的顺序") {
+                    section(tr("卡片上的顺序")) {
                         ForEach(Array(enabled.enumerated()), id: \.element.id) { index, service in
                             orderRow(service, index: index, count: enabled.count,
                                      isDefault: service.id == defaultID)
@@ -290,7 +290,7 @@ private struct AIManageView: View {
                     }
                 }
                 if !custom.isEmpty {
-                    section("自定义") {
+                    section(tr("自定义")) {
                         ForEach(custom) { service in
                             toggleRow(service, on: enabledIDs.contains(service.id),
                                       full: enabled.count >= AIServices.maxCount, removable: true)
@@ -351,7 +351,7 @@ private struct AIManageView: View {
             }
             .toggleStyle(.checkbox)
             .disabled(!on && full)
-            .accessibilityLabel(on ? "\(service.title)，显示在卡片上" : "\(service.title)，已隐藏")
+            .accessibilityLabel(on ? tr("\(service.title)，显示在卡片上") : tr("\(service.title)，已隐藏"))
             Spacer(minLength: 0)
             if service.supportsAsk {
                 Text("可带问题")
@@ -363,7 +363,7 @@ private struct AIManageView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color(hex: PaletteColor.red.hex))
-                    .accessibilityLabel("删除 \(service.title)")
+                    .accessibilityLabel(tr("删除 \(service.title)"))
             }
         }
         .frame(height: 24)
@@ -382,17 +382,17 @@ private struct AIManageView: View {
             }
             Spacer(minLength: 0)
             if !isDefault {
-                smallButton("设为默认", label: "把 \(service.title) 设为默认") {
+                smallButton(tr("设为默认"), label: tr("把 \(service.title) 设为默认")) {
                     change { AIServices.setDefault(service.id, in: &$0) }
                 }
             }
-            iconButton("chevron.left", label: "\(service.title) 左移", disabled: index == 0) {
+            iconButton("chevron.left", label: tr("\(service.title) 左移"), disabled: index == 0) {
                 change { AIServices.move(service.id, by: -1, in: &$0) }
             }
-            iconButton("chevron.right", label: "\(service.title) 右移", disabled: index == count - 1) {
+            iconButton("chevron.right", label: tr("\(service.title) 右移"), disabled: index == count - 1) {
                 change { AIServices.move(service.id, by: 1, in: &$0) }
             }
-            iconButton("eye.slash", label: "隐藏 \(service.title)", disabled: false) {
+            iconButton("eye.slash", label: tr("隐藏 \(service.title)"), disabled: false) {
                 change { AIServices.hide(service.id, in: &$0) }
             }
         }
@@ -451,10 +451,10 @@ private struct AICustomForm: View {
                 .foregroundStyle(.white.opacity(0.55))
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 8) {
-                field("名字", text: Binding(get: { state.form.name }, set: { state.form.name = $0 }),
-                      prompt: "例如 秘塔", focus: true)
+                field(tr("名字"), text: Binding(get: { state.form.name }, set: { state.form.name = $0 }),
+                      prompt: tr("例如 秘塔"), focus: true)
                     .frame(width: 96)
-                field("打开地址", text: Binding(get: { state.form.address }, set: { state.form.address = $0 }),
+                field(tr("打开地址"), text: Binding(get: { state.form.address }, set: { state.form.address = $0 }),
                       prompt: "https://metaso.cn")
             }
             HStack(spacing: 8) {
@@ -564,8 +564,8 @@ private struct AICustomForm: View {
         defer { NSApp.setActivationPolicy(policy) }
 
         let panel = NSOpenPanel()
-        panel.message = "选一个 AI App"
-        panel.prompt = "选择"
+        panel.message = tr("选一个 AI App")
+        panel.prompt = tr("选择")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -625,8 +625,8 @@ struct AskTextEditor: NSViewRepresentable {
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
         view.textContainerInset = .zero
-        view.setAccessibilityLabel("要问的问题")
-        view.setAccessibilityHelp("Enter 提交，Shift 加 Enter 换行")
+        view.setAccessibilityLabel(tr("要问的问题"))
+        view.setAccessibilityHelp(tr("Enter 提交，Shift 加 Enter 换行"))
         view.string = text
         let coordinator = context.coordinator
         view.onSubmit = { coordinator.parent.onSubmit() }

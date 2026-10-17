@@ -87,16 +87,16 @@ public enum IslandCountdown {
     /// seconds away says 5 rather than claiming more time than there is
     /// left to spare. Under a minute says so; at or past the start, 现在.
     public static func text(secondsUntil seconds: TimeInterval) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "现在" }
-        if seconds < 60 { return "不到 1 分钟后" }
+        guard seconds.isFinite, seconds > 0 else { return tr("现在") }
+        if seconds < 60 { return tr("不到 1 分钟后") }
         let minutes = Int((seconds / 60).rounded(.up))
-        return "\(minutes) 分钟后"
+        return tr("\(minutes) 分钟后")
     }
 
     /// The capsule's whole line.
     public static func line(title: String, secondsUntil seconds: TimeInterval) -> String {
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return "\(text(secondsUntil: seconds))：\(name.isEmpty ? "新日程" : name)"
+        return "\(text(secondsUntil: seconds))：\(name.isEmpty ? tr("新日程") : name)"
     }
 
     /// Whether an event starting at `start` is inside the countdown window.

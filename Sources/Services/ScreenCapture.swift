@@ -33,9 +33,9 @@ enum ScreenCapture {
 
         var title: String {
             switch self {
-            case .window: "截取窗口"
-            case .region: "截取区域"
-            case .screen: "截取全屏"
+            case .window: tr("截取窗口")
+            case .region: tr("截取区域")
+            case .screen: tr("截取全屏")
             }
         }
     }

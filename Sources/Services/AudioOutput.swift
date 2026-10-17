@@ -51,7 +51,7 @@ final class AudioOutput {
             volume = nil
             return
         }
-        deviceName = Self.name(of: device) ?? "输出设备"
+        deviceName = Self.name(of: device) ?? tr("输出设备")
         volume = Self.float(device, kAudioHardwareServiceDeviceProperty_VirtualMainVolume).map(Double.init)
         muted = (Self.uint(device, kAudioDevicePropertyMute) ?? 0) != 0
     }

@@ -66,8 +66,8 @@ public enum SlackerClock {
 
     /// 设置里的星期选项，标题和存进配置的值。
     public static let weekdayChoices: [(title: String, value: String)] = [
-        ("周一", "1"), ("周二", "2"), ("周三", "3"), ("周四", "4"),
-        ("周五", "5"), ("周六", "6"), ("周日", "7"),
+        (tr("周一"), "1"), (tr("周二"), "2"), (tr("周三"), "3"), (tr("周四"), "4"),
+        (tr("周五"), "5"), (tr("周六"), "6"), (tr("周日"), "7"),
     ]
 
     /// 卡片上的几种字体。
@@ -76,10 +76,10 @@ public enum SlackerClock {
 
         public var title: String {
             switch self {
-            case .system: "系统"
-            case .rounded: "圆体"
-            case .mono: "等宽"
-            case .serif: "宋体"
+            case .system: tr("系统")
+            case .rounded: tr("圆体")
+            case .mono: tr("等宽")
+            case .serif: tr("宋体")
             }
         }
     }
@@ -92,10 +92,10 @@ public enum SlackerClock {
 
         public var title: String {
             switch self {
-            case .payday: "发薪日"
-            case .friday: "距离周五"
-            case .holiday: "下一个节日"
-            case .earned: "今天收入"
+            case .payday: tr("发薪日")
+            case .friday: tr("距离周五")
+            case .holiday: tr("下一个节日")
+            case .earned: tr("今天收入")
             }
         }
     }
@@ -110,8 +110,8 @@ public enum SlackerClock {
 
         public var title: String {
             switch self {
-            case .illustrated: "小熊猫"
-            case .liquid: "液态"
+            case .illustrated: tr("小熊猫")
+            case .liquid: tr("液态")
             }
         }
     }
@@ -275,11 +275,11 @@ public enum SlackerClock {
     public static func title(_ phase: Phase) -> String {
         switch phase {
         case .working(let left):
-            return "距离下班 \(clock(seconds: left))"
+            return tr("距离下班 \(clock(seconds: left))")
         case .beforeWork(let left):
-            return left <= leadSeconds ? "距离上班 \(clockMinutes(seconds: left))" : "还没上班"
+            return left <= leadSeconds ? tr("距离上班 \(clockMinutes(seconds: left))") : tr("还没上班")
         case .afterWork(let since):
-            return since < justOffSeconds ? "下班啦" : "休息时间"
+            return since < justOffSeconds ? tr("下班啦") : tr("休息时间")
         case .dayOff(let greeting):
             return greeting
         }
@@ -289,9 +289,9 @@ public enum SlackerClock {
     public static func titleLines(_ phase: Phase) -> (top: String, bottom: String?) {
         switch phase {
         case .working(let left):
-            return ("距离下班", clock(seconds: left))
+            return (tr("距离下班"), clock(seconds: left))
         case .beforeWork(let left) where left <= leadSeconds:
-            return ("距离上班", clockMinutes(seconds: left))
+            return (tr("距离上班"), clockMinutes(seconds: left))
         default:
             return (title(phase), nil)
         }
@@ -319,14 +319,14 @@ public enum SlackerClock {
                       .festMidAutumn, .festNational] {
             if let window = badge.festivalWindow { list.append((badge.title, window)) }
         }
-        list.insert(("劳动节", FestivalWindow(.gregorian, from: .init(5, 1), to: .init(5, 5))), at: 3)
+        list.insert((tr("劳动节"), FestivalWindow(.gregorian, from: .init(5, 1), to: .init(5, 5))), at: 3)
         return list
     }()
 
     /// “国庆快乐”“清明安康”。
     public static func greeting(festival name: String) -> String {
         let short = HolidaySchedule.shortName(name)
-        return ["清明", "端午"].contains(short) ? "\(short)安康" : "\(short)快乐"
+        return ["清明", "端午"].contains(short) ? tr("\(trKey(short))安康") : tr("\(trKey(short))快乐")
     }
 
     /// 不上班那天的标题。
@@ -339,7 +339,7 @@ public enum SlackerClock {
             return greeting(festival: festival.name)
         }
         let weekday = isoWeekday(date, calendar: calendar)
-        return weekday >= 6 ? "周末快乐" : "休息日快乐"
+        return weekday >= 6 ? tr("周末快乐") : tr("休息日快乐")
     }
 
     /// 下一个节日，和竹篮的节日限定徽章是同一份名单、同一套窗口。
@@ -353,7 +353,7 @@ public enum SlackerClock {
     public static func festivalName(_ badge: PerfectBadge) -> String {
         switch badge {
         case .festLantern, .festQingming, .festDragonBoat, .festMidAutumn, .festNational, .festDoubleNinth:
-            "\(badge.title)节"
+            tr("\(badge.title)节")
         default:
             badge.title
         }
@@ -518,28 +518,28 @@ public enum SlackerClock {
         switch item {
         case .payday:
             let days = daysUntilPayday(settings.payday, now: now, calendar: calendar)
-            return days == 0 ? Cell(item: item, label: "今天", value: "发薪", unit: "")
-                             : Cell(item: item, label: "发薪", value: "\(days)", unit: "天")
+            return days == 0 ? Cell(item: item, label: tr("今天"), value: tr("发薪"), unit: "")
+                             : Cell(item: item, label: tr("发薪"), value: "\(days)", unit: tr("天"))
         case .friday:
             if case .dayOff = phase {
                 let days = daysUntilWork(now, settings: settings, calendar: calendar, known: known)
-                return Cell(item: item, label: "上班", value: days.map(String.init) ?? "--", unit: "天")
+                return Cell(item: item, label: tr("上班"), value: days.map(String.init) ?? "--", unit: tr("天"))
             }
             let days = daysUntilFriday(now, calendar: calendar)
-            return days == 0 ? Cell(item: item, label: "周五", value: "就是", unit: "今天")
-                             : Cell(item: item, label: "周五", value: "\(days)", unit: "天")
+            return days == 0 ? Cell(item: item, label: tr("周五"), value: tr("就是"), unit: tr("今天"))
+                             : Cell(item: item, label: tr("周五"), value: "\(days)", unit: tr("天"))
         case .holiday:
             guard let next = nextFestival(after: now, calendar: calendar) else {
-                return Cell(item: item, label: "节日", value: "--", unit: "")
+                return Cell(item: item, label: tr("节日"), value: "--", unit: "")
             }
-            return next.days == 0 ? Cell(item: item, label: next.name, value: "就是", unit: "今天")
-                                  : Cell(item: item, label: next.name, value: "\(next.days)", unit: "天")
+            return next.days == 0 ? Cell(item: item, label: next.name, value: tr("就是"), unit: tr("今天"))
+                                  : Cell(item: item, label: next.name, value: "\(next.days)", unit: tr("天"))
         case .earned:
             if case .dayOff = phase {
                 let month = earnedThisMonth(now: now, settings: settings, calendar: calendar, known: known)
-                return Cell(item: item, label: "本月已赚", value: monthMoney(month), unit: "¥")
+                return Cell(item: item, label: tr("本月已赚"), value: monthMoney(month), unit: "¥")
             }
-            return Cell(item: item, label: "今天赚了", value: money(earnedToday(phase: phase, settings: settings)),
+            return Cell(item: item, label: tr("今天赚了"), value: money(earnedToday(phase: phase, settings: settings)),
                         unit: "¥")
         }
     }

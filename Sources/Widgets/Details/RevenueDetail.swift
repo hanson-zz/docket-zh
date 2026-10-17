@@ -96,7 +96,7 @@ struct RevenueDetail: View {
             Text("未连接")
                 .font(WidgetStyle.value(20))
                 .foregroundStyle(WidgetStyle.primary)
-            Text("码头没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。")
+            Text(tr("码头没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
@@ -168,26 +168,26 @@ struct RevenueDetail: View {
     private var metricTitle: String {
         // Paddle calls its `revenue` "Net revenue"; every other raw value
         // means the same on whichever provider offers it.
-        if metric == "revenue", instance.kind == .paddle { return "净收入" }
+        if metric == "revenue", instance.kind == .paddle { return tr("净收入") }
         return switch metric {
-        case "revenue": "收入"
-        case "net": "净收入"
+        case "revenue": tr("收入")
+        case "net": tr("净收入")
         case "mrr": "MRR"
         case "arr": "ARR"
-        case "subscribers": "订阅者"
+        case "subscribers": tr("订阅者")
         case "arpu": "ARPU"
-        case "sales": "销售额"
-        case "netSales": "净销售额"
-        case "orders": "订单"
-        case "averageOrderValue": "平均订单金额"
-        case "returns": "退货"
-        case "visitors": "访客"
-        case "sessions": "会话"
-        case "pageviews": "页面浏览量"
-        case "conversionRate": "转化率"
-        case "addedToCart": "加入购物车"
-        case "reachedCheckout": "进入结账"
-        case "completedCheckout": "完成结账"
+        case "sales": tr("销售额")
+        case "netSales": tr("净销售额")
+        case "orders": tr("订单")
+        case "averageOrderValue": tr("平均订单金额")
+        case "returns": tr("退货")
+        case "visitors": tr("访客")
+        case "sessions": tr("会话")
+        case "pageviews": tr("页面浏览量")
+        case "conversionRate": tr("转化率")
+        case "addedToCart": tr("加入购物车")
+        case "reachedCheckout": tr("进入结账")
+        case "completedCheckout": tr("完成结账")
         // A metric this build predates still deserves a readable name.
         default: WidgetCatalog.optionLabel(metric)
         }
@@ -215,42 +215,42 @@ struct RevenueDetail: View {
     }
 
     private var periodShort: String {
-        if isLevel { return instance.kind == .paddle ? "最新" : "当前" }
+        if isLevel { return instance.kind == .paddle ? tr("最新") : tr("当前") }
         return switch period {
-        case "today": "今天"
-        case "week": "近7天"
-        case "month": "本月"
-        case "thirtyDays": "近30天"
-        case "fourWeeks": "近4周"
-        case "sixtyDays": "近60天"
-        case "ninetyDays": "近90天"
-        case "sixMonths": "近6月"
-        case "twelveMonths": "近12月"
-        case "quarter": "本季"
-        case "year": "本年"
-        case "lastYear": "近365天"
-        case "allTime": "全部"
+        case "today": tr("今天")
+        case "week": tr("近7天")
+        case "month": tr("本月")
+        case "thirtyDays": tr("近30天")
+        case "fourWeeks": tr("近4周")
+        case "sixtyDays": tr("近60天")
+        case "ninetyDays": tr("近90天")
+        case "sixMonths": tr("近6月")
+        case "twelveMonths": tr("近12月")
+        case "quarter": tr("本季")
+        case "year": tr("本年")
+        case "lastYear": tr("近365天")
+        case "allTime": tr("全部")
         default: "-"
         }
     }
 
     private var periodName: String {
-        if isLevel { return instance.kind == .paddle ? "最新报告" : "当前" }
+        if isLevel { return instance.kind == .paddle ? tr("最新报告") : tr("当前") }
         return switch period {
-        case "today": "今天"
-        case "week": "最近 7 天"
-        case "month": "本月至今"
-        case "thirtyDays": "最近 30 天"
-        case "fourWeeks": "最近 4 周"
-        case "sixtyDays": "最近 60 天"
-        case "ninetyDays": "最近 90 天"
-        case "sixMonths": "最近 6 个月"
-        case "twelveMonths": "最近 12 个月"
-        case "quarter": "本季度至今"
-        case "year": "本年至今"
-        case "lastYear": "最近 365 天"
-        case "allTime": "全部时间"
-        default: "自定义时段"
+        case "today": tr("今天")
+        case "week": tr("最近 7 天")
+        case "month": tr("本月至今")
+        case "thirtyDays": tr("最近 30 天")
+        case "fourWeeks": tr("最近 4 周")
+        case "sixtyDays": tr("最近 60 天")
+        case "ninetyDays": tr("最近 90 天")
+        case "sixMonths": tr("最近 6 个月")
+        case "twelveMonths": tr("最近 12 个月")
+        case "quarter": tr("本季度至今")
+        case "year": tr("本年至今")
+        case "lastYear": tr("最近 365 天")
+        case "allTime": tr("全部时间")
+        default: tr("自定义时段")
         }
     }
 
@@ -300,10 +300,10 @@ struct RevenueDetail: View {
     private var explanation: String {
         // Stripe and Paddle break today down by the hour; everything else,
         // Shopify included, is a point per day.
-        let grain = period == "today" && instance.kind != .shopify ? "按小时统计的" : "按天统计的"
+        let grain = period == "today" && instance.kind != .shopify ? tr("按小时统计的") : tr("按天统计的")
         let headline = isLevel
-            ? "“\(metricTitle)”是序列中的最新数据点而非合计，即上次刷新时的水平。"
-            : "“\(metricTitle)”是\(periodName)内所有\(grain)数据点的合计。"
-        return headline + "扩展栏显示在屏幕上时，已连接的账户每五分钟刷新一次。"
+            ? tr("“\(metricTitle)”是序列中的最新数据点而非合计，即上次刷新时的水平。")
+            : tr("“\(metricTitle)”是\(periodName)内所有\(grain)数据点的合计。")
+        return headline + tr("扩展栏显示在屏幕上时，已连接的账户每五分钟刷新一次。")
     }
 }

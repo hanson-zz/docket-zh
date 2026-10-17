@@ -74,14 +74,14 @@ public enum RelativeAge {
     public static func caption(_ date: Date, now: Date) -> String {
         let seconds = max(0, now.timeIntervalSince(date))
         switch seconds {
-        case ..<60: return "刚刚"
-        case ..<3600: return "\(Int(seconds / 60)) 分钟前"
-        case ..<86_400: return "\(Int(seconds / 3600)) 小时前"
-        case ..<(86_400 * 30): return "\(Int(seconds / 86_400)) 天前"
+        case ..<60: return tr("刚刚")
+        case ..<3600: return tr("\(Int(seconds / 60)) 分钟前")
+        case ..<86_400: return tr("\(Int(seconds / 3600)) 小时前")
+        case ..<(86_400 * 30): return tr("\(Int(seconds / 86_400)) 天前")
         default:
             let f = DateFormatter()
-            f.locale = Locale(identifier: "zh_Hans")
-            f.dateFormat = "yyyy年M月d日"
+            f.locale = L10n.isEnglish ? Locale(identifier: "en_US") : Locale(identifier: "zh_Hans")
+            f.dateFormat = tr("yyyy年M月d日")
             return f.string(from: date)
         }
     }

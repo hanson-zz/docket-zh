@@ -49,7 +49,7 @@ final class MicrophoneMonitor {
             return
         }
         if !hasDevice { hasDevice = true }
-        let name = Self.name(of: device) ?? "输入设备"
+        let name = Self.name(of: device) ?? tr("输入设备")
         if name != deviceName { deviceName = name }
         let running = (Self.uint(device, kAudioDevicePropertyDeviceIsRunningSomewhere,
                                  scope: kAudioObjectPropertyScopeGlobal) ?? 0) != 0

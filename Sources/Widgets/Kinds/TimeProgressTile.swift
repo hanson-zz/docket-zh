@@ -74,7 +74,7 @@ struct TimeProgressTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("时间进度，\(period.spoken)已过去 \(percent)%，\(TimeProgress.remaining(period, now: context.now))")
+        .accessibilityLabel(tr("时间进度，\(period.spoken)已过去 \(percent)%，\(TimeProgress.remaining(period, now: context.now))"))
     }
 
     /// Every layout reads `period`, so one write swaps the span in place and

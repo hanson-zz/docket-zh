@@ -19,9 +19,9 @@ struct AppVolumeDetail: View {
     private var rows: [AppVolumeService.Row] {
         if context.isPreview {
             return [
-                .init(bundleID: "com.apple.Music", name: "音乐", setting: AppVolumeSetting(), problem: nil),
+                .init(bundleID: "com.apple.Music", name: tr("音乐"), setting: AppVolumeSetting(), problem: nil),
                 .init(bundleID: "com.apple.Safari", name: "Safari", setting: AppVolumeSetting(percent: 60), problem: nil),
-                .init(bundleID: "com.tencent.xinWeChat", name: "微信",
+                .init(bundleID: "com.tencent.xinWeChat", name: tr("微信"),
                       setting: AppVolumeSetting(percent: 100, muted: true), problem: nil),
             ]
         }
@@ -69,7 +69,7 @@ struct AppVolumeDetail: View {
                 }
 
                 if rows.isEmpty {
-                    note("还没有应用在播放声音。开始播放后，它会出现在这里。")
+                    note(tr("还没有应用在播放声音。开始播放后，它会出现在这里。"))
                 } else {
                     VStack(spacing: 8) {
                         ForEach(rows) { row in rowView(row) }
@@ -95,7 +95,7 @@ struct AppVolumeDetail: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 Spacer(minLength: 0)
-                Text(row.setting.muted ? "已静音" : AppVolume.percentText(live))
+                Text(row.setting.muted ? tr("已静音") : AppVolume.percentText(live))
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.white.opacity(0.75))
                     .contentTransition(.numericText())
@@ -113,8 +113,8 @@ struct AppVolumeDetail: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help(row.setting.muted ? "取消静音" : "静音")
-                .accessibilityLabel(row.setting.muted ? "取消静音 \(row.name)" : "静音 \(row.name)")
+                .help(row.setting.muted ? tr("取消静音") : tr("静音"))
+                .accessibilityLabel(row.setting.muted ? tr("取消静音 \(row.name)") : tr("静音 \(row.name)"))
 
                 Slider(value: Binding(
                     get: { live },
@@ -127,7 +127,7 @@ struct AppVolumeDetail: View {
                     })
                     .controlSize(.small)
                     .disabled(context.isPreview)
-                    .accessibilityLabel("\(row.name) 音量")
+                    .accessibilityLabel(tr("\(row.name) 音量"))
                     .accessibilityValue(AppVolume.percentText(live))
             }
             if let problem = row.problem {

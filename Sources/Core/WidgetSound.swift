@@ -11,8 +11,8 @@ public enum WidgetSoundStyle: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .dockling: "码头"
-        case .system: "系统"
+        case .dockling: tr("码头")
+        case .system: tr("系统")
         }
     }
 }

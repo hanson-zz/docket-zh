@@ -310,11 +310,11 @@ private struct IslandCapsule: View {
             case .volume(let level, let muted):
                 levelRow(symbol: IslandLevel.volumeSymbol(level, muted: muted),
                          level: muted ? 0 : level,
-                         label: muted ? "静音" : "\(IslandLevel.percent(level))%",
-                         name: "音量")
+                         label: muted ? tr("静音") : "\(IslandLevel.percent(level))%",
+                         name: tr("音量"))
             case .brightness(let level):
                 levelRow(symbol: IslandLevel.brightnessSymbol(level), level: level,
-                         label: "\(IslandLevel.percent(level))%", name: "亮度")
+                         label: "\(IslandLevel.percent(level))%", name: tr("亮度"))
             case .meeting(let title, let start):
                 TimelineView(.periodic(from: .now, by: 1)) { tick in
                     HStack(spacing: 8) {

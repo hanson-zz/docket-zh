@@ -19,7 +19,7 @@ struct AINotchSettingsSection: View {
                 .help("关掉时每块屏幕都有入口；打开后只在带菜单栏的那块屏幕上显示。")
             // 快捷键本身在“设置 ▸ 快捷键”里录制，这里只说现在是什么。
             LabeledContent("展开对话的快捷键") {
-                Button(state.aiNotch.hotKey?.displayString ?? "未设置") {
+                Button(state.aiNotch.hotKey?.displayString ?? tr("未设置")) {
                     SettingsSelection.shared.current = "Shortcuts"
                 }
                 .buttonStyle(.link)
@@ -39,7 +39,7 @@ struct AINotchSettingsSection: View {
                 }
             }
         } header: {
-            ProLabel(title: "AI 助手", isPro: true)
+            ProLabel(title: tr("AI 助手"), isPro: true)
         } footer: {
             Text("入口就是刘海本身，不占菜单栏的地方：指针移到刘海上，刘海下面会长出一小条显示小熊猫，点一下刘海或按快捷键才展开；回答生成中那一小条里是三个跳动的小点。外接屏的入口是菜单栏下方正中的小胶囊，平时半透明。「拾掇」在运行时刘海让给拾掇，码头不在刘海上放入口，请用快捷键或货架上 AI 卡片的小熊猫。灵动提示出现时入口暂时让位。货架上 AI 卡片的小熊猫打开的是同一个对话。")
                 .font(.caption)
@@ -120,7 +120,7 @@ private struct AIServiceModeRow: View {
                         .buttonStyle(.plain)
                         .disabled(!enabled)
                         .help(modeHelp(mode, enabled: enabled))
-                        .accessibilityLabel("\(service.title) 用\(mode.title)\(on ? "，当前" : "")")
+                        .accessibilityLabel(tr("\(service.title) 用\(mode.title)\(on ? tr("，当前") : "")"))
                     }
                 }
                 .padding(2)
@@ -134,7 +134,7 @@ private struct AIServiceModeRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("密钥、接口地址和模型")
-                .accessibilityLabel(expanded ? "收起 \(service.title) 的接口设置" : "展开 \(service.title) 的接口设置")
+                .accessibilityLabel(expanded ? tr("收起 \(service.title) 的接口设置") : tr("展开 \(service.title) 的接口设置"))
             }
             if expanded {
                 details
@@ -145,9 +145,9 @@ private struct AIServiceModeRow: View {
 
     private func modeHelp(_ mode: AIOpenMode, enabled: Bool) -> String {
         switch mode {
-        case .web: enabled ? "在面板里打开 \(service.title) 的网页，用你自己的账号。" : "这个服务没有网址。"
-        case .api: enabled ? "用 API 在面板里对话。" : "先展开这一行填好密钥（以及接口地址和模型）。"
-        case .jump: "打开 Mac App 或浏览器（原来的做法）。"
+        case .web: enabled ? tr("在面板里打开 \(service.title) 的网页，用你自己的账号。") : tr("这个服务没有网址。")
+        case .api: enabled ? tr("用 API 在面板里对话。") : tr("先展开这一行填好密钥（以及接口地址和模型）。")
+        case .jump: tr("打开 Mac App 或浏览器（原来的做法）。")
         }
     }
 
@@ -167,9 +167,9 @@ private struct AIServiceModeRow: View {
         let fallback = AIEndpoints.defaults[service.id]
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                SecureField(hasKey ? "已保存，粘贴新的密钥可替换" : "粘贴 API 密钥", text: $keyText)
+                SecureField(hasKey ? tr("已保存，粘贴新的密钥可替换") : tr("粘贴 API 密钥"), text: $keyText)
                     .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel("\(service.title) 的 API 密钥")
+                    .accessibilityLabel(tr("\(service.title) 的 API 密钥"))
                 Button("保存") { saveKey() }
                     .disabled(keyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 if hasKey {
@@ -180,13 +180,13 @@ private struct AIServiceModeRow: View {
                 TextField("接口地址", text: endpoint.baseURL,
                           prompt: Text(fallback?.baseURL ?? "https://…/v1"))
                     .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel("\(service.title) 的接口地址")
+                    .accessibilityLabel(tr("\(service.title) 的接口地址"))
                 TextField("模型", text: endpoint.model,
                           prompt: Text(AIEndpoints.requiresModel(service.id)
-                                       ? "接入点 ID" : (fallback?.model.isEmpty == false ? fallback!.model : "模型名")))
+                                       ? tr("接入点 ID") : (fallback?.model.isEmpty == false ? fallback!.model : tr("模型名"))))
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 150)
-                    .accessibilityLabel("\(service.title) 的模型名")
+                    .accessibilityLabel(tr("\(service.title) 的模型名"))
             }
             Text(note ?? detailHint(fallback))
                 .font(.caption)
@@ -198,31 +198,31 @@ private struct AIServiceModeRow: View {
 
     private func detailHint(_ fallback: AIEndpoint?) -> String {
         if AIEndpoints.requiresModel(service.id) {
-            return "豆包要在火山方舟控制台创建接入点，把接入点 ID（ep- 开头）填进“模型”。密钥只存在这台 Mac 的钥匙串里。"
+            return tr("豆包要在火山方舟控制台创建接入点，把接入点 ID（ep- 开头）填进“模型”。密钥只存在这台 Mac 的钥匙串里。")
         }
         if fallback == nil {
-            return "填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。密钥只存在这台 Mac 的钥匙串里。"
+            return tr("填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。密钥只存在这台 Mac 的钥匙串里。")
         }
-        return "地址和模型留空就用默认值。密钥只存在这台 Mac 的钥匙串里。"
+        return tr("地址和模型留空就用默认值。密钥只存在这台 Mac 的钥匙串里。")
     }
 
     private func saveKey() {
         guard AIKeyStore.write(keyText, for: service.id) else {
-            note = "没能存进钥匙串，再试一次。"
+            note = tr("没能存进钥匙串，再试一次。")
             return
         }
         keyText = ""
         if AIEndpoints.resolved(service.id, override: settings.endpoints[service.id]) != nil {
             settings.modes[service.id] = .api
-            note = "密钥已存进钥匙串，已改用 API。"
+            note = tr("密钥已存进钥匙串，已改用 API。")
         } else {
-            note = "密钥已存进钥匙串。再填好接口地址和模型就能选 API。"
+            note = tr("密钥已存进钥匙串。再填好接口地址和模型就能选 API。")
         }
     }
 
     private func deleteKey() {
         AIKeyStore.delete(service.id)
         if settings.modes[service.id] == .api { settings.modes[service.id] = nil }
-        note = "密钥已删除。"
+        note = tr("密钥已删除。")
     }
 }

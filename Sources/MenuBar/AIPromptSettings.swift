@@ -40,12 +40,12 @@ struct AIPromptsSection: View {
                 }
                 .disabled(prompts.count >= AIPrompts.maxCount)
                 .help(prompts.count >= AIPrompts.maxCount
-                      ? "最多存 \(AIPrompts.maxCount) 条" : "名字加内容，内容里可以用 {文本}")
+                      ? tr("最多存 \(AIPrompts.maxCount) 条") : tr("名字加内容，内容里可以用 {文本}"))
             }
         } header: {
             Text("AI 助手的常用提示词")
         } footer: {
-            Text("在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，跳转复制或带着问题打开。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 \(AIPrompts.maxCount) 条。")
+            Text(tr("在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，跳转复制或带着问题打开。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 \(AIPrompts.maxCount) 条。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -62,10 +62,10 @@ struct AIPromptsSection: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
-            iconButton("chevron.up", label: "上移 \(prompt.name)", disabled: index == 0) {
+            iconButton("chevron.up", label: tr("上移 \(prompt.name)"), disabled: index == 0) {
                 AIPrompts.move(prompt.id, by: -1, in: &prompts)
             }
-            iconButton("chevron.down", label: "下移 \(prompt.name)", disabled: index == prompts.count - 1) {
+            iconButton("chevron.down", label: tr("下移 \(prompt.name)"), disabled: index == prompts.count - 1) {
                 AIPrompts.move(prompt.id, by: 1, in: &prompts)
             }
             Button("编辑") {
@@ -73,13 +73,13 @@ struct AIPromptsSection: View {
             }
             .controlSize(.small)
             .disabled(editing != nil)
-            .accessibilityLabel("编辑 \(prompt.name)")
+            .accessibilityLabel(tr("编辑 \(prompt.name)"))
             Button("删除", role: .destructive) {
                 AIPrompts.remove(prompt.id, from: &prompts)
             }
             .controlSize(.small)
             .disabled(editing != nil)
-            .accessibilityLabel("删除 \(prompt.name)")
+            .accessibilityLabel(tr("删除 \(prompt.name)"))
         }
     }
 
@@ -110,7 +110,7 @@ struct AIPromptsSection: View {
                     .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.15)))
                     .accessibilityLabel("提示词的内容")
                 HStack(spacing: 8) {
-                    Text(current.error ?? "例如：把下面的会议记录整理成周报：{文本}")
+                    Text(current.error ?? tr("例如：把下面的会议记录整理成周报：{文本}"))
                         .font(.caption)
                         .foregroundStyle(current.error == nil ? Color.secondary : Color.orange)
                         .fixedSize(horizontal: false, vertical: true)
@@ -123,7 +123,7 @@ struct AIPromptsSection: View {
                     Button("取消") { editing = nil }
                         .keyboardShortcut(.cancelAction)
                     // 不挂回车快捷键：内容是多行的，回车要留给换行。
-                    Button(current.id == nil ? "添加" : "保存", action: save)
+                    Button(current.id == nil ? tr("添加") : tr("保存"), action: save)
                         .buttonStyle(.borderedProminent)
                 }
             }

@@ -72,20 +72,20 @@ struct TrashTile: View {
             guard !Task.isCancelled else { return }
             swallowAt = nil
         }
-        .help(targeted ? "松开即可移到废纸篓" : "把文件拖到这里即可移到废纸篓")
+        .help(targeted ? tr("松开即可移到废纸篓") : tr("把文件拖到这里即可移到废纸篓"))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("废纸篓，\(value)，\(caption)")
+        .accessibilityLabel(tr("废纸篓，\(value)，\(caption)"))
     }
 
     private var value: String {
-        if locked { return "需要权限" }
-        return targeted ? "松开以删除" : TrashFlies.format(bytes: bytes)
+        if locked { return tr("需要权限") }
+        return targeted ? tr("松开以删除") : TrashFlies.format(bytes: bytes)
     }
 
     private var caption: String {
         if locked { return TilePermission.prompt(permission) }
-        if items == 0 { return "废纸篓是空的" }
-        return flies > 0 ? "\(items) 个项目 · 该倒垃圾了" : "\(items) 个项目"
+        if items == 0 { return tr("废纸篓是空的") }
+        return flies > 0 ? tr("\(items) 个项目 · 该倒垃圾了") : tr("\(items) 个项目")
     }
 
     /// 没有完全磁盘访问权限时读不到废纸篓。

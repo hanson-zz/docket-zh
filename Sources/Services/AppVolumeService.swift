@@ -100,7 +100,7 @@ final class AppVolumeService {
         let own = Bundle.main.bundleIdentifier.map { Set([$0]) } ?? []
         let next = AudioAppList.groups(processes, apps: apps, owners: owners, excluding: own)
         if !AudioAppList.diff(old: groups, new: next).isEmpty { groups = next }
-        let issue: String? = device == AudioObjectID(kAudioObjectUnknown) ? "没有可用的输出设备" : nil
+        let issue: String? = device == AudioObjectID(kAudioObjectUnknown) ? tr("没有可用的输出设备") : nil
         if issue != problem { problem = issue }
         applyTaps()
         publishRows()
@@ -254,7 +254,7 @@ struct TapError: Error {
 }
 
 private extension Error {
-    var tapMessage: String { (self as? TapError)?.message ?? "无法调节此应用的音量" }
+    var tapMessage: String { (self as? TapError)?.message ?? tr("无法调节此应用的音量") }
 }
 
 /// The gain the audio thread reads, as the bits of a Float so it can be one
@@ -293,18 +293,18 @@ final class AppTap {
         var tap = AudioObjectID(kAudioObjectUnknown)
         var status = AudioHardwareCreateProcessTap(description, &tap)
         guard status == noErr, tap != AudioObjectID(kAudioObjectUnknown) else {
-            throw TapError(message: "无法创建音频接入（\(status)）")
+            throw TapError(message: tr("无法创建音频接入（\(status)）"))
         }
         tapID = tap
 
         guard let outputUID = CoreAudioReader.uid(of: output) else {
             invalidate()
-            throw TapError(message: "读不到输出设备")
+            throw TapError(message: tr("读不到输出设备"))
         }
         let tapChannels = Int(CoreAudioReader.tapFormat(tap)?.mChannelsPerFrame ?? 2)
 
         let aggregate: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "码头应用音量",
+            kAudioAggregateDeviceNameKey: tr("码头应用音量"),
             kAudioAggregateDeviceUIDKey: "com.docket-zh.app-volume.\(UUID().uuidString)",
             kAudioAggregateDeviceMainSubDeviceKey: outputUID,
             kAudioAggregateDeviceIsPrivateKey: true,
@@ -320,7 +320,7 @@ final class AppTap {
         status = AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &device)
         guard status == noErr, device != AudioObjectID(kAudioObjectUnknown) else {
             invalidate()
-            throw TapError(message: "无法创建聚合设备（\(status)）")
+            throw TapError(message: tr("无法创建聚合设备（\(status)）"))
         }
         aggregateID = device
 
@@ -329,13 +329,13 @@ final class AppTap {
                                                     Self.renderBlock(gain: gain, tapChannels: tapChannels))
         guard status == noErr, let proc else {
             invalidate()
-            throw TapError(message: "无法启动音频回调（\(status)）")
+            throw TapError(message: tr("无法启动音频回调（\(status)）"))
         }
         procID = proc
         status = AudioDeviceStart(device, proc)
         guard status == noErr else {
             invalidate()
-            throw TapError(message: "无法启动聚合设备（\(status)）")
+            throw TapError(message: tr("无法启动聚合设备（\(status)）"))
         }
     }
 

@@ -7,8 +7,8 @@ public enum SearchEngine: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .bing: "必应"
-        case .baidu: "百度"
+        case .bing: tr("必应")
+        case .baidu: tr("百度")
         case .google: "Google"
         case .duckduckgo: "DuckDuckGo"
         }
@@ -98,20 +98,20 @@ public enum SearchSites {
 
     /// 面板里可加的内置站。前四个是原来的搜索引擎，id 不变。
     public static let builtIn: [SearchSite] = [
-        SearchSite(id: "baidu", title: "百度", template: "https://www.baidu.com/s?wd=%s", tint: "#2932E1"),
-        SearchSite(id: "bing", title: "必应", template: "https://www.bing.com/search?q=%s", tint: "#00809D"),
+        SearchSite(id: "baidu", title: tr("百度"), template: "https://www.baidu.com/s?wd=%s", tint: "#2932E1"),
+        SearchSite(id: "bing", title: tr("必应"), template: "https://www.bing.com/search?q=%s", tint: "#00809D"),
         SearchSite(id: "google", title: "Google", template: "https://www.google.com/search?q=%s", tint: "#4285F4"),
         SearchSite(id: "duckduckgo", title: "DuckDuckGo", template: "https://duckduckgo.com/?q=%s", tint: "#DE5833"),
-        SearchSite(id: "xiaohongshu", title: "小红书", template: "https://www.xiaohongshu.com/search_result?keyword=%s", tint: "#FF2442"),
-        SearchSite(id: "douyin", title: "抖音", template: "https://www.douyin.com/search/%s", tint: "#161823"),
-        SearchSite(id: "bilibili", title: "哔哩哔哩", template: "https://search.bilibili.com/all?keyword=%s", tint: "#00AEEC"),
+        SearchSite(id: "xiaohongshu", title: tr("小红书"), template: "https://www.xiaohongshu.com/search_result?keyword=%s", tint: "#FF2442"),
+        SearchSite(id: "douyin", title: tr("抖音"), template: "https://www.douyin.com/search/%s", tint: "#161823"),
+        SearchSite(id: "bilibili", title: tr("哔哩哔哩"), template: "https://search.bilibili.com/all?keyword=%s", tint: "#00AEEC"),
         SearchSite(id: "github", title: "GitHub", template: "https://github.com/search?q=%s", tint: "#24292F"),
-        SearchSite(id: "zhihu", title: "知乎", template: "https://www.zhihu.com/search?type=content&q=%s", tint: "#1772F6"),
-        SearchSite(id: "weibo", title: "微博", template: "https://s.weibo.com/weibo?q=%s", tint: "#E6162D"),
-        SearchSite(id: "taobao", title: "淘宝", template: "https://s.taobao.com/search?q=%s", tint: "#FF5000"),
-        SearchSite(id: "jd", title: "京东", template: "https://search.jd.com/Search?keyword=%s", tint: "#E1251B"),
+        SearchSite(id: "zhihu", title: tr("知乎"), template: "https://www.zhihu.com/search?type=content&q=%s", tint: "#1772F6"),
+        SearchSite(id: "weibo", title: tr("微博"), template: "https://s.weibo.com/weibo?q=%s", tint: "#E6162D"),
+        SearchSite(id: "taobao", title: tr("淘宝"), template: "https://s.taobao.com/search?q=%s", tint: "#FF5000"),
+        SearchSite(id: "jd", title: tr("京东"), template: "https://search.jd.com/Search?keyword=%s", tint: "#E1251B"),
         SearchSite(id: "youtube", title: "YouTube", template: "https://www.youtube.com/results?search_query=%s", tint: "#FF0000"),
-        SearchSite(id: "wikipedia", title: "维基百科", template: "https://zh.wikipedia.org/w/index.php?search=%s", tint: "#54595D"),
+        SearchSite(id: "wikipedia", title: tr("维基百科"), template: "https://zh.wikipedia.org/w/index.php?search=%s", tint: "#54595D"),
     ]
 
     /// 新加的搜索小组件默认显示的一排。

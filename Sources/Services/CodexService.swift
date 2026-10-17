@@ -33,12 +33,12 @@ final class CodexService {
 
         var message: String {
             switch self {
-            case .notSignedIn: "没有找到 Codex 的 ChatGPT 登录。请在终端运行 codex login，或打开 Codex 应用登录。"
-            case .expired: "Codex 的登录已过期。打开 Codex 用一次即可自动续期。"
-            case .offline: "无法连接 chatgpt.com。国内网络需要代理，可在详情面板里填写代理地址。"
-            case .rateLimited(let until): "请求太频繁，\(CodexPace.duration(until.timeIntervalSinceNow))后再试。"
-            case .server(let code): "chatgpt.com 返回错误 \(code)，可能是接口有变动。"
-            case .unreadable: "读不懂 chatgpt.com 的返回内容，可能是接口有变动。"
+            case .notSignedIn: tr("没有找到 Codex 的 ChatGPT 登录。请在终端运行 codex login，或打开 Codex 应用登录。")
+            case .expired: tr("Codex 的登录已过期。打开 Codex 用一次即可自动续期。")
+            case .offline: tr("无法连接 chatgpt.com。国内网络需要代理，可在详情面板里填写代理地址。")
+            case .rateLimited(let until): tr("请求太频繁，\(CodexPace.duration(until.timeIntervalSinceNow))后再试。")
+            case .server(let code): tr("chatgpt.com 返回错误 \(code)，可能是接口有变动。")
+            case .unreadable: tr("读不懂 chatgpt.com 的返回内容，可能是接口有变动。")
             }
         }
     }
@@ -299,10 +299,10 @@ final class CodexService {
     private func scanActivity() {
         let read = Self.readActivity(now: .now)
         if read.state == .done, activity == .working || activity == .waiting, notifyDone {
-            post(id: "docket.codex.done", title: "Codex 已完成", body: read.project.map { "\($0) 里的任务已经完成。" } ?? "当前任务已经完成。")
+            post(id: "docket.codex.done", title: tr("Codex 已完成"), body: read.project.map { tr("\($0) 里的任务已经完成。") } ?? tr("当前任务已经完成。"))
         }
         if read.state == .waiting, activity != .waiting, notifyDone {
-            post(id: "docket.codex.waiting", title: "Codex 在等你确认", body: "有一条命令或修改需要你批准。")
+            post(id: "docket.codex.waiting", title: tr("Codex 在等你确认"), body: tr("有一条命令或修改需要你批准。"))
         }
         if read.state != activity { activity = read.state }
         if read.project != activityProject { activityProject = read.project }
@@ -358,9 +358,9 @@ final class CodexService {
             guard notifyQuota,
                   let hit = CodexAlert.crossed(previous: lastAlerted[w.id], current: w.usedFraction,
                                                thresholds: thresholds) else { continue }
-            let reset = w.resetsAt.map { "，\(CodexPace.duration($0.timeIntervalSinceNow))后重置" } ?? ""
-            let title = hit >= 1 ? "Codex \(w.label)已用完" : "Codex \(w.label)已用 \(Int((hit * 100).rounded()))%"
-            post(id: "docket.codex.quota.\(w.id)", title: title, body: "剩余 \(GaugeReading.percent(w.remainingFraction))\(reset)。")
+            let reset = w.resetsAt.map { tr("，\(CodexPace.duration($0.timeIntervalSinceNow))后重置") } ?? ""
+            let title = hit >= 1 ? tr("Codex \(w.label)已用完") : tr("Codex \(w.label)已用 \(Int((hit * 100).rounded()))%")
+            post(id: "docket.codex.quota.\(w.id)", title: title, body: tr("剩余 \(GaugeReading.percent(w.remainingFraction))\(reset)。"))
         }
     }
 

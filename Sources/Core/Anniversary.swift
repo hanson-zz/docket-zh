@@ -24,8 +24,8 @@ public struct AnniversaryEvent: Equatable, Hashable, Sendable, Identifiable {
 
         public var title: String {
             switch self {
-            case .countdown: "倒数日"
-            case .countup: "正数日"
+            case .countdown: tr("倒数日")
+            case .countup: tr("正数日")
             }
         }
     }
@@ -117,21 +117,21 @@ public struct AnniversaryReading: Equatable, Sendable {
     /// 还有, 已经, 就是今天.
     public var word: String {
         switch phase {
-        case .upcoming: "还有"
-        case .today: "就是今天"
-        case .past: "已经"
+        case .upcoming: tr("还有")
+        case .today: tr("就是今天")
+        case .past: tr("已经")
         }
     }
 
     /// 还有 116 天, 已经 1453 天, 就是今天.
     public var sentence: String {
-        phase == .today ? word : "\(word) \(days) 天"
+        phase == .today ? word : tr("\(word) \(days) 天")
     }
 
     /// Counting up, the anniversary that comes round today: 3 周年.
     public var anniversaryNote: String? {
         guard isToday, phase == .past, event.kind == .countup, years > 0 else { return nil }
-        return "\(years) 周年"
+        return tr("\(years) 周年")
     }
 
     public var isFuture: Bool { phase == .upcoming }
@@ -550,10 +550,10 @@ public enum Anniversary {
         let shown = event.kind == .countup && reading.phase == .past ? reading.original : reading.timelineDate
         if event.lunar {
             let text = lunarText(shown, calendar: calendar)
-            return event.yearly ? "\(text) · 每年" : text
+            return event.yearly ? tr("\(text) · 每年") : text
         }
         let text = solarText(shown, calendar: calendar)
-        return event.yearly ? "\(text) · 每年" : text
+        return event.yearly ? tr("\(text) · 每年") : text
     }
 
     // MARK: Sizing

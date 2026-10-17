@@ -17,6 +17,6 @@ public enum MailBadge {
     }
 
     public static func caption(_ count: Int) -> String {
-        count == 0 ? "没有未读邮件" : "封未读邮件"
+        count == 0 ? tr("没有未读邮件") : tr("封未读邮件")
     }
 }

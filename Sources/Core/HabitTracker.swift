@@ -33,7 +33,7 @@ public struct Habit: Equatable, Hashable, Sendable, Identifiable {
     public var counts: [String: Int]
 
     public static let defaultIcon = "checkmark.seal.fill"
-    public static let defaultUnit = "次"
+    public static let defaultUnit = tr("次")
 
     public init(id: String = Habit.newID(), name: String, days: Set<String> = [],
                 icon: String? = nil, color: PaletteColor? = nil, goal: Int = 1,
@@ -378,33 +378,33 @@ public enum HabitTracker {
 
     public static func colorName(_ color: PaletteColor) -> String {
         switch color {
-        case .orange: "橙色"
-        case .yellow: "黄色"
-        case .pink: "粉色"
-        case .purple: "紫色"
-        case .blue: "蓝色"
-        case .green: "绿色"
-        case .graphite: "灰色"
-        case .indigo: "靛蓝"
-        case .red: "红色"
-        case .teal: "青色"
+        case .orange: tr("橙色")
+        case .yellow: tr("黄色")
+        case .pink: tr("粉色")
+        case .purple: tr("紫色")
+        case .blue: tr("蓝色")
+        case .green: tr("绿色")
+        case .graphite: tr("灰色")
+        case .indigo: tr("靛蓝")
+        case .red: tr("红色")
+        case .teal: tr("青色")
         }
     }
 
     public static let templates: [HabitTemplate] = [
-        HabitTemplate(name: "早起", icon: "sunrise.fill", color: .orange),
-        HabitTemplate(name: "阅读", icon: "book.fill", color: .indigo),
-        HabitTemplate(name: "运动", icon: "figure.run", color: .red),
-        HabitTemplate(name: "冥想", icon: "figure.mind.and.body", color: .purple),
-        HabitTemplate(name: "喝水", icon: "drop.fill", color: .blue, goal: 8, unit: "杯"),
-        HabitTemplate(name: "拉伸", icon: "figure.flexibility", color: .green),
-        HabitTemplate(name: "写日记", icon: "square.and.pencil", color: .pink),
-        HabitTemplate(name: "不熬夜", icon: "moon.zzz.fill", color: .teal),
+        HabitTemplate(name: tr("早起"), icon: "sunrise.fill", color: .orange),
+        HabitTemplate(name: tr("阅读"), icon: "book.fill", color: .indigo),
+        HabitTemplate(name: tr("运动"), icon: "figure.run", color: .red),
+        HabitTemplate(name: tr("冥想"), icon: "figure.mind.and.body", color: .purple),
+        HabitTemplate(name: tr("喝水"), icon: "drop.fill", color: .blue, goal: 8, unit: tr("杯")),
+        HabitTemplate(name: tr("拉伸"), icon: "figure.flexibility", color: .green),
+        HabitTemplate(name: tr("写日记"), icon: "square.and.pencil", color: .pink),
+        HabitTemplate(name: tr("不熬夜"), icon: "moon.zzz.fill", color: .teal),
     ]
 
     /// 卡片底部的目标，比如“每天 1 次”“每天 8 杯”。
     public static func goalText(_ habit: Habit) -> String {
-        "每天 \(habit.goal) \(habit.unitName)"
+        tr("每天 \(habit.goal) \(habit.unitName)")
     }
 
     // MARK: Readings
@@ -426,8 +426,8 @@ public enum HabitTracker {
 
     /// 卡片上的今日状态：“已完成”“未完成”或“3/8 杯”。
     public static func todayText(_ habit: Habit, today: Date, calendar: Calendar = HabitTracker.calendar) -> String {
-        if isDone(habit, on: today, calendar: calendar) { return "已完成" }
-        if habit.goal == 1 { return "未完成" }
+        if isDone(habit, on: today, calendar: calendar) { return tr("已完成") }
+        if habit.goal == 1 { return tr("未完成") }
         return "\(count(habit, on: today, calendar: calendar))/\(habit.goal) \(habit.unitName)"
     }
 
@@ -527,9 +527,9 @@ public enum HabitTracker {
     /// The tile's caption under the habits, or its empty state.
     public static func caption(done: Int, total: Int) -> String {
         switch (done, total) {
-        case (_, 0): "点按添加习惯"
-        case (let d, let t) where d >= t: "今天全部完成"
-        default: "今天 \(done)/\(total)"
+        case (_, 0): tr("点按添加习惯")
+        case (let d, let t) where d >= t: tr("今天全部完成")
+        default: tr("今天 \(done)/\(total)")
         }
     }
 }

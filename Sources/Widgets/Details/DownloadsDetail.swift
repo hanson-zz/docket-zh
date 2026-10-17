@@ -16,23 +16,23 @@ struct DownloadsDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.blue))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "arrow.down.circle", title: "下载",
-                            subtitle: context.isPreview ? "下载" : "\(feed.files.count) 个最近项目")
+                PanelHeader(symbol: "arrow.down.circle", title: tr("下载"),
+                            subtitle: context.isPreview ? tr("下载") : tr("\(feed.files.count) 个最近项目"))
                 if !context.isPreview, !feed.downloading.isEmpty {
                     DownloadingStrip(downloads: feed.downloading)
                 }
                 if context.isPreview {
-                    PanelNote(symbol: "arrow.down.circle", text: "最近下载的文件会显示在这里。")
+                    PanelNote(symbol: "arrow.down.circle", text: tr("最近下载的文件会显示在这里。"))
                         .frame(height: 236)
                 } else if let error = feed.error {
                     PanelNote(symbol: "lock", text: error).frame(height: 236)
                 } else if feed.files.isEmpty, feed.downloading.isEmpty {
-                    PanelNote(symbol: "tray", text: feed.loadedAt == nil ? "正在读取…" : "“下载”文件夹是空的。")
+                    PanelNote(symbol: "tray", text: feed.loadedAt == nil ? tr("正在读取…") : tr("“下载”文件夹是空的。"))
                         .frame(height: 236)
                 } else {
                     FileRows(files: feed.files, now: context.now, onTrash: { feed.trash($0) })
                 }
-                PanelButton(title: "打开“下载”文件夹", symbol: "folder", prominent: true) {
+                PanelButton(title: tr("打开“下载”文件夹"), symbol: "folder", prominent: true) {
                     guard !context.isPreview else { return }
                     FileActions.openFolder(feed.folder)
                 }

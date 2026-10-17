@@ -29,7 +29,7 @@ struct ColorPickerDetail: View {
                     }
                 }
                 history
-                PanelButton(title: "从屏幕取色", symbol: "eyedropper", prominent: true) {
+                PanelButton(title: tr("从屏幕取色"), symbol: "eyedropper", prominent: true) {
                     guard !context.isPreview else { return }
                     let item = instance
                     ColorSampling.sample { picked in
@@ -52,10 +52,10 @@ struct ColorPickerDetail: View {
                         .strokeBorder(.white.opacity(0.25), lineWidth: 0.5)
                 }
             VStack(alignment: .leading, spacing: 2) {
-                Text(shown?.hex ?? "还没有取色")
+                Text(shown?.hex ?? tr("还没有取色"))
                     .font(.system(size: 22, weight: .semibold).monospacedDigit())
                     .foregroundStyle(WidgetStyle.primary)
-                Text(copied.map { "已拷贝 \($0)" } ?? "点按下方的值即可拷贝")
+                Text(copied.map { tr("已拷贝 \($0)") } ?? tr("点按下方的值即可拷贝"))
                     .font(WidgetStyle.caption(11))
                     .foregroundStyle(.white.opacity(0.7))
             }

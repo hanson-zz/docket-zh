@@ -9,7 +9,7 @@ import Foundation
 public enum TrashFlies {
     /// The size choices offered in settings, smallest first.
     public static let thresholds: [(label: String, value: String, bytes: Int64)] = [
-        ("有东西就有", "any", 1),
+        (tr("有东西就有"), "any", 1),
         ("10 MB", "10MB", 10_000_000),
         ("100 MB", "100MB", 100_000_000),
         ("500 MB", "500MB", 500_000_000),
@@ -99,7 +99,7 @@ public enum TrashFlies {
 
     /// 1.2 GB, 340 MB, 12 KB, 空.
     public static func format(bytes: Int64) -> String {
-        guard bytes > 0 else { return "空" }
+        guard bytes > 0 else { return tr("空") }
         let units = ["B", "KB", "MB", "GB", "TB"]
         var value = Double(bytes)
         var unit = 0

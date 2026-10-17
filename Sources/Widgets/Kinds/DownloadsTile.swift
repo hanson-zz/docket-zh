@@ -40,17 +40,17 @@ struct DownloadsTile: View {
     }
 
     private var title: String {
-        if context.isPreview { return "发票.pdf" }
+        if context.isPreview { return tr("发票.pdf") }
         if let active { return active.finalName }
         if let latest { return latest.name }
-        return feed.error != nil ? "无法访问" : "下载"
+        return feed.error != nil ? tr("无法访问") : tr("下载")
     }
 
     private var caption: String {
-        if context.isPreview { return "下载 · 刚刚" }
+        if context.isPreview { return tr("下载 · 刚刚") }
         if let active { return DownloadProgress.tileCaption(active.fraction) }
-        guard let latest else { return feed.loadedAt == nil ? "正在读取" : PandaEmpty.downloads.line() }
-        return "下载 · \(RelativeAge.caption(latest.date, now: context.now))"
+        guard let latest else { return feed.loadedAt == nil ? tr("正在读取") : PandaEmpty.downloads.line() }
+        return tr("下载 · \(RelativeAge.caption(latest.date, now: context.now))")
     }
 
     private func badge(size: CGFloat) -> some View {

@@ -25,12 +25,12 @@ struct RadioTile: View {
     private var playing: Bool { context.isPreview ? true : player.plays(station) }
 
     private var caption: String {
-        if context.isPreview { return "正在收听" }
-        guard station != nil else { return "在面板中添加电台" }
-        guard playing else { return "已暂停" }
-        if player.problem != nil { return "正在重新连接" }
-        if player.isBuffering { return "正在连接…" }
-        return player.nowTitle ?? "正在收听"
+        if context.isPreview { return tr("正在收听") }
+        guard station != nil else { return tr("在面板中添加电台") }
+        guard playing else { return tr("已暂停") }
+        if player.problem != nil { return tr("正在重新连接") }
+        if player.isBuffering { return tr("正在连接…") }
+        return player.nowTitle ?? tr("正在收听")
     }
 
     var body: some View {
@@ -38,7 +38,7 @@ struct RadioTile: View {
             if context.position.isVertical {
                 VStack(spacing: 4) {
                     RadioIcon(size: 34, playing: playing, animated: !context.isPreview)
-                    Text(station?.name ?? "收音机")
+                    Text(station?.name ?? tr("收音机"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -51,7 +51,7 @@ struct RadioTile: View {
             } else {
                 HStack(spacing: 9) {
                     RadioIcon(size: 40, playing: playing, animated: !context.isPreview)
-                    TileReading(value: station?.name ?? "收音机", caption: caption, valueSize: 15)
+                    TileReading(value: station?.name ?? tr("收音机"), caption: caption, valueSize: 15)
                     Spacer(minLength: 0)
                     HStack(spacing: 2) {
                         playButton(size: 11)
@@ -72,8 +72,8 @@ struct RadioTile: View {
                   action: context.isPreview || station == nil ? nil : {
             if let station { player.toggle(station, volume: volume) }
         })
-        .help(playing ? "暂停" : "收听")
-        .accessibilityLabel(playing ? "暂停收音机" : "收听 \(station?.name ?? "电台")")
+        .help(playing ? tr("暂停") : tr("收听"))
+        .accessibilityLabel(playing ? tr("暂停收音机") : tr("收听 \(station?.name ?? tr("电台"))"))
     }
 
     private func nextButton(size: CGFloat) -> some View {

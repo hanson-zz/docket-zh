@@ -42,7 +42,7 @@ struct PerfectDayTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("小熊猫的竹篮，今天\(tier.map { "收到\($0.leafName)" } ?? "还没有竹叶")")
+        .accessibilityLabel(tr("小熊猫的竹篮，今天\(tier.map { tr("收到\($0.leafName)") } ?? tr("还没有竹叶"))"))
         .onAppear { if !context.isPreview { center.refresh(now: context.now) } }
     }
 
@@ -234,8 +234,8 @@ final class PerfectDayCenter {
 
     /// The library's card: two of three met.
     static let sampleProgress: [PerfectDayProgress] = [
-        PerfectDayProgress(item: .water, mark: .met, fraction: 1, detail: "2000/2000 毫升"),
-        PerfectDayProgress(item: .habit, mark: .met, fraction: 1, detail: "3/3 项"),
-        PerfectDayProgress(item: .focus, mark: .missed, fraction: 0.6, detail: "30/50 分钟"),
+        PerfectDayProgress(item: .water, mark: .met, fraction: 1, detail: tr("2000/2000 毫升")),
+        PerfectDayProgress(item: .habit, mark: .met, fraction: 1, detail: tr("3/3 项")),
+        PerfectDayProgress(item: .focus, mark: .missed, fraction: 0.6, detail: tr("30/50 分钟")),
     ]
 }

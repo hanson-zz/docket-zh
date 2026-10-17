@@ -62,14 +62,14 @@ public enum DownloadProgress {
 
     /// 图标下面的一行字。
     public static func caption(_ fraction: Double?) -> String {
-        guard let fraction else { return "下载中" }
+        guard let fraction else { return tr("下载中") }
         return "\(Int((min(max(fraction, 0), 1) * 100).rounded(.down)))%"
     }
 
     /// 卡片上的说明：“下载中 · 45%”；不知道进度时只写“下载中”，不重复两遍。
     public static func tileCaption(_ fraction: Double?) -> String {
         guard fraction != nil else { return caption(nil) }
-        return "下载中 · \(caption(fraction))"
+        return tr("下载中 · \(caption(fraction))")
     }
 
     /// 多久没再写入就不算“正在下载”。下到一半失败或被暂停的 .crdownload、.download

@@ -34,15 +34,15 @@ public enum AppIconCatalog {
 
     /// bundle 自带的图标。选了别的图标时，Finder 里贴的是自定义图标。
     public static let classic = AppIconOption(
-        id: "classic", title: "经典", resourceName: nil, isSupporterOnly: false)
+        id: "classic", title: tr("经典"), resourceName: nil, isSupporterOnly: false)
 
     /// 小熊猫是码头的品牌形象，所以这一款免费。
     public static let panda = AppIconOption(
-        id: "panda", title: "小熊猫码头", resourceName: "AppIcon-Panda", isSupporterOnly: false)
+        id: "panda", title: tr("小熊猫码头"), resourceName: "AppIcon-Panda", isSupporterOnly: false)
 
     /// 小熊猫码头的夜景版：深蓝夜空、暗色水面，同样免费。
     public static let pandaDark = AppIconOption(
-        id: "pandaDark", title: "小熊猫夜色", resourceName: "AppIcon-PandaDark", isSupporterOnly: false)
+        id: "pandaDark", title: tr("小熊猫夜色"), resourceName: "AppIcon-PandaDark", isSupporterOnly: false)
 
     /// 设置里按这个顺序排列，第一项是默认。
     public static let all: [AppIconOption] = [classic, panda, pandaDark]

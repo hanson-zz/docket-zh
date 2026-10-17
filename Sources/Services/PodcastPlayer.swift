@@ -47,7 +47,7 @@ final class PodcastPlayer {
     /// Starts `episode` where it was left.
     func play(_ episode: PodcastEpisode, show: String) {
         guard let url = episode.audioURL else {
-            problem = "这一集没有可播放的音频。"
+            problem = tr("这一集没有可播放的音频。")
             return
         }
         saveProgress()
@@ -199,7 +199,7 @@ final class PodcastPlayer {
     private func failed() {
         isPlaying = false
         isBuffering = false
-        problem = "播放失败，请检查网络后再试。"
+        problem = tr("播放失败，请检查网络后再试。")
         saveProgress()
     }
 

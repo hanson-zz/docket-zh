@@ -58,7 +58,7 @@ struct MailTile: View {
     private var value: String {
         switch state {
         case .unread(let count): MailBadge.figure(count)
-        case .notRunning: "邮件"
+        case .notRunning: tr("邮件")
         case .denied, .failed: "-"
         }
     }
@@ -66,18 +66,18 @@ struct MailTile: View {
     private var caption: String {
         switch state {
         case .unread(let count): MailBadge.caption(count)
-        case .notRunning: "未打开，点按打开"
+        case .notRunning: tr("未打开，点按打开")
         case .denied: TilePermission.prompt(Self.permission)
-        case .failed: "暂时无法读取"
+        case .failed: tr("暂时无法读取")
         }
     }
 
     private var shortLine: String {
         switch state {
-        case .unread(let count): count == 0 ? "无未读" : "\(MailBadge.figure(count)) 封未读"
-        case .notRunning: "未打开"
-        case .denied: "需要权限"
-        case .failed: "无法读取"
+        case .unread(let count): count == 0 ? tr("无未读") : tr("\(MailBadge.figure(count)) 封未读")
+        case .notRunning: tr("未打开")
+        case .denied: tr("需要权限")
+        case .failed: tr("无法读取")
         }
     }
 }

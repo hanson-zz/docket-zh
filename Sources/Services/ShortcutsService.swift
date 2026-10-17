@@ -56,7 +56,7 @@ final class ShortcutsService {
         loading = false
         loadedAt = .now
         guard result.status == 0 else {
-            loadError = Tool.message(result) ?? "“快捷指令”命令行工具没有响应。"
+            loadError = Tool.message(result) ?? tr("“快捷指令”命令行工具没有响应。")
             return
         }
         loadError = nil
@@ -87,7 +87,7 @@ final class ShortcutsService {
                 // renamed shortcut is the common case: "Couldn't find
                 // shortcut". Showing it is what makes that recoverable
                 // instead of a tile that quietly stopped working.
-                lastRun = .failed(name, Tool.message(result) ?? "快捷指令未能完成。")
+                lastRun = .failed(name, Tool.message(result) ?? tr("快捷指令未能完成。"))
             }
         }
     }
@@ -146,7 +146,7 @@ private enum Tool {
             try process.run()
         } catch {
             return Result(status: -1, signalled: false, out: "",
-                          err: "无法启动 \(path)：\(error.localizedDescription)")
+                          err: tr("无法启动 \(path)：\(error.localizedDescription)"))
         }
         box?.hold(process)
 

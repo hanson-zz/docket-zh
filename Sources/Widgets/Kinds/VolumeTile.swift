@@ -12,7 +12,7 @@ struct VolumeTile: View {
     private var audio: AudioOutput { AudioOutput.shared }
 
     private var level: Double? { context.isPreview ? 0.58 : audio.volume }
-    private var name: String { context.isPreview ? "MacBook Pro 扬声器" : audio.deviceName }
+    private var name: String { context.isPreview ? tr("MacBook Pro 扬声器") : audio.deviceName }
 
     var body: some View {
         let column = context.position.isVertical
@@ -22,7 +22,7 @@ struct VolumeTile: View {
                     Image(systemName: "hifispeaker")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(WidgetStyle.secondary)
-                    Text(name.isEmpty ? "无输出设备" : name)
+                    Text(name.isEmpty ? tr("无输出设备") : name)
                         .font(WidgetStyle.label(column ? 10 : 12))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -46,7 +46,7 @@ struct VolumeTile: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(audio.muted ? "取消静音" : "静音")
+                    .accessibilityLabel(audio.muted ? tr("取消静音") : tr("静音"))
                     if let level {
                         Slider(value: Binding(
                             get: { level },

@@ -239,17 +239,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             let alert = NSAlert()
-            alert.messageText = "要检查码头的新版本吗？"
-            alert.informativeText = """
-                Docket 可以每天检查一次新版本，并在发现新版本时通过菜单栏项提示你。\
-                更新永远不会自动安装。
-
-                检查时只会向 GitHub 查询最新版本号，不会发送其他任何信息。\
-                你可以在“设置”中更改此选项。
-                """
+            alert.messageText = tr("要检查码头的新版本吗？")
+            alert.informativeText = tr(
+                "Docket 可以每天检查一次新版本，并在发现新版本时通过菜单栏项提示你。更新永远不会自动安装。\n\n检查时只会向 GitHub 查询最新版本号，不会发送其他任何信息。你可以在“设置”中更改此选项。")
             alert.alertStyle = .informational
-            alert.addButton(withTitle: "检查更新")
-            alert.addButton(withTitle: "不检查")
+            alert.addButton(withTitle: tr("检查更新"))
+            alert.addButton(withTitle: tr("不检查"))
             NSApp.activate(ignoringOtherApps: true)
             let wanted = alert.runModal() == .alertFirstButtonReturn
             state.state.checkForUpdates = wanted

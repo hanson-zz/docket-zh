@@ -29,9 +29,9 @@ struct QuickTogglesTile: View {
             TileGlyph(symbol: toggle.symbol, size: 11,
                       tint: on ? .orange : WidgetStyle.primary,
                       action: context.isPreview ? nil : { actions.perform(toggle) })
-                .help(on ? "\(toggle.title)：已打开" : toggle.help)
+                .help(on ? tr("\(toggle.title)：已打开") : toggle.help)
                 .accessibilityLabel(toggle.title)
-                .accessibilityValue(toggle.hasState ? (on ? "开" : "关") : "")
+                .accessibilityValue(toggle.hasState ? (on ? tr("开") : tr("关")) : "")
         }
     }
 }

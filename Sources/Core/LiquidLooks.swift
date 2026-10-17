@@ -17,8 +17,8 @@ public enum LiquidLooks {
 
         public var title: String {
             switch self {
-            case .ring: "圆环"
-            case .liquid: "液态"
+            case .ring: tr("圆环")
+            case .liquid: tr("液态")
             }
         }
     }
@@ -28,8 +28,8 @@ public enum LiquidLooks {
 
         public var title: String {
             switch self {
-            case .leaf: "竹叶"
-            case .liquid: "液态"
+            case .leaf: tr("竹叶")
+            case .liquid: tr("液态")
             }
         }
     }

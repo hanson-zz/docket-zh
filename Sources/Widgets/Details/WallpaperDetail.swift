@@ -16,7 +16,7 @@ struct WallpaperDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.teal))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "photo.on.rectangle", title: "壁纸", subtitle: subtitle)
+                PanelHeader(symbol: "photo.on.rectangle", title: tr("壁纸"), subtitle: subtitle)
                 content
                 HStack(spacing: 6) {
                     ForEach(WallpaperCycle.Step.allCases, id: \.self) { step in
@@ -29,8 +29,8 @@ struct WallpaperDetail: View {
                     }
                 }
                 HStack(spacing: 6) {
-                    PanelButton(title: "选择文件夹…", symbol: "folder", action: choose)
-                    PanelButton(title: "在访达中打开", symbol: nil) {
+                    PanelButton(title: tr("选择文件夹…"), symbol: "folder", action: choose)
+                    PanelButton(title: tr("在访达中打开"), symbol: nil) {
                         guard !context.isPreview else { return }
                         FileActions.openFolder(feed.folder)
                     }
@@ -51,10 +51,10 @@ struct WallpaperDetail: View {
     }
 
     private var subtitle: String {
-        if context.isPreview { return "图片 · 6 张" }
+        if context.isPreview { return tr("图片 · 6 张") }
         let name = feed.folder.lastPathComponent
-        guard feed.loadedAt != nil else { return "\(name) · 正在读取" }
-        return "\(name) · \(feed.files.count) 张 · \(allScreens ? "所有显示器" : "主显示器")"
+        guard feed.loadedAt != nil else { return tr("\(name) · 正在读取") }
+        return tr("\(name) · \(feed.files.count) 张 · \(allScreens ? tr("所有显示器") : tr("主显示器"))")
     }
 
     @ViewBuilder
@@ -65,7 +65,7 @@ struct WallpaperDetail: View {
             PanelNote(symbol: "lock", text: error).frame(height: 200)
         } else if feed.files.isEmpty {
             PanelNote(symbol: "photo",
-                      text: feed.loadedAt == nil ? "正在读取…" : "这个文件夹里没有图片。点按“选择文件夹…”换一个。")
+                      text: feed.loadedAt == nil ? tr("正在读取…") : tr("这个文件夹里没有图片。点按“选择文件夹…”换一个。"))
                 .frame(height: 200)
         } else {
             ScrollView {
@@ -83,7 +83,7 @@ struct WallpaperDetail: View {
                             }
                             .contentShape(.rect(cornerRadius: 7))
                             .onTapGesture { wallpaper.set(file.url, allScreens: allScreens) }
-                            .help("设为壁纸：\(file.name)")
+                            .help(tr("设为壁纸：\(file.name)"))
                     }
                 }
             }
@@ -99,7 +99,7 @@ struct WallpaperDetail: View {
     private func choose() {
         guard !context.isPreview else { return }
         let item = instance
-        guard let url = FileActions.chooseFolder(title: "选择壁纸所在的文件夹", startingAt: feed.folder) else { return }
+        guard let url = FileActions.chooseFolder(title: tr("选择壁纸所在的文件夹"), startingAt: feed.folder) else { return }
         WidgetWriter.write(item) { $0.set("folder", .string(url.path)) }
     }
 }

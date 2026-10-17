@@ -39,7 +39,7 @@ struct SearchDetail: View {
                         SiteBadge(site: engine, size: 22)
                     }
                     TextField("", text: $text,
-                              prompt: Text(files ? "文件名" : "用\(engine?.title ?? "网页")搜索"))
+                              prompt: Text(files ? tr("文件名") : tr("用\(engine?.title ?? tr("网页"))搜索")))
                         .textFieldStyle(.plain)
                         .font(.system(size: 16))
                         .foregroundStyle(.white)
@@ -77,7 +77,7 @@ struct SearchDetail: View {
             }
             if sites.count < SearchSites.maxCount {
                 Button { adding = true } label: {
-                    siteCell(title: "添加", selected: false) {
+                    siteCell(title: tr("添加"), selected: false) {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Color(hex: "#4C9BFF"))
@@ -101,7 +101,7 @@ struct SearchDetail: View {
             siteCell(title: site.title, selected: selected) { SiteBadge(site: site, size: 34) }
         }
         .buttonStyle(.plain)
-        .help(text.isEmpty ? "用\(site.title)搜索" : "用\(site.title)搜索“\(text)”")
+        .help(text.isEmpty ? tr("用\(site.title)搜索") : tr("用\(site.title)搜索“\(text)”"))
         .accessibilityLabel(site.title)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .contextMenu {
@@ -172,10 +172,10 @@ struct SearchDetail: View {
     @ViewBuilder
     private var results: some View {
         if search.searching {
-            PanelNote(symbol: "magnifyingglass", text: "正在查找…").frame(height: 236)
+            PanelNote(symbol: "magnifyingglass", text: tr("正在查找…")).frame(height: 236)
         } else if search.results.isEmpty {
             PanelNote(symbol: "doc.text.magnifyingglass",
-                      text: search.query.isEmpty ? "输入文件名后按下 Return。" : "没有找到“\(search.query)”。")
+                      text: search.query.isEmpty ? tr("输入文件名后按下 Return。") : tr("没有找到“\(search.query)”。"))
                 .frame(height: 236)
         } else {
             FileRows(files: search.results, now: context.now)
@@ -254,7 +254,7 @@ private struct AddSearchSite: View {
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
-                        .help("添加\(site.title)")
+                        .help(tr("添加\(site.title)"))
                     }
                 }
                 Divider()

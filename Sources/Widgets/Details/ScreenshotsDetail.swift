@@ -14,8 +14,8 @@ struct ScreenshotsDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.blue))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "camera.viewfinder", title: "最近截图",
-                            subtitle: context.isPreview ? "桌面" : "保存在“\(feed.folder.lastPathComponent)”")
+                PanelHeader(symbol: "camera.viewfinder", title: tr("最近截图"),
+                            subtitle: context.isPreview ? tr("桌面") : tr("保存在“\(feed.folder.lastPathComponent)”"))
                 if context.isPreview {
                     SamplePicture(symbol: "macwindow").frame(height: 150)
                         .clipShape(.rect(cornerRadius: 10))
@@ -29,7 +29,7 @@ struct ScreenshotsDetail: View {
                     }
                 } else {
                     PanelNote(symbol: "camera.viewfinder",
-                              text: feed.loadedAt == nil ? "正在读取…" : "还没有截图。按 ⇧⌘3、⇧⌘4 或 ⇧⌘5 截取屏幕。")
+                              text: feed.loadedAt == nil ? tr("正在读取…") : tr("还没有截图。按 ⇧⌘3、⇧⌘4 或 ⇧⌘5 截取屏幕。"))
                         .frame(height: 236)
                 }
             }
@@ -59,11 +59,11 @@ struct ScreenshotsDetail: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             HStack(spacing: 6) {
-                PanelButton(title: "拷贝", symbol: "doc.on.doc", prominent: true) {
+                PanelButton(title: tr("拷贝"), symbol: "doc.on.doc", prominent: true) {
                     file.isImage ? FileActions.copyImage(file.url) : FileActions.copyFile(file.url)
                 }
-                PanelButton(title: "显示", symbol: "folder") { FileActions.reveal([file.url]) }
-                PanelButton(title: "删除", symbol: "trash") { feed.trash(file) }
+                PanelButton(title: tr("显示"), symbol: "folder") { FileActions.reveal([file.url]) }
+                PanelButton(title: tr("删除"), symbol: "trash") { feed.trash(file) }
             }
         }
     }

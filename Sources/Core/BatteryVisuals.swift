@@ -24,11 +24,11 @@ public enum BatteryLook: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .classic: "经典"
-        case .liquid: "液态"
-        case .pixel: "像素电池"
-        case .particles: "能量粒子"
-        case .panda: "小熊猫抱电池"
+        case .classic: tr("经典")
+        case .liquid: tr("液态")
+        case .pixel: tr("像素电池")
+        case .particles: tr("能量粒子")
+        case .panda: tr("小熊猫抱电池")
         }
     }
 
@@ -145,11 +145,11 @@ public enum BatteryStatusText {
     /// five, since an estimate to the minute is false precision.
     public static func duration(minutes: Int) -> String {
         let m = max(0, minutes)
-        if m < 60 { return "\(max(1, m)) 分钟" }
+        if m < 60 { return tr("\(max(1, m)) 分钟") }
         var hours = m / 60
         var rest = Int((Double(m % 60) / 5).rounded()) * 5
         if rest == 60 { hours += 1; rest = 0 }
-        return rest == 0 ? "\(hours) 小时" : "\(hours) 小时 \(rest) 分钟"
+        return rest == 0 ? tr("\(hours) 小时") : tr("\(hours) 小时 \(rest) 分钟")
     }
 
     /// An estimate macOS gives: positive and under four days. It reports -1
@@ -163,21 +163,21 @@ public enum BatteryStatusText {
                             watts: Int?, minutesToFull: Int?, minutesToEmpty: Int?) -> String {
         let wattText = watts.flatMap { $0 > 0 ? "\($0)W" : nil }
         if charging {
-            var parts = ["充电中"]
+            var parts = [tr("充电中")]
             if let wattText { parts.append(wattText) }
-            if let m = validMinutes(minutesToFull) { parts.append("约 \(duration(minutes: m))充满") }
+            if let m = validMinutes(minutesToFull) { parts.append(tr("约 \(duration(minutes: m))充满")) }
             return parts.joined(separator: " · ")
         }
         if onPower {
-            if charged || percent >= 100 { return "已充满" }
+            if charged || percent >= 100 { return tr("已充满") }
             // On the adapter but held back (optimised charging, a limit).
-            var parts = ["已接电源"]
+            var parts = [tr("已接电源")]
             if let wattText { parts.append(wattText) }
-            parts.append("暂未充电")
+            parts.append(tr("暂未充电"))
             return parts.joined(separator: " · ")
         }
-        if let m = validMinutes(minutesToEmpty) { return "使用电池 · 还能用约 \(duration(minutes: m))" }
-        return "使用电池"
+        if let m = validMinutes(minutesToEmpty) { return tr("使用电池 · 还能用约 \(duration(minutes: m))") }
+        return tr("使用电池")
     }
 }
 

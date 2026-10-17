@@ -100,7 +100,7 @@ struct RemindersTile: View {
                 listRow(item)
             }
             if hidden > 0 {
-                Text("还有 \(hidden) 项")
+                Text(tr("还有 \(hidden) 项"))
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(WidgetStyle.secondary)
             }
@@ -173,14 +173,14 @@ struct RemindersTile: View {
     private var count: some View {
         if overdueCount > 0 && todayCount > 0 {
             VStack(alignment: .leading, spacing: 1) {
-                countRow(overdueCount, "已过期", tint: WidgetStyle.primary)
-                countRow(todayCount, "今天", tint: WidgetStyle.primary)
+                countRow(overdueCount, tr("已过期"), tint: WidgetStyle.primary)
+                countRow(todayCount, tr("今天"), tint: WidgetStyle.primary)
             }
             .frame(maxWidth: .infinity)
         } else if overdueCount > 0 {
-            bigCount(overdueCount, "已过期", tint: WidgetStyle.primary)
+            bigCount(overdueCount, tr("已过期"), tint: WidgetStyle.primary)
         } else {
-            bigCount(todayCount, "今天到期", tint: WidgetStyle.primary)
+            bigCount(todayCount, tr("今天到期"), tint: WidgetStyle.primary)
         }
     }
 
@@ -244,7 +244,7 @@ struct RemindersTile: View {
                 .accessibilityElement(children: .combine)
             }
             if hidden > 0 {
-                Text("还有 \(hidden) 项")
+                Text(tr("还有 \(hidden) 项"))
                     .font(WidgetStyle.caption(9))
                     .foregroundStyle(WidgetStyle.secondary)
             }
@@ -280,7 +280,7 @@ struct RemindersTile: View {
 
     // 缺权限时的那句话在 Core 的 `TilePermission`，和日历、邮件、废纸篓共用。
 
-    private var emptyText: String { narrow ? "无到期事项" : "今天没有到期事项。" }
+    private var emptyText: String { narrow ? tr("无到期事项") : tr("今天没有到期事项。") }
 
     @ViewBuilder
     private func notice(_ symbol: String, _ text: String, tint: Color) -> some View {
@@ -328,7 +328,7 @@ struct RemindersTile: View {
         guard Calendar.current.isDateInToday(item.due) else {
             return item.due.formatted(.dateTime.day().month(.abbreviated))
         }
-        return item.hasTime ? item.due.formatted(date: .omitted, time: .shortened) : "全天"
+        return item.hasTime ? item.due.formatted(date: .omitted, time: .shortened) : tr("全天")
     }
 
     /// The Next layout's fuller line, matching the panel's: when it was due,
@@ -337,7 +337,7 @@ struct RemindersTile: View {
     private func detail(_ item: TileReminder) -> String {
         let when = item.hasTime
             ? item.due.formatted(date: .omitted, time: .shortened)
-            : "全天"
+            : tr("全天")
         let day = Calendar.current.isDateInToday(item.due)
             ? ""
             : item.due.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) + " "
@@ -407,11 +407,11 @@ struct RemindersTile: View {
     /// of the count to draw. Anchored to `now` so the split is real wherever
     /// the library is opened.
     private static func sample(now: Date) -> [TileReminder] {
-        [(-86_400.0, "续费域名", "工作", true),
-         (-5_400.0, "回复小张", "工作", false),
-         (3_600.0, "预订机票", "旅行", false),
-         (9_000.0, "给植物浇水", "家庭", false),
-         (16_200.0, "取快递", "家庭", false)]
+        [(-86_400.0, tr("续费域名"), tr("工作"), true),
+         (-5_400.0, tr("回复小张"), tr("工作"), false),
+         (3_600.0, tr("预订机票"), tr("旅行"), false),
+         (9_000.0, tr("给植物浇水"), tr("家庭"), false),
+         (16_200.0, tr("取快递"), tr("家庭"), false)]
             .enumerated()
             .map { index, item in
                 TileReminder(id: "sample-\(index)",
@@ -466,7 +466,7 @@ private struct TileReminder: Identifiable, Hashable, Sendable {
                   // An untitled reminder is still a real reminder; Reminders.app
                   // shows the row empty, which here would be a dot with nothing
                   // beside it.
-                  title: title.isEmpty ? "新提醒事项" : title,
+                  title: title.isEmpty ? tr("新提醒事项") : title,
                   due: due,
                   hasTime: components.hour != nil,
                   list: reminder.calendar?.title ?? "",

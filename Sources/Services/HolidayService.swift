@@ -13,7 +13,7 @@ import Observation
 final class HolidayService {
     static let shared = HolidayService()
 
-    static let attribution = "放假安排来自国务院办公厅通知，经 holiday-cn 整理"
+    static let attribution = tr("放假安排来自国务院办公厅通知，经 holiday-cn 整理")
 
     private(set) var known: [Int: [HolidayDay]] = HolidaySchedule.bundled
 

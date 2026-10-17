@@ -17,7 +17,7 @@ struct ClipboardTile: View {
             if column {
                 VStack(spacing: WidgetStyle.columnSpacing) {
                     badge(size: WidgetStyle.badgeColumn)
-                    Text(context.isPreview ? "8 条" : "\(history.entries.count) 条")
+                    Text(context.isPreview ? tr("8 条") : tr("\(history.entries.count) 条"))
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -34,15 +34,15 @@ struct ClipboardTile: View {
     }
 
     private var value: String {
-        if context.isPreview { return "明天上午十点开会" }
+        if context.isPreview { return tr("明天上午十点开会") }
         return latest?.preview ?? PandaEmpty.clipboard.line()
     }
 
     private var caption: String {
         let count = context.isPreview ? 8 : history.entries.count
         let starred = context.isPreview ? 3 : ClipboardPins.pins(instance.config).count
-        var text = count == 0 ? "剪贴板" : "剪贴板 · \(count) 条"
-        if starred > 0 { text += " · \(starred) 星标" }
+        var text = count == 0 ? tr("剪贴板") : tr("剪贴板 · \(count) 条")
+        if starred > 0 { text += tr(" · \(starred) 星标") }
         return text
     }
 

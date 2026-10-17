@@ -41,7 +41,7 @@ struct AnniversaryTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(featured.map { "纪念日，\($0.event.title)\($0.sentence)" } ?? "纪念日")
+        .accessibilityLabel(featured.map { tr("纪念日，\($0.event.title)\($0.sentence)") } ?? tr("纪念日"))
     }
 
     // MARK: Empty
@@ -60,7 +60,7 @@ struct AnniversaryTile: View {
         } else {
             HStack(spacing: WidgetStyle.rowSpacing) {
                 TileBadge { badgeGlyph(size: 16) }
-                TileReading(value: "纪念日", caption: "点按添加纪念日", valueSize: 15)
+                TileReading(value: tr("纪念日"), caption: tr("点按添加纪念日"), valueSize: 15)
                 Spacer(minLength: 0)
             }
         }
@@ -133,7 +133,7 @@ struct AnniversaryTile: View {
             }
             .monospacedDigit()
             .lineLimit(1)
-            .help("共 \(reading.days) 天")
+            .help(tr("共 \(reading.days) 天"))
         } else {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text("\(reading.days)")
@@ -151,7 +151,7 @@ struct AnniversaryTile: View {
 
     /// 丁未年正月初一 · 还有, or 2022-10-21 · 已经.
     private func caption(_ reading: AnniversaryReading) -> String {
-        if let note = reading.anniversaryNote { return "\(note) · 就是今天" }
+        if let note = reading.anniversaryNote { return tr("\(note) · 就是今天") }
         let date = reading.event.kind == .countup && reading.phase == .past
             ? reading.original : reading.timelineDate
         let text = reading.event.lunar ? Anniversary.lunarText(date) : Anniversary.solarText(date)
@@ -168,7 +168,7 @@ struct AnniversaryTile: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
         }
-        .help(reading.event.kind == .countup ? "距上一个周年已过 \(percent)%" : "这一年已过 \(percent)%")
+        .help(reading.event.kind == .countup ? tr("距上一个周年已过 \(percent)%") : tr("这一年已过 \(percent)%"))
     }
 
     /// Up to three columns, nearest first, split by hairlines.
@@ -198,13 +198,13 @@ struct AnniversaryTile: View {
                 .foregroundStyle(tint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(today ? "今天" : "\(reading.days)")
+            Text(today ? tr("今天") : "\(reading.days)")
                 .font(WidgetStyle.value(valueSize))
                 .foregroundStyle(tint)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Text(today ? "就是今天" : (reading.anniversaryNote ?? "\(reading.word) 天"))
+            Text(today ? tr("就是今天") : (reading.anniversaryNote ?? tr("\(reading.word) 天")))
                 .font(WidgetStyle.caption(captionSize))
                 .foregroundStyle(WidgetStyle.secondary)
                 .lineLimit(1)
@@ -232,11 +232,11 @@ struct AnniversaryTile: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(today ? "今天" : "\(reading.days)")
+                        Text(today ? tr("今天") : "\(reading.days)")
                             .font(.system(size: 14, weight: .bold))
                             .monospacedDigit()
                         if !today {
-                            Text(reading.phase == .past ? "天前" : "天")
+                            Text(reading.phase == .past ? tr("天前") : tr("天"))
                                 .font(.system(size: 9, weight: .semibold))
                         }
                     }
@@ -282,12 +282,12 @@ enum AnniversaryLog {
 /// past, so the numbers follow the day being drawn.
 enum AnniversarySamples {
     static let events: [AnniversaryEvent] = [
-        AnniversaryEvent(id: "s1", title: "春节", day: "20260217", kind: .countdown,
+        AnniversaryEvent(id: "s1", title: tr("春节"), day: "20260217", kind: .countdown,
                          yearly: true, lunar: true, color: .green),
-        AnniversaryEvent(id: "s2", title: "元旦", day: "20260101", kind: .countdown,
+        AnniversaryEvent(id: "s2", title: tr("元旦"), day: "20260101", kind: .countdown,
                          yearly: true, color: .blue),
-        AnniversaryEvent(id: "s3", title: "入职", day: "20221021", kind: .countup,
+        AnniversaryEvent(id: "s3", title: tr("入职"), day: "20221021", kind: .countup,
                          yearly: true, color: .pink),
-        AnniversaryEvent(id: "s4", title: "国庆节", day: "20261001", kind: .countdown, color: .orange),
+        AnniversaryEvent(id: "s4", title: tr("国庆节"), day: "20261001", kind: .countdown, color: .orange),
     ]
 }

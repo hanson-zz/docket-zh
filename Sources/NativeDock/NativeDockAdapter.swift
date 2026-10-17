@@ -23,15 +23,15 @@ public actor NativeDockAdapter {
         public var errorDescription: String? {
             switch self {
             case .readFailed:
-                "无法读取当前的程序坞布局。"
+                tr("无法读取当前的程序坞布局。")
             case .writeFailed:
-                "无法写入程序坞布局。"
+                tr("无法写入程序坞布局。")
             case .verificationFailed(let expected, let found):
-                "程序坞重启后有 \(found) 个项目，而不是预期的 \(expected) 个。"
+                tr("程序坞重启后有 \(found) 个项目，而不是预期的 \(expected) 个。")
             case .dockDidNotRestart:
-                "程序坞重启后没有恢复运行。"
+                tr("程序坞重启后没有恢复运行。")
             case .rolledBack(let reason):
-                "无法应用该布局，已恢复你之前的程序坞。（\(reason)）"
+                tr("无法应用该布局，已恢复你之前的程序坞。（\(reason)）")
             }
         }
     }

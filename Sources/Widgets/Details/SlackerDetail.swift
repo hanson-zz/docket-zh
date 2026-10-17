@@ -106,7 +106,7 @@ struct SlackerDetail: View {
                     }
                 }
                 Spacer(minLength: 4)
-                pill("工作日", on: chosen == Set(SlackerClock.weekdays)) {
+                pill(tr("工作日"), on: chosen == Set(SlackerClock.weekdays)) {
                     writeWorkdays(Set(SlackerClock.weekdays))
                 }
             }
@@ -118,7 +118,7 @@ struct SlackerDetail: View {
     private var hoursRow: some View {
         let s = settings
         return VStack(alignment: .leading, spacing: 4) {
-            row("工作时间") {
+            row(tr("工作时间")) {
                 HStack(spacing: 6) {
                     timePicker(s.start) { setHours(start: $0, end: s.end) }
                     Text("至").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
@@ -187,7 +187,7 @@ struct SlackerDetail: View {
                     .frame(width: 52, height: 30)
                     .clipShape(.rect(cornerRadius: 6, style: .continuous))
             }
-            Button(path.isEmpty ? "选择图片…" : "换一张…") { chooseImage() }
+            Button(path.isEmpty ? tr("选择图片…") : tr("换一张…")) { chooseImage() }
                 .controlSize(.small)
             if !path.isEmpty {
                 Button("移除") {
@@ -220,7 +220,7 @@ struct SlackerDetail: View {
     }
 
     private var lookRow: some View {
-        row("外观") {
+        row(tr("外观")) {
             Picker("", selection: Binding(
                 get: { SlackerClock.look(config) },
                 set: { look in write { $0.set(SlackerClock.lookKey, .string(look.rawValue)) } })) {
@@ -235,7 +235,7 @@ struct SlackerDetail: View {
     }
 
     private var fontRow: some View {
-        row("字体") {
+        row(tr("字体")) {
             Picker("", selection: Binding(
                 get: { SlackerClock.font(config) },
                 set: { choice in write { $0.set(SlackerClock.fontKey, .string(choice.rawValue)) } })) {
@@ -250,7 +250,7 @@ struct SlackerDetail: View {
 
     private var itemsRow: some View {
         let chosen = Set(settings.items)
-        return row("显示更多") {
+        return row(tr("显示更多")) {
             HStack(spacing: 4) {
                 ForEach(SlackerClock.Item.allCases) { item in
                     pill(item.title, on: chosen.contains(item)) {
@@ -265,7 +265,7 @@ struct SlackerDetail: View {
     }
 
     private var paydayRow: some View {
-        row("发薪日") {
+        row(tr("发薪日")) {
             HStack(spacing: 4) {
                 Text("每月").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
                 Picker("", selection: Binding(
@@ -282,7 +282,7 @@ struct SlackerDetail: View {
 
     private var incomeRow: some View {
         let income = settings.income
-        return row("每天的收入") {
+        return row(tr("每天的收入")) {
             HStack(spacing: 6) {
                 TextField("", value: Binding(
                     get: { income },
@@ -299,7 +299,7 @@ struct SlackerDetail: View {
     }
 
     private var holidaysRow: some View {
-        row("按法定节假日和调休") {
+        row(tr("按法定节假日和调休")) {
             Toggle("", isOn: Binding(
                 get: { settings.followsHolidays },
                 set: { on in write { $0.set(SlackerClock.holidaysKey, .bool(on)) } }))

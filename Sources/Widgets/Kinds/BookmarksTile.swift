@@ -78,7 +78,7 @@ struct BookmarksTile: View {
         }
         .buttonStyle(.plain)
         .help([title, summary, link.url.absoluteString].compactMap { $0 }.joined(separator: "\n"))
-        .accessibilityLabel("打开 \(title)")
+        .accessibilityLabel(tr("打开 \(title)"))
     }
 }
 

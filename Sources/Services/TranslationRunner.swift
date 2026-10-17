@@ -53,7 +53,7 @@ enum TranslationRunner {
     /// A language's name in Chinese, from our list or else the system's.
     static func name(_ code: String) -> String {
         if Translate.language(code) != nil || code == Translate.auto { return Translate.name(code) }
-        return Locale(identifier: "zh-Hans").localizedString(forIdentifier: code) ?? code
+        return Locale(identifier: L10n.isEnglish ? "en" : "zh-Hans").localizedString(forIdentifier: code) ?? code
     }
 
     /// Translates one job with the session the view was given.
@@ -69,7 +69,7 @@ enum TranslationRunner {
                 to: Locale.Language(identifier: job.target))
             switch status {
             case .unsupported?:
-                return .note("暂不支持从\(name(source))翻译成\(name(job.target))。")
+                return .note(tr("暂不支持从\(name(source))翻译成\(name(job.target))。"))
             case .supported?:
                 downloading()
             default:
@@ -87,9 +87,9 @@ enum TranslationRunner {
             if Task.isCancelled { return .cancelled }
             let reason = error.localizedDescription
             if job.source == nil {
-                return .note("无法识别原文的语言，请在左上角选择源语言后再试。（\(reason)）")
+                return .note(tr("无法识别原文的语言，请在左上角选择源语言后再试。（\(reason)）"))
             }
-            return .note("翻译没有完成：\(reason)")
+            return .note(tr("翻译没有完成：\(reason)"))
         }
     }
 }

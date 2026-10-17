@@ -14,9 +14,9 @@ public enum WidgetVisibilityMode: String, Sendable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .always: "始终显示"
-        case .conditional: "满足条件时显示"
-        case .hidden: "隐藏"
+        case .always: tr("始终显示")
+        case .conditional: tr("满足条件时显示")
+        case .hidden: tr("隐藏")
         }
     }
 }
@@ -92,20 +92,20 @@ public enum WidgetVisibility {
     /// The condition in words, for menus and settings.
     public static func conditionTitle(_ kind: WidgetKind, config: WidgetConfig) -> String? {
         switch kind {
-        case .music: return "正在播放时显示"
-        case .microphone: return "麦克风使用中时显示"
-        case .mail: return "有未读邮件时显示"
-        case .aiUsage: return "Codex 工作中或等你确认时显示"
-        case .todo: return "有未完成的待办时显示"
-        case .ambient: return "正在播放时显示"
-        case .radio: return "正在收听时显示"
-        case .anniversary: return "\(Anniversary.soonDays) 天内有纪念日时显示"
-        case .water: return "今天未达标时显示"
-        case .pet: return "需要照顾时显示"
-        case .github: return "有新反馈时显示"
+        case .music: return tr("正在播放时显示")
+        case .microphone: return tr("麦克风使用中时显示")
+        case .mail: return tr("有未读邮件时显示")
+        case .aiUsage: return tr("Codex 工作中或等你确认时显示")
+        case .todo: return tr("有未完成的待办时显示")
+        case .ambient: return tr("正在播放时显示")
+        case .radio: return tr("正在收听时显示")
+        case .anniversary: return tr("\(Anniversary.soonDays) 天内有纪念日时显示")
+        case .water: return tr("今天未达标时显示")
+        case .pet: return tr("需要照顾时显示")
+        case .github: return tr("有新反馈时显示")
         case .battery:
             let threshold = batteryThreshold(config)
-            return threshold >= 100 ? "使用电池时显示" : "使用电池且电量不高于 \(threshold)% 时显示"
+            return threshold >= 100 ? tr("使用电池时显示") : tr("使用电池且电量不高于 \(threshold)% 时显示")
         default: return nil
         }
     }
@@ -194,7 +194,7 @@ public enum WidgetVisibility {
 
     /// Why a hidden widget is hidden, as a short line after its name.
     public static func hiddenReason(_ instance: WidgetInstance) -> String {
-        mode(instance.config) == .hidden ? "已隐藏" : "条件未满足"
+        mode(instance.config) == .hidden ? tr("已隐藏") : tr("条件未满足")
     }
 
     /// The widget put back on the shelf for good.

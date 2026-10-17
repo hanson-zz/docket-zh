@@ -9,17 +9,17 @@ enum SponsorMethod: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .wechat: "微信"
-        case .alipay: "支付宝"
+        case .wechat: tr("微信")
+        case .alipay: tr("支付宝")
         case .kofi: "Ko-fi"
         }
     }
 
     var hint: String {
         switch self {
-        case .wechat: "微信支付，适合国内用户"
-        case .alipay: "支付宝，适合国内用户"
-        case .kofi: "Ko-fi，支持 PayPal 和信用卡，适合海外用户"
+        case .wechat: tr("微信支付，适合国内用户")
+        case .alipay: tr("支付宝，适合国内用户")
+        case .kofi: tr("Ko-fi，支持 PayPal 和信用卡，适合海外用户")
         }
     }
 

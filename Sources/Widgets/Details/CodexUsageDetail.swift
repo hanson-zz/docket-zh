@@ -35,7 +35,7 @@ struct CodexUsageDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.indigo))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "gauge.with.dots.needle.33percent", title: "Codex 用量", subtitle: subtitle(now: now))
+                PanelHeader(symbol: "gauge.with.dots.needle.33percent", title: tr("Codex 用量"), subtitle: subtitle(now: now))
                 activityRow
                 if let report, !report.windows.isEmpty {
                     VStack(spacing: 6) {
@@ -44,12 +44,12 @@ struct CodexUsageDetail: View {
                     stats(report, now: now)
                     chart(report, now: now)
                     if let source = report.source, !context.isPreview {
-                        Text("来源：\(source.title)")
+                        Text(tr("来源：\(source.title)"))
                             .font(WidgetStyle.caption(10))
                             .foregroundStyle(.white.opacity(0.5))
                     }
                 } else {
-                    PanelNote(symbol: "network", text: service.problem?.message ?? "正在读取…").frame(height: 100)
+                    PanelNote(symbol: "network", text: service.problem?.message ?? tr("正在读取…")).frame(height: 100)
                 }
                 if let problem = service.problem, report != nil, !context.isPreview {
                     Text(problem.message)
@@ -58,11 +58,11 @@ struct CodexUsageDetail: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 8) {
-                    PanelButton(title: "刷新", symbol: "arrow.clockwise", prominent: true) {
+                    PanelButton(title: tr("刷新"), symbol: "arrow.clockwise", prominent: true) {
                         guard !context.isPreview else { return }
                         service.refresh(force: true)
                     }
-                    PanelButton(title: "网页版用量", symbol: "arrow.up.right") {
+                    PanelButton(title: tr("网页版用量"), symbol: "arrow.up.right") {
                         guard !context.isPreview, let url = URL(string: "https://chatgpt.com/codex/settings/usage") else { return }
                         NSWorkspace.shared.open(url)
                     }
@@ -73,16 +73,16 @@ struct CodexUsageDetail: View {
     }
 
     private func subtitle(now: Date) -> String {
-        if context.isPreview { return "示例数据" }
+        if context.isPreview { return tr("示例数据") }
         var parts: [String] = []
         if let email = service.email { parts.append(email) }
         if let plan = CodexUsageParser.planTitle(report?.plan) { parts.append(plan) }
         if let report {
             let f = DateFormatter()
-            f.dateFormat = Calendar.current.isDate(report.fetchedAt, inSameDayAs: now) ? "HH:mm" : "M月d日 HH:mm"
-            parts.append(report.isStale(now: now) ? "\(f.string(from: report.fetchedAt)) 的缓存" : "\(f.string(from: report.fetchedAt)) 更新")
+            f.dateFormat = Calendar.current.isDate(report.fetchedAt, inSameDayAs: now) ? "HH:mm" : tr("M月d日 HH:mm")
+            parts.append(report.isStale(now: now) ? tr("\(f.string(from: report.fetchedAt)) 的缓存") : tr("\(f.string(from: report.fetchedAt)) 更新"))
         }
-        return parts.isEmpty ? "读取 ~/.codex 的登录" : parts.joined(separator: " · ")
+        return parts.isEmpty ? tr("读取 ~/.codex 的登录") : parts.joined(separator: " · ")
     }
 
     private var activityRow: some View {
@@ -116,7 +116,7 @@ struct CodexUsageDetail: View {
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white)
                 Spacer(minLength: 4)
-                Text("\(showsRemaining ? "剩余" : "已用") \(GaugeReading.percent(fraction))")
+                Text("\(showsRemaining ? tr("剩余") : tr("已用")) \(GaugeReading.percent(fraction))")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -147,15 +147,15 @@ struct CodexUsageDetail: View {
         var parts: [String] = []
         if let resets = w.resetsAt {
             let f = DateFormatter()
-            f.dateFormat = Calendar.current.isDate(resets, inSameDayAs: now) ? "HH:mm" : "M月d日 HH:mm"
-            parts.append("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置（\(f.string(from: resets))）")
+            f.dateFormat = Calendar.current.isDate(resets, inSameDayAs: now) ? "HH:mm" : tr("M月d日 HH:mm")
+            parts.append(tr("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置（\(f.string(from: resets))）"))
         }
         if let out = CodexPace.runsOutAt(w, now: now) {
             let f = DateFormatter()
             f.dateFormat = "HH:mm"
-            parts.append("按当前速度约 \(f.string(from: out)) 用完")
+            parts.append(tr("按当前速度约 \(f.string(from: out)) 用完"))
         } else if let delta = CodexPace.delta(w, now: now) {
-            parts.append(delta > 0.05 ? "用得偏快" : "节奏正常")
+            parts.append(delta > 0.05 ? tr("用得偏快") : tr("节奏正常"))
         }
         return parts.joined(separator: " · ")
     }
@@ -163,9 +163,9 @@ struct CodexUsageDetail: View {
     private func stats(_ report: CodexUsageReport, now: Date) -> some View {
         let series = CodexPace.series(report.daily, now: now)
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-            StatChip(label: "今天", value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.last ?? 0))
-            StatChip(label: "30 天", value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.reduce(0, +)))
-            StatChip(label: "可用重置", value: report.resetCredits.map { "\($0) 次" } ?? "-")
+            StatChip(label: tr("今天"), value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.last ?? 0))
+            StatChip(label: tr("30 天"), value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.reduce(0, +)))
+            StatChip(label: tr("可用重置"), value: report.resetCredits.map { tr("\($0) 次") } ?? "-")
         }
     }
 
@@ -202,8 +202,8 @@ struct CodexUsageDetail: View {
                     .foregroundStyle(.white)
                     .disabled(context.isPreview)
             }
-            Text(proxyRejected ? "地址格式不对，应为“主机:端口”。"
-                 : "留空则使用系统代理。只在终端里设置了 HTTPS_PROXY 时，应用读不到，需要填在这里。")
+            Text(proxyRejected ? tr("地址格式不对，应为“主机:端口”。")
+                 : tr("留空则使用系统代理。只在终端里设置了 HTTPS_PROXY 时，应用读不到，需要填在这里。"))
                 .font(WidgetStyle.caption(10))
                 .foregroundStyle(proxyRejected ? Color(hex: "#FF9F0A") : .white.opacity(0.55))
                 .fixedSize(horizontal: false, vertical: true)

@@ -126,9 +126,9 @@ struct WeeklyReportSection<Accessory: View>: View {
             }
             .frame(height: max(3, chartHeight * report.fraction(day)))
             .frame(maxWidth: .infinity, maxHeight: chartHeight, alignment: .bottom)
-            .help("\(day.axisLabel)：\(valueText(day))\(day.isMet ? "，达标" : "")")
+            .help("\(day.axisLabel)：\(valueText(day))\(day.isMet ? tr("，达标") : "")")
             .accessibilityElement()
-            .accessibilityLabel("\(day.isToday ? "今天，" : "")\(day.axisLabel)，\(valueText(day))\(day.isMet ? "，达标" : "")")
+            .accessibilityLabel("\(day.isToday ? tr("今天，") : "")\(day.axisLabel)，\(valueText(day))\(day.isMet ? tr("，达标") : "")")
     }
 
     private func goalLine(at fraction: Double) -> some View {
@@ -188,25 +188,25 @@ struct WaterWeeklyReport: View {
         return WeeklyReportSection(
             report: report, accent: accent,
             headline: [
-                WeeklyReportStat(value: WaterIntake.figure(average, ounces: ounces), unit: unit, label: "每日平均"),
+                WeeklyReportStat(value: WaterIntake.figure(average, ounces: ounces), unit: unit, label: tr("每日平均")),
                 total(Int(report.total)),
             ],
             chips: [
-                WeeklyReportStat(value: WeeklyReport.figure(Double(cups) / Double(report.days.count)), unit: " 杯",
-                                 label: "日均杯数"),
-                WeeklyReportStat(value: "\(report.metDays)", unit: " 天", label: "达标天数"),
+                WeeklyReportStat(value: WeeklyReport.figure(Double(cups) / Double(report.days.count)), unit: tr(" 杯"),
+                                 label: tr("日均杯数")),
+                WeeklyReportStat(value: "\(report.metDays)", unit: tr(" 天"), label: tr("达标天数")),
             ],
-            goalLabel: "目标 \(WaterIntake.amount(goal, ounces: ounces))",
+            goalLabel: tr("目标 \(WaterIntake.amount(goal, ounces: ounces))"),
             valueText: { WaterIntake.amount(Int($0.value), ounces: ounces) })
     }
 
     /// Litres past a litre, so a week's total stays short.
     private func total(_ millilitres: Int) -> WeeklyReportStat {
         if !ounces, millilitres >= 1000 {
-            return WeeklyReportStat(value: WeeklyReport.figure(Double(millilitres) / 1000), unit: "升", label: "总量")
+            return WeeklyReportStat(value: WeeklyReport.figure(Double(millilitres) / 1000), unit: tr("升"), label: tr("总量"))
         }
         return WeeklyReportStat(value: WaterIntake.figure(millilitres, ounces: ounces),
-                                unit: WaterIntake.unitLabel(ounces: ounces), label: "总量")
+                                unit: WaterIntake.unitLabel(ounces: ounces), label: tr("总量"))
     }
 }
 
@@ -226,22 +226,22 @@ struct FocusWeeklyReport: View {
         return WeeklyReportSection(
             report: report, accent: accent,
             headline: [
-                WeeklyReportStat(value: "\(Int(report.average.rounded()))", unit: "分钟", label: "每日平均"),
-                WeeklyReportStat(value: WeeklyReport.duration(minutes: Int(report.total)), label: "总时长"),
+                WeeklyReportStat(value: "\(Int(report.average.rounded()))", unit: tr("分钟"), label: tr("每日平均")),
+                WeeklyReportStat(value: WeeklyReport.duration(minutes: Int(report.total)), label: tr("总时长")),
             ],
             chips: [
-                WeeklyReportStat(value: "\(report.metDays)", unit: " 天", label: "达标天数"),
-                WeeklyReportStat(value: report.best.map { "\($0.weekdayLabel) \(Int($0.value))" } ?? "无",
-                                 unit: report.best == nil ? "" : " 分", label: "最长一天"),
+                WeeklyReportStat(value: "\(report.metDays)", unit: tr(" 天"), label: tr("达标天数")),
+                WeeklyReportStat(value: report.best.map { "\($0.weekdayLabel) \(Int($0.value))" } ?? tr("无"),
+                                 unit: report.best == nil ? "" : tr(" 分"), label: tr("最长一天")),
             ],
-            goalLabel: "目标 \(goal) 分钟",
+            goalLabel: tr("目标 \(goal) 分钟"),
             valueText: { WeeklyReport.duration(minutes: Int($0.value)) }
         ) {
             Stepper(value: Binding(
                 get: { goal },
                 set: { storedGoal = FocusLog.clampGoal($0) }),
                 in: FocusLog.goalRange, step: FocusLog.goalStep) {
-                    Text("每日目标 \(goal) 分钟")
+                    Text(tr("每日目标 \(goal) 分钟"))
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(.white.opacity(0.75))
                         .monospacedDigit()
@@ -344,13 +344,13 @@ struct HabitWeeklyReport: View {
         return WeeklyReportSection(
             report: report, accent: accent,
             headline: [
-                WeeklyReportStat(value: "\(WeeklyReport.habitCheckIns(habits, today: now))", unit: "次", label: "7 天完成次数"),
-                WeeklyReportStat(value: "\(report.metDays)", unit: "天", label: "全勤天数"),
+                WeeklyReportStat(value: "\(WeeklyReport.habitCheckIns(habits, today: now))", unit: tr("次"), label: tr("7 天完成次数")),
+                WeeklyReportStat(value: "\(report.metDays)", unit: tr("天"), label: tr("全勤天数")),
             ],
             chips: [
-                WeeklyReportStat(value: "\(Int(report.average.rounded()))", unit: "%", label: "平均完成率"),
+                WeeklyReportStat(value: "\(Int(report.average.rounded()))", unit: "%", label: tr("平均完成率")),
             ],
-            goalLabel: "全勤",
-            valueText: { "完成 \(Int($0.value.rounded()))%" })
+            goalLabel: tr("全勤"),
+            valueText: { tr("完成 \(Int($0.value.rounded()))%") })
     }
 }

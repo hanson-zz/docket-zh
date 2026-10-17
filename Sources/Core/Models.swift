@@ -174,22 +174,22 @@ public enum PaperColor: String, Codable, Sendable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .yellow: "柠檬黄"
-        case .orange: "橘子橙"
-        case .pink: "樱花粉"
-        case .purple: "葡萄紫"
-        case .blue: "天空蓝"
-        case .green: "青草绿"
-        case .graphite: "石墨灰"
-        case .cream: "奶油白"
-        case .peach: "蜜桃"
-        case .coral: "珊瑚红"
-        case .mint: "薄荷绿"
-        case .teal: "湖水青"
-        case .lavender: "薰衣草"
-        case .kraft: "牛皮纸"
-        case .slate: "雾霾蓝"
-        case .night: "夜黑"
+        case .yellow: tr("柠檬黄")
+        case .orange: tr("橘子橙")
+        case .pink: tr("樱花粉")
+        case .purple: tr("葡萄紫")
+        case .blue: tr("天空蓝")
+        case .green: tr("青草绿")
+        case .graphite: tr("石墨灰")
+        case .cream: tr("奶油白")
+        case .peach: tr("蜜桃")
+        case .coral: tr("珊瑚红")
+        case .mint: tr("薄荷绿")
+        case .teal: tr("湖水青")
+        case .lavender: tr("薰衣草")
+        case .kraft: tr("牛皮纸")
+        case .slate: tr("雾霾蓝")
+        case .night: tr("夜黑")
         }
     }
 
@@ -624,7 +624,7 @@ public struct DockProfile: Codable, Hashable, Identifiable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         kind = try c.decode(ProfileKind.self, forKey: .kind)
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? "未命名"
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? tr("未命名")
         color = try c.decodeIfPresent(PaletteColor.self, forKey: .color) ?? .blue
         scale = try c.decodeIfPresent(Double.self, forKey: .scale) ?? Geometry.defaultScale
         shortcut = try c.decodeIfPresent(KeyCombo.self, forKey: .shortcut)
@@ -1054,9 +1054,9 @@ public enum TimerPhase: String, Codable, Sendable, CaseIterable {
 
     public var label: String {
         switch self {
-        case .focus: "专注"
-        case .rest: "休息"
-        case .long: "长休息"
+        case .focus: tr("专注")
+        case .rest: tr("休息")
+        case .long: tr("长休息")
         }
     }
 }
@@ -1201,10 +1201,10 @@ public extension DockPosition {
     /// 界面上显示的屏幕边缘名称。
     var displayName: String {
         switch self {
-        case .left: "左侧"
-        case .top: "顶部"
-        case .bottom: "底部"
-        case .right: "右侧"
+        case .left: tr("左侧")
+        case .top: tr("顶部")
+        case .bottom: tr("底部")
+        case .right: tr("右侧")
         }
     }
 }
@@ -1213,17 +1213,17 @@ public extension WidgetCategory {
     /// 小组件库侧边栏中显示的类别名称。
     var displayName: String {
         switch self {
-        case .appsAndFolders: "应用和文件夹"
-        case .time: "时间与日历"
-        case .todo: "待办与笔记"
-        case .health: "健康与习惯"
-        case .ai: "AI 与效率"
-        case .tools: "小工具"
-        case .media: "媒体"
-        case .files: "文件"
-        case .system: "系统"
-        case .weather: "天气"
-        case .stocks: "行情"
+        case .appsAndFolders: tr("应用和文件夹")
+        case .time: tr("时间与日历")
+        case .todo: tr("待办与笔记")
+        case .health: tr("健康与习惯")
+        case .ai: tr("AI 与效率")
+        case .tools: tr("小工具")
+        case .media: tr("媒体")
+        case .files: tr("文件")
+        case .system: tr("系统")
+        case .weather: tr("天气")
+        case .stocks: tr("行情")
         }
     }
 
@@ -1248,16 +1248,16 @@ public extension WidgetCategory {
 /// 颜色原始值（如 "red"、"graphite"）对应的中文名称；未知值按原样首字母大写。
 public func docketColourName(_ raw: String) -> String {
     switch raw {
-    case "red": "红色"
-    case "orange": "橙色"
-    case "yellow": "黄色"
-    case "green": "绿色"
-    case "teal": "青色"
-    case "blue": "蓝色"
-    case "indigo": "靛蓝色"
-    case "purple": "紫色"
-    case "pink": "粉色"
-    case "graphite": "石墨色"
+    case "red": tr("红色")
+    case "orange": tr("橙色")
+    case "yellow": tr("黄色")
+    case "green": tr("绿色")
+    case "teal": tr("青色")
+    case "blue": tr("蓝色")
+    case "indigo": tr("靛蓝色")
+    case "purple": tr("紫色")
+    case "pink": tr("粉色")
+    case "graphite": tr("石墨色")
     default: raw.prefix(1).uppercased() + raw.dropFirst()
     }
 }

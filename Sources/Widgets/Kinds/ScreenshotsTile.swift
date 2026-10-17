@@ -18,11 +18,11 @@ struct ScreenshotsTile: View {
         WidgetSurface {
             Group {
                 if context.isPreview {
-                    picture(SamplePicture(symbol: "macwindow"), caption: "2 分钟前")
+                    picture(SamplePicture(symbol: "macwindow"), caption: tr("2 分钟前"))
                 } else if let latest {
                     picture(FileThumb(url: latest.url, pixels: 480).id(latest.url),
                             caption: RelativeAge.caption(latest.date, now: context.now))
-                        .accessibilityLabel("最近截图：\(latest.name)")
+                        .accessibilityLabel(tr("最近截图：\(latest.name)"))
                 } else {
                     empty
                 }
@@ -62,7 +62,7 @@ struct ScreenshotsTile: View {
             Image(systemName: "camera.viewfinder")
                 .font(.system(size: column ? 15 : 16, weight: .medium))
                 .foregroundStyle(WidgetStyle.secondary)
-            Text(feed.error != nil ? "无法访问" : "没有截图")
+            Text(feed.error != nil ? tr("无法访问") : tr("没有截图"))
                 .font(WidgetStyle.note)
                 .foregroundStyle(WidgetStyle.secondary)
                 .lineLimit(1)

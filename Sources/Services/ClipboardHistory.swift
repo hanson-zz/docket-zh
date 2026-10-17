@@ -45,9 +45,9 @@ final class ClipboardHistory {
                 text.trimmingCharacters(in: .whitespacesAndNewlines)
                     .replacingOccurrences(of: "\n", with: " ")
             case .image(let image, _, _):
-                "图片 \(Int(image.size.width))×\(Int(image.size.height))"
+                tr("图片 \(Int(image.size.width))×\(Int(image.size.height))")
             case .files(let urls):
-                urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) 个文件"
+                urls.count == 1 ? urls[0].lastPathComponent : tr("\(urls.count) 个文件")
             }
         }
     }

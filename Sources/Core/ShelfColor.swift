@@ -14,12 +14,12 @@ public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .redPanda: "小熊猫橙"
-        case .sakura: "樱花粉"
-        case .mint: "薄荷绿"
-        case .ocean: "海盐蓝"
-        case .galaxy: "星空紫"
-        case .amber: "琥珀金"
+        case .redPanda: tr("小熊猫橙")
+        case .sakura: tr("樱花粉")
+        case .mint: tr("薄荷绿")
+        case .ocean: tr("海盐蓝")
+        case .galaxy: tr("星空紫")
+        case .amber: tr("琥珀金")
         }
     }
 

@@ -34,7 +34,7 @@ struct AmbientDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(playing ? "正在播放" : "环境音")
+                    Text(playing ? tr("正在播放") : tr("环境音"))
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.8)
                         .foregroundStyle(.white.opacity(0.7))
@@ -44,7 +44,7 @@ struct AmbientDetail: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     if let end = player.stopAt, player.isPlaying {
-                        Text("\(AmbientTimer.remaining(until: end, now: now)) 后自动停止")
+                        Text(tr("\(AmbientTimer.remaining(until: end, now: now)) 后自动停止"))
                             .font(WidgetStyle.label(12))
                             .foregroundStyle(.white.opacity(0.75))
                             .monospacedDigit()
@@ -94,7 +94,7 @@ struct AmbientDetail: View {
                     guard !context.isPreview else { return }
                     player.toggle(sounds: sounds, volume: volume)
                 } label: {
-                    Label(playing ? "暂停" : "播放", systemImage: playing ? "pause.fill" : "play.fill")
+                    Label(playing ? tr("暂停") : tr("播放"), systemImage: playing ? "pause.fill" : "play.fill")
                         .font(WidgetStyle.label(13))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -104,7 +104,7 @@ struct AmbientDetail: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(sounds.isEmpty)
-                .accessibilityLabel(playing ? "暂停环境音" : "播放环境音")
+                .accessibilityLabel(playing ? tr("暂停环境音") : tr("播放环境音"))
 
                 BreathPacerView(isPreview: context.isPreview)
             }

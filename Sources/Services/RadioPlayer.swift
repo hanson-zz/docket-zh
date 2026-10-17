@@ -198,7 +198,7 @@ final class RadioPlayer {
         attempt += 1
         // The first couple of hiccups are routine on a live stream; say so
         // only once it keeps failing.
-        if attempt >= 3 { problem = "连接不上电台，\(Int(wait)) 秒后重试" }
+        if attempt >= 3 { problem = tr("连接不上电台，\(Int(wait)) 秒后重试") }
         retryTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(wait))
             guard !Task.isCancelled else { return }

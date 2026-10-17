@@ -29,7 +29,7 @@ struct WaterDetail: View {
 
     fileprivate enum Field: Hashable { case amount, weight, age, height }
 
-    private static let weekdays = ["一", "二", "三", "四", "五", "六", "日"]
+    private static let weekdays = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
 
     private var accent: Color { WaterStyle.water }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
@@ -135,7 +135,7 @@ struct WaterDetail: View {
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.85))
                     .monospacedDigit()
-                Text(done ? "达标啦！小熊猫喝饱了" : WaterIntake.remainingLine(total: today.total, goal: today.goal, ounces: ounces))
+                Text(done ? tr("达标啦！小熊猫喝饱了") : WaterIntake.remainingLine(total: today.total, goal: today.goal, ounces: ounces))
                     .font(.system(size: 11))
                     .foregroundStyle(done ? accent.mix(with: .white, by: 0.4) : .white.opacity(0.6))
             }
@@ -144,11 +144,11 @@ struct WaterDetail: View {
             Spacer(minLength: 0)
         }
         .overlay(alignment: .topTrailing) {
-            Label("\(streak) 天", systemImage: "flame.fill")
+            Label(tr("\(streak) 天"), systemImage: "flame.fill")
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.45))
                 .monospacedDigit()
-                .help("连续达标 \(streak) 天")
+                .help(tr("连续达标 \(streak) 天"))
         }
     }
 
@@ -178,7 +178,7 @@ struct WaterDetail: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .help(type == .custom ? "自定义饮品，计入比例可调" : "\(type.title)：按 \(Int((type.factor * 100).rounded()))% 计入")
+                .help(type == .custom ? tr("自定义饮品，计入比例可调") : tr("\(type.title)：按 \(Int((type.factor * 100).rounded()))% 计入"))
             }
         }
     }
@@ -195,7 +195,7 @@ struct WaterDetail: View {
                 guard !context.isPreview else { return }
                 WaterLog.set("customFactor", .number(WaterIntake.clampFactor(value)), in: instance)
             }), in: 0.1...1.5, step: 0.1) {
-                Text("计入比例 \(Int((current * 100).rounded()))%")
+                Text(tr("计入比例 \(Int((current * 100).rounded()))%"))
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.85))
                     .monospacedDigit()
@@ -236,7 +236,7 @@ struct WaterDetail: View {
                 ForEach(WaterIntake.quickAmounts, id: \.self) { amount in
                     amountButton(title: "+\(WaterIntake.figure(amount, ounces: ounces))") { log(amount) }
                 }
-                amountButton(title: "自定义") {
+                amountButton(title: tr("自定义")) {
                     editingCustom = true
                     focus = .amount
                 }
@@ -284,7 +284,7 @@ struct WaterDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             schedule(all, now: now)
             HStack {
-                Text("\(today.entries.count) 杯")
+                Text(tr("\(today.entries.count) 杯"))
                     .font(WidgetStyle.label(11))
                     .foregroundStyle(.white.opacity(0.6))
                 Spacer()
@@ -326,29 +326,29 @@ struct WaterDetail: View {
     /// been overdue (the notification only ever says it once).
     private func schedule(_ all: [WaterDay], now: Date) -> some View {
         HStack(spacing: 8) {
-            StatChip(label: "上次喝水", value: lastDrinkLine(all, now: now))
-            StatChip(label: "下次提醒", value: dueLine(now: now))
+            StatChip(label: tr("上次喝水"), value: lastDrinkLine(all, now: now))
+            StatChip(label: tr("下次提醒"), value: dueLine(now: now))
         }
     }
 
     private func lastDrinkLine(_ all: [WaterDay], now: Date) -> String {
-        if context.isPreview { return "14:20，40 分钟前" }
+        if context.isPreview { return tr("14:20，40 分钟前") }
         guard let last = WaterIntake.lastDrink(all),
-              WaterIntake.calendar.isDate(last, inSameDayAs: now) else { return "今天还没喝" }
+              WaterIntake.calendar.isDate(last, inSameDayAs: now) else { return tr("今天还没喝") }
         let since = max(0, now.timeIntervalSince(last))
-        return since < 60 ? "\(Self.clock(last))，刚刚" : "\(Self.clock(last))，\(Self.spelled(since))前"
+        return since < 60 ? tr("\(Self.clock(last))，刚刚") : tr("\(Self.clock(last))，\(Self.spelled(since))前")
     }
 
     private func dueLine(now: Date) -> String {
         if context.isPreview { return "15:20" }
         switch WaterReminder.due(instance.config, now: now) {
-        case .off: return "已关闭"
-        case .met(let next): return "达标啦，明天 \(Self.clock(next))"
+        case .off: return tr("已关闭")
+        case .met(let next): return tr("达标啦，明天 \(Self.clock(next))")
         case .upcoming(let at):
-            let day = WaterIntake.calendar.isDate(at, inSameDayAs: now) ? "" : "明天 "
+            let day = WaterIntake.calendar.isDate(at, inSameDayAs: now) ? "" : tr("明天 ")
             return "\(day)\(Self.clock(at))"
         case .overdue(let seconds):
-            return seconds >= 60 ? "已超时 \(Self.spelled(seconds))" : "该喝水了"
+            return seconds >= 60 ? tr("已超时 \(Self.spelled(seconds))") : tr("该喝水了")
         }
     }
 
@@ -360,8 +360,8 @@ struct WaterDetail: View {
     /// "45 分钟", "1 小时 30 分钟": a span, not a ticking countdown.
     private static func spelled(_ seconds: TimeInterval) -> String {
         let minutes = Int(seconds / 60)
-        guard minutes >= 60 else { return "\(max(1, minutes)) 分钟" }
-        return minutes % 60 == 0 ? "\(minutes / 60) 小时" : "\(minutes / 60) 小时 \(minutes % 60) 分钟"
+        guard minutes >= 60 else { return tr("\(max(1, minutes)) 分钟") }
+        return minutes % 60 == 0 ? tr("\(minutes / 60) 小时") : tr("\(minutes / 60) 小时 \(minutes % 60) 分钟")
     }
 
     private func entryRow(_ entry: WaterEntry, index: Int) -> some View {
@@ -384,7 +384,7 @@ struct WaterDetail: View {
                 .foregroundStyle(.white)
                 .monospacedDigit()
             if entry.effective != entry.amount {
-                Text("计 \(WaterIntake.figure(entry.effective, ounces: ounces))")
+                Text(tr("计 \(WaterIntake.figure(entry.effective, ounces: ounces))"))
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.5))
                     .monospacedDigit()
@@ -402,7 +402,7 @@ struct WaterDetail: View {
             .buttonStyle(.plain)
             .disabled(context.isPreview)
             .help("删除这一杯")
-            .accessibilityLabel("删除 \(entry.clock) 的\(entry.type.title)")
+            .accessibilityLabel(tr("删除 \(entry.clock) 的\(entry.type.title)"))
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
@@ -415,9 +415,9 @@ struct WaterDetail: View {
         let week = WaterIntake.lastDays(all, goal: goal, today: now)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                StatChip(label: "连续达标", value: "\(streak) 天")
-                StatChip(label: "本月达标", value: "\(WaterIntake.metCount(all, goal: goal, month: now, today: now)) 天")
-                StatChip(label: "7 天平均", value: WaterIntake.amount(week.reduce(0) { $0 + $1.total } / max(1, week.count), ounces: ounces))
+                StatChip(label: tr("连续达标"), value: tr("\(streak) 天"))
+                StatChip(label: tr("本月达标"), value: tr("\(WaterIntake.metCount(all, goal: goal, month: now, today: now)) 天"))
+                StatChip(label: tr("7 天平均"), value: WaterIntake.amount(week.reduce(0) { $0 + $1.total } / max(1, week.count), ounces: ounces))
             }
             bars(week)
             month(all, goal: goal, now: now)
@@ -457,7 +457,7 @@ struct WaterDetail: View {
             .frame(height: height)
             HStack(spacing: 8) {
                 ForEach(week, id: \.key) { day in
-                    Text(day.isToday ? "今" : Self.weekdays[weekdayIndex(day.date)])
+                    Text(day.isToday ? tr("今") : Self.weekdays[weekdayIndex(day.date)])
                         .font(.system(size: 9, weight: day.isToday ? .bold : .semibold))
                         .foregroundStyle(.white.opacity(day.isToday ? 0.9 : 0.5))
                         .frame(maxWidth: .infinity)
@@ -577,7 +577,7 @@ struct WaterDetail: View {
 
     private func reminderSettings(_ reminder: WaterReminder) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            settingRow("提醒") {
+            settingRow(tr("提醒")) {
                 Picker("", selection: Binding(
                     get: { reminder.every },
                     set: { value in
@@ -585,13 +585,13 @@ struct WaterDetail: View {
                         WaterLog.set("remindEvery", .string(String(value)), in: instance)
                     })) {
                         ForEach(WaterIntake.reminderChoices, id: \.self) { value in
-                            Text(value == 0 ? "关闭" : "每 \(value) 分钟").tag(value)
+                            Text(value == 0 ? tr("关闭") : tr("每 \(value) 分钟")).tag(value)
                         }
                     }
                     .labelsHidden()
                     .fixedSize()
             }
-            settingRow("时段") {
+            settingRow(tr("时段")) {
                 HStack(spacing: 4) {
                     timePicker(reminder.start, key: "start")
                     Text("到").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
@@ -613,7 +613,7 @@ struct WaterDetail: View {
         let calendar = WaterIntake.calendar
         let minutes = calendar.component(.hour, from: shown) * 60 + calendar.component(.minute, from: shown)
         return VStack(alignment: .leading, spacing: 6) {
-            settingRow("下次提醒") {
+            settingRow(tr("下次提醒")) {
                 HStack(spacing: 6) {
                     if !calendar.isDate(shown, inSameDayAs: now) {
                         Text("明天").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
@@ -631,13 +631,13 @@ struct WaterDetail: View {
             }
             HStack(spacing: 6) {
                 ForEach([15, 30, 60], id: \.self) { delay in
-                    chip(delay == 60 ? "1 小时后" : "\(delay) 分钟后") {
+                    chip(delay == 60 ? tr("1 小时后") : tr("\(delay) 分钟后")) {
                         pickNext(Date.now.addingTimeInterval(TimeInterval(delay * 60)))
                     }
                 }
                 Spacer(minLength: 0)
                 if picked != nil {
-                    chip("恢复自动") {
+                    chip(tr("恢复自动")) {
                         guard !context.isPreview else { return }
                         WaterLog.set(WaterReminder.overrideKey, nil, in: instance)
                     }
@@ -742,7 +742,7 @@ struct WaterDetail: View {
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
                     .help(locked ? "\(character.title)：\(ProFeatures.help)" : character.title)
-                    .accessibilityLabel(locked ? "角色：\(character.title)，Pro 专属" : "角色：\(character.title)")
+                    .accessibilityLabel(locked ? tr("角色：\(character.title)，Pro 专属") : tr("角色：\(character.title)"))
                 }
             }
         }
@@ -836,7 +836,7 @@ extension WaterDetail {
                             Text("每日目标")
                                 .font(WidgetStyle.label(12))
                                 .foregroundStyle(.white.opacity(0.85))
-                            Text(result.isManual ? "已手动设置" : "按个人情况推荐")
+                            Text(result.isManual ? tr("已手动设置") : tr("按个人情况推荐"))
                                 .font(.system(size: 10))
                                 .foregroundStyle(result.isManual ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.55))
                         }
@@ -850,7 +850,7 @@ extension WaterDetail {
                 .controlSize(.small)
             if result.isManual {
                 HStack(spacing: 6) {
-                    Text("推荐目标 \(WaterIntake.amount(result.recommended, ounces: ounces))")
+                    Text(tr("推荐目标 \(WaterIntake.amount(result.recommended, ounces: ounces))"))
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.65))
                         .monospacedDigit()
@@ -907,7 +907,7 @@ extension WaterDetail {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
                 Spacer()
-                Text("\(result.recommended) 毫升")
+                Text(tr("\(result.recommended) 毫升"))
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -918,7 +918,7 @@ extension WaterDetail {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Color(hex: PaletteColor.orange.hex))
                     Spacer()
-                    Text("\(manual) 毫升")
+                    Text(tr("\(manual) 毫升"))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(Color(hex: PaletteColor.orange.hex))
                         .monospacedDigit()
@@ -936,8 +936,8 @@ extension WaterDetail {
             Text("个人情况")
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(.white.opacity(0.85))
-            numberField("体重", text: $weightText, unit: "公斤", prompt: "60", field: .weight, save: saveWeight)
-            optionRow("性别") {
+            numberField(tr("体重"), text: $weightText, unit: tr("公斤"), prompt: "60", field: .weight, save: saveWeight)
+            optionRow(tr("性别")) {
                 Picker("", selection: Binding(
                     get: { profile.sex },
                     set: { setProfile(WaterGoal.Key.sex, $0 == .unset ? nil : .string($0.rawValue)) })) {
@@ -947,9 +947,9 @@ extension WaterDetail {
                     .labelsHidden()
                     .fixedSize()
             }
-            numberField("年龄", text: $ageText, unit: "岁", prompt: "30", field: .age, save: saveAge)
-            numberField("身高", text: $heightText, unit: "厘米", prompt: "170", field: .height, save: saveHeight)
-            optionRow("日常活动量") {
+            numberField(tr("年龄"), text: $ageText, unit: tr("岁"), prompt: "30", field: .age, save: saveAge)
+            numberField(tr("身高"), text: $heightText, unit: tr("厘米"), prompt: "170", field: .height, save: saveHeight)
+            optionRow(tr("日常活动量")) {
                 Picker("", selection: Binding(
                     get: { profile.activity },
                     set: { setProfile(WaterGoal.Key.activity, $0 == .sedentary ? nil : .string($0.rawValue)) })) {
@@ -959,7 +959,7 @@ extension WaterDetail {
                     .labelsHidden()
                     .fixedSize()
             }
-            optionRow("气候") {
+            optionRow(tr("气候")) {
                 Picker("", selection: Binding(
                     get: { profile.climate },
                     set: { setProfile(WaterGoal.Key.climate, $0 == .mild ? nil : .string($0.rawValue)) })) {
@@ -968,7 +968,7 @@ extension WaterDetail {
                     .labelsHidden()
                     .fixedSize()
             }
-            optionRow("特殊状态") {
+            optionRow(tr("特殊状态")) {
                 Picker("", selection: Binding(
                     get: { profile.condition },
                     set: { setProfile(WaterGoal.Key.condition, $0 == .none ? nil : .string($0.rawValue)) })) {
@@ -1013,7 +1013,7 @@ extension WaterDetail {
                             .font(WidgetStyle.label(12))
                             .foregroundStyle(.white.opacity(0.85))
                         Spacer()
-                        Text(profile.exerciseMinutes == 0 ? "没有" : "\(profile.exerciseMinutes) 分钟")
+                        Text(profile.exerciseMinutes == 0 ? tr("没有") : tr("\(profile.exerciseMinutes) 分钟"))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
                             .monospacedDigit()

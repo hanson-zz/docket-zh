@@ -12,13 +12,13 @@ public enum AmbientSound: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .rain: "雨声"
-        case .waves: "海浪"
-        case .wind: "风声"
-        case .fire: "篝火"
-        case .white: "白噪音"
-        case .pink: "粉红噪音"
-        case .brown: "棕色噪音"
+        case .rain: tr("雨声")
+        case .waves: tr("海浪")
+        case .wind: tr("风声")
+        case .fire: tr("篝火")
+        case .white: tr("白噪音")
+        case .pink: tr("粉红噪音")
+        case .brown: tr("棕色噪音")
         }
     }
 
@@ -43,9 +43,9 @@ public enum AmbientSound: String, CaseIterable, Sendable, Identifiable {
     /// "雨声 + 海浪", or the first two and a count when there are more.
     public static func summary(_ sounds: [AmbientSound]) -> String {
         switch sounds.count {
-        case 0: "未选择声音"
+        case 0: tr("未选择声音")
         case 1, 2: sounds.map(\.title).joined(separator: " + ")
-        default: "\(sounds[0].title) 等 \(sounds.count) 种"
+        default: tr("\(sounds[0].title) 等 \(sounds.count) 种")
         }
     }
 }
@@ -55,7 +55,7 @@ public enum AmbientTimer {
     public static let choices: [Int] = [0, 15, 30, 60, 90]
 
     public static func title(_ minutes: Int) -> String {
-        minutes == 0 ? "不定时" : (minutes >= 60 && minutes % 60 == 0 ? "\(minutes / 60) 小时" : "\(minutes) 分钟")
+        minutes == 0 ? tr("不定时") : (minutes >= 60 && minutes % 60 == 0 ? tr("\(minutes / 60) 小时") : tr("\(minutes) 分钟"))
     }
 
     /// "12:05" left, rounded up so it never reads 0:00 while still playing.

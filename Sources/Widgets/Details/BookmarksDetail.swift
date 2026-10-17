@@ -23,7 +23,7 @@ struct BookmarksDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center) {
-                    PanelHeader(symbol: "bookmark", title: "书签", subtitle: "\(links.count) 个网址 · 用默认浏览器打开")
+                    PanelHeader(symbol: "bookmark", title: tr("书签"), subtitle: tr("\(links.count) 个网址 · 用默认浏览器打开"))
                     if !links.isEmpty, !context.isPreview {
                         Button {
                             refresh(links)
@@ -44,7 +44,7 @@ struct BookmarksDetail: View {
                 }
                 addField
                 if links.isEmpty {
-                    PanelNote(symbol: "bookmark", text: "还没有网址。在上面粘贴一个，或在 设置 ▸ 小组件 中添加，用逗号分隔，例如“必应 cn.bing.com”。")
+                    PanelNote(symbol: "bookmark", text: tr("还没有网址。在上面粘贴一个，或在 设置 ▸ 小组件 中添加，用逗号分隔，例如“必应 cn.bing.com”。"))
                         .frame(height: 120)
                 } else {
                     ScrollView {
@@ -189,7 +189,7 @@ struct BookmarksDetail: View {
             addingPodcast.remove(key)
             switch result {
             case .success(let show):
-                podcastStatus[key] = "已加入「\(show.title)」"
+                podcastStatus[key] = tr("已加入「\(show.title)」")
             case .failure(let failure):
                 podcastStatus[key] = failure.message
             }

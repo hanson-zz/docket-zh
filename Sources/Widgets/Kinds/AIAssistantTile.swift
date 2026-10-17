@@ -114,11 +114,11 @@ struct AIAssistantTile: View {
             AIGlyph(initial: service.initial, size: size, isDefault: isDefault, style: .shelf)
         }
         .buttonStyle(.plain)
-        .help(isDefault ? "\(service.title)（默认）" : service.title)
-        .accessibilityLabel("打开 \(service.title)")
-        .accessibilityHint(isDefault ? "默认的提问服务" : "")
+        .help(isDefault ? tr("\(service.title)（默认）") : service.title)
+        .accessibilityLabel(tr("打开 \(service.title)"))
+        .accessibilityHint(isDefault ? tr("默认的提问服务") : "")
         .contextMenu {
-            Button(isDefault ? "已是默认" : "设为默认") { change { AIServices.setDefault(service.id, in: &$0) } }
+            Button(isDefault ? tr("已是默认") : tr("设为默认")) { change { AIServices.setDefault(service.id, in: &$0) } }
                 .disabled(isDefault)
             Button("左移") { change { AIServices.move(service.id, by: -1, in: &$0) } }
                 .disabled(!AIServices.canMove(service.id, by: -1, in: config))
@@ -318,13 +318,13 @@ final class AIServiceMenu: NSObject {
         }
         let custom = AIServices.custom(in: config)
         if !custom.isEmpty {
-            menu.addItem(.sectionHeader(title: "自定义"))
+            menu.addItem(.sectionHeader(title: tr("自定义")))
             for service in custom {
                 menu.addItem(item(service, on: enabled.contains(service.id), full: full))
             }
             menu.addItem(.separator())
         }
-        let add = NSMenuItem(title: "自定义…", action: #selector(pickCustom), keyEquivalent: "")
+        let add = NSMenuItem(title: tr("自定义…"), action: #selector(pickCustom), keyEquivalent: "")
         add.target = self
         menu.addItem(add)
         return menu
@@ -337,7 +337,7 @@ final class AIServiceMenu: NSObject {
         item.state = on ? .on : .off
         item.isEnabled = on || !full
         item.image = Self.glyph(service.initial)
-        item.setAccessibilityLabel(on ? "隐藏 \(service.title)" : "显示 \(service.title)")
+        item.setAccessibilityLabel(on ? tr("隐藏 \(service.title)") : tr("显示 \(service.title)"))
         return item
     }
 

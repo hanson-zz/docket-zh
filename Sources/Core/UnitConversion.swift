@@ -14,9 +14,9 @@ public enum UnitCategory: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .length: "长度"
-        case .weight: "重量"
-        case .temperature: "温度"
+        case .length: tr("长度")
+        case .weight: tr("重量")
+        case .temperature: tr("温度")
         }
     }
 
@@ -55,7 +55,7 @@ public enum ConversionUnit: String, CaseIterable, Sendable {
     /// Short mark for a chip.
     public var symbol: String {
         switch self {
-        case .jin: "斤"
+        case .jin: tr("斤")
         case .celsius: "°C"
         case .fahrenheit: "°F"
         case .kelvin: "K"
@@ -65,24 +65,24 @@ public enum ConversionUnit: String, CaseIterable, Sendable {
 
     public var name: String {
         switch self {
-        case .millimetre: "毫米"
-        case .centimetre: "厘米"
-        case .metre: "米"
-        case .kilometre: "公里"
-        case .inch: "英寸"
-        case .foot: "英尺"
-        case .yard: "码"
-        case .mile: "英里"
-        case .milligram: "毫克"
-        case .gram: "克"
-        case .kilogram: "千克"
-        case .tonne: "吨"
-        case .ounce: "盎司"
-        case .pound: "磅"
-        case .jin: "斤"
-        case .celsius: "摄氏度"
-        case .fahrenheit: "华氏度"
-        case .kelvin: "开尔文"
+        case .millimetre: tr("毫米")
+        case .centimetre: tr("厘米")
+        case .metre: tr("米")
+        case .kilometre: tr("公里")
+        case .inch: tr("英寸")
+        case .foot: tr("英尺")
+        case .yard: tr("码")
+        case .mile: tr("英里")
+        case .milligram: tr("毫克")
+        case .gram: tr("克")
+        case .kilogram: tr("千克")
+        case .tonne: tr("吨")
+        case .ounce: tr("盎司")
+        case .pound: tr("磅")
+        case .jin: tr("斤")
+        case .celsius: tr("摄氏度")
+        case .fahrenheit: tr("华氏度")
+        case .kelvin: tr("开尔文")
         }
     }
 

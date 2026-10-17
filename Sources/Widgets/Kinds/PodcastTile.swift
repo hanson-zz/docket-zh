@@ -36,20 +36,20 @@ struct PodcastTile: View {
     private var unheard: Int { context.isPreview ? 1 : service.library.unheardCount }
 
     private var caption: String {
-        if context.isPreview { return "最新：心灵音乐 005" }
-        guard let show else { return "在面板中粘贴小宇宙链接" }
+        if context.isPreview { return tr("最新：心灵音乐 005") }
+        guard let show else { return tr("在面板中粘贴小宇宙链接") }
         if let episode, player.isCurrent(episode) {
-            if player.problem != nil { return "播放失败" }
-            if player.isBuffering, player.isPlaying { return "正在缓冲…" }
+            if player.problem != nil { return tr("播放失败") }
+            if player.isBuffering, player.isPlaying { return tr("正在缓冲…") }
             // 有时间轴时，播放中的说明换成当前章节，像歌词一样跟着走。
             if player.isPlaying,
                let chapter = PodcastChapters.current(PodcastRemote.chapters(for: episode), at: player.position) {
                 return chapter.title
             }
-            return player.isPlaying ? episode.title : "已暂停 · \(episode.title)"
+            return player.isPlaying ? episode.title : tr("已暂停 · \(episode.title)")
         }
-        if service.problems[show.id] != nil, show.episodes.isEmpty { return "暂时连不上小宇宙" }
-        return episode.map { "最新：\($0.title)" } ?? "还没有单集"
+        if service.problems[show.id] != nil, show.episodes.isEmpty { return tr("暂时连不上小宇宙") }
+        return episode.map { tr("最新：\($0.title)") } ?? tr("还没有单集")
     }
 
     var body: some View {
@@ -57,7 +57,7 @@ struct PodcastTile: View {
             if context.position.isVertical {
                 VStack(spacing: 4) {
                     cover(size: 34)
-                    Text(show?.title ?? "播客")
+                    Text(show?.title ?? tr("播客"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -67,7 +67,7 @@ struct PodcastTile: View {
             } else {
                 HStack(spacing: 9) {
                     cover(size: 40)
-                    TileReading(value: show?.title ?? "播客", caption: caption, valueSize: 15)
+                    TileReading(value: show?.title ?? tr("播客"), caption: caption, valueSize: 15)
                     Spacer(minLength: 0)
                     playButton(size: 11)
                 }
@@ -106,7 +106,7 @@ struct PodcastTile: View {
                         .frame(minWidth: 13, minHeight: 13)
                         .background(Capsule().fill(Color(hex: "#FF3B30")))
                         .offset(x: 4, y: -4)
-                        .accessibilityLabel("\(unheard) 个新单集")
+                        .accessibilityLabel(tr("\(unheard) 个新单集"))
                 }
             }
     }
@@ -118,13 +118,13 @@ struct PodcastTile: View {
                   action: context.isPreview || episode?.audioURL == nil ? nil : {
             if let episode, let show { player.toggle(episode, show: show.id) }
         })
-        .help(playing ? "暂停" : "播放")
-        .accessibilityLabel(playing ? "暂停播客" : "播放 \(episode?.title ?? "播客")")
+        .help(playing ? tr("暂停") : tr("播放"))
+        .accessibilityLabel(playing ? tr("暂停播客") : tr("播放 \(episode?.title ?? tr("播客"))"))
     }
 
-    static let sample = PodcastShow(id: "sample", title: "冥想音疗馆", author: "Hanson汉森",
+    static let sample = PodcastShow(id: "sample", title: tr("冥想音疗馆"), author: tr("Hanson汉森"),
                                     episodeCount: 5,
-                                    episodes: [PodcastEpisode(id: "sample-5", title: "心灵音乐 005",
+                                    episodes: [PodcastEpisode(id: "sample-5", title: tr("心灵音乐 005"),
                                                               pubDate: nil, duration: 3602, audioURL: nil)])
 }
 

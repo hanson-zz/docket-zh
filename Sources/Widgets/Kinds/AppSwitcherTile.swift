@@ -62,7 +62,7 @@ struct AppSwitcherTile: View {
         }
         .buttonStyle(.plain)
         .help(app.name)
-        .accessibilityLabel(app.isActive ? "\(app.name)（当前）" : app.name)
+        .accessibilityLabel(app.isActive ? tr("\(app.name)（当前）") : app.name)
     }
 
     /// The rest are in the panel, which the card opens.
@@ -86,11 +86,11 @@ struct AppSwitcherItem: Identifiable, Hashable {
     var sampleSymbol: String?
 
     static let samples: [AppSwitcherItem] = [
-        AppSwitcherItem(id: "sample.safari", name: "Safari 浏览器", url: nil, isActive: true, sampleSymbol: "safari"),
-        AppSwitcherItem(id: "sample.mail", name: "邮件", url: nil, isActive: false, sampleSymbol: "envelope"),
-        AppSwitcherItem(id: "sample.notes", name: "备忘录", url: nil, isActive: false, sampleSymbol: "note.text"),
-        AppSwitcherItem(id: "sample.music", name: "音乐", url: nil, isActive: false, sampleSymbol: "music.note"),
-        AppSwitcherItem(id: "sample.terminal", name: "终端", url: nil, isActive: false, sampleSymbol: "terminal"),
+        AppSwitcherItem(id: "sample.safari", name: tr("Safari 浏览器"), url: nil, isActive: true, sampleSymbol: "safari"),
+        AppSwitcherItem(id: "sample.mail", name: tr("邮件"), url: nil, isActive: false, sampleSymbol: "envelope"),
+        AppSwitcherItem(id: "sample.notes", name: tr("备忘录"), url: nil, isActive: false, sampleSymbol: "note.text"),
+        AppSwitcherItem(id: "sample.music", name: tr("音乐"), url: nil, isActive: false, sampleSymbol: "music.note"),
+        AppSwitcherItem(id: "sample.terminal", name: tr("终端"), url: nil, isActive: false, sampleSymbol: "terminal"),
     ]
 }
 

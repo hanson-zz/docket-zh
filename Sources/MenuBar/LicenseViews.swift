@@ -90,7 +90,7 @@ final class CreditsWindow: HostedWindow {
     static let shared = CreditsWindow()
 
     func show() {
-        present(CreditsView(), title: "开源致谢与许可",
+        present(CreditsView(), title: tr("开源致谢与许可"),
                 size: NSSize(width: 620, height: 560), resizable: true)
     }
 }
@@ -100,7 +100,7 @@ final class EULAWindow: HostedWindow {
     static let shared = EULAWindow()
 
     func show() {
-        present(EULAView(), title: "最终用户许可协议",
+        present(EULAView(), title: tr("最终用户许可协议"),
                 size: NSSize(width: 560, height: 560), resizable: true)
     }
 }

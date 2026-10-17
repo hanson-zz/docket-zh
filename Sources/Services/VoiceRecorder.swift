@@ -92,7 +92,7 @@ final class VoiceRecorder {
     // MARK: Private
 
     private func denied() {
-        error = "没有麦克风权限。请在 系统设置 ▸ 隐私与安全性 ▸ 麦克风 中允许码头。"
+        error = tr("没有麦克风权限。请在 系统设置 ▸ 隐私与安全性 ▸ 麦克风 中允许码头。")
     }
 
     private func begin() {
@@ -100,7 +100,7 @@ final class VoiceRecorder {
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         } catch {
-            self.error = "无法创建文件夹“\(folder.lastPathComponent)”。"
+            self.error = tr("无法创建文件夹“\(folder.lastPathComponent)”。")
             return
         }
         let taken = Set((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
@@ -115,14 +115,14 @@ final class VoiceRecorder {
         do {
             let recorder = try AVAudioRecorder(url: url, settings: settings)
             guard recorder.record() else {
-                error = "无法开始录音。请检查输入设备。"
+                error = tr("无法开始录音。请检查输入设备。")
                 return
             }
             self.recorder = recorder
             startedAt = .now
             error = nil
         } catch {
-            self.error = "无法开始录音：\(error.localizedDescription)"
+            self.error = tr("无法开始录音：\(error.localizedDescription)")
         }
     }
 

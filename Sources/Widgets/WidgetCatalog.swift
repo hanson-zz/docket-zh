@@ -59,48 +59,48 @@ public enum WidgetCatalog {
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
-        Entry(kind: .clock, name: "时钟", category: .time,
+        Entry(kind: .clock, name: tr("时钟"), category: .time,
               defaults: c(["layout": .string("standard"), "seconds": .bool(true)]),
-              variants: [("标准", ["layout": .string("standard")]),
-                         ("模拟表盘", ["layout": .string("analog")]),
-                         ("翻页", ["layout": .string("flip")]),
-                         ("折叠翻页", ["layout": .string(FoldFlip.clockLayout)]),
-                         ("像素", ["layout": .string("pixel")]),
-                         ("大号数字", ["layout": .string("digital")]),
-                         ("秒圈", ["layout": .string("ring")]),
-                         ("中文", ["layout": .string("words")]),
-                         ("霓虹", ["layout": .string("neon")]),
-                         ("实景", ["layout": .string("nixie")]),
-                         ("简约", ["layout": .string("lcd")]),
-                         ("极简", ["layout": .string("minimal")])],
+              variants: [(tr("标准"), ["layout": .string("standard")]),
+                         (tr("模拟表盘"), ["layout": .string("analog")]),
+                         (tr("翻页"), ["layout": .string("flip")]),
+                         (tr("折叠翻页"), ["layout": .string(FoldFlip.clockLayout)]),
+                         (tr("像素"), ["layout": .string("pixel")]),
+                         (tr("大号数字"), ["layout": .string("digital")]),
+                         (tr("秒圈"), ["layout": .string("ring")]),
+                         (tr("中文"), ["layout": .string("words")]),
+                         (tr("霓虹"), ["layout": .string("neon")]),
+                         (tr("实景"), ["layout": .string("nixie")]),
+                         (tr("简约"), ["layout": .string("lcd")]),
+                         (tr("极简"), ["layout": .string("minimal")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .world, name: "世界时钟", category: .time,
-              defaults: c(["city": .string("伦敦"), "zone": .string("Europe/London")]),
+        Entry(kind: .world, name: tr("世界时钟"), category: .time,
+              defaults: c(["city": .string(tr("伦敦")), "zone": .string("Europe/London")]),
               variants: [], supportsCompact: true, selfContained: true),
 
-        Entry(kind: .stopwatch, name: "秒表", category: .time, defaults: c([:]),
+        Entry(kind: .stopwatch, name: tr("秒表"), category: .time, defaults: c([:]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // 专注计时没有样式选择，外观（圆环或液态）用 look 键，默认圆环。
-        Entry(kind: .timer, name: "专注计时", category: .health,
+        Entry(kind: .timer, name: tr("专注计时"), category: .health,
               defaults: c([LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.ring.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // 默认值里的 layout 仍是进度条：没存 layout 的旧卡片补默认值时保持
         // 原样。新放上去的卡片在 `make` 里换成圆环（推荐默认），所以圆环排第一。
-        Entry(kind: .progress, name: "时间进度", category: .time,
+        Entry(kind: .progress, name: tr("时间进度"), category: .time,
               defaults: c([TimeProgress.layoutKey: .string(TimeProgress.legacyLayout),
                            TimeProgress.periodKey: .string("year"),
                            TimeProgress.motionKey: .bool(true)]),
-              variants: [("圆环", ["layout": .string("ring")]),
-                         ("百分比", ["layout": .string("percentage")]),
-                         ("液态", ["layout": .string(LiquidMotion.layout)]),
-                         ("进度条", ["layout": .string("bars")])],
+              variants: [(tr("圆环"), ["layout": .string("ring")]),
+                         (tr("百分比"), ["layout": .string("percentage")]),
+                         (tr("液态"), ["layout": .string(LiquidMotion.layout)]),
+                         (tr("进度条"), ["layout": .string("bars")])],
               supportsCompact: true, selfContained: true),
 
         // 倒计时没有样式选择，数字的外观（普通或折叠翻页）用 look 键，默认普通。
-        Entry(kind: .countdown, name: "倒计时", category: .time,
+        Entry(kind: .countdown, name: tr("倒计时"), category: .time,
               defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([]),
                            FoldFlip.countdownLookKey: .string(FoldFlip.CountdownLook.plain.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
@@ -109,7 +109,7 @@ public enum WidgetCatalog {
         // 下一个节日和今天赚的钱，全部由 SlackerClock 算。背景色、背景图和
         // 字体颜色只在面板里改（background、backgroundImage、textColor），
         // 所以不在这里的默认值里，读的时候用 SlackerClock 的默认。
-        Entry(kind: .slacker, name: "摸鱼时钟", category: .time,
+        Entry(kind: .slacker, name: tr("摸鱼时钟"), category: .time,
               defaults: c([SlackerClock.workdaysKey: .list(SlackerClock.weekdays.map { .string(String($0)) }),
                            SlackerClock.startKey: .string("09:00"),
                            SlackerClock.endKey: .string("18:00"),
@@ -122,45 +122,45 @@ public enum WidgetCatalog {
                            SlackerClock.lookKey: .string(SlackerClock.Look.illustrated.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .alarm, name: "闹钟", category: .time,
-              defaults: c(["time": .string("14:30"), "name": .string("给小王回电话")]),
+        Entry(kind: .alarm, name: tr("闹钟"), category: .time,
+              defaults: c(["time": .string("14:30"), "name": .string(tr("给小王回电话"))]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // No `showCallButton`: read by nothing. A join-call affordance needs
         // the event's conference URL and a row to put it in, neither of which
         // exists, so the switch promised something that was never built.
-        Entry(kind: .calendar, name: "日历", category: .time,
+        Entry(kind: .calendar, name: tr("日历"), category: .time,
               defaults: c(["layout": .string("nextEvent"), "allDay": .bool(true),
                            "calendars": .list([])]),
-              variants: [("下一个日程", ["layout": .string("nextEvent")]),
-                         ("日期 + 下一个日程", ["layout": .string("dateAndEvent")]),
-                         ("日期 + 日程列表", ["layout": .string("agenda")]),
-                         ("日期", ["layout": .string("date")])],
+              variants: [(tr("下一个日程"), ["layout": .string("nextEvent")]),
+                         (tr("日期 + 下一个日程"), ["layout": .string("dateAndEvent")]),
+                         (tr("日期 + 日程列表"), ["layout": .string("agenda")]),
+                         (tr("日期"), ["layout": .string("date")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .reminders, name: "提醒事项", category: .todo,
+        Entry(kind: .reminders, name: tr("提醒事项"), category: .todo,
               defaults: c(["layout": .string("list"), "list": .string("")]),
-              variants: [("列表", ["layout": .string("list")]),
-                         ("下一个提醒", ["layout": .string("next")]),
-                         ("数量", ["layout": .string("count")])],
+              variants: [(tr("列表"), ["layout": .string("list")]),
+                         (tr("下一个提醒"), ["layout": .string("next")]),
+                         (tr("数量"), ["layout": .string("count")])],
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .notes, name: "便签", category: .todo,
+        Entry(kind: .notes, name: tr("便签"), category: .todo,
               defaults: c(["text": .string(""), "color": .string("yellow")]),
               variants: PaperColor.picker.map { ($0.title, ["color": .string($0.rawValue)]) },
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .music, name: "正在播放", category: .media,
+        Entry(kind: .music, name: tr("正在播放"), category: .media,
               defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),
                            "backward": .bool(false), "forward": .bool(false), "skip": .number(15),
                            "spotify": .bool(true), "apple": .bool(true), "netease": .bool(true), "xiaoyuzhou": .bool(true),
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true)]),
-              variants: [("完整", ["mini": .bool(false)]), ("迷你", ["mini": .bool(true)])],
+              variants: [(tr("完整"), ["mini": .bool(false)]), (tr("迷你"), ["mini": .bool(true)])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .battery, name: "电池", category: .system,
+        Entry(kind: .battery, name: tr("电池"), category: .system,
               defaults: c(["layout": .string("status"),
                            "devices": .list([.string("mac")]),
                            // Connected Bluetooth accessories in the spare
@@ -171,22 +171,22 @@ public enum WidgetCatalog {
                            // before looks existed reads, so it stays 经典;
                            // `make` gives a new widget 液态.
                            BatteryLook.key: .string(BatteryLook.legacyDefault.rawValue)]),
-              variants: [("状态", ["layout": .string("status")]),
-                         ("百分比圆环", ["layout": .string("gauge")]),
-                         ("仅图标", ["layout": .string("icon")])],
+              variants: [(tr("状态"), ["layout": .string("status")]),
+                         (tr("百分比圆环"), ["layout": .string("gauge")]),
+                         (tr("仅图标"), ["layout": .string("icon")])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .system, name: "系统活动", category: .system,
+        Entry(kind: .system, name: tr("系统活动"), category: .system,
               // No chart by default: the shipped design is clean numbers with
               // a coloured dot, and a sparkline behind them crowds a 62pt
               // strip. Offered as its own variant instead.
               defaults: c(["layout": .string("numbers"), "chart": .bool(false),
                            "metrics": .list([.string("cpu"), .string("memory")])]),
-              variants: [("数字", ["layout": .string("numbers"), "chart": .bool(false)]),
-                         ("数字 + 图表", ["layout": .string("numbers"), "chart": .bool(true)]),
-                         ("圆环", ["layout": .string("rings")]),
-                         ("条形", ["layout": .string("bars")]),
-                         ("液态", ["layout": .string(LiquidMotion.layout)])],
+              variants: [(tr("数字"), ["layout": .string("numbers"), "chart": .bool(false)]),
+                         (tr("数字 + 图表"), ["layout": .string("numbers"), "chart": .bool(true)]),
+                         (tr("圆环"), ["layout": .string("rings")]),
+                         (tr("条形"), ["layout": .string("bars")]),
+                         (tr("液态"), ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: true, selfContained: true),
 
         // No `popupChart`: it was read by nothing, and the detail panel it
@@ -194,18 +194,18 @@ public enum WidgetCatalog {
         // The Wi-Fi rings share the card: same shelf slot, a different
         // reading of the same link. 经典 is free, the other three are
         // Pro 专属 appearances.
-        Entry(kind: .network, name: "网络活动", category: .system,
+        Entry(kind: .network, name: tr("网络活动"), category: .system,
               defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false)]),
-              variants: [("仅数字", ["layout": .string("speed"), "chart": .bool(false)]),
-                         ("带图表", ["layout": .string("speed"), "chart": .bool(true)])]
+              variants: [(tr("仅数字"), ["layout": .string("speed"), "chart": .bool(false)]),
+                         (tr("带图表"), ["layout": .string("speed"), "chart": .bool(true)])]
                 + wifiVariants,
               supportsCompact: true, selfContained: true),
 
-        Entry(kind: .shortcut, name: "快捷指令", category: .appsAndFolders,
+        Entry(kind: .shortcut, name: tr("快捷指令"), category: .appsAndFolders,
               defaults: c(["name": .string("")]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .airdrop, name: "隔空投送", category: .files, defaults: c([:]),
+        Entry(kind: .airdrop, name: tr("隔空投送"), category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // `period`, `metric`, `reference` and `style` were offered here and
@@ -213,7 +213,7 @@ public enum WidgetCatalog {
         // DitherChart has no reference line and no styles, and no reader ever
         // asked for a metric. Every one of them persisted and changed nothing.
         // They come back with the code that honours them, not before.
-        Entry(kind: .stock, name: "股票", category: .stocks,
+        Entry(kind: .stock, name: tr("股票"), category: .stocks,
               defaults: c(["symbol": .string("AAPL"),
                            "symbols": .list([.string("AAPL")]),
                            "chart": .bool(true)]),
@@ -221,7 +221,7 @@ public enum WidgetCatalog {
 
         // Prices from CoinGecko's free API, at most every five minutes, the
         // last good table cached; see CryptoMarket and CryptoService.
-        Entry(kind: .crypto, name: "加密货币行情", category: .stocks,
+        Entry(kind: .crypto, name: tr("加密货币行情"), category: .stocks,
               defaults: c(["coins": .list(CryptoMarket.defaultCoins.map { .string($0) }),
                            "currency": .string("cny"), "colors": .string(ChangeColors.redUp.rawValue),
                            "chart": .bool(true)]),
@@ -229,11 +229,11 @@ public enum WidgetCatalog {
 
         // No `chart` here, unlike Stock: this tile is a list of rows and has
         // never drawn one, so the switch had nothing to switch.
-        Entry(kind: .watchlist, name: "自选股", category: .stocks,
+        Entry(kind: .watchlist, name: tr("自选股"), category: .stocks,
               defaults: c(["symbols": .list([.string("AAPL"), .string("MSFT"), .string("NVDA")])]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .weather, name: "天气", category: .weather,
+        Entry(kind: .weather, name: tr("天气"), category: .weather,
               // Empty city: use wherever the user actually is. "Oslo" is the
               // city in the reference screenshots, not a sane default.
               // `cities` is only read by the multi-city layout, which shows
@@ -242,53 +242,53 @@ public enum WidgetCatalog {
               defaults: c(["layout": .string("current"), "fahrenheit": .bool(false),
                            "city": .string(""),
                            "cities": .list(WeatherLayout.defaultCities.map { .string($0) })]),
-              variants: [("当前", ["layout": .string("current")]),
-                         ("天气状况", ["layout": .string("conditions")]),
-                         ("逐小时预报", ["layout": .string("hourly")]),
-                         ("风与日出日落", ["layout": .string("sky")]),
-                         ("未来 7 天", ["layout": .string("week")]),
-                         ("未来 10 天", ["layout": .string("tenDays")]),
-                         ("多城市", ["layout": .string("cities")])],
+              variants: [(tr("当前"), ["layout": .string("current")]),
+                         (tr("天气状况"), ["layout": .string("conditions")]),
+                         (tr("逐小时预报"), ["layout": .string("hourly")]),
+                         (tr("风与日出日落"), ["layout": .string("sky")]),
+                         (tr("未来 7 天"), ["layout": .string("week")]),
+                         (tr("未来 10 天"), ["layout": .string("tenDays")]),
+                         (tr("多城市"), ["layout": .string("cities")])],
               supportsCompact: true, selfContained: true),
 
         // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
         // the Settings field is there for anyone who would rather paste.
-        Entry(kind: .photos, name: "相册", category: .media,
+        Entry(kind: .photos, name: tr("相册"), category: .media,
               defaults: c(["layout": .string("standard"), "folder": .string(""),
                            "interval": .number(30), "shuffle": .bool(false)]),
-              variants: [("标准", ["layout": .string("standard")]),
-                         ("宽幅", ["layout": .string("wide")])],
+              variants: [(tr("标准"), ["layout": .string("standard")]),
+                         (tr("宽幅"), ["layout": .string("wide")])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .screenshots, name: "最近截图", category: .files, defaults: c([:]),
+        Entry(kind: .screenshots, name: tr("最近截图"), category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .downloads, name: "下载", category: .files, defaults: c([:]),
+        Entry(kind: .downloads, name: tr("下载"), category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // The held paths live under `files`, which is deliberately not a
         // default: it is the shelf's contents, not a setting.
-        Entry(kind: .fileShelf, name: "文件暂存", category: .files, defaults: c([:]),
+        Entry(kind: .fileShelf, name: tr("文件暂存"), category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Starred texts live under `pins`, contents rather than a setting.
-        Entry(kind: .clipboard, name: "剪贴板", category: .ai, defaults: c(["pasteOnClick": .bool(false)]),
+        Entry(kind: .clipboard, name: tr("剪贴板"), category: .ai, defaults: c(["pasteOnClick": .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Recent colours live under `recent`, not a default, for the same
         // reason as the file shelf's paths.
-        Entry(kind: .colorPicker, name: "取色器", category: .tools, defaults: c([:]),
+        Entry(kind: .colorPicker, name: tr("取色器"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Category, units and value are edited in the panel, where the unit
         // menus can follow the category; see ConverterState.
-        Entry(kind: .converter, name: "单位换算", category: .tools, defaults: c([:]),
+        Entry(kind: .converter, name: tr("单位换算"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .capture, name: "截图工具", category: .tools, defaults: c([:]),
+        Entry(kind: .capture, name: tr("截图工具"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .emoji, name: "表情符号", category: .tools,
+        Entry(kind: .emoji, name: tr("表情符号"), category: .tools,
               defaults: c(["emoji": .list(["😂", "✨", "✅", "🔥", "🥹", "🙏", "💡", "🚀", "❤️"]
                                             .map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
@@ -297,66 +297,66 @@ public enum WidgetCatalog {
         // 显示哪些、顺序、默认服务和自定义服务（services、customServices、
         // defaultService）在卡片和面板里改，不在这里的默认值里，读的时候
         // 用 AIServices 的默认；所以设置页里没有它们。
-        Entry(kind: .aiAssistant, name: "AI 助手", category: .ai,
+        Entry(kind: .aiAssistant, name: tr("AI 助手"), category: .ai,
               defaults: c(["layout": .string(AIServices.wideLayout)]),
-              variants: [("横排", ["layout": .string(AIServices.wideLayout)]),
-                         ("方块", ["layout": .string(AIServices.squareLayout)])],
+              variants: [(tr("横排"), ["layout": .string(AIServices.wideLayout)]),
+                         (tr("方块"), ["layout": .string(AIServices.squareLayout)])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .search, name: "搜索", category: .ai,
+        Entry(kind: .search, name: tr("搜索"), category: .ai,
               defaults: c(["layout": .string("web"), "engine": .string("bing")]),
-              variants: [("网页搜索", ["layout": .string("web")]),
-                         ("查找文件", ["layout": .string("files")])],
+              variants: [(tr("网页搜索"), ["layout": .string("web")]),
+                         (tr("查找文件"), ["layout": .string("files")])],
               supportsCompact: false, selfContained: true),
 
-        Entry(kind: .volume, name: "音量", category: .media, defaults: c([:]),
+        Entry(kind: .volume, name: tr("音量"), category: .media, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Which switches, in order; see QuickToggle.
-        Entry(kind: .toggles, name: "快速开关", category: .tools,
+        Entry(kind: .toggles, name: tr("快速开关"), category: .tools,
               defaults: c([QuickToggle.key: .list(QuickToggle.defaults.map { .string($0.rawValue) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
-        Entry(kind: .wallpaper, name: "壁纸切换", category: .system,
+        Entry(kind: .wallpaper, name: tr("壁纸切换"), category: .system,
               defaults: c(["folder": .string(""), "allScreens": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // What Command-Tab lists: the regular apps that are open.
-        Entry(kind: .appSwitcher, name: "应用切换器", category: .appsAndFolders, defaults: c([:]),
+        Entry(kind: .appSwitcher, name: tr("应用切换器"), category: .appsAndFolders, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Each link is "标题 网址" or just the address; see Bookmark.
-        Entry(kind: .bookmarks, name: "书签", category: .ai,
+        Entry(kind: .bookmarks, name: tr("书签"), category: .ai,
               defaults: c(["links": .list(["GitHub https://github.com/hanson-zz/docket-zh",
-                                              "必应 https://cn.bing.com",
-                                              "哔哩哔哩 https://www.bilibili.com",
-                                              "知乎 https://www.zhihu.com"].map { .string($0) })]),
+                                              tr("必应 https://cn.bing.com"),
+                                              tr("哔哩哔哩 https://www.bilibili.com"),
+                                              tr("知乎 https://www.zhihu.com")].map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Downloads. Chosen in the panel.
-        Entry(kind: .recorder, name: "录音", category: .media,
+        Entry(kind: .recorder, name: tr("录音"), category: .media,
               defaults: c(["folder": .string("")]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Read from Mail over AppleScript, and only while Mail is open.
-        Entry(kind: .mail, name: "邮件", category: .ai, defaults: c([:]),
+        Entry(kind: .mail, name: tr("邮件"), category: .ai, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // The last sum is kept under `expression`, written by the panel.
-        Entry(kind: .calculator, name: "计算器", category: .tools, defaults: c([:]),
+        Entry(kind: .calculator, name: tr("计算器"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Apple's on-device Translation: free, no key, nothing leaves the Mac.
         // The languages and the last translations (`source`, `target`,
         // `history`) are kept by the panel; see Translate.
-        Entry(kind: .translate, name: "翻译", category: .ai,
+        Entry(kind: .translate, name: tr("翻译"), category: .ai,
               defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Rates from open.er-api.com, cached for offline use; see
         // CurrencyService. The amount is typed in the panel.
-        Entry(kind: .currency, name: "汇率换算", category: .tools,
+        Entry(kind: .currency, name: tr("汇率换算"), category: .tools,
               defaults: c(["from": .string("USD"), "to": .string("CNY"), "amount": .number(100)]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -372,40 +372,40 @@ public enum WidgetCatalog {
 
         // Whether any app is using the default input device, from Core Audio.
         // Reading the state needs no microphone permission.
-        Entry(kind: .microphone, name: "麦克风", category: .system, defaults: c([:]),
+        Entry(kind: .microphone, name: tr("麦克风"), category: .system, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Storage from URLResourceValues, battery from the power-source API.
         // CPU temperature is left out: macOS has no public API for it.
-        Entry(kind: .gauges, name: "圆环仪表", category: .system,
+        Entry(kind: .gauges, name: tr("圆环仪表"), category: .system,
               defaults: c(["rings": .list([.string("storage"), .string("battery")])]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A ring that fills between breaks, with active hours, a
         // notification and a count of today's breaks.
-        Entry(kind: .posture, name: "久坐提醒", category: .health,
+        Entry(kind: .posture, name: tr("久坐提醒"), category: .health,
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
                            "end": .string("18:00"), "notify": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A list of its own under `items`, never the system's Reminders.
-        Entry(kind: .todo, name: "快速待办", category: .todo,
+        Entry(kind: .todo, name: tr("快速待办"), category: .todo,
               defaults: c(["showDone": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Habits of its own under `habits`, with each day they were done;
         // see HabitTracker.
-        Entry(kind: .habit, name: "习惯打卡", category: .health,
+        Entry(kind: .habit, name: tr("习惯打卡"), category: .health,
               defaults: c(["showStreak": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Dates of its own under `events`, counted down or up, by the solar
         // or the lunar calendar; the single card's event is `pinned`, chosen
         // in the panel. See Anniversary.
-        Entry(kind: .anniversary, name: "纪念日", category: .todo,
+        Entry(kind: .anniversary, name: tr("纪念日"), category: .todo,
               defaults: c(["layout": .string("single"), "showRing": .bool(true)]),
-              variants: [("单个", ["layout": .string("single")]),
-                         ("多个", ["layout": .string("multi")])],
+              variants: [(tr("单个"), ["layout": .string("single")]),
+                         (tr("多个"), ["layout": .string("multi")])],
               supportsCompact: false, selfContained: true),
 
         // Today's glasses under `days`, with the chosen `character` (the red
@@ -413,7 +413,7 @@ public enum WidgetCatalog {
         // `start` and `end`. See WaterIntake. No `goal` here: the goal is the
         // personal recommendation unless one is set by hand in the panel,
         // and a default would read as a hand-set 2000 (see WaterGoal).
-        Entry(kind: .water, name: "喝水", category: .health,
+        Entry(kind: .water, name: tr("喝水"), category: .health,
               defaults: c(["layout": .string("character"),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
@@ -421,28 +421,28 @@ public enum WidgetCatalog {
                            WaterParched.key: .bool(true)]),
               // The red panda's card names its character, so a 柴犬 config is
               // not also matched by it; the other five are Pro 专属.
-              variants: [("小熊猫", ["layout": .string("character"), "character": .string("panda")]),
-                         ("柴犬", ["layout": .string("character"), "character": .string("shiba")]),
-                         ("橘猫", ["layout": .string("character"), "character": .string("cat")]),
-                         ("企鹅", ["layout": .string("character"), "character": .string("penguin")]),
-                         ("水獭", ["layout": .string("character"), "character": .string("otter")]),
-                         ("章鱼", ["layout": .string("character"), "character": .string("octopus")]),
-                         ("圆环", ["layout": .string("ring")]),
-                         ("液态", ["layout": .string(LiquidMotion.layout)])],
+              variants: [(tr("小熊猫"), ["layout": .string("character"), "character": .string("panda")]),
+                         (tr("柴犬"), ["layout": .string("character"), "character": .string("shiba")]),
+                         (tr("橘猫"), ["layout": .string("character"), "character": .string("cat")]),
+                         (tr("企鹅"), ["layout": .string("character"), "character": .string("penguin")]),
+                         (tr("水獭"), ["layout": .string("character"), "character": .string("otter")]),
+                         (tr("章鱼"), ["layout": .string("character"), "character": .string("octopus")]),
+                         (tr("圆环"), ["layout": .string("ring")]),
+                         (tr("液态"), ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: false, selfContained: true),
 
         // A pet of its own: four needs kept with the time they were true, so
         // they run down without anything running (see VirtualPet), and the
         // same six characters as 喝水 under `character`, the red panda free
         // and the other five Pro 专属.
-        Entry(kind: .pet, name: "电子宠物", category: .health,
+        Entry(kind: .pet, name: tr("电子宠物"), category: .health,
               defaults: c(["character": .string("panda")]),
-              variants: [("小熊猫", ["character": .string("panda")]),
-                         ("柴犬", ["character": .string("shiba")]),
-                         ("橘猫", ["character": .string("cat")]),
-                         ("企鹅", ["character": .string("penguin")]),
-                         ("水獭", ["character": .string("otter")]),
-                         ("章鱼", ["character": .string("octopus")])],
+              variants: [(tr("小熊猫"), ["character": .string("panda")]),
+                         (tr("柴犬"), ["character": .string("shiba")]),
+                         (tr("橘猫"), ["character": .string("cat")]),
+                         (tr("企鹅"), ["character": .string("penguin")]),
+                         (tr("水獭"), ["character": .string("otter")]),
+                         (tr("章鱼"), ["character": .string("octopus")])],
               supportsCompact: false, selfContained: true),
 
         // 喝水、习惯打卡、专注计时 summed up as a bamboo leaf a day for the
@@ -451,53 +451,53 @@ public enum WidgetCatalog {
         // the 专注计时 panel's. The kind stays perfect-day so widgets already
         // placed keep working.
         // 唯一的选项是外观：竹叶（默认）或液态，见 LiquidLooks。
-        Entry(kind: .perfectDay, name: "小熊猫的竹篮", category: .health,
+        Entry(kind: .perfectDay, name: tr("小熊猫的竹篮"), category: .health,
               defaults: c([LiquidLooks.key: .string(LiquidLooks.BasketLook.leaf.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
-        Entry(kind: .week, name: "一周日程", category: .time,
+        Entry(kind: .week, name: tr("一周日程"), category: .time,
               defaults: c(["allDay": .bool(true), "calendars": .list([])]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
-        Entry(kind: .lunar, name: "农历与假期", category: .time,
+        Entry(kind: .lunar, name: tr("农历与假期"), category: .time,
               defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // The Trash's size, a drop target, and flies; see TrashFlies.
-        Entry(kind: .trash, name: "废纸篓", category: .files,
+        Entry(kind: .trash, name: tr("废纸篓"), category: .files,
               defaults: c(["flies": .bool(true), "threshold": .string(TrashFlies.defaultThreshold)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Synthesised noise, mixed live; see AmbientSynth and AmbientPlayer.
-        Entry(kind: .ambient, name: "环境音", category: .media,
+        Entry(kind: .ambient, name: tr("环境音"), category: .media,
               defaults: c(["sounds": .list([.string("rain")]), "volume": .number(50)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Internet radio through one shared AVPlayer; favourites live under
         // `stations` like the to-do list's items, see RadioDial and RadioPlayer.
-        Entry(kind: .radio, name: "收音机", category: .media,
+        Entry(kind: .radio, name: tr("收音机"), category: .media,
               defaults: c(["volume": .number(60)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 小宇宙 shows by their public pages, played in 码头; the subscriptions
         // are shared by every 播客 widget and kept by PodcastService, which
         // checks hourly while one is placed. `notify` announces new episodes.
-        Entry(kind: .podcast, name: "播客", category: .media,
+        Entry(kind: .podcast, name: tr("播客"), category: .media,
               defaults: c(["notify": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Each playing app's own volume, through Core Audio process taps; see
         // AppVolume and AppVolumeService. Per-app choices are kept by the
         // service, by bundle identifier, not in the widget's config.
-        Entry(kind: .appVolume, name: "应用音量", category: .media, defaults: c([:]),
+        Entry(kind: .appVolume, name: tr("应用音量"), category: .media, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Codex's own rate limits, read with the sign-in Codex keeps in
         // ~/.codex, and what Codex is doing from its newest session log.
-        Entry(kind: .aiUsage, name: "Codex 用量", category: .ai,
+        Entry(kind: .aiUsage, name: tr("Codex 用量"), category: .ai,
               defaults: c(["show": .string("used"), "notify": .bool(true), "alertAt": .number(80),
                            "notifyDone": .bool(true), "extras": .bool(false),
                            // 外观：圆环（默认）或液态小圆杯，见 LiquidLooks。

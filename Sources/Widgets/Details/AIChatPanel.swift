@@ -181,7 +181,7 @@ struct AIChatPanelView: View {
                     }
                 } else {
                     PanelNote(symbol: "plus.square.dashed",
-                              text: "还没有 AI 字牌。在货架的 AI 助手卡片上点“＋”添加。")
+                              text: tr("还没有 AI 字牌。在货架的 AI 助手卡片上点“＋”添加。"))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -215,8 +215,8 @@ struct AIChatPanelView: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .help(center.pinned ? "已钉住：点面板外面不会收起" : "钉住：点面板外面不收起")
-            .accessibilityLabel(center.pinned ? "取消钉住" : "钉住面板")
+            .help(center.pinned ? tr("已钉住：点面板外面不会收起") : tr("钉住：点面板外面不收起"))
+            .accessibilityLabel(center.pinned ? tr("取消钉住") : tr("钉住面板"))
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)
@@ -246,7 +246,7 @@ struct AIChatPanelView: View {
                         .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(selected ? "\(service.title)，当前" : "切换到 \(service.title)")
+                    .accessibilityLabel(selected ? tr("\(service.title)，当前") : tr("切换到 \(service.title)"))
                 }
             }
             .padding(.horizontal, 14)
@@ -273,15 +273,15 @@ private struct AIPromptBar: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 if mode != .web {
-                    chip("剪贴板", symbol: "doc.on.clipboard", enabled: center.clipboardText != nil,
-                         help: center.clipboardPreview.map { "带进输入框：\($0)" } ?? "剪贴板里没有文字",
-                         label: "把剪贴板文字带进输入框") {
+                    chip(tr("剪贴板"), symbol: "doc.on.clipboard", enabled: center.clipboardText != nil,
+                         help: center.clipboardPreview.map { tr("带进输入框：\($0)") } ?? tr("剪贴板里没有文字"),
+                         label: tr("把剪贴板文字带进输入框")) {
                         center.pasteClipboard()
                     }
                 }
                 ForEach(AIQuickAction.allCases, id: \.self) { action in
                     chip(action.title, symbol: nil, enabled: true,
-                         help: helpText(action.title), label: "\(action.title)输入框或剪贴板里的文字") {
+                         help: helpText(action.title), label: tr("\(action.title)输入框或剪贴板里的文字")) {
                         guard !AskTextView.keyWindowIsComposing else { return }
                         center.run(action)
                     }
@@ -309,7 +309,7 @@ private struct AIPromptBar: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "doc.on.clipboard")
-                    Text("剪贴板：\(preview)")
+                    Text(tr("剪贴板：\(preview)"))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -320,8 +320,8 @@ private struct AIPromptBar: View {
             }
             .buttonStyle(.plain)
             .disabled(mode == .web)
-            .help(mode == .web ? "网页模式下，快捷指令会用剪贴板里的文字" : "点一下带进输入框")
-            .accessibilityLabel("剪贴板预览：\(preview)")
+            .help(mode == .web ? tr("网页模式下，快捷指令会用剪贴板里的文字") : tr("点一下带进输入框"))
+            .accessibilityLabel(tr("剪贴板预览：\(preview)"))
         }
     }
 
@@ -360,9 +360,9 @@ private struct AIPromptBar: View {
 
     private func helpText(_ title: String) -> String {
         switch mode {
-        case .api: "\(title)输入框里的文字（空着时用剪贴板），直接发给 \(service.title)"
-        case .web: "\(title)剪贴板里的文字：复制套好的提示词，到网页里粘贴"
-        case .jump: "\(title)输入框里的文字（空着时用剪贴板），再打开 \(service.title)"
+        case .api: tr("\(title)输入框里的文字（空着时用剪贴板），直接发给 \(service.title)")
+        case .web: tr("\(title)剪贴板里的文字：复制套好的提示词，到网页里粘贴")
+        case .jump: tr("\(title)输入框里的文字（空着时用剪贴板），再打开 \(service.title)")
         }
     }
 
@@ -419,8 +419,8 @@ private struct AIAPIChatPane: View {
                 actions(last)
             }
             AIChatInput(center: center, generating: generating,
-                        placeholder: messages.isEmpty ? "问点什么… Enter 发送，Shift+Enter 换行"
-                                                      : "继续问… Enter 发送，Shift+Enter 换行",
+                        placeholder: messages.isEmpty ? tr("问点什么… Enter 发送，Shift+Enter 换行")
+                                                      : tr("继续问… Enter 发送，Shift+Enter 换行"),
                         submit: { center.send() }, stop: { center.stop() }, close: close)
                 .padding(.horizontal, 12)
                 .padding(.bottom, 14)
@@ -461,7 +461,7 @@ private struct AIAPIChatPane: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: "#3B82F6")))
-                    .accessibilityLabel("我：\(message.text)")
+                    .accessibilityLabel(tr("我：\(message.text)"))
             }
         case .assistant:
             VStack(alignment: .leading, spacing: 6) {
@@ -475,7 +475,7 @@ private struct AIAPIChatPane: View {
                         .foregroundStyle(Color(hex: PaletteColor.orange.hex))
                         .fixedSize(horizontal: false, vertical: true)
                 case .stopped:
-                    Text(message.text.isEmpty ? "（已停止）" : "（已停止生成）")
+                    Text(message.text.isEmpty ? tr("（已停止）") : tr("（已停止生成）"))
                         .font(.system(size: 11.5))
                         .foregroundStyle(.white.opacity(0.45))
                 default:
@@ -489,13 +489,13 @@ private struct AIAPIChatPane: View {
     private func actions(_ last: AIChatMessage) -> some View {
         HStack(spacing: 14) {
             if generating {
-                action("停止生成", symbol: "stop.circle") { center.stop() }
+                action(tr("停止生成"), symbol: "stop.circle") { center.stop() }
             } else {
                 if !last.text.isEmpty {
-                    action("复制", symbol: "doc.on.doc") { center.copy(last.text) }
+                    action(tr("复制"), symbol: "doc.on.doc") { center.copy(last.text) }
                 }
-                action("重试", symbol: "arrow.clockwise") { center.retry() }
-                action("新对话", symbol: "square.and.pencil") { center.clear() }
+                action(tr("重试"), symbol: "arrow.clockwise") { center.retry() }
+                action(tr("新对话"), symbol: "square.and.pencil") { center.clear() }
             }
             Spacer(minLength: 0)
         }
@@ -617,7 +617,7 @@ private struct AIChatInput: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(generating ? "停止生成" : "发送")
+            .accessibilityLabel(generating ? tr("停止生成") : tr("发送"))
         }
         .padding(.leading, 12)
         .padding(.trailing, 8)
@@ -755,7 +755,7 @@ private struct AIJumpPane: View {
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white.opacity(0.08)))
             HStack(spacing: 10) {
-                Button("只打开 \(service.title)") { center.openService() }
+                Button(tr("只打开 \(service.title)")) { center.openService() }
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.65))
@@ -776,8 +776,8 @@ private struct AIJumpPane: View {
                 .disabled(AIAsk.question(center.draft) == nil)
             }
             Text(center.jumpHint ?? (service.supportsAsk
-                 ? "跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。"
-                 : "跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。"))
+                 ? tr("跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
+                 : tr("跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
                 .font(.system(size: 11.5))
                 .foregroundStyle(.white.opacity(center.jumpHint == nil ? 0.5 : 0.8))
                 .fixedSize(horizontal: false, vertical: true)

@@ -134,7 +134,7 @@ public final class SystemDockSettings {
     /// One-line summary for the settings UI.
     public var summary: String {
         let edge = position.displayName
-        let mag = magnification ? "放大 \(Int((magnificationPeak * 100).rounded()))%" : "不放大"
-        return "\(edge) · \(Int(tileSize))pt 图标 · \(mag)"
+        let mag = magnification ? tr("放大 \(Int((magnificationPeak * 100).rounded()))%") : tr("不放大")
+        return tr("\(edge) · \(Int(tileSize))pt 图标 · \(mag)")
     }
 }

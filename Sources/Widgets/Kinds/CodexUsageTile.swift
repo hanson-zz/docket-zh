@@ -132,8 +132,8 @@ struct CodexUsageTile: View {
     }
 
     private func resetText(_ w: CodexLimitWindow) -> String {
-        guard let resets = w.resetsAt else { return showsRemaining ? "剩余" : "已用" }
-        return "\(CodexPace.compact(resets.timeIntervalSince(context.now))) 后重置"
+        guard let resets = w.resetsAt else { return showsRemaining ? tr("剩余") : tr("已用") }
+        return tr("\(CodexPace.compact(resets.timeIntervalSince(context.now))) 后重置")
     }
 
     @ViewBuilder private var statusDot: some View {
@@ -160,7 +160,7 @@ struct CodexUsageTile: View {
                 Text("Codex 用量")
                     .font(WidgetStyle.title)
                     .foregroundStyle(WidgetStyle.primary)
-                Text(service.problem.map(CodexStyle.short) ?? "正在读取…")
+                Text(service.problem.map(CodexStyle.short) ?? tr("正在读取…"))
                     .font(WidgetStyle.note)
                     .foregroundStyle(WidgetStyle.secondary)
             }
@@ -191,11 +191,11 @@ enum CodexStyle {
     /// The problem in a few words, for the tile.
     static func short(_ p: CodexService.Problem) -> String {
         switch p {
-        case .notSignedIn: "Codex 未登录"
-        case .expired: "登录已过期"
-        case .offline: "无法连接，检查代理"
-        case .rateLimited: "请求太频繁"
-        case .server, .unreadable: "接口有变动"
+        case .notSignedIn: tr("Codex 未登录")
+        case .expired: tr("登录已过期")
+        case .offline: tr("无法连接，检查代理")
+        case .rateLimited: tr("请求太频繁")
+        case .server, .unreadable: tr("接口有变动")
         }
     }
 }
@@ -212,9 +212,9 @@ enum CodexSample {
         }
         return CodexUsageReport(
             windows: [
-                CodexLimitWindow(id: "primary", label: "5 小时额度", usedFraction: 0.42,
+                CodexLimitWindow(id: "primary", label: tr("5 小时额度"), usedFraction: 0.42,
                                  resetsAt: now.addingTimeInterval(2 * 3600 + 14 * 60), duration: 18_000),
-                CodexLimitWindow(id: "secondary", label: "每周额度", usedFraction: 0.18,
+                CodexLimitWindow(id: "secondary", label: tr("每周额度"), usedFraction: 0.18,
                                  resetsAt: now.addingTimeInterval(4 * 86_400 + 3 * 3600), duration: 604_800),
             ],
             plan: "plus", resetCredits: 1, daily: daily, fetchedAt: now)

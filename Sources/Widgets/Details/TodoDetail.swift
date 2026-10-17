@@ -30,10 +30,10 @@ struct TodoDetail: View {
 
     private var items: [TodoItem] {
         if context.isPreview {
-            return [TodoItem(id: "s1", text: "回复产品评审意见"),
-                    TodoItem(id: "s2", text: "取快递"),
-                    TodoItem(id: "s3", text: "订周五的会议室"),
-                    TodoItem(id: "s4", text: "交电费", done: true)]
+            return [TodoItem(id: "s1", text: tr("回复产品评审意见")),
+                    TodoItem(id: "s2", text: tr("取快递")),
+                    TodoItem(id: "s3", text: tr("订周五的会议室")),
+                    TodoItem(id: "s4", text: tr("交电费"), done: true)]
         }
         return QuickTodo.items(instance.config)
     }
@@ -52,7 +52,7 @@ struct TodoDetail: View {
                 header(open: open.count, done: done.count)
                 addField
                 if shown.isEmpty {
-                    Text(all.isEmpty ? "清单是空的。输入一件事，按回车添加。" : "都做完了。")
+                    Text(all.isEmpty ? tr("清单是空的。输入一件事，按回车添加。") : tr("都做完了。"))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,7 +78,7 @@ struct TodoDetail: View {
                 if !done.isEmpty {
                     HStack {
                         if !showDone {
-                            Text("已完成 \(done.count) 项（已隐藏）")
+                            Text(tr("已完成 \(done.count) 项（已隐藏）"))
                                 .font(.system(size: 11))
                                 .foregroundStyle(.white.opacity(0.55))
                         }
@@ -130,14 +130,14 @@ struct TodoDetail: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(open == 0 ? "全部完成" : "\(open) 项未完成")
+                Text(open == 0 ? tr("全部完成") : tr("\(open) 项未完成"))
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
             }
             Spacer()
             if done > 0 {
-                StatChip(label: "已完成", value: "\(done)")
+                StatChip(label: tr("已完成"), value: "\(done)")
                     .frame(width: 76)
             }
         }
@@ -172,7 +172,7 @@ struct TodoDetail: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(item.done ? "标为未完成" : "标为完成")
+            .accessibilityLabel(item.done ? tr("标为未完成") : tr("标为完成"))
 
             if editing == item.id {
                 TextField("", text: $editDraft)
@@ -206,7 +206,7 @@ struct TodoDetail: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("删除 \(item.text)")
+            .accessibilityLabel(tr("删除 \(item.text)"))
             .help("删除，也可以把这一行往左拖")
         }
         .padding(.horizontal, 8)

@@ -124,10 +124,10 @@ public enum QuickTodo {
     /// What the tile says under the first task.
     public static func caption(open: Int, done: Int) -> String {
         switch (open, done) {
-        case (0, 0): "点按添加待办"
-        case (0, _): "全部完成"
-        case (1, _): "只剩这一项"
-        default: "另外还有 \(open - 1) 项"
+        case (0, 0): tr("点按添加待办")
+        case (0, _): tr("全部完成")
+        case (1, _): tr("只剩这一项")
+        default: tr("另外还有 \(open - 1) 项")
         }
     }
 }

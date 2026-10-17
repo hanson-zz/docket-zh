@@ -104,8 +104,8 @@ public struct BatteryAlertTracker: Sendable {
             if item.percent <= BatteryAlertSettings.accessoryLevel {
                 if settings.accessory, !firedAccessory.contains(item.id) {
                     alerts.append(BatteryAlert(id: "accessory.\(item.id)",
-                                               title: "\(item.name)电量低",
-                                               body: "只剩 \(item.percent)%，记得充电。"))
+                                               title: tr("\(item.name)电量低"),
+                                               body: tr("只剩 \(item.percent)%，记得充电。")))
                 }
                 firedAccessory.insert(item.id)
             } else if item.percent > BatteryAlertSettings.accessoryRearm {
@@ -136,17 +136,17 @@ public struct BatteryAlertTracker: Sendable {
             let reached = settings.charge.filter { percent >= $0 && !firedCharge.contains($0) }
             firedCharge.formUnion(BatteryAlertSettings.chargeChoices.filter { percent >= $0 })
             if let top = reached.max() {
-                alerts.append(BatteryAlert(id: "charge", title: "电量已充到 \(percent)%",
-                                           body: top >= 95 ? "快充满了，可以拔掉电源。"
-                                                           : "已经够用了，想保护电池可以拔掉电源。"))
+                alerts.append(BatteryAlert(id: "charge", title: tr("电量已充到 \(percent)%"),
+                                           body: top >= 95 ? tr("快充满了，可以拔掉电源。")
+                                                           : tr("已经够用了，想保护电池可以拔掉电源。")))
             }
             if percent >= 100 {
                 let since = fullSince ?? now
                 fullSince = since
                 if settings.full, !firedFull, now.timeIntervalSince(since) >= BatteryAlertSettings.fullAfter {
                     firedFull = true
-                    alerts.append(BatteryAlert(id: "full", title: "电池已充满 2 小时",
-                                               body: "一直插着电对电池不太好，可以拔掉电源。"))
+                    alerts.append(BatteryAlert(id: "full", title: tr("电池已充满 2 小时"),
+                                               body: tr("一直插着电对电池不太好，可以拔掉电源。")))
                 }
             } else {
                 fullSince = nil
@@ -155,16 +155,16 @@ public struct BatteryAlertTracker: Sendable {
             let reached = settings.low.filter { percent <= $0 && !firedLow.contains($0) }
             firedLow.formUnion(BatteryAlertSettings.lowChoices.filter { percent <= $0 })
             if !reached.isEmpty {
-                alerts.append(BatteryAlert(id: "low", title: "电量只剩 \(percent)%",
-                                           body: "该接上电源了。"))
+                alerts.append(BatteryAlert(id: "low", title: tr("电量只剩 \(percent)%"),
+                                           body: tr("该接上电源了。")))
             }
         }
 
         if let celsius = mac.celsius {
             if celsius >= BatteryAlertSettings.hotCelsius {
                 if settings.hot, !firedHot {
-                    alerts.append(BatteryAlert(id: "hot", title: "电池温度偏高",
-                                               body: "现在约 \(Int(celsius.rounded()))°C，可以把 Mac 放到通风的地方，或先关掉占用高的 App。"))
+                    alerts.append(BatteryAlert(id: "hot", title: tr("电池温度偏高"),
+                                               body: tr("现在约 \(Int(celsius.rounded()))°C，可以把 Mac 放到通风的地方，或先关掉占用高的 App。")))
                 }
                 firedHot = true
             } else if celsius < BatteryAlertSettings.coolCelsius {

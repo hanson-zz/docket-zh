@@ -81,7 +81,7 @@ struct ConverterDetail: View {
 
                 others(state)
 
-                PanelButton(title: "拷贝结果", symbol: "doc.on.doc", prominent: true) {
+                PanelButton(title: tr("拷贝结果"), symbol: "doc.on.doc", prominent: true) {
                     ColorSampling.copy(state.resultText)
                 }
             }

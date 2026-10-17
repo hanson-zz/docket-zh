@@ -13,8 +13,8 @@ public struct AIService: Codable, Equatable, Sendable, Identifiable {
 
         public var title: String {
             switch self {
-            case .domestic: "国内"
-            case .overseas: "国外"
+            case .domestic: tr("国内")
+            case .overseas: tr("国外")
             }
         }
     }
@@ -127,19 +127,19 @@ public enum AIServices {
     /// codesign 结果），Perplexity 是 ai.perplexity.mac、豆包是
     /// com.volcengine.doubao（第三方工具的应用清单）。没装或 id 不对时照常打开网页。
     public static let builtIn: [AIService] = [
-        AIService(id: "doubao", title: "豆包", initial: "豆", region: .domestic,
+        AIService(id: "doubao", title: tr("豆包"), initial: tr("豆"), region: .domestic,
                   home: "https://www.doubao.com/chat/", appBundleID: "com.volcengine.doubao"),
         AIService(id: "deepseek", title: "DeepSeek", initial: "D", region: .domestic,
                   home: "https://chat.deepseek.com/"),
         AIService(id: "kimi", title: "Kimi", initial: "K", region: .domestic,
                   home: "https://www.kimi.com/"),
-        AIService(id: "tongyi", title: "通义", initial: "通", region: .domestic,
+        AIService(id: "tongyi", title: tr("通义"), initial: tr("通"), region: .domestic,
                   home: "https://www.qianwen.com/"),
-        AIService(id: "yuanbao", title: "元宝", initial: "元", region: .domestic,
+        AIService(id: "yuanbao", title: tr("元宝"), initial: tr("元"), region: .domestic,
                   home: "https://yuanbao.tencent.com/"),
-        AIService(id: "wenxin", title: "文心", initial: "文", region: .domestic,
+        AIService(id: "wenxin", title: tr("文心"), initial: tr("文"), region: .domestic,
                   home: "https://wenxin.baidu.com/"),
-        AIService(id: "zhipu", title: "智谱清言", initial: "智", region: .domestic,
+        AIService(id: "zhipu", title: tr("智谱清言"), initial: tr("智"), region: .domestic,
                   home: "https://chatglm.cn/"),
         AIService(id: "chatgpt", title: "ChatGPT", initial: "G", region: .overseas,
                   home: "https://chatgpt.com/", appBundleID: "com.openai.chat",
@@ -309,12 +309,12 @@ public enum AIServices {
 
         public var message: String {
             switch self {
-            case .emptyName: "请填写名字。"
-            case .invalidAddress: "网址要以 http:// 或 https:// 开头（不写协议会补 https）。"
-            case .missingTarget: "填一个网址，或者选一个 App。"
-            case .duplicateName: "已经有同名的服务了。"
-            case .duplicateAddress: "这个地址或 App 已经添加过了。"
-            case .tooMany: "自定义服务最多 \(AIServices.maxCustom) 个。"
+            case .emptyName: tr("请填写名字。")
+            case .invalidAddress: tr("网址要以 http:// 或 https:// 开头（不写协议会补 https）。")
+            case .missingTarget: tr("填一个网址，或者选一个 App。")
+            case .duplicateName: tr("已经有同名的服务了。")
+            case .duplicateAddress: tr("这个地址或 App 已经添加过了。")
+            case .tooMany: tr("自定义服务最多 \(AIServices.maxCustom) 个。")
             }
         }
     }
@@ -519,15 +519,15 @@ public enum AIAsk {
 
     /// 主按钮上的字。
     public static func buttonTitle(for service: AIService?) -> String {
-        service?.supportsAsk == true ? "打开并提问" : "复制问题并打开"
+        service?.supportsAsk == true ? tr("打开并提问") : tr("复制问题并打开")
     }
 
     /// 做完之后面板上的一句话。只说做了什么，不假装已经发送或已经回答。
     public static func hint(after plan: Plan, service: AIService) -> String? {
         switch plan {
-        case .blocked: "先写下要问的问题。"
-        case .openWithQuestion: "已在浏览器打开 \(service.title)，问题放在了网址里。"
-        case .copyThenOpen: "已复制，到 \(service.title) 里粘贴即可。"
+        case .blocked: tr("先写下要问的问题。")
+        case .openWithQuestion: tr("已在浏览器打开 \(service.title)，问题放在了网址里。")
+        case .copyThenOpen: tr("已复制，到 \(service.title) 里粘贴即可。")
         }
     }
 }

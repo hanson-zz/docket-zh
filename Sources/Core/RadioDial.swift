@@ -59,7 +59,7 @@ public struct RadioStation: Equatable, Hashable, Sendable, Identifiable {
         if !codec.isEmpty, codec.uppercased() != "UNKNOWN" { parts.append(codec.uppercased()) }
         if bitrate > 0 { parts.append("\(bitrate) kbps") }
         if parts.isEmpty, url.lowercased().contains(".m3u8") { parts.append("HLS") }
-        return parts.isEmpty ? "网络电台" : parts.joined(separator: " · ")
+        return parts.isEmpty ? tr("网络电台") : parts.joined(separator: " · ")
     }
 }
 
@@ -74,17 +74,17 @@ public enum RadioDial {
     /// real audio (an HLS playlist with MPEG-TS segments, or an MP3 stream)
     /// over HTTPS before it was added here.
     public static let presets: [RadioStation] = [
-        RadioStation(id: "cnr-zgzs", name: "中国之声",
+        RadioStation(id: "cnr-zgzs", name: tr("中国之声"),
                      url: "https://ngcdn001.cnr.cn/live/zgzs/index.m3u8", codec: "HLS"),
-        RadioStation(id: "cnr-jjzs", name: "经济之声",
+        RadioStation(id: "cnr-jjzs", name: tr("经济之声"),
                      url: "https://ngcdn002.cnr.cn/live/jjzs/index.m3u8", codec: "HLS"),
-        RadioStation(id: "cnr-yyzs", name: "音乐之声",
+        RadioStation(id: "cnr-yyzs", name: tr("音乐之声"),
                      url: "https://ngcdn001.cnr.cn/live/yyzs/index.m3u8", codec: "HLS"),
-        RadioStation(id: "cri-hqzx", name: "环球资讯广播",
+        RadioStation(id: "cri-hqzx", name: tr("环球资讯广播"),
                      url: "https://sk.cri.cn/905.m3u8", codec: "HLS"),
-        RadioStation(id: "bj-news", name: "北京新闻广播",
+        RadioStation(id: "bj-news", name: tr("北京新闻广播"),
                      url: "https://lhttp.qtfm.cn/live/339/64k.mp3", codec: "MP3", bitrate: 64),
-        RadioStation(id: "sh-101", name: "动感 101",
+        RadioStation(id: "sh-101", name: tr("动感 101"),
                      url: "https://lhttp.qingting.fm/live/274/64k.mp3", codec: "MP3", bitrate: 64),
     ]
 
@@ -240,12 +240,12 @@ public enum RadioRegion: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .chinese: "中文电台"
-        case .mainland: "大陆"
-        case .hongKong: "香港"
-        case .taiwan: "台湾"
-        case .macau: "澳门"
-        case .global: "全球"
+        case .chinese: tr("中文电台")
+        case .mainland: tr("大陆")
+        case .hongKong: tr("香港")
+        case .taiwan: tr("台湾")
+        case .macau: tr("澳门")
+        case .global: tr("全球")
         }
     }
 
@@ -279,7 +279,7 @@ public enum RadioRegion: String, CaseIterable, Identifiable, Sendable {
 /// directory be credited where it is shown.
 public enum RadioBrowser {
     public static let userAgent = "Dockling/1.0 (macOS dock radio widget; https://github.com/hanson-zz/docket-zh)"
-    public static let attribution = "电台目录来自 Radio Browser"
+    public static let attribution = tr("电台目录来自 Radio Browser")
     public static let homepage = URL(string: "https://www.radio-browser.info")!
     /// Mirrors, tried in order. The directory runs several identical servers.
     public static let hosts = ["de1.api.radio-browser.info", "de2.api.radio-browser.info",
@@ -363,10 +363,10 @@ public enum RadioSleep {
 
     public static func title(_ minutes: Int) -> String {
         switch minutes {
-        case ..<1: "不定时"
-        case 60: "1 小时"
-        case 120: "2 小时"
-        default: "\(minutes) 分钟"
+        case ..<1: tr("不定时")
+        case 60: tr("1 小时")
+        case 120: tr("2 小时")
+        default: tr("\(minutes) 分钟")
         }
     }
 

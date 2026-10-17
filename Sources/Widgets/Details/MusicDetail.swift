@@ -326,7 +326,7 @@ struct MusicDetail: View {
                 .playPauseMorph(playing ? "pause.fill" : "play.fill")
         }
         .buttonStyle(TransportButton(primary: true, ink: ink, compact: compact))
-        .accessibilityLabel(playing ? "暂停" : "播放")
+        .accessibilityLabel(playing ? tr("暂停") : tr("播放"))
     }
 
     private func secondary(_ symbol: String, _ size: CGFloat,
@@ -368,12 +368,12 @@ struct MusicDetail: View {
         let open = !context.isPreview && MusicService.shared.hasPlayer
         let setup = browserSetupHint
         return VStack(spacing: 4) {
-            Text(setup == nil ? (open ? "未在播放" : "无可读取内容")
-                              : "有标签页正在播放码头无法读取的媒体")
+            Text(setup == nil ? (open ? tr("未在播放") : tr("无可读取内容"))
+                              : tr("有标签页正在播放码头无法读取的媒体"))
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
-            Text(setup ?? (open ? "在\(sourceNames)中播放点什么吧。"
-                                : "码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
+            Text(setup ?? (open ? tr("在\(sourceNames)中播放点什么吧。")
+                                : tr("码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。")))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(WidgetStyle.secondary)
         }
@@ -390,8 +390,8 @@ struct MusicDetail: View {
 
     private var sourceNames: String {
         let names = sources.map(\.displayName)
-        guard !names.isEmpty else { return "无来源" }
-        return names.count == 1 ? names[0] : names.joined(separator: "或")
+        guard !names.isEmpty else { return tr("无来源") }
+        return names.count == 1 ? names[0] : names.joined(separator: tr("或"))
     }
 }
 

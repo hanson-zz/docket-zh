@@ -52,7 +52,7 @@ public enum WeekAgenda {
         return calendar
     }
 
-    public static let weekdayNames = ["一", "二", "三", "四", "五", "六", "日"]
+    public static let weekdayNames = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
 
     /// Midnight on the Monday of the week containing `date`.
     public static func weekStart(_ date: Date, calendar: Calendar = WeekAgenda.calendar) -> Date {
@@ -112,13 +112,13 @@ public enum WeekAgenda {
         guard let last = calendar.date(byAdding: .day, value: 6, to: span.start) else { return "" }
         let a = calendar.dateComponents([.month, .day], from: span.start)
         let b = calendar.dateComponents([.month, .day], from: last)
-        let head = "\(a.month ?? 0)月\(a.day ?? 0)日"
-        return a.month == b.month ? "\(head)至\(b.day ?? 0)日" : "\(head)至\(b.month ?? 0)月\(b.day ?? 0)日"
+        let head = tr("\(a.month ?? 0)月\(a.day ?? 0)日")
+        return a.month == b.month ? tr("\(head)至\(b.day ?? 0)日") : tr("\(head)至\(b.month ?? 0)月\(b.day ?? 0)日")
     }
 
     /// "周一" through "周日", or "今天".
     public static func dayTitle(_ day: WeekDay) -> String {
-        day.isToday ? "今天" : "周\(weekdayNames[day.index])"
+        day.isToday ? tr("今天") : tr("周\(weekdayNames[day.index])")
     }
 
     /// The marks a day's column on the shelf can hold: one bar per entry in

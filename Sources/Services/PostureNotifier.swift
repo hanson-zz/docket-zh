@@ -42,8 +42,8 @@ final class PostureNotifier {
             _ = try? await center.requestAuthorization(options: [.alert, .sound])
         }
         let content = UNMutableNotificationContent()
-        content.title = "该起身活动一下了"
-        content.body = "已经坐了 \(minutes) 分钟，站起来走动、伸展一下吧。"
+        content.title = tr("该起身活动一下了")
+        content.body = tr("已经坐了 \(minutes) 分钟，站起来走动、伸展一下吧。")
         content.sound = .default
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, date.timeIntervalSinceNow),
                                                         repeats: false)

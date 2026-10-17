@@ -66,8 +66,8 @@ struct TranslateDetail: View {
                 resultPane
                 statusLine
                 HStack(spacing: 8) {
-                    PanelButton(title: "粘贴剪贴板", symbol: "doc.on.clipboard") { pasteClipboard() }
-                    PanelButton(title: "翻译", symbol: "translate", prominent: true) { translate(force: true) }
+                    PanelButton(title: tr("粘贴剪贴板"), symbol: "doc.on.clipboard") { pasteClipboard() }
+                    PanelButton(title: tr("翻译"), symbol: "translate", prominent: true) { translate(force: true) }
                         .keyboardShortcut(.return, modifiers: .command)
                         .help("⌘↩ 立即翻译")
                 }
@@ -77,7 +77,7 @@ struct TranslateDetail: View {
         .translationTask(configuration) { session in
             guard let job = pending else { return }
             let outcome = await TranslationRunner.run(session, job: job) {
-                if pending == job { message = "首次翻译这对语言需要下载语言包，请在系统弹出的窗口中下载。" }
+                if pending == job { message = tr("首次翻译这对语言需要下载语言包，请在系统弹出的窗口中下载。") }
             }
             // A newer job, or this one asked again, picks up from here.
             guard pending == job, outcome != .cancelled else { return }
@@ -134,7 +134,7 @@ struct TranslateDetail: View {
     private var languageBar: some View {
         HStack(spacing: 8) {
             Menu {
-                Button { setSource(Translate.auto) } label: { menuLabel("自动检测", on: source == Translate.auto) }
+                Button { setSource(Translate.auto) } label: { menuLabel(tr("自动检测"), on: source == Translate.auto) }
                 Divider()
                 ForEach(languages) { language in
                     Button { setSource(language.code) } label: {
@@ -143,7 +143,7 @@ struct TranslateDetail: View {
                 }
             } label: {
                 chip(source == Translate.auto
-                     ? (detectedSource.map { "自动 · \(TranslationRunner.name($0))" } ?? "自动检测")
+                     ? (detectedSource.map { tr("自动 · \(TranslationRunner.name($0))") } ?? tr("自动检测"))
                      : TranslationRunner.name(source))
             }
             .menuStyle(.button)
@@ -164,7 +164,7 @@ struct TranslateDetail: View {
             .help("交换语言")
 
             Menu {
-                Button { setSmart() } label: { menuLabel("智能方向（中文译成英语，其他译成中文）", on: smart) }
+                Button { setSmart() } label: { menuLabel(tr("智能方向（中文译成英语，其他译成中文）"), on: smart) }
                 Divider()
                 ForEach(languages) { language in
                     Button { setTarget(language.code) } label: {
@@ -172,7 +172,7 @@ struct TranslateDetail: View {
                     }
                 }
             } label: {
-                chip(smart ? "智能 · \(TranslationRunner.name(currentTarget))" : TranslationRunner.name(currentTarget))
+                chip(smart ? tr("智能 · \(TranslationRunner.name(currentTarget))") : TranslationRunner.name(currentTarget))
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
@@ -228,10 +228,10 @@ struct TranslateDetail: View {
                     .font(WidgetStyle.caption(10).monospacedDigit())
                     .foregroundStyle(.white.opacity(draft.count >= Translate.maxCharacters ? 0.9 : 0.5))
                 Spacer(minLength: 0)
-                paneButton("speaker.wave.2", label: "朗读原文", disabled: draft.isEmpty) {
+                paneButton("speaker.wave.2", label: tr("朗读原文"), disabled: draft.isEmpty) {
                     TranslateSpeaker.shared.toggle(draft, language: detectedSource ?? Translate.chinese)
                 }
-                paneButton("xmark", label: "清除", disabled: draft.isEmpty) {
+                paneButton("xmark", label: tr("清除"), disabled: draft.isEmpty) {
                     draft = ""
                     result = nil
                     message = nil
@@ -249,7 +249,7 @@ struct TranslateDetail: View {
         let text = result?.resultText ?? ""
         return VStack(alignment: .leading, spacing: 4) {
             ScrollView {
-                Text(text.isEmpty ? (working ? "正在翻译…" : "译文会显示在这里") : text)
+                Text(text.isEmpty ? (working ? tr("正在翻译…") : tr("译文会显示在这里")) : text)
                     .font(.system(size: 14, weight: text.isEmpty ? .regular : .medium))
                     .foregroundStyle(.white.opacity(text.isEmpty ? 0.4 : 1))
                     .textSelection(.enabled)
@@ -263,10 +263,10 @@ struct TranslateDetail: View {
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.5))
                 Spacer(minLength: 0)
-                paneButton("speaker.wave.2", label: "朗读译文", disabled: text.isEmpty) {
+                paneButton("speaker.wave.2", label: tr("朗读译文"), disabled: text.isEmpty) {
                     TranslateSpeaker.shared.toggle(text, language: result?.target ?? currentTarget)
                 }
-                paneButton(copied ? "checkmark" : "doc.on.doc", label: copied ? "已拷贝" : "拷贝译文",
+                paneButton(copied ? "checkmark" : "doc.on.doc", label: copied ? tr("已拷贝") : tr("拷贝译文"),
                            disabled: text.isEmpty) {
                     ColorSampling.copy(text)
                     copied = true
@@ -307,7 +307,7 @@ struct TranslateDetail: View {
         HStack(spacing: 5) {
             Image(systemName: message == nil ? "lock.shield" : "info.circle")
                 .font(.system(size: 10, weight: .semibold))
-            Text(message ?? "由 macOS 在本机翻译，免费，文字不会上传。")
+            Text(message ?? tr("由 macOS 在本机翻译，免费，文字不会上传。"))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -338,7 +338,7 @@ struct TranslateDetail: View {
             }
             .padding(.horizontal, 4)
             if history.isEmpty {
-                PanelNote(symbol: "clock.arrow.circlepath", text: "翻译过的内容会保存在这里，最多 \(Translate.maxHistory) 条。")
+                PanelNote(symbol: "clock.arrow.circlepath", text: tr("翻译过的内容会保存在这里，最多 \(Translate.maxHistory) 条。"))
                     .frame(height: 132)
             } else {
                 ScrollView {
@@ -416,7 +416,7 @@ struct TranslateDetail: View {
         if let from, Translate.same(from, to) {
             pending = nil
             working = false
-            message = "原文已经是\(TranslationRunner.name(to))，换一个目标语言试试。"
+            message = tr("原文已经是\(TranslationRunner.name(to))，换一个目标语言试试。")
             return
         }
         pending = job
@@ -434,7 +434,7 @@ struct TranslateDetail: View {
         guard !context.isPreview,
               let text = NSPasteboard.general.string(forType: .string),
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            if !context.isPreview { message = "剪贴板里没有文字。" }
+            if !context.isPreview { message = tr("剪贴板里没有文字。") }
             return
         }
         draft = Translate.clamped(text)

@@ -67,7 +67,7 @@ struct AirDropTile: View {
                 files = count
             },
             send: Self.send))
-        .help(state.disabled ? state.caption : "把文件拖到这里，用隔空投送发送")
+        .help(state.disabled ? state.caption : tr("把文件拖到这里，用隔空投送发送"))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(state.title)，\(state.caption)")
     }
@@ -95,7 +95,7 @@ struct AirDropTile: View {
     private var columnLayout: some View {
         VStack(spacing: 4) {
             badge(size: WidgetStyle.badgeColumn)
-            Text(state.highlighted ? "松手\n发送" : AirDropDrop.columnTitle)
+            Text(state.highlighted ? tr("松手\n发送") : AirDropDrop.columnTitle)
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(state.highlighted ? blue : WidgetStyle.primary)
                 .multilineTextAlignment(.center)

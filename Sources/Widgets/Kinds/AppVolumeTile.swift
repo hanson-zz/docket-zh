@@ -19,9 +19,9 @@ struct AppVolumeTile: View {
 
     private var shown: [Shown] {
         if context.isPreview {
-            return [Shown(id: "com.apple.Music", name: "音乐", muted: false, changed: false),
+            return [Shown(id: "com.apple.Music", name: tr("音乐"), muted: false, changed: false),
                     Shown(id: "com.apple.Safari", name: "Safari", muted: false, changed: true),
-                    Shown(id: "com.tencent.xinWeChat", name: "微信", muted: true, changed: true)]
+                    Shown(id: "com.tencent.xinWeChat", name: tr("微信"), muted: true, changed: true)]
         }
         return service.rows.map {
             Shown(id: $0.bundleID, name: $0.name, muted: $0.setting.muted, changed: !$0.setting.isDefault)

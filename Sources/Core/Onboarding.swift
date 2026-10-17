@@ -10,22 +10,22 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
 
     public var title: String {
         switch self {
-        case .productivity: "效率"
-        case .health: "健康"
-        case .system: "系统"
-        case .fun: "娱乐"
-        case .developer: "开发"
+        case .productivity: tr("效率")
+        case .health: tr("健康")
+        case .system: tr("系统")
+        case .fun: tr("娱乐")
+        case .developer: tr("开发")
         }
     }
 
     /// 卡片上的一行说明。
     public var caption: String {
         switch self {
-        case .productivity: "待办、日历、专注计时、习惯"
-        case .health: "喝水、久坐提醒"
-        case .system: "电池、网络、系统活动"
-        case .fun: "音乐、收音机"
-        case .developer: "剪贴板、取色器"
+        case .productivity: tr("待办、日历、专注计时、习惯")
+        case .health: tr("喝水、久坐提醒")
+        case .system: tr("电池、网络、系统活动")
+        case .fun: tr("音乐、收音机")
+        case .developer: tr("剪贴板、取色器")
         }
     }
 
@@ -87,7 +87,7 @@ public enum Onboarding {
     public static let buildDuration: Double = 2.5
 
     /// “布置中”下方清单的三条文字。
-    public static let checklist = ["正在读取你的选择", "正在挑选小组件", "正在布置你的码头"]
+    public static let checklist = [tr("正在读取你的选择"), tr("正在挑选小组件"), tr("正在布置你的码头")]
 
     /// 是否在启动时弹出新手引导。
     ///

@@ -25,8 +25,8 @@ public struct TodoUndoStep: Equatable, Sendable {
     /// 撤销条上的一句话。
     public var caption: String {
         switch kind {
-        case .deleted: "已删除“\(item.text)”"
-        case .completed: "已完成“\(item.text)”"
+        case .deleted: tr("已删除“\(item.text)”")
+        case .completed: tr("已完成“\(item.text)”")
         }
     }
 }

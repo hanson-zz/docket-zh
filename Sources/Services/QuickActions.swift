@@ -105,7 +105,7 @@ final class QuickActions {
             NSWorkspace.shared.openApplication(at: engine, configuration: NSWorkspace.OpenConfiguration())
             done()
         case .emptyTrash:
-            guard Self.confirm("要清空废纸篓吗？", "废纸篓中的所有项目将被永久抹掉，此操作无法撤销。", button: "清空废纸篓") else { return }
+            guard Self.confirm(tr("要清空废纸篓吗？"), tr("废纸篓中的所有项目将被永久抹掉，此操作无法撤销。"), button: tr("清空废纸篓")) else { return }
             Self.run("/usr/bin/osascript", ["-e", "tell application \"Finder\" to empty trash"], then: done)
         case .hiddenFiles:
             let on = !isOn(.hiddenFiles)
@@ -151,9 +151,9 @@ final class QuickActions {
         case .lowPower:
             toggleLowPower(then: done)
         case .restartDock:
-            guard Self.confirm("要重新启动程序坞和访达吗？",
-                               "程序坞和访达会退出并马上自动重新打开，访达窗口会关闭后再恢复。",
-                               button: "重新启动") else { return }
+            guard Self.confirm(tr("要重新启动程序坞和访达吗？"),
+                               tr("程序坞和访达会退出并马上自动重新打开，访达窗口会关闭后再恢复。"),
+                               button: tr("重新启动")) else { return }
             Self.shell("killall Dock; killall Finder", then: done)
         }
     }
@@ -164,7 +164,7 @@ final class QuickActions {
         if on, !keepAwake {
             let result = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep as CFString,
                                                      IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                     "码头：保持唤醒" as CFString, &assertion)
+                                                     tr("码头：保持唤醒") as CFString, &assertion)
             keepAwake = result == kIOReturnSuccess
         } else if !on, keepAwake {
             IOPMAssertionRelease(assertion)
@@ -279,12 +279,12 @@ final class QuickActions {
             guard let reading = LowPowerSetting.parse(output),
                   let command = LowPowerSetting.command(key: reading.key, on: !reading.isOn) else {
                 self.lowPower = nil
-                QuickHint.show("这台 Mac 不支持低电量模式", symbol: "battery.25", tint: .secondary)
+                QuickHint.show(tr("这台 Mac 不支持低电量模式"), symbol: "battery.25", tint: .secondary)
                 done()
                 return
             }
             let turningOn = !reading.isOn
-            let prompt = turningOn ? "码头要打开低电量模式。" : "码头要关闭低电量模式。"
+            let prompt = turningOn ? tr("码头要打开低电量模式。") : tr("码头要关闭低电量模式。")
             let source = "do shell script \"\(ChargeHelperFiles.appleScriptQuoted(command))\" "
                 + "with prompt \"\(ChargeHelperFiles.appleScriptQuoted(prompt))\" with administrator privileges"
             var error: NSDictionary?
@@ -292,12 +292,12 @@ final class QuickActions {
             if let error {
                 let code = error[NSAppleScript.errorNumber] as? Int
                 if code != -128 {
-                    QuickHint.show("没能切换低电量模式：\(error[NSAppleScript.errorMessage] as? String ?? "未知错误")",
+                    QuickHint.show(tr("没能切换低电量模式：\(error[NSAppleScript.errorMessage] as? String ?? tr("未知错误"))"),
                                    symbol: "exclamationmark.triangle.fill", tint: .orange, seconds: 4)
                 }
             } else {
                 self.lowPower = LowPowerSetting.Reading(key: reading.key, isOn: turningOn)
-                QuickHint.show(turningOn ? "低电量模式已打开" : "低电量模式已关闭",
+                QuickHint.show(turningOn ? tr("低电量模式已打开") : tr("低电量模式已关闭"),
                                symbol: turningOn ? "battery.25" : "battery.100", tint: turningOn ? .yellow : .green)
             }
             self.refreshLowPower()
@@ -318,10 +318,10 @@ final class QuickActions {
         }
         guard !targets.isEmpty else { return }
         let names = targets.prefix(6).compactMap(\.localizedName).joined(separator: "、")
-        let more = targets.count > 6 ? " 等 \(targets.count) 个应用" : ""
-        guard Self.confirm("要退出其他 \(targets.count) 个应用吗？",
-                           "\(names)\(more)。当前使用的应用和访达会保留；有未存储内容的应用会照常询问。",
-                           button: "全部退出") else { return }
+        let more = targets.count > 6 ? tr(" 等 \(targets.count) 个应用") : ""
+        guard Self.confirm(tr("要退出其他 \(targets.count) 个应用吗？"),
+                           tr("\(names)\(more)。当前使用的应用和访达会保留；有未存储内容的应用会照常询问。"),
+                           button: tr("全部退出")) else { return }
         targets.forEach { $0.terminate() }
     }
 
@@ -341,7 +341,7 @@ final class QuickActions {
         alert.informativeText = detail
         alert.alertStyle = .warning
         alert.addButton(withTitle: button)
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: tr("取消"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 
@@ -490,7 +490,7 @@ private struct CleanModeView: View {
                 Text("清洁模式")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.5))
-                Text(keyboardLocked ? "屏幕和键盘可以放心擦拭，键盘已暂时锁定。" : "屏幕可以擦拭了。键盘未锁定：需要在“辅助功能”中允许码头。")
+                Text(keyboardLocked ? tr("屏幕和键盘可以放心擦拭，键盘已暂时锁定。") : tr("屏幕可以擦拭了。键盘未锁定：需要在“辅助功能”中允许码头。"))
                     .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.4))
                 Button("完成", action: done)

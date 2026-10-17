@@ -53,7 +53,7 @@ struct BreathPacerView: View {
                 .frame(width: 84, height: 84)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(running ? "跟着圆圈呼吸，肩膀放松。" : "选一个节奏，跟着圆圈慢慢呼吸。")
+                    Text(running ? tr("跟着圆圈呼吸，肩膀放松。") : tr("选一个节奏，跟着圆圈慢慢呼吸。"))
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.7))
                         .fixedSize(horizontal: false, vertical: true)
@@ -61,7 +61,7 @@ struct BreathPacerView: View {
                         guard !isPreview else { return }
                         startedAt = running ? nil : .now
                     } label: {
-                        Label(running ? "结束" : "开始", systemImage: running ? "stop.fill" : "wind")
+                        Label(running ? tr("结束") : tr("开始"), systemImage: running ? "stop.fill" : "wind")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
@@ -70,7 +70,7 @@ struct BreathPacerView: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(running ? "结束呼吸引导" : "开始呼吸引导")
+                    .accessibilityLabel(running ? tr("结束呼吸引导") : tr("开始呼吸引导"))
                 }
                 Spacer(minLength: 0)
             }
@@ -104,7 +104,7 @@ struct BreathPacerView: View {
                 }
                 .scaleEffect(0.45 + 0.45 * fullness)
             VStack(spacing: 0) {
-                Text(state?.phase.title ?? "准备")
+                Text(state?.phase.title ?? tr("准备"))
                     .font(.system(size: 12, weight: .semibold))
                 if let state {
                     Text("\(state.secondsLeft)")
@@ -115,6 +115,6 @@ struct BreathPacerView: View {
             .foregroundStyle(.white)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(state.map { "\($0.phase.title)，还剩 \($0.secondsLeft) 秒" } ?? "呼吸引导未开始")
+        .accessibilityLabel(state.map { tr("\($0.phase.title)，还剩 \($0.secondsLeft) 秒") } ?? tr("呼吸引导未开始"))
     }
 }

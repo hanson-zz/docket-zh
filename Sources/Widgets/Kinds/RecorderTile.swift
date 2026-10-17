@@ -15,18 +15,18 @@ struct RecorderTile: View {
 
     private var reading: String {
         if context.isPreview { return "0:00" }
-        guard let started = recorder.startedAt else { return "录音" }
+        guard let started = recorder.startedAt else { return tr("录音") }
         return RecordingNaming.elapsed(context.now.timeIntervalSince(started))
     }
 
     private var caption: String {
-        if context.isPreview { return "点按开始录音" }
-        if recorder.error != nil { return "没有麦克风权限" }
-        if recording { return "正在录音…" }
+        if context.isPreview { return tr("点按开始录音") }
+        if recorder.error != nil { return tr("没有麦克风权限") }
+        if recording { return tr("正在录音…") }
         if let last = recorder.recordings.first {
-            return "上次 \(RelativeAge.caption(last.date, now: context.now))"
+            return tr("上次 \(RelativeAge.caption(last.date, now: context.now))")
         }
-        return "保存到“\(recorder.folder.lastPathComponent)”"
+        return tr("保存到“\(recorder.folder.lastPathComponent)”")
     }
 
     var body: some View {
@@ -57,7 +57,7 @@ struct RecorderTile: View {
         TileGlyph(symbol: recording ? "stop.fill" : "mic.fill", size: size,
                   tint: recording || context.isPreview ? .red : WidgetStyle.primary,
                   action: context.isPreview ? nil : { recorder.toggle(folderPath: folderPath) })
-            .help(recording ? "停止录音" : "开始录音")
-            .accessibilityLabel(recording ? "停止录音" : "开始录音")
+            .help(recording ? tr("停止录音") : tr("开始录音"))
+            .accessibilityLabel(recording ? tr("停止录音") : tr("开始录音"))
     }
 }

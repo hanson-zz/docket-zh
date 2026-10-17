@@ -42,18 +42,18 @@ public enum PerfectDayTier: String, CaseIterable, Sendable, Hashable, Comparable
     /// 满篮一天 / 丰收一天 / 小有收获.
     public var title: String {
         switch self {
-        case .gold: "满篮一天"
-        case .silver: "丰收一天"
-        case .bronze: "小有收获"
+        case .gold: tr("满篮一天")
+        case .silver: tr("丰收一天")
+        case .bronze: tr("小有收获")
         }
     }
 
     /// 金竹叶 / 银竹叶 / 铜竹叶.
     public var leafName: String {
         switch self {
-        case .gold: "金竹叶"
-        case .silver: "银竹叶"
-        case .bronze: "铜竹叶"
+        case .gold: tr("金竹叶")
+        case .silver: tr("银竹叶")
+        case .bronze: tr("铜竹叶")
         }
     }
 
@@ -87,9 +87,9 @@ public enum PerfectDayItem: String, CaseIterable, Sendable, Hashable, Identifiab
 
     public var title: String {
         switch self {
-        case .water: "喝水"
-        case .habit: "习惯"
-        case .focus: "专注"
+        case .water: tr("喝水")
+        case .habit: tr("习惯")
+        case .focus: tr("专注")
         }
     }
 
@@ -270,7 +270,7 @@ public enum PerfectDay {
     public static func water(_ configs: [WidgetConfig], on date: Date, today: Date,
                              calendar: Calendar = PerfectDay.calendar) -> PerfectDayProgress {
         guard !configs.isEmpty else {
-            return PerfectDayProgress(item: .water, mark: .off, fraction: 0, detail: "没有放喝水小组件")
+            return PerfectDayProgress(item: .water, mark: .off, fraction: 0, detail: tr("没有放喝水小组件"))
         }
         let key = HabitTracker.dayKey(date, calendar: calendar)
         let isToday = key == HabitTracker.dayKey(today, calendar: calendar)
@@ -287,7 +287,7 @@ public enum PerfectDay {
         } ?? WaterDay(key: key, goal: WaterIntake.defaultGoal)
         return PerfectDayProgress(item: .water, mark: day.isMet ? .met : .missed,
                                   fraction: WaterIntake.progress(total: day.total, goal: day.goal),
-                                  detail: "\(day.total)/\(day.goal) 毫升")
+                                  detail: tr("\(day.total)/\(day.goal) 毫升"))
     }
 
     /// 习惯 on `date`: every habit of every 习惯打卡 widget checked in. Two
@@ -303,23 +303,23 @@ public enum PerfectDay {
             }
         }
         guard !all.isEmpty else {
-            return PerfectDayProgress(item: .habit, mark: .off, fraction: 0, detail: "还没有设置习惯")
+            return PerfectDayProgress(item: .habit, mark: .off, fraction: 0, detail: tr("还没有设置习惯"))
         }
         let done = HabitTracker.doneToday(all, today: date, calendar: calendar)
         return PerfectDayProgress(item: .habit, mark: done >= all.count ? .met : .missed,
                                   fraction: Double(done) / Double(all.count),
-                                  detail: "\(done)/\(all.count) 项")
+                                  detail: tr("\(done)/\(all.count) 项"))
     }
 
     /// 专注 on `date`.
     public static func focus(minutes: Int, goal: Int, hasTimer: Bool) -> PerfectDayProgress {
         guard hasTimer || minutes > 0 else {
-            return PerfectDayProgress(item: .focus, mark: .off, fraction: 0, detail: "没有放专注计时小组件")
+            return PerfectDayProgress(item: .focus, mark: .off, fraction: 0, detail: tr("没有放专注计时小组件"))
         }
         let goal = max(1, goal)
         return PerfectDayProgress(item: .focus, mark: minutes >= goal ? .met : .missed,
                                   fraction: min(1, Double(minutes) / Double(goal)),
-                                  detail: "\(minutes)/\(goal) 分钟")
+                                  detail: tr("\(minutes)/\(goal) 分钟"))
     }
 
     /// The three items on `date`, in order.
@@ -435,7 +435,7 @@ public enum PerfectDay {
 
     /// 周日 … 周六, rotated to start on `firstWeekday`.
     public static func weekdaySymbols(firstWeekday: Int) -> [String] {
-        let names = ["日", "一", "二", "三", "四", "五", "六"]
+        let names = [tr("日"), tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六")]
         let start = min(7, max(1, firstWeekday)) - 1
         return (0..<7).map { names[(start + $0) % 7] }
     }
@@ -483,28 +483,28 @@ public enum PerfectDay {
 
     /// The tile's line for today.
     public static func headline(_ tier: PerfectDayTier?) -> String {
-        tier?.title ?? "还没有竹叶"
+        tier?.title ?? tr("还没有竹叶")
     }
 
     /// The panel's line under the headline.
     public static func subline(_ tier: PerfectDayTier?) -> String {
-        tier.map { "小熊猫收到一片\($0.leafName)" } ?? "达标一项，小熊猫就能收到铜竹叶"
+        tier.map { tr("小熊猫收到一片\($0.leafName)") } ?? tr("达标一项，小熊猫就能收到铜竹叶")
     }
 
     /// 怎么算: the rule in words, for the panel's foot.
     public static func rules(focusGoal: Int) -> String {
-        "喝水达到当日目标；习惯当天全部完成；专注达到每日目标（\(max(1, focusGoal)) 分钟，在专注计时面板里设置）。"
-            + "三项全部达标是\(PerfectDayTier.gold.title)（\(PerfectDayTier.gold.leafName)），"
-            + "差一项是\(PerfectDayTier.silver.title)（\(PerfectDayTier.silver.leafName)），"
-            + "只达标一项是\(PerfectDayTier.bronze.title)（\(PerfectDayTier.bronze.leafName)）。"
-            + "没放喝水或专注计时小组件、或没设习惯时，那一项不计入：两项都达标算金竹叶，只达标一项算铜竹叶。"
-            + "每天的竹叶放进本月的竹篮，记录从放上这个小组件那天开始，按这台 Mac 的本地日历结算。"
+        tr("喝水达到当日目标；习惯当天全部完成；专注达到每日目标（\(max(1, focusGoal)) 分钟，在专注计时面板里设置）。")
+            + tr("三项全部达标是\(PerfectDayTier.gold.title)（\(PerfectDayTier.gold.leafName)），")
+            + tr("差一项是\(PerfectDayTier.silver.title)（\(PerfectDayTier.silver.leafName)），")
+            + tr("只达标一项是\(PerfectDayTier.bronze.title)（\(PerfectDayTier.bronze.leafName)）。")
+            + tr("没放喝水或专注计时小组件、或没设习惯时，那一项不计入：两项都达标算金竹叶，只达标一项算铜竹叶。")
+            + tr("每天的竹叶放进本月的竹篮，记录从放上这个小组件那天开始，按这台 Mac 的本地日历结算。")
     }
 
     /// "2026年10月".
     public static func monthTitle(_ month: Date, calendar: Calendar = PerfectDay.calendar) -> String {
         let c = calendar.dateComponents([.year, .month], from: month)
-        return "\(c.year ?? 0)年\(c.month ?? 0)月"
+        return tr("\(c.year ?? 0)年\(c.month ?? 0)月")
     }
 
     /// A believable month for the library and the screenshots: leaves on most

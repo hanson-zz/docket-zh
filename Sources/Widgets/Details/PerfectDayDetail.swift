@@ -48,10 +48,10 @@ struct PerfectDayDetail: View {
                     Divider().overlay(.white.opacity(0.1))
                     monthBar(shownMonth)
                     basketSection(all, month: shownMonth)
-                    section("月度竹叶频率") {
+                    section(tr("月度竹叶频率")) {
                         PerfectFrequencyStrip(days: PerfectDay.monthDays(all, month: shownMonth, today: context.now))
                     }
-                    section("日历视图") {
+                    section(tr("日历视图")) {
                         PerfectCalendarGrid(
                             weeks: PerfectDay.monthGrid(all, month: shownMonth, today: context.now,
                                                         firstWeekday: firstWeekday),
@@ -78,7 +78,7 @@ struct PerfectDayDetail: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(tier.map { "今天是\($0.title)" } ?? "今天还没有竹叶")
+                Text(tier.map { tr("今天是\($0.title)") } ?? tr("今天还没有竹叶"))
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -100,7 +100,7 @@ struct PerfectDayDetail: View {
                     Text(item.item.title)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white)
-                    Text(item.mark == .met ? "已达标" : item.detail)
+                    Text(item.mark == .met ? tr("已达标") : item.detail)
                         .font(.system(size: 9))
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
@@ -189,7 +189,7 @@ struct PerfectDayDetail: View {
                                               years: context.isPreview ? [:] : center.archive.festivalYears,
                                               today: context.now)
         let unlocked = statuses.filter(\.unlocked).count
-        return section("徽章 \(unlocked)/\(statuses.count)") {
+        return section(tr("徽章 \(unlocked)/\(statuses.count)")) {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(PerfectBadges.grouped(statuses)) { group in
                     VStack(alignment: .leading, spacing: 8) {
@@ -235,9 +235,9 @@ struct PerfectDayDetail: View {
     }
 
     private func earnedLine(_ status: PerfectBadgeStatus) -> String {
-        guard let key = status.earnedOn, let date = HabitTracker.date(fromKey: key) else { return "已解锁" }
+        guard let key = status.earnedOn, let date = HabitTracker.date(fromKey: key) else { return tr("已解锁") }
         let c = calendar.dateComponents([.month, .day], from: date)
-        return "\(c.month ?? 0)月\(c.day ?? 0)日解锁"
+        return tr("\(c.month ?? 0)月\(c.day ?? 0)日解锁")
     }
 
     // MARK: Sharing
@@ -248,7 +248,7 @@ struct PerfectDayDetail: View {
                 Button {
                     share(all, month: month)
                 } label: {
-                    Label(monthsBack == 0 ? "分享本月竹篮" : "分享这个月的竹篮", systemImage: "square.and.arrow.up")
+                    Label(monthsBack == 0 ? tr("分享本月竹篮") : tr("分享这个月的竹篮"), systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(hex: PerfectDay.bambooHex))
@@ -274,13 +274,13 @@ struct PerfectDayDetail: View {
     }
 
     private func fileName(_ month: Date) -> String {
-        "码头竹篮-\(PerfectDay.monthTitle(month)).png"
+        tr("码头竹篮-\(PerfectDay.monthTitle(month)).png")
     }
 
     private func share(_ all: [PerfectDayRecord], month: Date) {
-        guard let png = image(all, month: month)?.1 else { return say("图片生成失败") }
+        guard let png = image(all, month: month)?.1 else { return say(tr("图片生成失败")) }
         let url = FileManager.default.temporaryDirectory.appending(path: fileName(month))
-        do { try png.write(to: url, options: .atomic) } catch { return say("图片生成失败") }
+        do { try png.write(to: url, options: .atomic) } catch { return say(tr("图片生成失败")) }
         let picker = NSSharingServicePicker(items: [url])
         if let view = anchor.view, view.window != nil {
             picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
@@ -293,29 +293,29 @@ struct PerfectDayDetail: View {
     private func saveToDesktop(_ all: [PerfectDayRecord], month: Date) {
         guard let png = image(all, month: month)?.1,
               let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
-        else { return say("图片生成失败") }
+        else { return say(tr("图片生成失败")) }
         var url = desktop.appending(path: fileName(month))
         var n = 2
         while FileManager.default.fileExists(atPath: url.path) {
-            url = desktop.appending(path: "码头竹篮-\(PerfectDay.monthTitle(month)) \(n).png")
+            url = desktop.appending(path: tr("码头竹篮-\(PerfectDay.monthTitle(month)) \(n).png"))
             n += 1
         }
         do {
             try png.write(to: url, options: .atomic)
-            say("已存储到桌面：\(url.lastPathComponent)")
+            say(tr("已存储到桌面：\(url.lastPathComponent)"))
         } catch {
-            say("无法存储到桌面")
+            say(tr("无法存储到桌面"))
         }
     }
 
     private func copy(_ all: [PerfectDayRecord], month: Date) {
-        guard let rendered = image(all, month: month) else { return say("图片生成失败") }
+        guard let rendered = image(all, month: month) else { return say(tr("图片生成失败")) }
         let (picture, png) = rendered
         let board = NSPasteboard.general
         board.clearContents()
         board.writeObjects([picture])
         board.setData(png, forType: .png)
-        say("已拷贝图片")
+        say(tr("已拷贝图片"))
     }
 
     private func say(_ text: String) {
@@ -386,7 +386,7 @@ struct PerfectDayShareCard: View {
                         .font(.system(size: 13, weight: .semibold))
                         .tracking(1)
                         .foregroundStyle(.white.opacity(0.7))
-                    Text("\(PerfectDay.monthTitle(month))的竹篮")
+                    Text(tr("\(PerfectDay.monthTitle(month))的竹篮"))
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
@@ -414,7 +414,7 @@ struct PerfectDayShareCard: View {
                                 .foregroundStyle(Color(hex: tier.hexes.light))
                         }
                     }
-                    Text("小熊猫这个月收到 \(leaves.count) 片竹叶")
+                    Text(tr("小熊猫这个月收到 \(leaves.count) 片竹叶"))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }

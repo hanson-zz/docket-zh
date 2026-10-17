@@ -117,15 +117,15 @@ struct CalculatorDetail: View {
 
     private static func spoken(_ key: String) -> String {
         switch key {
-        case "C": "清除"
-        case "⌫": "删除"
-        case "÷": "除"
-        case "×": "乘"
-        case "−": "减"
-        case "+": "加"
-        case "=": "等于"
-        case "%": "百分号"
-        case ".": "小数点"
+        case "C": tr("清除")
+        case "⌫": tr("删除")
+        case "÷": tr("除")
+        case "×": tr("乘")
+        case "−": tr("减")
+        case "+": tr("加")
+        case "=": tr("等于")
+        case "%": tr("百分号")
+        case ".": tr("小数点")
         default: key
         }
     }

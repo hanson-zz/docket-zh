@@ -13,10 +13,10 @@ public enum WifiRingStyle: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .classic: "经典"
-        case .numeric: "数字"
-        case .dotted: "点状"
-        case .thin: "细线"
+        case .classic: tr("经典")
+        case .numeric: tr("数字")
+        case .dotted: tr("点状")
+        case .thin: tr("细线")
         }
     }
 
@@ -61,11 +61,11 @@ public enum WifiQuality {
 
     public static func label(rssi: Int) -> String {
         switch bars(rssi: rssi) {
-        case 4: "极好"
-        case 3: "良好"
-        case 2: "一般"
-        case 1: "较弱"
-        default: "很差"
+        case 4: tr("极好")
+        case 3: tr("良好")
+        case 2: tr("一般")
+        case 1: tr("较弱")
+        default: tr("很差")
         }
     }
 

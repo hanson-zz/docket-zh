@@ -215,7 +215,7 @@ struct FileRows: View {
 
     private func detail(_ file: ListedFile) -> String {
         var parts = [RelativeAge.caption(file.date, now: now)]
-        if file.isDirectory { parts.append("文件夹") }
+        if file.isDirectory { parts.append(tr("文件夹")) }
         else if let size = FileActions.size(file.size) { parts.append(size) }
         return parts.joined(separator: " · ")
     }

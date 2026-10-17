@@ -46,7 +46,7 @@ public struct WeeklyReport: Equatable, Sendable {
     public var best: WeeklyReportDay?
 
     public static let dayCount = 7
-    public static let weekdayNames = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    public static let weekdayNames = [tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六"), tr("周日")]
 
     public static func isMet(value: Double, goal: Double) -> Bool {
         goal > 0 && value >= goal
@@ -111,8 +111,8 @@ public extension WeeklyReport {
     /// "3 小时 20 分", "45 分", "2 小时": a total of focus minutes.
     static func duration(minutes: Int) -> String {
         let m = max(0, minutes)
-        guard m >= 60 else { return "\(m) 分" }
-        return m % 60 == 0 ? "\(m / 60) 小时" : "\(m / 60) 小时 \(m % 60) 分"
+        guard m >= 60 else { return tr("\(m) 分") }
+        return m % 60 == 0 ? tr("\(m / 60) 小时") : tr("\(m / 60) 小时 \(m % 60) 分")
     }
 
     /// Up to one decimal, without a trailing ".0": "6", "5.5".

@@ -38,8 +38,8 @@ public enum BrowserApp: String, CaseIterable, Sendable {
     /// because "enable the setting" on its own sends people hunting.
     var setupHint: String {
         isSafari
-            ? "Safari 浏览器 ▸ 设置 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript"
-            : "\(displayName) ▸ 显示 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript"
+            ? tr("Safari 浏览器 ▸ 设置 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript")
+            : tr("\(displayName) ▸ 显示 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript")
     }
 }
 

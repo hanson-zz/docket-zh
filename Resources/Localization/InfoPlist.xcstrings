@@ -1,0 +1,244 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头"
+          }
+        }
+      }
+    },
+    "NSAppleEventsUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling controls music playback from shelf widgets, reads the media playing in browser tabs, reads the Mail inbox unread count for the Mail widget, and empties the Trash and ejects disks through Finder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，并通过访达清空废纸篓、推出磁盘。"
+          }
+        }
+      }
+    },
+    "NSAudioCaptureUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you change or mute an app's volume in the App Volume widget, Dockling taps that app's sound and plays it back at your level. Nothing is recorded or saved."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在你调节“应用音量”小组件中某个应用的音量或将其静音时，接入该应用的声音并按你设置的音量重新播放。声音不会被录制或保存。"
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling shows your upcoming events in shelf widgets."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在程序坞小组件中显示你即将到来的日程。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling turns on the camera when you click Mirror in Quick Toggles, showing the picture in a small window. Nothing is recorded or saved, and the camera stops when you close the window."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在你点“快速开关”里的“镜子”时打开摄像头，在小窗里显示画面方便照一照。画面不会被录制或保存，关掉小窗就停止使用摄像头。"
+          }
+        }
+      }
+    },
+    "NSDesktopFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads your Desktop folder to show screenshots in the Screenshots widget."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会读取“桌面”文件夹，在“最近截图”小组件中显示你的截图。"
+          }
+        }
+      }
+    },
+    "NSDocumentsFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads the folder in Documents you chose for Photo Frame or screenshots to show its pictures."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会读取你为“相册”或截图选择的“文稿”中的文件夹，以显示其中的图片。"
+          }
+        }
+      }
+    },
+    "NSDownloadsFolderUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads your Downloads folder to show recent downloads in the Downloads widget."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会读取“下载”文件夹，在“下载”小组件中显示最近下载的文件。"
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original work © 2026 Naman Parashar (MIT). Dockling additions © 2026 Hanson, all rights reserved."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原作 © 2026 Naman Parashar（MIT）。码头新增部分 © 2026 Hanson，保留所有权利。"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling uses your location for the Weather widget."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会使用你的位置来显示天气小组件。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling uses the microphone to record voice memos when you press the Recorder widget's button. Recordings are saved only in the folder you choose."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。"
+          }
+        }
+      }
+    },
+    "NSNetworkVolumesUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads the folder on a network volume you chose for Photo Frame to show its pictures."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会读取你为“相册”选择的网络卷宗上的文件夹，以显示其中的图片。"
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling shows your reminders in shelf widgets and can mark them as done."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在程序坞小组件中显示你的提醒事项，并可将其标记为已完成。"
+          }
+        }
+      }
+    },
+    "NSRemovableVolumesUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads the folder on an external disk you chose for Photo Frame to show its pictures."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会读取你为“相册”选择的外置磁盘上的文件夹，以显示其中的图片。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

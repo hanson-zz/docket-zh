@@ -51,28 +51,28 @@ struct ClipboardDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 10) {
                 if let editing {
-                    PanelHeader(symbol: "pencil", title: "编辑",
-                                subtitle: editing.isPin ? "保存后仍在星标里" : "保存后回到历史，可再次拷贝")
+                    PanelHeader(symbol: "pencil", title: tr("编辑"),
+                                subtitle: editing.isPin ? tr("保存后仍在星标里") : tr("保存后回到历史，可再次拷贝"))
                     editor
                     HStack(spacing: 8) {
-                        PanelButton(title: "取消", symbol: "xmark") { endEditing() }
-                        PanelButton(title: "保存", symbol: "checkmark") { saveEdit(copy: false) }
+                        PanelButton(title: tr("取消"), symbol: "xmark") { endEditing() }
+                        PanelButton(title: tr("保存"), symbol: "checkmark") { saveEdit(copy: false) }
                             .disabled(draftIsEmpty)
-                        PanelButton(title: "保存并拷贝", symbol: "doc.on.doc", prominent: true) {
+                        PanelButton(title: tr("保存并拷贝"), symbol: "doc.on.doc", prominent: true) {
                             saveEdit(copy: true)
                         }
                         .disabled(draftIsEmpty)
                     }
                 } else {
-                    PanelHeader(symbol: "list.clipboard", title: "剪贴板",
-                                subtitle: pastes ? "点按即可粘贴到前台应用" : "点按即可重新拷贝 · 星标保留常用文本")
+                    PanelHeader(symbol: "list.clipboard", title: tr("剪贴板"),
+                                subtitle: pastes ? tr("点按即可粘贴到前台应用") : tr("点按即可重新拷贝 · 星标保留常用文本"))
                     HStack(spacing: 6) {
                         searchField
                         layoutToggle
                     }
                     if shelfLayout { shelf } else { list }
                     HStack(spacing: 8) {
-                        PanelButton(title: "清除历史", symbol: "trash") {
+                        PanelButton(title: tr("清除历史"), symbol: "trash") {
                             guard !context.isPreview else { return }
                             history.clear()
                         }
@@ -108,7 +108,7 @@ struct ClipboardDetail: View {
                 .disabled(context.isPreview)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             HStack(spacing: 6) {
-                Text(draftIsEmpty ? "内容不能为空" : "\(draft.count) 字")
+                Text(draftIsEmpty ? tr("内容不能为空") : tr("\(draft.count) 字"))
                     .font(WidgetStyle.caption(10).monospacedDigit())
                     .foregroundStyle(.white.opacity(draft.count > draftLimit || draftIsEmpty ? 0.9 : 0.5))
                 Spacer(minLength: 0)
@@ -210,7 +210,7 @@ struct ClipboardDetail: View {
 
     private var emptyNote: some View {
         PanelNote(symbol: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass",
-                  text: query.isEmpty ? "拷贝的文本和图片会显示在这里。点星标可以把常用文本留下来。" : "没有找到“\(query)”。")
+                  text: query.isEmpty ? tr("拷贝的文本和图片会显示在这里。点星标可以把常用文本留下来。") : tr("没有找到“\(query)”。"))
             .frame(height: 248)
     }
 
@@ -224,11 +224,11 @@ struct ClipboardDetail: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 4) {
                     if !shownPins.isEmpty {
-                        sectionLabel("星标")
+                        sectionLabel(tr("星标"))
                         ForEach(shownPins, id: \.self) { pinRow($0) }
                     }
                     if !shownEntries.isEmpty {
-                        if !shownPins.isEmpty { sectionLabel("最近") }
+                        if !shownPins.isEmpty { sectionLabel(tr("最近")) }
                         ForEach(shownEntries) { entryRow($0) }
                     }
                 }
@@ -257,7 +257,7 @@ struct ClipboardDetail: View {
         } title: {
             text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
         } caption: {
-            "星标"
+            tr("星标")
         } star: {
             editButton(.pin(text), text: text)
             starButton(text, pinned: true)
@@ -321,8 +321,8 @@ struct ClipboardDetail: View {
     /// 列表和货架之间切换的两个小图标。
     private var layoutToggle: some View {
         HStack(spacing: 2) {
-            layoutButton(symbol: "list.bullet", on: !shelfLayout, help: "列表") { shelfLayout = false }
-            layoutButton(symbol: "square.grid.3x2", on: shelfLayout, help: "货架") { shelfLayout = true }
+            layoutButton(symbol: "list.bullet", on: !shelfLayout, help: tr("列表")) { shelfLayout = false }
+            layoutButton(symbol: "square.grid.3x2", on: shelfLayout, help: tr("货架")) { shelfLayout = true }
         }
         .padding(2)
         .glassPane(cornerRadius: 9)
@@ -358,13 +358,13 @@ struct ClipboardDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     if !shownPins.isEmpty {
-                        sectionLabel("星标")
+                        sectionLabel(tr("星标"))
                         shelfRows(shownPins.map { "pin:" + $0 }) { index in
                             pinCard(shownPins[index], index: index)
                         }
                     }
                     if !shownEntries.isEmpty {
-                        sectionLabel("最近")
+                        sectionLabel(tr("最近"))
                         shelfRows(shownEntries.map(\.id.uuidString)) { index in
                             entryCard(shownEntries[index], index: index)
                         }
@@ -405,9 +405,9 @@ struct ClipboardDetail: View {
     }
 
     private func pinCard(_ text: String, index: Int) -> some View {
-        ShelfClipCard(title: ClipboardShelf.excerpt(text), caption: "星标",
+        ShelfClipCard(title: ClipboardShelf.excerpt(text), caption: tr("星标"),
                       tilt: ClipboardShelf.tilt(index: index),
-                      flashed: copied == "pin:" + text, flashText: pastes ? "已粘贴" : "已拷贝") {
+                      flashed: copied == "pin:" + text, flashText: pastes ? tr("已粘贴") : tr("已拷贝")) {
             Image(systemName: "text.quote")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.8))
@@ -426,7 +426,7 @@ struct ClipboardDetail: View {
         return ShelfClipCard(title: ClipboardShelf.excerpt(entry.preview),
                              caption: RelativeAge.caption(entry.date, now: context.now),
                              tilt: ClipboardShelf.tilt(index: index),
-                             flashed: copied == entry.id.uuidString, flashText: pastes ? "已粘贴" : "已拷贝") {
+                             flashed: copied == entry.id.uuidString, flashText: pastes ? tr("已粘贴") : tr("已拷贝")) {
             thumbnail(entry)
         } accessory: {
             if let text { starButton(text, pinned: false) }
@@ -452,7 +452,7 @@ struct ClipboardDetail: View {
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                Text(copied == id ? (pastes ? "已粘贴" : "已拷贝") : caption())
+                Text(copied == id ? (pastes ? tr("已粘贴") : tr("已拷贝")) : caption())
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -478,7 +478,7 @@ struct ClipboardDetail: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help(pinned ? "取消星标" : "加星标，退出后也保留")
+        .help(pinned ? tr("取消星标") : tr("加星标，退出后也保留"))
     }
 
     @ViewBuilder

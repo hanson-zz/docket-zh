@@ -38,6 +38,7 @@ public struct CodexLimitWindow: Codable, Equatable, Sendable, Identifiable {
     public var shortLabel: String {
         label.replacingOccurrences(of: "额度", with: "")
             .replacingOccurrences(of: "每", with: "")
+            .replacingOccurrences(of: " limit", with: "")
             .trimmingCharacters(in: .whitespaces)
     }
 }
@@ -180,13 +181,13 @@ public enum CodexUsageParser {
                        group: "Spark", now: now, to: &result)
             }
             append(root["code_review_rate_limit"] as? [String: Any],
-                   ids: ("code-review", "code-review-secondary"), group: "代码审查", now: now, to: &result)
+                   ids: ("code-review", "code-review-secondary"), group: tr("代码审查"), now: now, to: &result)
         }
         // A Business or Team seat has no rolling windows, only a credit cap.
         if result.isEmpty,
            let credit = (root["spend_control"] as? [String: Any])?["individual_limit"] as? [String: Any],
            let percent = number(credit["used_percent"]) {
-            result.append(CodexLimitWindow(id: "credits", label: "额度上限", usedFraction: percent / 100,
+            result.append(CodexLimitWindow(id: "credits", label: tr("额度上限"), usedFraction: percent / 100,
                                            resetsAt: number(credit["reset_at"]).map { Date(timeIntervalSince1970: $0) }))
         }
         guard !result.isEmpty else { throw CodexUsageError.nothingMetered }
@@ -222,15 +223,15 @@ public enum CodexUsageParser {
     /// The label follows the length the server sent, not the plan we assume:
     /// a free account has reported a 30-day window where Plus has 5 hours.
     public static func label(windowSeconds: Double, fallback: String) -> String {
-        guard windowSeconds > 0 else { return fallback == "primary" ? "当前会话" : "较长窗口" }
+        guard windowSeconds > 0 else { return fallback == "primary" ? tr("当前会话") : tr("较长窗口") }
         let minutes = windowSeconds / 60
-        if minutes < 60 { return "\(Int(minutes)) 分钟额度" }
-        if minutes < 60 * 24 { return "\(Int((minutes / 60).rounded())) 小时额度" }
+        if minutes < 60 { return tr("\(Int(minutes)) 分钟额度") }
+        if minutes < 60 * 24 { return tr("\(Int((minutes / 60).rounded())) 小时额度") }
         let days = Int((minutes / (60 * 24)).rounded())
         switch days {
-        case 7: return "每周额度"
-        case 28...31: return "每月额度"
-        default: return "\(days) 天额度"
+        case 7: return tr("每周额度")
+        case 28...31: return tr("每月额度")
+        default: return tr("\(days) 天额度")
         }
     }
 
@@ -298,10 +299,10 @@ public enum CodexActivity: String, Codable, Equatable, Sendable {
 
     public var title: String {
         switch self {
-        case .idle: "空闲"
-        case .working: "正在工作"
-        case .waiting: "等你确认"
-        case .done: "已完成"
+        case .idle: tr("空闲")
+        case .working: tr("正在工作")
+        case .waiting: tr("等你确认")
+        case .done: tr("已完成")
         }
     }
 }
@@ -403,18 +404,18 @@ public enum CodexPace {
     /// "2 小时 14 分", "3 天 4 小时", "不到 1 分钟".
     public static func duration(_ seconds: TimeInterval) -> String {
         let s = max(0, Int(seconds))
-        if s < 60 { return "不到 1 分钟" }
+        if s < 60 { return tr("不到 1 分钟") }
         let minutes = s / 60, hours = minutes / 60, days = hours / 24
-        if days > 0 { return hours % 24 > 0 ? "\(days) 天 \(hours % 24) 小时" : "\(days) 天" }
-        if hours > 0 { return minutes % 60 > 0 ? "\(hours) 小时 \(minutes % 60) 分" : "\(hours) 小时" }
-        return "\(minutes) 分钟"
+        if days > 0 { return hours % 24 > 0 ? tr("\(days) 天 \(hours % 24) 小时") : tr("\(days) 天") }
+        if hours > 0 { return minutes % 60 > 0 ? tr("\(hours) 小时 \(minutes % 60) 分") : tr("\(hours) 小时") }
+        return tr("\(minutes) 分钟")
     }
 
     /// "2:14" for the tile, where space is short. Days past 24 hours.
     public static func compact(_ seconds: TimeInterval) -> String {
         let s = max(0, Int(seconds))
         let hours = s / 3600, minutes = (s % 3600) / 60
-        if hours >= 24 { return "\(hours / 24) 天" }
+        if hours >= 24 { return tr("\(hours / 24) 天") }
         return String(format: "%d:%02d", hours, minutes)
     }
 

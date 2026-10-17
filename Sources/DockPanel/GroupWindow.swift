@@ -429,6 +429,6 @@ private struct GroupSheetItem: View {
             return url.deletingPathExtension().lastPathComponent
         }
         if case .link(_, _, let title) = item { return title }
-        return "项目"
+        return tr("项目")
     }
 }

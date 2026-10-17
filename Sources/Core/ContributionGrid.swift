@@ -91,9 +91,9 @@ public enum ContributionGrid {
     /// 读屏和悬停提示用的一句话。
     public static func describe(_ cell: Cell, unit: String) -> String {
         let c = calendar.dateComponents([.month, .day], from: cell.date)
-        let day = "\(c.month ?? 0) 月 \(c.day ?? 0) 日"
+        let day = tr("\(c.month ?? 0) 月 \(c.day ?? 0) 日")
         if cell.isFuture { return day }
-        return cell.count == 0 ? "\(day)，没有记录" : "\(day)，\(cell.count) \(unit)"
+        return cell.count == 0 ? tr("\(day)，没有记录") : "\(day)，\(cell.count) \(unit)"
     }
 
     static func clamp(_ level: Int) -> Int { min(max(level, 0), maxLevel) }

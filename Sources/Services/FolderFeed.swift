@@ -170,7 +170,7 @@ final class FolderFeed {
         let fm = FileManager.default
         var isDirectory: ObjCBool = false
         guard fm.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            return .failure(Failure(text: "找不到文件夹“\(folder.lastPathComponent)”。"))
+            return .failure(Failure(text: tr("找不到文件夹“\(folder.lastPathComponent)”。")))
         }
         switch source {
         case .pictures:
@@ -208,7 +208,7 @@ final class FolderFeed {
     }
 
     nonisolated private static func denied(_ folder: URL) -> String {
-        "无法读取“\(folder.lastPathComponent)”文件夹。请在 系统设置 → 隐私与安全性 → 文件与文件夹 中允许码头访问。"
+        tr("无法读取“\(folder.lastPathComponent)”文件夹。请在 系统设置 → 隐私与安全性 → 文件与文件夹 中允许码头访问。")
     }
 
     nonisolated private static func describe(_ url: URL) -> ListedFile? {

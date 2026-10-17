@@ -40,9 +40,9 @@ struct ShortcutDetail: View {
                 outcome
                 chooser
                 HStack(spacing: 8) {
-                    button("打开快捷指令", fill: .white.opacity(0.24), label: .white, action: openShortcuts)
+                    button(tr("打开快捷指令"), fill: .white.opacity(0.24), label: .white, action: openShortcuts)
                     if !chosen.isEmpty {
-                        button("清除", fill: .white.opacity(0.14), label: .white) {
+                        button(tr("清除"), fill: .white.opacity(0.14), label: .white) {
                             WidgetWriter.write(instance) { $0.set("name", .string("")) }
                         }
                     }
@@ -59,11 +59,11 @@ struct ShortcutDetail: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(running ? "正在运行" : chosen.isEmpty ? "请在下方选择" : "就绪")
+                Text(running ? tr("正在运行") : chosen.isEmpty ? tr("请在下方选择") : tr("就绪"))
                     .font(.system(size: 9, weight: .semibold))
                     .tracking(0.6)
                     .foregroundStyle(.white.opacity(0.6))
-                Text(chosen.isEmpty ? "未选择快捷指令" : chosen)
+                Text(chosen.isEmpty ? tr("未选择快捷指令") : chosen)
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
                     .lineLimit(2)
@@ -83,7 +83,7 @@ struct ShortcutDetail: View {
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(running ? "停止" : "运行")
+                .accessibilityLabel(running ? tr("停止") : tr("运行"))
             }
         }
     }
@@ -94,9 +94,9 @@ struct ShortcutDetail: View {
         case .failed(let name, let why) where name == chosen:
             note(why, tint: Self.red)
         case .cancelled(let name) where name == chosen:
-            note("已停止。", tint: nil)
+            note(tr("已停止。"), tint: nil)
         case .ok(let name) where name == chosen:
-            note("已完成。", tint: nil)
+            note(tr("已完成。"), tint: nil)
         default:
             EmptyView()
         }
@@ -106,16 +106,16 @@ struct ShortcutDetail: View {
         if let error = service.loadError {
             note(error, tint: Self.red)
         } else if service.loadedAt == nil {
-            note("正在读取你的快捷指令。", tint: nil)
+            note(tr("正在读取你的快捷指令。"), tint: nil)
         } else if service.names.isEmpty {
-            note("你还没有快捷指令。在“快捷指令”App 中创建一个，它就会显示在这里。", tint: nil)
+            note(tr("你还没有快捷指令。在“快捷指令”App 中创建一个，它就会显示在这里。"), tint: nil)
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(service.names.prefix(Self.visibleRows), id: \.self) { name in
                     row(name)
                 }
                 if service.names.count > Self.visibleRows {
-                    Text("“快捷指令”中还有 \(service.names.count - Self.visibleRows) 个")
+                    Text(tr("“快捷指令”中还有 \(service.names.count - Self.visibleRows) 个"))
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(.white.opacity(0.6))
                 }

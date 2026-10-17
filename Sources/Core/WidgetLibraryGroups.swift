@@ -67,7 +67,7 @@ public enum WidgetLibraryGroups {
 
     /// 文件夹的显示名：用户主目录叫“个人”，其他照系统给的名字。
     public static func folderTitle(path: String, systemName: String, homePath: String) -> String {
-        standardized(path) == standardized(homePath) ? "个人" : systemName
+        standardized(path) == standardized(homePath) ? tr("个人") : systemName
     }
 
     private static func standardized(_ path: String) -> String {

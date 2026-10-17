@@ -37,7 +37,7 @@ struct ReconnectStateView: View {
             PlugArt(phase: phase, reduceMotion: reduceMotion)
                 .frame(width: 136, height: 46)
             VStack(spacing: 3) {
-                Text(phase == .reconnecting ? "正在重新连接…" : title)
+                Text(phase == .reconnecting ? tr("正在重新连接…") : title)
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(WidgetStyle.primary)
                 if let detail {
@@ -49,7 +49,7 @@ struct ReconnectStateView: View {
                 }
             }
             if retry != nil {
-                PanelButton(title: "重新连接", symbol: "powerplug.fill", prominent: true) { press() }
+                PanelButton(title: tr("重新连接"), symbol: "powerplug.fill", prominent: true) { press() }
                     .frame(maxWidth: 160)
                     .disabled(phase == .reconnecting)
                     .opacity(phase == .reconnecting ? 0.5 : 1)
@@ -68,7 +68,7 @@ struct ReconnectStateView: View {
                 .scaleEffect(0.5)
                 .frame(width: 68, height: 23)
             VStack(alignment: .leading, spacing: 1) {
-                Text(phase == .reconnecting ? "正在重新连接…" : title)
+                Text(phase == .reconnecting ? tr("正在重新连接…") : title)
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(WidgetStyle.primary)
                 if let detail {

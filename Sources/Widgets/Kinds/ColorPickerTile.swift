@@ -21,7 +21,7 @@ struct ColorPickerTile: View {
             if column {
                 VStack(spacing: 6) {
                     grid(cell: 18)
-                    Text(recent.first?.hex ?? "取色")
+                    Text(recent.first?.hex ?? tr("取色"))
                         .font(.system(size: 10, weight: .semibold).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -30,8 +30,8 @@ struct ColorPickerTile: View {
             } else {
                 HStack(spacing: 10) {
                     grid(cell: 20)
-                    TileReading(value: recent.first?.hex ?? "取色",
-                                caption: "取色器", valueSize: 14)
+                    TileReading(value: recent.first?.hex ?? tr("取色"),
+                                caption: tr("取色器"), valueSize: 14)
                     Spacer(minLength: 0)
                 }
             }
@@ -65,7 +65,7 @@ struct ColorPickerTile: View {
         }
         .buttonStyle(.plain)
         .disabled(color == nil)
-        .accessibilityLabel(color.map { "拷贝 \($0.hex)" } ?? "空")
+        .accessibilityLabel(color.map { tr("拷贝 \($0.hex)") } ?? tr("空"))
     }
 
     private func dropper(cell: CGFloat) -> some View {

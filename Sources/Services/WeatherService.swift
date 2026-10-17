@@ -44,11 +44,11 @@ final class WeatherService {
     static let shared = WeatherService()
 
     /// CC BY 4.0 requires this to be visible in the UI.
-    static let attribution = "天气数据来自 MET Norway（挪威气象研究所）"
+    static let attribution = tr("天气数据来自 MET Norway（挪威气象研究所）")
 
     /// The daily forecasts and the multi-city layout come from Open-Meteo,
     /// whose data is CC BY 4.0 as well. Shown beside `attribution`.
-    static let forecastAttribution = "部分天气数据来自 Open-Meteo"
+    static let forecastAttribution = tr("部分天气数据来自 Open-Meteo")
 
     /// MET blocks requests without a real identifier. Replace the contact
     /// with the shipping app's own before release.
@@ -224,13 +224,15 @@ final class WeatherService {
 
     // 中文本地化分支：天气状况名称改为简体中文。键是 MET 的符号代码，保持不变。
     private static let conditionNames: [String: String] = [
-        "clearsky": "晴", "fair": "少云", "partlycloudy": "多云", "cloudy": "阴",
-        "fog": "雾", "rain": "雨", "rainshowers": "阵雨", "drizzle": "毛毛雨",
-        "sleet": "雨夹雪", "sleetshowers": "雨夹雪", "snow": "雪", "snowshowers": "阵雪",
+        "clearsky": tr("晴"), "fair": tr("少云"), "partlycloudy": tr("多云"), "cloudy": tr("阴"),
+        "fog": tr("雾"), "rain": tr("雨"), "rainshowers": tr("阵雨"), "drizzle": tr("毛毛雨"),
+        "sleet": tr("雨夹雪"), "sleetshowers": tr("雨夹雪"), "snow": tr("雪"), "snowshowers": tr("阵雪"),
     ]
 
     /// MET 的强度前缀（light / heavy）对应的中文前缀。
-    private static let intensityNames: [String: String] = ["light": "小", "heavy": "大"]
+    private static let intensityNames: [String: String] = [
+        "light": tr("小", context: "weather"), "heavy": tr("大", context: "weather"),
+    ]
 
     static func condition(for code: String) -> String {
         var base = String(code.split(separator: "_").first ?? "")
@@ -241,7 +243,7 @@ final class WeatherService {
         }
         var suffix = ""
         if base.hasSuffix("andthunder") {
-            suffix = "伴有雷暴"
+            suffix = tr("伴有雷暴")
             base.removeLast("andthunder".count)
         }
         return prefix + (conditionNames[base] ?? base.capitalized) + suffix

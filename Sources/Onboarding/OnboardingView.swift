@@ -124,11 +124,11 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         switch step {
-        case .welcome: "开始"
-        case .permissions: "继续"
-        case .building: progress >= 1 ? "继续" : "正在布置…"
-        case .done: "开始使用"
-        default: "继续"
+        case .welcome: tr("开始")
+        case .permissions: tr("继续")
+        case .building: progress >= 1 ? tr("继续") : tr("正在布置…")
+        case .done: tr("开始使用")
+        default: tr("继续")
         }
     }
 
@@ -201,7 +201,7 @@ struct OnboardingView: View {
 
     private var positionStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            StepTitle(title: "扩展栏放在哪里？", subtitle: "选好后立即生效，以后可以在“设置 ▸ 扩展栏”里修改。")
+            StepTitle(title: tr("扩展栏放在哪里？"), subtitle: tr("选好后立即生效，以后可以在“设置 ▸ 扩展栏”里修改。"))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
                       spacing: 14) {
                 ForEach(DockPosition.allCases, id: \.self) { edge in
@@ -219,7 +219,7 @@ struct OnboardingView: View {
 
     private var usesStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            StepTitle(title: "你想用码头做什么？", subtitle: "可以多选，我们会为每一类挑两三个小组件。")
+            StepTitle(title: tr("你想用码头做什么？"), subtitle: tr("可以多选，我们会为每一类挑两三个小组件。"))
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(OnboardingUse.allCases, id: \.self) { use in
@@ -239,10 +239,10 @@ struct OnboardingView: View {
     private var permissionsStep: some View {
         let needed = Onboarding.permissions(for: previewKinds)
         return VStack(alignment: .leading, spacing: 18) {
-            StepTitle(title: "授予需要的权限",
+            StepTitle(title: tr("授予需要的权限"),
                       subtitle: needed.isEmpty
-                        ? "你选的小组件不需要额外权限，直接继续就好。"
-                        : "只列出你选的小组件真正用得到的权限。现在不授权也没关系，可以跳过，以后用到时再开。")
+                        ? tr("你选的小组件不需要额外权限，直接继续就好。")
+                        : tr("只列出你选的小组件真正用得到的权限。现在不授权也没关系，可以跳过，以后用到时再开。"))
             if needed.isEmpty {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.shield.fill")
@@ -372,9 +372,9 @@ struct OnboardingView: View {
     private var doneSummary: String {
         let names = added.compactMap { WidgetKind(rawValue: $0).flatMap { WidgetCatalog.entry($0)?.name } }
         if names.isEmpty {
-            return "扩展栏已经放在屏幕\(position.displayName)。你选的小组件都已经在布局里了，没有重复添加。"
+            return tr("扩展栏已经放在屏幕\(position.displayName)。你选的小组件都已经在布局里了，没有重复添加。")
         }
-        return "扩展栏已经放在屏幕\(position.displayName)，并添加了 \(names.count) 个小组件：\(names.joined(separator: "、"))。"
+        return tr("扩展栏已经放在屏幕\(position.displayName)，并添加了 \(names.count) 个小组件：\(names.joined(separator: "、"))。")
     }
 }
 
@@ -411,7 +411,7 @@ private struct SegmentedProgress: View {
         }
         .animation(.snappy(duration: 0.3), value: filled)
         .accessibilityElement()
-        .accessibilityLabel("第 \(filled) 步，共 \(total) 步")
+        .accessibilityLabel(tr("第 \(filled) 步，共 \(total) 步"))
     }
 }
 
@@ -446,7 +446,7 @@ private struct PositionCard: View {
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("扩展栏放在\(edge.displayName)")
+        .accessibilityLabel(tr("扩展栏放在\(edge.displayName)"))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -612,7 +612,7 @@ private struct DockingView: View {
         .frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
         .clipped()
         .accessibilityElement()
-        .accessibilityLabel("正在把 \(kinds.count) 个小组件停进扩展栏，已靠岸 \(Onboarding.dockedCount(count: kinds.count, progress: progress)) 个")
+        .accessibilityLabel(tr("正在把 \(kinds.count) 个小组件停进扩展栏，已靠岸 \(Onboarding.dockedCount(count: kinds.count, progress: progress)) 个"))
     }
 
     /// 栈桥和每个泊位的位置。
@@ -700,9 +700,9 @@ private struct PermissionRow: View {
                 .frame(width: 36, height: 36)
                 .background(Color.accentColor, in: Circle())
             VStack(alignment: .leading, spacing: 3) {
-                Text(permission)
+                Text(trKey(permission))
                     .font(.system(size: 14, weight: .semibold))
-                Text(usedBy.isEmpty ? status.caption : "\(usedBy)用到 · \(status.caption)")
+                Text(usedBy.isEmpty ? status.caption : tr("\(usedBy)用到 · \(status.caption)"))
                     .font(.system(size: 12))
                     .foregroundStyle(status == .granted ? Color.green : .secondary)
                     .lineLimit(2)
@@ -739,10 +739,10 @@ enum PermissionStatus: Equatable {
 
     var caption: String {
         switch self {
-        case .granted: "已授权"
-        case .notDetermined: "尚未授权"
-        case .denied: "已拒绝，需要在“系统设置”里打开"
-        case .unknown: "需要在“系统设置”里打开，或首次使用时由系统询问"
+        case .granted: tr("已授权")
+        case .notDetermined: tr("尚未授权")
+        case .denied: tr("已拒绝，需要在“系统设置”里打开")
+        case .unknown: tr("需要在“系统设置”里打开，或首次使用时由系统询问")
         }
     }
 }

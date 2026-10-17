@@ -96,9 +96,9 @@ public enum GitHubWatch {
 
         public var message: String {
             switch self {
-            case .invalid: "请输入“用户/仓库”或 GitHub 链接"
-            case .duplicate: "这个项目已经在列表中"
-            case .full: "最多关注 \(GitHubWatch.maxRepos) 个项目"
+            case .invalid: tr("请输入“用户/仓库”或 GitHub 链接")
+            case .duplicate: tr("这个项目已经在列表中")
+            case .full: tr("最多关注 \(GitHubWatch.maxRepos) 个项目")
             }
         }
     }
@@ -193,7 +193,7 @@ public enum GitHubWatch {
     /// "docket-zh" for one project, "3 个项目" for several.
     public static func tileTitle(_ repos: [String]) -> String {
         guard repos.count != 1 else { return RepoSlug.parse(repos[0])?.repo ?? repos[0] }
-        return "\(repos.count) 个项目"
+        return tr("\(repos.count) 个项目")
     }
 
     /// The red badge: nothing at zero, "99+" past ninety-nine.
@@ -220,9 +220,9 @@ public struct GitHubFeedItem: Equatable, Hashable, Sendable, Identifiable {
 
         public var title: String {
             switch self {
-            case .issue: "议题"
-            case .pull: "拉取请求"
-            case .comment: "评论"
+            case .issue: tr("议题")
+            case .pull: tr("拉取请求")
+            case .comment: tr("评论")
             }
         }
     }
@@ -336,13 +336,13 @@ public struct GitHubFeedback: Equatable, Sendable {
     /// One line for the panel: "2 个议题 · 3 条评论 · 5 个星标".
     public var summary: String {
         var parts: [String] = []
-        if issues > 0 { parts.append("\(issues) 个议题") }
-        if pulls > 0 { parts.append("\(pulls) 个拉取请求") }
-        if comments > 0 { parts.append("\(comments) 条评论") }
-        if stars > 0 { parts.append("\(stars) 个星标") }
-        if forks > 0 { parts.append("\(forks) 个复刻") }
-        if downloads > 0 { parts.append("\(downloads) 次下载") }
-        return parts.isEmpty ? "没有新反馈" : parts.joined(separator: " · ")
+        if issues > 0 { parts.append(tr("\(issues) 个议题")) }
+        if pulls > 0 { parts.append(tr("\(pulls) 个拉取请求")) }
+        if comments > 0 { parts.append(tr("\(comments) 条评论")) }
+        if stars > 0 { parts.append(tr("\(stars) 个星标")) }
+        if forks > 0 { parts.append(tr("\(forks) 个复刻")) }
+        if downloads > 0 { parts.append(tr("\(downloads) 次下载")) }
+        return parts.isEmpty ? tr("没有新反馈") : parts.joined(separator: " · ")
     }
 }
 
@@ -411,9 +411,9 @@ public enum GitHubFeed {
         guard let first = items.first else { return nil }
         if items.count == 1 {
             let what: String = switch first.kind {
-            case .issue: "新议题"
-            case .pull: "新拉取请求"
-            case .comment: "新评论"
+            case .issue: tr("新议题")
+            case .pull: tr("新拉取请求")
+            case .comment: tr("新评论")
             }
             return ("\(repo) · \(what)", "\(first.author)：\(first.title)")
         }
@@ -421,11 +421,11 @@ public enum GitHubFeed {
         let pulls = items.filter { $0.kind == .pull }.count
         let comments = items.filter { $0.kind == .comment }.count
         var parts: [String] = []
-        if issues > 0 { parts.append("\(issues) 个议题") }
-        if pulls > 0 { parts.append("\(pulls) 个拉取请求") }
-        if comments > 0 { parts.append("\(comments) 条评论") }
-        return ("\(repo) 有 \(items.count) 条新反馈",
-                "新增 " + parts.joined(separator: "、") + "。最新：\(first.title)")
+        if issues > 0 { parts.append(tr("\(issues) 个议题")) }
+        if pulls > 0 { parts.append(tr("\(pulls) 个拉取请求")) }
+        if comments > 0 { parts.append(tr("\(comments) 条评论")) }
+        return (tr("\(repo) 有 \(items.count) 条新反馈"),
+                tr("新增 ") + parts.joined(separator: "、") + tr("。最新：\(first.title)"))
     }
 
     // MARK: Relative time
@@ -434,13 +434,13 @@ public enum GitHubFeed {
     public static func relativeText(_ date: Date, now: Date) -> String {
         let seconds = now.timeIntervalSince(date)
         switch seconds {
-        case ..<60: return "刚刚"
-        case ..<3600: return "\(Int(seconds / 60)) 分钟前"
-        case ..<86_400: return "\(Int(seconds / 3600)) 小时前"
-        case ..<(86_400 * 2): return "昨天"
-        case ..<(86_400 * 30): return "\(Int(seconds / 86_400)) 天前"
-        case ..<(86_400 * 365): return "\(Int(seconds / (86_400 * 30))) 个月前"
-        default: return "\(Int(seconds / (86_400 * 365))) 年前"
+        case ..<60: return tr("刚刚")
+        case ..<3600: return tr("\(Int(seconds / 60)) 分钟前")
+        case ..<86_400: return tr("\(Int(seconds / 3600)) 小时前")
+        case ..<(86_400 * 2): return tr("昨天")
+        case ..<(86_400 * 30): return tr("\(Int(seconds / 86_400)) 天前")
+        case ..<(86_400 * 365): return tr("\(Int(seconds / (86_400 * 30))) 个月前")
+        default: return tr("\(Int(seconds / (86_400 * 365))) 年前")
         }
     }
 
@@ -562,6 +562,6 @@ public enum GitHubRateLimit {
     /// "请求太频繁，5 分钟后重试", rounded up, never "0 分钟".
     public static func waitText(until: Date, now: Date) -> String {
         let minutes = max(1, Int((until.timeIntervalSince(now) / 60).rounded(.up)))
-        return "请求太频繁，\(minutes) 分钟后重试"
+        return tr("请求太频繁，\(minutes) 分钟后重试")
     }
 }

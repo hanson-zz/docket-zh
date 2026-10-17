@@ -184,11 +184,11 @@ enum TextCapture {
             let text = await QuickTool.recognizeText(at: url)
             try? FileManager.default.removeItem(at: url)
             guard !text.isEmpty else {
-                QuickHint.show("没有识别到文字", symbol: "text.viewfinder", tint: .secondary)
+                QuickHint.show(tr("没有识别到文字"), symbol: "text.viewfinder", tint: .secondary)
                 return
             }
             QuickTool.copy(text)
-            QuickHint.show("已拷贝：\(RecognizedText.preview(text))", symbol: "text.viewfinder")
+            QuickHint.show(tr("已拷贝：\(RecognizedText.preview(text))"), symbol: "text.viewfinder")
         }
     }
 }
@@ -242,7 +242,7 @@ final class KeyboardLockMode {
         let trusted = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
         guard trusted, KeyboardBlocker.shared.start() else {
             // 和清洁模式同一句话。
-            QuickHint.show("键盘未锁定：需要在“辅助功能”中允许码头。",
+            QuickHint.show(tr("键盘未锁定：需要在“辅助功能”中允许码头。"),
                            symbol: "exclamationmark.triangle.fill", tint: .orange, seconds: 4)
             return
         }
@@ -306,7 +306,7 @@ private struct KeyboardLockView: View {
                         Capsule().fill(Color.accentColor.opacity(0.85))
                             .frame(width: proxy.size.width * progress)
                     }
-                    Text(pressStart == nil ? "长按 3 秒解锁" : "继续按住…")
+                    Text(pressStart == nil ? tr("长按 3 秒解锁") : tr("继续按住…"))
                         .font(.system(size: 13, weight: .medium))
                         .frame(maxWidth: .infinity)
                 }
@@ -392,7 +392,7 @@ final class QRCodePanel {
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 420),
                             styleMask: [.titled, .closable, .utilityWindow],
                             backing: .buffered, defer: false)
-        panel.title = "二维码"
+        panel.title = tr("二维码")
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
@@ -418,7 +418,7 @@ final class QRCodePanel {
             try? FileManager.default.removeItem(at: url)
             guard let text else {
                 model.scanned = nil
-                model.scanMessage = "框选的区域里没有找到二维码"
+                model.scanMessage = tr("框选的区域里没有找到二维码")
                 return
             }
             QuickTool.copy(text)
@@ -437,7 +437,7 @@ private struct QRCodeView: View {
             generated
             Divider()
             Button(action: scan) {
-                Label(model.scanning ? "正在框选…" : "识别屏幕上的二维码", systemImage: "qrcode.viewfinder")
+                Label(model.scanning ? tr("正在框选…") : tr("识别屏幕上的二维码"), systemImage: "qrcode.viewfinder")
                     .frame(maxWidth: .infinity)
             }
             .controlSize(.large)
@@ -469,15 +469,15 @@ private struct QRCodeView: View {
                     Button("拷贝图片") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.writeObjects([image])
-                        QuickHint.show("已拷贝二维码图片", symbol: "qrcode")
+                        QuickHint.show(tr("已拷贝二维码图片"), symbol: "qrcode")
                     }
                     Button("重新读取剪贴板") { model.readClipboard() }
                 }
             }
         case .empty:
-            message("剪贴板里没有文字，先拷贝一段文字或网址再打开。")
+            message(tr("剪贴板里没有文字，先拷贝一段文字或网址再打开。"))
         case .tooLong:
-            message("剪贴板里的文字太长，生成不了二维码（最多约 2000 字节）。")
+            message(tr("剪贴板里的文字太长，生成不了二维码（最多约 2000 字节）。"))
         }
     }
 
@@ -594,7 +594,7 @@ final class MirrorWindow {
     }
 
     private static func denied() {
-        QuickHint.show("没有摄像头权限：请在“系统设置 ▸ 隐私与安全性 ▸ 摄像头”中允许码头。",
+        QuickHint.show(tr("没有摄像头权限：请在“系统设置 ▸ 隐私与安全性 ▸ 摄像头”中允许码头。"),
                        symbol: "video.slash.fill", tint: .orange, seconds: 4)
     }
 
@@ -602,7 +602,7 @@ final class MirrorWindow {
         guard !isOpen else { return }
         let camera = MirrorCamera()
         guard camera.configure() else {
-            QuickHint.show("没有找到可用的摄像头", symbol: "video.slash.fill", tint: .orange)
+            QuickHint.show(tr("没有找到可用的摄像头"), symbol: "video.slash.fill", tint: .orange)
             return
         }
         let size = NSSize(width: 360, height: 270)

@@ -18,11 +18,11 @@ struct FileShelfDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.teal))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "tray.full", title: "文件暂存",
-                            subtitle: files.isEmpty ? "把文件拖到这里" : "\(files.count) 个文件 · 拖出即可使用")
+                PanelHeader(symbol: "tray.full", title: tr("文件暂存"),
+                            subtitle: files.isEmpty ? tr("把文件拖到这里") : tr("\(files.count) 个文件 · 拖出即可使用"))
                 if files.isEmpty {
                     PanelNote(symbol: "tray.and.arrow.down",
-                              text: "把文件从访达或其他应用拖到扩展栏上的小组件或这里，稍后再拖出。只会记住文件的位置，不会复制文件。")
+                              text: tr("把文件从访达或其他应用拖到扩展栏上的小组件或这里，稍后再拖出。只会记住文件的位置，不会复制文件。"))
                         .frame(height: 236)
                         .background {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -36,10 +36,10 @@ struct FileShelfDetail: View {
                         .dropTargetOutline(targeted, corner: 12)
                 }
                 HStack(spacing: 8) {
-                    PanelButton(title: "在访达中显示", symbol: "folder", prominent: true) {
+                    PanelButton(title: tr("在访达中显示"), symbol: "folder", prominent: true) {
                         FileActions.reveal(files.map(\.url))
                     }
-                    PanelButton(title: "全部清除", symbol: "xmark") {
+                    PanelButton(title: tr("全部清除"), symbol: "xmark") {
                         guard !context.isPreview else { return }
                         FileShelf.clear(instance)
                     }

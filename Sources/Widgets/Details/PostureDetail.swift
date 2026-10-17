@@ -65,9 +65,9 @@ struct PostureDetail: View {
                 }
 
                 HStack(spacing: 8) {
-                    StatChip(label: "今日起身", value: "\(breaks(now: now)) 次")
-                    StatChip(label: "提醒时段", value: hours)
-                    StatChip(label: "间隔", value: spelled(schedule.interval))
+                    StatChip(label: tr("今日起身"), value: tr("\(breaks(now: now)) 次"))
+                    StatChip(label: tr("提醒时段"), value: hours)
+                    StatChip(label: tr("间隔"), value: spelled(schedule.interval))
                 }
 
                 Button {
@@ -95,21 +95,21 @@ struct PostureDetail: View {
     }
 
     private func headlineLabel(active: Bool, left: TimeInterval) -> String {
-        guard active else { return "不在提醒时段" }
-        return left > 0 ? "下次起身时间" : "该起身了"
+        guard active else { return tr("不在提醒时段") }
+        return left > 0 ? tr("下次起身时间") : tr("该起身了")
     }
 
     private func headline(active: Bool, left: TimeInterval, now: Date) -> String {
         guard active else { return PostureSchedule.clock(schedule.start) }
-        return left > 0 ? clock(now.addingTimeInterval(left)) : "动一动"
+        return left > 0 ? clock(now.addingTimeInterval(left)) : tr("动一动")
     }
 
     private func caption(active: Bool, left: TimeInterval, now: Date) -> String {
-        guard active else { return "提醒从 \(PostureSchedule.clock(schedule.start)) 开始" }
-        guard left <= 0 else { return "还有 \(docketClockString(left))" }
-        guard !context.isPreview else { return "站起来走动、伸展一下" }
+        guard active else { return tr("提醒从 \(PostureSchedule.clock(schedule.start)) 开始") }
+        guard left <= 0 else { return tr("还有 \(docketClockString(left))") }
+        guard !context.isPreview else { return tr("站起来走动、伸展一下") }
         let over = now.timeIntervalSince(schedule.due(lastBreak: lastBreak, now: now))
-        return over >= 60 ? "已超时 \(spelled(over))" : "站起来走动、伸展一下"
+        return over >= 60 ? tr("已超时 \(spelled(over))") : tr("站起来走动、伸展一下")
     }
 
     private func breaks(now: Date) -> Int {

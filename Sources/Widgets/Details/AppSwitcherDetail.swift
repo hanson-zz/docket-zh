@@ -20,10 +20,10 @@ struct AppSwitcherDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.indigo))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "square.grid.3x2", title: "应用切换器",
-                            subtitle: "\(apps.count) 个应用正在运行")
+                PanelHeader(symbol: "square.grid.3x2", title: tr("应用切换器"),
+                            subtitle: tr("\(apps.count) 个应用正在运行"))
                 if apps.isEmpty {
-                    PanelNote(symbol: "macwindow", text: "没有正在运行的应用。").frame(height: 160)
+                    PanelNote(symbol: "macwindow", text: tr("没有正在运行的应用。")).frame(height: 160)
                 } else {
                     ScrollView {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4),

@@ -137,7 +137,7 @@ private struct LibraryShortcut: Identifiable {
         return paths.map { URL(fileURLWithPath: $0) }
             .filter { FileManager.default.fileExists(atPath: $0.path) }
             .map { named($0, folder: false) }
-            + [LibraryShortcut(id: "more-apps", title: "更多应用…", url: nil, isFolder: false)]
+            + [LibraryShortcut(id: "more-apps", title: tr("更多应用…"), url: nil, isFolder: false)]
     }()
 
     static let folders: [LibraryShortcut] = {
@@ -154,7 +154,7 @@ private struct LibraryShortcut: Identifiable {
         urls.append(fm.homeDirectoryForCurrentUser)
         return urls.filter { fm.fileExists(atPath: $0.path) }
             .map { named($0, folder: true) }
-            + [LibraryShortcut(id: "more-folders", title: "更多文件夹…", url: nil, isFolder: true)]
+            + [LibraryShortcut(id: "more-folders", title: tr("更多文件夹…"), url: nil, isFolder: true)]
     }()
 
     static var all: [LibraryShortcut] { apps + folders }
@@ -214,10 +214,10 @@ struct WidgetLibraryView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     // Counts are widgets, not variants: 时钟 is one widget
                     // however many faces it offers.
-                    row(.all, symbol: "square.grid.2x2", title: "所有小组件",
+                    row(.all, symbol: "square.grid.2x2", title: tr("所有小组件"),
                         count: widgetCount(libraryCards), enabled: true)
                     if !recommendedCards.isEmpty {
-                        row(.recommended, symbol: "star", title: "推荐",
+                        row(.recommended, symbol: "star", title: tr("推荐"),
                             count: recommendedCards.count, enabled: true)
                     }
                     row(.appsAndFolders, symbol: WidgetCategory.appsAndFolders.symbol,
@@ -303,8 +303,8 @@ struct WidgetLibraryView: View {
         .disabled(!enabled)
         // Empty categories are no longer listed, so every row is enabled
         // today; the explanation stays for any row that ever is not.
-        .help(enabled ? "" : "这里还没有小组件。")
-        .accessibilityHint(enabled ? "" : "此类别中还没有小组件。")
+        .help(enabled ? "" : tr("这里还没有小组件。"))
+        .accessibilityHint(enabled ? "" : tr("此类别中还没有小组件。"))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
@@ -431,8 +431,8 @@ struct WidgetLibraryView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help(shortcut.url == nil ? "选择其他\(shortcut.isFolder ? "文件夹" : "应用")" : "添加到扩展栏")
-        .accessibilityLabel(shortcut.url == nil ? shortcut.title : "添加“\(shortcut.title)”")
+        .help(shortcut.url == nil ? tr("选择其他\(shortcut.isFolder ? tr("文件夹") : tr("应用"))") : tr("添加到扩展栏"))
+        .accessibilityLabel(shortcut.url == nil ? shortcut.title : tr("添加“\(shortcut.title)”"))
     }
 
     private var visibleShortcuts: [LibraryShortcut] {
@@ -453,7 +453,7 @@ struct WidgetLibraryView: View {
         panel.canChooseFiles = !shortcut.isFolder
         panel.canChooseDirectories = shortcut.isFolder
         panel.allowsMultipleSelection = true
-        panel.prompt = "添加"
+        panel.prompt = tr("添加")
         if !shortcut.isFolder {
             panel.allowedContentTypes = [.applicationBundle]
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
@@ -490,8 +490,8 @@ struct WidgetLibraryView: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
-                        .help("需要“\(permission)”权限，第一次用到时会请求。")
-                        .accessibilityLabel("需要\(permission)权限")
+                        .help(tr("需要“\(trKey(permission))”权限，第一次用到时会请求。"))
+                        .accessibilityLabel(tr("需要\(trKey(permission))权限"))
                 }
                 Spacer(minLength: 2)
                 let onShelf = placedInstances(for: card)
@@ -504,9 +504,9 @@ struct WidgetLibraryView: View {
                     }
                     .buttonStyle(.plain)
                     .help(onShelf.count > 1
-                          ? "扩展栏上有 \(onShelf.count) 个，移除最后添加的那个"
-                          : "从扩展栏移除")
-                    .accessibilityLabel("移除“\(card.title)”")
+                          ? tr("扩展栏上有 \(onShelf.count) 个，移除最后添加的那个")
+                          : tr("从扩展栏移除"))
+                    .accessibilityLabel(tr("移除“\(card.title)”"))
                     if onShelf.count > 1 {
                         Text("\(onShelf.count)")
                             .font(.system(size: 10, weight: .semibold))
@@ -521,7 +521,7 @@ struct WidgetLibraryView: View {
                         .background(Circle().fill(.quaternary))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("添加“\(card.title)”")
+                .accessibilityLabel(tr("添加“\(card.title)”"))
             }
         }
         .padding(10)
@@ -555,7 +555,7 @@ struct WidgetLibraryView: View {
         let query = search.trimmingCharacters(in: .whitespaces)
         // Searching flattens the category grouping into one list.
         guard query.isEmpty else {
-            return [(title: "搜索结果", cards: libraryCards.filter { $0.matches(query) })]
+            return [(title: tr("搜索结果"), cards: libraryCards.filter { $0.matches(query) })]
         }
         let categories: [WidgetCategory] = {
             switch selection {
@@ -566,12 +566,12 @@ struct WidgetLibraryView: View {
             }
         }()
         if selection == .recommended {
-            return [(title: "推荐", cards: recommendedCards)]
+            return [(title: tr("推荐"), cards: recommendedCards)]
         }
         return categories.compactMap { category in
             let cards = libraryCards.filter { $0.category == category }
             // The shortcuts above already carry the 应用和文件夹 heading.
-            let title = category == .appsAndFolders ? "应用小组件" : category.displayName
+            let title = category == .appsAndFolders ? tr("应用小组件") : category.displayName
             return cards.isEmpty ? nil : (title: title, cards: cards)
         }
     }

@@ -100,7 +100,7 @@ struct GaugesTile: View {
         let known = total > 0
         return Reading(progress: GaugeReading.usedFraction(free: free, total: total),
                        value: known ? GaugeReading.bytes(free) : "-",
-                       caption: known ? "可用，共 \(GaugeReading.bytes(total))" : "正在读取",
+                       caption: known ? tr("可用，共 \(GaugeReading.bytes(total))") : tr("正在读取"),
                        symbol: "internaldrive",
                        tint: Color(hex: MetricColor.storage),
                        known: known)
@@ -116,7 +116,7 @@ struct GaugesTile: View {
             state = (0, false, false, false)
         }
         let (level, charging, onPower, present) = state
-        let caption = !present ? "没有电池" : charging ? "正在充电" : onPower ? "已接电源" : "使用电池"
+        let caption = !present ? tr("没有电池") : charging ? tr("正在充电") : onPower ? tr("已接电源") : tr("使用电池")
         var tint = Color(hex: MetricColor.batteryPresent)
         if present, !charging, !onPower {
             if level <= 0.10 { tint = Color(hex: "#FF453A") } else if level <= 0.20 { tint = Color(hex: "#FF9F0A") }

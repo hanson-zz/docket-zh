@@ -22,7 +22,7 @@ struct WorldClockDetail: View {
         TimeZone(identifier: instance.config.string("zone", default: "Europe/London")) ?? .current
     }
 
-    private var city: String { instance.config.string("city", default: "伦敦") }
+    private var city: String { instance.config.string("city", default: tr("伦敦")) }
 
     private var zoneID: String { instance.config.string("zone", default: "Europe/London") }
 
@@ -50,9 +50,9 @@ struct WorldClockDetail: View {
                         .glassPane()
                     } else {
                         HStack(spacing: 8) {
-                            StatChip(label: "此处", value: ClockFormat.time(now, zone: .current))
+                            StatChip(label: tr("此处"), value: ClockFormat.time(now, zone: .current))
                                 .frame(width: 88)
-                            StatChip(label: "时差",
+                            StatChip(label: tr("时差"),
                                      value: ClockPanelFormat.difference(zone, at: now))
                         }
 
@@ -99,7 +99,7 @@ struct WorldClockDetail: View {
             Button {
                 withAnimation(.snappy(duration: 0.25)) { choosing.toggle() }
             } label: {
-                Label(choosing ? "完成" : "选择城市", systemImage: choosing ? "checkmark" : "globe")
+                Label(choosing ? tr("完成") : tr("选择城市"), systemImage: choosing ? "checkmark" : "globe")
                     .font(WidgetStyle.label(11))
                     .foregroundStyle(WidgetStyle.primary)
                     .padding(.horizontal, 9)
@@ -156,7 +156,7 @@ struct WorldClockDetail: View {
                     .foregroundStyle(WidgetStyle.secondary)
                 Spacer(minLength: 0)
                 // Names the band rather than implying a sunrise, see below.
-                Text("阴影为\(city)的早 6 点至晚 6 点")
+                Text(tr("阴影为\(city)的早 6 点至晚 6 点"))
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(WidgetStyle.secondary)
             }

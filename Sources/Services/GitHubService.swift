@@ -160,7 +160,7 @@ final class GitHubService {
         switch await fetch("https://api.github.com/repos/\(slug)", token: token) {
         case .data(let data):
             guard var stats = GitHubStats.parseRepository(data) else {
-                state.error = "GitHub 返回的数据无法读取"
+                state.error = tr("GitHub 返回的数据无法读取")
                 states[key] = state
                 return
             }
@@ -171,9 +171,9 @@ final class GitHubService {
         case .failed(let status):
             state.offline = false
             state.error = switch status {
-            case 404: "找不到这个仓库（或它是私有仓库）"
-            case 401: "令牌无效"
-            default: "GitHub 返回错误 \(status)"
+            case 404: tr("找不到这个仓库（或它是私有仓库）")
+            case 401: tr("令牌无效")
+            default: tr("GitHub 返回错误 \(status)")
             }
             states[key] = state
             return
@@ -184,7 +184,7 @@ final class GitHubService {
             return
         case .offline:
             state.offline = true
-            state.error = state.stats == nil ? "无法连接 GitHub" : nil
+            state.error = state.stats == nil ? tr("无法连接 GitHub") : nil
             states[key] = state
             return
         }
@@ -282,7 +282,7 @@ final class GitHubService {
         switch await fetch("https://api.github.com/repos/\(slug)", token: token) {
         case .data(let data):
             guard let stats = GitHubStats.parseRepository(data) else {
-                return .failure(Failure(message: "GitHub 返回的数据无法读取"))
+                return .failure(Failure(message: tr("GitHub 返回的数据无法读取")))
             }
             var state = states[GitHubWatch.key(stats.fullName)] ?? RepoState()
             state.stats = stats
@@ -290,15 +290,15 @@ final class GitHubService {
             return .success(stats.fullName)
         case .failed(let status):
             let message = switch status {
-            case 404: "找不到这个仓库（或它是私有仓库）"
-            case 401: "令牌无效，请在下方更换或移除"
-            default: "GitHub 返回错误 \(status)"
+            case 404: tr("找不到这个仓库（或它是私有仓库）")
+            case 401: tr("令牌无效，请在下方更换或移除")
+            default: tr("GitHub 返回错误 \(status)")
             }
             return .failure(Failure(message: message))
         case .limited(let until):
             return .failure(Failure(message: GitHubRateLimit.waitText(until: until, now: .now)))
         case .offline:
-            return .failure(Failure(message: "无法连接 GitHub，请检查网络"))
+            return .failure(Failure(message: tr("无法连接 GitHub，请检查网络")))
         }
     }
 
@@ -311,7 +311,7 @@ final class GitHubService {
     func stats(for slug: String) -> GitHubStats? { state(for: slug)?.stats }
 
     func error(for slug: String) -> String? {
-        guard GitHubWatch.slug(from: slug) != nil else { return "仓库格式应为“用户/仓库”" }
+        guard GitHubWatch.slug(from: slug) != nil else { return tr("仓库格式应为“用户/仓库”") }
         if let limitedUntil, limitedUntil > .now, state(for: slug)?.stats == nil {
             return GitHubRateLimit.waitText(until: limitedUntil, now: .now)
         }

@@ -87,7 +87,7 @@ struct MusicTile: View {
     }
 
     private static let sample = Playing(native: NowPlaying(
-        title: "日光", artist: "示例艺人", album: "示例专辑",
+        title: tr("日光"), artist: tr("示例艺人"), album: tr("示例专辑"),
         duration: 240, elapsed: 74, isPlaying: true, artwork: nil, source: .spotify
     ))
 
@@ -138,7 +138,7 @@ struct MusicTile: View {
             if let playing, !context.isPreview {
                 TileGlyph(symbol: playing.isPlaying ? "pause.fill" : "play.fill",
                           size: side, morphs: true) { toggle(playing) }
-                    .accessibilityLabel(playing.isPlaying ? "暂停" : "播放")
+                    .accessibilityLabel(playing.isPlaying ? tr("暂停") : tr("播放"))
             } else {
                 // Nothing playing is nothing to toggle, so the chip shows what
                 // it is and the whole of it opens the panel.
@@ -385,7 +385,7 @@ struct MusicTile: View {
         return VStack(spacing: 2) {
             Image(systemName: setup != nil ? "switch.2" : (open ? "music.note" : "music.note.list"))
                 .font(.system(size: 14, weight: .medium))
-            Text(setup ?? (open ? "未在播放" : sourceNames))
+            Text(setup ?? (open ? tr("未在播放") : sourceNames))
                 .font(WidgetStyle.note)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -393,8 +393,8 @@ struct MusicTile: View {
         }
         .foregroundStyle(subInk)
         .frame(maxWidth: .infinity)
-        .help(setup.map { "有浏览器标签页正在播放媒体，但码头无法读取。请开启：\($0)。" }
-              ?? (open ? "当前没有播放内容。" : "码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。"))
+        .help(setup.map { tr("有浏览器标签页正在播放媒体，但码头无法读取。请开启：\($0)。") }
+              ?? (open ? tr("当前没有播放内容。") : tr("码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。")))
     }
 
     /// The menu item the user has to switch on, or nil when nothing is asking.
@@ -407,8 +407,8 @@ struct MusicTile: View {
     /// The players this widget is configured to read, e.g. "Spotify or Music".
     private var sourceNames: String {
         let names = sources.map(\.displayName)
-        guard !names.isEmpty else { return "无来源" }
-        return names.count == 1 ? names[0] : names.joined(separator: "或")
+        guard !names.isEmpty else { return tr("无来源") }
+        return names.count == 1 ? names[0] : names.joined(separator: tr("或"))
     }
 }
 
@@ -504,7 +504,7 @@ private struct Artwork: View {
                 .contentShape(.rect)
                 .onTapGesture(perform: onToggle)
                 .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(isPlaying ? "暂停" : "播放")
+                .accessibilityLabel(isPlaying ? tr("暂停") : tr("播放"))
         } else {
             square(control: nil)
                 .accessibilityLabel("封面")

@@ -208,10 +208,10 @@ struct WidgetTintPicker: View {
 
     private var caption: String {
         switch choice {
-        case .kindDefault: "默认：这种小组件自己的颜色"
-        case .system: "跟随系统强调色"
+        case .kindDefault: tr("默认：这种小组件自己的颜色")
+        case .system: tr("跟随系统强调色")
         case .preset(let preset): preset.title
-        case .custom(let code): "自定义 \(code.hex)"
+        case .custom(let code): tr("自定义 \(code.hex)")
         }
     }
 
@@ -237,7 +237,7 @@ struct WidgetTintPicker: View {
     /// 默认：这种小组件自己的主色，中间一个“回到默认”的小箭头。
     private var defaultSwatch: some View {
         let palette = WidgetTint.defaultPalette(instance.kind)
-        return swatchButton(selected: choice == .kindDefault, help: "默认",
+        return swatchButton(selected: choice == .kindDefault, help: tr("默认"),
                             action: { pick(.kindDefault) }) {
             Circle()
                 .fill(Color(code: palette.main))
@@ -286,7 +286,7 @@ struct WidgetTintPicker: View {
 
     /// 跟随系统强调色。
     private var systemSwatch: some View {
-        swatchButton(selected: choice == .system, help: "跟随系统强调色",
+        swatchButton(selected: choice == .system, help: tr("跟随系统强调色"),
                      action: { pick(.system) }) {
             Circle()
                 .fill(Color.accentColor)

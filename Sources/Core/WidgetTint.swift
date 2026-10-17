@@ -30,21 +30,21 @@ public enum WidgetTint {
 
         public var title: String {
             switch self {
-            case .pink: "粉"
-            case .blush: "浅粉"
-            case .rose: "玫红"
-            case .red: "红"
-            case .yellow: "黄"
-            case .orange: "橙"
-            case .amber: "琥珀"
-            case .lime: "黄绿"
-            case .mint: "薄荷绿"
-            case .green: "绿"
-            case .cyan: "青"
-            case .sky: "天蓝"
-            case .blue: "蓝"
-            case .lavender: "淡紫"
-            case .purple: "紫"
+            case .pink: tr("粉")
+            case .blush: tr("浅粉")
+            case .rose: tr("玫红")
+            case .red: tr("红")
+            case .yellow: tr("黄")
+            case .orange: tr("橙")
+            case .amber: tr("琥珀")
+            case .lime: tr("黄绿")
+            case .mint: tr("薄荷绿")
+            case .green: tr("绿")
+            case .cyan: tr("青")
+            case .sky: tr("天蓝")
+            case .blue: tr("蓝")
+            case .lavender: tr("淡紫")
+            case .purple: tr("紫")
             }
         }
 
@@ -295,12 +295,12 @@ public enum WidgetTint {
 
         public var title: String {
             switch self {
-            case .plain: "无"
-            case .dark: "深色"
-            case .frosted: "磨砂"
-            case .gradient: "渐变"
-            case .dots: "网点"
-            case .lines: "线条"
+            case .plain: tr("无")
+            case .dark: tr("深色")
+            case .frosted: tr("磨砂")
+            case .gradient: tr("渐变")
+            case .dots: tr("网点")
+            case .lines: tr("线条")
             }
         }
 

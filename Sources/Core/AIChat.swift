@@ -12,9 +12,9 @@ public enum AIOpenMode: String, Codable, Sendable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .web: "网页"
+        case .web: tr("网页")
         case .api: "API"
-        case .jump: "跳转"
+        case .jump: tr("跳转")
         }
     }
 }
@@ -187,8 +187,8 @@ public enum AIOpenModes {
         case .api:
             let name = (model ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return name.isEmpty ? "API" : "API · \(name)"
-        case .web: return "网页 · 你的账号"
-        case .jump: return "跳转 · 打开 App 或浏览器"
+        case .web: return tr("网页 · 你的账号")
+        case .jump: return tr("跳转 · 打开 App 或浏览器")
         }
     }
 }
@@ -410,26 +410,26 @@ public enum AIChatFailure: Error, Equatable, Sendable {
         case .http(let status, let server):
             let detail = Self.short(server).map { "：\($0)" } ?? ""
             switch status {
-            case 401: return "密钥不对或已失效（401），请到设置里重新填写。"
-            case 402: return "账户余额不足（402），充值后再试。"
-            case 403: return "没有权限使用这个模型（403），检查密钥的权限或账户状态\(detail)。"
-            case 404: return "接口地址或模型名不对（404），检查设置里的地址和模型。"
-            case 408: return "等了太久没有回应（408），稍后重试。"
-            case 429: return "请求太频繁或额度用完了（429），稍等一会儿再试。"
-            case 400, 422: return "请求被拒绝（\(status)）\(detail)。"
-            case 500...599: return "服务暂时出错（\(status)），稍后重试。"
-            default: return "请求失败（\(status)）\(detail)。"
+            case 401: return tr("密钥不对或已失效（401），请到设置里重新填写。")
+            case 402: return tr("账户余额不足（402），充值后再试。")
+            case 403: return tr("没有权限使用这个模型（403），检查密钥的权限或账户状态\(detail)。")
+            case 404: return tr("接口地址或模型名不对（404），检查设置里的地址和模型。")
+            case 408: return tr("等了太久没有回应（408），稍后重试。")
+            case 429: return tr("请求太频繁或额度用完了（429），稍等一会儿再试。")
+            case 400, 422: return tr("请求被拒绝（\(status)）\(detail)。")
+            case 500...599: return tr("服务暂时出错（\(status)），稍后重试。")
+            default: return tr("请求失败（\(status)）\(detail)。")
             }
-        case .timeout: return "等了 60 秒没有回应，已停止。可以点“重试”。"
-        case .offline: return "没有连上网络，检查网络后重试。"
-        case .cannotConnect: return "连不上服务器，检查接口地址或网络。"
-        case .secureConnection: return "安全连接失败，检查接口地址或网络代理。"
-        case .missingKey: return "还没有填这个服务的密钥，到“设置 ▸ AI”里填写。"
-        case .missingEndpoint: return "接口地址或模型名没填全（豆包要填接入点 ID 作为模型名）。"
-        case .badURL: return "接口地址不对，要以 https:// 开头。"
-        case .emptyReply: return "服务没有返回内容，可以点“重试”。"
-        case .stream(let text): return "服务返回了错误：\(Self.short(text) ?? "未知错误")"
-        case .other(let text): return "出错了：\(Self.short(text) ?? "未知错误")"
+        case .timeout: return tr("等了 60 秒没有回应，已停止。可以点“重试”。")
+        case .offline: return tr("没有连上网络，检查网络后重试。")
+        case .cannotConnect: return tr("连不上服务器，检查接口地址或网络。")
+        case .secureConnection: return tr("安全连接失败，检查接口地址或网络代理。")
+        case .missingKey: return tr("还没有填这个服务的密钥，到“设置 ▸ AI”里填写。")
+        case .missingEndpoint: return tr("接口地址或模型名没填全（豆包要填接入点 ID 作为模型名）。")
+        case .badURL: return tr("接口地址不对，要以 https:// 开头。")
+        case .emptyReply: return tr("服务没有返回内容，可以点“重试”。")
+        case .stream(let text): return tr("服务返回了错误：\(Self.short(text) ?? tr("未知错误"))")
+        case .other(let text): return tr("出错了：\(Self.short(text) ?? tr("未知错误"))")
         }
     }
 
@@ -450,7 +450,7 @@ public enum AIChatFailure: Error, Equatable, Sendable {
              URLError.Code.appTransportSecurityRequiresSecureConnection.rawValue:
             return .secureConnection
         case URLError.Code.badURL.rawValue, URLError.Code.unsupportedURL.rawValue: return .badURL
-        default: return .other("网络错误 \(code)")
+        default: return .other(tr("网络错误 \(code)"))
         }
     }
 
@@ -541,7 +541,7 @@ public enum AIWeb {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
 
     public static let googleWarning =
-        "谷歌不允许在内嵌网页登录，请改用邮箱或 Apple 登录，或用浏览器打开。"
+        tr("谷歌不允许在内嵌网页登录，请改用邮箱或 Apple 登录，或用浏览器打开。")
 
     /// 是不是谷歌账号的登录页（accounts.google.com 下的任何页面）。
     public static func isGoogleSignIn(_ url: URL?) -> Bool {
@@ -575,7 +575,7 @@ public enum AIWeb {
     public static func credit(_ home: URL?) -> String? {
         guard var host = home?.host()?.lowercased() else { return nil }
         if host.hasPrefix("www.") { host.removeFirst(4) }
-        return "网页内容由 \(host) 提供"
+        return tr("网页内容由 \(host) 提供")
     }
 }
 
@@ -587,10 +587,10 @@ public enum AIHotKeyAdvice {
         guard let combo, combo.keyCode == 49 else { return nil }
         let m = combo.modifiers
         typealias M = KeyCombo.Modifier
-        if m == M.option { return "Option+空格 是 ChatGPT 桌面版的默认快捷键，建议换一个，免得两边抢。" }
-        if m == M.command { return "Command+空格 是聚焦搜索，建议换一个。" }
-        if m == M.control || m == M.control | M.shift { return "Control+空格 常用来切换输入法，建议换一个。" }
-        if m == M.command | M.option { return "Command+Option+空格 是访达搜索，建议换一个。" }
+        if m == M.option { return tr("Option+空格 是 ChatGPT 桌面版的默认快捷键，建议换一个，免得两边抢。") }
+        if m == M.command { return tr("Command+空格 是聚焦搜索，建议换一个。") }
+        if m == M.control || m == M.control | M.shift { return tr("Control+空格 常用来切换输入法，建议换一个。") }
+        if m == M.command | M.option { return tr("Command+Option+空格 是访达搜索，建议换一个。") }
         return nil
     }
 }

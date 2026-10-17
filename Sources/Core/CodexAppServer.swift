@@ -25,8 +25,8 @@ public enum CodexUsageSource: String, Codable, Equatable, Sendable {
 
     public var title: String {
         switch self {
-        case .appServer: "官方接口"
-        case .web: "备用接口"
+        case .appServer: tr("官方接口")
+        case .web: tr("备用接口")
         }
     }
 }
@@ -61,7 +61,7 @@ public enum CodexAppServer {
             "id": id,
             "method": "initialize",
             "params": [
-                "clientInfo": ["name": "docket", "title": "码头", "version": version],
+                "clientInfo": ["name": "docket", "title": tr("码头"), "version": version],
             ],
         ])
     }
@@ -95,7 +95,7 @@ public enum CodexAppServer {
         guard let id = CodexUsageParser.number(root["id"]).map({ Int($0) }) else { return .other }
         if let error = root["error"] as? [String: Any] {
             return .error(id: id, code: CodexUsageParser.number(error["code"]).map { Int($0) },
-                          message: (error["message"] as? String) ?? "未知错误")
+                          message: (error["message"] as? String) ?? tr("未知错误"))
         }
         if let result = root["result"],
            let data = try? JSONSerialization.data(withJSONObject: result, options: [.fragmentsAllowed]) {
@@ -151,7 +151,7 @@ public enum CodexAppServer {
         // A seat with no rolling windows and only a spend cap.
         if windows.isEmpty, let cap = main?["individualLimit"] as? [String: Any],
            let remaining = CodexUsageParser.number(cap["remainingPercent"]) {
-            windows.append(CodexLimitWindow(id: "credits", label: "额度上限", usedFraction: 1 - remaining / 100,
+            windows.append(CodexLimitWindow(id: "credits", label: tr("额度上限"), usedFraction: 1 - remaining / 100,
                                             resetsAt: CodexUsageParser.number(cap["resetsAt"]).map { Date(timeIntervalSince1970: $0) }))
         }
         guard !windows.isEmpty else { throw CodexUsageError.nothingMetered }

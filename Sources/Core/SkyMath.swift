@@ -46,7 +46,7 @@ public enum SunTimes {
 
 /// Wind, said the way a Chinese forecast says it.
 public enum Wind {
-    private static let points = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"]
+    private static let points = [tr("北"), tr("东北"), tr("东"), tr("东南"), tr("南"), tr("西南"), tr("西"), tr("西北")]
 
     /// MET's `wind_from_direction` is where the wind comes from, in degrees
     /// clockwise from north, which is also how a Chinese forecast names it:
@@ -54,7 +54,7 @@ public enum Wind {
     public static func direction(_ degrees: Double) -> String {
         guard degrees.isFinite else { return "-" }
         let normal = (degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-        return points[Int((normal / 45).rounded()) % 8] + "风"
+        return points[Int((normal / 45).rounded()) % 8] + tr("风")
     }
 
     /// The Beaufort force for a speed in metres a second, which is the
@@ -69,7 +69,7 @@ public enum Wind {
     public static func summary(speed: Double, from degrees: Double) -> String {
         let force = beaufort(speed)
         let calm = force == 0
-        return calm ? "无风" : "\(direction(degrees)) \(force) 级 · \(String(format: "%.1f", speed)) m/s"
+        return calm ? tr("无风") : tr("\(direction(degrees)) \(force) 级 · \(String(format: "%.1f", speed)) m/s")
     }
 }
 

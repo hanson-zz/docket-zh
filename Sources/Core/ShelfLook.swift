@@ -25,14 +25,14 @@ public enum ShelfLook: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .frosted: "磨砂"
-        case .glass: "玻璃"
-        case .clearGlass: "清透玻璃"
-        case .lightGlass: "浅色玻璃"
-        case .darkGlass: "深色玻璃"
-        case .white: "白色"
-        case .black: "黑色"
-        case .transparent: "透明"
+        case .frosted: tr("磨砂")
+        case .glass: tr("玻璃")
+        case .clearGlass: tr("清透玻璃")
+        case .lightGlass: tr("浅色玻璃")
+        case .darkGlass: tr("深色玻璃")
+        case .white: tr("白色")
+        case .black: tr("黑色")
+        case .transparent: tr("透明")
         }
     }
 

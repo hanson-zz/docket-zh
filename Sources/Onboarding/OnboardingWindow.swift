@@ -34,7 +34,7 @@ final class OnboardingWindow: HostedWindow {
             OnboardingView(app: app,
                            startPosition: firstRun ? .bottom : app.effectivePosition,
                            onFinish: { [weak self] in self?.close() }),
-            title: "欢迎使用码头",
+            title: tr("欢迎使用码头"),
             size: NSSize(width: 560, height: 640)
         )
         watchClose()
@@ -124,7 +124,7 @@ extension AppState {
         guard !widgets.isEmpty else { return [] }
 
         if customProfile == nil {
-            createProfile(kind: .customDock, named: "日常")
+            createProfile(kind: .customDock, named: tr("日常"))
         }
         guard let id = state.customDock.profileID,
               let index = state.profiles.firstIndex(where: { $0.id == id }) else { return [] }

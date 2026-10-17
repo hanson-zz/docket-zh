@@ -20,17 +20,17 @@ struct TranslateTile: View {
     private var last: TranslateRecord? {
         context.isPreview
             ? TranslateRecord(source: Translate.chinese, target: Translate.english,
-                              sourceText: "你好，世界", resultText: "Hello, world")
+                              sourceText: tr("你好，世界"), resultText: "Hello, world")
             : Translate.history(instance.config).first
     }
 
     private var pair: String {
-        context.isPreview ? "中 ⇄ 英" : Translate.tilePair(instance.config)
+        context.isPreview ? tr("中 ⇄ 英") : Translate.tilePair(instance.config)
     }
 
     private var value: String {
-        if working { return "正在翻译…" }
-        guard let last else { return "点按开始翻译" }
+        if working { return tr("正在翻译…") }
+        guard let last else { return tr("点按开始翻译") }
         return Translate.snippet(last.resultText)
     }
 
@@ -45,7 +45,7 @@ struct TranslateTile: View {
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                    Text(last == nil && !working ? "拖入文字" : value)
+                    Text(last == nil && !working ? tr("拖入文字") : value)
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(WidgetStyle.secondary)
                         .multilineTextAlignment(.center)
@@ -56,7 +56,7 @@ struct TranslateTile: View {
             } else {
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     badge(size: WidgetStyle.badge)
-                    TileReading(value: value, caption: "翻译 · \(pair)", valueSize: 14)
+                    TileReading(value: value, caption: tr("翻译 · \(pair)"), valueSize: 14)
                     Spacer(minLength: 0)
                 }
             }

@@ -116,7 +116,7 @@ extension GroupTint {
 
     var title: String {
         switch self {
-        case .none: "无色调"
+        case .none: tr("无色调")
         default: docketColourName(rawValue)
         }
     }

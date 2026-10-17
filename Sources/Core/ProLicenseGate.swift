@@ -13,7 +13,7 @@ import Foundation
 public enum ProLicenseGate {
 
     /// 遮罩上的字。
-    public static let lockTitle = "Pro 专属 · 解锁"
+    public static let lockTitle = tr("Pro 专属 · 解锁")
 
     /// Pro 是否已解锁：试用中、已激活，或这台 Mac 以前按过“我已赞助”。
     /// 老赞助用户不会因为改成收费而被锁。

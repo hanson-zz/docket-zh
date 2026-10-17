@@ -22,7 +22,7 @@ struct SearchTile: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(WidgetStyle.primary)
                     }
-                    Text(files ? "查找文件" : "搜索")
+                    Text(files ? tr("查找文件") : tr("搜索"))
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -32,7 +32,7 @@ struct SearchTile: View {
                     Image(systemName: files ? "folder" : "magnifyingglass")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(WidgetStyle.secondary)
-                    Text(files ? "查找文件…" : "搜索网页…")
+                    Text(files ? tr("查找文件…") : tr("搜索网页…"))
                         .font(.system(size: 14))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)

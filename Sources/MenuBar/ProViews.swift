@@ -17,15 +17,15 @@ private struct ProPerk: Identifiable {
             .sorted()
             .joined(separator: "、")
         return [
-            ProPerk(id: "kinds", symbol: "square.grid.2x2.fill", title: "Pro 小组件", detail: kinds),
-            ProPerk(id: "liquid", symbol: "drop.fill", title: "液态外观",
-                    detail: "所有小组件的液态外观，电池的液态电量也包括在内"),
-            ProPerk(id: "faces", symbol: "clock.fill", title: "专属表盘和角色",
-                    detail: "时钟的霓虹、实景、简约、极简表盘；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼"),
-            ProPerk(id: "looks", symbol: "battery.100percent.bolt", title: "Wi-Fi 和电池外观",
-                    detail: "数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池"),
-            ProPerk(id: "colors", symbol: "paintpalette.fill", title: "扩展栏专属配色",
-                    detail: "小熊猫橙、樱花粉等底板配色"),
+            ProPerk(id: "kinds", symbol: "square.grid.2x2.fill", title: tr("Pro 小组件"), detail: kinds),
+            ProPerk(id: "liquid", symbol: "drop.fill", title: tr("液态外观"),
+                    detail: tr("所有小组件的液态外观，电池的液态电量也包括在内")),
+            ProPerk(id: "faces", symbol: "clock.fill", title: tr("专属表盘和角色"),
+                    detail: tr("时钟的霓虹、实景、简约、极简表盘；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼")),
+            ProPerk(id: "looks", symbol: "battery.100percent.bolt", title: tr("Wi-Fi 和电池外观"),
+                    detail: tr("数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池")),
+            ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("扩展栏专属配色"),
+                    detail: tr("小熊猫橙、樱花粉等底板配色")),
         ]
     }
 }
@@ -91,7 +91,7 @@ struct ProPaywallView: View {
                     Button {
                         license.startTrial()
                     } label: {
-                        Text("开始 \(ProLicenseConfig.trialDays) 天免费试用")
+                        Text(tr("开始 \(ProLicenseConfig.trialDays) 天免费试用"))
                             .frame(minWidth: 150)
                     }
                     .buttonStyle(.borderedProminent)
@@ -100,10 +100,10 @@ struct ProPaywallView: View {
                 Button {
                     license.buy()
                 } label: {
-                    Text("购买 \(ProLicenseConfig.price)").frame(minWidth: 90)
+                    Text(tr("购买 \(ProLicenseConfig.price)")).frame(minWidth: 90)
                 }
                 .buttonStyle(.bordered)
-                Text("早鸟价 \(ProLicenseConfig.earlyBirdPrice)")
+                Text(tr("早鸟价 \(ProLicenseConfig.earlyBirdPrice)"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(proAccent)
             }
@@ -140,7 +140,7 @@ private struct ProStatusLine: View {
         HStack(spacing: 6) {
             Image(systemName: unlocked ? "checkmark.seal.fill" : "info.circle")
                 .foregroundStyle(unlocked ? proAccent : Color.secondary)
-            Text(supporter && !state.isUnlocked ? "已按赞助者解锁 Pro，谢谢你的支持" : state.statusText)
+            Text(supporter && !state.isUnlocked ? tr("已按赞助者解锁 Pro，谢谢你的支持") : state.statusText)
                 .font(.callout.weight(.medium))
         }
     }
@@ -192,7 +192,7 @@ final class PaywallWindow: HostedWindow {
     func show() {
         ProLicenseManager.shared.refreshState()
         present(ProPaywallView(onClose: { [weak self] in self?.close() }),
-                title: "码头 Pro", size: NSSize(width: 480, height: 640), chromeless: true)
+                title: tr("码头 Pro"), size: NSSize(width: 480, height: 640), chromeless: true)
     }
 }
 
@@ -240,7 +240,7 @@ struct ProSettingsPane: View {
                     }
                 }
             } footer: {
-                Text(ProLicenseText.priceLine + "。离线时最多保留 \(ProLicenseConfig.offlineGraceDays) 天，联网后自动重新校验。")
+                Text(ProLicenseText.priceLine + tr("。离线时最多保留 \(ProLicenseConfig.offlineGraceDays) 天，联网后自动重新校验。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -249,11 +249,11 @@ struct ProSettingsPane: View {
                 Section {
                     HStack(spacing: 10) {
                         if license.canStartTrial && !supporter {
-                            Button("开始 \(ProLicenseConfig.trialDays) 天免费试用") { license.startTrial() }
+                            Button(tr("开始 \(ProLicenseConfig.trialDays) 天免费试用")) { license.startTrial() }
                                 .buttonStyle(.borderedProminent)
                                 .tint(proAccent)
                         }
-                        Button("购买 \(ProLicenseConfig.price)（早鸟 \(ProLicenseConfig.earlyBirdPrice)）") { license.buy() }
+                        Button(tr("购买 \(ProLicenseConfig.price)（早鸟 \(ProLicenseConfig.earlyBirdPrice)）")) { license.buy() }
                         Button("查看 Pro 功能…") { PaywallWindow.shared.show() }
                             .buttonStyle(.link)
                     }

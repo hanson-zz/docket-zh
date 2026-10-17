@@ -11,10 +11,10 @@ public enum BreathPacer {
 
         public var title: String {
             switch self {
-            case .inhale: "吸气"
-            case .holdIn: "屏息"
-            case .exhale: "呼气"
-            case .holdOut: "停一下"
+            case .inhale: tr("吸气")
+            case .holdIn: tr("屏息")
+            case .exhale: tr("呼气")
+            case .holdOut: tr("停一下")
             }
         }
     }
@@ -27,9 +27,9 @@ public enum BreathPacer {
 
         public var title: String {
             switch self {
-            case .calm: "舒缓 4-6"
-            case .box: "方块 4-4-4-4"
-            case .relax: "助眠 4-7-8"
+            case .calm: tr("舒缓 4-6")
+            case .box: tr("方块 4-4-4-4")
+            case .relax: tr("助眠 4-7-8")
             }
         }
 

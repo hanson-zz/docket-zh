@@ -35,20 +35,20 @@ public enum TimeProgress {
         /// 设置里的名字。
         public var title: String {
             switch self {
-            case .day: "日"
-            case .week: "周"
-            case .month: "月"
-            case .year: "年"
+            case .day: tr("日", context: "period")
+            case .week: tr("周", context: "period")
+            case .month: tr("月", context: "period")
+            case .year: tr("年", context: "period")
             }
         }
 
         /// 读屏时说的话。
         public var spoken: String {
             switch self {
-            case .day: "今天"
-            case .week: "本周"
-            case .month: "本月"
-            case .year: "今年"
+            case .day: tr("今天")
+            case .week: tr("本周")
+            case .month: tr("本月")
+            case .year: tr("今年")
             }
         }
 
@@ -95,11 +95,11 @@ public enum TimeProgress {
     /// 周期的名字：2026年、10月、第42周、周六。
     public static func label(_ period: Period, now: Date, calendar: Calendar = .current) -> String {
         switch period {
-        case .year: return "\(calendar.component(.year, from: now))年"
-        case .month: return "\(calendar.component(.month, from: now))月"
-        case .week: return "第\(calendar.component(.weekOfYear, from: now))周"
+        case .year: return tr("\(calendar.component(.year, from: now))年")
+        case .month: return tr("\(calendar.component(.month, from: now))月")
+        case .week: return tr("第\(calendar.component(.weekOfYear, from: now))周")
         case .day:
-            let names = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+            let names = [tr("周日"), tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六")]
             let weekday = calendar.component(.weekday, from: now)
             return names[max(0, min(names.count - 1, weekday - 1))]
         }
@@ -113,10 +113,10 @@ public enum TimeProgress {
         switch period {
         case .day:
             let minutes = Int((max(0, end.timeIntervalSince(now)) / 60).rounded(.up))
-            return minutes >= 60 ? "剩 \(minutes / 60) 小时" : "剩 \(minutes) 分钟"
+            return minutes >= 60 ? tr("剩 \(minutes / 60) 小时") : tr("剩 \(minutes) 分钟")
         case .week, .month, .year:
             let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: end).day ?? 0
-            return "剩 \(max(0, days)) 天"
+            return tr("剩 \(max(0, days)) 天")
         }
     }
 

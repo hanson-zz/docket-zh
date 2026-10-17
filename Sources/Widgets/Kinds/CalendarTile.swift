@@ -261,17 +261,17 @@ struct CalendarTile: View {
     /// the tile was not allowed to read.
     private var stateLine: String {
         guard hasAccess else {
-            return access == .notDetermined ? "未获得日历访问权限" : "日历访问权限已关闭"
+            return access == .notDetermined ? tr("未获得日历访问权限") : tr("日历访问权限已关闭")
         }
-        return dayEvents.isEmpty ? "没有日程" : "今天没有剩余日程"
+        return dayEvents.isEmpty ? tr("没有日程") : tr("今天没有剩余日程")
     }
 
     /// The same four states in the width a column has for them.
     private var shortStateLine: String {
         guard hasAccess else {
-            return access == .notDetermined ? "尚无权限" : "权限已关闭"
+            return access == .notDetermined ? tr("尚无权限") : tr("权限已关闭")
         }
-        return dayEvents.isEmpty ? "没有日程" : "没有剩余日程"
+        return dayEvents.isEmpty ? tr("没有日程") : tr("没有剩余日程")
     }
 
     // MARK: Data
@@ -379,7 +379,7 @@ private struct TileEvent: Identifiable, Hashable {
             // part of it or two occurrences on one day collide in the list.
             id: "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)",
             // An untitled event is a real event; the calendar apps call it this.
-            title: title.isEmpty ? "新日程" : title,
+            title: title.isEmpty ? tr("新日程") : title,
             start: start,
             end: event.endDate ?? start,
             isAllDay: event.isAllDay,
@@ -397,7 +397,7 @@ private struct TileEvent: Identifiable, Hashable {
 
     /// Where the clock goes for something that has no clock.
     var timeText: String {
-        isAllDay ? "全天" : start.formatted(date: .omitted, time: .shortened)
+        isAllDay ? tr("全天") : start.formatted(date: .omitted, time: .shortened)
     }
 
     /// The panel's second line, and a calendar with no name does not earn a
@@ -415,15 +415,15 @@ private struct TileEvent: Identifiable, Hashable {
             calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
         }
         return [
-            TileEvent(id: "sample-review", title: "设计评审",
+            TileEvent(id: "sample-review", title: tr("设计评审"),
                       start: at(9, 30), end: at(10, 15),
-                      calendar: "工作", color: calendarAccent),
-            TileEvent(id: "sample-one", title: "与小李一对一沟通",
+                      calendar: tr("工作"), color: calendarAccent),
+            TileEvent(id: "sample-one", title: tr("与小李一对一沟通"),
                       start: at(11, 0), end: at(11, 30),
-                      calendar: "工作", color: Color(hex: PaletteColor.blue.hex)),
-            TileEvent(id: "sample-lunch", title: "团队午餐",
+                      calendar: tr("工作"), color: Color(hex: PaletteColor.blue.hex)),
+            TileEvent(id: "sample-lunch", title: tr("团队午餐"),
                       start: at(13, 0), end: at(14, 0),
-                      calendar: "个人", color: Color(hex: PaletteColor.green.hex))
+                      calendar: tr("个人"), color: Color(hex: PaletteColor.green.hex))
         ]
     }
 }

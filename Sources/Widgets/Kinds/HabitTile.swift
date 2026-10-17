@@ -34,7 +34,7 @@ struct HabitTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("习惯打卡，\(HabitTracker.caption(done: done, total: all.count))")
+        .accessibilityLabel(tr("习惯打卡，\(HabitTracker.caption(done: done, total: all.count))"))
     }
 
     // MARK: Wide
@@ -46,7 +46,7 @@ struct HabitTile: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(WidgetStyle.primary)
             }
-            TileReading(value: "习惯打卡", caption: HabitTracker.caption(done: 0, total: 0), valueSize: 15)
+            TileReading(value: tr("习惯打卡"), caption: HabitTracker.caption(done: 0, total: 0), valueSize: 15)
             Spacer(minLength: 0)
         }
     }
@@ -138,13 +138,13 @@ struct HabitTile: View {
 
     private func streakText(_ habit: Habit, size: CGFloat) -> some View {
         let streak = HabitTracker.streak(habit, today: context.now)
-        return Text(streak > 0 ? "\(streak) 天" : "0 天")
+        return Text(streak > 0 ? tr("\(streak) 天") : tr("0 天"))
             .font(.system(size: size, weight: .semibold))
             .foregroundStyle(streak > 0 ? tint(habit) : WidgetStyle.secondary)
             .monospacedDigit()
             .lineLimit(1)
             .fixedSize()
-            .help("连续打卡 \(streak) 天")
+            .help(tr("连续打卡 \(streak) 天"))
     }
 
     /// Seven dots, today last. Only today's dot is a control.
@@ -166,7 +166,7 @@ struct HabitTile: View {
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
                     .help(todayHelp(habit, done: day.done))
-                    .accessibilityLabel(day.done ? "取消 \(habit.name) 今天的打卡" : "\(habit.name) 今天打卡")
+                    .accessibilityLabel(day.done ? tr("取消 \(habit.name) 今天的打卡") : tr("\(habit.name) 今天打卡"))
                 } else {
                     dot(day, habit: habit, size: size)
                 }
@@ -175,9 +175,9 @@ struct HabitTile: View {
     }
 
     private func todayHelp(_ habit: Habit, done: Bool) -> String {
-        if done { return "取消今天的打卡" }
-        guard habit.goal > 1 else { return "今天打卡：\(habit.name)" }
-        return "\(habit.name) 今天 \(HabitTracker.todayText(habit, today: context.now))，点一下加 1"
+        if done { return tr("取消今天的打卡") }
+        guard habit.goal > 1 else { return tr("今天打卡：\(habit.name)") }
+        return tr("\(habit.name) 今天 \(HabitTracker.todayText(habit, today: context.now))，点一下加 1")
     }
 
     private func dot(_ day: HabitDay, habit: Habit, size: CGFloat) -> some View {
@@ -278,12 +278,12 @@ enum HabitSamples {
                 .map { HabitTracker.dayKey($0, calendar: calendar) })
         }
         return [
-            Habit(id: "s1", name: "早起", days: days([0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13]),
+            Habit(id: "s1", name: tr("早起"), days: days([0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13]),
                   icon: "sunrise.fill", color: .orange),
-            Habit(id: "s2", name: "读书 30 分钟", days: days([1, 2, 3, 5, 6, 9, 13, 14]),
+            Habit(id: "s2", name: tr("读书 30 分钟"), days: days([1, 2, 3, 5, 6, 9, 13, 14]),
                   icon: "book.fill", color: .indigo),
-            Habit(id: "s3", name: "喝水", days: days([2, 4, 7, 9, 11]), icon: "drop.fill", color: .blue,
-                  goal: 8, unit: "杯", counts: [HabitTracker.dayKey(today, calendar: calendar): 5]),
+            Habit(id: "s3", name: tr("喝水"), days: days([2, 4, 7, 9, 11]), icon: "drop.fill", color: .blue,
+                  goal: 8, unit: tr("杯"), counts: [HabitTracker.dayKey(today, calendar: calendar): 5]),
         ]
     }
 }

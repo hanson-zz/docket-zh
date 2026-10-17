@@ -37,14 +37,14 @@ struct PostureTile: View {
 
     private var value: String {
         guard active else { return "--:--" }
-        guard remaining > 0 else { return "起身" }
+        guard remaining > 0 else { return tr("起身") }
         let seconds = max(0, Int(remaining.rounded(.up)))
         return "\(seconds / 60):\(String(format: "%02d", seconds % 60))"
     }
 
     private var caption: String {
-        guard active else { return "不在提醒时段" }
-        return remaining > 0 ? "今日已起身 \(breaksToday) 次" : "该起身活动了"
+        guard active else { return tr("不在提醒时段") }
+        return remaining > 0 ? tr("今日已起身 \(breaksToday) 次") : tr("该起身活动了")
     }
 
     /// When the next notification goes out, or nil when there should be none.

@@ -83,9 +83,9 @@ struct ClockDigits: Equatable {
         minute = split.count > 1 ? split[1] : "--"
         second = String(format: "%02d", c.second ?? 0)
         meridiem = parts.meridiem
-        monthDay = "\(c.month ?? 1)月\(c.day ?? 1)日"
+        monthDay = tr("\(c.month ?? 1)月\(c.day ?? 1)日")
         day = String(format: "%02d", c.day ?? 1)
-        weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][((c.weekday ?? 1) - 1) % 7]
+        weekday = [tr("周日"), tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六")][((c.weekday ?? 1) - 1) % 7]
     }
 }
 
@@ -356,8 +356,8 @@ private struct MinimalFlipFace: View {
             }
         } else {
             let groups: [(String, String)] = seconds
-                ? [(t.hour, "时"), (t.minute, "分"), (t.second, "秒")]
-                : [(t.hour, "时"), (t.minute, "分")]
+                ? [(t.hour, tr("时")), (t.minute, tr("分")), (t.second, tr("秒"))]
+                : [(t.hour, tr("时")), (t.minute, tr("分"))]
             let w: CGFloat = seconds ? 19 : 25
             HStack(spacing: seconds ? 6 : 10) {
                 ForEach(groups.indices, id: \.self) { i in

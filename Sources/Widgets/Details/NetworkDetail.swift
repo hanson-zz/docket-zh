@@ -65,7 +65,7 @@ struct NetworkDetail: View {
                     Text(reading.label)
                         .font(WidgetStyle.value(28))
                         .foregroundStyle(WidgetStyle.primary)
-                    Text(wifiName ?? "Wi-Fi 信号")
+                    Text(wifiName ?? tr("Wi-Fi 信号"))
                         .font(WidgetStyle.caption(11))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
@@ -74,13 +74,13 @@ struct NetworkDetail: View {
             if let rssi = wifiRSSI {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
                                     GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    StatChip(label: "信号强度", value: "\(rssi) dBm")
-                    StatChip(label: "信号质量", value: "\(reading.percent)%")
+                    StatChip(label: tr("信号强度"), value: "\(rssi) dBm")
+                    StatChip(label: tr("信号质量"), value: "\(reading.percent)%")
                     if let noise = wifiNoise, let snr = WifiQuality.snr(rssi: rssi, noise: noise) {
-                        StatChip(label: "信噪比", value: "\(snr) dB")
+                        StatChip(label: tr("信噪比"), value: "\(snr) dB")
                     }
                     if let rate = wifiRate {
-                        StatChip(label: "连接速率", value: "\(Int(rate.rounded())) Mbps")
+                        StatChip(label: tr("连接速率"), value: "\(Int(rate.rounded())) Mbps")
                     }
                 }
             }
@@ -92,8 +92,8 @@ struct NetworkDetail: View {
 
     private var headline: some View {
         HStack(spacing: 12) {
-            if showsDownload { reading("arrow.down", "下载", download, Self.downTint) }
-            if showsUpload { reading("arrow.up", "上传", upload, Self.upTint) }
+            if showsDownload { reading("arrow.down", tr("下载"), download, Self.downTint) }
+            if showsUpload { reading("arrow.up", tr("上传"), upload, Self.upTint) }
         }
     }
 
@@ -157,7 +157,7 @@ struct NetworkDetail: View {
             .padding(.top, 14)
             // Named with the span the buffer actually holds, which is under a
             // minute until it fills.
-            Text((window >= NetworkMetrics.historyLength ? "最近 60 秒" : "最近 \(window) 秒")
+            Text((window >= NetworkMetrics.historyLength ? tr("最近 60 秒") : tr("最近 \(window) 秒"))
                     .uppercased())
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(0.6)
@@ -184,12 +184,12 @@ struct NetworkDetail: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
                             GridItem(.flexible(), spacing: 8)], spacing: 8) {
             if showsDownload {
-                StatChip(label: "下载平均", value: text(average(downloadHistory)))
-                StatChip(label: "下载峰值", value: text(peak(downloadHistory)))
+                StatChip(label: tr("下载平均"), value: text(average(downloadHistory)))
+                StatChip(label: tr("下载峰值"), value: text(peak(downloadHistory)))
             }
             if showsUpload {
-                StatChip(label: "上传平均", value: text(average(uploadHistory)))
-                StatChip(label: "上传峰值", value: text(peak(uploadHistory)))
+                StatChip(label: tr("上传平均"), value: text(average(uploadHistory)))
+                StatChip(label: tr("上传峰值"), value: text(peak(uploadHistory)))
             }
         }
     }

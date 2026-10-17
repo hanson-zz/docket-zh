@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
-	<key>CFBundleLocalizations</key><array><string>zh-Hans</string></array>
+	<key>CFBundleLocalizations</key><array><string>zh-Hans</string><string>en</string></array>
 	<key>CFBundleDisplayName</key><string>码头</string>
 	<key>LSHasLocalizedDisplayName</key><true/>
 	<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>

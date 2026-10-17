@@ -39,9 +39,9 @@ public enum WaterSex: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .unset: "未设置"
-        case .male: "男"
-        case .female: "女"
+        case .unset: tr("未设置")
+        case .male: tr("男")
+        case .female: tr("女")
         }
     }
 }
@@ -55,9 +55,9 @@ public enum WaterActivity: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .sedentary: "久坐"
-        case .moderate: "中等"
-        case .heavy: "重体力"
+        case .sedentary: tr("久坐")
+        case .moderate: tr("中等")
+        case .heavy: tr("重体力")
         }
     }
 
@@ -80,10 +80,10 @@ public enum WaterClimate: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .mild: "温和"
-        case .hotHumid: "炎热潮湿"
-        case .dry: "干燥或暖气房"
-        case .altitude: "高海拔"
+        case .mild: tr("温和")
+        case .hotHumid: tr("炎热潮湿")
+        case .dry: tr("干燥或暖气房")
+        case .altitude: tr("高海拔")
         }
     }
 
@@ -105,9 +105,9 @@ public enum WaterCondition: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .none: "无"
-        case .pregnant: "怀孕"
-        case .nursing: "哺乳"
+        case .none: tr("无")
+        case .pregnant: tr("怀孕")
+        case .nursing: tr("哺乳")
         }
     }
 
@@ -287,43 +287,43 @@ public enum WaterGoal {
             let rate = perKilogram(profile)
             perKg = rate
             base = weight * Double(rate)
-            lines.append(WaterGoalLine(id: "base", title: "基数",
-                                       detail: "体重 \(number(weight)) 公斤 x \(rate) 毫升",
+            lines.append(WaterGoalLine(id: "base", title: tr("基数"),
+                                       detail: tr("体重 \(number(weight)) 公斤 x \(rate) 毫升"),
                                        millilitres: Int(base.rounded())))
         } else {
             base = Double(guidelineBase(profile.sex))
-            let who = profile.sex == .unset ? "成人" : "成年\(profile.sex.title)性"
-            lines.append(WaterGoalLine(id: "base", title: "基数",
-                                       detail: "未填体重，按膳食指南（2022）\(who)基准",
+            let who = profile.sex == .unset ? tr("成人") : tr("成年\(profile.sex.title)性")
+            lines.append(WaterGoalLine(id: "base", title: tr("基数"),
+                                       detail: tr("未填体重，按膳食指南（2022）\(who)基准"),
                                        millilitres: Int(base)))
         }
 
         var running = base
         if profile.activity != .sedentary {
             let after = base * profile.activity.factor
-            lines.append(WaterGoalLine(id: "activity", title: "日常活动量：\(profile.activity.title)",
+            lines.append(WaterGoalLine(id: "activity", title: tr("日常活动量：\(profile.activity.title)"),
                                        detail: "x \(number(profile.activity.factor))",
                                        millilitres: Int((after - base).rounded())))
             running = after
         }
         if profile.exerciseMinutes > 0 {
             let extra = profile.exerciseMinutes * millilitresPerExerciseMinute
-            lines.append(WaterGoalLine(id: "exercise", title: "今日运动 \(profile.exerciseMinutes) 分钟",
-                                       detail: "每 30 分钟 +300 毫升", millilitres: extra))
+            lines.append(WaterGoalLine(id: "exercise", title: tr("今日运动 \(profile.exerciseMinutes) 分钟"),
+                                       detail: tr("每 30 分钟 +300 毫升"), millilitres: extra))
             running += Double(extra)
         }
         if profile.climate.extra > 0 {
-            lines.append(WaterGoalLine(id: "climate", title: "气候：\(profile.climate.title)",
+            lines.append(WaterGoalLine(id: "climate", title: tr("气候：\(profile.climate.title)"),
                                        detail: "", millilitres: profile.climate.extra))
             running += Double(profile.climate.extra)
         }
         if profile.condition != .none, profile.sex != .male {
-            lines.append(WaterGoalLine(id: "condition", title: "特殊状态：\(profile.condition.title)",
+            lines.append(WaterGoalLine(id: "condition", title: tr("特殊状态：\(profile.condition.title)"),
                                        detail: "", millilitres: profile.condition.extra))
             running += Double(profile.condition.extra)
         }
         if profile.unwell {
-            lines.append(WaterGoalLine(id: "unwell", title: "发烧或腹泻", detail: "今天",
+            lines.append(WaterGoalLine(id: "unwell", title: tr("发烧或腹泻"), detail: tr("今天"),
                                        millilitres: unwellExtra))
             running += Double(unwellExtra)
         }
@@ -333,10 +333,10 @@ public enum WaterGoal {
         let shown = lines.reduce(0) { $0 + $1.millilitres }
         if roundedValue != recommended {
             // Rounding folded into the limit line: one adjustment, one reason.
-            lines.append(WaterGoalLine(id: "limit", title: "限制在 1200 到 4500 毫升",
+            lines.append(WaterGoalLine(id: "limit", title: tr("限制在 1200 到 4500 毫升"),
                                        detail: "", millilitres: recommended - shown))
         } else if recommended != shown {
-            lines.append(WaterGoalLine(id: "round", title: "取整到 50 毫升",
+            lines.append(WaterGoalLine(id: "round", title: tr("取整到 50 毫升"),
                                        detail: "", millilitres: recommended - shown))
         }
 
@@ -412,7 +412,7 @@ public enum WaterGoal {
 
     /// "+300 毫升", "-20 毫升", or the base as "1980 毫升".
     public static func signed(_ line: WaterGoalLine) -> String {
-        if line.id == "base" { return "\(line.millilitres) 毫升" }
-        return line.millilitres >= 0 ? "+\(line.millilitres) 毫升" : "\(line.millilitres) 毫升"
+        if line.id == "base" { return tr("\(line.millilitres) 毫升") }
+        return line.millilitres >= 0 ? tr("+\(line.millilitres) 毫升") : tr("\(line.millilitres) 毫升")
     }
 }

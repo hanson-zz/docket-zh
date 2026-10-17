@@ -105,15 +105,15 @@ struct SettingsView: View {
     /// rows need no colour to be told apart, and the tiles made a small
     /// window read as a phone's settings screen.
     private static let sections: [(id: String, title: String, symbol: String)] = [
-        ("Shelf", "扩展栏", "rectangle.bottomthird.inset.filled"),
-        ("Widgets", "小组件", "square.grid.2x2"),
-        ("WidgetManager", "小组件管理", "slider.horizontal.3"),
-        ("Layouts", "布局", "square.stack.3d.up"),
+        ("Shelf", tr("扩展栏"), "rectangle.bottomthird.inset.filled"),
+        ("Widgets", tr("小组件"), "square.grid.2x2"),
+        ("WidgetManager", tr("小组件管理"), "slider.horizontal.3"),
+        ("Layouts", tr("布局"), "square.stack.3d.up"),
         // AI 和快捷键各自一页，不再堆在“通用”里。
         ("AI", "AI", "sparkles"),
-        ("Shortcuts", "快捷键", "command"),
-        ("General", "通用", "gearshape"),
-        ("Pro", "码头 Pro", "crown"),
+        ("Shortcuts", tr("快捷键"), "command"),
+        ("General", tr("通用"), "gearshape"),
+        ("Pro", tr("码头 Pro"), "crown"),
     ]
 
     var body: some View {
@@ -140,7 +140,7 @@ struct SettingsView: View {
                 // stagger instead of swapping a finished pane for another
                 // finished pane.
                 .id(selection.current)
-                .navigationTitle(Self.sections.first { $0.id == selection.current }?.title ?? "设置")
+                .navigationTitle(Self.sections.first { $0.id == selection.current }?.title ?? tr("设置"))
         }
         // A minimum rather than a fixed size: the window is resizable, and a
         // hard frame here would win against it.
@@ -206,11 +206,11 @@ struct SettingsView: View {
     /// the rest.
     private var layouts: some View {
         Form {
-            layoutList(.customDock, title: "扩展栏",
+            layoutList(.customDock, title: tr("扩展栏"),
                        selection: $state.customDock.profileID, allowsNone: false)
                 .disabled(state.setup == .macOSDockOnly)
 
-            layoutList(.macOSDock, title: "系统程序坞",
+            layoutList(.macOSDock, title: tr("系统程序坞"),
                        selection: $state.macOSDock.profileID, allowsNone: true)
 
             Section {
@@ -272,8 +272,8 @@ struct SettingsView: View {
     private var switching: some View {
         Section {
             Toggle(isOn: $state.customDock.switchLayoutsByGesture) {
-                subtitled("在扩展栏上用 ⌘ + 滚轮或双指左右轻扫切换布局",
-                          "指针位于扩展栏上时生效，在扩展栏布局之间循环切换。扩展栏内容超出屏幕时，左右轻扫仍用于滚动扩展栏。")
+                subtitled(tr("在扩展栏上用 ⌘ + 滚轮或双指左右轻扫切换布局"),
+                          tr("指针位于扩展栏上时生效，在扩展栏布局之间循环切换。扩展栏内容超出屏幕时，左右轻扫仍用于滚动扩展栏。"))
             }
             .disabled(state.setup == .macOSDockOnly)
 
@@ -297,7 +297,7 @@ struct SettingsView: View {
             // "None" is the documented "leave the live Dock completely alone"
             // state, which has to stay reachable after the first capture.
             if allowsNone {
-                LayoutRow(name: .constant("无"), editable: false,
+                LayoutRow(name: .constant(tr("无")), editable: false,
                           active: selection.wrappedValue == nil,
                           onUse: { selection.wrappedValue = nil }) { EmptyView() }
             }
@@ -376,7 +376,7 @@ struct SettingsView: View {
                         }
                     }
                 } label: {
-                    subtitled("展开 AI 对话", "默认不设。建议避开 ChatGPT 桌面版的 Option+空格。")
+                    subtitled(tr("展开 AI 对话"), tr("默认不设。建议避开 ChatGPT 桌面版的 Option+空格。"))
                 }
                 if let warning = AIHotKeyAdvice.warning(for: state.aiNotch.hotKey) {
                     Label(warning, systemImage: "exclamationmark.triangle.fill")
@@ -388,9 +388,9 @@ struct SettingsView: View {
                 Text("AI 助手")
             }
 
-            shortcutList(.customDock, title: "切换扩展栏布局")
+            shortcutList(.customDock, title: tr("切换扩展栏布局"))
                 .disabled(state.setup == .macOSDockOnly)
-            shortcutList(.macOSDock, title: "切换系统程序坞布局")
+            shortcutList(.macOSDock, title: tr("切换系统程序坞布局"))
 
             Section {
                 Text("点按右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
@@ -449,7 +449,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: {
-                    Text("\(state.activeCustomProfile?.name ?? "扩展栏") · \(widgets.count) 个小组件")
+                    Text(tr("\(state.activeCustomProfile?.name ?? tr("扩展栏")) · \(widgets.count) 个小组件"))
                 } footer: {
                     Text("拖动排序，关掉开关会把小组件从扩展栏上隐藏，设置保留，随时可以再打开。应用、文件夹和分组的位置不受影响。")
                         .font(.caption)
@@ -516,6 +516,8 @@ struct SettingsView: View {
                 .padding(.vertical, 2)
             }
 
+            LanguageSection()
+
             AppIconSection()
 
             Section("菜单栏") {
@@ -525,8 +527,8 @@ struct SettingsView: View {
                 Toggle("显示菜单栏图标", isOn: $state.menuBar.showIcon)
                     .disabled(state.setup == .macOSDockOnly)
                     .help(state.setup == .macOSDockOnly
-                          ? "屏幕上没有扩展栏时，这是访问码头的唯一途径。"
-                          : "关闭此项后，仍可通过扩展栏自身的菜单打开设置。")
+                          ? tr("屏幕上没有扩展栏时，这是访问码头的唯一途径。")
+                          : tr("关闭此项后，仍可通过扩展栏自身的菜单打开设置。"))
                 Picker("在旁边显示", selection: $state.menuBar.label) {
                     ForEach(MenuBarLabelMode.allCases, id: \.self) { Text(title($0)).tag($0) }
                 }
@@ -538,7 +540,7 @@ struct SettingsView: View {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)
                 } label: {
-                    subtitled("重新显示新手引导", "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。")
+                    subtitled(tr("重新显示新手引导"), tr("再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。"))
                 }
             } header: {
                 Text("新手引导")
@@ -562,7 +564,7 @@ struct SettingsView: View {
                         .resizable()
                         .frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("码头 \(shortVersion)")
+                        Text(tr("码头 \(shortVersion)"))
                             .font(.headline)
                             .monospacedDigit()
                         Text("所有数据都保存在这台 Mac 上 Application Support 中的一个文件里，不会同步。")
@@ -585,7 +587,7 @@ struct SettingsView: View {
                     }
                     .keyboardShortcut("q", modifiers: [.command])
                 } label: {
-                    subtitled("退出码头", "关闭扩展栏和所有小组件。设置和数据已保存，下次打开会原样恢复。")
+                    subtitled(tr("退出码头"), tr("关闭扩展栏和所有小组件。设置和数据已保存，下次打开会原样恢复。"))
                 }
             }
         }
@@ -601,8 +603,8 @@ struct SettingsView: View {
             Toggle("亮度提示", isOn: $state.island.brightness)
                 .disabled(!brightnessAvailable && !state.island.brightness)
                 .help(brightnessAvailable
-                      ? "调节内建显示器亮度时，在屏幕顶部中央显示当前亮度。"
-                      : "这台 Mac 没有可读取亮度的内建显示器。")
+                      ? tr("调节内建显示器亮度时，在屏幕顶部中央显示当前亮度。")
+                      : tr("这台 Mac 没有可读取亮度的内建显示器。"))
             Toggle("会议倒计时", isOn: $state.island.meeting)
                 .help("日程开始前，在屏幕顶部中央显示“X 分钟后：日程标题”。需要日历权限。")
             if state.island.meeting {
@@ -610,7 +612,7 @@ struct SettingsView: View {
                     get: { state.island.leadMinutes },
                     set: { state.island.meetingMinutes = $0 })) {
                     ForEach(IslandSettings.minuteChoices, id: \.self) { minutes in
-                        Text("\(minutes) 分钟").tag(minutes)
+                        Text(tr("\(minutes) 分钟")).tag(minutes)
                     }
                 }
             }
@@ -644,9 +646,9 @@ struct SettingsView: View {
             Toggle(isOn: $state.customDock.followSystemDock) {
                 // What is being inherited, under the switch that inherits it,
                 // rather than in a row and a footnote of its own.
-                subtitled("与系统程序坞保持一致", state.customDock.followSystemDock
+                subtitled(tr("与系统程序坞保持一致"), state.customDock.followSystemDock
                           ? SystemDockSettings.shared.summary
-                          : "自行设置扩展栏的位置和大小。")
+                          : tr("自行设置扩展栏的位置和大小。"))
             }
 
             // Hidden while the Dock dictates them, not greyed: following is
@@ -694,7 +696,7 @@ struct SettingsView: View {
                 LabeledContent {
                     Button("保持一致", action: onResumeFollowingScale)
                 } label: {
-                    subtitled("大小", "已手动设置。其他设置仍跟随程序坞。")
+                    subtitled(tr("大小"), tr("已手动设置。其他设置仍跟随程序坞。"))
                 }
             }
         }
@@ -723,13 +725,13 @@ struct SettingsView: View {
                 Text("原色").tag(WidgetColorMode.original)
                 Text("单色").tag(WidgetColorMode.monochrome)
             } label: {
-                subtitled("小组件颜色", "单色只把扩展栏上的小组件画成灰阶，应用图标不受影响。")
+                subtitled(tr("小组件颜色"), tr("单色只把扩展栏上的小组件画成灰阶，应用图标不受影响。"))
             }
             .pickerStyle(.segmented)
 
             Toggle(isOn: $state.customDock.reduceTransparency) {
-                subtitled("降低透明度",
-                          "使用不透明的底板。系统设置 ▸ 辅助功能 ▸ 显示 中开启“降低透明度”时会自动生效。")
+                subtitled(tr("降低透明度"),
+                          tr("使用不透明的底板。系统设置 ▸ 辅助功能 ▸ 显示 中开启“降低透明度”时会自动生效。"))
             }
 
             if !state.customDock.followSystemDock {
@@ -742,8 +744,8 @@ struct SettingsView: View {
                 Text("横向滚动").tag(ShelfOverflow.scroll)
                 Text("自动缩小").tag(ShelfOverflow.shrink)
             } label: {
-                subtitled("放不下时",
-                          "自动缩小会把扩展栏整体缩小到能放下为止，最小为所选大小的一半；仍放不下时再滚动。")
+                subtitled(tr("放不下时"),
+                          tr("自动缩小会把扩展栏整体缩小到能放下为止，最小为所选大小的一半；仍放不下时再滚动。"))
             }
             .pickerStyle(.segmented)
 
@@ -754,7 +756,7 @@ struct SettingsView: View {
             // Only means anything while something is hiding.
             if state.customDock.followSystemDock || state.customDock.autoHide {
                 Toggle(isOn: $state.customDock.showHandleWhenHidden) {
-                    subtitled("隐藏时保留一条细边", "便于看到它的位置。")
+                    subtitled(tr("隐藏时保留一条细边"), tr("便于看到它的位置。"))
                 }
             }
             LabeledContent {
@@ -766,18 +768,18 @@ struct SettingsView: View {
                         .frame(width: 44, alignment: .trailing)
                 }
             } label: {
-                subtitled("距屏幕边缘", "扩展栏与所在屏幕边缘之间的距离，设为 0 即贴边。")
+                subtitled(tr("距屏幕边缘"), tr("扩展栏与所在屏幕边缘之间的距离，设为 0 即贴边。"))
             }
             Toggle(isOn: $state.customDock.reserveSystemDockSpace) {
-                subtitled("为系统程序坞留出空间",
-                          "系统程序坞与扩展栏在同一边缘时，把扩展栏抬到程序坞之外。关闭后扩展栏会贴边并盖在系统程序坞上方。")
+                subtitled(tr("为系统程序坞留出空间"),
+                          tr("系统程序坞与扩展栏在同一边缘时，把扩展栏抬到程序坞之外。关闭后扩展栏会贴边并盖在系统程序坞上方。"))
             }
             Toggle(isOn: $state.customDock.hideWhenMacOSDockAppears) {
-                subtitled("为系统程序坞让位",
-                          "两者位于同一边缘时，移向其中一个会让另一个显露出来。")
+                subtitled(tr("为系统程序坞让位"),
+                          tr("两者位于同一边缘时，移向其中一个会让另一个显露出来。"))
             }
             Toggle(isOn: $state.customDock.useAsDesktopWidget) {
-                subtitled("置于窗口之后", "像桌面小组件一样停留在桌面上。")
+                subtitled(tr("置于窗口之后"), tr("像桌面小组件一样停留在桌面上。"))
             }
         }
 
@@ -791,8 +793,8 @@ struct SettingsView: View {
     private var soundSection: some View {
         Section {
             Toggle(isOn: $state.widgetSounds.enabled) {
-                subtitled("添加和移除小组件时播放音效",
-                          "添加时一声轻响，移除时像程序坞一样“噗”一声。系统设置里关闭了“播放用户界面音效”时不会播放。")
+                subtitled(tr("添加和移除小组件时播放音效"),
+                          tr("添加时一声轻响，移除时像程序坞一样“噗”一声。系统设置里关闭了“播放用户界面音效”时不会播放。"))
             }
             if state.widgetSounds.enabled {
                 Picker("音效风格", selection: $state.widgetSounds.style) {
@@ -851,7 +853,7 @@ struct SettingsView: View {
     private func minutes(_ title: String, _ value: Binding<Int>,
                          in range: ClosedRange<Int>) -> some View {
         Stepper(value: value, in: range) {
-            LabeledContent(title) { Text("\(value.wrappedValue) 分钟") }
+            LabeledContent(title) { Text(tr("\(value.wrappedValue) 分钟")) }
         }
     }
 
@@ -894,7 +896,7 @@ struct SettingsView: View {
                 LabeledContent {
                     Button("重新同步", action: onResumeMirroringApps)
                 } label: {
-                    subtitled("应用", "使用你自己的排序，不再跟随程序坞的变化。")
+                    subtitled(tr("应用"), tr("使用你自己的排序，不再跟随程序坞的变化。"))
                 }
             }
 
@@ -980,9 +982,9 @@ struct SettingsView: View {
                     // watch the tile change. A Stepper with a title draws
                     // the title, never the value; the value has to be put
                     // there. Same shape the per-widget number controls use.
-                    minutes("专注", $state.timer.work, in: 1...180)
-                    minutes("休息", $state.timer.rest, in: 1...60)
-                    minutes("长休息", $state.timer.longBreak, in: 1...180)
+                    minutes(tr("专注"), $state.timer.work, in: 1...180)
+                    minutes(tr("休息"), $state.timer.rest, in: 1...60)
+                    minutes(tr("长休息"), $state.timer.longBreak, in: 1...180)
                     Stepper(value: $state.timer.sessions, in: 1...12) {
                         LabeledContent("长休息前的专注次数") {
                             Text("\(state.timer.sessions)")
@@ -1029,43 +1031,43 @@ struct SettingsView: View {
 
 private func title(_ value: AppAppearance) -> String {
     switch value {
-    case .system: "跟随系统"
-    case .light: "浅色"
-    case .dark: "深色"
+    case .system: tr("跟随系统")
+    case .light: tr("浅色")
+    case .dark: tr("深色")
     }
 }
 
 private func title(_ value: DockSetup) -> String {
     switch value {
-    case .macOSDockOnly: "系统程序坞"
-    case .both: "程序坞和扩展栏"
-    case .customReplacement: "仅扩展栏"
+    case .macOSDockOnly: tr("系统程序坞")
+    case .both: tr("程序坞和扩展栏")
+    case .customReplacement: tr("仅扩展栏")
     }
 }
 
 private func detail(_ value: DockSetup) -> String {
     switch value {
-    case .macOSDockOnly: "只使用系统程序坞，并可切换已存储的布局。"
-    case .both: "系统程序坞放应用，另一侧边缘放一条小组件扩展栏。"
-    case .customReplacement: "用一条扩展栏同时放应用和小组件，系统程序坞保持隐藏。"
+    case .macOSDockOnly: tr("只使用系统程序坞，并可切换已存储的布局。")
+    case .both: tr("系统程序坞放应用，另一侧边缘放一条小组件扩展栏。")
+    case .customReplacement: tr("用一条扩展栏同时放应用和小组件，系统程序坞保持隐藏。")
     }
 }
 
 private func title(_ value: DockPosition) -> String {
     switch value {
-    case .left: "左侧"
-    case .top: "顶部"
-    case .bottom: "底部"
-    case .right: "右侧"
+    case .left: tr("左侧")
+    case .top: tr("顶部")
+    case .bottom: tr("底部")
+    case .right: tr("右侧")
     }
 }
 
 private func title(_ value: MenuBarLabelMode) -> String {
     switch value {
-    case .none: "不显示"
-    case .native: "系统程序坞布局"
-    case .custom: "扩展栏布局"
-    case .both: "两种布局"
+    case .none: tr("不显示")
+    case .native: tr("系统程序坞布局")
+    case .custom: tr("扩展栏布局")
+    case .both: tr("两种布局")
     }
 }
 
@@ -1311,8 +1313,8 @@ private struct LayoutRow<Preview: View>: View {
                     .imageScale(.large)
             }
             .buttonStyle(.plain)
-            .help(active ? "使用中" : "使用此布局")
-            .accessibilityLabel(active ? "使用中" : "使用“\(name)”")
+            .help(active ? tr("使用中") : tr("使用此布局"))
+            .accessibilityLabel(active ? tr("使用中") : tr("使用“\(name)”"))
 
             if renaming {
                 // Unlabelled and leading: inside a form a titled field draws
@@ -1387,8 +1389,8 @@ struct ShortcutRecorder: View {
         }
         .controlSize(.small)
         .help(recorder.isRecording
-              ? "按下组合键；按 Esc 取消，按删除键清除。"
-              : "点按以录制切换到此布局的快捷键。")
+              ? tr("按下组合键；按 Esc 取消，按删除键清除。")
+              : tr("点按以录制切换到此布局的快捷键。"))
         .accessibilityLabel(Text(spokenTitle))
         // Leaving the pane mid-recording must not leave the hotkeys switched
         // off, or every layout shortcut would stay dead until a relaunch.
@@ -1396,15 +1398,15 @@ struct ShortcutRecorder: View {
     }
 
     private var spokenTitle: String {
-        guard let combo else { return "录制快捷键" }
-        return "快捷键 " + combo.displayString
+        guard let combo else { return tr("录制快捷键") }
+        return tr("快捷键 ") + combo.displayString
     }
 
     private var title: String {
         if recorder.isRecording {
-            return recorder.rejected ? "须含 ⌃⌥⌘" : "请按快捷键…"
+            return recorder.rejected ? tr("须含 ⌃⌥⌘") : tr("请按快捷键…")
         }
-        return combo?.displayString ?? "录制快捷键"
+        return combo?.displayString ?? tr("录制快捷键")
     }
 }
 
@@ -1503,7 +1505,7 @@ private struct SupporterColorPicker: View {
             }
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.45)
-            Text(unlocked ? "给扩展栏底板染一层颜色，“透明”外观下不生效。" : "Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。")
+            Text(unlocked ? tr("给扩展栏底板染一层颜色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -1532,7 +1534,7 @@ private struct SupporterColorPicker: View {
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .help(color?.title ?? "无")
-        .accessibilityLabel(color?.title ?? "无配色")
+        .help(color?.title ?? tr("无"))
+        .accessibilityLabel(color?.title ?? tr("无配色"))
     }
 }

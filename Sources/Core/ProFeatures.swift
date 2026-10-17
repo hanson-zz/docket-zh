@@ -19,9 +19,9 @@ public enum ProFeatures {
     /// 胶囊上的字。
     public static let badgeTitle = "Pro"
     /// 文字里的说法，替换原来的“赞助者专属”。
-    public static let label = "Pro 专属"
+    public static let label = tr("Pro 专属")
     /// 鼠标停在 Pro 标识上时的提示。
-    public static let help = "码头 Pro 专属，正式版推出后需要激活码解锁。"
+    public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
     /// 整种都是 Pro 的小组件：摸鱼时钟、时间进度、环境音、播客、废纸篓、
     /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物。

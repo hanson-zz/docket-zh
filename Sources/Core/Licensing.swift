@@ -44,7 +44,15 @@ public enum Licensing {
         """
 
     /// 码头自己的版权说明，显示在致谢窗口最上面。
-    public static let ownNotice = """
+    public static var ownNotice: String { L10n.isEnglish ? ownNoticeEnglish : ownNoticeChinese }
+
+    static let ownNoticeEnglish = """
+        Dockling is built on Docket, the open source project by Naman Parashar (MIT License). The original work is provided under the MIT License below, and its copyright belongs to the original author.
+
+        The code, images, characters and text that Dockling adds or changes beyond the original are Copyright © 2026 Hanson, all rights reserved. Installing and using Dockling is subject to the End User License Agreement (the Chinese version governs).
+        """
+
+    public static let ownNoticeChinese = """
         码头 Dockling 基于 Naman Parashar 的开源项目 Docket（MIT 许可）开发。原作部分按下面的 MIT 许可提供，版权归原作者所有。
 
         码头在原作之外新增和修改的代码、图片、角色形象和文字，版权所有 © 2026 Hanson，保留所有权利。安装和使用码头适用《最终用户许可协议》。
@@ -53,11 +61,11 @@ public enum Licensing {
     /// 需要保留声明的全部来源，原作排在第一个。
     public static let credits: [Credit] = [
         Credit(id: "docket", project: "Docket",
-               usage: "码头的原作，扩展栏、小组件和应用分组的基础代码。",
+               usage: tr("码头的原作，扩展栏、小组件和应用分组的基础代码。"),
                link: "https://github.com/nparashar150/dockset",
                text: upstreamMIT),
         Credit(id: "codenotch", project: "Codenotch",
-               usage: "Codex 用量小组件参考了它的接口和会话日志格式。",
+               usage: tr("Codex 用量小组件参考了它的接口和会话日志格式。"),
                link: "https://github.com/vinzdg/codenotch",
                text: """
         MIT License
@@ -83,7 +91,7 @@ public enum Licensing {
         SOFTWARE.
         """),
         Credit(id: "onlyswitch", project: "OnlySwitch",
-               usage: "快速开关小组件参考了它用到的系统命令。",
+               usage: tr("快速开关小组件参考了它用到的系统命令。"),
                link: "https://github.com/jacklandrin/OnlySwitch",
                text: """
         MIT License
@@ -108,8 +116,8 @@ public enum Licensing {
         OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
         SOFTWARE.
         """),
-        Credit(id: "meowradio", project: "阿喵收音机 meowRadio",
-               usage: "收音机小组件的图标和弧光调谐的样式。",
+        Credit(id: "meowradio", project: tr("阿喵收音机 meowRadio"),
+               usage: tr("收音机小组件的图标和弧光调谐的样式。"),
                link: "https://github.com/ca-x/meowRadio",
                text: """
         MIT License
@@ -135,7 +143,7 @@ public enum Licensing {
         SOFTWARE.
         """),
         Credit(id: "audiocap", project: "AudioCap",
-               usage: "应用音量小组件的声音接入流程参考了它。",
+               usage: tr("应用音量小组件的声音接入流程参考了它。"),
                link: "https://github.com/insidegui/AudioCap",
                text: """
         Copyright (c) 2024 Guilherme Rambo
@@ -164,7 +172,13 @@ public enum Licensing {
     ]
 
     /// 数据来源的署名，许可要求在显示数据的地方注明，这里再列一次。
-    public static let dataSources = """
+    public static var dataSources: String { L10n.isEnglish ? dataSourcesEnglish : dataSourcesChinese }
+
+    static let dataSourcesEnglish = """
+        Weather data from MET Norway and Open-Meteo (CC BY 4.0), crypto prices from CoinGecko, the station directory from Radio Browser, and holiday data from holiday-cn (MIT).
+        """
+
+    public static let dataSourcesChinese = """
         天气数据来自 MET Norway 和 Open-Meteo（CC BY 4.0），加密货币行情来自 CoinGecko，电台目录来自 Radio Browser，节假日数据来自 holiday-cn（MIT）。
         """
 

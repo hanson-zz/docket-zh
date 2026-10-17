@@ -27,7 +27,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: "rectangle.bottomthird.inset.filled",
-                               accessibilityDescription: "码头")
+                               accessibilityDescription: tr("码头"))
         button.image?.isTemplate = true
         button.title = labelText.isEmpty ? "" : " \(labelText)"
     }
@@ -74,15 +74,15 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         let hasShelf = app.state.setup != .macOSDockOnly
         if hasShelf {
-            menu.addItem(layoutMenu(.customDock, title: "扩展栏布局"))
+            menu.addItem(layoutMenu(.customDock, title: tr("扩展栏布局")))
         }
-        menu.addItem(layoutMenu(.macOSDock, title: "系统程序坞布局"))
+        menu.addItem(layoutMenu(.macOSDock, title: tr("系统程序坞布局")))
         menu.addItem(.separator())
 
         // Only when there is one. An always-present "you are up to date" line
         // is a permanent reminder of something nobody needs reminding of.
         if let update = UpdateService.shared.available {
-            let entry = item("更新到 \(update.version)…", #selector(openUpdate))
+            let entry = item(tr("更新到 \(update.version)…"), #selector(openUpdate))
             entry.image = NSImage(systemSymbolName: "arrow.down.circle.fill",
                                   accessibilityDescription: nil)
             menu.addItem(entry)
@@ -90,12 +90,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
         if hasShelf {
             if let hidden = hiddenWidgetsMenu() { menu.addItem(hidden) }
-            menu.addItem(item("添加小组件…", #selector(openLibrary)))
+            menu.addItem(item(tr("添加小组件…"), #selector(openLibrary)))
         }
-        menu.addItem(item("设置…", #selector(openSettings), key: ","))
-        menu.addItem(item("支持码头…", #selector(openSponsor)))
+        menu.addItem(item(tr("设置…"), #selector(openSettings), key: ","))
+        menu.addItem(item(tr("支持码头…"), #selector(openSponsor)))
         menu.addItem(.separator())
-        menu.addItem(item("退出码头", #selector(quit), key: "q"))
+        menu.addItem(item(tr("退出码头"), #selector(quit), key: "q"))
     }
 
     @objc private func openSponsor() { SponsorWindow.shared.show() }
@@ -110,7 +110,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                                                     WidgetConditionMonitor.shared.conditions,
                                                     ignoringConditions: app.showsSampleData)
         guard !hidden.isEmpty else { return nil }
-        let parent = NSMenuItem(title: "已隐藏的小组件", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: tr("已隐藏的小组件"), action: nil, keyEquivalent: "")
         let submenu = NSMenu()
         for widget in hidden {
             let name = WidgetCatalog.entry(widget.kind)?.name ?? widget.kind.rawValue
@@ -149,13 +149,13 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
         if !profiles.isEmpty { submenu.addItem(.separator()) }
         if kind == .macOSDock {
-            submenu.addItem(item("存储当前程序坞", #selector(captureDock)))
+            submenu.addItem(item(tr("存储当前程序坞"), #selector(captureDock)))
             if app.state.originalMacOSDock != nil {
-                submenu.addItem(item("恢复原始程序坞", #selector(restoreDock)))
+                submenu.addItem(item(tr("恢复原始程序坞"), #selector(restoreDock)))
             }
             submenu.addItem(.separator())
         }
-        submenu.addItem(item("编辑布局…", #selector(openLayouts)))
+        submenu.addItem(item(tr("编辑布局…"), #selector(openLayouts)))
         parent.submenu = submenu
 
         // The layout in use, greyed at the trailing edge the way a menu shows

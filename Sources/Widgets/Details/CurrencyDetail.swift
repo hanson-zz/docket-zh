@@ -114,11 +114,11 @@ struct CurrencyDetail: View {
     }
 
     private var status: String {
-        if context.isPreview { return "示例数据" }
-        if service.loading && service.rates == nil { return "正在获取汇率…" }
-        guard let rates = service.rates else { return "无法获取汇率，请检查网络连接" }
+        if context.isPreview { return tr("示例数据") }
+        if service.loading && service.rates == nil { return tr("正在获取汇率…") }
+        guard let rates = service.rates else { return tr("无法获取汇率，请检查网络连接") }
         let date = rates.updated.formatted(.dateTime.month().day().hour().minute())
-        return service.failed ? "离线，使用 \(date) 的汇率" : "汇率更新于 \(date)"
+        return service.failed ? tr("离线，使用 \(date) 的汇率") : tr("汇率更新于 \(date)")
     }
 
     private func menu(_ selected: String, choose: @escaping (String) -> Void) -> some View {

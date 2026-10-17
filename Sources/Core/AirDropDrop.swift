@@ -16,17 +16,17 @@ public enum AirDropDrop {
 
         public var title: String {
             switch self {
-            case .targeted: "松手发送"
-            case .idle, .noFiles, .unavailable: "隔空投送"
+            case .targeted: tr("松手发送")
+            case .idle, .noFiles, .unavailable: tr("隔空投送")
             }
         }
 
         public var caption: String {
             switch self {
-            case .idle: "拖文件到这里"
-            case .targeted(let files): "\(files) 个文件"
-            case .noFiles: "只能发送文件"
-            case .unavailable: "此 Mac 不支持"
+            case .idle: tr("拖文件到这里")
+            case .targeted(let files): tr("\(files) 个文件")
+            case .noFiles: tr("只能发送文件")
+            case .unavailable: tr("此 Mac 不支持")
             }
         }
 
@@ -57,5 +57,5 @@ public enum AirDropDrop {
     }
 
     /// 竖排时「隔空投送」拆成两行。
-    public static let columnTitle = "隔空\n投送"
+    public static let columnTitle = tr("隔空\n投送")
 }

@@ -19,12 +19,12 @@ struct PhotoFrameDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 PanelHeader(symbol: "photo.on.rectangle.angled",
-                            title: "相册",
+                            title: tr("相册"),
                             subtitle: subtitle)
                 content
                 HStack(spacing: 8) {
-                    PanelButton(title: "选择文件夹…", symbol: "folder", prominent: true, action: choose)
-                    PanelButton(title: "在访达中打开", symbol: nil) {
+                    PanelButton(title: tr("选择文件夹…"), symbol: "folder", prominent: true, action: choose)
+                    PanelButton(title: tr("在访达中打开"), symbol: nil) {
                         guard !context.isPreview else { return }
                         FileActions.openFolder(feed.folder)
                     }
@@ -48,9 +48,9 @@ struct PhotoFrameDetail: View {
 
     private var subtitle: String {
         let name = feed.folder.lastPathComponent
-        if context.isPreview { return "图片" }
-        guard feed.loadedAt != nil else { return "\(name) · 正在读取" }
-        return "\(name) · \(feed.files.count) 张图片"
+        if context.isPreview { return tr("图片") }
+        guard feed.loadedAt != nil else { return tr("\(name) · 正在读取") }
+        return tr("\(name) · \(feed.files.count) 张图片")
     }
 
     @ViewBuilder
@@ -61,7 +61,7 @@ struct PhotoFrameDetail: View {
             PanelNote(symbol: "lock", text: error).frame(height: 236)
         } else if feed.files.isEmpty {
             PanelNote(symbol: "photo",
-                      text: feed.loadedAt == nil ? "正在读取…" : "这个文件夹里没有图片。点按“选择文件夹…”换一个。")
+                      text: feed.loadedAt == nil ? tr("正在读取…") : tr("这个文件夹里没有图片。点按“选择文件夹…”换一个。"))
                 .frame(height: 236)
         } else {
             FileGrid(files: feed.files)
@@ -74,7 +74,7 @@ struct PhotoFrameDetail: View {
         let item = instance
         // The panel closes on the click that lands in the open panel; the
         // choice is written back to the widget either way.
-        guard let url = FileActions.chooseFolder(title: "选择相册要轮播的文件夹", startingAt: start) else { return }
+        guard let url = FileActions.chooseFolder(title: tr("选择相册要轮播的文件夹"), startingAt: start) else { return }
         WidgetWriter.write(item) { $0.set("folder", .string(url.path)) }
     }
 }

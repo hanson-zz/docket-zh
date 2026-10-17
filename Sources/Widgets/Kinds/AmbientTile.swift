@@ -17,10 +17,10 @@ struct AmbientTile: View {
     private var playing: Bool { context.isPreview ? true : player.isPlaying }
 
     private var caption: String {
-        if context.isPreview { return "24:13 后停止" }
-        guard player.isPlaying else { return sounds.isEmpty ? "在设置中选择声音" : "已暂停" }
-        if let end = player.stopAt { return "\(AmbientTimer.remaining(until: end, now: context.now)) 后停止" }
-        return "正在播放"
+        if context.isPreview { return tr("24:13 后停止") }
+        guard player.isPlaying else { return sounds.isEmpty ? tr("在设置中选择声音") : tr("已暂停") }
+        if let end = player.stopAt { return tr("\(AmbientTimer.remaining(until: end, now: context.now)) 后停止") }
+        return tr("正在播放")
     }
 
     var body: some View {
@@ -29,7 +29,7 @@ struct AmbientTile: View {
             if context.position.isVertical {
                 VStack(spacing: 4) {
                     TileBadge(size: WidgetStyle.badgeCompact) { mark(symbol, size: 14) }
-                    Text(sounds.first?.title ?? "环境音")
+                    Text(sounds.first?.title ?? tr("环境音"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -66,7 +66,7 @@ struct AmbientTile: View {
                   action: context.isPreview || sounds.isEmpty ? nil : {
             player.toggle(sounds: sounds, volume: volume)
         })
-        .help(playing ? "暂停" : "播放")
-        .accessibilityLabel(playing ? "暂停环境音" : "播放环境音")
+        .help(playing ? tr("暂停") : tr("播放"))
+        .accessibilityLabel(playing ? tr("暂停环境音") : tr("播放环境音"))
     }
 }

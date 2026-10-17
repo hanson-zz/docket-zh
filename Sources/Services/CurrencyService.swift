@@ -12,7 +12,7 @@ import Observation
 final class CurrencyService {
     static let shared = CurrencyService()
 
-    static let attribution = "汇率数据来自 ExchangeRate-API（open.er-api.com），每日更新"
+    static let attribution = tr("汇率数据来自 ExchangeRate-API（open.er-api.com），每日更新")
     static let attributionURL = URL(string: "https://www.exchangerate-api.com")!
     private static let endpoint = URL(string: "https://open.er-api.com/v6/latest/CNY")!
 

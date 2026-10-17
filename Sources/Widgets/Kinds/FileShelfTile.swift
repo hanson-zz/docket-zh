@@ -24,7 +24,7 @@ struct FileShelfTile: View {
             if column {
                 VStack(spacing: WidgetStyle.columnSpacing) {
                     badge(size: WidgetStyle.badgeColumn)
-                    Text(count == 0 ? PandaEmpty.fileShelf.line(compact: true) : "\(count) 个")
+                    Text(count == 0 ? PandaEmpty.fileShelf.line(compact: true) : tr("\(count) 个"))
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -32,8 +32,8 @@ struct FileShelfTile: View {
             } else {
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     badge(size: WidgetStyle.badge)
-                    TileReading(value: count == 0 ? PandaEmpty.fileShelf.line() : "\(count) 个文件",
-                                caption: "文件暂存", valueSize: 15)
+                    TileReading(value: count == 0 ? PandaEmpty.fileShelf.line() : tr("\(count) 个文件"),
+                                caption: tr("文件暂存"), valueSize: 15)
                     Spacer(minLength: 0)
                 }
             }

@@ -27,10 +27,10 @@ public enum PetNeed: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .food: "饱食"
-        case .mood: "心情"
-        case .energy: "精力"
-        case .clean: "清洁"
+        case .food: tr("饱食")
+        case .mood: tr("心情")
+        case .energy: tr("精力")
+        case .clean: tr("清洁")
         }
     }
 
@@ -72,12 +72,12 @@ public enum PetAction: String, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .feed: "喂食"
-        case .play: "玩耍"
-        case .sleep: "睡觉"
-        case .wash: "清洁"
-        case .heal: "看病"
-        case .treat: "奖励"
+        case .feed: tr("喂食")
+        case .play: tr("玩耍")
+        case .sleep: tr("睡觉")
+        case .wash: tr("清洁")
+        case .heal: tr("看病")
+        case .treat: tr("奖励")
         }
     }
 
@@ -99,9 +99,9 @@ public enum PetTreat: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .water: "喝了一杯水"
-        case .habit: "完成一项习惯打卡"
-        case .focus: "完成一轮专注"
+        case .water: tr("喝了一杯水")
+        case .habit: tr("完成一项习惯打卡")
+        case .focus: tr("完成一轮专注")
         }
     }
 }
@@ -118,15 +118,15 @@ public enum PetLook: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .idle: "还不错"
-        case .cheer: "很开心"
-        case .rest: "睡着了"
-        case .eat: "吃得正香"
-        case .hungry: "饿了"
-        case .sick: "生病了"
-        case .dried: "渴成骷髅了"
-        case .dusty: "积灰了"
-        case .melted: "热化了"
+        case .idle: tr("还不错")
+        case .cheer: tr("很开心")
+        case .rest: tr("睡着了")
+        case .eat: tr("吃得正香")
+        case .hungry: tr("饿了")
+        case .sick: tr("生病了")
+        case .dried: tr("渴成骷髅了")
+        case .dusty: tr("积灰了")
+        case .melted: tr("热化了")
         }
     }
 }
@@ -158,8 +158,8 @@ public struct PetAlert: Equatable, Sendable {
     }
 
     public func message(name: String) -> (title: String, body: String) {
-        sick ? ("\(name)生病了", "快去看看它，带它看病吧。")
-             : ("\(name)需要照顾", "它\(line)，去照顾一下它吧。")
+        sick ? (tr("\(name)生病了"), tr("快去看看它，带它看病吧。"))
+             : (tr("\(name)需要照顾"), tr("它\(line)，去照顾一下它吧。"))
     }
 }
 
@@ -561,7 +561,7 @@ public enum VirtualPet {
                 when = nextNightEdge(after: when, calendar: calendar)
             }
             let then = advanced(current, to: when, calendar: calendar)
-            if isSick(then) { return PetAlert(date: when, sick: true, line: "生病了") }
+            if isSick(then) { return PetAlert(date: when, sick: true, line: tr("生病了")) }
             return PetAlert(date: when, sick: false, line: statusLine(then, now: when))
         }
         return nil
@@ -589,31 +589,31 @@ public enum VirtualPet {
         if let action = state.lastAction, let when = state.lastActionAt, state.lastActionFull,
            now >= when, now.timeIntervalSince(when) < actSeconds {
             switch action {
-            case .feed: return "吃不下了"
-            case .play: return "已经很开心了"
-            case .wash: return "已经很干净了"
-            case .heal: return "没有生病"
+            case .feed: return tr("吃不下了")
+            case .play: return tr("已经很开心了")
+            case .wash: return tr("已经很干净了")
+            case .heal: return tr("没有生病")
             case .sleep, .treat: break
             }
         }
         switch effect(state, now: now) {
-        case .bubbles: return "洗得香喷喷"
-        case .hearts: return "玩得真开心"
-        case .healing: return "好多了"
+        case .bubbles: return tr("洗得香喷喷")
+        case .hearts: return tr("玩得真开心")
+        case .healing: return tr("好多了")
         default: break
         }
         let look = look(state, now: now, dried: dried, melted: melted)
         switch look {
         case .dried:
-            return "渴成骷髅了，快喝水"
+            return tr("渴成骷髅了，快喝水")
         case .dusty:
-            return "积灰了，摸摸它"
+            return tr("积灰了，摸摸它")
         case .melted:
-            return "热化了，歇一歇"
+            return tr("热化了，歇一歇")
         case .idle:
-            if state.clean < lowLine { return "有点脏了" }
-            if state.mood < lowLine { return "有点无聊" }
-            if state.energy < lowLine { return "困了" }
+            if state.clean < lowLine { return tr("有点脏了") }
+            if state.mood < lowLine { return tr("有点无聊") }
+            if state.energy < lowLine { return tr("困了") }
             return look.title
         default:
             return look.title

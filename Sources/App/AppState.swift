@@ -181,7 +181,7 @@ public final class AppState {
         guard let source = state.profile(id) else { return }
         var copy = source
         copy.id = UUID()
-        copy.name = "\(source.name) 副本"
+        copy.name = tr("\(source.name) 副本")
         copy.shortcut = nil          // two profiles must never claim one hotkey
         state.profiles.append(copy)
     }
@@ -314,7 +314,7 @@ public final class AppState {
         guard let index = index(of: id) else { return nil }
         var copy = state.profiles[index]
         copy.id = UUID()
-        copy.name = uniqueName("\(copy.name) 副本")
+        copy.name = uniqueName(tr("\(copy.name) 副本"))
         copy.shortcut = nil          // two profiles must never claim one hotkey
         // Fresh identities throughout, or the copy and the original would
         // share item ids and editing one would move things on the other.
@@ -651,7 +651,8 @@ public final class AppState {
 
     /// Captures the live Dock into a new profile without changing anything.
     @discardableResult
-    public func captureCurrentDock(named name: String = "当前程序坞") async -> DockProfile? {
+    public func captureCurrentDock(named name: String? = nil) async -> DockProfile? {
+        let name = name ?? tr("当前程序坞")
         do {
             let tiles = try await nativeDock.capture()
             // Remember the very first capture as the user's original layout,
@@ -735,7 +736,7 @@ public final class AppState {
     /// is removable.
     public func installDefaultProfile() {
         guard state.profiles.isEmpty else { return }
-        var profile = DockProfile(kind: .customDock, name: "日常", color: .blue)
+        var profile = DockProfile(kind: .customDock, name: tr("日常"), color: .blue)
 
         for bundleID in ["com.apple.finder", "com.apple.Safari", "com.apple.mail"] {
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { continue }

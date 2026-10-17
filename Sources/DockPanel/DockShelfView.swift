@@ -100,8 +100,8 @@ struct DockShelfView: View {
         /// actually do - a panel for a widget that has one, otherwise the app.
         var actionLabel: String {
             if let widget = item.widget, WidgetDetail.exists(for: widget.kind) {
-                "显示详情"
-            } else { "打开" }
+                tr("显示详情")
+            } else { tr("打开") }
         }
         /// Running-but-unpinned apps have no stored position to move, and
         /// neither does the Trash: it is pinned to the end the way the Dock
@@ -256,7 +256,7 @@ struct DockShelfView: View {
                                                icon: FolderIcon()),
                                  isRunningApp: false,
                                  isTrash: true,
-                                 label: "废纸篓"))
+                                 label: tr("废纸篓")))
         }
 
         // Rebuild slots with the separator and the grip in the right places.
@@ -1257,7 +1257,7 @@ struct DockShelfView: View {
         .buttonStyle(.plain)
         .opacity(disabled ? 0.25 : 0.7)
         .disabled(disabled)
-        .accessibilityLabel(back ? "向回滚动" : "向前滚动")
+        .accessibilityLabel(back ? tr("向回滚动") : tr("向前滚动"))
     }
 
     private func scrollLimit(_ s: Solved) -> CGFloat { max(0, s.restLength - maxLength) }
@@ -1343,7 +1343,7 @@ struct DockShelfView: View {
                     }
             )
             .accessibilityLabel("程序坞大小")
-            .accessibilityValue("百分之 \(Int((baseScale * 100).rounded()))")
+            .accessibilityValue(tr("百分之 \(Int((baseScale * 100).rounded()))"))
             .accessibilityAdjustableAction { direction in
                 app.setScale(baseScale + (direction == .increment ? 0.05 : -0.05))
             }
@@ -1390,7 +1390,7 @@ struct DockShelfView: View {
             }
             if let widget = entry.item.widget {
                 visibilityMenu(widget)
-                Button(WidgetPlate.isHidden(widget.config) ? "显示背景和边框" : "隐藏背景和边框") {
+                Button(WidgetPlate.isHidden(widget.config) ? tr("显示背景和边框") : tr("隐藏背景和边框")) {
                     withAnimation(.snappy(duration: 0.2)) {
                         app.updateWidget(WidgetPlate.toggled(widget))
                     }
@@ -1398,7 +1398,7 @@ struct DockShelfView: View {
             }
             if let widget = entry.item.widget,
                WidgetCatalog.entry(widget.kind)?.supportsCompact == true {
-                Button(widget.expanded ? "收起" : "展开") {
+                Button(widget.expanded ? tr("收起") : tr("展开")) {
                     var updated = widget
                     updated.expanded.toggle()
                     withAnimation(.snappy(duration: 0.22)) { app.updateWidget(updated) }
@@ -1415,7 +1415,7 @@ struct DockShelfView: View {
             if let widget = entry.item.widget, widget.kind == .photos {
                 Button("选择文件夹…") {
                     let current = FolderFeed.folder(for: .pictures(widget.config.string("folder")))
-                    guard let url = FileActions.chooseFolder(title: "选择相册要轮播的文件夹",
+                    guard let url = FileActions.chooseFolder(title: tr("选择相册要轮播的文件夹"),
                                                              startingAt: current) else { return }
                     var updated = widget
                     updated.config.set("folder", .string(url.path))
@@ -1526,7 +1526,7 @@ struct DockShelfView: View {
                         app.updateWidget(updated)
                     })) {
                     ForEach(WidgetVisibility.thresholdChoices, id: \.self) { value in
-                        Text(value >= 100 ? "任意电量" : "不高于 \(value)%").tag(value)
+                        Text(value >= 100 ? tr("任意电量") : tr("不高于 \(value)%")).tag(value)
                     }
                 }
             }
@@ -1593,13 +1593,13 @@ struct DockShelfView: View {
         defer { NSApp.setActivationPolicy(policy) }
 
         let alert = NSAlert()
-        alert.messageText = "天气位置"
-        alert.informativeText = "留空则使用你的当前位置。"
-        alert.addButton(withTitle: "设置")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = tr("天气位置")
+        alert.informativeText = tr("留空则使用你的当前位置。")
+        alert.addButton(withTitle: tr("设置"))
+        alert.addButton(withTitle: tr("取消"))
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         field.stringValue = widget.config.string("city")
-        field.placeholderString = "当前位置"
+        field.placeholderString = tr("当前位置")
         alert.accessoryView = field
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -1617,10 +1617,10 @@ struct DockShelfView: View {
         defer { NSApp.setActivationPolicy(policy) }
 
         let alert = NSAlert()
-        alert.messageText = "重命名分组"
-        alert.informativeText = "这是指针悬停在分组上时显示的名称。"
-        alert.addButton(withTitle: "重命名")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = tr("重命名分组")
+        alert.informativeText = tr("这是指针悬停在分组上时显示的名称。")
+        alert.addButton(withTitle: tr("重命名"))
+        alert.addButton(withTitle: tr("取消"))
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         field.stringValue = group.name
         alert.accessoryView = field

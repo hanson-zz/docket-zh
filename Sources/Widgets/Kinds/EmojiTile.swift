@@ -55,7 +55,7 @@ struct EmojiTile: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .help("拷贝 \(item)")
+            .help(tr("拷贝 \(item)"))
         } else {
             Button {
                 guard !context.isPreview else { return }

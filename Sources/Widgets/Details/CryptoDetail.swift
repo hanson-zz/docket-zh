@@ -42,7 +42,7 @@ struct CryptoDetail: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(currency == "usd" ? "美元计价" : "人民币计价")
+                Text(currency == "usd" ? tr("美元计价") : tr("人民币计价"))
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
             }
@@ -67,7 +67,7 @@ struct CryptoDetail: View {
                 Text(CryptoMarket.label(id: id, quote: quote))
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(.white)
-                Text(quote?.name ?? "暂无数据")
+                Text(quote?.name ?? tr("暂无数据"))
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -124,9 +124,9 @@ struct CryptoDetail: View {
     }
 
     private var updatedLine: String {
-        if context.isPreview { return "示例数据" }
-        guard let date = CryptoService.shared.updated(currency) else { return "尚未获取" }
-        return "更新于 " + date.formatted(date: .omitted, time: .shortened)
+        if context.isPreview { return tr("示例数据") }
+        guard let date = CryptoService.shared.updated(currency) else { return tr("尚未获取") }
+        return tr("更新于 ") + date.formatted(date: .omitted, time: .shortened)
     }
 
     private func choose(_ value: String) {

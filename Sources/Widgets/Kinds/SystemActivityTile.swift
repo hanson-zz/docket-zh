@@ -118,7 +118,7 @@ struct SystemActivityTile: View {
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(metric.label)
-                .accessibilityValue("百分之 \(Int((value(metric) * 100).rounded()))")
+                .accessibilityValue(tr("百分之 \(Int((value(metric) * 100).rounded()))"))
             }
         }
     }
@@ -167,7 +167,7 @@ struct SystemActivityTile: View {
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(metric.label)
-        .accessibilityValue("百分之 \(Int((load * 100).rounded()))")
+        .accessibilityValue(tr("百分之 \(Int((load * 100).rounded()))"))
     }
 
     private func liquid(diameter: CGFloat, size: CGFloat) -> some View {
@@ -364,9 +364,9 @@ struct SystemActivityTile: View {
         var label: String {
             switch self {
             case .cpu: "CPU"
-            case .memory: "内存"
-            case .disk: "磁盘"
-            case .battery: "电池"
+            case .memory: tr("内存")
+            case .disk: tr("磁盘")
+            case .battery: tr("电池")
             }
         }
 
@@ -374,9 +374,9 @@ struct SystemActivityTile: View {
         var short: String {
             switch self {
             case .cpu: "CPU"
-            case .memory: "内存"
-            case .disk: "磁盘"
-            case .battery: "电池"
+            case .memory: tr("内存")
+            case .disk: tr("磁盘")
+            case .battery: tr("电池")
             }
         }
 

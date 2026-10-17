@@ -52,7 +52,7 @@ final class WallpaperService {
                 failed = true
             }
         }
-        lastError = failed ? "无法设置桌面图片。" : nil
+        lastError = failed ? tr("无法设置桌面图片。") : nil
         read()
     }
 

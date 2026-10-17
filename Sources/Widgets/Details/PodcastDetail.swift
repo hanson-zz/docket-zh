@@ -34,8 +34,8 @@ struct PodcastDetail: View {
             MeshBackdrop(color: PodcastCover.accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "mic", title: "播客",
-                            subtitle: shows.isEmpty ? "粘贴小宇宙节目或单集链接来订阅" : "已订阅 \(shows.count) 个节目 · 来自小宇宙")
+                PanelHeader(symbol: "mic", title: tr("播客"),
+                            subtitle: shows.isEmpty ? tr("粘贴小宇宙节目或单集链接来订阅") : tr("已订阅 \(shows.count) 个节目 · 来自小宇宙"))
                 addField
                 if let message {
                     Text(message)
@@ -45,7 +45,7 @@ struct PodcastDetail: View {
                 }
                 if shows.isEmpty {
                     PanelNote(symbol: "mic",
-                              text: "在小宇宙里点“分享”拷贝节目链接，粘贴到上面即可订阅。也可以在书签小组件里把小宇宙链接“加到播客”。")
+                              text: tr("在小宇宙里点“分享”拷贝节目链接，粘贴到上面即可订阅。也可以在书签小组件里把小宇宙链接“加到播客”。"))
                         .frame(height: 120)
                 } else {
                     showStrip
@@ -96,7 +96,7 @@ struct PodcastDetail: View {
             case .success(let added):
                 link = ""
                 messageIsError = false
-                message = "已订阅「\(added.title)」"
+                message = tr("已订阅「\(added.title)」")
                 PodcastRemote.choose(added.id, in: instance)
             case .failure(let failure):
                 messageIsError = true
@@ -151,7 +151,7 @@ struct PodcastDetail: View {
             Divider()
             Button("取消订阅", role: .destructive) { service.remove(item.id) }
         }
-        .help("\(item.title)\n右键可刷新、取消订阅")
+        .help(tr("\(item.title)\n右键可刷新、取消订阅"))
     }
 
     // MARK: Playing
@@ -161,7 +161,7 @@ struct PodcastDetail: View {
         let position = scrubbing ?? player.position
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(player.isPlaying ? (player.isBuffering ? "正在缓冲" : "正在播放") : "已暂停")
+                Text(player.isPlaying ? (player.isBuffering ? tr("正在缓冲") : tr("正在播放")) : tr("已暂停"))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(PodcastCover.accent)
                 Text(episode.title)
@@ -190,14 +190,14 @@ struct PodcastDetail: View {
             chapterLines(episode, position: position)
             HStack(spacing: 22) {
                 Spacer()
-                roundButton("gobackward.15", size: 32, label: "后退 15 秒") {
+                roundButton("gobackward.15", size: 32, label: tr("后退 15 秒")) {
                     player.skip(by: -PodcastPlayback.backSeconds)
                 }
                 roundButton(player.isPlaying ? "pause.fill" : "play.fill", size: 44,
-                            label: player.isPlaying ? "暂停" : "播放", filled: true) {
+                            label: player.isPlaying ? tr("暂停") : tr("播放"), filled: true) {
                     player.isPlaying ? player.pause() : player.resume()
                 }
-                roundButton("goforward.30", size: 32, label: "前进 30 秒") {
+                roundButton("goforward.30", size: 32, label: tr("前进 30 秒")) {
                     player.skip(by: PodcastPlayback.forwardSeconds)
                 }
                 Spacer()
@@ -249,9 +249,9 @@ struct PodcastDetail: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help("跳到 \(PodcastPlayback.clock(chapter.start))")
+        .help(tr("跳到 \(PodcastPlayback.clock(chapter.start))"))
         .transition(.move(edge: .bottom).combined(with: .opacity))
-        .accessibilityLabel("\(isCurrent ? "当前章节，" : "")\(chapter.title)")
+        .accessibilityLabel("\(isCurrent ? tr("当前章节，") : "")\(chapter.title)")
     }
 
     private func roundButton(_ symbol: String, size: CGFloat, label: String, filled: Bool = false,
@@ -343,7 +343,7 @@ struct PodcastDetail: View {
                           PodcastPlayback.durationText(episode.duration)]
                         .filter { !$0.isEmpty }.joined(separator: " · "))
                     if let saved {
-                        Text(saved.finished ? "已听完" : "已听 \(Int(saved.fraction * 100))%")
+                        Text(saved.finished ? tr("已听完") : tr("已听 \(Int(saved.fraction * 100))%"))
                             .foregroundStyle(PodcastCover.accent.opacity(0.9))
                     }
                 }
@@ -360,7 +360,7 @@ struct PodcastDetail: View {
             guard !context.isPreview else { return }
             player.toggle(episode, show: show.id)
         }
-        .help(episode.audioURL == nil ? "这一集没有可播放的音频" : "点按播放或暂停")
+        .help(episode.audioURL == nil ? tr("这一集没有可播放的音频") : tr("点按播放或暂停"))
     }
 
     // MARK: Footer

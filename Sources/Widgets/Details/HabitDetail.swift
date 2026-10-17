@@ -14,7 +14,7 @@ struct HabitDetail: View {
         context.isPreview ? HabitSamples.habits(today: context.now) : HabitTracker.habits(instance.config)
     }
 
-    private static let weekdays = ["一", "二", "三", "四", "五", "六", "日"]
+    private static let weekdays = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
 
     var body: some View {
         let all = habits
@@ -95,7 +95,7 @@ struct HabitDetail: View {
         }
     }
 
-    private var deleteTitle: String { "删除“\(pendingDelete?.name ?? "")”？" }
+    private var deleteTitle: String { tr("删除“\(pendingDelete?.name ?? "")”？") }
 
     private var deleteShown: Binding<Bool> {
         Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })
@@ -156,9 +156,9 @@ struct HabitDetail: View {
             HStack(alignment: .top, spacing: 12) {
                 heatmap(habit)
                 VStack(alignment: .leading, spacing: 6) {
-                    StatChip(label: "连续", value: "\(streak) 天")
-                    StatChip(label: "本月", value: "\(HabitTracker.doneCount(habit, month: context.now)) 天")
-                    StatChip(label: "最长", value: "\(HabitTracker.longestStreak(habit)) 天")
+                    StatChip(label: tr("连续"), value: tr("\(streak) 天"))
+                    StatChip(label: tr("本月"), value: tr("\(HabitTracker.doneCount(habit, month: context.now)) 天"))
+                    StatChip(label: tr("最长"), value: tr("\(HabitTracker.longestStreak(habit)) 天"))
                 }
                 .frame(width: 70)
             }
@@ -220,14 +220,14 @@ struct HabitDetail: View {
         }
         .buttonStyle(.plain)
         .disabled(day.isFuture || context.isPreview)
-        .help(day.isFuture ? "" : (day.done ? "取消这天的打卡" : "补打这天的卡"))
+        .help(day.isFuture ? "" : (day.done ? tr("取消这天的打卡") : tr("补打这天的卡")))
     }
 
     // MARK: Editing
 
     private func todayLabel(_ habit: Habit, done: Bool) -> String {
-        if done { return "今天已打卡" }
-        guard habit.goal > 1 else { return "今天打卡" }
+        if done { return tr("今天已打卡") }
+        guard habit.goal > 1 else { return tr("今天打卡") }
         return "\(HabitTracker.count(habit, on: context.now))/\(habit.goal) \(habit.unitName)"
     }
 

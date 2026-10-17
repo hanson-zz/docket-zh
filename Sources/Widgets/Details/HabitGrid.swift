@@ -126,7 +126,7 @@ struct HabitCard: View {
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .monospacedDigit()
-                    Text("\(habit.unitName)/天")
+                    Text(tr("\(habit.unitName)/天"))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
@@ -140,7 +140,7 @@ struct HabitCard: View {
         .frame(height: Self.height)
         .glassPane(cornerRadius: 14)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(habit.name)，\(HabitTracker.goalText(habit))，今天\(HabitTracker.todayText(habit, today: now))")
+        .accessibilityLabel(tr("\(habit.name)，\(HabitTracker.goalText(habit))，今天\(HabitTracker.todayText(habit, today: now))"))
     }
 
     /// 右上角的今天打卡：目标 1 次是勾选圈，多次是进度环加次数。
@@ -175,8 +175,8 @@ struct HabitCard: View {
         }
         .buttonStyle(.plain)
         .disabled(isPreview)
-        .help(done ? "取消今天的打卡" : (habit.goal > 1 ? "加 1 \(habit.unitName)" : "今天打卡"))
-        .accessibilityLabel(done ? "取消 \(habit.name) 今天的打卡" : "\(habit.name) 今天打卡")
+        .help(done ? tr("取消今天的打卡") : (habit.goal > 1 ? tr("加 1 \(habit.unitName)") : tr("今天打卡")))
+        .accessibilityLabel(done ? tr("取消 \(habit.name) 今天的打卡") : tr("\(habit.name) 今天打卡"))
     }
 }
 
@@ -225,7 +225,7 @@ struct HabitEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(isNew ? "新建习惯" : "编辑习惯")
+                Text(isNew ? tr("新建习惯") : tr("编辑习惯"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                 Spacer()
@@ -246,9 +246,9 @@ struct HabitEditor: View {
                 VStack(alignment: .leading, spacing: 12) {
                     if isNew { templates }
                     nameRow
-                    section("图标") { iconGrid }
-                    section("颜色") { colorRow }
-                    section("每日目标") { goalRow }
+                    section(tr("图标")) { iconGrid }
+                    section(tr("颜色")) { colorRow }
+                    section(tr("每日目标")) { goalRow }
                 }
                 .padding(.bottom, 2)
             }
@@ -269,7 +269,7 @@ struct HabitEditor: View {
                 Button {
                     save()
                 } label: {
-                    Text(isNew ? "添加" : "完成")
+                    Text(isNew ? tr("添加") : tr("完成"))
                         .font(WidgetStyle.label(12))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
@@ -297,7 +297,7 @@ struct HabitEditor: View {
     // MARK: Pieces
 
     private var templates: some View {
-        section(isFull ? "从模板添加（已满 \(HabitTracker.maxHabits) 个）" : "从模板添加") {
+        section(isFull ? tr("从模板添加（已满 \(HabitTracker.maxHabits) 个）") : tr("从模板添加")) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                 ForEach(HabitTracker.templates) { template in
                     Button {
@@ -317,7 +317,7 @@ struct HabitEditor: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(isFull)
-                    .help(template.goal > 1 ? "\(template.name)，每天 \(template.goal) \(template.unit ?? Habit.defaultUnit)" : template.name)
+                    .help(template.goal > 1 ? tr("\(template.name)，每天 \(template.goal) \(template.unit ?? Habit.defaultUnit)") : template.name)
                 }
             }
         }
@@ -326,7 +326,7 @@ struct HabitEditor: View {
     private var nameRow: some View {
         HStack(spacing: 10) {
             HabitIconBadge(icon: icon, color: Color(hex: color.hex), size: 34)
-            TextField("", text: $name, prompt: Text(isNew ? "自己起个名字，比如“晚饭后散步”" : "名称"))
+            TextField("", text: $name, prompt: Text(isNew ? tr("自己起个名字，比如“晚饭后散步”") : tr("名称")))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
@@ -356,7 +356,7 @@ struct HabitEditor: View {
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("图标 \(index + 1)")
+                .accessibilityLabel(tr("图标 \(index + 1)"))
                 .accessibilityAddTraits(symbol == icon ? .isSelected : [])
             }
         }
@@ -415,7 +415,7 @@ struct HabitEditor: View {
                 }
                 .help("单位，比如杯、页、公里，空着就是“次”")
             Spacer(minLength: 0)
-            Text(goal == 1 ? "勾选即完成" : "点 \(goal) 下完成")
+            Text(goal == 1 ? tr("勾选即完成") : tr("点 \(goal) 下完成"))
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.5))
                 .lineLimit(1)

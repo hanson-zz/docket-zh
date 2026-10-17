@@ -48,7 +48,7 @@ struct WeekTile: View {
         .onChange(of: Int(context.now.timeIntervalSince1970) / 300) { _, _ in load() }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("一周日程，本周 \(WeekAgenda.total(week)) 个日程")
+        .accessibilityLabel(tr("一周日程，本周 \(WeekAgenda.total(week)) 个日程"))
     }
 
     // MARK: Wide
@@ -209,7 +209,7 @@ enum WeekEvents {
         return WeekEntry(
             // Recurring instances share an identifier; the start tells them apart.
             id: "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)",
-            title: title.isEmpty ? "新日程" : title,
+            title: title.isEmpty ? tr("新日程") : title,
             start: start,
             end: event.endDate ?? start,
             isAllDay: event.isAllDay,
@@ -237,17 +237,17 @@ enum WeekEvents {
         let team = PaletteColor.blue.hex
         let home = PaletteColor.green.hex
         return [
-            WeekEntry(id: "s1", title: "周会", start: at(0, 10), end: at(0, 11), calendar: "工作", colorHex: work),
-            WeekEntry(id: "s2", title: "设计评审", start: at(0, 14), end: at(0, 15), calendar: "工作", colorHex: team),
-            WeekEntry(id: "s3", title: "与小李一对一沟通", start: at(1, 11), end: at(1, 11, 30),
-                      calendar: "工作", colorHex: work),
-            WeekEntry(id: "s4", title: "产品发布会", start: at(2, 9, 30), end: at(2, 11), calendar: "工作", colorHex: team),
-            WeekEntry(id: "s5", title: "客户电话", start: at(2, 15), end: at(2, 15, 30), calendar: "工作", colorHex: work),
-            WeekEntry(id: "s6", title: "健身", start: at(2, 19), end: at(2, 20), calendar: "个人", colorHex: home),
-            WeekEntry(id: "s7", title: "团队午餐", start: at(2, 12), end: at(2, 13), calendar: "工作", colorHex: team),
-            WeekEntry(id: "s8", title: "季度复盘", start: at(3, 14), end: at(3, 16), calendar: "工作", colorHex: work),
-            WeekEntry(id: "s9", title: "看牙医", start: at(4, 16), end: at(4, 17), calendar: "个人", colorHex: home),
-            WeekEntry(id: "s10", title: "家庭聚餐", start: at(5, 18), end: at(5, 20), calendar: "个人", colorHex: home),
+            WeekEntry(id: "s1", title: tr("周会"), start: at(0, 10), end: at(0, 11), calendar: tr("工作"), colorHex: work),
+            WeekEntry(id: "s2", title: tr("设计评审"), start: at(0, 14), end: at(0, 15), calendar: tr("工作"), colorHex: team),
+            WeekEntry(id: "s3", title: tr("与小李一对一沟通"), start: at(1, 11), end: at(1, 11, 30),
+                      calendar: tr("工作"), colorHex: work),
+            WeekEntry(id: "s4", title: tr("产品发布会"), start: at(2, 9, 30), end: at(2, 11), calendar: tr("工作"), colorHex: team),
+            WeekEntry(id: "s5", title: tr("客户电话"), start: at(2, 15), end: at(2, 15, 30), calendar: tr("工作"), colorHex: work),
+            WeekEntry(id: "s6", title: tr("健身"), start: at(2, 19), end: at(2, 20), calendar: tr("个人"), colorHex: home),
+            WeekEntry(id: "s7", title: tr("团队午餐"), start: at(2, 12), end: at(2, 13), calendar: tr("工作"), colorHex: team),
+            WeekEntry(id: "s8", title: tr("季度复盘"), start: at(3, 14), end: at(3, 16), calendar: tr("工作"), colorHex: work),
+            WeekEntry(id: "s9", title: tr("看牙医"), start: at(4, 16), end: at(4, 17), calendar: tr("个人"), colorHex: home),
+            WeekEntry(id: "s10", title: tr("家庭聚餐"), start: at(5, 18), end: at(5, 20), calendar: tr("个人"), colorHex: home),
         ]
     }
 }

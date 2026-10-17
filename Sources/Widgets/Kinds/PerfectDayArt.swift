@@ -93,7 +93,7 @@ struct LeafGlyph: View {
 struct BambooBasket: View {
     var leaves: [PerfectDayTier]
     var width: CGFloat = 170
-    var emptyText = "这个月的竹篮还空着"
+    var emptyText = tr("这个月的竹篮还空着")
 
     private var height: CGFloat { width * 1.05 }
     private var rimY: CGFloat { height * 0.34 }
@@ -161,7 +161,7 @@ struct BambooBasket: View {
         }
         .frame(width: width, height: height, alignment: .topLeading)
         .accessibilityElement()
-        .accessibilityLabel(leaves.isEmpty ? emptyText : "竹篮里有 \(leaves.count) 片竹叶")
+        .accessibilityLabel(leaves.isEmpty ? emptyText : tr("竹篮里有 \(leaves.count) 片竹叶"))
     }
 
     private var handle: some View {
@@ -358,7 +358,7 @@ struct PerfectItemRing: View {
         }
         .frame(width: size, height: size)
         .accessibilityElement()
-        .accessibilityLabel("\(progress.item.title)，\(progress.mark == .met ? "已达标" : progress.detail)")
+        .accessibilityLabel("\(progress.item.title)，\(progress.mark == .met ? tr("已达标") : progress.detail)")
     }
 }
 
@@ -475,7 +475,7 @@ struct PerfectFrequencyStrip: View {
         }
         .frame(height: height)
         .accessibilityElement()
-        .accessibilityLabel("月度竹叶频率，\(days.filter { $0.tier != nil }.count) 天收到竹叶")
+        .accessibilityLabel(tr("月度竹叶频率，\(days.filter { $0.tier != nil }.count) 天收到竹叶"))
     }
 
     private func fill(_ day: PerfectDayCell) -> AnyShapeStyle {
@@ -533,7 +533,7 @@ struct PerfectCalendarGrid: View {
                     .opacity(day.isFuture ? 0.35 : 1)
             }
             .accessibilityElement()
-            .accessibilityLabel("\(day.day) 日，\(day.tier.map { "\($0.title)，\($0.leafName)" } ?? "没有竹叶")")
+            .accessibilityLabel(tr("\(day.day) 日，\(day.tier.map { "\($0.title)，\($0.leafName)" } ?? tr("没有竹叶"))"))
         } else {
             Color.clear.frame(height: leafSize + 16)
         }

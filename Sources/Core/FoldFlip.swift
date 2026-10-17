@@ -17,8 +17,8 @@ public enum FoldFlip {
 
         public var title: String {
             switch self {
-            case .plain: "普通数字"
-            case .fold: "折叠翻页"
+            case .plain: tr("普通数字")
+            case .fold: tr("折叠翻页")
             }
         }
     }

@@ -13,7 +13,7 @@ struct MicrophoneTile: View {
     private var inUse: Bool { context.isPreview ? true : mic.inUse }
     private var muted: Bool { context.isPreview ? false : (mic.muted ?? false) }
     private var canMute: Bool { context.isPreview ? true : mic.canMute }
-    private var name: String { context.isPreview ? "MacBook Pro 麦克风" : mic.deviceName }
+    private var name: String { context.isPreview ? tr("MacBook Pro 麦克风") : mic.deviceName }
 
     var body: some View {
         WidgetSurface {
@@ -62,7 +62,7 @@ struct MicrophoneTile: View {
     private func muteButton(size: CGFloat) -> some View {
         TileGlyph(symbol: muted ? "mic.fill" : "mic.slash", size: size,
                   action: context.isPreview ? nil : { mic.setMuted(!muted) })
-            .help(muted ? "取消输入静音" : "输入静音")
-            .accessibilityLabel(muted ? "取消输入静音" : "输入静音")
+            .help(muted ? tr("取消输入静音") : tr("输入静音"))
+            .accessibilityLabel(muted ? tr("取消输入静音") : tr("输入静音"))
     }
 }

@@ -14,10 +14,10 @@ struct TodoTile: View {
 
     private var items: [TodoItem] {
         if context.isPreview {
-            return [TodoItem(id: "s1", text: "回复产品评审意见"),
-                    TodoItem(id: "s2", text: "取快递"),
-                    TodoItem(id: "s3", text: "订周五的会议室"),
-                    TodoItem(id: "s4", text: "交电费", done: true)]
+            return [TodoItem(id: "s1", text: tr("回复产品评审意见")),
+                    TodoItem(id: "s2", text: tr("取快递")),
+                    TodoItem(id: "s3", text: tr("订周五的会议室")),
+                    TodoItem(id: "s4", text: tr("交电费"), done: true)]
         }
         return QuickTodo.items(instance.config)
     }
@@ -35,7 +35,7 @@ struct TodoTile: View {
                               badgeSize: WidgetStyle.badgeCompact)
                     }
                         .overlay { cheer(size: 60) }
-                    Text(open.isEmpty ? (empty(all, open: open) ?? .todo).line(compact: true) : "\(open.count) 项")
+                    Text(open.isEmpty ? (empty(all, open: open) ?? .todo).line(compact: true) : tr("\(open.count) 项"))
                         .font(WidgetStyle.title)
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -67,7 +67,7 @@ struct TodoTile: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(open.first.map { "快速待办：\($0.text)" } ?? "快速待办")
+        .accessibilityLabel(open.first.map { tr("快速待办：\($0.text)") } ?? tr("快速待办"))
         .task(id: celebrateAt) {
             guard celebrateAt != nil else { return }
             try? await Task.sleep(for: .seconds(CheerMotion.duration))
@@ -149,8 +149,8 @@ struct TodoTile: View {
                 withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance, cheering: finishing) }
                 if finishing { celebrateAt = .now }
             })
-            .help("完成“\(item.text)”")
-            .accessibilityLabel("完成 \(item.text)")
+            .help(tr("完成“\(item.text)”"))
+            .accessibilityLabel(tr("完成 \(item.text)"))
         } else {
             TileGlyph(symbol: "plus", size: size, action: nil)
                 .accessibilityHidden(true)

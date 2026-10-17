@@ -47,7 +47,7 @@ enum ProLicenseKeychain {
         guard let value else { return }
         var item = base
         item[kSecValueData as String] = Data(value.utf8)
-        item[kSecAttrLabel as String] = "码头 Pro 授权"
+        item[kSecAttrLabel as String] = tr("码头 Pro 授权")
         item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
         let status = SecItemAdd(item as CFDictionary, nil)
         if status != errSecSuccess {

@@ -50,11 +50,11 @@ struct WeekDetail: View {
         let days = week
         return HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("本周 · \(WeekAgenda.rangeTitle(context.now))")
+                Text(tr("本周 · \(WeekAgenda.rangeTitle(context.now))"))
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.6)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(granted ? "\(WeekAgenda.total(days)) 个日程" : "一周日程")
+                Text(granted ? tr("\(WeekAgenda.total(days)) 个日程") : tr("一周日程"))
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -108,7 +108,7 @@ struct WeekDetail: View {
                     .foregroundStyle(.white.opacity(0.6))
                 Spacer(minLength: 0)
                 if day.count > 0 {
-                    Text("\(day.count) 个")
+                    Text(tr("\(day.count) 个"))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.6))
                         .monospacedDigit()
@@ -154,11 +154,11 @@ struct WeekDetail: View {
     private func detail(_ entry: WeekEntry, on day: WeekDay) -> String {
         let time: String
         if entry.isAllDay {
-            time = "全天"
+            time = tr("全天")
         } else if entry.start < day.date {
-            time = "接上一天，至 \(clock(entry.end))"
+            time = tr("接上一天，至 \(clock(entry.end))")
         } else {
-            time = "\(clock(entry.start)) 至 \(clock(entry.end))"
+            time = tr("\(clock(entry.start)) 至 \(clock(entry.end))")
         }
         return entry.calendar.isEmpty ? time : "\(time) · \(entry.calendar)"
     }
@@ -172,15 +172,15 @@ struct WeekDetail: View {
     private var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(access == .notDetermined
-                 ? "码头尚未获得访问你日历的权限。"
-                 : "码头的日历访问权限已关闭。")
+                 ? tr("码头尚未获得访问你日历的权限。")
+                 : tr("码头的日历访问权限已关闭。"))
                 .font(WidgetStyle.caption(12))
                 .foregroundStyle(.white.opacity(0.8))
                 .fixedSize(horizontal: false, vertical: true)
             Button {
                 if access == .notDetermined { request() } else { openPrivacySettings() }
             } label: {
-                Text(access == .notDetermined ? "允许访问" : "打开系统设置")
+                Text(access == .notDetermined ? tr("允许访问") : tr("打开系统设置"))
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)

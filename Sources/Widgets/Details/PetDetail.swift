@@ -68,7 +68,7 @@ struct PetDetail: View {
                     .foregroundStyle(look == .sick || look == .hungry || look == .dried || look == .melted
                                      ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
                                      : .white.opacity(0.85))
-                Text("整体 \(Int(state.health.rounded()))%")
+                Text(tr("整体 \(Int(state.health.rounded()))%"))
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))
                     .monospacedDigit()
@@ -78,11 +78,11 @@ struct PetDetail: View {
             Spacer(minLength: 0)
         }
         .overlay(alignment: .topTrailing) {
-            Label("\(streak) 天", systemImage: "flame.fill")
+            Label(tr("\(streak) 天"), systemImage: "flame.fill")
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.45))
                 .monospacedDigit()
-                .help("连续照顾 \(streak) 天")
+                .help(tr("连续照顾 \(streak) 天"))
         }
     }
 
@@ -120,7 +120,7 @@ struct PetDetail: View {
     private func actions(_ state: PetState) -> some View {
         HStack(spacing: 6) {
             ForEach(PetAction.buttons) { action in
-                let title = action == .sleep && state.isSleeping ? "叫醒" : action.title
+                let title = action == .sleep && state.isSleeping ? tr("叫醒") : action.title
                 let symbol = action == .sleep && state.isSleeping ? "sun.max.fill" : action.symbol
                 Button {
                     guard !context.isPreview else { return }
@@ -164,7 +164,7 @@ struct PetDetail: View {
         }
         .buttonStyle(.plain)
         .disabled(context.isPreview)
-        .help("生病了：看病后四项状态至少回到 \(Int(VirtualPet.healTo))")
+        .help(tr("生病了：看病后四项状态至少回到 \(Int(VirtualPet.healTo))"))
     }
 
     @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0
@@ -184,7 +184,7 @@ struct PetDetail: View {
                 Text("喝水不达标会渴成骷髅")
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.85))
-                Text("喝水小组件连续 \(VirtualPet.dryDays) 天没喝够，它就变成骷髅；喝够一天马上复活。")
+                Text(tr("喝水小组件连续 \(VirtualPet.dryDays) 天没喝够，它就变成骷髅；喝够一天马上复活。"))
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -264,7 +264,7 @@ struct PetDetail: View {
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
                     .help(locked ? "\(option.title)：\(ProFeatures.help)" : option.title)
-                    .accessibilityLabel(locked ? "角色：\(option.title)，Pro 专属" : "角色：\(option.title)")
+                    .accessibilityLabel(locked ? tr("角色：\(option.title)，Pro 专属") : tr("角色：\(option.title)"))
                 }
             }
         }

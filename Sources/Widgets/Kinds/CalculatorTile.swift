@@ -35,7 +35,7 @@ struct CalculatorTile: View {
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     badge(size: WidgetStyle.badge)
                     TileReading(value: answer,
-                                caption: expression.isEmpty ? "点按开始计算" : expression)
+                                caption: expression.isEmpty ? tr("点按开始计算") : expression)
                     Spacer(minLength: 0)
                 }
             }

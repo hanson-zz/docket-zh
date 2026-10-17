@@ -31,15 +31,15 @@ struct GitHubTile: View {
     private var caption: String {
         let stats = allStats
         guard !stats.isEmpty else {
-            return repos.lazy.compactMap { service.error(for: $0) }.first ?? "正在读取…"
+            return repos.lazy.compactMap { service.error(for: $0) }.first ?? tr("正在读取…")
         }
-        if newCount > 0 { return "\(newCount) 条新反馈" }
+        if newCount > 0 { return tr("\(newCount) 条新反馈") }
         let issues = stats.reduce(0) { $0 + ($1.openIssues ?? $1.openIssuesAndPulls) }
-        var parts = ["\(GitHubStats.short(issues)) 议题"]
+        var parts = [tr("\(GitHubStats.short(issues)) 议题")]
         if stats.allSatisfy({ $0.openPulls != nil }) {
             parts.append("\(GitHubStats.short(stats.reduce(0) { $0 + ($1.openPulls ?? 0) })) PR")
         }
-        if !context.isPreview, let n = service.notifications, n > 0 { parts.append("\(n) 通知") }
+        if !context.isPreview, let n = service.notifications, n > 0 { parts.append(tr("\(n) 通知")) }
         return parts.joined(separator: " · ")
     }
 

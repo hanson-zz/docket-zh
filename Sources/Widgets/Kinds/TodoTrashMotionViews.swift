@@ -196,7 +196,7 @@ struct TodoUndoBar: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
-            Button(more > 0 ? "撤销（还有 \(more) 步）" : "撤销", action: undo)
+            Button(more > 0 ? tr("撤销（还有 \(more) 步）") : tr("撤销"), action: undo)
                 .buttonStyle(.plain)
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(Color(hex: PaletteColor.orange.hex))

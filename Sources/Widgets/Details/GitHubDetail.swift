@@ -41,12 +41,12 @@ struct GitHubDetail: View {
         if context.isPreview {
             let now = context.now
             return [
-                GitHubFeedItem(id: "c1", kind: .comment, number: 12, title: "#12 菜单栏图标在深色模式下看不清",
+                GitHubFeedItem(id: "c1", kind: .comment, number: 12, title: tr("#12 菜单栏图标在深色模式下看不清"),
                                author: "lin", createdAt: now.addingTimeInterval(-600), url: nil),
-                GitHubFeedItem(id: "p1", kind: .pull, number: 14, title: "补充繁体中文翻译",
+                GitHubFeedItem(id: "p1", kind: .pull, number: 14, title: tr("补充繁体中文翻译"),
                                author: "chen", createdAt: now.addingTimeInterval(-7200), url: nil,
-                               labels: ["翻译"]),
-                GitHubFeedItem(id: "i1", kind: .issue, number: 12, title: "菜单栏图标在深色模式下看不清",
+                               labels: [tr("翻译")]),
+                GitHubFeedItem(id: "i1", kind: .issue, number: 12, title: tr("菜单栏图标在深色模式下看不清"),
                                author: "wang", createdAt: now.addingTimeInterval(-90_000), url: nil,
                                labels: ["bug"]),
             ]
@@ -91,7 +91,7 @@ struct GitHubDetail: View {
                 if let stats {
                     if !context.isPreview, service.isOffline(current) {
                         // 还有上次的数据，只是这次没连上：一条细横幅，可以直接重连。
-                        ReconnectStateView(title: "离线", detail: "这次没连上 GitHub，显示的是上次的数据",
+                        ReconnectStateView(title: tr("离线"), detail: tr("这次没连上 GitHub，显示的是上次的数据"),
                                            loading: service.isLoading(current), style: .compact,
                                            retry: reconnect)
                     }
@@ -101,21 +101,21 @@ struct GitHubDetail: View {
                     if let release { releaseCard(release) }
                 } else if !context.isPreview, service.isOffline(current) {
                     // 一次都没读到：共用的断网状态，插头拔着，点“重新连接”推回去。
-                    ReconnectStateView(title: "无法连接 GitHub",
-                                       detail: "可能是网络断开了，或者 GitHub 暂时访问不了。",
+                    ReconnectStateView(title: tr("无法连接 GitHub"),
+                                       detail: tr("可能是网络断开了，或者 GitHub 暂时访问不了。"),
                                        loading: service.isLoading(current),
                                        retry: reconnect)
                 } else {
-                    PanelNote(symbol: "network", text: service.error(for: current) ?? "正在读取…").frame(height: 90)
+                    PanelNote(symbol: "network", text: service.error(for: current) ?? tr("正在读取…")).frame(height: 90)
                 }
                 HStack(spacing: 8) {
-                    PanelButton(title: "打开仓库", symbol: "arrow.up.right", prominent: true) {
+                    PanelButton(title: tr("打开仓库"), symbol: "arrow.up.right", prominent: true) {
                         open("https://github.com/\(current)")
                     }
-                    PanelButton(title: "新建议题", symbol: "plus") {
+                    PanelButton(title: tr("新建议题"), symbol: "plus") {
                         open("https://github.com/\(current)/issues/new")
                     }
-                    PanelButton(title: "刷新", symbol: "arrow.clockwise") {
+                    PanelButton(title: tr("刷新"), symbol: "arrow.clockwise") {
                         guard !context.isPreview else { return }
                         service.refreshAll(repos, force: true)
                     }
@@ -134,10 +134,10 @@ struct GitHubDetail: View {
     }
 
     private var subtitle: String {
-        if context.isPreview { return "示例数据" }
+        if context.isPreview { return tr("示例数据") }
         let feedback = service.feedback(for: current)
-        if feedback.total > 0 { return "新反馈：" + feedback.summary }
-        return service.hasToken ? "已使用个人访问令牌" : "公开数据 · 未使用令牌"
+        if feedback.total > 0 { return tr("新反馈：") + feedback.summary }
+        return service.hasToken ? tr("已使用个人访问令牌") : tr("公开数据 · 未使用令牌")
     }
 
     // MARK: Switcher
@@ -194,12 +194,12 @@ struct GitHubDetail: View {
 
     private func statsGrid(_ stats: GitHubStats) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-            StatChip(label: "星标", value: GitHubStats.short(stats.stars))
-            StatChip(label: "复刻", value: GitHubStats.short(stats.forks))
-            StatChip(label: "关注", value: GitHubStats.short(stats.watchers))
-            StatChip(label: "未解决议题", value: GitHubStats.short(stats.openIssues ?? stats.openIssuesAndPulls))
-            StatChip(label: "拉取请求", value: stats.openPulls.map(GitHubStats.short) ?? "-")
-            StatChip(label: "通知",
+            StatChip(label: tr("星标"), value: GitHubStats.short(stats.stars))
+            StatChip(label: tr("复刻"), value: GitHubStats.short(stats.forks))
+            StatChip(label: tr("关注"), value: GitHubStats.short(stats.watchers))
+            StatChip(label: tr("未解决议题"), value: GitHubStats.short(stats.openIssues ?? stats.openIssuesAndPulls))
+            StatChip(label: tr("拉取请求"), value: stats.openPulls.map(GitHubStats.short) ?? "-")
+            StatChip(label: tr("通知"),
                      value: context.isPreview ? "-" : service.notifications.map { "\($0)" } ?? "-")
         }
     }
@@ -223,12 +223,12 @@ struct GitHubDetail: View {
         let total = weeks.joined().reduce(0) { $0 + $1.count }
         let green = Color(hex: "39D353")
         return HStack(alignment: .center, spacing: 12) {
-            ContributionGridView(columns: leveled, color: green, cell: 11, spacing: 3, unit: "条")
+            ContributionGridView(columns: leveled, color: green, cell: 11, spacing: 3, unit: tr("条"))
             VStack(alignment: .leading, spacing: 4) {
                 Text("近 5 周动静")
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white)
-                Text(total == 0 ? "这几周没有新的议题、拉取请求或评论。" : "共 \(total) 条议题、拉取请求和评论")
+                Text(total == 0 ? tr("这几周没有新的议题、拉取请求或评论。") : tr("共 \(total) 条议题、拉取请求和评论"))
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
@@ -339,12 +339,12 @@ struct GitHubDetail: View {
                 Image(systemName: "shippingbox")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
-                Text("最新版本 \(release.tag)")
+                Text(tr("最新版本 \(release.tag)"))
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 Spacer()
-                Text("共 \(release.downloads) 次下载")
+                Text(tr("共 \(release.downloads) 次下载"))
                     .font(WidgetStyle.label(11))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -392,7 +392,7 @@ struct GitHubDetail: View {
                 withAnimation(.easeOut(duration: 0.15)) { managing.toggle() }
             } label: {
                 HStack(spacing: 4) {
-                    Text("关注的项目（\(repos.count)/\(GitHubWatch.maxRepos)）")
+                    Text(tr("关注的项目（\(repos.count)/\(GitHubWatch.maxRepos)）"))
                     Image(systemName: managing ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }
@@ -409,13 +409,13 @@ struct GitHubDetail: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer(minLength: 0)
-                        iconButton("chevron.up", help: "上移", disabled: index == 0) {
+                        iconButton("chevron.up", help: tr("上移"), disabled: index == 0) {
                             save(GitHubWatch.moving(slug, by: -1, in: repos))
                         }
-                        iconButton("chevron.down", help: "下移", disabled: index == repos.count - 1) {
+                        iconButton("chevron.down", help: tr("下移"), disabled: index == repos.count - 1) {
                             save(GitHubWatch.moving(slug, by: 1, in: repos))
                         }
-                        iconButton("xmark", help: "移除", disabled: repos.count <= 1) {
+                        iconButton("xmark", help: tr("移除"), disabled: repos.count <= 1) {
                             save(GitHubWatch.removing(slug, from: repos))
                         }
                     }
@@ -432,7 +432,7 @@ struct GitHubDetail: View {
                         .frame(height: 26)
                         .glassPane(cornerRadius: 7)
                         .onSubmit(add)
-                    Button(adding ? "检查中…" : "添加", action: add)
+                    Button(adding ? tr("检查中…") : tr("添加"), action: add)
                         .buttonStyle(.plain)
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(.white)
@@ -520,7 +520,7 @@ struct GitHubDetail: View {
                 .font(WidgetStyle.label(11))
                 .foregroundStyle(.white.opacity(0.8))
             HStack(spacing: 6) {
-                SecureField("", text: $token, prompt: Text(service.hasToken ? "已保存在钥匙串中" : "ghp_… 或 github_pat_…"))
+                SecureField("", text: $token, prompt: Text(service.hasToken ? tr("已保存在钥匙串中") : tr("ghp_… 或 github_pat_…")))
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.white)
@@ -528,7 +528,7 @@ struct GitHubDetail: View {
                     .frame(height: 26)
                     .glassPane(cornerRadius: 7)
                     .onSubmit(saveToken)
-                Button(service.hasToken && token.isEmpty ? "移除" : "保存") {
+                Button(service.hasToken && token.isEmpty ? tr("移除") : tr("保存")) {
                     if token.isEmpty { service.setToken(nil) } else { saveToken() }
                 }
                 .buttonStyle(.plain)
@@ -537,8 +537,8 @@ struct GitHubDetail: View {
                 .disabled(context.isPreview || (token.isEmpty && !service.hasToken))
             }
             Text(service.hasToken
-                 ? "令牌只保存在这台 Mac 的钥匙串中，用于提高请求上限并显示未读通知数。读取通知需要令牌具有 notifications 权限。"
-                 : "令牌只保存在这台 Mac 的钥匙串中。未使用令牌时每小时只能请求 60 次，关注的项目较多时会自动放慢检查；添加令牌后上限提高到每小时 5000 次，并显示未读通知数。")
+                 ? tr("令牌只保存在这台 Mac 的钥匙串中，用于提高请求上限并显示未读通知数。读取通知需要令牌具有 notifications 权限。")
+                 : tr("令牌只保存在这台 Mac 的钥匙串中。未使用令牌时每小时只能请求 60 次，关注的项目较多时会自动放慢检查；添加令牌后上限提高到每小时 5000 次，并显示未读通知数。"))
                 .font(WidgetStyle.caption(10))
                 .foregroundStyle(.white.opacity(0.55))
                 .fixedSize(horizontal: false, vertical: true)

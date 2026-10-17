@@ -60,10 +60,10 @@ public enum ProLicenseState: Equatable, Sendable {
     /// 设置和付费墙里显示的一句话。
     public var statusText: String {
         switch self {
-        case .free: "免费版"
-        case .trial(let days): "Pro 试用中，还剩 \(days) 天"
-        case .pro: "码头 Pro 已激活"
-        case .expiredTrial: "试用已结束"
+        case .free: tr("免费版")
+        case .trial(let days): tr("Pro 试用中，还剩 \(days) 天")
+        case .pro: tr("码头 Pro 已激活")
+        case .expiredTrial: tr("试用已结束")
         }
     }
 }
@@ -294,18 +294,18 @@ public enum ProLicenseInput: Equatable, Sendable {
 // MARK: - 文案
 
 public enum ProLicenseText {
-    public static let emptyInput = "请输入许可证密钥或兑换码。"
-    public static let malformedGift = "兑换码格式不对，应为 DKG-XXXX-XXXX-XXXX，请检查是否完整复制。"
-    public static let siblingGift = "这是拾掇的兑换码，不能用于码头。码头的兑换码以 DKG 开头。"
-    public static let wrongProduct = "这个许可证不属于码头 Pro。拾掇等其他应用的许可证不能用于码头。"
-    public static let network = "无法连接授权服务器，请检查网络后再试。"
+    public static let emptyInput = tr("请输入许可证密钥或兑换码。")
+    public static let malformedGift = tr("兑换码格式不对，应为 DKG-XXXX-XXXX-XXXX，请检查是否完整复制。")
+    public static let siblingGift = tr("这是拾掇的兑换码，不能用于码头。码头的兑换码以 DKG 开头。")
+    public static let wrongProduct = tr("这个许可证不属于码头 Pro。拾掇等其他应用的许可证不能用于码头。")
+    public static let network = tr("无法连接授权服务器，请检查网络后再试。")
 
     /// 输入框占位文字。
-    public static let inputPlaceholder = "许可证密钥或兑换码（DKG-XXXX-XXXX-XXXX）"
+    public static let inputPlaceholder = tr("许可证密钥或兑换码（DKG-XXXX-XXXX-XXXX）")
 
     /// 价格一句话，付费墙和设置里用。
     public static var priceLine: String {
-        "一次买断 \(ProLicenseConfig.price)，早鸟价 \(ProLicenseConfig.earlyBirdPrice)"
+        tr("一次买断 \(ProLicenseConfig.price)，早鸟价 \(ProLicenseConfig.earlyBirdPrice)")
     }
 
     /// 许可证只显示前 4 位和后 4 位；兑换码只显示最后一组。
@@ -331,26 +331,26 @@ public enum ProLicenseText {
     public static func message(error: String?, status: String?) -> String {
         let text = (error ?? "").lowercased()
         if text.contains("activation limit") {
-            return "这个许可证的激活次数已用完。请先在旧 Mac 的 设置 ▸ 码头 Pro 里“解绑本机”，再来激活。"
+            return tr("这个许可证的激活次数已用完。请先在旧 Mac 的 设置 ▸ 码头 Pro 里“解绑本机”，再来激活。")
         }
         if text.contains("not found") || text.contains("invalid") {
-            return "许可证密钥或兑换码不正确，请检查是否完整复制。"
+            return tr("许可证密钥或兑换码不正确，请检查是否完整复制。")
         }
         if text.contains("disabled") || status == "disabled" {
-            return "这个许可证已被停用。"
+            return tr("这个许可证已被停用。")
         }
         if text.contains("expired") || status == "expired" {
-            return "这个许可证已过期。"
+            return tr("这个许可证已过期。")
         }
         if text.contains("too many") {
-            return "请求太频繁，请稍后再试。"
+            return tr("请求太频繁，请稍后再试。")
         }
         if text.contains("misconfigured") || text.contains("upstream") || text.contains("not configured") {
-            return "授权服务器暂时不可用，请稍后再试。"
+            return tr("授权服务器暂时不可用，请稍后再试。")
         }
         if let error, !error.isEmpty {
-            return "授权失败：\(error)"
+            return tr("授权失败：\(error)")
         }
-        return "授权失败，请稍后再试。"
+        return tr("授权失败，请稍后再试。")
     }
 }
