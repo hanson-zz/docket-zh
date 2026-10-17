@@ -399,6 +399,12 @@ struct WidgetSettingsSections: View {
                         get: { instance.config.strings(key, default: Self.strings(fallback))
                                 .contains(choice.value) },
                         set: { on in
+                            // 快速开关的 Pro 工具没解锁时勾不上，弹付费墙；取消勾选不拦。
+                            if on, !ProLicenseGate.canEnableListChoice(key: key, value: choice.value,
+                                                                       unlocked: ProAccess.isUnlocked) {
+                                PaywallWindow.shared.show()
+                                return
+                            }
                             var list = instance.config.strings(key, default: Self.strings(fallback))
                             if on { if !list.contains(choice.value) { list.append(choice.value) } }
                             else { list.removeAll { $0 == choice.value } }

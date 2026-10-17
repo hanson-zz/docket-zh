@@ -1827,6 +1827,17 @@
         }
       }
     },
+    "%@：码头 Pro 专属，点一下解锁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: Dockling Pro only. Click to unlock"
+          }
+        }
+      }
+    },
     "%d 分 %02d 秒后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2604,6 +2615,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pro widgets"
+          }
+        }
+      }
+    },
+    "Pro 小组件、外观、快速开关的 Pro 工具、AI 刘海对话和充电上限已上锁，设置都还在。购买或输入兑换码即可解锁。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro widgets, looks, the Pro Quick Toggles tools, the AI notch chat and the charge limit are now locked. Your settings are kept. Buy Pro or enter a gift code to unlock."
+          }
+        }
+      }
+    },
+    "Pro 工具" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro tools"
           }
         }
       }
@@ -5156,6 +5189,17 @@
         }
       }
     },
+    "以后再说" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        }
+      }
+    },
     "任务完成时通知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6065,6 +6109,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Charge Limit"
+          }
+        }
+      }
+    },
+    "充电上限是码头 Pro 功能。现在没有解锁，上限已暂停生效，电池照常充满；解锁后自动恢复 %@%% 上限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The charge limit is a Dockling Pro feature. Pro is not unlocked, so the limit is paused and the battery charges fully. The %@%% limit comes back once you unlock."
+          }
+        }
+      }
+    },
+    "充电上限是码头 Pro 功能，解锁后可以让电池充到设定的电量就暂停。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The charge limit is a Dockling Pro feature. Unlock it to pause charging once the battery reaches the level you set."
           }
         }
       }
@@ -7044,6 +7110,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "List"
+          }
+        }
+      }
+    },
+    "刘海对话是码头 Pro 功能。没有解锁时点刘海或按快捷键只会打开付费墙；AI 卡片跳转到网页或 App 照旧免费。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The notch chat is a Dockling Pro feature. Until you unlock it, clicking the notch or pressing the shortcut only opens the Pro window. Opening websites or apps from the AI card stays free."
           }
         }
       }
@@ -13939,6 +14016,17 @@
         }
       }
     },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit"
+          }
+        }
+      }
+    },
     "快速待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19548,6 +19636,17 @@
         }
       }
     },
+    "查看码头 Pro…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Dockling Pro…"
+          }
+        }
+      }
+    },
     "柴犬" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23588,6 +23687,28 @@
         }
       }
     },
+    "码头 Pro 试用只剩最后 1 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Dockling Pro trial has 1 day left"
+          }
+        }
+      }
+    },
+    "码头 Pro 试用已结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Dockling Pro trial has ended"
+          }
+        }
+      }
+    },
     "码头 · 小熊猫的竹篮" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23764,13 +23885,13 @@
         }
       }
     },
-    "码头的基础功能一直免费。Pro 解锁下面这些小组件和外观，一次买断，不用订阅。" : {
+    "码头的基础功能一直免费。Pro 解锁下面这些小组件、外观和工具，一次买断，不用订阅。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dockling's basics are always free. Pro unlocks the widgets and looks below, as a one-time purchase with no subscription."
+            "value" : "Dockling's basics are always free. Pro unlocks the widgets, looks and tools below, as a one-time purchase with no subscription."
           }
         }
       }
@@ -27023,6 +27144,17 @@
         }
       }
     },
+    "试用结束后，Pro 小组件、外观、快速开关的 Pro 工具、AI 刘海对话和充电上限会上锁，设置都会保留。现在购买或输入兑换码，可以一直用下去。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the trial ends, Pro widgets, looks, the Pro Quick Toggles tools, the AI notch chat and the charge limit will be locked, and your settings will be kept. Buy Pro or enter a gift code now to keep using them."
+          }
+        }
+      }
+    },
     "该喝水了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27448,6 +27580,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buy %@ (early bird %@)"
+          }
+        }
+      }
+    },
+    "购买或输入兑换码…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy or Enter Gift Code…"
           }
         }
       }

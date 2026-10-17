@@ -187,6 +187,82 @@ public enum ProLicenseLogic {
     }
 }
 
+// MARK: - 试用到期提醒
+
+/// 试用快结束和结束时各提醒一次：剩最后 1 天时一次，到期后（第一次发现已到期时）
+/// 一次。提醒过的记在 UserDefaults 里，不会重复。已激活或老赞助者不提醒。
+public enum ProTrialReminder: String, CaseIterable, Sendable {
+    /// 试用只剩最后 1 天。
+    case lastDay
+    /// 试用已结束。
+    case expired
+
+    /// UserDefaults 里存已提醒过哪些（rawValue 的数组）。
+    public static let defaultsKey = "pro.trialRemindersShown"
+
+    /// 现在该弹哪一条，不该弹时返回 nil。
+    ///
+    /// 剩 1 天那天码头没开、直接到期的，只弹到期那条，不补弹“剩 1 天”。
+    public static func due(state: ProLicenseState, supporter: Bool, shown: Set<ProTrialReminder>) -> ProTrialReminder? {
+        guard !supporter else { return nil }
+        switch state {
+        case .trial(let daysLeft) where daysLeft <= 1:
+            return shown.contains(.lastDay) || shown.contains(.expired) ? nil : .lastDay
+        case .expiredTrial:
+            return shown.contains(.expired) ? nil : .expired
+        case .free, .trial, .pro:
+            return nil
+        }
+    }
+
+    /// 弹过这一条以后记下的集合。到期那条连带把“剩 1 天”也记上。
+    public static func marking(_ reminder: ProTrialReminder, in shown: Set<ProTrialReminder>) -> Set<ProTrialReminder> {
+        var next = shown
+        next.insert(reminder)
+        if reminder == .expired { next.insert(.lastDay) }
+        return next
+    }
+
+    /// 从 UserDefaults 读出来的数组转成集合，认不出的值丢掉。
+    public static func decode(_ raw: [String]) -> Set<ProTrialReminder> {
+        Set(raw.compactMap(ProTrialReminder.init(rawValue:)))
+    }
+
+    /// 存回 UserDefaults 用的数组，排好序方便比较。
+    public static func encode(_ shown: Set<ProTrialReminder>) -> [String] {
+        shown.map(\.rawValue).sorted()
+    }
+
+    /// 提示的标题。
+    public var title: String {
+        switch self {
+        case .lastDay: tr("码头 Pro 试用只剩最后 1 天")
+        case .expired: tr("码头 Pro 试用已结束")
+        }
+    }
+
+    /// 提示的正文。
+    public var message: String {
+        switch self {
+        case .lastDay:
+            tr("试用结束后，Pro 小组件、外观、快速开关的 Pro 工具、AI 刘海对话和充电上限会上锁，设置都会保留。现在购买或输入兑换码，可以一直用下去。")
+        case .expired:
+            tr("Pro 小组件、外观、快速开关的 Pro 工具、AI 刘海对话和充电上限已上锁，设置都还在。购买或输入兑换码即可解锁。")
+        }
+    }
+
+    /// 打开付费墙的按钮。
+    public var actionTitle: String {
+        switch self {
+        case .lastDay: tr("查看码头 Pro…")
+        case .expired: tr("购买或输入兑换码…")
+        }
+    }
+
+    /// 关掉提示的按钮。
+    public static let laterTitle = tr("以后再说")
+}
+
 // MARK: - 响应
 
 /// 中转服务返回的内容里关心的几项（格式见 server/license-relay/worker.js）。

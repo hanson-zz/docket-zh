@@ -11,8 +11,13 @@ import Foundation
 /// - 天气的多城市和电池的百分比圆环没有同样大小的免费样式可退，盖小锁遮罩。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
 /// - 颜色与背景里的自定义颜色和渐变背景退回默认颜色、无背景显示。
-///
-/// 快速开关的 Pro 工具、AI 刘海和充电上限这次只有标识，不在这里上锁。
+/// - 快速开关的 Pro 工具：设置里照样列出并带 Pro 标识，勾选时弹付费墙；已经勾上的
+///   在卡片上画成带小锁的样子，点按弹付费墙，不执行。正开着的（演示模式、只锁
+///   键盘、低电量模式）还能点一下关掉，免得到期后关不回去。
+/// - AI 刘海对话：点刘海入口、按快捷键、设置里打开开关都弹付费墙，不展开对话。
+///   AI 卡片跳转到网页或 App 照旧免费。
+/// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
+///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
 
     /// 遮罩上的字。
@@ -82,5 +87,43 @@ public enum ProLicenseGate {
         let look = BatteryLook.shown(config: config, unlocked: unlocked)
         if look == .liquid, !unlocked { return .classic }
         return look
+    }
+
+    // MARK: 快速开关
+
+    /// 这个快速开关工具现在是不是锁着：没解锁且是 Pro 工具。
+    public static func isToolLocked(_ tool: QuickToggle, unlocked: Bool) -> Bool {
+        !unlocked && ProFeatures.proTools.contains(tool)
+    }
+
+    /// 卡片上点这个工具能不能执行。锁着的不执行，弹付费墙；但已经开着的
+    /// （试用中打开的演示模式之类）总能点一下关掉。
+    public static func canUseTool(_ tool: QuickToggle, isOn: Bool, unlocked: Bool) -> Bool {
+        !isToolLocked(tool, unlocked: unlocked) || (tool.hasState && isOn)
+    }
+
+    /// 设置里多选列表能不能勾上这一项。取消勾选总是可以。
+    public static func canEnableListChoice(key: String, value: String, unlocked: Bool) -> Bool {
+        unlocked || !ProFeatures.isProListChoice(key: key, value: value)
+    }
+
+    // MARK: AI 刘海对话和充电上限
+
+    /// 不属于某个小组件的 Pro 设置能不能用（刘海对话、充电上限）。
+    public static func canUse(_ setting: ProFeatures.Setting, unlocked: Bool) -> Bool {
+        unlocked
+    }
+
+    /// 能不能展开刘海对话（点刘海入口、快捷键、AI 卡片的小熊猫）。
+    public static func canOpenAINotch(unlocked: Bool) -> Bool {
+        canUse(.aiNotch, unlocked: unlocked)
+    }
+
+    /// 写给充电助手的设置：没解锁时关掉，让助手恢复正常充电；上限和缓冲照旧
+    /// 保留。用户自己的开关另外记着，解锁后再写回去就恢复生效。
+    public static func chargeLimitConfig(_ config: ChargeLimitConfig, unlocked: Bool) -> ChargeLimitConfig {
+        var effective = config.clamped
+        effective.enabled = config.enabled && canUse(.chargeLimit, unlocked: unlocked)
+        return effective
     }
 }

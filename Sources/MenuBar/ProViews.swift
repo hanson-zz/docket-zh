@@ -26,6 +26,8 @@ private struct ProPerk: Identifiable {
                     detail: tr("数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池")),
             ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("专属配色和样式"),
                     detail: tr("小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池百分比圆环")),
+            ProPerk(id: "tools", symbol: "wand.and.stars", title: tr("Pro 工具"),
+                    detail: tr("快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限")),
         ]
     }
 }
@@ -58,7 +60,7 @@ struct ProPaywallView: View {
                 .accessibilityLabel("关闭")
             }
 
-            Text("码头的基础功能一直免费。Pro 解锁下面这些小组件和外观，一次买断，不用订阅。")
+            Text("码头的基础功能一直免费。Pro 解锁下面这些小组件、外观和工具，一次买断，不用订阅。")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 

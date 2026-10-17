@@ -1,14 +1,26 @@
 import SwiftUI
 
 /// 电池面板里的“充电上限”：开关、上限、缓冲，以及助手的状态和安装按钮。
+///
+/// 充电上限是码头 Pro 的功能：没解锁时开关和安装、更新助手的按钮弹付费墙，
+/// 上限和缓冲变灰；已打开的不再生效，电池照常充电，解锁后恢复。卸载助手和
+/// 复制诊断一直能用。
 struct ChargeLimitSection: View {
     var now: Date
 
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+
     private var service: ChargeLimitService { ChargeLimitService.shared }
+
+    private var unlocked: Bool {
+        ProLicenseGate.canUse(.chargeLimit, unlocked: licenseUnlocked || supporter)
+    }
 
     var body: some View {
         let config = service.config
         let state = service.state(now: now)
+        let unlocked = self.unlocked
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("充电上限")
@@ -16,12 +28,23 @@ struct ChargeLimitSection: View {
                     .foregroundStyle(.white.opacity(0.75))
                 ProBadge()
                 Spacer()
-                Toggle("", isOn: Binding(get: { config.enabled },
-                                         set: { on in service.update { $0.enabled = on } }))
+                if !unlocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .accessibilityHidden(true)
+                }
+                // 没解锁时开关显示为关（上限此时不生效），拨它弹付费墙。
+                Toggle("", isOn: Binding(get: { unlocked && config.enabled },
+                                         set: { on in
+                                             guard unlocked else { PaywallWindow.shared.show(); return }
+                                             service.update { $0.enabled = on }
+                                         }))
                     .toggleStyle(.switch)
                     .controlSize(.mini)
                     .labelsHidden()
                     .accessibilityLabel("充电上限")
+                    .help(unlocked ? "" : ProFeatures.help)
             }
             // 上限和缓冲随时能调，先存进设置文件；助手装好跑起来后照这个执行。
             Group {
@@ -52,7 +75,9 @@ struct ChargeLimitSection: View {
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(.white.opacity(0.7))
             }
-            Text(caption(state, config: config))
+            .disabled(!unlocked)
+            .opacity(unlocked ? 1 : 0.5)
+            Text(unlocked ? caption(state, config: config) : lockedCaption(config))
                 .font(WidgetStyle.caption(11))
                 .foregroundStyle(.white.opacity(0.65))
                 .fixedSize(horizontal: false, vertical: true)
@@ -65,9 +90,9 @@ struct ChargeLimitSection: View {
             HStack(spacing: 8) {
                 switch state {
                 case .notInstalled:
-                    button(tr("安装助手")) { service.install() }
+                    button(tr("安装助手"), locked: !unlocked) { install(unlocked) }
                 case .needsUpdate:
-                    button(tr("更新助手")) { service.install() }
+                    button(tr("更新助手"), locked: !unlocked) { install(unlocked) }
                 case .starting, .unsupported, .running:
                     EmptyView()
                 }
@@ -79,13 +104,18 @@ struct ChargeLimitSection: View {
                 }
                 if service.working { ProgressView().controlSize(.small) }
                 Spacer()
+                if !unlocked {
+                    button(tr("解锁码头 Pro…")) { PaywallWindow.shared.show() }
+                }
             }
         }
         .padding(10)
         .glassPane(cornerRadius: 10)
+        .onChange(of: unlocked) { _, value in service.applyLicense(unlocked: value) }
         .task {
             // 面板开着时每 5 秒看一眼助手的状态。
             while !Task.isCancelled {
+                service.applyLicense(unlocked: unlocked)
                 service.refresh()
                 try? await Task.sleep(for: .seconds(5))
             }
@@ -113,14 +143,35 @@ struct ChargeLimitSection: View {
         }
     }
 
-    private func button(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
-            .buttonStyle(.plain)
-            .font(WidgetStyle.label(12))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(.white.opacity(0.18)))
-            .disabled(service.working)
+    /// 没解锁时安装、更新助手只弹付费墙。
+    private func install(_ unlocked: Bool) {
+        guard unlocked else { PaywallWindow.shared.show(); return }
+        service.install()
+    }
+
+    /// 没解锁时的说明。
+    private func lockedCaption(_ config: ChargeLimitConfig) -> String {
+        if config.enabled {
+            return tr("充电上限是码头 Pro 功能。现在没有解锁，上限已暂停生效，电池照常充满；解锁后自动恢复 \(config.limit)% 上限。")
+        }
+        return tr("充电上限是码头 Pro 功能，解锁后可以让电池充到设定的电量就暂停。")
+    }
+
+    private func button(_ title: String, locked: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                if locked {
+                    Image(systemName: "lock.fill").font(.system(size: 9, weight: .semibold))
+                }
+                Text(title)
+            }
+        }
+        .buttonStyle(.plain)
+        .font(WidgetStyle.label(12))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(.white.opacity(0.18)))
+        .disabled(service.working)
     }
 }

@@ -214,6 +214,12 @@ private struct AIAskView: View {
     private func submit() {
         guard !context.isPreview, let service = target else { return }
         let mode = targetMode
+        // 网页和 API 在刘海对话里问，刘海对话是码头 Pro：没解锁时弹付费墙，问题留在框里。
+        if mode != .jump, !ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked),
+           AIAsk.question(state.draft(instance.id)) != nil {
+            PaywallWindow.shared.show()
+            return
+        }
         if mode != .jump, let question = AIAsk.question(state.draft(instance.id)) {
             let center = AIChatCenter.shared
             center.select(service.id)

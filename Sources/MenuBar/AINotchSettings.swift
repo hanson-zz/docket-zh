@@ -7,12 +7,39 @@ struct AINotchSettingsSection: View {
     @Binding var state: PersistedState
 
     @State private var shiduoRunning = AINotchController.checkShiduo()
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+
+    /// 刘海对话是码头 Pro 功能。
+    private var unlocked: Bool {
+        ProLicenseGate.canUse(.aiNotch, unlocked: licenseUnlocked || supporter)
+    }
 
     private var center: AIChatCenter { AIChatCenter.shared }
 
     var body: some View {
         Section {
-            Toggle("在刘海显示 AI 助手", isOn: $state.aiNotch.enabled)
+            if !unlocked {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Label(tr("刘海对话是码头 Pro 功能。没有解锁时点刘海或按快捷键只会打开付费墙；AI 卡片跳转到网页或 App 照旧免费。"),
+                          systemImage: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button(tr("解锁码头 Pro…")) { PaywallWindow.shared.show() }
+                }
+            }
+            // 没解锁时打开开关只弹付费墙；关掉不拦。
+            Toggle("在刘海显示 AI 助手", isOn: Binding(
+                get: { state.aiNotch.enabled },
+                set: { on in
+                    if on, !unlocked {
+                        PaywallWindow.shared.show()
+                        return
+                    }
+                    state.aiNotch.enabled = on
+                }))
                 .help("点一下刘海展开对话，刘海两侧不多出任何东西；没有刘海的屏幕在菜单栏下方正中放一个小胶囊。")
             Toggle("只在主屏显示", isOn: $state.aiNotch.mainScreenOnly)
                 .disabled(!state.aiNotch.enabled)

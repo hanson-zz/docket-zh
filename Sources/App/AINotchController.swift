@@ -15,6 +15,10 @@ import SwiftUI
 /// 入口改为快捷键和货架上 AI 卡片的小熊猫。
 ///
 /// 和灵动提示共处：灵动提示出现在同一块屏幕时入口淡出让位，收起后恢复。
+///
+/// 刘海对话是码头 Pro 的功能：没解锁时入口照常显示，点刘海、按快捷键都只弹
+/// 付费墙，不展开对话；货架上 AI 卡片的小熊猫退回原来的提问面板，跳转到网页
+/// 或 App 照旧免费。
 @MainActor
 final class AINotchController {
     static let shared = AINotchController()
@@ -161,14 +165,25 @@ final class AINotchController {
         return (AINotchLayout.anchor(for: description, shiduoRunning: shiduoRunning), target.frame)
     }
 
+    /// 没解锁码头 Pro 时弹付费墙并返回 false。
+    private func unlockedOrPaywall() -> Bool {
+        guard ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked) else {
+            PaywallWindow.shared.show()
+            return false
+        }
+        return true
+    }
+
     func toggle(onScreenWithPointer: Bool = false) {
         if isOpen { return close() }
+        guard unlockedOrPaywall() else { return }
         guard let anchor = self.anchor(onScreenWithPointer: onScreenWithPointer) else { return }
         show(below: anchor.entry, screen: anchor.screen)
     }
 
     private func toggle(from entryFrame: CGRect) {
         if isOpen { return close() }
+        guard unlockedOrPaywall() else { return }
         let screen = NSScreen.screens.first { $0.frame.intersects(entryFrame) } ?? NSScreen.screens.first
         show(below: entryFrame, screen: screen?.frame ?? entryFrame)
     }
@@ -179,13 +194,17 @@ final class AINotchController {
             panel?.makeKey()
             return
         }
+        guard unlockedOrPaywall() else { return }
         guard let anchor = self.anchor(onScreenWithPointer: true) else { return }
         show(below: anchor.entry, screen: anchor.screen)
     }
 
     /// 货架上 AI 卡片的小熊猫：当前服务是网页或 API 时打开刘海对话（同一个
     /// 会话），是跳转时返回 false，由卡片照旧打开原来的提问面板。
+    ///
+    /// 没解锁码头 Pro 时也返回 false：小熊猫打开原来的提问面板，跳转照旧免费。
     func openFromShelf(_ instance: WidgetInstance) -> Bool {
+        guard ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked) else { return false }
         let center = AIChatCenter.shared
         let services = AIServices.enabled(in: instance.config)
         guard let service = services.first(where: { $0.id == center.current?.id })

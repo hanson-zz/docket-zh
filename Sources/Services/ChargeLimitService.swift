@@ -6,11 +6,24 @@ import Observation
 /// 真正暂停充电的是 root 运行的助手（见 Core/ChargeLimit.swift）。装助手
 /// 要管理员密码，用系统的授权框（AppleScript 的 with administrator
 /// privileges），码头自己从不碰密码。
+///
+/// 充电上限是码头 Pro 的功能。`config` 是用户自己的选择；写给助手的设置文件
+/// 是 `ProLicenseGate.chargeLimitConfig` 算出的实际生效的那份：没解锁时开关写成
+/// 关，助手就恢复正常充电（旧版助手也认）。用户的开关另外存在 UserDefaults，
+/// 解锁后写回去，上限恢复生效。
 @MainActor @Observable
 final class ChargeLimitService {
     static let shared = ChargeLimitService()
 
+    /// 用户自己的选择（开关、上限、缓冲）。
     private(set) var config: ChargeLimitConfig
+    /// Pro 是否已解锁，由 `ProLicenseManager` 在状态变化时告诉这里。
+    private(set) var unlocked = ProAccess.isUnlocked
+    /// 设置文件里现在写着的（实际生效的那份），没有文件时为 nil。
+    @ObservationIgnored private var onDisk: ChargeLimitConfig?
+
+    /// UserDefaults 里存用户自己打开没打开充电上限。
+    static let enabledByUserKey = "chargeLimit.enabledByUser"
     private(set) var status: ChargeHelperStatus?
     private(set) var installed = false
     /// 最近一次装、卸或保存失败的原因。
@@ -18,8 +31,30 @@ final class ChargeLimitService {
     private(set) var working = false
 
     private init() {
-        config = Self.readConfig()
+        let disk = Self.readConfigFile()
+        onDisk = disk
+        var mine = disk ?? .default
+        if let wanted = UserDefaults.standard.object(forKey: Self.enabledByUserKey) as? Bool {
+            mine.enabled = wanted
+        } else if mine.enabled {
+            // 以前打开过，还没单独记下来：记下，锁上以后解锁还能恢复。
+            UserDefaults.standard.set(true, forKey: Self.enabledByUserKey)
+        }
+        config = mine
         refresh()
+    }
+
+    /// 写给助手的那份：没解锁时开关是关的。
+    var effectiveConfig: ChargeLimitConfig {
+        ProLicenseGate.chargeLimitConfig(config, unlocked: unlocked)
+    }
+
+    /// 授权状态变了：没解锁时让上限停止生效，解锁后恢复。设置文件只在实际
+    /// 生效的那份变了时才重写；从没写过设置文件（没用过充电上限）时不写。
+    func applyLicense(unlocked: Bool) {
+        if self.unlocked != unlocked { self.unlocked = unlocked }
+        guard let onDisk, onDisk != effectiveConfig else { return }
+        save()
     }
 
     // MARK: 状态
@@ -61,6 +96,7 @@ final class ChargeLimitService {
         next = next.clamped
         guard next != config else { return }
         config = next
+        UserDefaults.standard.set(next.enabled, forKey: Self.enabledByUserKey)
         save()
     }
 
@@ -68,18 +104,20 @@ final class ChargeLimitService {
         do {
             try FileManager.default.createDirectory(atPath: ChargeHelperFiles.directory,
                                                     withIntermediateDirectories: true)
-            let data = try ChargeHelperFiles.encoder().encode(config)
+            let effective = effectiveConfig
+            let data = try ChargeHelperFiles.encoder().encode(effective)
             try data.write(to: URL(fileURLWithPath: ChargeHelperFiles.configPath), options: .atomic)
+            onDisk = effective
             problem = nil
         } catch {
             problem = tr("设置没存上：\(ChargeHelperFiles.directory) 不可写。重新安装助手可以修好。")
         }
     }
 
-    private static func readConfig() -> ChargeLimitConfig {
+    private static func readConfigFile() -> ChargeLimitConfig? {
         guard let data = FileManager.default.contents(atPath: ChargeHelperFiles.configPath),
               let config = try? ChargeHelperFiles.decoder().decode(ChargeLimitConfig.self, from: data) else {
-            return .default
+            return nil
         }
         return config.clamped
     }
@@ -94,6 +132,8 @@ final class ChargeLimitService {
     }
 
     func install() {
+        // 装和更新助手是 Pro 的一部分；界面上已经拦了，这里再守一道。
+        guard ProLicenseGate.canUse(.chargeLimit, unlocked: unlocked) else { return }
         guard let helper = bundledHelper else {
             problem = tr("应用包里没有找到充电助手，重新下载码头试试。")
             return

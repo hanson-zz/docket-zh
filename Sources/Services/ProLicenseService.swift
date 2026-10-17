@@ -169,13 +169,19 @@ final class ProLicenseManager {
         guard !started else { return }
         started = true
         refreshState()
-        Task { await revalidateIfNeeded() }
+        Task {
+            await revalidateIfNeeded()
+            // 启动后稍等一会儿再看要不要提醒试用快到期，别和启动时的窗口抢。
+            try? await Task.sleep(for: .seconds(8))
+            ProLicenseManager.shared.remindTrialIfNeeded()
+        }
         Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(3600))
                 guard let self else { return }
                 self.refreshState()
                 await self.revalidateIfNeeded()
+                self.remindTrialIfNeeded()
             }
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -183,7 +189,10 @@ final class ProLicenseManager {
         ) { _ in
             MainActor.assumeIsolated {
                 ProLicenseManager.shared.refreshState()
-                Task { await ProLicenseManager.shared.revalidateIfNeeded() }
+                Task {
+                    await ProLicenseManager.shared.revalidateIfNeeded()
+                    ProLicenseManager.shared.remindTrialIfNeeded()
+                }
             }
         }
     }
@@ -201,6 +210,47 @@ final class ProLicenseManager {
         let unlocked = state.isUnlocked
         if UserDefaults.standard.bool(forKey: ProAccess.licenseKey) != unlocked {
             UserDefaults.standard.set(unlocked, forKey: ProAccess.licenseKey)
+        }
+        applyLocks()
+    }
+
+    /// 解锁状态变了以后，让不在界面上的锁跟上：充电上限没解锁时停止生效
+    /// （解锁后恢复），刘海对话开着而 Pro 已锁时收起。
+    private func applyLocks() {
+        let unlocked = ProAccess.isUnlocked
+        ChargeLimitService.shared.applyLicense(unlocked: unlocked)
+        if !ProLicenseGate.canOpenAINotch(unlocked: unlocked), AINotchController.shared.isOpen {
+            AINotchController.shared.close()
+        }
+    }
+
+    // MARK: 试用到期提醒
+
+    /// 试用剩最后 1 天时和到期后各提醒一次（应用内提示，点按钮打开付费墙）。
+    /// 提醒过的记在 UserDefaults，不重复；已激活或老赞助者不提醒。
+    func remindTrialIfNeeded() {
+        let defaults = UserDefaults.standard
+        let shown = ProTrialReminder.decode(defaults.stringArray(forKey: ProTrialReminder.defaultsKey) ?? [])
+        guard let reminder = ProTrialReminder.due(state: state, supporter: Supporter.isUnlocked, shown: shown) else { return }
+        // 先记下再弹，弹的过程中出什么事也不会再弹第二次。
+        defaults.set(ProTrialReminder.encode(ProTrialReminder.marking(reminder, in: shown)),
+                     forKey: ProTrialReminder.defaultsKey)
+        // 付费墙已经开着就不用再弹一次提示。
+        guard PaywallWindow.shared.window?.isVisible != true else { return }
+
+        let policy = NSApp.activationPolicy()
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = reminder.title
+        alert.informativeText = reminder.message
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: reminder.actionTitle)
+        alert.addButton(withTitle: ProTrialReminder.laterTitle)
+        let response = alert.runModal()
+        NSApp.setActivationPolicy(policy)
+        if response == .alertFirstButtonReturn {
+            PaywallWindow.shared.show()
         }
     }
 
