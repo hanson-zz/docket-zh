@@ -71,7 +71,7 @@ final class WidgetOptionTests: XCTestCase {
     func testNoWidgetOffersAnOptionItDoesNotRead() {
         let expected: [WidgetKind: Set<String>] = [
             .world: ["city", "zone"],
-            .progress: ["period"],
+            .progress: ["period", "liquidMotion"],
             .timer: ["look"],
             .countdown: ["duration", "name", "presets", "look"],
             .alarm: ["time", "name"],
@@ -267,6 +267,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
         "search.engine",
         "weather.city", "weather.cities",
+        // 水面动效只有液态外观有。
+        "progress.liquidMotion",
     ]
 
     /// Everything else is unconditional, and a rule added carelessly would
