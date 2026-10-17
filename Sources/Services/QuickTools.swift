@@ -213,8 +213,8 @@ private final class FirstClickHostingView<Content: View>: NSHostingView<Content>
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
-/// 能成为键盘焦点的无边框浮窗（镜子要收 Esc）。
-private final class KeyablePanel: NSPanel {
+/// 镜子的浮窗：无边框，但能成为键盘焦点（要收 Esc）。
+private final class MirrorPanel: NSPanel {
     var onCancel: (() -> Void)?
     override var canBecomeKey: Bool { true }
     override func cancelOperation(_ sender: Any?) { onCancel?() }
@@ -570,7 +570,7 @@ private final class MirrorPreviewView: NSView {
 final class MirrorWindow {
     static let shared = MirrorWindow()
 
-    private var panel: KeyablePanel?
+    private var panel: MirrorPanel?
     private var camera: MirrorCamera?
     private var monitors: [Any] = []
     /// 点镜子按钮本身来关时，按下先关、松开又会打开，用这个挡一下。
@@ -606,7 +606,7 @@ final class MirrorWindow {
             return
         }
         let size = NSSize(width: 360, height: 270)
-        let panel = KeyablePanel(contentRect: NSRect(origin: .zero, size: size),
+        let panel = MirrorPanel(contentRect: NSRect(origin: .zero, size: size),
                                  styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
