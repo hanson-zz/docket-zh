@@ -133,6 +133,14 @@ public struct WidgetSurface<Content: View>: View {
     /// Set per widget from its context menu; see `WidgetPlate`.
     @Environment(\.widgetPlateHidden) private var plateHidden
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 颜色面板里选的卡片背景（`WidgetTint.Background`），没选是无。
+    @Environment(\.widgetTint) private var tint
+
+    /// 选了背景、而且卡片没有自己的颜色或图片、没有隐藏底板时才画。
+    private var tintBackground: WidgetTint.Background {
+        guard let tint, fill == nil, image == nil, !plateHidden else { return .plain }
+        return tint.background
+    }
 
     /// 普通或悬停。拖入、禁用、缺权限由各卡片用共用修饰器叠在上面。
     private var state: TileState { TileState.resolve(hovered: hovered) }
@@ -172,7 +180,10 @@ public struct WidgetSurface<Content: View>: View {
     }
 
     public var body: some View {
+        let backdrop = tintBackground
         content
+            // 深色和渐变背景本身是深的，卡片里的字固定用浅色。
+            .environment(\.colorScheme, backdrop.forcesDarkInk ? .dark : scheme)
             .padding(.horizontal, WidgetStyle.inset)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
@@ -180,6 +191,13 @@ public struct WidgetSurface<Content: View>: View {
                     // Only the default card goes. A colour or a picture a
                     // widget asked for (a note's paper, a cover) is content.
                     .fill(fill ?? (plateHidden ? Color.clear : cardFill))
+                    .overlay {
+                        if backdrop != .plain {
+                            TintBackgroundView(background: backdrop, style: tint, dark: scheme == .dark)
+                                .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner,
+                                                            style: .continuous))
+                        }
+                    }
                     .overlay {
                         if let image {
                             Image(nsImage: image)

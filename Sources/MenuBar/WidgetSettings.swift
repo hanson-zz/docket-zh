@@ -14,6 +14,9 @@ struct WidgetSettingsSections: View {
     /// is also where a selection goes when its widget leaves the shelf.
     @State private var selection: UUID?
 
+    /// 正在选城市的世界时钟。
+    @State private var cityPickerFor: UUID?
+
     var body: some View {
         if instances.isEmpty {
             Section("小组件") {
@@ -60,6 +63,13 @@ struct WidgetSettingsSections: View {
                 }
                 if pair.instance.kind == .battery {
                     batteryAlertSection(pair.instance)
+                }
+                if WidgetTint.offersColor(pair.instance.kind) || WidgetTint.offersBackground(pair.instance.kind) {
+                    Section("颜色与背景") {
+                        WidgetTintPicker(instance: pair.instance) { change in
+                            write(pair.instance, change)
+                        }
+                    }
                 }
                 displaySection(pair.instance)
             }
@@ -264,6 +274,41 @@ struct WidgetSettingsSections: View {
     @ViewBuilder
     private func control(_ key: String, entry: WidgetCatalog.Entry,
                          instance: WidgetInstance) -> some View {
+        if entry.kind == .world, key == "zone" {
+            // 时区不再手打：从可搜索的城市列表里选，城市名一起写好。
+            worldCityControl(instance)
+        } else {
+            plainControl(key, entry: entry, instance: instance)
+        }
+    }
+
+    /// 世界时钟的“选择城市”：按钮上是现在的城市和时区，点开是城市列表。
+    private func worldCityControl(_ instance: WidgetInstance) -> some View {
+        let zone = instance.config.string("zone", default: "Europe/London")
+        let city = instance.config.string("city", default: "伦敦")
+        return LabeledContent("城市与时区") {
+            Button {
+                cityPickerFor = instance.id
+            } label: {
+                Text("\(city) · \(zone)")
+                    .lineLimit(1)
+            }
+            .popover(isPresented: Binding(
+                get: { cityPickerFor == instance.id },
+                set: { if !$0 { cityPickerFor = nil } })) {
+                WorldCityPicker(zone: zone, city: city) { picked in
+                    write(instance) { WorldCityPicker.apply(picked, to: &$0) }
+                    cityPickerFor = nil
+                }
+                .padding(12)
+                .frame(width: 320)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func plainControl(_ key: String, entry: WidgetCatalog.Entry,
+                              instance: WidgetInstance) -> some View {
         switch entry.defaults.values[key] {
         // Every read here passes the catalog's default. Without it a widget
         // saved before a key existed showed false, or empty, rather than what

@@ -21,6 +21,8 @@ struct TimeProgressTile: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.widgetHovered) private var hovered
+    @Environment(\.widgetTint) private var tint
+    @Environment(\.colorScheme) private var scheme
 
     /// One bar per 3pt of the 156pt content width.
     private static let barCount = 52
@@ -39,9 +41,13 @@ struct TimeProgressTile: View {
     /// 「2026年 · 剩 80 天」
     private var caption: String { TimeProgress.caption(period, now: context.now) }
 
-    /// 圆环、进度条和水共用的蓝色渐变。
+    /// 原来圆环、进度条和水共用的蓝色渐变。扩展栏上的卡片改用颜色主题
+    /// （`WidgetTint`，时间进度默认紫），环境里没有主题色时才用这一对。
     static let light = Color(hex: TimeProgress.gradientHex.0)
     static let deep = Color(hex: TimeProgress.gradientHex.1)
+
+    /// 主题色，调到在当前外观下看得清。
+    private var accent: Color { tint?.main(dark: scheme == .dark) ?? Self.deep }
 
     var body: some View {
         WidgetSurface {
@@ -104,7 +110,7 @@ struct TimeProgressTile: View {
                 RoundedRectangle(cornerRadius: 0.85, style: .continuous)
                     // Softened from full ink: a run of 52 solid white bars was
                     // the brightest thing on the shelf.
-                    .fill(WidgetStyle.primary.opacity(index < filled ? 0.62 : 0.12))
+                    .fill(index < filled ? accent.opacity(0.85) : WidgetStyle.primary.opacity(0.12))
                     .frame(width: 5.0 / 3.0)
             }
         }
@@ -150,7 +156,7 @@ struct TimeProgressTile: View {
     }
 
     private var water: some View {
-        LiquidWater(level: fraction, tint: Self.deep,
+        LiquidWater(level: fraction, tint: accent,
                     visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                     still: !TimeProgress.liquidAnimates(instance.config, reduceMotion: reduceMotion),
                     shine: true, bubbles: 4)
@@ -253,9 +259,10 @@ struct TimeProgressTile: View {
                 .font(WidgetStyle.value(size))
                 .foregroundStyle(WidgetStyle.primary)
                 .rollingValue(percent)
+            // 百分号用主题色做强调，数字本身保持主色最清楚。
             Text("%")
                 .font(.system(size: size * 0.6, weight: .semibold))
-                .foregroundStyle(WidgetStyle.secondary)
+                .foregroundStyle(tint == nil ? WidgetStyle.secondary : accent)
         }
         .monospacedDigit()
         .lineLimit(1)
@@ -275,19 +282,25 @@ struct TimeProgressTile: View {
     }
 }
 
-/// 圆环版的环：淡淡的底环，上面一段蓝色渐变的进度，圆头。
+/// 圆环版的环：淡淡的底环，上面一段主题色渐变的进度，圆头。
 struct GradientRing: View {
     var progress: Double
     var lineWidth: CGFloat = 5
 
+    @Environment(\.widgetTint) private var tint
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
+        let dark = scheme == .dark
+        let light = tint?.light(dark: dark) ?? TimeProgressTile.light
+        let deep = tint?.main(dark: dark) ?? TimeProgressTile.deep
         let value = min(1, max(0, progress.isFinite ? progress : 0))
         ZStack {
             Circle()
                 .stroke(WidgetStyle.primary.opacity(0.12), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: value)
-                .stroke(AngularGradient(colors: [TimeProgressTile.light, TimeProgressTile.deep],
+                .stroke(AngularGradient(colors: [light, deep],
                                         center: .center,
                                         startAngle: .degrees(0),
                                         endAngle: .degrees(360 * max(value, 0.01))),
@@ -299,12 +312,21 @@ struct GradientRing: View {
     }
 }
 
-/// 百分比版的进度条：浅底，蓝色渐变的进度，端点一颗带光晕的小点。
+/// 百分比版的进度条：浅底，主题色渐变的进度，端点一颗对比色的小点，
+/// 只有一点点光晕。
 struct GlowBar: View {
     var progress: Double
     var height: CGFloat = 5
 
+    @Environment(\.widgetTint) private var tint
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
+        let dark = scheme == .dark
+        let light = tint?.light(dark: dark) ?? TimeProgressTile.light
+        let deep = tint?.main(dark: dark) ?? TimeProgressTile.deep
+        let dotColor = tint?.contrast(dark: dark) ?? Color.white
+        let glow = tint?.contrast(dark: dark) ?? TimeProgressTile.light
         let value = min(1, max(0, progress.isFinite ? progress : 0))
         GeometryReader { geometry in
             let width = geometry.size.width
@@ -312,13 +334,13 @@ struct GlowBar: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(WidgetStyle.primary.opacity(0.12))
                 Capsule()
-                    .fill(LinearGradient(colors: [TimeProgressTile.light, TimeProgressTile.deep],
+                    .fill(LinearGradient(colors: [light, deep],
                                          startPoint: .leading, endPoint: .trailing))
                     .frame(width: max(height, width * value))
                 Circle()
-                    .fill(.white)
+                    .fill(dotColor)
                     .frame(width: dot, height: dot)
-                    .shadow(color: TimeProgressTile.light.opacity(0.9), radius: 3)
+                    .shadow(color: glow.opacity(tint == nil ? 0.9 : 0.5), radius: tint == nil ? 3 : 2)
                     .offset(x: min(max(0, width * value - dot / 2), width - dot))
             }
         }

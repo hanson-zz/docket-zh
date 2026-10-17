@@ -140,11 +140,14 @@ struct BatteryTile: View {
 
     /// White while nothing is wrong; the low-battery colours only when they
     /// mean something.
-    private func ringTint(_ reading: Reading) -> Color {
-        guard reading.present, !reading.charging else { return WidgetStyle.primary }
+    /// 电量低时的红和橙照旧；其余时候是 nil，圆环用卡片的主题色
+    /// （电池默认绿，见 `WidgetTint`），不再是一圈白。
+    private func ringTint(_ reading: Reading) -> Color? {
+        guard reading.present else { return WidgetStyle.primary }
+        guard !reading.charging else { return nil }
         if reading.level <= 0.10 { return Color(hex: "#FF453A") }
         if reading.level <= 0.20 { return Color(hex: "#FF9F0A") }
-        return WidgetStyle.primary
+        return nil
     }
 
     private func percentText(_ reading: Reading) -> String {

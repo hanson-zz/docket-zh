@@ -47,7 +47,8 @@ private struct SlackerTileBody: View, Equatable {
             ZStack {
                 if SlackerClock.look(config) == .liquid {
                     SlackerWater(phase: reading.phase, level: SlackerClock.waterLevel(reading.phase, settings: settings),
-                                 animates: animates)
+                                 animates: animates,
+                                 tint: WidgetTintStyle.chosenColor(kind: .slacker, config: config) ?? .white)
                         // 撑满整张卡片：不然水只有中间文字那么大，左右和上下会露出底色的黑边。
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(.horizontal, -WidgetStyle.inset)
@@ -189,6 +190,8 @@ struct SlackerWater: View {
     var phase: SlackerClock.Phase
     var level: Double
     var animates: Bool
+    /// 默认是白色的水（卡片本身已经是彩色底）；颜色面板里选过颜色时用选的。
+    var tint: Color = .white
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -225,14 +228,14 @@ struct SlackerWater: View {
             path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
             path.closeSubpath()
             if layer == 1 {
-                context.fill(path, with: .color(.white.opacity(0.10)))
+                context.fill(path, with: .color(tint.opacity(tint == .white ? 0.10 : 0.22)))
             } else {
                 front = path
                 context.fill(path, with: .linearGradient(
-                    Gradient(colors: [.white.opacity(0.26), .white.opacity(0.12)]),
+                    Gradient(colors: [tint.opacity(tint == .white ? 0.26 : 0.5), tint.opacity(tint == .white ? 0.12 : 0.3)]),
                     startPoint: CGPoint(x: rect.midX, y: baseY),
                     endPoint: CGPoint(x: rect.midX, y: rect.maxY)))
-                context.stroke(front, with: .color(.white.opacity(0.35)), lineWidth: 0.8)
+                context.stroke(front, with: .color(tint.opacity(tint == .white ? 0.35 : 0.6)), lineWidth: 0.8)
             }
         }
 

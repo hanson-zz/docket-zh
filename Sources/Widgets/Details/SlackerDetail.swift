@@ -72,7 +72,8 @@ struct SlackerDetail: View {
                         if SlackerClock.look(config) == .liquid {
                             SlackerWater(phase: reading.phase,
                                          level: SlackerClock.waterLevel(reading.phase, settings: settings),
-                                         animates: !context.isPreview)
+                                         animates: !context.isPreview,
+                                         tint: WidgetTintStyle.chosenColor(kind: .slacker, config: config) ?? .white)
                         }
                     }
                 }

@@ -18,6 +18,9 @@ struct WaterTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
     /// 液态：整张卡片是一杯水，水位是今天的进度（见 `LiquidLooks`）。
     private var isLiquid: Bool { LiquidLooks.waterIsLiquid(instance.config) }
@@ -160,7 +163,8 @@ struct WaterTile: View {
         let level = LiquidLooks.waterLevel(total: day.total, goal: day.goal)
         let vertical = context.position.isVertical
         return ZStack {
-            LiquidWater(level: level, tint: WaterStyle.water,
+            // 液态的水用卡片的颜色主题（喝水默认青蓝，见 `WidgetTint`）。
+            LiquidWater(level: level, tint: theme?.main(dark: scheme == .dark) ?? WaterStyle.water,
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                         golden: done && mood == .drink)
                 .fillingCard()

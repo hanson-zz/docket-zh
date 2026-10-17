@@ -6,6 +6,16 @@ struct CodexUsageTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
+    /// 圆环和水杯的颜色：默认照旧按用掉多少变绿、橙、红；颜色面板里选过
+    /// 颜色时，用掉不到 70% 用选的颜色，快用完的橙和红照旧提醒。
+    private func usageTint(_ used: Double) -> Color {
+        if let theme, theme.isChosen, used < 0.7 { return theme.main(dark: scheme == .dark) }
+        return CodexStyle.tint(used: used)
+    }
+
     private var service: CodexService { CodexService.shared }
     private var showsRemaining: Bool { instance.config.string("show", default: "used") == "remaining" }
 
@@ -91,7 +101,7 @@ struct CodexUsageTile: View {
     /// 一样按用掉多少变绿、橙、红；快用完时水波更急。只在卡片可见时动。
     private func cup(_ w: CodexLimitWindow, diameter: CGFloat) -> some View {
         let level = LiquidLooks.codexLevel(usedFraction: w.usedFraction, showsRemaining: showsRemaining)
-        let tint = CodexStyle.tint(used: w.usedFraction)
+        let tint = usageTint(w.usedFraction)
         return ZStack {
             LiquidWater(level: level, tint: tint, shape: .circle,
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
@@ -109,7 +119,7 @@ struct CodexUsageTile: View {
 
     private func progressRing(_ w: CodexLimitWindow, diameter: CGFloat) -> some View {
         let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
-        let tint = CodexStyle.tint(used: w.usedFraction)
+        let tint = usageTint(w.usedFraction)
         return MetricProgressRing(progress: fraction, tint: tint, track: tint.opacity(0.16),
                                   diameter: diameter, lineWidth: diameter > 36 ? 4.5 : 4) {
             Text("\(Int((fraction * 100).rounded()))")

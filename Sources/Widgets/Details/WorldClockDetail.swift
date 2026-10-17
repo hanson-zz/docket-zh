@@ -24,6 +24,11 @@ struct WorldClockDetail: View {
 
     private var city: String { instance.config.string("city", default: "伦敦") }
 
+    private var zoneID: String { instance.config.string("zone", default: "Europe/London") }
+
+    /// 展开“选择城市”时，时差和十二小时那一块换成可搜索的城市列表。
+    @State private var choosing = false
+
     var body: some View {
         // Never `context.now`: the chrome assigns its root view once, so the
         // frozen date would leave the seconds and the strip standing still.
@@ -37,16 +42,24 @@ struct WorldClockDetail: View {
                     headline(now)
                         .padding(.top, 18)
 
-                    HStack(spacing: 8) {
-                        StatChip(label: "此处", value: ClockFormat.time(now, zone: .current))
-                            .frame(width: 88)
-                        StatChip(label: "时差",
-                                 value: ClockPanelFormat.difference(zone, at: now))
-                    }
-
-                    strip(now)
+                    if choosing {
+                        WorldCityPicker(zone: zoneID, city: city) { picked in
+                            pick(picked)
+                        }
                         .padding(10)
                         .glassPane()
+                    } else {
+                        HStack(spacing: 8) {
+                            StatChip(label: "此处", value: ClockFormat.time(now, zone: .current))
+                                .frame(width: 88)
+                            StatChip(label: "时差",
+                                     value: ClockPanelFormat.difference(zone, at: now))
+                        }
+
+                        strip(now)
+                            .padding(10)
+                            .glassPane()
+                    }
                 }
             }
         }
@@ -72,7 +85,38 @@ struct WorldClockDetail: View {
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             Spacer(minLength: 0)
+            cityButton
         }
+    }
+
+    // MARK: 选择城市
+
+    /// 右上角的“选择城市”：点开是城市列表，再点收起。小组件库的预览里
+    /// 不能写配置，所以那里不显示。
+    @ViewBuilder
+    private var cityButton: some View {
+        if !context.isPreview {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) { choosing.toggle() }
+            } label: {
+                Label(choosing ? "完成" : "选择城市", systemImage: choosing ? "checkmark" : "globe")
+                    .font(WidgetStyle.label(11))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .glassPane(cornerRadius: 8)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help("换一个城市或时区")
+        }
+    }
+
+    /// 写回 `zone` 和 `city`，卡片和面板一起换。
+    private func pick(_ picked: WorldCity) {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(instance) { WorldCityPicker.apply(picked, to: &$0) }
+        withAnimation(.snappy(duration: 0.25)) { choosing = false }
     }
 
     // MARK: Twelve hours

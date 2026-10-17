@@ -59,11 +59,23 @@ struct FocusTimerTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.colorScheme) private var scheme
+
+    /// 颜色面板里选过就用选的；没选过时设置里给专注计时换过的颜色照旧，
+    /// 否则是专注计时自己的绿（`WidgetTint.timerPalette`）。跟随系统强调色时
+    /// 用系统的。
+    private func sessionTint(for state: TimerState) -> Color {
+        guard let palette = WidgetTint.timerPalette(WidgetTint.choice(instance.config), session: state.color) else {
+            return .accentColor
+        }
+        return Color(code: WidgetTint.readable(palette.main, dark: scheme == .dark))
+    }
+
     var body: some View {
         let state = resolvedState
         let total = max(1, state.duration ?? Double(state.minutes * 60))
         let remaining = remaining(in: state, total: total)
-        let tint = WidgetStyle.tint(state.color)
+        let tint = sessionTint(for: state)
         // A countdown at zero is not running whatever its deadline says: the
         // glyph offers a fresh start there, which is what pressing it does.
         let running = remaining > 0 && state.paused == nil && state.deadline != nil

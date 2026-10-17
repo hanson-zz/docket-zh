@@ -33,6 +33,9 @@ public struct WidgetTile: View {
         let size = WidgetCatalog.contentSize(item, position: context.position)
         content(item)
             .frame(width: size.width, height: size.height)
+            // 这张卡片的颜色主题（没设置时是这种小组件自己的颜色），图标方底、
+            // 圆环、进度条和液态水从环境里取，见 `WidgetTintStyle`。
+            .environment(\.widgetTint, WidgetTintStyle(kind: item.kind, config: item.config))
     }
 
     @ViewBuilder

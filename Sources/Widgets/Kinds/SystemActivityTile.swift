@@ -11,6 +11,9 @@ struct SystemActivityTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         WidgetSurface {
             Group {
@@ -149,7 +152,9 @@ struct SystemActivityTile: View {
     /// 每个读数一个小水杯：水位是占用率，占用越高水波越急，过了 85% 变红。
     private func liquidCup(_ metric: Metric, diameter: CGFloat, size: CGFloat) -> some View {
         let load = value(metric)
-        let tint = LiquidMotion.isHot(load) ? Color.red : metric.color
+        // 颜色面板里选过颜色时水杯用选的颜色，过了 85% 照旧变红。
+        let chosen = theme?.isChosen == true ? theme?.main(dark: scheme == .dark) : nil
+        let tint = LiquidMotion.isHot(load) ? Color.red : (chosen ?? metric.color)
         return ZStack {
             LiquidWater(level: load, tint: tint, shape: .circle,
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,

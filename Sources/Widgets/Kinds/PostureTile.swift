@@ -84,7 +84,8 @@ struct PostureTile: View {
 
     private func mark(size: CGFloat) -> some View {
         ZStack {
-            TileRing(progress: active ? progress : 0, tint: tint)
+            // 到点前用卡片的主题色（`WidgetTint`），到点了换成提醒的绿。
+            TileRing(progress: active ? progress : 0, tint: active && remaining <= 0 ? tint : nil)
             Image(systemName: "figure.stand")
                 .font(.system(size: size, weight: .medium))
                 .foregroundStyle(active && remaining <= 0 ? tint : WidgetStyle.primary)

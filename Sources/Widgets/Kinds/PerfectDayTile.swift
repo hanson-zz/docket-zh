@@ -16,6 +16,9 @@ struct PerfectDayTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
     private var center: PerfectDayCenter { .shared }
 
     private var progress: [PerfectDayProgress] {
@@ -68,7 +71,9 @@ struct PerfectDayTile: View {
     private func liquid(_ items: [PerfectDayProgress], tier: PerfectDayTier?) -> some View {
         let vertical = context.position.isVertical
         return ZStack {
-            LiquidWater(level: LiquidLooks.basketLevel(items), tint: Color(hex: PerfectDay.bambooHex),
+            // 默认竹叶色；颜色面板里选过颜色时用选的。
+            LiquidWater(level: LiquidLooks.basketLevel(items),
+                        tint: theme?.isChosen == true ? theme!.main(dark: scheme == .dark) : Color(hex: PerfectDay.bambooHex),
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
                 .fillingCard()
             if vertical {

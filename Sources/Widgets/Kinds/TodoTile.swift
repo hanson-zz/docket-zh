@@ -122,7 +122,8 @@ struct TodoTile: View {
 
     private func ring(open: Int, progress: Double, size: CGFloat) -> some View {
         ZStack {
-            TileRing(progress: progress, tint: tint)
+            // 卡片的主题色（待办默认橙，见 `WidgetTint`）。
+            TileRing(progress: progress)
             if open > 0 {
                 Text("\(open)")
                     .font(.system(size: size, weight: .bold))
@@ -135,10 +136,6 @@ struct TodoTile: View {
                     .foregroundStyle(WidgetStyle.primary)
             }
         }
-    }
-
-    private var tint: Color {
-        Color(hex: PaletteColor.orange.hex).mix(with: WidgetStyle.primary, by: 0.3)
     }
 
     /// Finishes the task on the card. With nothing open it is drawn as a

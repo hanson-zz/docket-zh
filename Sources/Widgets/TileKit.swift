@@ -21,15 +21,30 @@ struct TileBadge<Content: View>: View {
     var size: CGFloat = CGFloat(DockMetrics.badge)
     @ViewBuilder var content: () -> Content
 
+    /// 扩展栏上的卡片按自己的主题色给方底染一层淡淡的颜色（`WidgetTint`），
+    /// 不再全是一样的灰；面板里没有主题色，照旧是中性的玻璃。
+    @Environment(\.widgetTint) private var tint
+    @Environment(\.colorScheme) private var scheme
+
+    private var fill: Color {
+        guard let tint else { return WidgetStyle.primary.opacity(0.07) }
+        return tint.main(dark: scheme == .dark).opacity(scheme == .dark ? 0.18 : 0.16)
+    }
+
+    private var edge: Color {
+        guard let tint else { return WidgetStyle.primary.opacity(0.1) }
+        return tint.main(dark: scheme == .dark).opacity(0.3)
+    }
+
     var body: some View {
         content()
             .frame(width: size, height: size)
             .background {
                 RoundedRectangle(cornerRadius: CGFloat(DockMetrics.badgeCorner(Double(size))), style: .continuous)
-                    .fill(WidgetStyle.primary.opacity(0.07))
+                    .fill(fill)
                     .overlay {
                         RoundedRectangle(cornerRadius: CGFloat(DockMetrics.badgeCorner(Double(size))), style: .continuous)
-                            .strokeBorder(WidgetStyle.primary.opacity(0.1), lineWidth: 0.5)
+                            .strokeBorder(edge, lineWidth: 0.5)
                     }
             }
     }
@@ -64,15 +79,20 @@ struct TileReading: View {
 /// A ring for a badge: a faint track and the part done over it.
 struct TileRing: View {
     var progress: Double
-    var tint: Color = WidgetStyle.primary
+    /// 不传时用卡片的主题色（`WidgetTint`），面板里没有主题色时是原来的白。
+    var tint: Color? = nil
     var lineWidth: CGFloat = 3
 
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
+        let stroke = tint ?? theme?.main(dark: scheme == .dark) ?? WidgetStyle.primary
         ZStack {
             Circle().stroke(WidgetStyle.primary.opacity(0.12), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(stroke, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
         .padding(7)
