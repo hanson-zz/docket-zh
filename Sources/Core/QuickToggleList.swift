@@ -10,6 +10,9 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     case darkMode, keepAwake, lock, screenSaver, emptyTrash
     case hiddenFiles, hideDesktop, extensions, muteMic
     case ejectDisks, clearClipboard, cleanScreen, quitApps
+    // 第二批工具，都不在默认里，用户在设置里自己勾。
+    case textCapture, colorPicker, presentation, keyboardLock
+    case qrCode, mirror, lowPower, restartDock
 
     public var id: String { rawValue }
 
@@ -31,6 +34,14 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         case .clearClipboard: "清空剪贴板"
         case .cleanScreen: "清洁屏幕和键盘"
         case .quitApps: "退出其他应用"
+        case .textCapture: "截图识字"
+        case .colorPicker: "取色器"
+        case .presentation: "演示模式"
+        case .keyboardLock: "只锁键盘"
+        case .qrCode: "二维码"
+        case .mirror: "镜子"
+        case .lowPower: "低电量模式"
+        case .restartDock: "重启程序坞和访达"
         }
     }
 
@@ -50,6 +61,14 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         case .clearClipboard: "清空当前剪贴板内容"
         case .cleanScreen: "黑屏并暂时锁住键盘，方便擦拭"
         case .quitApps: "正常退出其他应用（会先确认，未存储的内容由各应用询问）"
+        case .textCapture: "框选屏幕上的一块区域，识别其中的文字并拷贝"
+        case .colorPicker: "用放大镜取屏幕上任意一点的颜色，拷贝 HEX"
+        case .presentation: "隐藏桌面图标和其他应用并保持唤醒，再点一次恢复原样"
+        case .keyboardLock: "暂时锁住键盘，屏幕照常显示，长按浮窗按钮 3 秒解锁"
+        case .qrCode: "把剪贴板文字生成二维码，或识别屏幕上的二维码"
+        case .mirror: "打开摄像头小窗照一照，点外面或按 Esc 关闭"
+        case .lowPower: "切换系统的低电量模式（需要管理员密码）"
+        case .restartDock: "重新启动程序坞和访达（会先确认）"
         }
     }
 
@@ -68,6 +87,14 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         case .clearClipboard: "clipboard"
         case .cleanScreen: "sparkles"
         case .quitApps: "xmark.rectangle"
+        case .textCapture: "text.viewfinder"
+        case .colorPicker: "eyedropper"
+        case .presentation: "play.rectangle.on.rectangle"
+        case .keyboardLock: "keyboard.badge.ellipsis"
+        case .qrCode: "qrcode"
+        case .mirror: "person.crop.square"
+        case .lowPower: "battery.25"
+        case .restartDock: "arrow.clockwise"
         }
     }
 
@@ -75,6 +102,7 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     public var hasState: Bool {
         switch self {
         case .darkMode, .keepAwake, .hiddenFiles, .hideDesktop, .extensions, .muteMic: true
+        case .presentation, .keyboardLock, .lowPower: true
         default: false
         }
     }

@@ -14,8 +14,12 @@ import SwiftUI
 /// disks, the input volume for muting the microphone, and an IOKit power
 /// assertion for Keep Awake. macOS asks once for Automation consent. Locking
 /// is `pmset displaysleepnow`, which locks the Mac when a password is
-/// required after sleep, the macOS default. Do Not Disturb, Night Shift and
-/// Low Power Mode have no public switch, so they are not offered.
+/// required after sleep, the macOS default. Do Not Disturb and Night Shift
+/// have no public switch, so they are not offered. 低电量模式走 `pmset`，
+/// 要管理员密码，用系统的授权框（和充电助手的安装一样）。
+///
+/// 第二批工具（截图识字、取色器、只锁键盘、二维码、镜子）的窗口和识别
+/// 在 QuickTools.swift；演示模式、低电量模式和重启程序坞在这里。
 @MainActor @Observable
 final class QuickActions {
     static let shared = QuickActions()
@@ -26,9 +30,23 @@ final class QuickActions {
     private(set) var keepAwake = false
     private(set) var micMuted = UserDefaults.standard.bool(forKey: "quick.micMuted")
 
-    @ObservationIgnored private var assertion = IOPMAssertionID(0)
+    /// 演示模式打开前的样子；nil 表示没在演示。
+    private(set) var presentation: PresentationSnapshot? = QuickActions.loadPresentation()
+    /// 最近一次从 `pmset -g` 读到的低电量模式；nil 是还没读到或这台 Mac 不支持。
+    private(set) var lowPower: LowPowerSetting.Reading?
 
-    private init() {}
+    @ObservationIgnored private var assertion = IOPMAssertionID(0)
+    @ObservationIgnored private var lowPowerRequested = false
+
+    private init() {
+        // 上次退出时还在演示：保持唤醒的断言跟着进程没了，补上，让演示模式前后一致。
+        if presentation != nil { setKeepAwake(true) }
+    }
+
+    /// 别的地方改了开关状态（比如只锁键盘到点自动解锁），让卡片重画。
+    func noteChange() {
+        revision += 1
+    }
 
     static var isDark: Bool {
         UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
@@ -43,6 +61,14 @@ final class QuickActions {
         case .hideDesktop: return (Self.preference("CreateDesktop", in: "com.apple.finder") ?? true) == false
         case .extensions: return Self.preference("AppleShowAllExtensions", in: "kCFPreferencesAnyApplication") ?? false
         case .muteMic: return micMuted
+        case .presentation: return presentation != nil
+        case .keyboardLock: return KeyboardLockMode.shared.isActive
+        case .lowPower:
+            if !lowPowerRequested {
+                lowPowerRequested = true
+                refreshLowPower()
+            }
+            return lowPower?.isOn ?? false
         default: return false
         }
     }
@@ -99,17 +125,42 @@ final class QuickActions {
             NSPasteboard.general.clearContents()
             done()
         case .cleanScreen:
+            KeyboardLockMode.shared.stop()
             CleanMode.shared.start()
             done()
         case .quitApps:
             quitOtherApps()
             done()
+        case .textCapture:
+            TextCapture.start()
+            done()
+        case .colorPicker:
+            ColorPickerTool.start()
+            done()
+        case .presentation:
+            togglePresentation(then: done)
+        case .keyboardLock:
+            KeyboardLockMode.shared.toggle()
+            done()
+        case .qrCode:
+            QRCodePanel.shared.show()
+            done()
+        case .mirror:
+            MirrorWindow.shared.open()
+            done()
+        case .lowPower:
+            toggleLowPower(then: done)
+        case .restartDock:
+            guard Self.confirm("要重新启动程序坞和访达吗？",
+                               "程序坞和访达会退出并马上自动重新打开，访达窗口会关闭后再恢复。",
+                               button: "重新启动") else { return }
+            Self.shell("killall Dock; killall Finder", then: done)
         }
     }
 
     // MARK: Keep Awake
 
-    private func setKeepAwake(_ on: Bool) {
+    func setKeepAwake(_ on: Bool) {
         if on, !keepAwake {
             let result = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep as CFString,
                                                      IOPMAssertionLevel(kIOPMAssertionLevelOn),
@@ -139,6 +190,118 @@ final class QuickActions {
             let saved = UserDefaults.standard.integer(forKey: "quick.micLevel")
             let level = saved > 0 ? saved : 50
             Self.run("/usr/bin/osascript", ["-e", "set volume input volume \(level)"], then: done)
+        }
+    }
+
+    // MARK: Presentation
+
+    nonisolated private static let presentationKey = "quick.presentation"
+
+    nonisolated private static func loadPresentation() -> PresentationSnapshot? {
+        guard let data = UserDefaults.standard.data(forKey: presentationKey) else { return nil }
+        return try? JSONDecoder().decode(PresentationSnapshot.self, from: data)
+    }
+
+    private func savePresentation() {
+        if let presentation, let data = try? JSONEncoder().encode(presentation) {
+            UserDefaults.standard.set(data, forKey: Self.presentationKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.presentationKey)
+        }
+    }
+
+    private static func runningApps() -> [PresentationPlan.App] {
+        let me = ProcessInfo.processInfo.processIdentifier
+        let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        return NSWorkspace.shared.runningApplications.filter { !$0.isTerminated }.map {
+            PresentationPlan.App(pid: $0.processIdentifier,
+                                 isRegular: $0.activationPolicy == .regular,
+                                 isHidden: $0.isHidden,
+                                 isFrontmost: $0.processIdentifier == front,
+                                 isSelf: $0.processIdentifier == me,
+                                 isFinder: $0.bundleIdentifier == "com.apple.finder")
+        }
+    }
+
+    /// 打开：隐藏桌面图标、保持唤醒、隐藏其他应用，先记下原样；
+    /// 关闭：照记下的样子恢复，只把演示模式藏起来的应用显示回来。
+    private func togglePresentation(then done: @escaping @MainActor () -> Void) {
+        let apps = Self.runningApps()
+        let desktopHidden = isOn(.hideDesktop)
+        let changes: PresentationPlan.Changes
+        if let snapshot = presentation {
+            changes = PresentationPlan.exit(snapshot, desktopHidden: desktopHidden, keepAwake: keepAwake, apps: apps)
+            presentation = nil
+        } else {
+            let plan = PresentationPlan.enter(desktopHidden: desktopHidden, keepAwake: keepAwake, apps: apps)
+            presentation = plan.snapshot
+            changes = plan.changes
+        }
+        savePresentation()
+        if let awake = changes.setKeepAwake { setKeepAwake(awake) }
+        let running = Dictionary(NSWorkspace.shared.runningApplications.map { ($0.processIdentifier, $0) },
+                                 uniquingKeysWith: { first, _ in first })
+        changes.hide.forEach { _ = running[$0]?.hide() }
+        changes.unhide.forEach { _ = running[$0]?.unhide() }
+        // 访达改桌面图标要重启，重启后的访达是新进程，等它起来再藏或显示。
+        let finderStep: @MainActor () -> Void = {
+            guard changes.hideFinder || changes.unhideFinder else { return }
+            let finder = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first
+            if changes.hideFinder { _ = finder?.hide() } else { _ = finder?.unhide() }
+        }
+        guard let hidden = changes.setDesktopHidden else {
+            finderStep()
+            done()
+            return
+        }
+        Self.shell("defaults write com.apple.finder CreateDesktop -bool \(!hidden); killall Finder") {
+            done()
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                finderStep()
+            }
+        }
+    }
+
+    // MARK: Low Power Mode
+
+    func refreshLowPower() {
+        Self.capture("/usr/bin/pmset", ["-g"]) { [weak self] output in
+            self?.lowPower = LowPowerSetting.parse(output)
+            self?.revision += 1
+        }
+    }
+
+    /// 先读现在的状态，再用管理员授权框执行 pmset。用户取消授权框时什么都不做。
+    private func toggleLowPower(then done: @escaping @MainActor () -> Void) {
+        Self.capture("/usr/bin/pmset", ["-g"]) { [weak self] output in
+            guard let self else { return }
+            guard let reading = LowPowerSetting.parse(output),
+                  let command = LowPowerSetting.command(key: reading.key, on: !reading.isOn) else {
+                self.lowPower = nil
+                QuickHint.show("这台 Mac 不支持低电量模式", symbol: "battery.25", tint: .secondary)
+                done()
+                return
+            }
+            let turningOn = !reading.isOn
+            let prompt = turningOn ? "码头要打开低电量模式。" : "码头要关闭低电量模式。"
+            let source = "do shell script \"\(ChargeHelperFiles.appleScriptQuoted(command))\" "
+                + "with prompt \"\(ChargeHelperFiles.appleScriptQuoted(prompt))\" with administrator privileges"
+            var error: NSDictionary?
+            NSAppleScript(source: source)?.executeAndReturnError(&error)
+            if let error {
+                let code = error[NSAppleScript.errorNumber] as? Int
+                if code != -128 {
+                    QuickHint.show("没能切换低电量模式：\(error[NSAppleScript.errorMessage] as? String ?? "未知错误")",
+                                   symbol: "exclamationmark.triangle.fill", tint: .orange, seconds: 4)
+                }
+            } else {
+                self.lowPower = LowPowerSetting.Reading(key: reading.key, isOn: turningOn)
+                QuickHint.show(turningOn ? "低电量模式已打开" : "低电量模式已关闭",
+                               symbol: turningOn ? "battery.25" : "battery.100", tint: turningOn ? .yellow : .green)
+            }
+            self.refreshLowPower()
+            done()
         }
     }
 
@@ -182,7 +345,7 @@ final class QuickActions {
         return alert.runModal() == .alertFirstButtonReturn
     }
 
-    private static func shell(_ command: String, then done: @escaping @MainActor () -> Void) {
+    static func shell(_ command: String, then done: @escaping @MainActor () -> Void) {
         run("/bin/sh", ["-c", command], then: done)
     }
 
@@ -224,8 +387,6 @@ final class CleanMode {
     static let shared = CleanMode()
 
     private var windows: [NSWindow] = []
-    private var tap: CFMachPort?
-    private var source: CFRunLoopSource?
     private var timeout: Timer?
 
     var isActive: Bool { !windows.isEmpty }
@@ -234,7 +395,7 @@ final class CleanMode {
         guard !isActive else { return }
         let trusted = AXIsProcessTrustedWithOptions(
             ["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-        let locked = trusted && lockKeyboard()
+        let locked = trusted && KeyboardBlocker.shared.start()
         for screen in NSScreen.screens {
             let window = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
             window.level = .screenSaver
@@ -257,16 +418,26 @@ final class CleanMode {
     func stop() {
         timeout?.invalidate()
         timeout = nil
-        if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
-        if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
-        tap = nil
-        source = nil
-        CleanModeTap.port = nil
+        KeyboardBlocker.shared.stop()
         windows.forEach { $0.orderOut(nil) }
         windows.removeAll()
     }
+}
 
-    private func lockKeyboard() -> Bool {
+/// 锁键盘：一个会话级事件拦截，吞掉按键、修饰键和媒体键。
+/// 清洁模式和“只锁键盘”共用它，需要辅助功能授权。
+@MainActor
+final class KeyboardBlocker {
+    static let shared = KeyboardBlocker()
+
+    private var tap: CFMachPort?
+    private var source: CFRunLoopSource?
+
+    var isActive: Bool { tap != nil }
+
+    /// 已经锁着时直接算成功。
+    func start() -> Bool {
+        if isActive { return true }
         let types: [CGEventType] = [.keyDown, .keyUp, .flagsChanged]
         var mask = types.reduce(CGEventMask(0)) { $0 | (CGEventMask(1) << $1.rawValue) }
         // NX_SYSDEFINED: brightness, volume and the other media keys.
@@ -281,6 +452,14 @@ final class CleanMode {
         self.tap = tap
         self.source = source
         return true
+    }
+
+    func stop() {
+        if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
+        if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
+        tap = nil
+        source = nil
+        CleanModeTap.port = nil
     }
 }
 
