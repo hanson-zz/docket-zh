@@ -61,7 +61,10 @@ struct RemindersTile: View {
     var body: some View {
         WidgetSurface {
             if !granted {
-                notice("lock", accessText, tint: WidgetStyle.secondary)
+                // 缺权限：小锁和「需要提醒事项权限 · 去开启」，点按去开启。
+                PermissionLockNote(permission: TilePermission.name(for: WidgetKind.reminders.rawValue) ?? "提醒事项",
+                                   compact: narrow, stacked: narrow, preview: context.isPreview)
+                    .frame(maxWidth: .infinity, alignment: narrow ? .center : .leading)
             } else if items.isEmpty {
                 notice("checkmark.circle", emptyText, tint: Self.accent)
             } else if context.position.isVertical {
@@ -130,7 +133,7 @@ struct RemindersTile: View {
         // The shelf's badge and reading. Overdue is said by the glyph in
         // the badge, small and red, rather than by colouring the words: red
         // text was the loudest thing on the shelf.
-        return HStack(spacing: 10) {
+        return HStack(spacing: WidgetStyle.rowSpacing) {
             TileBadge {
                 Image(systemName: late ? "exclamationmark.circle.fill" : "checklist")
                     .font(.system(size: 17))
@@ -204,7 +207,7 @@ struct RemindersTile: View {
                 .monospacedDigit()
                 .rollingValue(value)
             Text(label)
-                .font(WidgetStyle.caption(11))
+                .font(WidgetStyle.note)
                 .foregroundStyle(WidgetStyle.secondary)
         }
         .lineLimit(1)
@@ -275,12 +278,7 @@ struct RemindersTile: View {
 
     // MARK: States with nothing to show
 
-    /// Never a plausible zero. Without access the count is unknown, not none,
-    /// and the two have to look different or the tile lies by omission.
-    private var accessText: String {
-        if narrow { return "无权限" }
-        return access == .notDetermined ? "未获得提醒事项访问权限" : "提醒事项访问权限已关闭"
-    }
+    // 缺权限时的那句话在 Core 的 `TilePermission`，和日历、邮件、废纸篓共用。
 
     private var emptyText: String { narrow ? "无到期事项" : "今天没有到期事项。" }
 

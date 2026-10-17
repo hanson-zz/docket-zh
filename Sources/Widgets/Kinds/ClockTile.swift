@@ -72,7 +72,7 @@ struct ClockReadout: View {
             } else if expanded {
                 // The face in the badge every tile leads with, so a clock and
                 // the tile beside it share one left edge for their pictures.
-                HStack(spacing: 10) {
+                HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge {
                         AnalogClockFace(now: now, zone: zone, diameter: 26)
                     }

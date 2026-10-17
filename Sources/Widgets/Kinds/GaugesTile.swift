@@ -40,7 +40,7 @@ struct GaugesTile: View {
                                     .monospacedDigit()
                                     .rollingValue(r.value)
                                 Text(r.caption)
-                                    .font(.system(size: 11))
+                                    .font(WidgetStyle.note)
                                     .foregroundStyle(WidgetStyle.secondary)
                             }
                             .lineLimit(1)

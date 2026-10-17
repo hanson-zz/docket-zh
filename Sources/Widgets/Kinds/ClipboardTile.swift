@@ -15,16 +15,16 @@ struct ClipboardTile: View {
         let column = context.position.isVertical
         return WidgetSurface {
             if column {
-                VStack(spacing: 6) {
-                    badge(size: 32)
+                VStack(spacing: WidgetStyle.columnSpacing) {
+                    badge(size: WidgetStyle.badgeColumn)
                     Text(context.isPreview ? "8 条" : "\(history.entries.count) 条")
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: value, caption: caption, valueSize: 14)
                     Spacer(minLength: 0)
                 }
@@ -35,7 +35,7 @@ struct ClipboardTile: View {
 
     private var value: String {
         if context.isPreview { return "明天上午十点开会" }
-        return latest?.preview ?? "尚未拷贝"
+        return latest?.preview ?? PandaEmpty.clipboard.line()
     }
 
     private var caption: String {
@@ -54,6 +54,9 @@ struct ClipboardTile: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: size, height: size)
                     .clipShape(.rect(cornerRadius: size * 0.26, style: .continuous))
+            } else if !context.isPreview, history.entries.isEmpty {
+                // 还没拷贝过：小熊猫打个盹。
+                PandaEmptyBadge(empty: .clipboard, size: size, fallback: "list.clipboard")
             } else {
                 Image(systemName: "list.clipboard")
                     .font(.system(size: size * 0.42, weight: .medium))

@@ -125,7 +125,7 @@ struct SystemActivityTile: View {
             ForEach(metrics, id: \.self) { metric in
                 HStack(spacing: 8) {
                     Text(metric.label)
-                        .font(WidgetStyle.caption(11))
+                        .font(WidgetStyle.note)
                         .foregroundStyle(WidgetStyle.secondary)
                         .frame(width: 44, alignment: .leading)
                     GeometryReader { geo in

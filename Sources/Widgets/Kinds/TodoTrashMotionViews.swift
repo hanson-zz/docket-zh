@@ -188,7 +188,7 @@ struct TodoUndoBar: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: step.kind == .deleted ? "trash" : "checkmark.circle")
-                .font(.system(size: 11))
+                .font(WidgetStyle.note)
                 .foregroundStyle(.white.opacity(0.7))
             Text(step.caption)
                 .font(.system(size: 12))
@@ -203,7 +203,7 @@ struct TodoUndoBar: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
-        .glassPane(cornerRadius: 10)
+        .glassPane(cornerRadius: WidgetStyle.innerCorner)
     }
 }
 

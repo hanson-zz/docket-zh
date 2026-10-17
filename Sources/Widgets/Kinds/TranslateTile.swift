@@ -54,19 +54,14 @@ struct TranslateTile: View {
                 }
                 .padding(.horizontal, 2)
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: value, caption: "翻译 · \(pair)", valueSize: 14)
                     Spacer(minLength: 0)
                 }
             }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                .strokeBorder(Color.accentColor, lineWidth: 2)
-                .opacity(targeted ? 1 : 0)
-                .animation(.snappy(duration: 0.15), value: targeted)
-        }
+        .dropTargetOutline(targeted)
         .dropDestination(for: String.self) { items, _ in
             guard !context.isPreview else { return false }
             return translate(items.joined(separator: "\n"))

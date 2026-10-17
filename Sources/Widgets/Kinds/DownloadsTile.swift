@@ -14,8 +14,8 @@ struct DownloadsTile: View {
         let column = context.position.isVertical
         return WidgetSurface {
             if column {
-                VStack(spacing: 6) {
-                    badge(size: 32)
+                VStack(spacing: WidgetStyle.columnSpacing) {
+                    badge(size: WidgetStyle.badgeColumn)
                     Text(title)
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
@@ -24,14 +24,19 @@ struct DownloadsTile: View {
                         .minimumScaleFactor(0.7)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: title, caption: caption, valueSize: 14)
                     Spacer(minLength: 0)
                 }
             }
         }
         .onAppear { if !context.isPreview { feed.start() } }
+    }
+
+    /// 读完了、没出错、也没有文件。
+    private var isEmpty: Bool {
+        !context.isPreview && active == nil && latest == nil && feed.loadedAt != nil && feed.error == nil
     }
 
     private var title: String {
@@ -44,7 +49,7 @@ struct DownloadsTile: View {
     private var caption: String {
         if context.isPreview { return "下载 · 刚刚" }
         if let active { return DownloadProgress.tileCaption(active.fraction) }
-        guard let latest else { return feed.loadedAt == nil ? "正在读取" : "空" }
+        guard let latest else { return feed.loadedAt == nil ? "正在读取" : PandaEmpty.downloads.line() }
         return "下载 · \(RelativeAge.caption(latest.date, now: context.now))"
     }
 
@@ -56,9 +61,12 @@ struct DownloadsTile: View {
                 FileThumb(url: latest.url, pixels: 120, fill: latest.isImage)
                     .clipShape(.rect(cornerRadius: size * 0.22, style: .continuous))
                     .padding(latest.isImage ? 0 : 2)
+            } else if isEmpty {
+                // 下载文件夹空着：小熊猫歇着。
+                PandaEmptyBadge(empty: .downloads, size: size, fallback: "arrow.down.circle")
             } else {
                 Image(systemName: "arrow.down.circle")
-                    .font(.system(size: size * 0.42, weight: .medium))
+                    .font(.system(size: size * CGFloat(DockMetrics.badgeGlyphRatio), weight: .medium))
                     .foregroundStyle(WidgetStyle.primary)
             }
         }

@@ -14,7 +14,7 @@ struct MailTile: View {
         return WidgetSurface {
             if column {
                 VStack(spacing: 4) {
-                    badge(size: 34)
+                    badge(size: WidgetStyle.badgeCompact)
                     Text(shortLine)
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(WidgetStyle.secondary)
@@ -22,18 +22,15 @@ struct MailTile: View {
                         .minimumScaleFactor(0.7)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: value, caption: caption)
                     Spacer(minLength: 0)
-                    if state == .denied {
-                        TileGlyph(symbol: "lock.fill", size: 10,
-                                  action: { mail.openAutomationSettings() })
-                            .help("打开“自动化”权限设置")
-                    }
                 }
             }
         }
+        // 缺“自动化”权限：右上角小锁，点按打开对应的隐私设置。
+        .permissionLock(state == .denied ? Self.permission : nil, preview: context.isPreview)
         .onAppear { if !context.isPreview { mail.start() } }
     }
 
@@ -56,6 +53,8 @@ struct MailTile: View {
         }
     }
 
+    static let permission = TilePermission.name(for: WidgetKind.mail.rawValue) ?? "自动化（邮件）"
+
     private var value: String {
         switch state {
         case .unread(let count): MailBadge.figure(count)
@@ -68,7 +67,7 @@ struct MailTile: View {
         switch state {
         case .unread(let count): MailBadge.caption(count)
         case .notRunning: "未打开，点按打开"
-        case .denied: "需要“自动化”权限"
+        case .denied: TilePermission.prompt(Self.permission)
         case .failed: "暂时无法读取"
         }
     }

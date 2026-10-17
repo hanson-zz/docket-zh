@@ -71,7 +71,7 @@ struct PhotoFrameTile: View {
                 .font(.system(size: column ? 15 : 16, weight: .medium))
                 .foregroundStyle(WidgetStyle.secondary)
             Text(message)
-                .font(WidgetStyle.caption(11))
+                .font(WidgetStyle.note)
                 .foregroundStyle(WidgetStyle.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

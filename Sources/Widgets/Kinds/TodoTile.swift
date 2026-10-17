@@ -30,21 +30,27 @@ struct TodoTile: View {
         return WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: 34) { badge(open: open.count, progress: progress, size: 13) }
+                    TileBadge(size: WidgetStyle.badgeCompact) {
+                        badge(open: open.count, progress: progress, size: 13, empty: empty(all, open: open),
+                              badgeSize: WidgetStyle.badgeCompact)
+                    }
                         .overlay { cheer(size: 60) }
-                    Text(open.isEmpty ? "无待办" : "\(open.count) 项")
-                        .font(.system(size: 13, weight: .semibold))
+                    Text(open.isEmpty ? (empty(all, open: open) ?? .todo).line(compact: true) : "\(open.count) 项")
+                        .font(WidgetStyle.title)
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     checkButton(open.first, size: 10)
                 }
             } else {
-                HStack(spacing: 10) {
-                    TileBadge { badge(open: open.count, progress: progress, size: 15) }
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    TileBadge {
+                        badge(open: open.count, progress: progress, size: 15, empty: empty(all, open: open),
+                              badgeSize: WidgetStyle.badge)
+                    }
                         .overlay { cheer(size: 70) }
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(open.first?.text ?? (all.isEmpty ? "没有待办" : "都做完了"))
+                        Text(open.first?.text ?? (all.isEmpty ? PandaEmpty.todo : PandaEmpty.todoDone).line())
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary)
                             .lineLimit(1)
@@ -98,7 +104,23 @@ struct TodoTile: View {
         }
     }
 
-    private func badge(open: Int, progress: Double, size: CGFloat) -> some View {
+    /// 没有要做的事时用哪只小熊猫：一条都没有，或者都做完了。库里的样例不算空。
+    private func empty(_ all: [TodoItem], open: [TodoItem]) -> PandaEmpty? {
+        guard !context.isPreview, open.isEmpty else { return nil }
+        return all.isEmpty ? .todo : .todoDone
+    }
+
+    @ViewBuilder
+    private func badge(open: Int, progress: Double, size: CGFloat,
+                       empty: PandaEmpty? = nil, badgeSize: CGFloat = WidgetStyle.badge) -> some View {
+        if let empty {
+            PandaEmptyBadge(empty: empty, size: badgeSize, fallback: "checklist")
+        } else {
+            ring(open: open, progress: progress, size: size)
+        }
+    }
+
+    private func ring(open: Int, progress: Double, size: CGFloat) -> some View {
         ZStack {
             TileRing(progress: progress, tint: tint)
             if open > 0 {

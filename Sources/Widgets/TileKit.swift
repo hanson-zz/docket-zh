@@ -18,17 +18,17 @@ import SwiftUI
 /// edge for its pictures and one for its text. Neutral, like the card: what
 /// is drawn in it carries the meaning, and any colour in it is an accent.
 struct TileBadge<Content: View>: View {
-    var size: CGFloat = 40
+    var size: CGFloat = CGFloat(DockMetrics.badge)
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         content()
             .frame(width: size, height: size)
             .background {
-                RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+                RoundedRectangle(cornerRadius: CGFloat(DockMetrics.badgeCorner(Double(size))), style: .continuous)
                     .fill(WidgetStyle.primary.opacity(0.07))
                     .overlay {
-                        RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+                        RoundedRectangle(cornerRadius: CGFloat(DockMetrics.badgeCorner(Double(size))), style: .continuous)
                             .strokeBorder(WidgetStyle.primary.opacity(0.1), lineWidth: 0.5)
                     }
             }
@@ -46,14 +46,14 @@ struct TileReading: View {
     var valueSize: CGFloat = 19
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
             Text(value)
                 .font(.system(size: valueSize, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
                 .rollingValue(value)
             Text(caption)
-                .font(.system(size: 12))
+                .font(WidgetStyle.note)
                 .foregroundStyle(WidgetStyle.secondary)
         }
         .lineLimit(1)

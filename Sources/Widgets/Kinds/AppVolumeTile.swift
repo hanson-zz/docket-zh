@@ -38,7 +38,7 @@ struct AppVolumeTile: View {
         return WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: 34) { icons(apps, size: 20) }
+                    TileBadge(size: WidgetStyle.badgeCompact) { icons(apps, size: 20) }
                     Text(AppVolumeText.value(playing: apps.count))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
@@ -46,7 +46,7 @@ struct AppVolumeTile: View {
                         .minimumScaleFactor(0.6)
                 }
             } else {
-                HStack(spacing: 10) {
+                HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge { icons(apps, size: 24) }
                     TileReading(value: AppVolumeText.value(playing: apps.count),
                                 caption: AppVolumeText.caption(names: apps.map(\.name),

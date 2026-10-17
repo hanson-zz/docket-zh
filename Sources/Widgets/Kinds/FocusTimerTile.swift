@@ -80,7 +80,7 @@ struct FocusTimerTile: View {
                         dial(liquid: liquid, remaining: remaining, total: total, tint: tint,
                              running: running, golden: golden, diameter: 44, width: 6)
                         Text(docketClockString(remaining))
-                            .font(WidgetStyle.label(13))
+                            .font(WidgetStyle.title)
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.primary)
                             .lineLimit(1)
@@ -126,7 +126,7 @@ struct FocusTimerTile: View {
                     dial(liquid: liquid, remaining: remaining, total: total, tint: tint,
                          running: running, golden: golden, diameter: 24, width: 5)
                     Text(docketClockString(remaining))
-                        .font(WidgetStyle.label(13))
+                        .font(WidgetStyle.title)
                         .monospacedDigit()
                         .foregroundStyle(WidgetStyle.primary)
                 }

@@ -28,7 +28,7 @@ struct AmbientTile: View {
         return WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: 34) { mark(symbol, size: 14) }
+                    TileBadge(size: WidgetStyle.badgeCompact) { mark(symbol, size: 14) }
                     Text(sounds.first?.title ?? "环境音")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
@@ -37,7 +37,7 @@ struct AmbientTile: View {
                     playButton(size: 10)
                 }
             } else {
-                HStack(spacing: 10) {
+                HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge { mark(symbol, size: 17) }
                     TileReading(value: AmbientSound.summary(sounds), caption: caption, valueSize: 16)
                     Spacer(minLength: 0)

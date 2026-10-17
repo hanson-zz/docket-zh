@@ -165,7 +165,7 @@ struct ClockStyleReadout: View {
                         }
                     }
                     Text(ClockFormat.date(now, zone: zone))
-                        .font(WidgetStyle.caption(11))
+                        .font(WidgetStyle.note)
                         .foregroundStyle(WidgetStyle.secondary)
                 }
                 .lineLimit(1)
@@ -202,7 +202,7 @@ struct ClockStyleReadout: View {
                             .foregroundStyle(WidgetStyle.primary)
                             .rollingValue(parts.time)
                         Text(ClockPanelWeekday.monthDay(now, zone: zone) + " " + ClockPanelWeekday.of(now, zone: zone))
-                            .font(WidgetStyle.caption(11))
+                            .font(WidgetStyle.note)
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                     .lineLimit(1)

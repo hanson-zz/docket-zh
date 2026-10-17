@@ -27,7 +27,7 @@ struct AppSwitcherTile: View {
         return WidgetSurface {
             if apps.isEmpty {
                 Text("没有正在运行的应用")
-                    .font(WidgetStyle.caption(11))
+                    .font(WidgetStyle.note)
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

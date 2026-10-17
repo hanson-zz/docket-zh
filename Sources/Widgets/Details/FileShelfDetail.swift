@@ -26,16 +26,14 @@ struct FileShelfDetail: View {
                         .frame(height: 236)
                         .background {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(.white.opacity(targeted ? 0.6 : 0.2),
+                                .strokeBorder(.white.opacity(targeted ? 0 : 0.2),
                                               style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                         }
+                        .dropTargetOutline(targeted, corner: 12)
                 } else {
                     FileRows(files: files, now: context.now,
                              onRemove: { FileShelf.remove($0.url, from: instance) })
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(.white.opacity(targeted ? 0.6 : 0), lineWidth: 1.5)
-                        }
+                        .dropTargetOutline(targeted, corner: 12)
                 }
                 HStack(spacing: 8) {
                     PanelButton(title: "在访达中显示", symbol: "folder", prominent: true) {

@@ -187,10 +187,14 @@ struct RadioBars: View {
     var barWidth: CGFloat = 2
     var height: CGFloat = 10
 
+    /// 打开“减少动态效果”时柱子不跳，停在静止的高度。
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private static let phases: [Double] = [0, 1.7, 0.6, 2.4]
     private static let still: [Double] = [0.55, 0.9, 0.4, 0.7]
 
     var body: some View {
+        let active = self.active && !reduceMotion
         TimelineView(.animation(minimumInterval: 1.0 / 12, paused: !active)) { tick in
             let t = tick.date.timeIntervalSinceReferenceDate
             HStack(alignment: .bottom, spacing: barWidth * 0.7) {

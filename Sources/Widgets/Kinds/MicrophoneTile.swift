@@ -19,7 +19,7 @@ struct MicrophoneTile: View {
         WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    badge(size: 34)
+                    badge(size: WidgetStyle.badgeCompact)
                     Text(MicrophoneText.value(inUse: inUse, muted: muted))
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(WidgetStyle.secondary)
@@ -28,8 +28,8 @@ struct MicrophoneTile: View {
                     if canMute { muteButton(size: 10) }
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: MicrophoneText.value(inUse: inUse, muted: muted),
                                 caption: MicrophoneText.caption(deviceName: name))
                     Spacer(minLength: 0)

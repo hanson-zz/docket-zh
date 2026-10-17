@@ -40,7 +40,7 @@ struct HabitTile: View {
     // MARK: Wide
 
     private var empty: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: WidgetStyle.rowSpacing) {
             TileBadge {
                 Image(systemName: "checkmark.seal")
                     .font(.system(size: 16, weight: .medium))
@@ -98,7 +98,7 @@ struct HabitTile: View {
     private func column(_ all: [Habit]) -> some View {
         if all.isEmpty {
             VStack(spacing: 4) {
-                TileBadge(size: 34) {
+                TileBadge(size: WidgetStyle.badgeCompact) {
                     Image(systemName: "checkmark.seal")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(WidgetStyle.primary)

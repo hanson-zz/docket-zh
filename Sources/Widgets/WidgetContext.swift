@@ -27,8 +27,9 @@ public enum WidgetStyle {
     /// About 0.3 of a card's height, which is what the reference shelf runs
     /// and what macOS 26's own grouped surfaces look like. 14 read as square
     /// beside them.
-    public static let corner: CGFloat = 18
-    public static let inset: CGFloat = 10
+    /// 数值见 Core 的 `DockMetrics`，全货架共用一套。
+    public static let corner = CGFloat(DockMetrics.cardCorner)
+    public static let inset = CGFloat(DockMetrics.cardInset)
 
     /// Enough black over any artwork to keep white ink legible on it.
     ///
@@ -131,6 +132,10 @@ public struct WidgetSurface<Content: View>: View {
     @Environment(\.widgetHovered) private var hovered
     /// Set per widget from its context menu; see `WidgetPlate`.
     @Environment(\.widgetPlateHidden) private var plateHidden
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// 普通或悬停。拖入、禁用、缺权限由各卡片用共用修饰器叠在上面。
+    private var state: TileState { TileState.resolve(hovered: hovered) }
 
     /// A card is a *recess* in the plate, not something raised on top of it.
     ///
@@ -192,7 +197,7 @@ public struct WidgetSurface<Content: View>: View {
                     // Lifted a little out of the recess under the pointer.
                     .overlay {
                         RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                            .fill(.white.opacity(hovered ? (scheme == .dark ? 0.07 : 0.22) : 0))
+                            .fill(.white.opacity(state.hoverLift(dark: scheme == .dark)))
                     }
             }
             .overlay {
@@ -211,8 +216,10 @@ public struct WidgetSurface<Content: View>: View {
             // nothing at all is what made them feel dead beside the icons.
             // scaleEffect draws bigger without asking for more room, and 2%
             // stays inside the gap between cards.
-            .scaleEffect(hovered ? 1.02 : 1)
-            .animation(.smooth(duration: 0.16), value: hovered)
+            //
+            // 打开“减少动态效果”时不放大，只提亮。
+            .scaleEffect(state.scale(reduceMotion: reduceMotion))
+            .animation(.smooth(duration: TileState.transitionDuration(reduceMotion: reduceMotion)), value: hovered)
     }
 
     /// The edge catches the light too, or the card reads as merely paler.

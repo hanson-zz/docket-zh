@@ -58,7 +58,7 @@ struct NetworkActivityTile: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
              + Text(" \(rate.unit)")
-                .font(.system(size: 11))
+                .font(WidgetStyle.note)
                 .foregroundStyle(WidgetStyle.secondary))
                 .monospacedDigit()
         }

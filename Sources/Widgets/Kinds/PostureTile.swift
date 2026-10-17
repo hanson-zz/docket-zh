@@ -57,7 +57,7 @@ struct PostureTile: View {
         WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: 34) { mark(size: 13) }
+                    TileBadge(size: WidgetStyle.badgeCompact) { mark(size: 13) }
                     Text(value)
                         .font(.system(size: 16, weight: .semibold))
                         .monospacedDigit()
@@ -67,7 +67,7 @@ struct PostureTile: View {
                     breakButton(size: 10)
                 }
             } else {
-                HStack(spacing: 10) {
+                HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge { mark(size: 15) }
                     TileReading(value: value, caption: caption)
                     Spacer(minLength: 0)

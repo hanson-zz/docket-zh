@@ -85,7 +85,7 @@ struct PetTile: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
                 Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
-                    .font(.system(size: 11))
+                    .font(WidgetStyle.note)
                     .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 PetBar(value: s.health, height: 4)
                     .frame(maxWidth: 80)
@@ -178,44 +178,53 @@ struct PetEffectLayer: View {
     var effect: PetEffect
     var height: CGFloat
 
+    /// 打开“减少动态效果”时泡泡和小心心停在原地，只按原来的时长淡出。
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var interval: Double { reduceMotion ? 0.25 : 1.0 / 30 }
+    private func clock(_ date: Date) -> Double { reduceMotion ? 0 : date.timeIntervalSinceReferenceDate }
+    private func elapsed(_ left: Double) -> Double {
+        reduceMotion ? VirtualPet.actSeconds * 0.5 : VirtualPet.actSeconds - left
+    }
+
     var body: some View {
         Group {
             switch effect {
             case .none:
                 EmptyView()
             case .bubbles(let until):
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                TimelineView(.animation(minimumInterval: interval)) { timeline in
                     let left = until.timeIntervalSince(timeline.date)
                     if left > 0 {
                         Canvas { context, size in
                             Self.drawBubbles(in: &context, size: size,
-                                             time: timeline.date.timeIntervalSinceReferenceDate,
+                                             time: clock(timeline.date),
                                              fade: min(1, left / 0.6), height: height)
                         }
                     }
                 }
                 .transition(.opacity)
             case .hearts(let until):
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                TimelineView(.animation(minimumInterval: interval)) { timeline in
                     let left = until.timeIntervalSince(timeline.date)
                     if left > 0 {
                         Canvas { context, size in
                             Self.drawFloaters(in: &context, size: size, symbol: "heart.fill",
                                               color: Color(red: 1, green: 0.38, blue: 0.52),
-                                              elapsed: VirtualPet.actSeconds - left,
+                                              elapsed: elapsed(left),
                                               fade: min(1, left / 0.6), height: height)
                         }
                     }
                 }
                 .transition(.opacity)
             case .healing(let until):
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                TimelineView(.animation(minimumInterval: interval)) { timeline in
                     let left = until.timeIntervalSince(timeline.date)
                     if left > 0 {
                         Canvas { context, size in
                             Self.drawFloaters(in: &context, size: size, symbol: "cross.fill",
                                               color: Color(red: 0.30, green: 0.80, blue: 0.55),
-                                              elapsed: VirtualPet.actSeconds - left,
+                                              elapsed: elapsed(left),
                                               fade: min(1, left / 0.6), height: height)
                         }
                     }

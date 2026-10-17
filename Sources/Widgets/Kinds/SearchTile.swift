@@ -16,8 +16,8 @@ struct SearchTile: View {
         let column = context.position.isVertical
         return WidgetSurface {
             if column {
-                VStack(spacing: 6) {
-                    TileBadge(size: 32) {
+                VStack(spacing: WidgetStyle.columnSpacing) {
+                    TileBadge(size: WidgetStyle.badgeColumn) {
                         Image(systemName: files ? "folder" : "magnifyingglass")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(WidgetStyle.primary)

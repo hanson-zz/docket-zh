@@ -61,7 +61,7 @@ struct WeekTile: View {
                         .font(.system(size: 10, weight: day.isToday ? .bold : .medium))
                         .foregroundStyle(day.isToday ? accent : WidgetStyle.secondary)
                     Text("\(WeekAgenda.calendar.component(.day, from: day.date))")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(WidgetStyle.title)
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
                         .minimumScaleFactor(0.7)
@@ -145,18 +145,10 @@ struct WeekTile: View {
     // MARK: Pieces
 
     private var note: some View {
-        let words = access == .notDetermined ? "未获得日历访问权限" : "日历访问权限已关闭"
-        return VStack(spacing: 4) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 14))
-                .foregroundStyle(WidgetStyle.secondary)
-            Text(context.position.isVertical ? (access == .notDetermined ? "尚无权限" : "权限已关闭") : words)
-                .font(WidgetStyle.caption(context.position.isVertical ? 9 : 12))
-                .foregroundStyle(WidgetStyle.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-        }
+        // 缺权限：小锁和「需要日历权限 · 去开启」，点按去开启。
+        PermissionLockNote(permission: TilePermission.name(for: WidgetKind.week.rawValue) ?? "日历",
+                           compact: context.position.isVertical, stacked: true,
+                           preview: context.isPreview)
     }
 
     private var accent: Color { WeekEvents.accent }

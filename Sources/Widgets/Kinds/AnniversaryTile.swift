@@ -50,7 +50,7 @@ struct AnniversaryTile: View {
     private var empty: some View {
         if context.position.isVertical {
             VStack(spacing: 4) {
-                TileBadge(size: 34) { badgeGlyph(size: 14) }
+                TileBadge(size: WidgetStyle.badgeCompact) { badgeGlyph(size: 14) }
                 Text("添加纪念日")
                     .font(.system(size: 10))
                     .foregroundStyle(WidgetStyle.secondary)
@@ -58,7 +58,7 @@ struct AnniversaryTile: View {
                     .minimumScaleFactor(0.7)
             }
         } else {
-            HStack(spacing: 10) {
+            HStack(spacing: WidgetStyle.rowSpacing) {
                 TileBadge { badgeGlyph(size: 16) }
                 TileReading(value: "纪念日", caption: "点按添加纪念日", valueSize: 15)
                 Spacer(minLength: 0)

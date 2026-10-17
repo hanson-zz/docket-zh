@@ -57,8 +57,8 @@ struct GitHubTile: View {
                         .minimumScaleFactor(0.6)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(GitHubWatch.tileTitle(repos))
                             .font(.system(size: 11, weight: .medium))
@@ -74,7 +74,7 @@ struct GitHubTile: View {
                                 .rollingValue(stars ?? 0)
                         }
                         Text(caption)
-                            .font(.system(size: 11))
+                            .font(WidgetStyle.note)
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                     .lineLimit(1)

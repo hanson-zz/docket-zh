@@ -18,7 +18,7 @@ struct LunarTile: View {
         return WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: 34) { dayBadge(now, size: 15) }
+                    TileBadge(size: WidgetStyle.badgeCompact) { dayBadge(now, size: 15) }
                     Text(reading.lunar.dayName)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
@@ -30,7 +30,7 @@ struct LunarTile: View {
                         .minimumScaleFactor(0.6)
                 }
             } else {
-                HStack(spacing: 10) {
+                HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge { dayBadge(now, size: 17) }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(reading.headline)

@@ -108,7 +108,7 @@ struct AlarmTile: View {
                 .buttonStyle(.plain)
                 // The badge's own square and no more, so the rest of the card
                 // still belongs to the shelf.
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: WidgetStyle.innerCorner, style: .continuous))
                 .accessibilityLabel(
                     "\(enabled ? "关闭" : "开启") \(nextOccurrence.formatted(.dateTime.hour().minute())) 的闹钟"
                 )

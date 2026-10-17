@@ -155,7 +155,7 @@ struct WeatherTile: View {
     /// line like every other tile's, so a long condition reads smaller rather
     /// than pushing a second line out of the card.
     private func wide(caption: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: WidgetStyle.rowSpacing) {
             TileBadge { icon(size: 19) }
             TileReading(value: weather.map { degrees($0.temperatureC) } ?? "--°", caption: caption)
             Spacer(minLength: 0)
@@ -374,7 +374,7 @@ struct WeatherTile: View {
                         Image(systemName: WMOWeather.symbol(day.code))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(WidgetStyle.primary)
-                            .font(.system(size: 11))
+                            .font(WidgetStyle.note)
                             .frame(width: 14)
                         Spacer(minLength: 0)
                         Text(degrees(day.highC))
@@ -443,7 +443,7 @@ struct WeatherTile: View {
                             .foregroundStyle(WidgetStyle.primary)
                             .font(.system(size: 12))
                         Text(forecast?.current.map { degrees($0.temperatureC) } ?? "--°")
-                            .font(WidgetStyle.label(13))
+                            .font(WidgetStyle.title)
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                     }

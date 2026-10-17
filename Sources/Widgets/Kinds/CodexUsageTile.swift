@@ -39,10 +39,10 @@ struct CodexUsageTile: View {
                                 ring(w, diameter: 40)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(w.shortLabel)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(WidgetStyle.title)
                                         .foregroundStyle(WidgetStyle.primary)
                                     Text(resetText(w))
-                                        .font(.system(size: 11))
+                                        .font(WidgetStyle.note)
                                         .foregroundStyle(WidgetStyle.secondary)
                                         .monospacedDigit()
                                 }
@@ -140,18 +140,18 @@ struct CodexUsageTile: View {
     }
 
     private var placeholder: some View {
-        HStack(spacing: 10) {
-            TileBadge(size: 40) {
+        HStack(spacing: WidgetStyle.rowSpacing) {
+            TileBadge(size: WidgetStyle.badge) {
                 Image(systemName: "gauge.with.dots.needle.33percent")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Codex 用量")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(WidgetStyle.title)
                     .foregroundStyle(WidgetStyle.primary)
                 Text(service.problem.map(CodexStyle.short) ?? "正在读取…")
-                    .font(.system(size: 11))
+                    .font(WidgetStyle.note)
                     .foregroundStyle(WidgetStyle.secondary)
             }
             .lineLimit(1)

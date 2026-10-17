@@ -15,6 +15,7 @@ struct TrashTile: View {
     @State private var scaredAt: Date?
     @State private var hovering = false
     @State private var swallowAt: Date?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var threshold: Int64 {
         TrashFlies.thresholdBytes(instance.config.string("threshold", default: TrashFlies.defaultThreshold))
@@ -32,7 +33,7 @@ struct TrashTile: View {
         WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    bin(size: 34)
+                    bin(size: WidgetStyle.badgeCompact)
                     Text(TrashFlies.format(bytes: bytes))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
@@ -40,19 +41,16 @@ struct TrashTile: View {
                         .minimumScaleFactor(0.6)
                 }
             } else {
-                HStack(spacing: 10) {
-                    bin(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    bin(size: WidgetStyle.badge)
                     TileReading(value: value, caption: caption, valueSize: 15)
                     Spacer(minLength: 0)
                 }
             }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                .strokeBorder(Color.red.opacity(0.8), lineWidth: 2)
-                .opacity(targeted ? 1 : 0)
-                .animation(.snappy(duration: 0.15), value: targeted)
-        }
+        // 共用的拖入虚线框；扔进废纸篓是删除，用红色那档。
+        .dropTargetOutline(targeted, tint: .destructive)
+        .permissionLock(locked ? permission : nil, preview: context.isPreview)
         .dropDestination(for: URL.self) { urls, _ in
             guard !context.isPreview else { return false }
             return monitor.trash(urls)
@@ -80,15 +78,19 @@ struct TrashTile: View {
     }
 
     private var value: String {
-        if !context.isPreview, monitor.needsAccess { return "需要权限" }
+        if locked { return "需要权限" }
         return targeted ? "松开以删除" : TrashFlies.format(bytes: bytes)
     }
 
     private var caption: String {
-        if !context.isPreview, monitor.needsAccess { return "点按以授权完全磁盘访问" }
+        if locked { return TilePermission.prompt(permission) }
         if items == 0 { return "废纸篓是空的" }
         return flies > 0 ? "\(items) 个项目 · 该倒垃圾了" : "\(items) 个项目"
     }
+
+    /// 没有完全磁盘访问权限时读不到废纸篓。
+    private var locked: Bool { !context.isPreview && monitor.needsAccess }
+    private var permission: String { TilePermission.name(for: WidgetKind.trash.rawValue) ?? "完全磁盘访问权限" }
 
     private func bin(size: CGFloat) -> some View {
         TileBadge(size: size) {
@@ -96,8 +98,8 @@ struct TrashTile: View {
                 Image(systemName: items > 0 ? "trash.fill" : "trash")
                     .font(.system(size: size * 0.42, weight: .medium))
                     .foregroundStyle(targeted ? Color.red : WidgetStyle.primary)
-                    .scaleEffect(targeted ? 1.15 : 1)
-                    .animation(.snappy(duration: 0.2), value: targeted)
+                    .scaleEffect(targeted && !reduceMotion ? 1.15 : 1)
+                    .dockAnimation(.snappy(duration: 0.2), value: targeted)
             }
         }
         .overlay {

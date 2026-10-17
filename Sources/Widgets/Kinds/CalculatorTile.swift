@@ -25,15 +25,15 @@ struct CalculatorTile: View {
                 VStack(spacing: 4) {
                     badge(size: 30)
                     Text(answer)
-                        .font(WidgetStyle.label(13))
+                        .font(WidgetStyle.title)
                         .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
                     TileReading(value: answer,
                                 caption: expression.isEmpty ? "点按开始计算" : expression)
                     Spacer(minLength: 0)

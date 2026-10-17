@@ -13,6 +13,7 @@ struct FileShelfTile: View {
     var context: WidgetContext
 
     @State private var targeted = false
+    @Environment(\.colorScheme) private var scheme
 
     private var files: [ListedFile] { context.isPreview ? [] : FileShelf.files(instance) }
 
@@ -21,28 +22,23 @@ struct FileShelfTile: View {
         let count = context.isPreview ? 3 : files.count
         return WidgetSurface {
             if column {
-                VStack(spacing: 6) {
-                    badge(size: 32)
-                    Text(count == 0 ? "拖入" : "\(count) 个")
+                VStack(spacing: WidgetStyle.columnSpacing) {
+                    badge(size: WidgetStyle.badgeColumn)
+                    Text(count == 0 ? PandaEmpty.fileShelf.line(compact: true) : "\(count) 个")
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                 }
             } else {
-                HStack(spacing: 10) {
-                    badge(size: 40)
-                    TileReading(value: count == 0 ? "拖入文件" : "\(count) 个文件",
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
+                    TileReading(value: count == 0 ? PandaEmpty.fileShelf.line() : "\(count) 个文件",
                                 caption: "文件暂存", valueSize: 15)
                     Spacer(minLength: 0)
                 }
             }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                .strokeBorder(Color.accentColor, lineWidth: 2)
-                .opacity(targeted ? 1 : 0)
-                .animation(.snappy(duration: 0.15), value: targeted)
-        }
+        .dropTargetOutline(targeted)
         .dropDestination(for: URL.self) { urls, _ in
             guard !context.isPreview else { return false }
             return FileShelf.add(urls, to: instance)
@@ -67,10 +63,14 @@ struct FileShelfTile: View {
                         .padding(size * 0.1)
                         .offset(x: files.count > 1 ? 2 : 0)
                 }
-            } else {
+            } else if targeted || context.isPreview {
+                // 库里的缩略图写着“3 个文件”，配托盘而不是空状态的小熊猫。
                 Image(systemName: targeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
-                    .font(.system(size: size * 0.42, weight: .medium))
-                    .foregroundStyle(WidgetStyle.primary)
+                    .font(.system(size: size * CGFloat(DockMetrics.badgeGlyphRatio), weight: .medium))
+                    .foregroundStyle(targeted ? WidgetStyle.dropBlue(scheme) : WidgetStyle.primary)
+            } else {
+                // 空着：小熊猫等着接文件。
+                PandaEmptyBadge(empty: .fileShelf, size: size, fallback: "tray.and.arrow.down")
             }
         }
     }

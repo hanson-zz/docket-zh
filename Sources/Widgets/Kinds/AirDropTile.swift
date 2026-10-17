@@ -18,12 +18,13 @@ struct AirDropTile: View {
 
     @Environment(\.widgetHovered) private var hovered
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var dragging = false
     @State private var files = 0
 
-    /// 系统隔空投送的蓝。
-    static let blue = Color(hex: "#0A84FF")
+    /// 系统隔空投送的蓝，浅色外观用深一点的那档。
+    private var blue: Color { WidgetStyle.dropBlue(scheme) }
 
     /// 系统有没有隔空投送服务，启动后不会变，读一次。
     @MainActor private static let available = NSSharingService(named: .sendViaAirDrop) != nil
@@ -55,10 +56,10 @@ struct AirDropTile: View {
                     }
                 }
             }
-            .opacity(state.disabled ? 0.45 : 1)
-            .animation(.snappy(duration: 0.18), value: state)
+            .tileDisabled(state.disabled)
+            .dockAnimation(.snappy(duration: 0.18), value: state)
         }
-        .overlay { highlight }
+        .dropTargetOutline(state.highlighted)
         .onDrop(of: [.fileURL, .item], delegate: AirDropDropDelegate(
             enabled: !context.isPreview && Self.available,
             update: { inside, count in
@@ -75,12 +76,12 @@ struct AirDropTile: View {
 
     /// 横排：图标和其它卡片一样是 40pt 的圆角方底，文字两级。
     private var rowLayout: some View {
-        HStack(spacing: 10) {
-            badge(size: 40)
+        HStack(spacing: WidgetStyle.rowSpacing) {
+            badge(size: WidgetStyle.badge)
             VStack(alignment: .leading, spacing: 2) {
                 title(15)
                 Text(state.caption)
-                    .font(WidgetStyle.caption(11))
+                    .font(WidgetStyle.note)
                     .foregroundStyle(WidgetStyle.secondary)
                     .monospacedDigit()
                     .lineLimit(1)
@@ -93,10 +94,10 @@ struct AirDropTile: View {
     /// 竖排：图标在上，标题拆两行。
     private var columnLayout: some View {
         VStack(spacing: 4) {
-            badge(size: 32)
+            badge(size: WidgetStyle.badgeColumn)
             Text(state.highlighted ? "松手\n发送" : AirDropDrop.columnTitle)
                 .font(WidgetStyle.label(12))
-                .foregroundStyle(state.highlighted ? Self.blue : WidgetStyle.primary)
+                .foregroundStyle(state.highlighted ? blue : WidgetStyle.primary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(0)
                 .lineLimit(2)
@@ -107,7 +108,7 @@ struct AirDropTile: View {
     private func title(_ size: CGFloat) -> some View {
         Text(state.title)
             .font(WidgetStyle.label(size))
-            .foregroundStyle(state.highlighted ? Self.blue : WidgetStyle.primary)
+            .foregroundStyle(state.highlighted ? blue : WidgetStyle.primary)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
     }
@@ -115,7 +116,7 @@ struct AirDropTile: View {
     /// 悬停或拖入时图标变蓝、微微放大；灰掉时是次要色。
     private var glyphColor: Color {
         if state.disabled { return WidgetStyle.secondary }
-        return state.highlighted || (hovered && !context.isPreview) ? Self.blue : WidgetStyle.primary
+        return state.highlighted || (hovered && !context.isPreview) ? blue : WidgetStyle.primary
     }
 
     private func badge(size: CGFloat) -> some View {
@@ -131,23 +132,10 @@ struct AirDropTile: View {
                         .offset(y: size * 0.56 * 0.08)
                 }
         }
-        .scaleEffect(state.highlighted ? 1.06 : 1)
-        .animation(.snappy(duration: 0.18), value: state.highlighted)
-        .animation(.easeOut(duration: 0.15), value: hovered)
-    }
-
-    /// 拖入态：蓝色虚线框，底下垫一层很淡的蓝。
-    private var highlight: some View {
-        RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-            .fill(Self.blue.opacity(scheme == .dark ? 0.14 : 0.10))
-            .overlay {
-                RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
-                    .strokeBorder(Self.blue.opacity(0.9),
-                                  style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-            }
-            .opacity(state.highlighted ? 1 : 0)
-            .animation(.snappy(duration: 0.15), value: state.highlighted)
-            .allowsHitTesting(false)
+        .scaleEffect(TileState.resolve(hovered: false, targeted: state.highlighted)
+            .badgeScale(reduceMotion: reduceMotion))
+        .dockAnimation(.snappy(duration: 0.18), value: state.highlighted)
+        .dockAnimation(.easeOut(duration: 0.15), value: hovered)
     }
 
     // MARK: Sending

@@ -129,7 +129,7 @@ struct CalendarTile: View {
                             // width of each time.
                             .frame(width: 54, alignment: .leading)
                         Text(event.title)
-                            .font(WidgetStyle.caption(11))
+                            .font(WidgetStyle.note)
                             .foregroundStyle(WidgetStyle.secondary)
                         Spacer(minLength: 0)
                     }
@@ -184,6 +184,9 @@ struct CalendarTile: View {
                     .multilineTextAlignment(.center)
             }
             .minimumScaleFactor(0.6)
+        } else if !hasAccess {
+            PermissionLockNote(permission: Self.permission, compact: true, stacked: true,
+                               preview: context.isPreview)
         } else {
             Text(shortStateLine)
                 .font(WidgetStyle.caption(9))
@@ -222,7 +225,21 @@ struct CalendarTile: View {
         Circle().fill(color).frame(width: size, height: size)
     }
 
+    @ViewBuilder
     private func note(_ text: String) -> some View {
+        if !hasAccess {
+            // 缺权限：小锁和「需要日历权限 · 去开启」，点按去开启。
+            PermissionLockNote(permission: Self.permission, preview: context.isPreview)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            plainNote(text)
+        }
+    }
+
+    /// 日历权限的名字，和新手引导、小组件库里写的一样。
+    static let permission = TilePermission.name(for: WidgetKind.calendar.rawValue) ?? "日历"
+
+    private func plainNote(_ text: String) -> some View {
         HStack(spacing: 7) {
             Image(systemName: hasAccess ? "calendar" : "calendar.badge.exclamationmark")
                 .font(.system(size: 14))

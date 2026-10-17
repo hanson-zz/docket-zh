@@ -237,7 +237,7 @@ struct MusicTile: View {
 
     private func time(_ text: String) -> some View {
         Text(text)
-            .font(WidgetStyle.caption(11))
+            .font(WidgetStyle.note)
             .monospacedDigit()
             .rollingValue(text)
             .foregroundStyle(subInk)
@@ -386,7 +386,7 @@ struct MusicTile: View {
             Image(systemName: setup != nil ? "switch.2" : (open ? "music.note" : "music.note.list"))
                 .font(.system(size: 14, weight: .medium))
             Text(setup ?? (open ? "未在播放" : sourceNames))
-                .font(WidgetStyle.caption(11))
+                .font(WidgetStyle.note)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.5)
