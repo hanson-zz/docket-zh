@@ -8,7 +8,7 @@ import Foundation
 /// - 已经在扩展栏上的 Pro 小组件：不删除，盖一层小锁遮罩，写“Pro 专属 · 解锁”。
 /// - 原来的赞助者外观（表盘、角色、Wi-Fi、电池外观）照旧退回免费外观显示，不盖遮罩。
 /// - 电池的液态外观也是 Pro，同样退回免费的经典外观显示，不盖遮罩。
-/// - 天气的多城市和电池的百分比圆环没有同样大小的免费样式可退，盖小锁遮罩。
+/// - 天气的多城市和电池格没有同样大小的免费样式可退，盖小锁遮罩。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
 /// - 颜色与背景里的自定义颜色和渐变背景退回默认颜色、无背景显示。
 /// - 快速开关的 Pro 工具：设置里照样列出并带 Pro 标识，勾选时弹付费墙；已经勾上的
@@ -39,7 +39,7 @@ public enum ProLicenseGate {
         unlocked || !ProFeatures.isProStyle(overrides)
     }
 
-    /// 同上，带上种类：天气的多城市、电池的百分比圆环、便签的 Pro 纸色也算。
+    /// 同上，带上种类：天气的多城市、电池格、便签的 Pro 纸色也算。
     public static func canChoose(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value], unlocked: Bool) -> Bool {
         unlocked || !ProFeatures.isProStyle(kind, overrides)
     }
@@ -58,7 +58,7 @@ public enum ProLicenseGate {
     ///
     /// 整种是 Pro 的小组件，和用了液态外观的小组件（电池除外）要盖；电池的液态
     /// 和原来的赞助者外观有免费外观可退，退回去照常显示，不盖。天气的多城市和
-    /// 电池的百分比圆环要盖。便签的 Pro 纸色退回柠檬黄，不盖。预览（添加面板
+    /// 电池格要盖。便签的 Pro 纸色退回柠檬黄，不盖。预览（添加面板
     /// 的缩略图）从不盖。
     public static func needsLockOverlay(_ instance: WidgetInstance, unlocked: Bool, isPreview: Bool = false) -> Bool {
         guard !unlocked, !isPreview else { return false }

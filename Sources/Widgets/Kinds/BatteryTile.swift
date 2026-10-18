@@ -90,29 +90,26 @@ struct BatteryTile: View {
         }
     }
 
-    /// The same gauge the activity tile draws: the arc is the reading, and the
-    /// middle says what it is of. No figure underneath - it restates the arc
-    /// and is what made the ring look cramped next to the metric rings.
+    /// 电池格（存的值仍是 gauge，原来的“百分比圆环”）：经典外观直接画电池。
+    /// 只有一台设备时是一块横向电池，旁边写百分比和状态；多台设备时每台
+    /// 一块竖电池，下面写百分比。液态外观也画电池，里面装的是会晃的水；
+    /// 像素电池、能量粒子、小熊猫照旧画它们自己的。
     private var gauges: some View {
-        HStack(spacing: 0) {
+        let axis = ShapeMeters.cellAxis(deviceCount: slots.count)
+        return HStack(spacing: 0) {
             ForEach(slots) { slot in
                 let reading = reading(slot)
                 Group {
                     let shown = look(for: slot)
-                    if shown == .classic {
-                        MetricProgressRing(progress: reading.present ? reading.level : 0,
-                                           tint: tint(reading),
-                                           track: reading.present
-                                               ? tint(reading).opacity(0.16)
-                                               : Color.primary.opacity(0.10),
-                                           diameter: 42,
-                                           lineWidth: 4.5) {
-                            Image(systemName: slot.symbol)
-                                .font(.system(size: 15, weight: .regular))
-                                .foregroundStyle(reading.present ? tint(reading) : WidgetStyle.secondary)
-                        }
-                        .overlay(alignment: .bottomTrailing) {
-                            if reading.charging { bolt }
+                    if ShapeMeters.drawsCell(look: shown.rawValue) {
+                        if axis == .horizontal {
+                            horizontalCell(slot, reading, liquid: shown == .liquid)
+                        } else {
+                            VStack(spacing: 3) {
+                                cell(reading, vertical: true, liquid: shown == .liquid)
+                                    .frame(width: 17, height: 30)
+                                percent(reading, size: 11)
+                            }
                         }
                     } else {
                         BatteryGauge(look: shown, state: gaugeState(slot), diameter: 42,
@@ -121,12 +118,40 @@ struct BatteryTile: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(slot.name)
-                .accessibilityValue(caption(reading))
+                .accessibilityValue("\(percentText(reading)) \(caption(reading))")
                 .help("\(slot.name) \(percentText(reading))")
             }
         }
         .lineLimit(1)
+    }
+
+    /// 一台设备：横向电池，放得下就在旁边写百分比和状态，窄卡片写在下面。
+    private func horizontalCell(_ slot: Slot, _ reading: Reading, liquid: Bool) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                cell(reading, vertical: false, liquid: liquid)
+                    .frame(width: 54, height: 26)
+                TileReading(value: percentText(reading), caption: caption(reading))
+                    .fixedSize()
+            }
+            VStack(spacing: 3) {
+                cell(reading, vertical: false, liquid: liquid)
+                    .frame(width: 38, height: 19)
+                percent(reading, size: 11)
+            }
+        }
+    }
+
+    private func cell(_ reading: Reading, vertical: Bool, liquid: Bool) -> some View {
+        BatteryCellShape(fill: ShapeMeters.cellFill(level: reading.level, present: reading.present),
+                         tone: ShapeMeters.cellTone(level: reading.level, charging: reading.charging,
+                                                    present: reading.present),
+                         charging: reading.charging,
+                         vertical: vertical,
+                         liquid: liquid,
+                         moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
     }
 
     /// Low batteries earn a colour. Everything else stays the neutral fill, so
@@ -181,7 +206,11 @@ struct BatteryTile: View {
                 let single = slots.count == 1
                 VStack(spacing: 3) {
                     let shown = look(for: slot)
-                    if shown == .classic {
+                    if layout == ProFeatures.batteryGaugeLayout, ShapeMeters.drawsCell(look: shown.rawValue) {
+                        cell(reading, vertical: true, liquid: shown == .liquid)
+                            .frame(width: single ? 16 : 14, height: single ? 26 : 24)
+                        percent(reading, size: single ? 12 : 11)
+                    } else if shown == .classic {
                         MetricProgressRing(progress: reading.present ? reading.level : 0,
                                            tint: present,
                                            track: reading.present
@@ -428,5 +457,95 @@ enum BatterySymbol {
         let ok = NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil
         known[name] = ok
         return ok ? name : AccessoryKind.fallbackSymbol
+    }
+}
+
+/// 电池格画的那块电池：圆角外框、正极小凸起、里面按电量填满，充电时中间一道
+/// 闪电。平时是不上色的白，低于 20% 橙、10% 红；没连上是空的虚框。
+struct BatteryCellShape: View {
+    var fill: Double
+    var tone: ShapeMeters.CellTone
+    var charging: Bool
+    var vertical: Bool
+    /// 液态外观：电量那一截里是会晃的水，不是一块实心的颜色。
+    var liquid = false
+    /// 卡片在屏幕上时水才动。
+    var moving = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var tint: Color {
+        switch tone {
+        // 液态的水平时是电池绿，实心的一截平时不上色。
+        case .normal: liquid ? Color(hex: MetricColor.batteryPresent) : WidgetStyle.primary
+        case .low: Color(hex: "#FF9F0A")
+        case .critical: Color(hex: "#FF453A")
+        case .absent: WidgetStyle.secondary
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let long = vertical ? geo.size.height : geo.size.width
+            let short = vertical ? geo.size.width : geo.size.height
+            let nub = max(2, long * 0.07)
+            let bodyLong = long - nub - 1
+            let stroke = max(1.4, short * 0.08)
+            let inset = stroke + max(1, short * 0.07)
+            let radius = short * 0.26
+            let innerLong = max(0, bodyLong - inset * 2)
+            let innerShort = max(0, short - inset * 2)
+
+            let outline = RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .strokeBorder(WidgetStyle.primary.opacity(tone == .absent ? 0.3 : 0.55),
+                              style: StrokeStyle(lineWidth: stroke, dash: tone == .absent ? [2, 2] : []))
+            let cap = RoundedRectangle(cornerRadius: nub / 2, style: .continuous)
+                .fill(WidgetStyle.primary.opacity(tone == .absent ? 0.3 : 0.55))
+            let corner = max(1, radius - inset * 0.6)
+
+            ZStack(alignment: .topLeading) {
+                if vertical {
+                    cap.frame(width: short * 0.42, height: nub)
+                        .offset(x: short * 0.29, y: 0)
+                    outline.frame(width: short, height: bodyLong)
+                        .offset(y: nub + 1)
+                    levelFill(width: innerShort, height: innerLong, corner: corner, vertical: true)
+                        .offset(x: inset, y: nub + 1 + inset)
+                } else {
+                    outline.frame(width: bodyLong, height: short)
+                    cap.frame(width: nub, height: short * 0.42)
+                        .offset(x: bodyLong + 1, y: short * 0.29)
+                    levelFill(width: innerLong, height: innerShort, corner: corner, vertical: false)
+                        .offset(x: inset, y: inset)
+                }
+                if charging {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: short * (vertical ? 0.5 : 0.55), weight: .bold))
+                        .foregroundStyle(fill > 0.45 ? Color.black.opacity(0.7) : WidgetStyle.primary)
+                        .frame(width: vertical ? short : bodyLong, height: vertical ? bodyLong : short)
+                        .offset(y: vertical ? nub + 1 : 0)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: fill)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// 电量那一截：竖电池从下往上，横电池从左往右。液态时是水，竖的水位就是
+    /// 电量，横的是一截装满的水，水面轻轻晃。
+    @ViewBuilder
+    private func levelFill(width: CGFloat, height: CGFloat, corner: CGFloat, vertical: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+        if liquid {
+            LiquidWater(level: vertical ? fill : (fill > 0 ? 0.88 : 0), tint: tint, shape: .rect, visible: moving)
+                .frame(width: vertical ? width : width * fill, height: height)
+                .clipShape(shape)
+                .frame(width: width, height: height, alignment: vertical ? .bottom : .leading)
+        } else {
+            shape.fill(tint)
+                .frame(width: vertical ? width : width * fill, height: vertical ? height * fill : height)
+                .frame(width: width, height: height, alignment: vertical ? .bottom : .leading)
+        }
     }
 }

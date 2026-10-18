@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Storage and battery as ring gauges, each with its figure beside it.
+/// 圆环仪表：存储、电池、CPU、内存任意拼装，每个一个圆环、旁边写读数。
 ///
+/// 码头里只有它画圆：电池画成电池形状，系统活动画成竖条，想要圆的人来这里拼。
 /// Storage comes from the same sample System Activity takes (the root
 /// volume's `URLResourceValues`, "important usage" free space as Finder
-/// counts it), battery from the power-source API. CPU temperature is not
-/// offered: macOS has no public API for it.
+/// counts it), battery from the power-source API, CPU and memory from the
+/// System Activity sampler. CPU temperature is not offered: macOS has no
+/// public API for it.
 struct GaugesTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -66,6 +68,7 @@ struct GaugesTile: View {
                                   track: r.known ? r.tint.opacity(0.16) : Color.primary.opacity(0.10),
                                   diameter: diameter,
                                   lineWidth: diameter > 36 ? 4.5 : 4,
+                                  peak: r.peak,
                                   laps: true) {
             Image(systemName: r.symbol)
                 .font(.system(size: diameter * 0.32, weight: .regular))
@@ -82,10 +85,38 @@ struct GaugesTile: View {
         var symbol: String
         var tint: Color
         var known: Bool
+        /// 最近一分钟的最高值，CPU 和内存在圆环上标一下；存储和电池没有。
+        var peak: Double?
     }
 
     private func reading(_ ring: String) -> Reading {
-        ring == "battery" ? battery : storage
+        switch ring {
+        case "battery": battery
+        case "cpu": activity(cpu: true)
+        case "memory": activity(cpu: false)
+        default: storage
+        }
+    }
+
+    /// CPU 或内存，和系统活动读同一个采样器。
+    private func activity(cpu: Bool) -> Reading {
+        let value: Double
+        let history: [Double]
+        if context.isPreview {
+            value = cpu ? 0.23 : 0.64
+            history = []
+        } else {
+            let live = SystemMetrics.shared
+            value = cpu ? live.cpu : live.memory
+            history = live.history(for: cpu ? "cpu" : "memory")
+        }
+        return Reading(progress: min(max(value, 0), 1),
+                       value: GaugeReading.percent(value),
+                       caption: cpu ? "CPU" : tr("内存"),
+                       symbol: cpu ? "cpu" : "memorychip",
+                       tint: Color(hex: cpu ? MetricColor.cpu : MetricColor.memory),
+                       known: true,
+                       peak: history.max())
     }
 
     private var storage: Reading {

@@ -173,19 +173,21 @@ public enum WidgetCatalog {
                            // `make` gives a new widget 液态.
                            BatteryLook.key: .string(BatteryLook.legacyDefault.rawValue)]),
               variants: [(tr("状态"), ["layout": .string("status")]),
-                         (tr("百分比圆环"), ["layout": .string("gauge")]),
+                         // 原来的“百分比圆环”，画成电池形状后改名；存的值仍是 gauge，Pro 照旧。
+                         (tr("电池格"), ["layout": .string("gauge")]),
                          (tr("仅图标"), ["layout": .string("icon")])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .system, name: tr("系统活动"), category: .system,
               // No chart by default: the shipped design is clean numbers with
               // a coloured dot, and a sparkline behind them crowds a 62pt
-              // strip. Offered as its own variant instead.
+              // strip. 原来单独列成“数字 + 图表”样式，只差一条线，现在并进
+              // “数字”，用“显示图表”开关（`chart`，旧卡片本来就存着它）。
               defaults: c(["layout": .string("numbers"), "chart": .bool(false),
                            "metrics": .list([.string("cpu"), .string("memory")])]),
-              variants: [(tr("数字"), ["layout": .string("numbers"), "chart": .bool(false)]),
-                         (tr("数字 + 图表"), ["layout": .string("numbers"), "chart": .bool(true)]),
-                         (tr("圆环"), ["layout": .string("rings")]),
+              variants: [(tr("数字"), ["layout": .string("numbers")]),
+                         // 原来的“圆环”，改成一格一格的竖条；存的值仍是 rings。
+                         (tr("竖条"), ["layout": .string(ShapeMeters.systemSegmentsLayout)]),
                          (tr("条形"), ["layout": .string("bars")]),
                          (tr("液态"), ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: true, selfContained: true),
@@ -197,8 +199,8 @@ public enum WidgetCatalog {
         // Pro 专属 appearances.
         Entry(kind: .network, name: tr("网络活动"), category: .system,
               defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false)]),
-              variants: [(tr("仅数字"), ["layout": .string("speed"), "chart": .bool(false)]),
-                         (tr("带图表"), ["layout": .string("speed"), "chart": .bool(true)])]
+              // “仅数字”和“带图表”并成“网速”，图表用“显示图表”开关（`chart`）。
+              variants: [(tr("网速"), ["layout": .string("speed")])]
                 + wifiVariants,
               supportsCompact: true, selfContained: true),
 
@@ -392,10 +394,11 @@ public enum WidgetCatalog {
         Entry(kind: .microphone, name: tr("麦克风"), category: .system, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // Storage from URLResourceValues, battery from the power-source API.
-        // CPU temperature is left out: macOS has no public API for it.
+        // Storage from URLResourceValues, battery from the power-source API,
+        // CPU and memory from the System Activity sampler. 圆只留给它：任意
+        // 拼装多个指标。CPU temperature is left out: macOS has no public API for it.
         Entry(kind: .gauges, name: tr("圆环仪表"), category: .system,
-              defaults: c(["rings": .list([.string("storage"), .string("battery")])]),
+              defaults: c(["rings": .list(GaugeReading.defaultRings.map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A ring that fills between breaks, with active hours, a
@@ -850,7 +853,8 @@ public enum WidgetCatalog {
             let metrics = max(1, cfg.strings("metrics", default: ["cpu", "memory"]).count)
             let layout = cfg.string("layout", default: "numbers")
             if layout == "bars" { return CGSize(width: 168, height: 62) }
-            let rings = layout == "rings" || layout == LiquidMotion.layout
+            // 竖条（存的值 rings）和液态一样宽：竖条加大数字，每个读数 66。
+            let rings = layout == ShapeMeters.systemSegmentsLayout || layout == LiquidMotion.layout
             // The per-metric widths are content widths; the tile also has to
             // pay for WidgetSurface's horizontal inset, or a two-metric tile
             // truncates "Memory" to "Memo…". 168pt for two metrics matches the

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// CPU / memory / disk, as numbers, rings or bars.
+/// CPU / memory / disk, as numbers, segments (竖条), bars or liquid.
 ///
 /// The card itself belongs to the shelf: a click opens the detail panel, which
 /// draws every configured metric at a size that can hold a number. Which
@@ -13,6 +13,7 @@ struct SystemActivityTile: View {
 
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         WidgetSurface {
@@ -43,7 +44,7 @@ struct SystemActivityTile: View {
     @ViewBuilder
     private var horizontal: some View {
         switch layout {
-        case "rings": rings
+        case ShapeMeters.systemSegmentsLayout: segmentsRow
         case "bars": bars
         case LiquidMotion.layout: liquid(diameter: 42, size: 12)
         default: numbers
@@ -53,7 +54,7 @@ struct SystemActivityTile: View {
     @ViewBuilder
     private var vertical: some View {
         switch layout {
-        case "rings": verticalRings
+        case ShapeMeters.systemSegmentsLayout: verticalSegments
         case "bars": verticalBars
         case LiquidMotion.layout: verticalLiquid
         default: verticalNumbers
@@ -96,31 +97,49 @@ struct SystemActivityTile: View {
         .lineLimit(1)
     }
 
-    private var rings: some View {
+    /// 竖条（存的值仍是 rings）：每个读数一根一格一格亮起来的竖条，旁边是
+    /// 大数字和名字。圆只留给圆环仪表，摆在一排一眼就分得开。
+    private var segmentsRow: some View {
         HStack(spacing: 0) {
             ForEach(metrics, id: \.self) { metric in
-                // Named under the ring, as the reference shelf does. A row of
-                // bare percentages cannot say which one is the memory.
-                // The arc is the reading. A number inside it says the same
-                // thing twice and is the part that made the gauge look busy,
-                // so the middle carries what the ring is *of* instead - which
-                // also retires the label underneath and lets the ring take
-                // the card's full height.
-                MetricProgressRing(progress: value(metric),
-                                   tint: metric.color,
-                                   track: metric.color.opacity(0.16),
-                                   diameter: 42,
-                                   lineWidth: 4.5,
-                                   peak: history(metric).max()) {
-                    Image(systemName: metric.symbol)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(metric.color)
+                HStack(spacing: 6) {
+                    segmentMeter(metric, width: 7)
+                        .frame(height: 40)
+                    VStack(alignment: .leading, spacing: 1) {
+                        percent(value(metric), size: 18)
+                        Text(metric.label)
+                            .font(WidgetStyle.note)
+                            .foregroundStyle(WidgetStyle.secondary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(metric.label)
                 .accessibilityValue(tr("百分之 \(Int((value(metric) * 100).rounded()))"))
             }
         }
+    }
+
+    /// 八格竖条，从下往上亮，亮的用读数的颜色，没亮的是淡淡的底。
+    private func segmentMeter(_ metric: Metric, width: CGFloat) -> some View {
+        let count = ShapeMeters.segments
+        let lit = ShapeMeters.litSegments(value(metric), segments: count)
+        return GeometryReader { geo in
+            let gap: CGFloat = 1.5
+            let cell = max(1, (geo.size.height - gap * CGFloat(count - 1)) / CGFloat(count))
+            VStack(spacing: gap) {
+                ForEach((0..<count).reversed(), id: \.self) { index in
+                    RoundedRectangle(cornerRadius: min(2, cell / 2), style: .continuous)
+                        .fill(index < lit ? metric.color : Color.primary.opacity(0.13))
+                        .frame(width: width, height: cell)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: width)
+        .animation(reduceMotion || context.isPreview ? nil : .easeOut(duration: 0.25), value: lit)
     }
 
     private var bars: some View {
@@ -228,22 +247,24 @@ struct SystemActivityTile: View {
         .padding(.vertical, 4)
     }
 
-    private var verticalRings: some View {
+    /// 侧边栏里的竖条：左边一根竖条，右边百分比和名字。
+    private var verticalSegments: some View {
         VStack(spacing: 0) {
             ForEach(metrics, id: \.self) { metric in
-                VStack(spacing: 2) {
-                    MetricProgressRing(progress: value(metric),
-                                       tint: metric.color,
-                                       track: metric.color.opacity(0.18),
-                                       diameter: 36,
-                                       lineWidth: 4.5) {
-                        percent(value(metric), size: 11)
+                HStack(spacing: 5) {
+                    segmentMeter(metric, width: 6)
+                        .frame(height: 38)
+                    VStack(alignment: .leading, spacing: 0) {
+                        percent(value(metric), size: 14)
+                        Text(metric.short)
+                            .font(WidgetStyle.label(9))
+                            .foregroundStyle(WidgetStyle.secondary)
                     }
-                    Text(metric.short)
-                        .font(WidgetStyle.label(9))
-                        .foregroundStyle(WidgetStyle.secondary)
                 }
                 .frame(height: 54)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(metric.label)
+                .accessibilityValue(tr("百分之 \(Int((value(metric) * 100).rounded()))"))
             }
         }
         .lineLimit(1)
@@ -380,17 +401,6 @@ struct SystemActivityTile: View {
             }
         }
 
-        /// Shown inside its ring in place of a number. `cpuchip` does not
-        /// exist on this system - checked - so the older `cpu` is used.
-        var symbol: String {
-            switch self {
-            case .cpu: "cpu"
-            case .memory: "memorychip"
-            case .disk: "internaldrive"
-            case .battery: "laptopcomputer"
-            }
-        }
-
         var color: Color {
             switch self {
             case .cpu: Color(hex: MetricColor.cpu)
@@ -423,8 +433,9 @@ struct SystemActivityTile: View {
     }
 }
 
-/// A round progress gauge with something in the middle. Shared by the system
-/// and battery tiles - the only two kinds that draw one.
+/// A round progress gauge with something in the middle. 卡片上只有圆环仪表
+/// （以及喝水、Codex 用量这些本来就是圆的进度）画它；电池和系统活动的卡片
+/// 不再用圆，详情面板里照旧。
 struct MetricProgressRing<Content: View>: View {
     var progress: Double
     var tint: Color

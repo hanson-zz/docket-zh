@@ -9,33 +9,29 @@ final class WidgetConfigurationTests: XCTestCase {
 
     // MARK: variantTitle
 
-    /// The bug this function exists for.
-    ///
-    /// The picker used to match rows on `layout` alone. "Numbers" and
-    /// "Numbers + graph" both carry `layout: "numbers"` and differ only in
-    /// `chart`, so both rows resolved to the same variant: the picker could
-    /// neither tell them apart nor show which one was active. Matching has to
-    /// consider every override a variant declares, not the one that happens to
-    /// name the layout.
-    func testSystemNumbersAndNumbersPlusGraphAreToldApart() {
+    /// “数字”和“数字 + 图表”只差一条线，并成一个样式加“显示图表”开关。
+    /// 旧卡片本来就把图表存在 `chart` 里，所以两种旧卡片都选中“数字”，
+    /// 开关保留原来的值，尺寸也不变。
+    func testSystemNumbersWithAndWithoutAChartAreOneStyle() {
         guard let plain = WidgetCatalog.make(.system, overrides: ["layout": .string("numbers"),
                                                                  "chart": .bool(false)]),
               let graphed = WidgetCatalog.make(.system, overrides: ["layout": .string("numbers"),
                                                                     "chart": .bool(true)])
         else { return XCTFail("system widget missing from catalog") }
 
-        XCTAssertEqual(plain.config.string("layout"), graphed.config.string("layout"),
-                       "precondition: the two variants share a layout")
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: plain.config, kind: .system), "数字")
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: graphed.config, kind: .system),
-                       "数字 + 图表")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: graphed.config, kind: .system), "数字")
+        XCTAssertFalse(ShapeMeters.chartOption(plain.config))
+        XCTAssertTrue(ShapeMeters.chartOption(graphed.config))
+        XCTAssertTrue(WidgetCatalog.applies("chart", to: graphed.config, kind: .system))
+        XCTAssertEqual(WidgetCatalog.naturalSize(plain), WidgetCatalog.naturalSize(graphed))
     }
 
     func testEverySystemVariantReportsItsOwnTitle() {
         let expected: [([String: WidgetConfig.Value], String)] = [
             (["layout": .string("numbers"), "chart": .bool(false)], "数字"),
-            (["layout": .string("numbers"), "chart": .bool(true)], "数字 + 图表"),
-            (["layout": .string("rings")], "圆环"),
+            (["layout": .string("numbers"), "chart": .bool(true)], "数字"),
+            (["layout": .string("rings")], "竖条"),
             (["layout": .string("bars")], "条形"),
             (["layout": .string("liquid")], "液态"),
         ]
@@ -45,6 +41,20 @@ final class WidgetConfigurationTests: XCTestCase {
             }
             XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .system),
                            title, "\(overrides)")
+        }
+    }
+
+    /// 网络活动的“仅数字”和“带图表”并成“网速”，图表是开关；旧卡片外观不变。
+    func testNetworkSpeedWithAndWithoutAChartIsOneStyle() {
+        guard let entry = WidgetCatalog.entry(.network) else { return XCTFail("missing") }
+        XCTAssertFalse(entry.variants.contains { $0.title == "仅数字" || $0.title == "带图表" })
+        for chart in [false, true] {
+            let old = WidgetConfig(["layout": .string("speed"), "display": .string("both"), "chart": .bool(chart)])
+            let widget = WidgetInstance(kind: .network, config: old.merging(defaults: entry.defaults))
+            XCTAssertEqual(WidgetCatalog.variantTitle(matching: widget.config, kind: .network), "网速")
+            XCTAssertEqual(ShapeMeters.chartOption(widget.config), chart)
+            XCTAssertTrue(WidgetCatalog.applies("chart", to: widget.config, kind: .network))
+            XCTAssertEqual(WidgetCatalog.naturalSize(widget).width, chart ? 160 : 100)
         }
     }
 
@@ -59,7 +69,7 @@ final class WidgetConfigurationTests: XCTestCase {
                                                                      "chart": .bool(true)]) else {
             return XCTFail("system widget missing from catalog")
         }
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .system), "圆环")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .system), "竖条")
     }
 
     /// Unrelated user options must not disturb the style row.
@@ -109,30 +119,22 @@ final class WidgetConfigurationTests: XCTestCase {
         }
     }
 
-    /// Callers must resolve a stored config against the defaults first.
-    ///
-    /// Matching is exact equality per key, and an absent key is not equal to
-    /// anything - so a config saved before `chart` existed matches neither
-    /// numbers variant and would open the picker with nothing selected. The
-    /// same `merging(defaults:)` that keeps old widgets working is what puts
-    /// the row back.
-    func testALegacyConfigMatchesOnlyOnceDefaultsAreMerged() {
+    /// 图表并成开关以后，“数字”只看 `layout`：`chart` 出现之前存下的旧卡片
+    /// 不用先合并默认值也能选中“数字”，合并后读到的开关是关，和原来一样
+    /// 不画图表。
+    func testALegacyConfigWithoutAChartKeySelectsNumbers() {
         guard let entry = WidgetCatalog.entry(.system) else { return XCTFail("missing") }
         let old = WidgetConfig(["layout": .string("numbers")])
-        XCTAssertNil(WidgetCatalog.variantTitle(matching: old, kind: .system),
-                     "an absent key cannot be treated as a match")
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: old.merging(defaults: entry.defaults),
-                                                  kind: .system), "数字")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: old, kind: .system), "数字")
+        let merged = old.merging(defaults: entry.defaults)
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: merged, kind: .system), "数字")
+        XCTAssertFalse(ShapeMeters.chartOption(merged))
     }
 
-    /// Matching compares whole values, cases included.
-    ///
-    /// A `chart` stored as the number 0 rather than the boolean false is not
-    /// the value the variant declares, so it must not match: silently
-    /// accepting it would let a type-confused config drive the picker and hide
-    /// the fact that the widget's own `bool("chart")` read is falling back.
+    /// Matching compares whole values, cases included: a `layout` stored as a
+    /// number is not the string the variant declares.
     func testAValueOfTheWrongTypeDoesNotMatchAVariant() {
-        let confused = WidgetConfig(["layout": .string("numbers"), "chart": .number(0)])
+        let confused = WidgetConfig(["layout": .number(0), "chart": .bool(false)])
         XCTAssertNil(WidgetCatalog.variantTitle(matching: confused, kind: .system))
     }
 

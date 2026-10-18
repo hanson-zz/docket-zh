@@ -263,7 +263,8 @@ final class GaugeReadingTests: XCTestCase {
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery"), .string("storage")])])),
                        ["storage", "battery"])
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery")])])), ["battery"])
-        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("cpu")])])), ["storage", "battery"])
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("cpu")])])), ["cpu"])
+        XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("network")])])), ["storage", "battery"])
         let one = WidgetCatalog.naturalSize(WidgetInstance(kind: .gauges,
             config: WidgetConfig(["rings": .list([.string("battery")])])))
         let two = WidgetCatalog.naturalSize(WidgetCatalog.make(.gauges)!)

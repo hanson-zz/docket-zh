@@ -6014,6 +6014,17 @@
         }
       }
     },
+    "任意拼装多个指标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mix any metrics"
+          }
+        }
+      }
+    },
     "任意电量" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12953,6 +12964,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Red panda orange, Sakura and other shelf colors"
+          }
+        }
+      }
+    },
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather and the Battery Cells style"
           }
         }
       }
@@ -25667,6 +25689,17 @@
         }
       }
     },
+    "电池格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery cells"
+          }
+        }
+      }
+    },
     "电池温度偏高" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26954,6 +26987,17 @@
         }
       }
     },
+    "竖条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segments"
+          }
+        }
+      }
+    },
     "站会" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28138,6 +28182,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Network error %@"
+          }
+        }
+      }
+    },
+    "网速" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed"
           }
         }
       }

@@ -45,6 +45,8 @@ public enum WidgetLibraryGroups {
         case .alarm: tr("今天某个时刻")
         case .anniversary: tr("按天")
         case .progress: tr("年月周日百分比")
+        // 圆只留给圆环仪表：存储、电池、CPU、内存任意拼。
+        case .gauges: tr("任意拼装多个指标")
         default: nil
         }
     }

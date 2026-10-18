@@ -240,9 +240,9 @@ struct WidgetSettingsSections: View {
 
     /// Keyed on the variant's title, not its layout.
     ///
-    /// "Numbers" and "Numbers + graph" are both `layout: "numbers"` and differ
-    /// only by `chart`, so tagging by layout gave two rows the same tag and
-    /// the picker could neither tell them apart nor show the right one.
+    /// A variant may declare more than `layout` (喝水 picks a character too),
+    /// so tagging by layout could give two rows the same tag and the picker
+    /// could neither tell them apart nor show the right one.
     private func stylePicker(_ entry: WidgetCatalog.Entry, _ instance: WidgetInstance) -> some View {
         let currentIsPro = entry.variants.first { $0.title == selectedVariant(entry, instance) }
             .map { ProFeatures.isProStyle(entry.kind, $0.overrides) } ?? false
@@ -696,7 +696,8 @@ struct WidgetSettingsSections: View {
                     (tr("磁盘"), "disk"), (tr("电池"), "battery")],
         "devices": [(tr("这台 Mac"), "mac"), ("AirPods", "pods"),
                     (tr("AirPods 充电盒"), "case"), (tr("键盘"), "keyboard")],
-        "rings": [(tr("存储空间"), "storage"), (tr("电池"), "battery")],
+        "rings": [(tr("存储空间"), "storage"), (tr("电池"), "battery"),
+                  ("CPU", "cpu"), (tr("内存"), "memory")],
         "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
         "actions": QuickToggle.allCases.map { ($0.title, $0.rawValue) },
         "workdays": SlackerClock.weekdayChoices,

@@ -28,12 +28,18 @@ public enum GaugeReading {
         "\(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
     }
 
+    /// 圆环仪表能拼的指标，按卡片上的先后：存储、电池、CPU、内存。
+    /// 圆只留给圆环仪表，系统活动的指标也能拼进来。
+    public static let allRings = ["storage", "battery", "cpu", "memory"]
+
+    /// 没选过时的默认，也是旧卡片没存 `rings` 时读到的：存储和电池。
+    public static let defaultRings = ["storage", "battery"]
+
     /// Which rings a gauge widget shows, in a fixed order, never none.
     public static func rings(_ config: WidgetConfig) -> [String] {
-        let known = ["storage", "battery"]
-        let chosen = config.strings("rings", default: known).filter(known.contains)
-        let ordered = known.filter(chosen.contains)
-        return ordered.isEmpty ? known : ordered
+        let chosen = config.strings("rings", default: defaultRings).filter(allRings.contains)
+        let ordered = allRings.filter(chosen.contains)
+        return ordered.isEmpty ? defaultRings : ordered
     }
 
     /// Natural width of the gauge tile for that many rings.

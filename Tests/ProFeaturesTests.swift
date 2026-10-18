@@ -1,7 +1,7 @@
 import XCTest
 
 /// Pro 专属的清单：整种 Pro 的小组件、原来的赞助者样式、液态外观、只属于某种小组件的
-/// Pro 样式（天气多城市、电池百分比圆环、便签纸色）、颜色与背景、快速开关里的工具。
+/// Pro 样式（天气多城市、电池格、便签纸色）、颜色与背景、快速开关里的工具。
 final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsMatchTheAgreedList() {
@@ -140,7 +140,7 @@ final class ProFeaturesTests: XCTestCase {
         for layout in ["status", "icon"] {
             XCTAssertFalse(ProFeatures.isPro(.battery, overrides: ["layout": .string(layout)]), layout)
         }
-        // 百分比圆环没有同样大小的免费样式可退，没解锁时盖小锁遮罩。
+        // 电池格（原百分比圆环）没有同样大小的免费样式可退，没解锁时盖小锁遮罩。
         let placed = WidgetInstance(kind: .battery, config: WidgetConfig(gauge))
         XCTAssertTrue(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
         XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: true))
@@ -157,7 +157,7 @@ final class ProFeaturesTests: XCTestCase {
             }
         }
         XCTAssertTrue(proStyles.contains("weather:多城市"))
-        XCTAssertTrue(proStyles.contains("battery:百分比圆环"))
+        XCTAssertTrue(proStyles.contains("battery:电池格"))
         // 便签十五种纸色里，免费五种，其余十种是 Pro。
         XCTAssertEqual(proStyles.filter { $0.hasPrefix("notes:") }.count, PaperColor.picker.count - 5)
     }

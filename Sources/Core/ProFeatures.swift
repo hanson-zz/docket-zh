@@ -13,7 +13,7 @@ import Foundation
 /// - 快速开关里的截图识字、二维码、演示模式、只锁键盘、低电量模式。
 /// - 所有小组件的“液态”外观（`layout` 或 `look` 为 liquid）。
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
-///   百分比圆环、便签除最浅五种以外的纸色。
+///   电池格（原百分比圆环）、便签除最浅五种以外的纸色。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
 /// - AI 刘海对话的设置和电池面板里的充电上限。
 public enum ProFeatures {
@@ -38,7 +38,7 @@ public enum ProFeatures {
 
     /// 天气的多城市样式（`layout` 为 cities）是 Pro。
     public static let weatherCitiesLayout = "cities"
-    /// 电池的百分比圆环样式（`layout` 为 gauge）是 Pro。
+    /// 电池的电池格样式（原百分比圆环，`layout` 仍为 gauge）是 Pro。
     public static let batteryGaugeLayout = "gauge"
     /// 便签存纸色的键。
     public static let noteColorKey = "color"
