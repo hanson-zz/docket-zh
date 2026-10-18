@@ -307,10 +307,10 @@ final class StockBoardTests: XCTestCase {
     }
 
     func testOuncesToGrams() throws {
-        // 2,400 美元/盎司，汇率 7.12：2400 × 7.12 / 31.1035 ≈ 549.38 元/克。
+        // 2,400 美元/盎司，汇率 7.12：2400 × 7.12 / 31.1035 ≈ 549.39 元/克。
         let gram = try XCTUnwrap(PreciousMetal.cnyPerGram(usdPerOunce: 2400, usdToCny: 7.12))
         XCTAssertEqual(gram, 2400 * 7.12 / 31.1035, accuracy: 1e-9)
-        XCTAssertEqual(gram, 549.38, accuracy: 0.01)
+        XCTAssertEqual(gram, 549.39, accuracy: 0.01)
         XCTAssertEqual(PreciousMetal.factor(.usdPerOunce, usdToCny: nil), 1)
         XCTAssertNil(PreciousMetal.factor(.cnyPerGram, usdToCny: nil), "no rate, no made-up price")
         XCTAssertNil(PreciousMetal.factor(.cnyPerGram, usdToCny: 0))

@@ -334,9 +334,10 @@ struct StocksDetail: View {
 
     private var watchlist: some View {
         let group = StockBoard.currentGroup(config)
-        let percents = Dictionary(uniqueKeysWithValues: group.symbols.compactMap { symbol in
-            quote(symbol).map { (symbol, $0.changePercent) }
-        })
+        var percents: [String: Double] = [:]
+        for symbol in group.symbols {
+            if let quote = quote(symbol) { percents[symbol] = quote.changePercent }
+        }
         let symbols = StockBoard.sorted(group.symbols, percents: percents, order: .from(config))
         let quotes = symbols.map { quote($0) }
         return VStack(alignment: .leading, spacing: 8) {
