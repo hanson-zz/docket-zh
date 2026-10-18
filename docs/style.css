@@ -116,6 +116,11 @@ h2{font-size:30px;margin:0 0 18px;text-align:center}
 .price{font-size:40px;font-weight:700;line-height:1.15;margin:6px 0 8px;letter-spacing:-.01em}
 .price span{font-size:16px;color:var(--mut);font-weight:400;letter-spacing:0}
 .price s.was{font-size:22px;color:var(--mut);font-weight:400}
+.price .amt{font-weight:700}
+.eb-line b{color:var(--acc)}
+.eb-meter{height:6px;max-width:280px;border-radius:999px;background:rgba(127,127,127,.16);overflow:hidden;margin:8px 0 12px}
+.eb-meter i{display:block;height:100%;width:0;border-radius:inherit;background:var(--acc);transition:width .6s ease}
+[hidden]{display:none!important}
 .plain{padding-left:20px;margin:14px 0 0;color:var(--fg);font-size:15px}.plain li{margin:5px 0}
 .plan-btn{margin-top:18px}
 .plan.pro{position:relative;border:2px solid var(--acc);background:linear-gradient(160deg,rgba(217,101,59,.10),transparent 46%),var(--card);box-shadow:0 18px 50px rgba(217,101,59,.14)}
@@ -181,3 +186,11 @@ footer .flinks a{text-decoration:none}
   .anchor{flex-direction:column;text-align:center}
   .cmp{font-size:14px}.cmp th,.cmp td{padding:9px 8px}.cmp td,.cmp thead th:not(:first-child){width:66px}
 }
+
+/* refund policy page */
+.policy{max-width:720px}
+.policy h1{font-size:36px;margin:10px 0 4px}
+.policy h2{font-size:20px;margin:28px 0 8px;text-align:left}
+.policy p{color:var(--mut);margin:0 0 12px}
+.policy .btn{margin-top:14px}
+.faq p code{overflow-wrap:anywhere;font-size:13px}

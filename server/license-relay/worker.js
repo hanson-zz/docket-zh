@@ -9,6 +9,8 @@
 //   CREEM_API      （变量，可选）测试时填 https://test-api.creem.io
 //   ADMIN_TOKEN    （Secret）兑换码管理页的密码，自己定
 //   GIFTS          （KV 绑定）存兑换码
+//   EARLYBIRD_TOTAL   （变量，可选）首批限量份数，默认 20
+//   EARLYBIRD_EXCLUDE （变量，可选）不算进首批的 Creem 订单号，英文逗号隔开（比如自己下的测试单）
 //
 // 返回给 App 的格式（与 App 里 ProLicenseResponse.parse 对应）：
 //   { activated|valid|deactivated: Bool, error?: String,
@@ -147,9 +149,97 @@ async function handleAdmin(path, request, env) {
   return json({ error: "not found" }, 404);
 }
 
+// ---------- 首批限量（官网读的公开计数） ----------
+// GET /earlybird → { total, sold, remaining, soldOut, updatedAt }
+// 数据来自 Creem 的 GET /v1/transactions/search?product_id=…（官方文档：
+// https://docs.creem.io/api-reference/endpoint/get-transactions），用的就是上面已有的 CREEM_API_KEY。
+// 计数口径：只数码头 Pro 产品的一次性付款（type=payment），状态是 paid 或 partialRefund，
+// 实付金额大于 0，环境与当前 API 一致（正式环境只数 prod）。全额退款、拒付、作废、待付都不算；
+// DKG- 兑换码不经过 Creem，本来就不在里面。EARLYBIRD_EXCLUDE 变量可填要排除的订单号（自己下的测试单）。
+// 只回四个数字，绝不回买家、订单号或金额。结果在 Cloudflare 边缘缓存 60 秒，免得每次打开页面都去问 Creem。
+
+const EARLYBIRD_ORIGINS = ["https://docket.shiduo.app", "https://hanson-zz.github.io"];
+const EARLYBIRD_TTL = 60;
+const COUNTED_STATUS = new Set(["paid", "partialRefund"]);
+
+function earlybirdHeaders(request, extra = {}) {
+  const origin = request.headers.get("origin") || "";
+  const h = { "content-type": "application/json; charset=utf-8", vary: "Origin", ...extra };
+  if (EARLYBIRD_ORIGINS.includes(origin)) {
+    h["access-control-allow-origin"] = origin;
+    h["access-control-allow-methods"] = "GET, OPTIONS";
+    h["access-control-max-age"] = "86400";
+  }
+  return h;
+}
+
+// 只看一笔交易该不该算进首批，单独拿出来方便测试。
+export function countsAsSale(t, { products, mode, exclude }) {
+  if (!t || t.type !== "payment") return false;
+  if (!COUNTED_STATUS.has(t.status)) return false;
+  if (mode && t.mode && t.mode !== mode) return false;
+  if (t.product && !products.includes(t.product)) return false;
+  const paid = t.amount_paid ?? t.amount;
+  if (!(Number(paid) > 0)) return false;
+  if (t.order && exclude.includes(t.order)) return false;
+  return true;
+}
+
+export async function countEarlybird(env, fetchImpl = fetch) {
+  const base = env.CREEM_API || "https://api.creem.io";
+  const mode = base.includes("test-api") ? "test" : "prod";
+  const products = allowedProducts(env);
+  const exclude = String(env.EARLYBIRD_EXCLUDE || "").split(",").map(s => s.trim()).filter(Boolean);
+  const total = Math.max(0, parseInt(env.EARLYBIRD_TOTAL, 10) || 20);
+  const seen = new Set();
+  let sold = 0;
+  for (const product of products) {
+    for (let page = 1; page <= 20; page++) {
+      const url = `${base}/v1/transactions/search?product_id=${encodeURIComponent(product)}&page_number=${page}&page_size=50`;
+      const res = await fetchImpl(url, { headers: { "x-api-key": env.CREEM_API_KEY, accept: "application/json" } });
+      if (!res.ok) throw new Error("creem " + res.status);
+      const data = await res.json();
+      for (const t of data.items || []) {
+        if (!countsAsSale(t, { products, mode, exclude })) continue;
+        const k = t.order || t.id;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        sold++;
+      }
+      if (!data.pagination || !data.pagination.next_page) break;
+    }
+  }
+  const remaining = Math.max(0, total - sold);
+  return { total, sold: Math.min(sold, total), remaining, soldOut: remaining === 0 };
+}
+
+async function handleEarlybird(request, env, ctx) {
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: earlybirdHeaders(request) });
+  const cache = typeof caches !== "undefined" ? caches.default : null;
+  const cacheKey = new Request(new URL("/earlybird", request.url).toString(), { method: "GET" });
+  let body = null;
+  if (cache) {
+    const hit = await cache.match(cacheKey);
+    if (hit) body = await hit.text();
+  }
+  if (!body) {
+    if (!env.CREEM_API_KEY) return new Response(JSON.stringify({ error: "not configured" }), { status: 503, headers: earlybirdHeaders(request, { "cache-control": "no-store" }) });
+    let result;
+    try { result = await countEarlybird(env); }
+    catch { return new Response(JSON.stringify({ error: "upstream unavailable" }), { status: 502, headers: earlybirdHeaders(request, { "cache-control": "no-store" }) }); }
+    body = JSON.stringify({ ...result, updatedAt: new Date().toISOString() });
+    if (cache) {
+      const put = cache.put(cacheKey, new Response(body, { headers: { "content-type": "application/json", "cache-control": `public, max-age=${EARLYBIRD_TTL}` } }));
+      if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put;
+    }
+  }
+  return new Response(body, { headers: earlybirdHeaders(request, { "cache-control": `public, max-age=${EARLYBIRD_TTL}` }) });
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === "/earlybird" && (request.method === "GET" || request.method === "OPTIONS")) return handleEarlybird(request, env, ctx);
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) return handleAdmin(url.pathname, request, env);
     const match = url.pathname.match(/^\/v1\/licenses\/(activate|validate|deactivate)$/);
     if (request.method === "GET" && url.pathname === "/") return json({ ok: true, service: "dockling-license" });
