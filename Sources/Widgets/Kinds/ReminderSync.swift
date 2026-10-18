@@ -116,7 +116,8 @@ enum ReminderSync {
             try store.save(item, commit: true)
             return true
         } catch {
-            store.rollback()
+            // 没写进去的改动留在内存里会被下一次保存一起带走，丢掉重读。
+            store.reset()
             NSSound.beep()
             return false
         }
