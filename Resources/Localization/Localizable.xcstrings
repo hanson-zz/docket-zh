@@ -1387,6 +1387,17 @@
         }
       }
     },
+    "%@后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@"
+          }
+        }
+      }
+    },
     "%@后重置（%@）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4078,6 +4089,17 @@
         }
       }
     },
+    "中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium"
+          }
+        }
+      }
+    },
     "中 ⇄ 英" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5002,6 +5024,17 @@
         }
       }
     },
+    "今日概览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today Overview"
+          }
+        }
+      }
+    },
     "今日起身" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5343,6 +5376,17 @@
         }
       }
     },
+    "优先级" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority"
+          }
+        }
+      }
+    },
     "会议倒计时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5383,6 +5427,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : " with thunder"
+          }
+        }
+      }
+    },
+    "低" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
           }
         }
       }
@@ -7220,6 +7275,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just now"
+          }
+        }
+      }
+    },
+    "刚到期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just due"
           }
         }
       }
@@ -9240,6 +9306,17 @@
         }
       }
     },
+    "和系统提醒事项同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs with Reminders"
+          }
+        }
+      }
+    },
     "咕嘟咕嘟，陪我喝一口吧！今天还差 %@。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9577,6 +9654,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Answers stream in word by word. You can stop, retry, copy, or ask a follow-up."
+          }
+        }
+      }
+    },
+    "回车保存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to save"
           }
         }
       }
@@ -12275,6 +12363,17 @@
         }
       }
     },
+    "已保存到“提醒事项”。它不是今天到期的，所以不在这里显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to Reminders. It is not due today, so it is not shown here."
+          }
+        }
+      }
+    },
     "已保存在钥匙串中" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12693,6 +12792,17 @@
         }
       }
     },
+    "已推迟“%@”。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Postponed \"%@\"."
+          }
+        }
+      }
+    },
     "已收 " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12931,6 +13041,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Overdue"
+          }
+        }
+      }
+    },
+    "已过期 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ overdue"
+          }
+        }
+      }
+    },
+    "已过期 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days overdue"
           }
         }
       }
@@ -15794,6 +15926,28 @@
         }
       }
     },
+    "推到下周一" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Next Monday"
+          }
+        }
+      }
+    },
+    "推到明天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Tomorrow"
+          }
+        }
+      }
+    },
     "推广" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15845,6 +15999,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The recommendation is a general guide, not medical advice. People who must limit fluids for heart or kidney conditions should follow their doctor."
+          }
+        }
+      }
+    },
+    "推迟 1 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze 1 Hour"
           }
         }
       }
@@ -16703,6 +16868,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Chat"
+          }
+        }
+      }
+    },
+    "新建一条提醒事项，同步到 iPhone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a reminder that syncs to your iPhone"
           }
         }
       }
@@ -21403,6 +21579,17 @@
         }
       }
     },
+    "没能写回“提醒事项”，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not save to Reminders. Try again later."
+          }
+        }
+      }
+    },
     "没能切换低电量模式：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22770,6 +22957,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to edit, right-click to reorder or delete"
+          }
+        }
+      }
+    },
+    "点按编辑，右键推迟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to edit, right-click to postpone"
           }
         }
       }
@@ -31404,6 +31602,17 @@
         }
       }
     },
+    "高" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        }
+      }
+    },
     "高海拔" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31609,6 +31818,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "(local time)"
+          }
+        }
+      }
+    },
+    "＋ 新提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ New Reminder"
           }
         }
       }

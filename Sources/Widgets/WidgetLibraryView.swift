@@ -22,9 +22,6 @@ private struct LibraryCard: Identifiable {
     func matches(_ query: String) -> Bool {
         WidgetSearch.matches(query, names: [title, name], kind: kind.rawValue)
     }
-
-    /// The permission this widget cannot work without, if any.
-    var permission: String? { WidgetSearch.permissions[kind.rawValue] }
 }
 
 /// Only self-contained kinds: the rest cannot be rendered in this build.
@@ -418,7 +415,7 @@ struct WidgetLibraryView: View {
     }
 
     /// 一组的小标题：种类名称，整种是 Pro 时带 Pro 角标，有多个样式时后面
-    /// 标样式个数。
+    /// 标样式个数，有说明的再跟一句（提醒事项“和系统提醒事项同步”）。
     private func groupHeader(_ kind: WidgetKind, styles: Int) -> some View {
         let name = WidgetCatalog.entry(kind)?.name ?? kind.rawValue
         return HStack(spacing: 5) {
@@ -431,6 +428,11 @@ struct WidgetLibraryView: View {
             if styles > 1 {
                 Text(tr("\(styles) 种样式"))
                     .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+            if let note = WidgetLibraryGroups.note(kind) {
+                Text(note)
+                    .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
             }
         }
@@ -534,13 +536,8 @@ struct WidgetLibraryView: View {
                         .help("近期新增的小组件")
                         .accessibilityLabel("新")
                 }
-                if let permission = card.permission {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-                        .help(tr("需要“\(trKey(permission))”权限，第一次用到时会请求。"))
-                        .accessibilityLabel(tr("需要\(trKey(permission))权限"))
-                }
+                // 需要系统权限的不再画小锁（像是锁住不能用），第一次用到时
+                // 再请求；是哪项权限写在整张卡片的悬停说明里。Pro 角标照旧。
                 Spacer(minLength: 2)
                 let onShelf = placedInstances(for: card)
                 if !onShelf.isEmpty {
@@ -581,6 +578,7 @@ struct WidgetLibraryView: View {
                               lineWidth: focused ? 2 : 1)
         }
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .help(WidgetLibraryGroups.cardHelp(card.kind))
         .onTapGesture { add(card) }
         .focusable()
         .focused($focus, equals: .card(card.id))

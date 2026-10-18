@@ -170,6 +170,18 @@ final class WidgetLibraryGroupsTests: XCTestCase {
         XCTAssertEqual(WidgetManagement.move(widgetsAt: [0], to: 9, in: items), items)
     }
 
+    // MARK: 说明和权限提示
+
+    func testRemindersSaysItSyncsAndNeedsNoLock() {
+        XCTAssertEqual(WidgetLibraryGroups.note(.reminders), "和系统提醒事项同步")
+        XCTAssertNil(WidgetLibraryGroups.note(.clock))
+        // 权限提示只在悬停说明里，写明第一次用到时请求。
+        XCTAssertEqual(WidgetLibraryGroups.cardHelp(.reminders),
+                       "和系统提醒事项同步\n需要“提醒事项”权限，第一次用到时会请求。")
+        XCTAssertEqual(WidgetLibraryGroups.cardHelp(.calendar), "需要“日历”权限，第一次用到时会请求。")
+        XCTAssertEqual(WidgetLibraryGroups.cardHelp(.clock), "")
+    }
+
     // MARK: 分类里按种类分组
 
     func testGroupedByKindKeepsOrderAndSplitsRuns() {

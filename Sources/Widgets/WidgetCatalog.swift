@@ -142,7 +142,8 @@ public enum WidgetCatalog {
               defaults: c(["layout": .string("list"), "list": .string("")]),
               variants: [(tr("列表"), ["layout": .string("list")]),
                          (tr("下一个提醒"), ["layout": .string("next")]),
-                         (tr("数量"), ["layout": .string("count")])],
+                         // 原来叫“数量”，layout 值不变，已经放好的卡片照旧。
+                         (tr("今日概览"), ["layout": .string("count")])],
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .notes, name: tr("便签"), category: .todo,
@@ -778,7 +779,8 @@ public enum WidgetCatalog {
         case .reminders:
             switch cfg.string("layout", default: "list") {
             case "next": return CGSize(width: 180, height: 132)
-            case "count": return CGSize(width: 88, height: 76)
+            // 今日概览：两个大数字并排，88 放不下。
+            case "count": return CGSize(width: 132, height: 76)
             default: return CGSize(width: 220, height: 132)
             }
         case .notes: return CGSize(width: 160, height: 100)

@@ -35,6 +35,27 @@ public enum WidgetLibraryGroups {
         .stock, .watchlist, .crypto,
     ]
 
+    /// 种类小标题后面的一句说明，没有就是 nil。
+    public static func note(_ kind: WidgetKind) -> String? {
+        switch kind {
+        case .reminders: tr("和系统提醒事项同步")
+        default: nil
+        }
+    }
+
+    /// 卡片的悬停说明：小标题那句说明，加上需要哪项系统权限。
+    ///
+    /// 卡片上原来的权限小锁去掉了（看着像锁住不能用），第一次用到时再请求；
+    /// 需要权限这件事只留在悬停说明里。Pro 的小锁不归这里管。
+    public static func cardHelp(_ kind: WidgetKind) -> String {
+        var parts: [String] = []
+        if let note = note(kind) { parts.append(note) }
+        if let permission = WidgetSearch.permissions[kind.rawValue] {
+            parts.append(tr("需要“\(trKey(permission))”权限，第一次用到时会请求。"))
+        }
+        return parts.joined(separator: "\n")
+    }
+
     /// 排序用的位置：在 `displayOrder` 里的按它的位置，不在的排在后面。
     public static func rank(_ kind: WidgetKind) -> Int {
         displayOrder.firstIndex(of: kind) ?? displayOrder.count
