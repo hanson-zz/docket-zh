@@ -2080,6 +2080,17 @@
         }
       }
     },
+    "%@背景" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ background"
+          }
+        }
+      }
+    },
     "%@至%@日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2146,6 +2157,17 @@
         }
       }
     },
+    "%@输入框里的文字（空着时用剪贴板），在刘海对话里直接问 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ the text in the input box (or the clipboard when empty), asked straight away to %@ in the notch chat"
+          }
+        }
+      }
+    },
     "%@输入框里的文字（空着时用剪贴板），直接发给 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2153,6 +2175,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ the text in the input box (or the clipboard when empty), sent straight to %@"
+          }
+        }
+      }
+    },
+    "%@输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ the text in the input box (or the clipboard when empty): copies the filled-in prompt and opens %@ in the notch chat"
           }
         }
       }
@@ -12470,6 +12503,35 @@
         }
       }
     },
+    "外观 (appearance)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        }
+      }
+    },
     "多" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19149,6 +19211,17 @@
         }
       }
     },
+    "收起外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide appearance"
+          }
+        }
+      }
+    },
     "收音机" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19178,6 +19251,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back to Pictures folder"
+          }
+        }
+      }
+    },
+    "改这张卡片的主题色和背景" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change this card's theme color and background"
           }
         }
       }
@@ -26994,6 +27078,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Battery above %@°C"
+          }
+        }
+      }
+    },
+    "电量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge"
           }
         }
       }

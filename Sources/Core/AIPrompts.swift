@@ -250,3 +250,60 @@ public enum AIClipboard {
         return clipboard.trimmingCharacters(in: .whitespacesAndNewlines).count > insertLimit
     }
 }
+
+// MARK: - 共用的快捷指令条
+
+/// 刘海对话和 AI 任意门迷你提问面板共用的那一排：剪贴板接力、翻译、总结、
+/// 润色、解释和“常用”菜单，下面一行是提示或剪贴板预览。这里是它不碰界面
+/// 的部分。
+public enum AIPromptStrip {
+    /// 剪贴板按钮只在有输入框的地方出现：刘海对话的网页模式没有输入框，
+    /// 快捷指令直接用剪贴板，用不着再带一次。
+    public static func showsClipboardChip(hasInput: Bool) -> Bool { hasInput }
+
+    /// 第二行显示什么。
+    public enum StatusLine: Equatable, Sendable {
+        /// 刚才做了什么（或者为什么没做）。
+        case notice(String)
+        /// 剪贴板里有文字时的一行预览。
+        case clipboard(String)
+        case none
+    }
+
+    /// 有提示先显示提示；没有时显示剪贴板预览；空白的提示当没有。
+    public static func statusLine(notice: String?, clipboardPreview: String?) -> StatusLine {
+        if let notice, !notice.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return .notice(notice)
+        }
+        if let preview = clipboardPreview, !preview.isEmpty { return .clipboard(preview) }
+        return .none
+    }
+
+    /// 迷你提问面板点了快捷指令或常用提示词之后怎么办。
+    public enum Outcome: Equatable, Sendable {
+        /// 输入框和剪贴板都没有文字，提示用户。
+        case needsText
+        /// 套好的提示词，照平时提问交给选中的服务（API、网页交给刘海对话，
+        /// 跳转的带着问题打开或复制再打开）。
+        case ask(String)
+    }
+
+    /// 迷你提问面板永远有输入框，所以和刘海对话的 API、跳转模式一样：
+    /// 输入框优先，空着时用剪贴板。
+    public static func outcome(template: String, draft: String, clipboard: String?) -> Outcome {
+        guard let prompt = AIPrompts.compose(template, draft: draft, clipboard: clipboard) else {
+            return .needsText
+        }
+        return .ask(prompt)
+    }
+
+    /// 两边都没有文字时的提示，和刘海对话用同一句。
+    public static var needsTextHint: String { tr("先在输入框里写字，或者复制要处理的文字。") }
+
+    /// 剪贴板接力之后的提示：剪贴板空着说一声，太长截掉了也说一声，其余不说。
+    public static func pasteHint(clipboard: String?) -> String? {
+        guard let clipboard, AIAsk.question(clipboard) != nil else { return tr("剪贴板里没有文字。") }
+        return AIClipboard.isTruncated(clipboard)
+            ? tr("剪贴板太长，只带进了前 \(AIClipboard.insertLimit) 个字。") : nil
+    }
+}

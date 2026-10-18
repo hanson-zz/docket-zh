@@ -153,7 +153,16 @@ struct TintBackgroundView: View {
 /// 在浅色和深色外观下的实时预览。
 struct WidgetTintPicker: View {
     var instance: WidgetInstance
+    /// 一排几个色块。设置页 9 个；详情面板窄，按面板宽度算
+    /// （`WidgetAppearance.swatchColumns`）。
+    var columns = 9
+    /// 浅色和深色两张预览卡片。详情面板里不画：扩展栏上那张真卡片就在旁边。
+    var showsPreview = true
     var write: ((inout WidgetConfig) -> Void) -> Void
+
+    /// 一个色块连同选中描边占的宽度，和格子间距，详情面板按它们算一排几个。
+    static let swatchCell: CGFloat = swatch + 6
+    static let swatchSpacing: CGFloat = 6
 
     private static let swatch: CGFloat = 22
     private static let ring = Color(red: 0.2, green: 0.78, blue: 0.35)
@@ -172,8 +181,9 @@ struct WidgetTintPicker: View {
                 Text("颜色")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.swatch + 6), spacing: 6), count: 9),
-                          alignment: .leading, spacing: 6) {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.swatchCell), spacing: Self.swatchSpacing),
+                                         count: max(1, columns)),
+                          alignment: .leading, spacing: Self.swatchSpacing) {
                     defaultSwatch
                     customSwatch
                     ForEach(WidgetTint.Preset.allCases) { preset in
@@ -196,6 +206,7 @@ struct WidgetTintPicker: View {
                     Text("自定义颜色和渐变背景为 Pro 专属，预设颜色免费")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -225,7 +236,9 @@ struct WidgetTintPicker: View {
                 }
             }
 
-            preview
+            if showsPreview {
+                preview
+            }
         }
         .padding(.vertical, 4)
     }

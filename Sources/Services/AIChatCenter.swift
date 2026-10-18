@@ -260,8 +260,7 @@ final class AIChatCenter {
         }
         draft = AIClipboard.insert(clip, into: draft)
         jumpHint = nil
-        notice = AIClipboard.isTruncated(clip)
-            ? tr("剪贴板太长，只带进了前 \(AIClipboard.insertLimit) 个字。") : nil
+        notice = AIPromptStrip.pasteHint(clipboard: clip)
     }
 
     // MARK: 快捷指令和常用提示词

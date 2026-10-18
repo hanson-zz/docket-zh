@@ -58,26 +58,30 @@ struct BatteryTile: View {
             }
             .lineLimit(1)
         } else {
-            // A bottom shelf is a 62pt strip: three stacked rows overflow it
-            // and the caption gets sliced off. Lay it out across instead, as
-            // the shelf's badge and reading: the ring is the level, in white
-            // unless the battery is low enough to earn a colour.
+            // A bottom shelf is a 58pt strip: three stacked rows overflow it
+            // and the caption gets sliced off. Lay it out across instead.
+            // 经典和液态原来是图标外一圈百分比圆环，和电池格对不上，现在也画
+            // 横向电池（见 `BatteryStatusCell`）；其余外观画它们自己的仪表。
             HStack(spacing: 10) {
                 let shown = look(for: slot)
-                if shown == .classic {
-                    TileBadge {
-                        ZStack {
-                            TileRing(progress: reading.present ? reading.level : 0,
-                                     tint: ringTint(reading))
+                if BatteryStatusCell.drawsCell(look: shown.rawValue) {
+                    // 经典和液态：和电池格一样画一块横向电池，百分比写在电池里。
+                    statusCell(reading, liquid: shown == .liquid)
+                    VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
+                        Text(caption(reading))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(statusCaptionColor(reading))
+                        HStack(spacing: 3) {
                             Image(systemName: slot.symbol)
-                                .font(.system(size: 11, weight: .regular))
-                                .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                                .font(.system(size: 10, weight: .regular))
+                            Text(slot.name)
+                                .font(WidgetStyle.note)
                         }
+                        .foregroundStyle(WidgetStyle.secondary)
                     }
-                    .overlay(alignment: .bottomTrailing) {
-                        if reading.charging { bolt }
-                    }
-                    TileReading(value: percentText(reading), caption: caption(reading))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
                 } else {
                     BatteryGauge(look: shown, state: gaugeState(slot), diameter: 40,
                                  center: shown == .panda ? .none : .symbol(slot.symbol),
@@ -87,6 +91,80 @@ struct BatteryTile: View {
                 }
                 Spacer(minLength: 0)
             }
+        }
+    }
+
+    /// 状态样式的电池：约 61 x 29 的横向电池，百分比写在里面，充电时数字前面
+    /// 一道闪电。压在电量那一截上的数字反色（见 `BatteryStatusCell.inkOnFill`），
+    /// 低电量时那一截变橙、变红。
+    private func statusCell(_ reading: Reading, liquid: Bool) -> some View {
+        let size = BatteryStatusCell.cellSize(cardHeight: 58)
+        let width = CGFloat(size.width)
+        let height = CGFloat(size.height)
+        let fill = ShapeMeters.cellFill(level: reading.level, present: reading.present)
+        let tone = ShapeMeters.cellTone(level: reading.level, charging: reading.charging, present: reading.present)
+        let geometry = BatteryStatusCell.geometry(long: Double(width), short: Double(height))
+        let label = statusLabel(reading, height: height)
+            .frame(width: CGFloat(geometry.bodyLong), height: height)
+        return BatteryCellShape(fill: fill, tone: tone, charging: reading.charging, vertical: false,
+                                liquid: liquid,
+                                moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                                showsBolt: false)
+            .frame(width: width, height: height)
+            .overlay(alignment: .topLeading) {
+                ZStack(alignment: .topLeading) {
+                    label.foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                    switch BatteryStatusCell.inkOnFill(tone: tone, liquid: liquid) {
+                    case .none:
+                        EmptyView()
+                    case .white:
+                        label.foregroundStyle(Color.white)
+                            .mask(alignment: .leading) {
+                                Rectangle().frame(width: CGFloat(geometry.fillEnd(fill)))
+                            }
+                    case .inverted:
+                        label.foregroundStyle(Color(nsColor: .textBackgroundColor))
+                            .mask(alignment: .leading) {
+                                Rectangle().frame(width: CGFloat(geometry.fillEnd(fill)))
+                            }
+                    }
+                }
+                .allowsHitTesting(false)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(tr("电量"))
+            .accessibilityValue(percentText(reading))
+    }
+
+    /// 电池里的字：充电时一道闪电，数字加一个小一号的 %；没连上是“-”。
+    private func statusLabel(_ reading: Reading, height: CGFloat) -> some View {
+        let size = (height * 0.46).rounded()
+        return HStack(spacing: 1) {
+            if reading.charging, reading.present {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: size * 0.72, weight: .bold))
+            }
+            Text(BatteryStatusCell.label(level: reading.level, present: reading.present))
+                .font(.system(size: size, weight: .bold))
+                .monospacedDigit()
+                .rollingValue(BatteryStatusCell.label(level: reading.level, present: reading.present))
+            if reading.present {
+                Text("%")
+                    .font(.system(size: size * 0.68, weight: .bold))
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .padding(.horizontal, 3)
+    }
+
+    /// 状态那一行：低电量时跟电池一起变色，其余是普通的前景色。
+    private func statusCaptionColor(_ reading: Reading) -> Color {
+        switch ShapeMeters.cellTone(level: reading.level, charging: reading.charging, present: reading.present) {
+        case .low: Color(hex: "#FF9F0A")
+        case .critical: Color(hex: "#FF453A")
+        case .absent: WidgetStyle.secondary
+        case .normal: WidgetStyle.primary
         }
     }
 
@@ -161,18 +239,6 @@ struct BatteryTile: View {
         if reading.level <= 0.10 { return Color(hex: "#FF453A") }
         if reading.level <= 0.20 { return Color(hex: "#FF9F0A") }
         return present
-    }
-
-    /// White while nothing is wrong; the low-battery colours only when they
-    /// mean something.
-    /// 电量低时的红和橙照旧；其余时候是 nil，圆环用卡片的主题色
-    /// （电池默认绿，见 `WidgetTint`），不再是一圈白。
-    private func ringTint(_ reading: Reading) -> Color? {
-        guard reading.present else { return WidgetStyle.primary }
-        guard !reading.charging else { return nil }
-        if reading.level <= 0.10 { return Color(hex: "#FF453A") }
-        if reading.level <= 0.20 { return Color(hex: "#FF9F0A") }
-        return nil
     }
 
     private func percentText(_ reading: Reading) -> String {
@@ -471,6 +537,8 @@ struct BatteryCellShape: View {
     var liquid = false
     /// 卡片在屏幕上时水才动。
     var moving = false
+    /// 充电时中间画不画闪电。状态样式把闪电写在电池里的数字前面，这里不画。
+    var showsBolt = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -488,13 +556,16 @@ struct BatteryCellShape: View {
         GeometryReader { geo in
             let long = vertical ? geo.size.height : geo.size.width
             let short = vertical ? geo.size.width : geo.size.height
-            let nub = max(2, long * 0.07)
-            let bodyLong = long - nub - 1
-            let stroke = max(1.4, short * 0.08)
-            let inset = stroke + max(1, short * 0.07)
-            let radius = short * 0.26
-            let innerLong = max(0, bodyLong - inset * 2)
-            let innerShort = max(0, short - inset * 2)
+            // 尺寸算法在 Core（`BatteryStatusCell.geometry`），状态样式压在
+            // 电池上的数字按同一套尺寸反色。
+            let g = BatteryStatusCell.geometry(long: Double(long), short: Double(short))
+            let nub = CGFloat(g.nub)
+            let bodyLong = CGFloat(g.bodyLong)
+            let stroke = CGFloat(g.stroke)
+            let inset = CGFloat(g.inset)
+            let radius = CGFloat(g.radius)
+            let innerLong = CGFloat(g.innerLong)
+            let innerShort = CGFloat(g.innerShort)
 
             let outline = RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .strokeBorder(WidgetStyle.primary.opacity(tone == .absent ? 0.3 : 0.55),
@@ -518,7 +589,7 @@ struct BatteryCellShape: View {
                     levelFill(width: innerLong, height: innerShort, corner: corner, vertical: false)
                         .offset(x: inset, y: inset)
                 }
-                if charging {
+                if charging, showsBolt {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: short * (vertical ? 0.5 : 0.55), weight: .bold))
                         .foregroundStyle(fill > 0.45 ? Color.black.opacity(0.7) : WidgetStyle.primary)

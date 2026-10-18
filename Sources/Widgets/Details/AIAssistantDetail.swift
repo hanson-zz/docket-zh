@@ -92,6 +92,7 @@ private struct AIAskView: View {
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 input
+                promptBar
                 HStack(spacing: 8) {
                     picker
                     Spacer(minLength: 0)
@@ -134,7 +135,7 @@ private struct AIAskView: View {
         ZStack(alignment: .topLeading) {
             AskTextEditor(text: draft, onSubmit: submit,
                           onCancel: { WidgetDetailWindow.shared.close() })
-                .frame(height: 112)
+                .frame(height: 84)
                 .accessibilityLabel("要问的问题")
             if state.draft(instance.id).isEmpty {
                 Text("想问点什么？")
@@ -148,6 +149,75 @@ private struct AIAskView: View {
         }
         .padding(10)
         .glassPane(cornerRadius: 12)
+    }
+
+    // MARK: 剪贴板接力、快捷指令和常用提示词
+
+    /// 和刘海对话同一排按钮（`AIPromptChipBar`）。文字先取输入框，空着时取
+    /// 剪贴板，套好的提示词照平时提问交给选中的服务。提示写在下面那行
+    /// （`state.hint`），这一排的第二行只显示剪贴板预览。
+    private var promptBar: some View {
+        let center = AIChatCenter.shared
+        return AIPromptChipBar(
+            hasInput: true,
+            clipboardPreview: context.isPreview ? nil : center.clipboardPreview,
+            notice: nil,
+            prompts: center.prompts,
+            actionHelp: { actionHelp($0.title) },
+            clipboardHelp: tr("点一下带进输入框"),
+            paste: pasteClipboard,
+            runAction: { run(template: $0.template) },
+            runPrompt: { run(template: $0.content) },
+            managePrompts: managePrompts)
+            .disabled(context.isPreview)
+            // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
+            // 和刘海对话共用同一份。
+            .task {
+                guard !context.isPreview else { return }
+                while !Task.isCancelled {
+                    center.refreshClipboard()
+                    try? await Task.sleep(for: .seconds(1))
+                }
+            }
+    }
+
+    private func actionHelp(_ title: String) -> String {
+        let name = target?.title ?? ""
+        switch targetMode {
+        case .api: return tr("\(title)输入框里的文字（空着时用剪贴板），在刘海对话里直接问 \(name)")
+        case .web: return tr("\(title)输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开 \(name)")
+        case .jump: return tr("\(title)输入框里的文字（空着时用剪贴板），再打开 \(name)")
+        }
+    }
+
+    private func pasteClipboard() {
+        guard !context.isPreview else { return }
+        let center = AIChatCenter.shared
+        center.refreshClipboard()
+        let clip = center.clipboardText
+        if clip != nil {
+            state.setDraft(AIClipboard.insert(clip, into: state.draft(instance.id)), for: instance.id)
+        }
+        state.setHint(AIPromptStrip.pasteHint(clipboard: clip), for: instance.id)
+    }
+
+    private func run(template: String) {
+        guard !context.isPreview else { return }
+        let center = AIChatCenter.shared
+        center.refreshClipboard()
+        switch AIPromptStrip.outcome(template: template, draft: state.draft(instance.id),
+                                     clipboard: center.clipboardText) {
+        case .needsText:
+            state.setHint(AIPromptStrip.needsTextHint, for: instance.id)
+        case .ask(let prompt):
+            deliver(prompt)
+        }
+    }
+
+    private func managePrompts() {
+        guard !context.isPreview, let app = AIChatCenter.shared.app else { return }
+        WidgetDetailWindow.shared.close()
+        SettingsWindow.shared.show(app: app, tab: "AI")
     }
 
     private var picker: some View {
@@ -211,16 +281,20 @@ private struct AIAskView: View {
         submit()
     }
 
-    private func submit() {
+    private func submit() { deliver(nil) }
+
+    /// 交出去。`text` 是快捷指令或常用提示词套好的提示词，nil 时交输入框里的问题。
+    private func deliver(_ text: String?) {
         guard !context.isPreview, let service = target else { return }
         let mode = targetMode
+        let asked = text ?? state.draft(instance.id)
         // 网页和 API 在刘海对话里问，刘海对话是码头 Pro：没解锁时弹付费墙，问题留在框里。
         if mode != .jump, !ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked),
-           AIAsk.question(state.draft(instance.id)) != nil {
+           AIAsk.question(asked) != nil {
             PaywallWindow.shared.show()
             return
         }
-        if mode != .jump, let question = AIAsk.question(state.draft(instance.id)) {
+        if mode != .jump, let question = AIAsk.question(asked) {
             let center = AIChatCenter.shared
             center.select(service.id)
             center.draft = question
@@ -235,7 +309,7 @@ private struct AIAskView: View {
             }
             return
         }
-        let plan = AIAsk.plan(state.draft(instance.id), service: service)
+        let plan = AIAsk.plan(asked, service: service)
         switch plan {
         case .blocked:
             state.setHint(AIAsk.hint(after: plan, service: service), for: instance.id)

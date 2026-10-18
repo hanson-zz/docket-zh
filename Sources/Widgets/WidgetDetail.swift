@@ -200,6 +200,9 @@ final class WidgetDetailWindow {
         stopWatching()
         let dismiss: (NSEvent) -> Void = { [weak self] event in
             guard let self, let panel = self.panel else { return }
+            // 面板底部“外观”里的自定义取色打开的是系统颜色面板，在那里点
+            // 颜色不算点到外面。
+            if event.window is NSColorPanel { return }
             // A local event reports a window-relative location; a global one
             // is already on screen.
             let point = event.window?.convertPoint(toScreen: event.locationInWindow)
@@ -372,8 +375,21 @@ struct WidgetDetailChrome: View {
     /// 提议是 nil，和原来外层 fixedSize 给的一样，所以各小组件排版不变。
     /// 内容不超出时 basedOnSize 让它不弹不滚，看起来和原来一样。
     @ViewBuilder private var scrolling: some View {
-        let content = WidgetDetailBody(instance: instance, context: context)
-            .padding(16)
+        // 间距 20：多数面板的深色卡片（DetailCard）往外多画 10pt，留够了
+        // 才和下面的“外观”分得开。
+        let content = VStack(spacing: 20) {
+            WidgetDetailBody(instance: instance, context: context)
+            if showsAppearance {
+                WidgetAppearanceSection(instance: instance, context: context,
+                                        width: WidgetDetail.width(instance.kind) - 32 - PanelShape.arrowDepth)
+                    // 每次打开都从收起开始。
+                    .id(session)
+                    // 封面这类自己有深色底的面板，入口的字跟着用浅色。
+                    .environment(\.colorScheme,
+                                 WidgetDetailBody.ground(instance, context) != nil ? .dark : scheme)
+            }
+        }
+        .padding(16)
         if measuring {
             content
         } else {
@@ -405,6 +421,11 @@ struct WidgetDetailChrome: View {
                 }
             }
         }
+    }
+
+    /// 有颜色或背景可选的卡片，面板底部带“外观”入口（见 `WidgetAppearance`）。
+    private var showsAppearance: Bool {
+        !context.isPreview && WidgetAppearance.offered(instance.kind)
     }
 
     /// Which side the tail sits on, which is the side facing the shelf.
