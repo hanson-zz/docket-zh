@@ -738,7 +738,7 @@ private func run() async {
     // should cost these three images rather than every shelf.
     for shot in viewShots() where only?.contains(shot.name) ?? true {
         await shot.prepare()
-        guard let (window, _) = makeWindow(shot.view(), shadow: true, on: screen, key: true) else {
+        guard let (window, _) = makeWindow(shot.view(), shadow: shot.windowShadow, on: screen, key: true) else {
             log("\(shot.name): measured empty, skipping")
             continue
         }
@@ -941,6 +941,9 @@ private struct ViewShot {
     var view: @MainActor () -> AnyView
     var prepare: @MainActor () async -> Void = {}
     var linger: Duration = .zero
+    /// The window's own shadow. Off for a view that draws its own around a
+    /// transparent margin, where the window shadow traces that margin's edge.
+    var windowShadow = true
 }
 
 /// Holds what the AI panel reads for as long as the run lasts:
@@ -983,7 +986,7 @@ private func viewShots() -> [ViewShot] {
             guard let card = ReminderPopupFixture.model.card else { return AnyView(EmptyView()) }
             return AnyView(ReminderPopupCardView(card: card, model: ReminderPopupFixture.model)
                 .environment(\.colorScheme, .dark))
-        }, prepare: { ReminderPopupFixture.fill() }, linger: .seconds(1)),
+        }, prepare: { ReminderPopupFixture.fill() }, linger: .seconds(1), windowShadow: false),
 
         // The Add Widget sheet with its category sidebar, opened on 健康与习惯:
         // 所有小组件 opens on the app and folder shortcuts, which fill the
