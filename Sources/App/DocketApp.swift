@@ -108,6 +108,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 小组件，扩展栏隐藏、卡片不在当前布局也照样响、照样弹出卡片。
         TimedAlertDriver.shared.widgets = { [state] in state.allWidgets }
         TimedAlertDriver.shared.start()
+        // 点弹出卡片主体、点股票或久坐通知时打开小组件面板：卡片在文件夹里、别的
+        // 布局里或扩展栏没开时也打得开。
+        WidgetPanelOpener.shared.currentItems = { [state] in state.effectiveItems }
+        WidgetPanelOpener.shared.start()
 
         // 小熊猫的竹篮 reads 喝水, 习惯打卡 and 专注计时 wherever they sit, so it
         // is handed every widget on every layout. Focus minutes come from

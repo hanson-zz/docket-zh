@@ -61,6 +61,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         IslandOccupancy.shared.displaces = { [weak self] footprint in
             self?.wouldMove(for: footprint) ?? false
         }
+        ShelfPresence.shared.isShown = { [weak self] in self?.panel?.isVisible == true }
+        ShelfPresence.shared.isTuckedAway = { [weak self] in self?.revealed == false }
+        ShelfPresence.shared.reveal = { [weak self] in
+            guard let self, !self.revealed else { return }
+            self.setRevealed(true)
+        }
+        ShelfPresence.shared.revealedFrame = { [weak self] in
+            guard let self, self.panel != nil else { return nil }
+            return self.shelfFrame
+        }
     }
 
     // MARK: Lifecycle
@@ -110,7 +120,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     func hide() {
         GroupWindow.shared.close()
-        WidgetDetailWindow.shared.close()
+        WidgetDetailWindow.shared.closeIfAnchored()
         TooltipWindow.shared.hide()
         panel?.orderOut(nil)
         publishVisibility()
@@ -561,7 +571,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // shelf just stays put while the panel is up.
         // The widget library pins it for the same reason: what is picked
         // there lands on the shelf, and it should be in view when it does.
-        if WidgetDetailWindow.shared.isOpen || LibraryWindow.shared.isOpen {
+        if WidgetDetailWindow.shared.isAnchoredOpen || LibraryWindow.shared.isOpen {
             hideWorkItem?.cancel()
             hideWorkItem = nil
             if !revealed { setRevealed(true) }
@@ -787,7 +797,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// Whether this swipe is one to follow, and which way. Nil to leave it.
     private func swipeDirection() -> MissionControlSwipe? {
         // Anything that pins the shelf out pins it through a swipe too.
-        if menuIsOpen || GroupWindow.shared.isOpen || WidgetDetailWindow.shared.isOpen
+        if menuIsOpen || GroupWindow.shared.isOpen || WidgetDetailWindow.shared.isAnchoredOpen
             || LibraryWindow.shared.isOpen {
             return nil
         }
@@ -812,7 +822,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // label was left sitting over the desktop pointing at nothing.
         if !value {
             GroupWindow.shared.close()
-            WidgetDetailWindow.shared.close()
+            // 独立浮动的面板（弹出卡片打开的、不挂在扩展栏上的）不跟着收。
+            WidgetDetailWindow.shared.closeIfAnchored()
             TooltipWindow.shared.hide()
         }
         revealed = value

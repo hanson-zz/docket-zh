@@ -22,8 +22,9 @@ import SwiftUI
 final class ReminderPopupCenter {
     static let shared = ReminderPopupCenter()
 
-    /// 请扩展栏打开某个小组件的面板（点了卡片主体）。扩展栏手里有卡片的位置，
-    /// 所以由它来开。`userInfo["id"]` 是小组件 id 的字符串。
+    /// 请打开某个小组件的面板（点了卡片主体）。由 `WidgetPanelOpener` 分派：卡片在
+    /// 扩展栏上或当前布局的文件夹里时交给扩展栏从那一格长出来，否则以独立浮动面板
+    /// 打开。`userInfo["id"]` 是小组件 id 的字符串。
     static let openPanelRequest = Notification.Name("com.docket-zh.reminder-popup.open-panel")
 
     private(set) var settings = ReminderPopupSettings()

@@ -50,6 +50,30 @@ final class WidgetDetailWindow {
 
     var isOpen: Bool { openWidgetID != nil && panel?.isVisible == true }
 
+    /// 开着的面板不挂在扩展栏的卡片上，而是独立浮在屏幕顶部（点弹出卡片主体时，
+    /// 卡片在别的布局里、扩展栏没开或卡片被条件隐藏）。这样的面板不把自动隐藏的
+    /// 扩展栏钉住，扩展栏滑走、跟着灵动提示挪动时它也不动。
+    private(set) var isFloating = false
+
+    /// 开着、挂在扩展栏上的面板。
+    var isAnchoredOpen: Bool { isOpen && !isFloating }
+
+    /// 扩展栏收起或滑走时调用：只收挂在它上面的那种。
+    func closeIfAnchored() {
+        if !isFloating { close() }
+    }
+
+    /// 以独立浮动面板打开：挂在带菜单栏那块屏幕的顶部正中，也就是到点弹出卡片
+    /// 刚才的位置，尾巴朝上。已经开着同一个就不动。
+    func openFloating(_ instance: WidgetInstance, now: Date) {
+        guard openWidgetID != instance.id || !isOpen else { return }
+        guard let screen = NSScreen.screens.first else { return }
+        let visible = screen.visibleFrame
+        let anchor = CGPoint(x: visible.midX, y: visible.maxY - 6)
+        show(instance, context: WidgetContext(position: .top, now: now), anchor: anchor, edge: .top,
+             host: .zero, floating: true)
+    }
+
     /// 开着的面板的中心点（屏幕坐标），关着时为 nil。
     var openCenter: CGPoint? {
         guard isOpen, let frame = panel?.frame else { return nil }
@@ -74,7 +98,7 @@ final class WidgetDetailWindow {
     /// 灵动提示, inside the shelf's own animation. See
     /// DockPanelController.islandMoved.
     func shift(by dy: CGFloat) {
-        guard isOpen, let panel, dy != 0 else { return }
+        guard isAnchoredOpen, let panel, dy != 0 else { return }
         panel.animator().setFrame(panel.frame.offsetBy(dx: 0, dy: dy), display: false)
         // The shelf moved with it, and a click on the shelf is still the
         // shelf's to handle.
@@ -89,7 +113,7 @@ final class WidgetDetailWindow {
     func toggle(_ instance: WidgetInstance, context: WidgetContext,
                 anchor: CGPoint, edge: DockPosition, host: CGRect) {
         if openWidgetID == instance.id { return close() }
-        show(instance, context: context, anchor: anchor, edge: edge, host: host)
+        show(instance, context: context, anchor: anchor, edge: edge, host: host, floating: false)
     }
 
     /// Redraws the open panel after its widget's config changed.
@@ -248,7 +272,7 @@ final class WidgetDetailWindow {
     }
 
     private func show(_ instance: WidgetInstance, context: WidgetContext,
-                      anchor: CGPoint, edge: DockPosition, host: CGRect) {
+                      anchor: CGPoint, edge: DockPosition, host: CGRect, floating: Bool) {
         let panel = existingOrNew()
         session = UUID()
         self.host = host
@@ -265,6 +289,7 @@ final class WidgetDetailWindow {
         guard size.width > 1, size.height > 1 else { return }
         if let previous = openWidgetID, previous != instance.id { announceClosed(previous) }
         openWidgetID = instance.id
+        isFloating = floating
         lastShownAnchor = (instance.id, anchor)
 
         // Almost touching the tile: the panel's own padding already includes

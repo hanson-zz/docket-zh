@@ -63,9 +63,13 @@ public final class AppState {
             // lands here, so this is the one place that sees them all. The
             // panel used to stay up pointing at nothing, still answering
             // clicks for a widget that no longer existed.
-            if let open = WidgetDetailWindow.shared.openWidgetID,
-               !effectiveItems.contains(where: { $0.widget?.id == open }) {
-                WidgetDetailWindow.shared.close()
+            // 收在文件夹里的也算在扩展栏上（弹出卡片打开的面板挂在文件夹那一格）；
+            // 独立浮动的面板只要小组件还在某个布局里就留着。
+            if let open = WidgetDetailWindow.shared.openWidgetID {
+                let gone = WidgetDetailWindow.shared.isFloating
+                    ? widgetAnywhere(open) == nil
+                    : DockItemTree.widget(open, in: effectiveItems) == nil
+                if gone { WidgetDetailWindow.shared.close() }
             }
         }
     }

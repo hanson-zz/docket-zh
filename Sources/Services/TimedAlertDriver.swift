@@ -2,7 +2,7 @@ import AppKit
 import EventKit
 import Foundation
 
-/// 倒计时、闹钟、快速待办和提醒事项的到点：从启动起每秒看一次，不再靠扩展栏
+/// 倒计时、闹钟、喝水、快速待办和提醒事项的到点：从启动起每秒看一次，不再靠扩展栏
 /// 上的卡片刷新才发现。
 ///
 /// 原来这几种都是卡片每秒重画时顺手比一下“上一秒到这一秒之间有没有到点”，所以
@@ -13,6 +13,8 @@ import Foundation
 ///   提示音也在这里响（倒计时 30 秒内、闹钟两分钟内每 4 秒一声，卡片设置里关了
 ///   提示音就不响）。卡片上点了停、关掉或稍后，弹出的那张跟着收起。
 /// - 快速待办：读每张待办卡片存着的提醒时间。
+/// - 喝水：每秒算好每个喝水小组件的下一次提醒交给 `WaterNotifier`（弹卡片或排
+///   系统通知由它决定，只弹一次）。
 /// - 提醒事项：从 EventKit 读今天到期、带具体时刻的提醒（列表跟各张提醒事项卡片的
 ///   筛选走，没有提醒事项卡片就不读），每 5 分钟、日子变了和系统提醒事项有改动时
 ///   重读一次。只读不问：没给权限就什么也不做，权限由面板去要。
@@ -69,6 +71,7 @@ final class TimedAlertDriver {
         let all = widgets()
         var upcoming: [Date] = []
         var ringing = false
+        var water: [(instance: WidgetInstance, next: Date?)] = []
 
         for widget in all {
             switch widget.kind {
@@ -78,13 +81,17 @@ final class TimedAlertDriver {
                 alarm(widget, after: old, now: now, upcoming: &upcoming, ringing: &ringing)
             case .todo:
                 todo(widget, all: all, after: old, now: now, upcoming: &upcoming)
+            case .water:
+                water.append((widget, WaterReminder.next(widget.config, now: now)))
             default:
                 continue
             }
         }
         withdrawStale(all, now: now)
         remindersTick(all, after: old, now: now, upcoming: &upcoming)
-        // 喝水的卡片由 WaterNotifier 自己的计时器弹，这里只帮它在快到点时挡住 App Nap。
+        // 喝水：每秒把每个喝水小组件的下一次提醒交给 WaterNotifier，由它排系统通知
+        // 或自己的计时器到点弹卡片；这里再帮它在快到点时挡住 App Nap。
+        WaterNotifier.shared.sync(water)
         upcoming += WaterNotifier.shared.armedTimes
         keepPrecise(TimedAlertWake.needsPrecision(next: TimedAlertWake.soonest(upcoming, after: now),
                                                   ringing: ringing, now: now))

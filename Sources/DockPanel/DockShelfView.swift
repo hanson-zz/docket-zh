@@ -495,9 +495,9 @@ struct DockShelfView: View {
         .onReceive(NotificationCenter.default.publisher(for: AIPanelState.openRequest)) { note in
             openAIPanel(note, solved)
         }
-        // 到点提醒弹出卡片上点了卡片主体：打开那张小组件的面板，从它在扩展栏上
-        // 的位置长出来。
-        .onReceive(NotificationCenter.default.publisher(for: ReminderPopupCenter.openPanelRequest)) { note in
+        // 到点提醒弹出卡片上点了卡片主体（或点了股票、久坐通知）：WidgetPanelOpener
+        // 判断卡片就在这条扩展栏上（或收在这里的文件夹里）时，从它的位置长出面板。
+        .onReceive(NotificationCenter.default.publisher(for: WidgetPanelOpener.shelfRequest)) { note in
             openWidgetPanel(note, solved)
         }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
@@ -1069,21 +1069,32 @@ struct DockShelfView: View {
     /// 按小组件 id 打开它的面板，锚点是那张卡片在扩展栏上的外沿正中（和悬停时
     /// 一样算），不靠指针在不在上面。几条扩展栏都有这张卡片时只开一次。
     private func openWidgetPanel(_ note: Notification, _ solved: Solved) {
-        guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
-              let window = shelfWindow, window.isVisible,
+        guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw) else { return }
+        let folder = (note.userInfo?["folder"] as? String).flatMap(UUID.init(uuidString:))
+        // 卡片收在文件夹里时挂在文件夹那一格上，面板照样是那张小组件的。
+        let target = folder ?? id
+        guard let widget = WidgetWriter.current(id), WidgetDetail.exists(for: widget.kind),
+              WidgetDetailWindow.shared.openWidgetID != id || !WidgetDetailWindow.shared.isOpen else { return }
+        guard let window = shelfWindow, window.isVisible,
               let index = solved.slots.indices.first(where: { index in
-                  if case .item(let entry) = solved.slots[index] { return entry.item.widget?.id == id }
+                  if case .item(let entry) = solved.slots[index] { return entry.item.id == target }
                   return false
-              }),
-              case .item(let entry) = solved.slots[index], let widget = entry.item.widget,
-              WidgetDetail.exists(for: widget.kind),
-              WidgetDetailWindow.shared.openWidgetID != id else { return }
+              }) else {
+            // 被条件隐藏、这一刻不在扩展栏上：以独立浮动面板打开。
+            return WidgetPanelOpener.shared.openFloating(id)
+        }
+        // 自动隐藏滑在屏幕外：先滑出来，面板按滑出来以后的位置挂。滑出来的动画
+        // 还在走，窗口这一刻的位置不能用。面板开着时扩展栏不会再滑走。
+        var frame = window.frame
+        if ShelfPresence.shared.isTuckedAway() {
+            ShelfPresence.shared.reveal()
+            frame = ShelfPresence.shared.revealedFrame() ?? frame
+        }
         let along = plateCentre(of: index, solved) + shelfInset(solved)
         let cross: CGFloat = switch position {
         case .bottom, .right: crossHeadroom
         case .top, .left: solved.restCross
         }
-        let frame = window.frame
         let anchor: CGPoint = switch position {
         case .bottom, .top: CGPoint(x: frame.minX + along, y: frame.maxY - cross)
         case .left, .right: CGPoint(x: frame.minX + cross, y: frame.maxY - along)

@@ -14,8 +14,8 @@ import SwiftUI
 /// control: the card's own click opens the panel, where other amounts and
 /// drinks, the day's list, the goal and the history live.
 ///
-/// The tile also keeps the reminder scheduled, the way the stand-up tile
-/// does: one pending notification, moved whenever the next one changes.
+/// 提醒不再由卡片排：`TimedAlertDriver` 从启动起每秒看着所有布局里的喝水小组件，
+/// 交给 `WaterNotifier` 排，卡片在文件夹里、别的布局里也照样提醒。
 struct WaterTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -66,12 +66,6 @@ struct WaterTile: View {
         UserDefaults.standard.set(missedDays, forKey: VirtualPet.missedDaysDefault)
     }
 
-    /// When the next reminder goes out, or nil for none.
-    private var nextReminder: Date? {
-        guard !context.isPreview else { return nil }
-        return WaterReminder.next(instance.config, now: context.now)
-    }
-
     var body: some View {
         let day = today
         let level = WaterIntake.progress(total: day.total, goal: day.goal)
@@ -92,8 +86,6 @@ struct WaterTile: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(tr("喝水，\(showsSkeleton ? tr("渴成骷髅了，") : "")\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))"))
-        .onAppear { WaterNotifier.shared.update(instance, next: nextReminder) }
-        .onChange(of: nextReminder) { _, next in WaterNotifier.shared.update(instance, next: next) }
         // The pet's 渴成骷髅 reads this; written from here so it needs no
         // way to find the 喝水 widget itself.
         .onAppear { publishMissed() }

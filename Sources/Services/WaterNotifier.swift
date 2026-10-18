@@ -4,6 +4,11 @@ import Foundation
 /// Schedules the 喝水 widget's reminder, the way PostureNotifier schedules
 /// the stand-up one.
 ///
+/// 下一次提醒的时间由 `TimedAlertDriver` 每秒从所有布局（含文件夹）里的每个喝水
+/// 小组件算好交来（`sync`），不再靠喝水卡片显示在扩展栏上：卡片在文件夹里、在
+/// 别的布局里、扩展栏自动隐藏时照样提醒，弹出卡片上「稍后 15 分钟」写下的时间
+/// 下一秒就排上。卡片删掉了，排着的那一次也撤掉。
+///
 /// One pending request per widget, replaced whenever the next reminder moves:
 /// a drink is logged, the goal is met, the interval or the hours change, or
 /// an ignored one fires and the next repeat comes due. `WaterReminder` already
@@ -68,6 +73,20 @@ final class WaterNotifier {
         Task { await schedule(id: id, at: next, title: message.title, body: message.body) }
     }
 
+    /// 后台计时器每秒交来所有布局里的喝水小组件和各自的下一次提醒。已经不在任何
+    /// 布局里的撤掉排着的系统通知和计时器。
+    func sync(_ widgets: [(instance: WidgetInstance, next: Date?)]) {
+        let present = Set(widgets.map { $0.instance.id })
+        for id in WaterAlertPlan.removed(known: Set(latest.keys), present: present) {
+            latest[id] = nil
+            disarm(id)
+            if scheduled.removeValue(forKey: id) != nil {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.identifier(id)])
+            }
+        }
+        for widget in widgets { update(widget.instance, next: widget.next) }
+    }
+
     /// 「到点弹出卡片」的喝水开关变了：每个小组件按最近一次的下一次提醒重排。
     func popupSettingChanged() {
         for (_, value) in latest {
@@ -78,13 +97,21 @@ final class WaterNotifier {
     // MARK: 弹卡片
 
     private func arm(_ widget: UUID, at date: Date?) {
-        // 下一次提醒往后挪的那一刻，往往就是上一次刚到点的那一秒（卡片每秒重算
-        // 下一次）：还没来得及响的那一次先弹出来，不让它被新的顶掉。
-        if let pending = armed[widget], pending != date, pending <= Date.now.addingTimeInterval(0.5) {
-            fire(widget, due: pending)
+        switch WaterAlertPlan.step(pending: armed[widget], next: date, now: .now) {
+        case .keep:
+            return
+        case .rearm(let next):
+            wait(widget, until: next)
+        case .fireThenRearm(let due, let next):
+            // 下一次提醒往后挪的那一刻，往往就是上一次刚到点的那一秒（每秒重算下一次）：
+            // 还没来得及响的那一次先弹出来，不让它被新的顶掉。
+            fire(widget, due: due)
+            wait(widget, until: next)
         }
+    }
+
+    private func wait(_ widget: UUID, until date: Date?) {
         guard let date else { return disarm(widget) }
-        if let pending = armed[widget], abs(pending.timeIntervalSince(date)) < 1 { return }
         timers[widget]?.invalidate()
         armed[widget] = date
         let timer = Timer(fire: date, interval: 0, repeats: false) { [weak self] _ in
