@@ -129,10 +129,9 @@ final class ClockStyleTests: XCTestCase {
                 XCTAssertFalse(WidgetCatalog.applies(key, to: config(["layout": .string(id)]), kind: .clock), "\(id) \(key)")
             }
         }
-        // 设置里时钟的选项按注册表顺序排在前面。
+        // 设置里按字母排：大小在粗细前，卡片在翻法前。
         let keys = WidgetCatalog.configurableKeys(.clock)
-        XCTAssertEqual(Array(keys.prefix(ClockStyles.optionKeys.count)), ClockStyles.optionKeys)
-        XCTAssertTrue(keys.contains("seconds"))
+        XCTAssertEqual(keys, ["clockCard", "clockDial", "clockFlip", "clockSize", "clockWeight", "seconds"])
         XCTAssertFalse(keys.contains("layout"))
     }
 

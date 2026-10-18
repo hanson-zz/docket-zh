@@ -114,7 +114,8 @@ final class WidgetOptionTests: XCTestCase {
             .perfectDay: ["look"],
             .podcast: ["notify"],
             .toggles: ["actions"],
-            .clock: ["seconds"],
+            // 时钟的子选项来自样式注册表，各由 ClockStyles.face 读（见 ClockStyleTests）。
+            .clock: Set(["seconds"] + ClockStyles.optionKeys),
             .aiAssistant: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
@@ -269,6 +270,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "weather.city", "weather.cities",
         // 水面动效只有液态外观有。
         "progress.liquidMotion",
+        // 时钟的子选项只在所属样式下列出（ClockStyles.applies）。
+        "clock.clockSize", "clock.clockWeight", "clock.clockDial", "clock.clockCard", "clock.clockFlip",
     ]
 
     /// Everything else is unconditional, and a rule added carelessly would

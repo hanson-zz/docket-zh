@@ -568,11 +568,8 @@ public enum WidgetCatalog {
     /// plain text field alongside that picker let the two disagree.
     public static func configurableKeys(_ kind: WidgetKind) -> [String] {
         guard let entry = entry(kind) else { return [] }
-        let keys = entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
-        // 时钟的子选项按注册表里的顺序排在前面（大小在粗细前，卡片在翻法前）。
-        guard kind == .clock else { return keys }
-        let options = ClockStyles.optionKeys.filter(keys.contains)
-        return options + keys.filter { !options.contains($0) }
+        // 按字母排；时钟的子选项恰好是大小在粗细前、卡片在翻法前。
+        return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
     }
 
     /// Whether an option means anything given the rest of the configuration.
