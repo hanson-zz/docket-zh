@@ -5,7 +5,9 @@ import SwiftUI
 ///
 /// 纸感卡片：小圆角、顶上一条半透明胶带、右下角卷起，手写字。可以叠几张
 /// （最多 3 张，见 `StickyStack`），每张一种颜色，后面的露出纸边；右下角的
-/// “1/3”点一下翻到下一张。不能勾选，也不会自动清空，一直贴着直到自己撕掉。
+/// “1/3”点一下翻到下一张；指针停在便签上用滚轮或触控板滚动也能前后翻（往下
+/// 是下一张，往上是上一张，一下手势翻一张）。减少动态效果时直接换，不做动画。
+/// 不能勾选，也不会自动清空，一直贴着直到自己撕掉。
 ///
 /// The words are only shown here; they are written in the note's detail panel,
 /// on paper the size of something you write on rather than glance at. A field
@@ -49,7 +51,7 @@ struct StickyNoteTile: View {
                     .overlay { words(pile.front.text, ink: Color(hex: front.inkHex), column: column) }
                     .rotationEffect(.degrees(-0.8))
                     .id(pile.page)
-                    .transition(reduceMotion ? AnyTransition.opacity
+                    .transition(reduceMotion ? AnyTransition.identity
                                 : AnyTransition.asymmetric(insertion: .opacity,
                                                            removal: AnyTransition.offset(x: -18, y: 0).combined(with: .opacity)))
             }
@@ -58,6 +60,10 @@ struct StickyNoteTile: View {
             .padding(.bottom, 5)
             .overlay(alignment: .bottomTrailing) {
                 if let marker = pile.marker { flipButton(marker, ink: Color(hex: front.inkHex)) }
+            }
+            // 只接滚动，点击照样穿过去（打开面板、点“1/3”）。
+            .overlay {
+                StickyScrollPager(enabled: pile.count > 1 && !context.isPreview) { step in flip(by: step) }
             }
         }
     }
@@ -108,10 +114,11 @@ struct StickyNoteTile: View {
         .accessibilityLabel(tr("第 \(pile.page + 1) 张，共 \(pile.count) 张，翻到下一张"))
     }
 
-    private func flip() {
+    private func flip(by step: Int = 1) {
         guard !context.isPreview else { return }
-        let animation: Animation = reduceMotion ? .easeInOut(duration: 0.12) : .snappy(duration: 0.25)
-        withAnimation(animation) { StickyLog.flip(instance) }
+        // 减少动态效果时直接换成那一张。
+        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.25)
+        withAnimation(animation) { StickyLog.flip(instance, by: step) }
     }
 
     /// Ruled lines under a pencil, at the weight of a watermark.
@@ -225,7 +232,7 @@ enum StickyLog {
         }
     }
 
-    static func flip(_ instance: WidgetInstance) { change(instance) { $0.flipped() } }
+    static func flip(_ instance: WidgetInstance, by step: Int = 1) { change(instance) { $0.flipped(by: step) } }
 
     static func write(_ text: String, in instance: WidgetInstance) { change(instance) { $0.writing(text) } }
 
@@ -238,4 +245,56 @@ enum StickyLog {
     }
 
     static func tearOff(_ instance: WidgetInstance) { change(instance) { $0.removingFront() } }
+}
+
+/// 便签上的滚轮和触控板翻页。
+///
+/// 扩展栏的滚动是整个承载视图自己接的（`ScrollingHostingView`），卡片上的 SwiftUI
+/// 拿不到。这里垫一层只在“当前事件是滚动”时才应答命中测试的视图：滚动落到它，
+/// 点击和悬停照样穿过去交给下面的便签和“1/3”。只有一张时不接，滚动照旧滚扩展栏；
+/// 按着 Command 的滚动（切换布局）也交回去。一下手势翻一张，滚轮一格翻一张，
+/// 节奏和切换布局的手势一样（`LayoutGesture`）。
+struct StickyScrollPager: NSViewRepresentable {
+    var enabled: Bool
+    var onStep: (Int) -> Void
+
+    func makeNSView(context: Context) -> PagerView {
+        let view = PagerView()
+        view.enabled = enabled
+        view.onStep = onStep
+        return view
+    }
+
+    func updateNSView(_ view: PagerView, context: Context) {
+        view.enabled = enabled
+        view.onStep = onStep
+    }
+
+    final class PagerView: NSView {
+        var enabled = false
+        var onStep: ((Int) -> Void)?
+        private var gesture = LayoutGesture()
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            guard enabled, NSApp.currentEvent?.type == .scrollWheel else { return nil }
+            return super.hitTest(point)
+        }
+
+        override func scrollWheel(with event: NSEvent) {
+            guard enabled, !event.modifierFlags.contains(.command) else {
+                super.scrollWheel(with: event)
+                return
+            }
+            if event.phase.contains(.began) || event.phase.contains(.mayBegin) { gesture.begin() }
+            // 惯性的尾巴吞掉但不算数，手指已经决定了翻不翻。
+            guard event.momentumPhase.isEmpty else { return }
+            let dx = event.scrollingDeltaX
+            let dy = event.scrollingDeltaY
+            let delta = abs(dx) > abs(dy) ? dx : dy
+            if let step = gesture.feed(Double(delta), precise: event.hasPreciseScrollingDeltas,
+                                       at: event.timestamp) {
+                onStep?(step)
+            }
+        }
+    }
 }

@@ -39,6 +39,8 @@ struct TodoDetail: View {
     @State private var notice: String?
     @State private var noticeNeedsSettings = false
     /// 正在自定义提醒时间的那一条。
+    /// 底部“已收起”展开着没有。
+    @State private var archiveOpen = false
     @State private var reminding: String?
     @State private var remindDate = Date()
 
@@ -121,6 +123,10 @@ struct TodoDetail: View {
                         .foregroundStyle(.white.opacity(0.8))
                     }
                 }
+                let shelved = context.isPreview ? [] : QuickTodo.archive(instance.config)
+                if !shelved.isEmpty {
+                    archiveSection(shelved)
+                }
                 if let step = undo.last {
                     TodoUndoBar(step: step, more: undo.count - 1) { restore() }
                         .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
@@ -188,6 +194,86 @@ struct TodoDetail: View {
                     .frame(width: 76)
             }
         }
+    }
+
+    // MARK: 已收起
+
+    /// 前几天做完的：第二天收进这里，点开能看、能恢复、能删，做完 7 天后自动清掉。
+    private func archiveSection(_ shelved: [TodoItem]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(listAnimation) { archiveOpen.toggle() }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .rotationEffect(.degrees(archiveOpen ? 90 : 0))
+                    Text(tr("已收起 \(shelved.count) 项"))
+                        .font(WidgetStyle.label(12))
+                    Spacer()
+                    Text(tr("做完 \(QuickTodo.archiveDays) 天后清掉"))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .foregroundStyle(.white.opacity(0.7))
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(archiveOpen ? tr("收起已完成") : tr("展开已完成"))
+            if archiveOpen {
+                ScrollView {
+                    VStack(spacing: 2) {
+                        ForEach(shelved) { item in
+                            archivedRow(item)
+                        }
+                    }
+                }
+                .frame(maxHeight: 160)
+                .scrollIndicators(.never)
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private func archivedRow(_ item: TodoItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: PaletteColor.orange.hex).opacity(0.6))
+            Text(item.text)
+                .font(.system(size: 12))
+                .strikethrough()
+                .foregroundStyle(.white.opacity(0.55))
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(QuickTodo.archivedDayLabel(item, today: today))
+                .font(.system(size: 10))
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.45))
+            Button {
+                withAnimation(listAnimation) { TodoLog.restore(item.id, in: instance) }
+            } label: {
+                Image(systemName: "arrow.uturn.backward.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.75))
+            }
+            .buttonStyle(.plain)
+            .help(tr("恢复成未完成"))
+            .accessibilityLabel(tr("恢复 \(item.text)"))
+            Button {
+                withAnimation(listAnimation) { TodoLog.removeArchived(item.id, in: instance) }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .help(tr("删除"))
+            .accessibilityLabel(tr("删除 \(item.text)"))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.04)))
     }
 
     private var addField: some View {

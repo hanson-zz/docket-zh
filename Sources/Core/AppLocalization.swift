@@ -71,6 +71,10 @@ enum L10n {
 
     /// 当前界面是否是英文。看的是表里的一条哨兵，测试包里永远是 false。
     static var isEnglish: Bool { lookup("__language__") == "en" }
+
+    /// 按界面语言（不是系统地区）格式化日期名字用的语言环境：月份缩写这类。
+    /// 测试包里没有表，是简体中文。
+    static var interfaceLocale: Locale { Locale(identifier: isEnglish ? "en" : "zh-Hans") }
 }
 
 /// 把中文原文换成当前界面语言的文字。

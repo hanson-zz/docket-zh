@@ -63,8 +63,14 @@ public enum StickyStack {
 
         /// 翻到下一张，最后一张之后回到第一张。
         public func flipped() -> Pile {
+            flipped(by: 1)
+        }
+
+        /// 往后（正数）或往前（负数）翻几张，首尾相接：第一张往前是最后一张。
+        /// 滚轮和触控板往下滚是下一张，往上滚是上一张。
+        public func flipped(by step: Int) -> Pile {
             var next = self
-            next.page = (page + 1) % count
+            next.page = ((page + step) % count + count) % count
             return next
         }
 

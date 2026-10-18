@@ -180,4 +180,15 @@ final class AnniversaryAxisTests: XCTestCase {
         XCTAssertGreaterThan(widths[0], Anniversary.tileWidth(layout: "single", count: 1))
         XCTAssertGreaterThanOrEqual(Anniversary.columnHeight(layout: "single", count: 1), 84)
     }
+
+    func testMonthShortFollowsTheInterfaceLocale() {
+        // 测试包没有本地化表，界面语言是简体中文。
+        XCTAssertEqual(Anniversary.monthShort(5), "5月")
+        XCTAssertEqual(Anniversary.monthShort(12, locale: Locale(identifier: "zh-Hans")), "12月")
+        XCTAssertEqual(Anniversary.monthShort(5, locale: Locale(identifier: "en")), "May")
+        XCTAssertEqual(Anniversary.monthShort(9, locale: Locale(identifier: "en")), "Sep")
+        // 越界的月份夹到 1 到 12。
+        XCTAssertEqual(Anniversary.monthShort(13, locale: Locale(identifier: "en")), "Dec")
+        XCTAssertEqual(Anniversary.monthShort(0, locale: Locale(identifier: "en")), "Jan")
+    }
 }

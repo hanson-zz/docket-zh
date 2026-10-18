@@ -187,12 +187,23 @@ extension Anniversary {
         return ("\(c.day ?? 1)", monthShort(c.month ?? 1))
     }
 
-    static let englishMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
     /// 5月；英文界面是 May，撕页和时间轴的月份字都这么短。
+    ///
+    /// 月份名不写死在代码里，按界面语言交给 `DateFormatter` 的独立月份缩写
+    /// （`shortStandaloneMonthSymbols`）：简体中文是“5月”，英文是“May”，以后多一种
+    /// 界面语言也不用改这里。
     public static func monthShort(_ month: Int) -> String {
-        L10n.isEnglish ? englishMonths[max(0, min(month - 1, 11))] : tr("\(month)月")
+        monthShort(month, locale: L10n.interfaceLocale)
+    }
+
+    static func monthShort(_ month: Int, locale: Locale) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.calendar = Calendar(identifier: .gregorian)
+        let symbols = formatter.shortStandaloneMonthSymbols ?? []
+        let index = max(0, min(month - 1, 11))
+        guard symbols.indices.contains(index) else { return tr("\(month)月") }
+        return symbols[index]
     }
 }
 

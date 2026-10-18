@@ -3,7 +3,7 @@ import Observation
 import SwiftUI
 
 /// 按全局快捷键弹出的快速待办小输入框：输入一句，回车记到扩展栏上第一个
-/// 快速待办，不打开面板。
+/// 快速待办（放在分组里的也找得到），不打开面板。
 ///
 /// 快捷键默认不设，在“设置 ▸ 快捷键”里录制（`PersistedState.quickTodoHotKey`）。
 /// 小框和刘海对话一样是不抢前台的面板，按 Esc 或点外面就收起。
@@ -30,12 +30,10 @@ final class QuickTodoCapture {
         isOpen ? close() : show()
     }
 
-    /// 记到哪一个：当前扩展栏布局里从头数第一个快速待办。
+    /// 记到哪一个：当前扩展栏布局里从头数第一个快速待办，顶层没有时找分组里的
+    /// （见 `QuickTodo.captureTarget`）。
     func target() -> WidgetInstance? {
-        for item in app?.customProfile?.items ?? [] {
-            if case .widget(let widget) = item, widget.kind == .todo { return widget }
-        }
-        return nil
+        QuickTodo.captureTarget(in: app?.customProfile?.items ?? [])
     }
 
     private func show() {

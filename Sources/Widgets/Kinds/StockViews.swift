@@ -51,6 +51,9 @@ enum StockDisplay {
         PreciousMetal.needsExchangeRate(symbols, unit: unit) ? symbols + [PreciousMetal.exchangeSymbol] : symbols
     }
 
+    /// 1 美元换多少人民币，还没取到时是 nil。
+    static func usdToCny(preview: Bool) -> Double? { rate(preview: preview) }
+
     private static func rate(preview: Bool) -> Double? {
         (preview ? StockQuote.preview(PreciousMetal.exchangeSymbol)
                  : StockService.shared.quote(PreciousMetal.exchangeSymbol))?.price

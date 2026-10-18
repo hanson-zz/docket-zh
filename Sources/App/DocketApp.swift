@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@preconcurrency import UserNotifications
 
 @main
 struct DocketMain {
@@ -44,6 +45,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var shelf: DockPanelController!
     private var menuBar: MenuBarController!
     private var observation: NSObjectProtocol?
+
+    /// 通知代理在启动完成之前就设好：点一条通知把没在运行的码头启动起来时，
+    /// 那次点击也交给 `BannerPresenter`。各个通知发送方见代理已有就不再换，
+    /// 都是同一个类，喝水、久坐、播客、股票的处理合在一起。
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = BannerPresenter.shared
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let state = AppState()

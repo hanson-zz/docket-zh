@@ -35,7 +35,14 @@ struct StockTile: View {
     private var currentIndex: Int { rotation.firstIndex(of: symbol) ?? 0 }
     private var unit: PreciousMetal.DisplayUnit { .from(instance.config) }
     private var colors: ChangeColors { StockBoard.colors(instance.config) }
-    private var alerts: [StockBoard.Alert] { StockBoard.alerts(instance.config) }
+    /// 能拿卡片上的价去比的提醒：黄金白银的提醒价单位和显示单位对不上（切了单位、
+    /// 汇率还没到）时先不算，见 `PreciousMetal.canCheck`。
+    private var alerts: [StockBoard.Alert] {
+        let rate = StockDisplay.usdToCny(preview: context.isPreview)
+        return StockBoard.alerts(instance.config).filter {
+            PreciousMetal.canCheck($0, config: instance.config, usdToCny: rate)
+        }
+    }
     private var rotates: Bool { instance.config.bool("rotate", default: true) && rotation.count > 1 }
     private var showsChart: Bool { instance.config.bool("chart", default: true) }
 
@@ -44,8 +51,22 @@ struct StockTile: View {
     }
 
     /// 要取的代码：轮播的每一只、提醒里的每一只，贵金属要元/克时加上汇率。
+    /// 提醒价还没换到当前单位时也要汇率，换完就不用了。
     private var tracked: [String] {
-        StockDisplay.tracked(StockBoard.unique(rotation + alerts.map(\.symbol)), unit: unit)
+        let symbols = StockBoard.unique(rotation + StockBoard.alerts(instance.config).map(\.symbol))
+        let list = StockDisplay.tracked(symbols, unit: unit)
+        guard PreciousMetal.alertsPending(instance.config), !list.contains(PreciousMetal.exchangeSymbol) else {
+            return list
+        }
+        return list + [PreciousMetal.exchangeSymbol]
+    }
+
+    /// 提醒价要不要换单位：设置或汇率有没有变。
+    private var unitSignature: String {
+        let rate = StockDisplay.usdToCny(preview: context.isPreview)
+        return [instance.config.string("metalUnit"), instance.config.string(PreciousMetal.alertUnitKey),
+                instance.config.strings("alerts", default: []).joined(separator: ","),
+                rate == nil ? "-" : "rate"].joined(separator: "|")
     }
 
     var body: some View {
@@ -78,6 +99,7 @@ struct StockTile: View {
         .task(id: "\(rotates)|\(rotation.joined(separator: ","))|\(manualTick)") {
             await autoRotate()
         }
+        .onChange(of: unitSignature, initial: true) { _, _ in reconcileAlertUnit() }
         .onChange(of: alertSignature, initial: true) { _, _ in checkAlerts() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityText(quote))
@@ -243,6 +265,16 @@ struct StockTile: View {
         .joined(separator: ",")
     }
 
+    /// 切过黄金白银的单位（在面板或设置里）：提醒价按汇率和克/盎司换算过去，
+    /// 汇率还没到就等它到了再换。见 `PreciousMetal.reconciled`。
+    private func reconcileAlertUnit() {
+        guard !context.isPreview else { return }
+        let rate = StockDisplay.usdToCny(preview: false)
+        let saved = WidgetWriter.current(instance.id) ?? instance
+        guard let next = PreciousMetal.reconciled(saved.config, usdToCny: rate) else { return }
+        WidgetWriter.write(saved) { $0 = next }
+    }
+
     private func checkAlerts() {
         guard !context.isPreview, !alerts.isEmpty else { return }
         var prices: [String: Double] = [:]
@@ -254,7 +286,8 @@ struct StockTile: View {
         guard !hits.isEmpty else { return }
         for hit in hits {
             let name = StockBoard.displaySymbol(hit.symbol)
-            StockAlertNotifier.shared.post(hit, name: name, price: prices[hit.symbol] ?? hit.price)
+            StockAlertNotifier.shared.post(hit, name: name, price: prices[hit.symbol] ?? hit.price,
+                                           widget: instance.id)
         }
         WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) { config in
             let kept = StockBoard.prunedFired(config.strings("alertsFired", default: []),

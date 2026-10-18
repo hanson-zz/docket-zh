@@ -143,6 +143,34 @@ final class ReminderTimingTests: XCTestCase {
         XCTAssertFalse(ReminderTiming.staysInToday(nil, now: now, calendar: calendar))
     }
 
+    func testPanelSections() {
+        let now = at(14, 9)
+        func section(_ due: ReminderDue) -> ReminderTiming.PanelSection? {
+            ReminderTiming.panelSection(due, now: now, calendar: calendar)
+        }
+        XCTAssertEqual(section(timed(at(14, 8))), .overdue)
+        XCTAssertEqual(section(allDay(at(13, 0))), .overdue)
+        XCTAssertEqual(section(timed(at(14, 23))), .today)
+        XCTAssertEqual(section(allDay(at(14, 0))), .today)
+        XCTAssertEqual(section(timed(at(15, 9))), .tomorrow)
+        XCTAssertEqual(section(allDay(at(16, 0))), .upcoming)
+        XCTAssertEqual(section(timed(at(22, 23, 59))), .upcoming, "后天起第 7 天")
+        XCTAssertNil(section(allDay(at(23, 0))))
+        XCTAssertEqual(ReminderTiming.panelEnd(now: now, calendar: calendar), at(23, 0))
+    }
+
+    func testRescheduledItemsStayInPanel() {
+        let now = at(14, 9)
+        let due = timed(at(14, 15))
+        // 推到明天、推到下周一（10/19）都还在面板里，只是换一段。
+        XCTAssertTrue(ReminderTiming.staysInPanel(ReminderTiming.tomorrow(due, now: now, calendar: calendar),
+                                                  now: now, calendar: calendar))
+        XCTAssertTrue(ReminderTiming.staysInPanel(ReminderTiming.nextMonday(due, now: now, calendar: calendar),
+                                                  now: now, calendar: calendar))
+        XCTAssertFalse(ReminderTiming.staysInPanel(timed(at(30, 9)), now: now, calendar: calendar))
+        XCTAssertFalse(ReminderTiming.staysInPanel(nil, now: now, calendar: calendar))
+    }
+
     // MARK: 优先级
 
     func testPriorityFromEventKit() {

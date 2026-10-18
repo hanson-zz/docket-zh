@@ -92,7 +92,8 @@ struct StickyNoteDetail: View {
                 }
         }
         .id(pile.page)
-        .transition(reduceMotion ? AnyTransition.opacity
+        // 减少动态效果时翻页直接换，不淡入淡出。
+        .transition(reduceMotion ? AnyTransition.identity
                     : AnyTransition.opacity.combined(with: AnyTransition.offset(x: 12, y: 0)))
     }
 
@@ -198,7 +199,7 @@ struct StickyNoteDetail: View {
         let saved = WidgetWriter.current(instance.id).map { StickyStack.pile($0.config) } ?? pile
         let before = saving ? saved.writing(draft) : saved
         let after = edit(before)
-        let animation: Animation = reduceMotion ? .easeInOut(duration: 0.12) : .snappy(duration: 0.25)
+        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.25)
         withAnimation(animation) {
             StickyLog.change(instance) { current in edit(saving ? current.writing(draft) : current) }
         }

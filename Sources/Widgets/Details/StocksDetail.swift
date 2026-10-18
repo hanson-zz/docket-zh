@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 股票和自选股的面板。
@@ -196,7 +197,7 @@ struct StocksDetail: View {
     @ViewBuilder
     private func chart(_ quote: StockQuote) -> some View {
         if quote.history.filter(\.isFinite).count >= 2 {
-            let alert = StockBoard.nearestAlert(for: symbol, price: quote.price, in: StockBoard.alerts(config))
+            let alert = StockBoard.nearestAlert(for: symbol, price: quote.price, in: checkableAlerts)
             IntradayChart(quote: quote,
                           tint: ink(quote.changePercent),
                           alert: alert?.price,
@@ -232,8 +233,18 @@ struct StocksDetail: View {
 
     // MARK: 到价提醒
 
+    /// 1 美元换多少人民币，还没取到时是 nil。
+    private var usdToCny: Double? { StockDisplay.usdToCny(preview: context.isPreview) }
+
+    /// 能拿显示的价去比的提醒（黄金白银切了单位、提醒价还没换过去的先不算）。
+    private var checkableAlerts: [StockBoard.Alert] {
+        let rate = usdToCny
+        return StockBoard.alerts(config).filter { PreciousMetal.canCheck($0, config: config, usdToCny: rate) }
+    }
+
     private var alertSection: some View {
         let mine = StockBoard.alerts(config).filter { $0.symbol == symbol }
+        let checkable = Set(checkableAlerts)
         let current = quote(symbol)?.price
         return VStack(alignment: .leading, spacing: 6) {
             Text("到价提醒")
@@ -249,7 +260,7 @@ struct StocksDetail: View {
                         .font(WidgetStyle.label(12))
                         .foregroundStyle(.white)
                         .monospacedDigit()
-                    Text(StockBoard.distanceText(alert, price: current))
+                    Text(StockBoard.distanceText(alert, price: checkable.contains(alert) ? current : nil))
                         .font(WidgetStyle.caption(11))
                         .foregroundStyle(StockInk.alert)
                     Spacer(minLength: 0)
@@ -286,9 +297,19 @@ struct StocksDetail: View {
 
     private func addAlert() {
         let raw = alertText.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "")
-        guard let target = Double(raw),
-              let alert = StockBoard.makeAlert(symbol: symbol, target: target, current: quote(symbol)?.price)
-        else { return }
+        // 黄金白银的提醒价按记账的单位存：输入的是现在显示的单位，换过去；换不过去
+        // （切了单位、汇率还没到）时先不加。
+        let rate = usdToCny
+        guard let entered = Double(raw),
+              let target = PreciousMetal.storedAlertPrice(entered, symbol: symbol, config: config, usdToCny: rate)
+        else {
+            NSSound.beep()
+            return
+        }
+        let current = (quote(symbol)?.price).flatMap {
+            PreciousMetal.storedAlertPrice($0, symbol: symbol, config: config, usdToCny: rate)
+        }
+        guard let alert = StockBoard.makeAlert(symbol: symbol, target: target, current: current) else { return }
         update { config in
             var list = config.strings("alerts", default: [])
             if !StockBoard.alerts(config).contains(alert) { list.append(alert.text) }
@@ -317,7 +338,11 @@ struct StocksDetail: View {
                 .foregroundStyle(.white.opacity(0.7))
             Picker("", selection: Binding(
                 get: { unit },
-                set: { value in update { $0.set("metalUnit", .string(value.rawValue)) } })) {
+                // 提醒价跟着换算过去，见 `PreciousMetal.switching`。
+                set: { value in
+                    let rate = usdToCny
+                    update { $0 = PreciousMetal.switching($0, to: value, usdToCny: rate) }
+                })) {
                 ForEach(PreciousMetal.DisplayUnit.allCases, id: \.self) { item in
                     Text(item.title).tag(item)
                 }

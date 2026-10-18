@@ -202,11 +202,56 @@ public enum ReminderTiming {
         return ReminderDue(date: date, hasTime: true)
     }
 
-    /// 保存后还在不在面板里：面板只列已过期和今天到期的，没有日期或者改到
-    /// 明天以后的，保存完就看不到了，要说一句。
+    /// 是不是今天以内（已过期或今天到期）。面板的分组见 `panelSection`。
     public static func staysInToday(_ due: ReminderDue?, now: Date, calendar: Calendar = .current) -> Bool {
         guard let due else { return false }
         return dayOffset(due.date, from: now, calendar: calendar) <= 0
+    }
+
+    // MARK: 面板分组
+
+    /// 提醒事项面板里的几段：已过期、今天、明天、之后 7 天（后天起再数 7 天）。
+    /// 改到明天或下周的那条留在面板里换一段显示，不会一改就消失。
+    public enum PanelSection: Int, CaseIterable, Sendable {
+        case overdue, today, tomorrow, upcoming
+
+        public var title: String {
+            switch self {
+            case .overdue: tr("已过期")
+            case .today: tr("今天")
+            case .tomorrow: tr("明天")
+            case .upcoming: tr("之后 7 天")
+            }
+        }
+    }
+
+    /// “之后 7 天”数几天（明天之后）。
+    public static let upcomingDays = 7
+
+    /// 面板取到哪一刻为止（不含）：今天零点往后 2 + 7 天，即后天起 7 天的最后
+    /// 一天过完。
+    public static func panelEnd(now: Date, calendar: Calendar = .current) -> Date {
+        let start = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .day, value: 2 + upcomingDays, to: start) ?? start
+    }
+
+    /// 这一条落在哪一段，超出“之后 7 天”的是 nil。
+    public static func panelSection(_ due: ReminderDue, now: Date,
+                                    calendar: Calendar = .current) -> PanelSection? {
+        if isOverdue(due, now: now, calendar: calendar) { return .overdue }
+        switch dayOffset(due.date, from: now, calendar: calendar) {
+        case ...0: return .today
+        case 1: return .tomorrow
+        case 2...(1 + upcomingDays): return .upcoming
+        default: return nil
+        }
+    }
+
+    /// 保存或改期后还在不在面板里：没有日期，或者改到“之后 7 天”以后的看不到了，
+    /// 要说一句。
+    public static func staysInPanel(_ due: ReminderDue?, now: Date, calendar: Calendar = .current) -> Bool {
+        guard let due else { return false }
+        return panelSection(due, now: now, calendar: calendar) != nil
     }
 
     // MARK: 和 EventKit 互换

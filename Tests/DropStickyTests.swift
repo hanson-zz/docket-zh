@@ -135,4 +135,26 @@ final class DropStickyTests: XCTestCase {
         XCTAssertTrue(entry.variants.isEmpty, "颜色在面板和设置里选，不占添加面板")
         XCTAssertEqual(WidgetCatalog.configurableKeys(.notes), ["color", "text"])
     }
+
+    func testFlippingBackAndForthWraps() {
+        let pile = StickyStack.Pile(sheets: [StickySheet(text: "一"), StickySheet(text: "二"), StickySheet(text: "三")])
+        XCTAssertEqual(pile.flipped(by: -1).front.text, "三", "第一张往前是最后一张")
+        XCTAssertEqual(pile.flipped(by: 1).front.text, "二")
+        XCTAssertEqual(pile.flipped(by: 4).front.text, "二")
+        XCTAssertEqual(pile.flipped(by: -1).flipped(by: 1), pile)
+        let single = StickyStack.Pile(sheets: [StickySheet(text: "独")])
+        XCTAssertEqual(single.flipped(by: -1), single)
+    }
+
+    func testWheelPagingStepsOncePerGesture() {
+        // 滚轮一格就翻；触控板滑够距离翻一张，同一下手势不连翻。
+        var gesture = LayoutGesture()
+        XCTAssertEqual(gesture.feed(-1, precise: false, at: 0), 1)
+        XCTAssertEqual(gesture.feed(1, precise: false, at: 1), -1)
+        var swipe = LayoutGesture()
+        swipe.begin()
+        XCTAssertNil(swipe.feed(-20, precise: true, at: 10))
+        XCTAssertEqual(swipe.feed(-30, precise: true, at: 10.05), 1)
+        XCTAssertNil(swipe.feed(-80, precise: true, at: 10.1))
+    }
 }

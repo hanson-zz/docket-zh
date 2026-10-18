@@ -493,10 +493,11 @@ public final class AppState {
 
     public func updateWidget(_ instance: WidgetInstance, in profileID: UUID? = nil) {
         let target = profileID ?? state.customDock.profileID
+        // 分组里的小组件也要找得到，不然它写下的东西（分组里的快速待办记的一条）会丢。
         guard let target, let pIndex = index(of: target),
-              let iIndex = state.profiles[pIndex].items.firstIndex(where: { $0.id == instance.id })
+              let items = ShelfItems.replacingWidget(instance, in: state.profiles[pIndex].items)
         else { return }
-        state.profiles[pIndex].items[iIndex] = .widget(instance)
+        state.profiles[pIndex].items = items
     }
 
     // MARK: Effective appearance

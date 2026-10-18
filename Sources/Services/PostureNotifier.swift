@@ -59,6 +59,9 @@ final class PostureNotifier {
 /// 不再叠一声系统默认提示音；勿扰、屏幕共享和短时间连着几条只响一声都在
 /// `ReminderSoundPlayer` 里判断。应用没在运行时系统照通知里带的声音响。
 final class BannerPresenter: NSObject, UNUserNotificationCenterDelegate, Sendable {
+    /// 启动时设成通知代理的那一个。代理是弱引用，放在这里一直留着。
+    static let shared = BannerPresenter()
+
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions {
@@ -67,5 +70,19 @@ final class BannerPresenter: NSObject, UNUserNotificationCenterDelegate, Sendabl
         }
         await MainActor.run { _ = ReminderSoundPlayer.shared.play(kind) }
         return [.banner, .list]
+    }
+
+    /// 点了通知本身：带着小组件 id 的（股票到价等，见 `NotificationRoute`）请扩展栏
+    /// 打开那张小组件的面板。所有通知共用这一个代理类，谁先设成代理都一样处理，
+    /// 喝水、久坐、播客这些不带 id 的照旧只把码头带到前台。
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse) async {
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+              let id = NotificationRoute.widgetID(from: response.notification.request.content.userInfo)
+        else { return }
+        await MainActor.run {
+            NotificationCenter.default.post(name: ReminderPopupCenter.openPanelRequest, object: nil,
+                                            userInfo: ["id": id.uuidString])
+        }
     }
 }

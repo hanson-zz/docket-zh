@@ -5134,6 +5134,17 @@
         }
       }
     },
+    "之后 7 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next 7 Days"
+          }
+        }
+      }
+    },
     "之后还能拿回来" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7165,6 +7176,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What for"
+          }
+        }
+      }
+    },
+    "做完 %@ 天后清掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleared %@ days after done"
           }
         }
       }
@@ -14273,6 +14295,17 @@
         }
       }
     },
+    "展开已完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand completed"
+          }
+        }
+      }
+    },
     "岁" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14405,13 +14438,13 @@
         }
       }
     },
-    "已保存到“提醒事项”。它不是今天到期的，所以不在这里显示。" : {
+    "已保存到“提醒事项”。它不在之后 7 天内，所以不在这里显示。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saved to Reminders. It is not due today, so it is not shown here."
+            "value" : "Saved to Reminders. It is not due within the next 7 days, so it is not shown here."
           }
         }
       }
@@ -14929,6 +14962,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Closed"
+          }
+        }
+      }
+    },
+    "已收起 %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ tucked away"
           }
         }
       }
@@ -16736,6 +16780,17 @@
         }
       }
     },
+    "恢复 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore %@"
+          }
+        }
+      }
+    },
     "恢复…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16765,6 +16820,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore Original Dock"
+          }
+        }
+      }
+    },
+    "恢复成未完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore as not done"
           }
         }
       }
@@ -19218,6 +19284,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide appearance"
+          }
+        }
+      }
+    },
+    "收起已完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse completed"
           }
         }
       }

@@ -103,7 +103,8 @@ extension QuickTodo {
     /// 上一次按“新的一天”收拾清单是哪天。
     public static let dayKey = "day"
 
-    /// 第二天收拾清单：昨天以前做完的收起（清掉），没记日子的老条目记成今天。
+    /// 第二天收拾清单：昨天以前做完的从清单里拿掉（`applyRollover` 把它们挪进
+    /// 收起区），没记日子的老条目记成今天。
     ///
     /// 没做完的留着，由面板顶部问一句顺延还是放弃（见 `leftover`）。旧版本写下
     /// 的条目没有日子，一律当作今天记下、今天做完，升级当天不会被当成“昨天的”。
@@ -127,9 +128,17 @@ extension QuickTodo {
     }
 
     /// 收拾一遍并记下今天。今天已经收拾过时什么也不改。
-    public static func applyRollover(in config: inout WidgetConfig, today: String) {
+    ///
+    /// 昨天以前做完的挪进收起区（见 `QuickTodoArchive.swift`），在那里留 7 天，
+    /// 过期的这时一并清掉。
+    public static func applyRollover(in config: inout WidgetConfig, today: String,
+                                     calendar: Calendar = .current) {
         guard needsRollover(config, today: today) else { return }
-        store(rollingOver(items(config), today: today), in: &config)
+        let current = items(config)
+        let moved = archiving(current, today: today)
+        let kept = prunedArchive(moved + archive(config), today: today, calendar: calendar)
+        storeArchive(kept, in: &config)
+        store(rollingOver(current, today: today), in: &config)
         config.set(dayKey, .string(today))
     }
 

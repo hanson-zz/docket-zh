@@ -9,7 +9,7 @@ import SwiftUI
 /// small button that opens it. Text, links and files dropped on the card each
 /// become a task.
 ///
-/// 第二天第一次显示时先收拾一遍（`QuickTodo.applyRollover`）：昨天做完的收起，
+/// 第二天第一次显示时先收拾一遍（`QuickTodo.applyRollover`）：昨天做完的收进“已收起”（留 7 天），
 /// 没做完的留给面板顶部问顺延还是放弃。
 ///
 /// 设了提醒时间的一行后面有个小闹钟和时刻；到点那一秒弹出卡片（到点弹出卡片
@@ -356,6 +356,24 @@ enum TodoLog {
         let day = today
         change(instance) { items in
             drops.reduce(items) { QuickTodo.adding($1.text, to: $0, link: $1.link, day: day) }
+        }
+    }
+
+    /// 从“已收起”里恢复一条，放回清单末尾当作今天没做完的。
+    static func restore(_ id: String, in instance: WidgetInstance) {
+        let day = today
+        WidgetWriter.write(latest(instance)) { config in
+            let result = QuickTodo.restoring(id, items: QuickTodo.items(config),
+                                             archive: QuickTodo.archive(config), today: day)
+            QuickTodo.store(result.items, in: &config)
+            QuickTodo.storeArchive(result.archive, in: &config)
+        }
+    }
+
+    /// 从“已收起”里删掉一条。
+    static func removeArchived(_ id: String, in instance: WidgetInstance) {
+        WidgetWriter.write(latest(instance)) { config in
+            QuickTodo.storeArchive(QuickTodo.removingArchived(id, from: QuickTodo.archive(config)), in: &config)
         }
     }
 

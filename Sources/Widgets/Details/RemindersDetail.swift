@@ -10,7 +10,8 @@ import SwiftUI
 /// first time it opens without an answer it asks for access itself; once the
 /// answer is no it says so in a line and offers System Settings.
 ///
-/// 列出的仍是还没完成、今晚前到期的（已过期和今天两段），可以：
+/// 列出还没完成的：已过期、今天、明天、之后 7 天四段（改到明天或下周的那条
+/// 换一段留着，不会一改就消失），可以：
 /// - 点行前的圆圈完成；
 /// - 点一行展开内联编辑：标题、日期和时刻（都可以不要）、优先级、列表，回车保存，
 ///   也能在这里删除；
@@ -88,8 +89,8 @@ struct RemindersDetail: View {
         // "Today" long after its time had passed.
         TimelineView(.periodic(from: .now, by: 60)) { timeline in
             content(now: timeline.date)
-                // The fetch asks for everything due by tonight, so at midnight
-                // the window itself has moved on.
+                // The fetch window is counted from today, so at midnight it
+                // has moved on.
                 .onChange(of: Calendar.current.startOfDay(for: timeline.date)) { _, _ in load() }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -116,8 +117,9 @@ struct RemindersDetail: View {
     @ViewBuilder
     private func content(now: Date) -> some View {
         let shown = rows.filter { !finishing.contains($0.id) }
-        let overdue = shown.filter { $0.isOverdue(now) }
-        let today = shown.filter { !$0.isOverdue(now) }
+        let sections = Self.sections(shown, now: now)
+        let overdue = sections[.overdue] ?? []
+        let today = sections[.today] ?? []
 
         // Red once anything is late, the widget's own colour otherwise: the
         // card says whether you are behind before a title is read.
@@ -132,7 +134,7 @@ struct RemindersDetail: View {
                             .transition(.opacity)
                     }
                     if !shown.isEmpty {
-                        list(overdue: overdue, today: today, now: now)
+                        list(sections, now: now)
                     }
                     if let notice {
                         Text(notice)
@@ -201,23 +203,38 @@ struct RemindersDetail: View {
 
     // MARK: List
 
-    /// Overdue first, then the rest of today, each in due order.
+    /// 每一段里的提醒，按到期先后；超出“之后 7 天”的不列。
+    private static func sections(_ rows: [DueReminder],
+                                 now: Date) -> [ReminderTiming.PanelSection: [DueReminder]] {
+        var result: [ReminderTiming.PanelSection: [DueReminder]] = [:]
+        for row in rows {
+            guard let section = ReminderTiming.panelSection(row.dueValue, now: now) else { continue }
+            result[section, default: []].append(row)
+        }
+        return result
+    }
+
+    /// Overdue first, then the rest of today, then tomorrow and the week
+    /// after, each in due order.
     ///
-    /// Two labelled sections rather than one stream: "yesterday 09:00" and
+    /// Labelled sections rather than one stream: "yesterday 09:00" and
     /// "18:00" sitting in the same list look like the same kind of thing, and
     /// the whole point of the panel is that they are not.
     @ViewBuilder
-    private func list(overdue: [DueReminder], today: [DueReminder], now: Date) -> some View {
+    private func list(_ sections: [ReminderTiming.PanelSection: [DueReminder]], now: Date) -> some View {
         // The cut falls on the overdue block first: what is already late
-        // outranks what is merely coming.
-        let shownOverdue = Array(overdue.prefix(Self.visibleRows))
-        let shownToday = Array(today.prefix(max(0, Self.visibleRows - shownOverdue.count)))
-        let hidden = overdue.count + today.count - shownOverdue.count - shownToday.count
+        // outranks what is merely coming, and today outranks next week.
+        let cut = Self.cut(sections)
+        let total = sections.values.reduce(0) { $0 + $1.count }
+        let hidden = total - cut.values.reduce(0) { $0 + $1.count }
 
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                section(tr("已过期"), shownOverdue, tint: .white, now: now)
-                section(tr("今天"), shownToday, tint: .white.opacity(0.7), now: now)
+                ForEach(ReminderTiming.PanelSection.allCases, id: \.self) { part in
+                    section(part.title, cut[part] ?? [],
+                            tint: part == .overdue ? .white : .white.opacity(part == .today ? 0.7 : 0.55),
+                            now: now)
+                }
                 if hidden > 0 {
                     Text(tr("“提醒事项”中还有 \(hidden) 项"))
                         .font(WidgetStyle.caption(11))
@@ -227,6 +244,19 @@ struct RemindersDetail: View {
         }
         .frame(maxHeight: 380)
         .scrollIndicators(.never)
+    }
+
+    /// 最多画 `visibleRows` 行，按段的先后分。
+    private static func cut(_ sections: [ReminderTiming.PanelSection: [DueReminder]])
+        -> [ReminderTiming.PanelSection: [DueReminder]] {
+        var left = visibleRows
+        var result: [ReminderTiming.PanelSection: [DueReminder]] = [:]
+        for part in ReminderTiming.PanelSection.allCases {
+            let rows = Array((sections[part] ?? []).prefix(left))
+            left -= rows.count
+            result[part] = rows
+        }
+        return result
     }
 
     @ViewBuilder
@@ -473,8 +503,8 @@ struct RemindersDetail: View {
             return
         }
         editing = nil
-        if !ReminderTiming.staysInToday(due, now: Date()) {
-            notice = tr("已保存到“提醒事项”。它不是今天到期的，所以不在这里显示。")
+        if !ReminderTiming.staysInPanel(due, now: Date()) {
+            notice = tr("已保存到“提醒事项”。它不在之后 7 天内，所以不在这里显示。")
         }
         load()
     }
@@ -492,7 +522,7 @@ struct RemindersDetail: View {
     private func reschedule(_ item: DueReminder, to due: ReminderDue) {
         guard !context.isPreview else { return }
         if ReminderSync.reschedule(item.id, to: due) {
-            if !ReminderTiming.staysInToday(due, now: Date()) {
+            if !ReminderTiming.staysInPanel(due, now: Date()) {
                 notice = tr("已推迟“\(item.title)”。")
             }
         } else {
@@ -559,8 +589,9 @@ struct RemindersDetail: View {
 
     // MARK: Store
 
-    /// Everything incomplete and dated up to the end of today, which is
-    /// overdue and today's in one predicate. Reminders with no due date are
+    /// Everything incomplete and dated up to the end of the week after
+    /// tomorrow (`ReminderTiming.panelEnd`): overdue, today, tomorrow and the
+    /// next seven days in one predicate. Reminders with no due date are
     /// not returned by a dated predicate, and the panel does not pretend
     /// otherwise: it is a list of what is *due*.
     private func load() {
@@ -584,12 +615,11 @@ struct RemindersDetail: View {
         // empty panel would read as "nothing due".
         let scope = listFilter.isEmpty ? all : all.filter { $0.title == listFilter }
         let wanted = scope.isEmpty ? all : scope
-        guard !wanted.isEmpty,
-              let end = Calendar.current.date(byAdding: .day, value: 1,
-                                              to: Calendar.current.startOfDay(for: Date())) else {
+        guard !wanted.isEmpty else {
             rows = []
             return
         }
+        let end = ReminderTiming.panelEnd(now: Date())
 
         generation += 1
         let token = generation
