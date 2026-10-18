@@ -27,6 +27,10 @@ final class WaterNotifier {
     private var armed: [UUID: Date] = [:]
     /// 每个小组件最近一次交来的下一次提醒，设置切换时按它重排。
     private var latest: [UUID: (instance: WidgetInstance, next: Date?)] = [:]
+    /// 这次启动里已经撤过系统通知的小组件。`scheduled` 只记这次启动排的，上次
+    /// 运行（或升级前的版本）排下、还没到点的那条系统里还留着，弹卡片时不撤
+    /// 就会和卡片同一刻各来一次。
+    private var purged: Set<UUID> = []
 
     private init() {}
 
@@ -38,7 +42,8 @@ final class WaterNotifier {
         let id = Self.identifier(instance.id)
         if ReminderPopupCenter.shared.shows(.water) {
             // 弹卡片：撤掉排着的系统通知，改由应用里的计时器到点弹出。
-            if scheduled.removeValue(forKey: instance.id) != nil {
+            let hadOne = scheduled.removeValue(forKey: instance.id) != nil
+            if hadOne || purged.insert(instance.id).inserted {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
             }
             arm(instance.id, at: next)
@@ -89,6 +94,11 @@ final class WaterNotifier {
         RunLoop.main.add(timer, forMode: .common)
         timers[widget] = timer
     }
+
+    /// 弹卡片的计时器还在等的那几刻。快到点时 `TimedAlertDriver` 请系统别把计时器
+    /// 往后推（App Nap），喝水也算进去，免得晚过 `ReminderPopupDecision.isFresh`
+    /// 的期限、这一次就不弹了。
+    var armedTimes: [Date] { Array(armed.values) }
 
     private func disarm(_ widget: UUID) {
         timers.removeValue(forKey: widget)?.invalidate()

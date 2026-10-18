@@ -41,6 +41,10 @@ final class TimedAlertDriver {
     private var fetchedScope: Set<String>?? = .none
     private var fetching = false
     private var storeObserver: NSObjectProtocol?
+    /// 上一次看到的提醒事项权限。从没权限变成有权限时，共用的那个 store 要
+    /// `reset()` 一下才读得到东西（和提醒事项卡片一样），否则卡片不在屏幕上时
+    /// 这里一直读成空的。
+    private var reminderAccess: EKAuthorizationStatus?
 
     private init() {}
 
@@ -80,6 +84,8 @@ final class TimedAlertDriver {
         }
         withdrawStale(all, now: now)
         remindersTick(all, after: old, now: now, upcoming: &upcoming)
+        // 喝水的卡片由 WaterNotifier 自己的计时器弹，这里只帮它在快到点时挡住 App Nap。
+        upcoming += WaterNotifier.shared.armedTimes
         keepPrecise(TimedAlertWake.needsPrecision(next: TimedAlertWake.soonest(upcoming, after: now),
                                                   ringing: ringing, now: now))
     }
@@ -138,6 +144,8 @@ final class TimedAlertDriver {
 
     /// 卡片上点了停、关掉、稍后，或者关掉了那个闹钟：弹出的那张跟着收起。
     private func withdrawStale(_ all: [WidgetInstance], now: Date) {
+        // 绝大多数时候没有弹着的计时卡片，不用每秒为它建一张表。
+        guard ReminderPopupCenter.shared.pending.contains(where: { $0.kind.isTimer }) else { return }
         let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var gone: Set<String> = []
         for alert in ReminderPopupCenter.shared.pending where alert.kind.isTimer {
@@ -185,16 +193,24 @@ final class TimedAlertDriver {
 
     private func remindersTick(_ all: [WidgetInstance], after old: Date, now: Date, upcoming: inout [Date]) {
         let tiles = all.filter { $0.kind == .reminders }
-        guard !tiles.isEmpty, EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else {
+        let status: EKAuthorizationStatus? = tiles.isEmpty ? nil : EKEventStore.authorizationStatus(for: .reminder)
+        if let status, status != reminderAccess {
+            if status == .fullAccess, reminderAccess != nil { ReminderSync.store.reset() }
+            reminderAccess = status
+            fetchedAt = nil
+        }
+        guard !tiles.isEmpty, status == .fullAccess else {
             reminders = []
             reminderWidget = nil
+            // 清空了就要记得重读：卡片放回来、权限给了，下一秒就读，不等 5 分钟。
+            fetchedAt = nil
             return
         }
         reminderWidget = tiles.first?.id
         let scope = ReminderScanScope.lists(filters: tiles.map { $0.config.string("list") })
         let day = Calendar.current.startOfDay(for: now)
-        if fetchedAt == nil || now.timeIntervalSince(fetchedAt ?? now) >= 300 || fetchedDay != day
-            || fetchedScope != .some(scope) {
+        if ReminderRefetch.needed(fetchedAt: fetchedAt, fetchedDay: fetchedDay, fetchedScope: fetchedScope,
+                                  now: now, day: day, scope: scope) {
             fetchReminders(scope: scope, day: day, now: now)
         }
         upcoming += reminders.filter(\.due.hasTime).map(\.due.date)

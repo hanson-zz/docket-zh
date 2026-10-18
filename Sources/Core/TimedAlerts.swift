@@ -170,6 +170,24 @@ public enum ReminderScanScope {
     }
 }
 
+// MARK: - 提醒事项什么时候重读
+
+public enum ReminderRefetch {
+    /// 没有别的变化时多久重读一次。
+    public static let interval: TimeInterval = 5 * 60
+
+    /// 要不要重读：还没读过（或清空过）、隔了 `interval`、过了午夜、要读的列表变了，
+    /// 或者系统时间往回拨过（上次读的时刻在现在之后，不重读就要等到拨回去的
+    /// 那段时间走完才会再读）。
+    public static func needed(fetchedAt: Date?, fetchedDay: Date?, fetchedScope: Set<String>??,
+                              now: Date, day: Date, scope: Set<String>?) -> Bool {
+        guard let fetchedAt else { return true }
+        let since = now.timeIntervalSince(fetchedAt)
+        if since >= interval || since < 0 { return true }
+        return fetchedDay != day || fetchedScope != .some(scope)
+    }
+}
+
 // MARK: - 日程悬停详情
 
 /// 日历时间线和一周日程悬停时浮出来的那张小卡片上的一条日程。
