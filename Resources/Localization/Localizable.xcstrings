@@ -1574,6 +1574,28 @@
         }
       }
     },
+    "%@万" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@×10K"
+          }
+        }
+      }
+    },
+    "%@亿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@×100M"
+          }
+        }
+      }
+    },
     "%@假期第 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
