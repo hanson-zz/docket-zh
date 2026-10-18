@@ -4,6 +4,10 @@ import SwiftUI
 /// between what is still to come and what has passed. Click a date to edit
 /// it; the button at the bottom adds one. A date can be pinned to the single
 /// card from its editor or its context menu.
+///
+/// 单个卡片和多个卡片点开不一样：单个卡片开它显示的那一个的专属页
+/// （`AnniversaryEventPage`），多个卡片开时间线，顶部有“这个月”的小概览；在多个
+/// 卡片里点某一列，直接开那一列的专属页。开哪一页记在 `AnniversaryRoute`。
 struct AnniversaryDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -41,8 +45,80 @@ struct AnniversaryDetail: View {
 
     private static let todayRed = Color(hex: PaletteColor.red.hex)
 
+    private var route: AnniversaryRoute { .shared }
+
+    private var isMulti: Bool { instance.config.string("layout", default: "single") == "multi" }
+
+    /// 现在这一页要讲的那个纪念日；在时间线上时是 nil。
+    ///
+    /// 记过页就按记的来（那个纪念日删掉了就回时间线）；没记过，单个卡片开它显示的
+    /// 那一个，多个卡片开时间线。
+    private func shownReading(_ all: [AnniversaryEvent]) -> AnniversaryReading? {
+        let page = context.isPreview ? nil : route.page(instance.id)
+        switch page {
+        case .timeline?:
+            return nil
+        case .event(let id)?:
+            guard let event = all.first(where: { $0.id == id }) else { return nil }
+            return Anniversary.reading(event, today: context.now)
+        case nil:
+            guard !isMulti else { return nil }
+            return Anniversary.featured(all, pinned: pinned, today: context.now)
+        }
+    }
+
     var body: some View {
         let all = events
+        if let reading = shownReading(all) {
+            eventScreen(reading, all: all)
+        } else {
+            timelineScreen(all)
+        }
+    }
+
+    // MARK: Event page
+
+    private func eventScreen(_ reading: AnniversaryReading, all: [AnniversaryEvent]) -> some View {
+        DetailCard {
+            MeshBackdrop(color: AnniversaryTile.base(reading.event))
+        } content: {
+            Group {
+                if let draft {
+                    VStack(alignment: .leading, spacing: 12) {
+                        AnniversaryBackButton { showTimeline() }
+                        editor(draft)
+                    }
+                } else {
+                    AnniversaryEventPage(
+                        reading: reading, events: all, pinned: pinned,
+                        showsSwitcher: !isMulti, now: context.now, isPreview: context.isPreview,
+                        onBack: { showTimeline() },
+                        onEdit: { begin(reading.event) },
+                        onPick: { id in
+                            AnniversaryLog.pin(id, in: instance)
+                            route.show(.event(id), in: instance.id)
+                        })
+                }
+            }
+        }
+        .animation(.snappy(duration: 0.25), value: draft)
+    }
+
+    private func showTimeline() {
+        draft = nil
+        guard !context.isPreview else { return }
+        withAnimation(.snappy(duration: 0.25)) { route.show(.timeline, in: instance.id) }
+    }
+
+    private func showEvent(_ id: String) {
+        guard !context.isPreview else { return }
+        draft = nil
+        withAnimation(.snappy(duration: 0.25)) { route.show(.event(id), in: instance.id) }
+    }
+
+    // MARK: Timeline page
+
+    private func timelineScreen(_ all: [AnniversaryEvent]) -> some View {
         let shown = all.filter { event in
             switch tab {
             case .all: true
@@ -56,6 +132,7 @@ struct AnniversaryDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(all)
+                if !all.isEmpty, draft == nil { monthOverview(all) }
                 Picker("", selection: $tab) {
                     Text("时间线").tag(Tab.all)
                     Text("倒数").tag(Tab.countdown)
@@ -81,6 +158,46 @@ struct AnniversaryDetail: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: draft)
+    }
+
+    // MARK: This month
+
+    /// 这个月：10 月有 2 个纪念日，最近的「生日」还有 12 天。
+    private func monthOverview(_ all: [AnniversaryEvent]) -> some View {
+        let summary = Anniversary.monthSummary(all, today: context.now)
+        let text: String
+        if summary.count == 0 {
+            text = tr("\(summary.month) 月没有纪念日")
+        } else if let nearest = summary.nearest, let days = summary.nearestDays {
+            text = days == 0
+                ? tr("\(summary.month) 月有 \(summary.count) 个纪念日，「\(nearest.title)」就是今天")
+                : tr("\(summary.month) 月有 \(summary.count) 个纪念日，最近的「\(nearest.title)」还有 \(days) 天")
+        } else {
+            text = tr("\(summary.month) 月有 \(summary.count) 个纪念日，都已经过去了")
+        }
+        return Button {
+            if let nearest = summary.nearest { showEvent(nearest.id) }
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("这个月")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                Text(text)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .monospacedDigit()
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassPane(cornerRadius: 10)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview || summary.nearest == nil)
+        .help(summary.nearest == nil ? "" : tr("点按打开最近的这个纪念日"))
     }
 
     // MARK: Header
@@ -249,6 +366,7 @@ struct AnniversaryDetail: View {
 
     @ViewBuilder
     private func menu(_ event: AnniversaryEvent) -> some View {
+        Button("打开专属页") { showEvent(event.id) }
         Button("编辑") { begin(event) }
         if pinned == event.id {
             Button("不再固定在卡片上") { AnniversaryLog.pin(nil, in: instance) }

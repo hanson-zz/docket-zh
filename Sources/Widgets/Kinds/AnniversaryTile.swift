@@ -3,12 +3,19 @@ import SwiftUI
 /// Days to go, or days since: one date with a big number and a small ring,
 /// or two to three dates side by side.
 ///
-/// Nothing on the card is a control: the card's own click opens the panel,
-/// where dates are added, edited, pinned and looked over on a timeline. See
+/// The single card has no controls: its own click opens the panel on the
+/// page of the date it shows. On the multi card each column is a button that
+/// opens the panel straight on that date's page (see `AnniversaryRoute`), and
+/// lights up a little under the pointer; the card's own click, between the
+/// columns, opens the timeline where dates are added, edited and pinned. See
 /// `Anniversary` for the counting.
 struct AnniversaryTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
+
+    /// 指针下面是第几列（多个卡片），没有指着哪一列时是 nil。
+    @State private var hoveredColumn: Int?
+    @Environment(\.widgetHovered) private var tileHovered
 
     private var events: [AnniversaryEvent] {
         context.isPreview ? AnniversarySamples.events : Anniversary.events(instance.config)
@@ -180,8 +187,57 @@ struct AnniversaryTile: View {
                         .fill(WidgetStyle.primary.opacity(0.12))
                         .frame(width: 0.5, height: 34)
                 }
-                compact(reading, nameSize: 10, valueSize: 17, captionSize: 9)
-                    .frame(maxWidth: .infinity)
+                pickable(reading, index: index) {
+                    compact(reading, nameSize: 10, valueSize: 17, captionSize: 9)
+                        .padding(.vertical, 3)
+                        .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .background { tracker(count: readings.count, vertical: false) }
+    }
+
+    // MARK: Columns as buttons
+
+    /// One column of the multi card: a button that opens the panel on this
+    /// date's page, lit a little while the pointer is over it. Drawn without
+    /// the button in the library, where the card's own click adds the widget.
+    @ViewBuilder
+    private func pickable<Content: View>(_ reading: AnniversaryReading, index: Int,
+                                         @ViewBuilder content: () -> Content) -> some View {
+        let lit = tileHovered && hoveredColumn == index && !context.isPreview
+        let label = content()
+            .background {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(WidgetStyle.primary.opacity(lit ? 0.09 : 0))
+            }
+            .contentShape(.rect)
+            .animation(.smooth(duration: 0.15), value: lit)
+        if context.isPreview {
+            label
+        } else {
+            Button {
+                AnniversaryRoute.shared.open(reading.event.id, in: instance.id)
+            } label: {
+                label
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("打开「\(reading.event.title)」"))
+        }
+    }
+
+    /// Which column the pointer is over, from where it sits across the row
+    /// (or down the column on a side shelf).
+    @ViewBuilder
+    private func tracker(count: Int, vertical: Bool) -> some View {
+        if !context.isPreview, count > 1 {
+            PointerFraction { point in
+                let index = point.map { point -> Int in
+                    let along = min(max(vertical ? point.y : point.x, 0), 0.999)
+                    return Int(along * Double(count))
+                }
+                if index != hoveredColumn { hoveredColumn = index }
             }
         }
     }
@@ -222,31 +278,36 @@ struct AnniversaryTile: View {
     /// 56pt across: a name over its number, up to three.
     private func columnList(_ readings: [AnniversaryReading]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(readings, id: \.event.id) { reading in
-                let tint = Self.tint(reading.event)
-                let today = reading.phase == .today || (reading.isToday && reading.event.kind == .countdown)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(reading.event.title)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(today ? tr("今天") : "\(reading.days)")
-                            .font(.system(size: 14, weight: .bold))
-                            .monospacedDigit()
-                        if !today {
-                            Text(reading.phase == .past ? tr("天前") : tr("天"))
-                                .font(.system(size: 9, weight: .semibold))
-                        }
-                    }
-                    .foregroundStyle(tint)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                }
-                .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+            ForEach(Array(readings.enumerated()), id: \.element.event.id) { index, reading in
+                pickable(reading, index: index) { columnRow(reading) }
             }
         }
+        .background { tracker(count: readings.count, vertical: true) }
+    }
+
+    private func columnRow(_ reading: AnniversaryReading) -> some View {
+        let tint = Self.tint(reading.event)
+        let today = reading.phase == .today || (reading.isToday && reading.event.kind == .countdown)
+        return VStack(alignment: .leading, spacing: 0) {
+            Text(reading.event.title)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(WidgetStyle.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(today ? tr("今天") : "\(reading.days)")
+                    .font(.system(size: 14, weight: .bold))
+                    .monospacedDigit()
+                if !today {
+                    Text(reading.phase == .past ? tr("天前") : tr("天"))
+                        .font(.system(size: 9, weight: .semibold))
+                }
+            }
+            .foregroundStyle(tint)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
     }
 
     // MARK: Colour

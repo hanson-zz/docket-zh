@@ -144,6 +144,17 @@
         }
       }
     },
+    "%@ %@ 起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Since %@ %@"
+          }
+        }
+      }
+    },
     "%@ · %@ 个小组件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -888,6 +899,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@/%@"
+          }
+        }
+      }
+    },
+    "%@ 月有 %@ 个纪念日，「%@」就是今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ dates in month %1$@. %3$@ is today"
+          }
+        }
+      }
+    },
+    "%@ 月有 %@ 个纪念日，最近的「%@」还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ dates in month %1$@. Next: %3$@ in %4$@ days"
+          }
+        }
+      }
+    },
+    "%@ 月有 %@ 个纪念日，都已经过去了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ dates in month %1$@, all passed"
+          }
+        }
+      }
+    },
+    "%@ 月没有纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No dates in month %@"
           }
         }
       }
@@ -4760,6 +4815,17 @@
         }
       }
     },
+    "今天是第 %@ 个周年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversary %@ is today"
+          }
+        }
+      }
+    },
     "今天未达标时显示" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6923,6 +6989,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "M"
+          }
+        }
+      }
+    },
+    "分享图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Image"
+          }
+        }
+      }
+    },
+    "分享图预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share image preview"
           }
         }
       }
@@ -9427,6 +9515,17 @@
         }
       }
     },
+    "回到时间线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the timeline"
+          }
+        }
+      }
+    },
     "回到本月" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9621,6 +9720,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rounded"
+          }
+        }
+      }
+    },
+    "圆点是下一个，打勾是已经过了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dot is next, ticks have passed"
           }
         }
       }
@@ -10618,6 +10728,17 @@
         }
       }
     },
+    "天后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "days to go"
+          }
+        }
+      }
+    },
     "天气" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10845,6 +10966,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "存为图片…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Image…"
           }
         }
       }
@@ -12348,6 +12480,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saved to Desktop: %@"
+          }
+        }
+      }
+    },
+    "已存储：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved: %@"
           }
         }
       }
@@ -14562,6 +14705,28 @@
         }
       }
     },
+    "打开「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@"
+          }
+        }
+      }
+    },
+    "打开专属页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Its Page"
+          }
+        }
+      }
+    },
     "打开仓库" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15387,6 +15552,17 @@
         }
       }
     },
+    "换一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch"
+          }
+        }
+      }
+    },
     "换一个城市或时区" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15394,6 +15570,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change city or time zone"
+          }
+        }
+      }
+    },
+    "换一个显示在单个卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show another date on the single card"
           }
         }
       }
@@ -15482,6 +15669,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "From the day before, until %@"
+          }
+        }
+      }
+    },
+    "接下来几个周年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming Anniversaries"
           }
         }
       }
@@ -16857,6 +17055,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't save to Desktop"
+          }
+        }
+      }
+    },
+    "无法存储图片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the image"
           }
         }
       }
@@ -22455,6 +22664,17 @@
         }
       }
     },
+    "点按打开最近的这个纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to open the nearest date"
+          }
+        }
+      }
+    },
     "点按打开，拖移到其他地方即可使用" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23940,6 +24160,17 @@
         }
       }
     },
+    "码头纪念日-%@.png" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling-%@.png"
+          }
+        }
+      }
+    },
     "码头要关闭低电量模式。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24068,6 +24299,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sample artist"
+          }
+        }
+      }
+    },
+    "离第 %@ 个周年还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversary %1$@ in %2$@ days"
           }
         }
       }
@@ -24435,6 +24677,17 @@
         }
       }
     },
+    "第 %@ 个周年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversary %@"
+          }
+        }
+      }
+    },
     "第 %@ 个电台，共 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24442,6 +24695,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Station %@ of %@"
+          }
+        }
+      }
+    },
+    "第 %@ 年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year %@"
           }
         }
       }
@@ -24574,6 +24838,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expression too long"
+          }
+        }
+      }
+    },
+    "管理全部纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage All Dates"
           }
         }
       }
@@ -28277,6 +28552,17 @@
         }
       }
     },
+    "还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days left"
+          }
+        }
+      }
+    },
     "还有 %@ 项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28581,6 +28867,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No pictures in this folder. Click \"Choose Folder…\" to pick another."
+          }
+        }
+      }
+    },
+    "这个月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Month"
           }
         }
       }
@@ -29395,6 +29692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo, Simple, Minimal; characters are in the Water widget: Shiba, Tabby, Penguin, Otter, Octopus."
+          }
+        }
+      }
+    },
+    "里程碑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Milestones"
           }
         }
       }
