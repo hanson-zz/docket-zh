@@ -4276,6 +4276,17 @@
         }
       }
     },
+    "不响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
     "不在提醒时段" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16194,6 +16205,17 @@
         }
       }
     },
+    "快速待办还没有到点时间，这个音色留给以后的待办提醒；现在不会响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick to-dos have no due time yet. This sound is kept for future to-do reminders and does not play for now."
+          }
+        }
+      }
+    },
     "快速待办：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18258,6 +18280,17 @@
         }
       }
     },
+    "提醒事项、喝水、待办到点弹出时轻响一声，用上面的音量。勿扰或专注模式、屏幕共享时不响，几条一起到点只响一声。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A soft chime when a reminder, a drink-water nudge or a to-do comes due, at the volume above. Silent during Do Not Disturb, a Focus, or screen sharing, and several at once chime only once."
+          }
+        }
+      }
+    },
     "提醒从 %@ 开始" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18331,6 +18364,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remind about makeup workdays and holidays"
+          }
+        }
+      }
+    },
+    "提醒音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder sounds"
           }
         }
       }
@@ -18595,6 +18639,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Play ambient sound"
+          }
+        }
+      }
+    },
+    "播放音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play sounds"
           }
         }
       }
@@ -27203,6 +27258,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dockling App Volume"
+          }
+        }
+      }
+    },
+    "码头所有音效的总开关和音量：添加和移除小组件时的轻响，以及提醒到点时的提示音。添加和移除的声音在系统设置里关闭了“播放用户界面音效”时不会播放。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One switch and volume for all of Dockling's sounds: the soft click when adding and removing widgets, and the chime when a reminder comes due. The add and remove sounds stay silent when \"Play user interface sound effects\" is off in System Settings."
           }
         }
       }

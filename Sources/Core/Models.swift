@@ -1021,6 +1021,8 @@ public struct PersistedState: Codable, Sendable {
     public var island = IslandSettings()
     /// 添加和移除小组件时的音效. On by default.
     public var widgetSounds = WidgetSoundSettings()
+    /// 提醒事项、喝水、待办到点时的提示音。音量和总开关跟着 `widgetSounds`。
+    public var reminderSounds = ReminderSoundSettings()
     /// AI 助手的刘海对话：入口、快捷键、每个服务的打开方式和接口。密钥不在这里。
     public var aiNotch = AINotchSettings()
     /// 弹出快速待办小输入框的全局快捷键。默认不设。
@@ -1051,6 +1053,7 @@ public struct PersistedState: Codable, Sendable {
         focusRevert = try c.decodeIfPresent(FocusRevert.self, forKey: .focusRevert)
         island = try c.decodeIfPresent(IslandSettings.self, forKey: .island) ?? IslandSettings()
         widgetSounds = try c.decodeIfPresent(WidgetSoundSettings.self, forKey: .widgetSounds) ?? WidgetSoundSettings()
+        reminderSounds = (try? c.decodeIfPresent(ReminderSoundSettings.self, forKey: .reminderSounds)) ?? ReminderSoundSettings()
         aiNotch = (try? c.decodeIfPresent(AINotchSettings.self, forKey: .aiNotch)) ?? AINotchSettings()
         quickTodoHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .quickTodoHotKey)
     }

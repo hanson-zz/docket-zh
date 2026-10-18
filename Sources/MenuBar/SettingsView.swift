@@ -805,13 +805,13 @@ struct SettingsView: View {
         itemList
     }
 
-    /// 添加和移除小组件时的音效. The style and volume only show while the
-    /// switch is on; 试听 plays both sounds whatever the switch says.
+    /// 码头所有音效：总开关和音量在最上面，管添加和移除小组件的声音，也管
+    /// 提醒到点的声音。风格、音量和提醒音效只在总开关开着时显示；试听不看开关。
     private var soundSection: some View {
         Section {
             Toggle(isOn: $state.widgetSounds.enabled) {
-                subtitled(tr("添加和移除小组件时播放音效"),
-                          tr("添加时一声轻响，移除时像程序坞一样“噗”一声。系统设置里关闭了“播放用户界面音效”时不会播放。"))
+                subtitled(tr("播放音效"),
+                          tr("码头所有音效的总开关和音量：添加和移除小组件时的轻响，以及提醒到点时的提示音。添加和移除的声音在系统设置里关闭了“播放用户界面音效”时不会播放。"))
             }
             if state.widgetSounds.enabled {
                 Picker("音效风格", selection: $state.widgetSounds.style) {
@@ -834,8 +834,46 @@ struct SettingsView: View {
                     WidgetSoundEffects.shared.preview(settings: state.widgetSounds)
                 }
             }
+            if state.widgetSounds.enabled {
+                Toggle(isOn: $state.reminderSounds.enabled) {
+                    subtitled(tr("提醒音效"),
+                              tr("提醒事项、喝水、待办到点弹出时轻响一声，用上面的音量。勿扰或专注模式、屏幕共享时不响，几条一起到点只响一声。"))
+                }
+                if state.reminderSounds.enabled {
+                    ForEach(ReminderSoundKind.allCases, id: \.self) { kind in
+                        reminderToneRow(kind)
+                    }
+                }
+            }
         } header: {
             Text("音效")
+        }
+    }
+
+    /// 一类提醒的音色：系统提示音或“不响”，旁边试听。
+    private func reminderToneRow(_ kind: ReminderSoundKind) -> some View {
+        let tone = Binding(
+            get: { state.reminderSounds.tone(for: kind) },
+            set: { state.reminderSounds.setTone($0, for: kind) })
+        return VStack(alignment: .leading, spacing: 2) {
+            LabeledContent(kind.title) {
+                HStack {
+                    Picker(kind.title, selection: tone) {
+                        ForEach(ReminderTone.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    Button("试听") {
+                        ReminderSoundPlayer.shared.preview(tone.wrappedValue, volume: state.widgetSounds.gain)
+                    }
+                    .disabled(tone.wrappedValue == .off)
+                }
+            }
+            if kind == .todo {
+                Text(tr("快速待办还没有到点时间，这个音色留给以后的待办提醒；现在不会响。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

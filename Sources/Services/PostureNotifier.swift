@@ -54,10 +54,18 @@ final class PostureNotifier {
 
 /// Shows the banner even while Docket happens to be the active app, which it
 /// is whenever its settings are open.
+///
+/// 提醒音效管的那几类（喝水等，按通知标识认）由应用自己播放所选的音色，
+/// 不再叠一声系统默认提示音；勿扰、屏幕共享和短时间连着几条只响一声都在
+/// `ReminderSoundPlayer` 里判断。应用没在运行时系统照通知里带的声音响。
 final class BannerPresenter: NSObject, UNUserNotificationCenterDelegate, Sendable {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        guard let kind = ReminderSoundKind(notificationIdentifier: notification.request.identifier) else {
+            return [.banner, .sound]
+        }
+        await MainActor.run { _ = ReminderSoundPlayer.shared.play(kind) }
+        return [.banner, .list]
     }
 }

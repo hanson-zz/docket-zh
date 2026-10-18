@@ -53,7 +53,9 @@ final class WaterNotifier {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.sound = .default
+        // 提醒音效里喝水选了“不响”或音效总开关关着时不带声音。应用在运行时
+        // 由 BannerPresenter 换成所选的音色播放，见 ReminderSoundPlayer。
+        content.sound = ReminderSoundPlayer.shared.notificationHasSound(.water) ? .default : nil
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, date.timeIntervalSinceNow),
                                                         repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)

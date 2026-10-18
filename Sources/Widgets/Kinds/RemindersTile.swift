@@ -93,6 +93,16 @@ struct RemindersTile: View {
         // A reminder ticked off in Reminders.app, or access granted in the
         // panel, both land here.
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
+        // 带时刻的提醒到点那一秒轻响一声（提醒音效 ▸ 提醒事项）。几个卡片、
+        // 几条同时到点都由 ReminderSoundPlayer 合成一声。
+        .onChange(of: context.now) { old, new in chimeIfDue(from: old, to: new) }
+    }
+
+    private func chimeIfDue(from old: Date, to new: Date) {
+        guard interactive else { return }
+        let due = ReminderSoundDecision.newlyDue(items.map { (id: $0.id, due: $0.dueValue) },
+                                                 after: old, upTo: new)
+        if !due.isEmpty { ReminderSoundPlayer.shared.play(.reminders, now: new) }
     }
 
     // MARK: Wide layouts
