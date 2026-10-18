@@ -157,6 +157,15 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "watchlist", instance: widget(.watchlist),
              isPreview: false, source: .live),
 
+        // Sample: 股票 following 黄金 and 白银 in 元/克. The futures quotes and
+        // the exchange rate both have to land for a live read, and the panel
+        // is about the unit and the layout, not today's price.
+        Shot(name: "metals",
+             instance: widget(.stock, ["symbol": .string(PreciousMetal.gold.symbol),
+                                       "symbols": .list([.string(PreciousMetal.gold.symbol),
+                                                         .string(PreciousMetal.silver.symbol)])]),
+             isPreview: true, source: .sample),
+
         // The one empty state worth a picture. This build ships no Stripe,
         // Paddle or Shopify client, and the panel's whole design is about
         // refusing to draw a plausible amount under a real account name - so
@@ -261,24 +270,14 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "color-picker", instance: widget(.colorPicker),
              isPreview: true, source: .sample),
 
-        // Live: 「算」 on a sum written into the config, the way the panel's
-        // own Return keeps one, with a unit conversion in its recent list.
-        Shot(name: "calculator",
-             instance: widget(.calculator, ["expression": .string("1280×(1+6%)"),
-                                            "history": .list([.string("1280×(1+6%)"), .string("5 km"),
-                                                              .string("3 斤")])]),
-             isPreview: false, source: .live),
-
-        // Live: the catalog's own links, which are the widget's content
-        // rather than a reading of anything.
-        Shot(name: "bookmarks", instance: widget(.bookmarks), isPreview: false, source: .live),
-
-        // Live: 「算」 converting money, with today's rates from
-        // open.er-api.com, fetched here because the panel only fetches when
-        // the table is stale.
-        Shot(name: "currency",
+        // Live: 「算」, the one box that took over 单位换算, 汇率换算 and 计算器.
+        // It opens on money, converted with today's rates from open.er-api.com
+        // (fetched here because the panel only fetches when the table is
+        // stale), with a sum and a unit conversion in its recent list.
+        Shot(name: "calc",
              instance: widget(.calculator, ["expression": .string("100 USD"),
-                                            "history": .list([.string("100 USD")])]),
+                                            "history": .list([.string("100 USD"), .string("1280×(1+6%)"),
+                                                              .string("5 km"), .string("3 斤")])]),
              isPreview: false, source: .live,
              prepare: {
                  CurrencyService.shared.refresh(force: true)
@@ -286,6 +285,10 @@ private func shots(since started: Date) -> [Shot] {
                      try? await Task.sleep(for: .milliseconds(250))
                  }
              }),
+
+        // Live: the catalog's own links, which are the widget's content
+        // rather than a reading of anything.
+        Shot(name: "bookmarks", instance: widget(.bookmarks), isPreview: false, source: .live),
 
         // Live: this fork's public numbers, newest issues and comments and
         // latest release, unauthenticated. Two projects, so the switcher
@@ -883,6 +886,33 @@ private func shelves() -> [ShelfShot] {
                             widget(.aiAssistant),
                             widget(.capture)],
                   sample: true),
+        // 日历、一周日程、农历与假期、纪念日分工以后的四张卡片。示例数据：日程是
+        // 别人的，这台机器也没有日历权限。
+        ShelfShot(name: "shelf-calendar",
+                  widgets: [widget(.calendar), widget(.week), widget(.lunar), widget(.anniversary)],
+                  sample: true),
+        // 时钟精简后的 8 款表盘，各取默认子选项。
+        ShelfShot(name: "shelf-clocks",
+                  widgets: ["standard", "analog", "flip", "pixel", "lcd", "words", "neon", "nixie"].map {
+                      widget(.clock, ["layout": .string($0)])
+                  },
+                  sample: true),
+        // 股票盯一只、自选股一列、加密货币、黄金白银（元/克）。
+        ShelfShot(name: "shelf-stocks",
+                  widgets: [widget(.stock), widget(.watchlist), widget(.crypto),
+                            widget(.stock, ["symbol": .string(PreciousMetal.gold.symbol),
+                                            "symbols": .list([.string(PreciousMetal.gold.symbol),
+                                                              .string(PreciousMetal.silver.symbol)])])],
+                  sample: true),
+        // 计时按尺度分工：倒计时、秒表、闹钟、专注计时。
+        ShelfShot(name: "shelf-timers",
+                  widgets: [widget(.countdown), widget(.stopwatch), widget(.alarm), widget(.timer)],
+                  sample: true),
+        // 圆只留给圆环仪表：电池格（横向电池）、经典电池和圆环仪表。
+        ShelfShot(name: "shelf-battery",
+                  widgets: [widget(.battery, ["layout": .string("gauge")]), widget(.battery),
+                            widget(.gauges)],
+                  sample: true),
     ]
 }
 
@@ -921,9 +951,40 @@ private enum AINotchFixture {
     static let model = AINotchPanelModel()
 }
 
+/// 到点提醒弹出卡片的示例：一张喝水卡片（杯子、八个小杯、加一杯和稍后 15 分钟）。
+@MainActor
+private enum ReminderPopupFixture {
+    static let model = ReminderPopupModel()
+
+    static func fill() {
+        let now = Date()
+        var queue = ReminderPopupQueue()
+        let info = WaterPopupInfo(total: 1000, goal: 2000, cup: 250, ounces: false,
+                                  character: WaterCharacter.redPanda.rawValue,
+                                  lastDrink: now.addingTimeInterval(-95 * 60))
+        _ = queue.post(ReminderAlert(kind: .water, itemID: "shots", title: tr("该喝水啦"), due: now, water: info),
+                       now: now)
+        model.card = queue.front
+        model.stacked = queue.stacked
+        model.chip = ReminderPopupSoundChip.make(.water, settings: ReminderSoundPlayer.shared.settings,
+                                                 master: ReminderSoundPlayer.shared.master,
+                                                 environment: ReminderSoundPlayer.environment())
+        model.presented = true
+    }
+}
+
 @MainActor
 private func viewShots() -> [ViewShot] {
     [
+        // The card that slides out under the notch when something comes due,
+        // here a 喝水 reminder drawn from sample numbers: a shelf's own log is
+        // the user's.
+        ViewShot(name: "reminder-popup", source: .sample, view: {
+            guard let card = ReminderPopupFixture.model.card else { return AnyView(EmptyView()) }
+            return AnyView(ReminderPopupCardView(card: card, model: ReminderPopupFixture.model)
+                .environment(\.colorScheme, .dark))
+        }, prepare: { ReminderPopupFixture.fill() }, linger: .seconds(1)),
+
         // The Add Widget sheet with its category sidebar, opened on 健康与习惯:
         // 所有小组件 opens on the app and folder shortcuts, which fill the
         // first screen, and this category is where most Pro capsules sit

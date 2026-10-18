@@ -492,7 +492,8 @@ struct ReminderPopupView: View {
     }
 }
 
-private struct ReminderPopupCardView: View {
+/// 一张卡片本身。截图工具（Tools/Shots）也直接拿它拍，所以不是 private。
+struct ReminderPopupCardView: View {
     var card: ReminderPopupCard
     var model: ReminderPopupModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
