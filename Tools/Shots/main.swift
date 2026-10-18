@@ -476,7 +476,9 @@ private func makePanel(_ shot: Shot, on screen: NSScreen) -> NSWindow? {
         // The tail points down, at a shelf on the bottom edge, which is where
         // the Dock is for almost everyone.
         edge: .bottom,
-        session: UUID())
+        session: UUID(),
+        // 截图要整张面板，不套滚动区域，按内容的自然高度画。
+        measuring: true)
 
     guard let (window, _) = makeWindow(chrome, shadow: true, on: screen) else {
         log("\(shot.name): the panel measured empty, skipping")

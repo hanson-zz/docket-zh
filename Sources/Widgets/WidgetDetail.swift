@@ -37,6 +37,11 @@ final class WidgetDetailWindow {
     /// can be redrawn without reopening it.
     private var shown: (context: WidgetContext, edge: DockPosition,
                         arrowOffset: CGFloat)?
+    /// 开着的面板：小组件、它的尾巴指向的点、内容的自然高度（含尾巴）、
+    /// 当前给滚动区域的高度。内容变高变矮时按这些重新摆窗口。
+    private var fit: (instance: WidgetInstance, anchor: CGPoint, natural: CGSize,
+                      viewport: CGFloat, overflows: Bool)?
+    private var screenObserver: NSObjectProtocol?
 
     private init() {}
 
@@ -74,6 +79,11 @@ final class WidgetDetailWindow {
         // The shelf moved with it, and a click on the shelf is still the
         // shelf's to handle.
         host = host.offsetBy(dx: 0, dy: dy)
+        // 小组件也跟着挪了，之后内容变高重新摆窗口时要从新位置算。
+        if var moved = fit {
+            moved.anchor.y += dy
+            fit = moved
+        }
     }
 
     func toggle(_ instance: WidgetInstance, context: WidgetContext,
@@ -90,15 +100,94 @@ final class WidgetDetailWindow {
     /// it was closed and reopened. Every widget write funnels through
     /// `WidgetWriter`, which is where this is called from.
     ///
-    /// Deliberately keeps `session`, so the entrance does not replay, and the
-    /// frame, so the panel does not jump: the width is fixed per kind, and a
-    /// config change that made the panel *taller* would keep the old height
-    /// until reopened.
+    /// Deliberately keeps `session`, so the entrance does not replay. 宽度
+    /// 每种固定；改设置让内容变高或变矮时，滚动区域里的内容报告新高度，
+    /// `contentHeightChanged` 再重新摆窗口，不用关了重开。
     func refresh(_ instance: WidgetInstance) {
-        guard openWidgetID == instance.id, let shown else { return }
-        hosting?.rootView = WidgetDetailChrome(
-            instance: instance, context: shown.context, edge: shown.edge,
-            session: session, arrowOffset: shown.arrowOffset)
+        guard openWidgetID == instance.id, let shown, var current = fit else { return }
+        current.instance = instance
+        fit = current
+        hosting?.rootView = chrome(instance, context: shown.context, edge: shown.edge,
+                                   arrowOffset: shown.arrowOffset, viewport: current.viewport,
+                                   overflows: current.overflows)
+    }
+
+    /// 面板的根视图，每次都从这里造，免得哪一处漏了滚动区域的高度或回调。
+    private func chrome(_ instance: WidgetInstance, context: WidgetContext, edge: DockPosition,
+                        arrowOffset: CGFloat, viewport: CGFloat?,
+                        overflows: Bool) -> WidgetDetailChrome {
+        let opened = session
+        return WidgetDetailChrome(
+            instance: instance, context: context, edge: edge, session: opened,
+            arrowOffset: arrowOffset, viewport: viewport, overflows: overflows,
+            // 放到下一轮再摆窗口：回调来自 SwiftUI 的布局，在布局中途换根视图
+            // 和改窗口大小会让 AppKit 重入布局。
+            onContentHeight: { [weak self] height in
+                Task { @MainActor in self?.contentHeightChanged(height, session: opened) }
+            })
+    }
+
+    /// 量内容的自然尺寸：不带滚动区域，在一个不进窗口的临时视图里量，
+    /// 不动正在显示的那个，里面小组件的状态不会因此重置。
+    private func measure(_ instance: WidgetInstance, context: WidgetContext,
+                         edge: DockPosition) -> CGSize {
+        let probe = NSHostingView(rootView: WidgetDetailChrome(
+            instance: instance, context: context, edge: edge, session: session,
+            measuring: true))
+        return probe.fittingSize
+    }
+
+    /// 面板所在屏幕的可用区域：按小组件那个点找屏幕，不按面板原点找。
+    private func visibleFrame(for anchor: CGPoint) -> CGRect? {
+        let screens = NSScreen.screens
+        if let index = DetailPanelFit.screenIndex(for: anchor, screens: screens.map(\.frame)) {
+            return screens[index].visibleFrame
+        }
+        return NSScreen.main?.visibleFrame
+    }
+
+    /// 滚动区域里的内容报告了新高度：日程、提醒、行情这类打开后才读到的
+    /// 数据，或者面板里展开了一段。重新算尺寸和位置，窗口跟着变。
+    private func contentHeightChanged(_ inner: CGFloat, session opened: UUID) {
+        guard opened == session, isOpen, let shown, let current = fit else { return }
+        let natural = CGSize(width: current.natural.width,
+                             height: inner + (shown.edge.isHorizontal ? PanelShape.arrowDepth : 0))
+        guard DetailPanelFit.needsRefit(old: current.natural.height, new: natural.height) else { return }
+        place(current.instance, context: shown.context, edge: shown.edge,
+              anchor: current.anchor, natural: natural)
+    }
+
+    /// 显示器插拔、分辨率或系统程序坞变了：按新的可用区域重摆。
+    private func screensChanged() {
+        guard isOpen, let shown, let current = fit else { return }
+        place(current.instance, context: shown.context, edge: shown.edge,
+              anchor: current.anchor, natural: current.natural)
+    }
+
+    /// 按自然尺寸算出 frame，换上对应滚动高度的根视图，摆好窗口。
+    private func place(_ instance: WidgetInstance, context: WidgetContext, edge: DockPosition,
+                       anchor: CGPoint, natural: CGSize) {
+        guard let panel, let visible = visibleFrame(for: anchor) else { return }
+        let placement = DetailPanelFit.place(edge: edge, anchor: anchor, natural: natural,
+                                             visible: visible)
+        let frame = placement.frame
+        let viewport = DetailPanelFit.viewportHeight(panelHeight: frame.height, edge: edge,
+                                                     tailDepth: PanelShape.arrowDepth)
+        // Only now is the tail's offset knowable: clamping against the end of
+        // the screen moves the panel but not the tile, and a tail still
+        // pointing at the panel's own middle would point at nothing.
+        // Screen y counts up and the panel's own coordinates count down, so
+        // the sign flips on a side shelf; see Geometry.popupTailOffset.
+        let offset = Geometry.popupTailOffset(edge: edge, anchor: anchor,
+                                              placed: frame.origin, size: frame.size)
+        shown = (context, edge, offset)
+        fit = (instance, anchor, natural, viewport, placement.overflows)
+        hosting?.rootView = chrome(instance, context: context, edge: edge,
+                                   arrowOffset: offset, viewport: viewport,
+                                   overflows: placement.overflows)
+        if panel.frame != frame {
+            panel.setFrame(frame, display: panel.isVisible)
+        }
     }
 
     /// Closes on the next click outside the panel and its own tile.
@@ -139,6 +228,7 @@ final class WidgetDetailWindow {
         openWidgetID = nil
         announceClosed(closing)
         shown = nil
+        fit = nil
         stopWatching()
         guard panel?.isVisible == true else { return }
         NSAnimationContext.runAnimationGroup { context in
@@ -158,12 +248,13 @@ final class WidgetDetailWindow {
                       anchor: CGPoint, edge: DockPosition, host: CGRect) {
         let panel = existingOrNew()
         session = UUID()
-        shown = (context, edge, 0)
         self.host = host
-        hosting?.rootView = WidgetDetailChrome(
-            instance: instance, context: context, edge: edge, session: session)
+        // 没有悬停位置时 anchor 是零点，面板会甩到主屏左下角；改用扩展栏
+        // 开口那一侧的中点。
+        let anchor = anchor == .zero && host != .zero
+            ? DetailPanelFit.fallbackAnchor(edge: edge, shelf: host) : anchor
 
-        let size = hosting?.fittingSize ?? .zero
+        let size = measure(instance, context: context, edge: edge)
         // Claimed only once there is something to show. Setting it above the
         // guard meant a bail here left the widget marked open with no window,
         // and `toggle` would then answer every later click by closing a panel
@@ -175,42 +266,17 @@ final class WidgetDetailWindow {
 
         // Almost touching the tile: the panel's own padding already includes
         // the tail's depth, so this is the gap between the tail's tip and the
-        // tile, not between the tile and the body.
-        // Below the tile on a top shelf, above it on a bottom one.
-        let origin = Geometry.popupOrigin(edge: edge, anchor: anchor, size: size, gap: 2)
-        let placed = clamped(origin, size: size)
+        // tile, not between the tile and the body. Below the tile on a top
+        // shelf, above it on a bottom one. 高度不超过所在屏幕的可用区域，
+        // 超出的部分在面板里滚动；见 DetailPanelFit。
+        place(instance, context: context, edge: edge, anchor: anchor, natural: size)
 
-        // Only now is the tail's offset knowable: clamping against the end of
-        // the screen moves the panel but not the tile, and a tail still
-        // pointing at the panel's own middle would point at nothing. Assigning
-        // the root view twice is cheap and cannot change the measured size -
-        // the offset moves the tail within the outline, not the frame.
-        // Screen y counts up and the panel's own coordinates count down, so
-        // the sign flips on a side shelf; see Geometry.popupTailOffset.
-        let offset = Geometry.popupTailOffset(edge: edge, anchor: anchor,
-                                              placed: placed, size: size)
-        shown = (context, edge, offset)
-        hosting?.rootView = WidgetDetailChrome(
-            instance: instance, context: context, edge: edge, session: session,
-            arrowOffset: offset)
-
-        panel.setFrame(CGRect(origin: placed, size: size), display: false)
         panel.alphaValue = 1
         panel.orderFrontRegardless()
         // A panel carrying a text field or a slider needs the keyboard, and a
         // borderless window is refused key status without the override.
         panel.makeKey()
         watchForDismissal()
-    }
-
-    private func clamped(_ origin: CGPoint, size: NSSize) -> CGPoint {
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(origin) })
-                ?? NSScreen.main else { return origin }
-        let visible = screen.visibleFrame
-        return CGPoint(
-            x: min(max(origin.x, visible.minX + 8), max(visible.minX, visible.maxX - size.width - 8)),
-            y: min(max(origin.y, visible.minY + 8), max(visible.minY, visible.maxY - size.height - 8))
-        )
     }
 
     private func existingOrNew() -> NSPanel {
@@ -239,6 +305,11 @@ final class WidgetDetailWindow {
 
         self.panel = panel
         self.hosting = hosting
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.screensChanged() }
+            }
         return panel
     }
 }
@@ -262,13 +333,21 @@ struct WidgetDetailChrome: View {
     /// until the panel is clamped against the end of the screen, after which
     /// the tail has to reach back toward the tile.
     var arrowOffset: CGFloat = 0
+    /// 滚动区域的高度，由窗口按所在屏幕算好给进来；内容比它高就能滚。
+    /// nil 时还没算过，先按内容的自然高度画。
+    var viewport: CGFloat? = nil
+    /// 内容比滚动区域高：底边淡出，提示下面还有。
+    var overflows = false
+    /// 只用来量自然尺寸：不套滚动区域，也不报告高度。
+    var measuring = false
+    /// 滚动区域里内容的自然高度变了（不含尾巴）。
+    var onContentHeight: @MainActor (CGFloat) -> Void = { _ in }
 
     @Environment(\.colorScheme) private var scheme
     @State private var appeared = false
 
     var body: some View {
-        WidgetDetailBody(instance: instance, context: context)
-            .padding(16)
+        scrolling
             // Room for the tail on whichever side the shelf is.
             .padding(tailSide, PanelShape.arrowDepth)
             .frame(width: WidgetDetail.width(instance.kind), alignment: .leading)
@@ -284,6 +363,48 @@ struct WidgetDetailChrome: View {
                 appeared = false
                 Task { @MainActor in enter() }
             }
+    }
+
+    /// 小组件的内容，外面总是同一个竖向滚动区域，高度由窗口给。
+    ///
+    /// 始终套着而不是放不下才套：换结构会让 SwiftUI 把里面的小组件当成新的
+    /// 视图，正在输入的文字、展开的编辑行都会丢。滚动区域给内容的竖向尺寸
+    /// 提议是 nil，和原来外层 fixedSize 给的一样，所以各小组件排版不变。
+    /// 内容不超出时 basedOnSize 让它不弹不滚，看起来和原来一样。
+    @ViewBuilder private var scrolling: some View {
+        let content = WidgetDetailBody(instance: instance, context: context)
+            .padding(16)
+        if measuring {
+            content
+        } else {
+            ScrollView(.vertical) {
+                content
+                    // 下面两项只给外层这个滚动区域用；各面板里自己的滚动列表
+                    // 照旧按它们自己的设置来。
+                    .scrollIndicators(.automatic)
+                    .scrollBounceBehavior(.automatic)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        onContentHeight(height)
+                    }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            // 和各深色面板一样不画滚动条：系统设成“始终显示滚动条”时，
+            // 右边会压一根浅色竖条，还会把内容挤窄、换行、变高。
+            .scrollIndicators(.never)
+            .frame(height: viewport)
+            .mask {
+                VStack(spacing: 0) {
+                    Rectangle()
+                    if overflows {
+                        LinearGradient(colors: [.black, .black.opacity(0)],
+                                       startPoint: .top, endPoint: .bottom)
+                            .frame(height: 18)
+                    }
+                }
+            }
+        }
     }
 
     /// Which side the tail sits on, which is the side facing the shelf.
