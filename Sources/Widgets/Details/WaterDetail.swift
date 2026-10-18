@@ -1,16 +1,17 @@
 import SwiftUI
 
-/// The day's water: the red panda big, filling toward the goal, with what to
-/// drink and how much, today's glasses, the last week and this month, and
-/// the goal itself.
+/// 喝水面板，四个标签。
 ///
-/// The top half is always there: the character, the tally, the drink chips
-/// and the amounts, because logging is what the panel is opened for. The
-/// rest sits under three tabs so the panel stays the height of its
-/// neighbours: 今天 (the list, with undo), 统计 (seven bars and the month's
-/// dots), 目标 (the personal recommendation, its breakdown, the details it
-/// is worked out from and a goal set by hand) and 设置 (the character and
-/// the reminder hours).
+/// 今天：杯子页。大杯子的水位是今天的进度，选的角色站在杯子旁边，身上是
+/// 原来那套灰/彩水位效果（水面以下全彩、以上发灰、中间白色波浪水面），
+/// 水位和杯子同步；表情照旧按 `WaterMood`（喝一杯举杯三秒、达标欢呼、
+/// 提醒时段外或三小时没喝打盹），很久没喝渴成骷髅（`WaterParched`）。
+/// 旁边是已喝/目标、还差几杯和八个小杯，下面是饮品、三只杯量按钮（小杯、
+/// 一杯、大杯，一杯跟设置里的一杯容量走）和自定义，再下面是今天的时间轴
+/// 和记录（撤销上一杯、单条删除）。
+///
+/// 统计（连续、本月、7 天平均、柱状、月历和近七天报告）、目标（推荐量、
+/// 明细、个人情况、手动目标）、设置（角色、提醒、复位）照旧。
 struct WaterDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -25,7 +26,10 @@ struct WaterDetail: View {
     @State private var ageText = ""
     @State private var heightText = ""
     @State private var confirmReset = false
+    /// 今天的记录展开全部。
+    @State private var showsAllEntries = false
     @FocusState private var focus: Field?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     fileprivate enum Field: Hashable { case amount, weight, age, height }
 
@@ -77,10 +81,6 @@ struct WaterDetail: View {
             MeshBackdrop(color: accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                hero(today, streak: streak)
-                drinkChips
-                if drink == .custom { factorRow }
-                amounts
                 Picker("", selection: $tab) {
                     Text("今天").tag(Tab.today)
                     Text("统计").tag(Tab.history)
@@ -92,52 +92,106 @@ struct WaterDetail: View {
                 .controlSize(.small)
 
                 switch tab {
-                case .today: entries(today, all: all, now: now)
-                case .history: history(all, goal: goal, now: now, streak: streak)
+                case .today: todayPage(today, all: all, now: now, streak: streak)
+                case .history:
+                    history(all, goal: goal, now: now, streak: streak)
+                    // 近七天报告原来挂在每个标签底下，现在归到统计里。
+                    WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now)
                 case .target: target(result)
                 case .goal: goalSettings()
                 }
-
-                WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now)
             }
         }
-        .animation(.snappy(duration: 0.25), value: tab)
-        .animation(.snappy(duration: 0.25), value: drink)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: tab)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: drink)
     }
 
-    // MARK: Hero
+    // MARK: 今天：杯子页
 
-    private func hero(_ today: WaterDay, streak: Int) -> some View {
+    private func todayPage(_ today: WaterDay, all: [WaterDay], now: Date, streak: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            hero(today, all: all, now: now, streak: streak)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("加一杯")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(.white.opacity(0.85))
+                    Spacer()
+                    Text(tr("\(drink.title)：按 \(Int((factor * 100).rounded()))% 计入"))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .monospacedDigit()
+                }
+                drinkChips
+                if drink == .custom { factorRow }
+                amounts
+            }
+            entries(today, all: all, now: now)
+        }
+    }
+
+    private var character: WaterCharacter {
+        WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
+    }
+
+    /// 大杯子加站在旁边的角色，右边已喝/目标、还差几杯、八个小杯、上次和下次。
+    private func hero(_ today: WaterDay, all: [WaterDay], now: Date, streak: Int) -> some View {
         let level = WaterIntake.progress(total: today.total, goal: today.goal)
         let done = today.isMet
-        return HStack(alignment: .center, spacing: 14) {
-            // Its own animation clock, only while the panel is open: the
-            // tile's surface stands still, the panel's moves.
-            TimelineView(.animation(minimumInterval: 1.0 / 24, paused: context.isPreview)) { tick in
-                WaterPanda(character: WaterCharacter.shown(instance.config,
-                                                           unlocked: ProAccess.isUnlocked || context.isPreview),
-                           mood: context.isPreview ? .idle : WaterMood.at(tick.date, config: instance.config),
-                           level: level,
-                           phase: context.isPreview ? 0.3 : tick.date.timeIntervalSinceReferenceDate,
-                           celebrating: done, height: 104)
+        let cup = WaterIntake.cupSize(instance.config)
+        let cupHeight: CGFloat = 128
+        return HStack(alignment: .center, spacing: 12) {
+            // 自己的动画时钟，只在面板开着时走：卡片的水面不动，面板的轻轻动。
+            // 减少动态效果时水面静止，只每秒看一次表情（喝一杯举杯的三秒）。
+            TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 24, paused: context.isPreview)) { tick in
+                let mood: WaterMood = context.isPreview ? .idle : WaterMood.at(tick.date, config: instance.config)
+                let parched = !context.isPreview && WaterParched.isParched(instance.config, now: tick.date)
+                WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
+                              parched: WaterCupPage.showsSkeleton(parched: parched, mood: mood),
+                              height: cupHeight, reduceMotion: reduceMotion,
+                              phase: context.isPreview || reduceMotion ? nil : tick.date.timeIntervalSinceReferenceDate,
+                              characterScale: 0.66, overlap: 0.14, detailed: true)
+                    .overlay(alignment: .topLeading) {
+                        Text(verbatim: "\(WaterIntake.percent(total: today.total, goal: today.goal))%")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .monospacedDigit()
+                            .padding(.leading, cupHeight * 0.64 * 0.22)
+                            .padding(.top, cupHeight * 0.1)
+                    }
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("今天喝水")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("今天已喝")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
-                Text("\(WaterIntake.percent(total: today.total, goal: today.goal))%")
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.white.opacity(0.6))
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(WaterIntake.figure(today.total, ounces: ounces))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .rollingValue(today.total)
+                    Text(verbatim: "/ \(WaterIntake.figure(today.goal, ounces: ounces)) \(WaterIntake.unitLabel(ounces: ounces))")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .monospacedDigit()
+                }
+                statusLine(today, now: now, cup: cup)
+                WaterCupRow(filled: WaterPetCards.filledCups(total: today.total, goal: today.goal),
+                            slots: WaterPetCards.cupSlots, cupWidth: 11, spacing: 3.5)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: today.total)
+                    .padding(.vertical, 2)
+                Text(tr("一杯 \(WaterIntake.amount(cup, ounces: ounces))，\(WaterCupPage.cupsToGoal(goal: today.goal, cup: cup)) 杯达标"))
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(.white.opacity(0.5))
                     .monospacedDigit()
-                    .rollingValue(today.total)
-                Text(WaterIntake.tally(total: today.total, goal: today.goal, ounces: ounces))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .monospacedDigit()
-                Text(done ? tr("达标啦！小熊猫喝饱了") : WaterIntake.remainingLine(total: today.total, goal: today.goal, ounces: ounces))
-                    .font(.system(size: 11))
-                    .foregroundStyle(done ? accent.mix(with: .white, by: 0.4) : .white.opacity(0.6))
+                Label(lastLine(all, now: now), systemImage: "drop.fill")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .help(tr("上次喝水"))
+                Label(tr("下次提醒 \(dueLine(now: now))"), systemImage: "bell.fill")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.white.opacity(0.75))
             }
             .lineLimit(1)
             .minimumScaleFactor(0.7)
@@ -150,6 +204,35 @@ struct WaterDetail: View {
                 .monospacedDigit()
                 .help(tr("连续达标 \(streak) 天"))
         }
+    }
+
+    /// 达标、渴成骷髅，或者还差多少、约几杯。
+    private func statusLine(_ today: WaterDay, now: Date, cup: Int) -> some View {
+        let parched = !context.isPreview && WaterParched.isParched(instance.config, now: now)
+        let text: String
+        let color: Color
+        if today.isMet {
+            text = tr("达标啦！\(character.title)喝饱了")
+            color = accent.mix(with: .white, by: 0.4)
+        } else if parched {
+            text = tr("渴成骷髅了")
+            color = Color(hex: PaletteColor.red.hex)
+        } else {
+            let left = WaterIntake.amount(max(0, today.goal - today.total), ounces: ounces)
+            text = tr("还差 \(left)，约 \(WaterCupPage.cupsLeft(total: today.total, goal: today.goal, cup: cup)) 杯")
+            color = .white.opacity(0.75)
+        }
+        return Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(color)
+            .monospacedDigit()
+    }
+
+    private func lastLine(_ all: [WaterDay], now: Date) -> String {
+        let line = lastDrinkLine(all, now: now)
+        if context.isPreview { return tr("上次 \(line)") }
+        guard let last = WaterIntake.lastDrink(all), WaterIntake.calendar.isDate(last, inSameDayAs: now) else { return line }
+        return tr("上次 \(line)")
     }
 
     // MARK: Drinks and amounts
@@ -173,8 +256,11 @@ struct WaterDetail: View {
                     .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
                     .frame(maxWidth: .infinity)
                     .frame(height: 38)
+                    // 选中只是亮一点加一圈白描边，不用大块的蓝。
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(selected ? accent.opacity(0.75) : Color.white.opacity(0.08)))
+                        .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
+                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -230,30 +316,77 @@ struct WaterDetail: View {
                     .accessibilityLabel("取消")
                 }
                 .padding(.horizontal, 10)
-                .frame(height: 34)
+                .frame(height: 40)
                 .glassPane(cornerRadius: 10)
             } else {
-                ForEach(WaterIntake.quickAmounts, id: \.self) { amount in
-                    amountButton(title: "+\(WaterIntake.figure(amount, ounces: ounces))") { log(amount) }
+                // 小杯、一杯、大杯：一杯是设置里的一杯容量，另外两只跟着让开。
+                ForEach(WaterCupPage.cupButtons(cup: WaterIntake.cupSize(instance.config)), id: \.size) { button in
+                    cupButton(button)
                 }
-                amountButton(title: tr("自定义")) {
+                amountTile(symbol: "pencil", title: tr("自定义"), subtitle: nil, highlighted: false) {
                     editingCustom = true
                     focus = .amount
                 }
+                .help(tr("自定义"))
             }
         }
     }
 
-    private func amountButton(title: String, action: @escaping () -> Void) -> some View {
+    private func cupButton(_ button: WaterCupPage.CupButton) -> some View {
+        let amount = WaterIntake.amount(button.amount, ounces: ounces)
+        return amountTile(symbol: nil, cup: button.size, title: "+\(WaterIntake.figure(button.amount, ounces: ounces))",
+                          subtitle: button.size.title, highlighted: button.size == .cup) {
+            log(button.amount)
+        }
+        .help(tr("记录\(button.size.title)，\(amount)"))
+        .accessibilityLabel(tr("记录\(button.size.title)，\(amount)"))
+    }
+
+    /// 一只按钮：左边一个小杯（按杯量画大小）或图标，右边量和名字。默认那只
+    /// 只多一圈淡白描边，不用大块的蓝。
+    private func amountTile(symbol: String?, cup: WaterCupPage.CupSize? = nil, title: String, subtitle: String?,
+                            highlighted: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-                .frame(maxWidth: .infinity)
-                .frame(height: 34)
-                .background(Capsule().fill(.white.opacity(0.16)))
-                .contentShape(Capsule())
+            HStack(spacing: 5) {
+                if let cup {
+                    let scale: CGFloat = cup == .small ? 0.7 : cup == .cup ? 0.85 : 1
+                    Rectangle()
+                        .fill(Color.white.opacity(0.14))
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(WaterStyle.water.opacity(0.75))
+                                .frame(height: 18 * scale * 0.6)
+                        }
+                        .clipShape(SmallCupShape())
+                        .frame(width: 13 * scale, height: 18 * scale)
+                    .frame(width: 13, height: 18, alignment: .bottom)
+                } else if let symbol {
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .frame(width: 13)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(title)
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.white.opacity(highlighted ? 0.16 : 0.1)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(.white.opacity(highlighted ? 0.35 : 0), lineWidth: 1))
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .disabled(context.isPreview)
@@ -263,7 +396,7 @@ struct WaterDetail: View {
         guard !context.isPreview else { return }
         let type = drink
         let share = factor
-        withAnimation(.snappy(duration: 0.35)) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.35)) {
             WaterLog.drink(type, amount: amount, factor: share, in: instance)
         }
     }
@@ -278,57 +411,140 @@ struct WaterDetail: View {
         editingCustom = false
     }
 
-    // MARK: 今天
+    // MARK: 今天的时间轴和记录
 
     private func entries(_ today: WaterDay, all: [WaterDay], now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            schedule(all, now: now)
-            HStack {
-                Text(tr("\(today.entries.count) 杯"))
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(.white.opacity(0.6))
-                Spacer()
+        let count = today.entries.count
+        let shown = WaterCupPage.shownRows(count: count, expanded: showsAllEntries)
+        let rows = Array(today.entries.enumerated().reversed().prefix(shown))
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text("今天")
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.9))
+                Text(tr("\(count) 杯 · 计入 \(WaterIntake.amount(today.total, ounces: ounces))"))
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 4)
                 Button {
                     guard !context.isPreview else { return }
-                    withAnimation(.snappy(duration: 0.3)) { WaterLog.undo(instance) }
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { WaterLog.undo(instance) }
                 } label: {
                     Label("撤销上一杯", systemImage: "arrow.uturn.backward")
                         .font(WidgetStyle.label(11))
                         .foregroundStyle(.white.opacity(today.entries.isEmpty ? 0.3 : 0.85))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(.white.opacity(today.entries.isEmpty ? 0.05 : 0.12)))
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .disabled(today.entries.isEmpty || context.isPreview)
             }
+            timeline(today, now: now)
             if today.entries.isEmpty {
                 Text("今天还没喝水。点上面的按钮记一杯，小熊猫就开始装水了。")
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 2)
             } else {
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(Array(today.entries.enumerated().reversed()), id: \.offset) { index, entry in
-                            entryRow(entry, index: index)
-                        }
+                VStack(spacing: 4) {
+                    ForEach(rows, id: \.offset) { index, entry in
+                        entryRow(entry, index: index)
                     }
                 }
-                .frame(maxHeight: 140)
-                .scrollIndicators(.never)
+                if WaterCupPage.canExpand(count: count) {
+                    Button {
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { showsAllEntries.toggle() }
+                    } label: {
+                        Label(showsAllEntries ? tr("收起") : tr("展开全部 \(count) 条"),
+                              systemImage: showsAllEntries ? "chevron.up" : "chevron.down")
+                            .font(WidgetStyle.label(11))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .frame(maxWidth: .infinity)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
+        .padding(10)
+        .glassPane(cornerRadius: 12)
     }
 
-    // MARK: When
-
-    /// What the old 喝水提醒 showed and the tally does not: when the last
-    /// glass went in, and when the next reminder is due, or how long it has
-    /// been overdue (the notification only ever says it once).
-    private func schedule(_ all: [WaterDay], now: Date) -> some View {
-        HStack(spacing: 8) {
-            StatChip(label: tr("上次喝水"), value: lastDrinkLine(all, now: now))
-            StatChip(label: tr("下次提醒"), value: dueLine(now: now))
+    /// 提醒时段的一根横轴：每一杯一个小图标，现在一道竖线，今天还有的下次
+    /// 提醒一个淡淡的铃铛，下面是整点。
+    private func timeline(_ today: WaterDay, now: Date) -> some View {
+        let calendar = WaterIntake.calendar
+        let nowMinute = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+        var nextMinute: Int?
+        if !context.isPreview, case .upcoming(let at) = WaterReminder.due(instance.config, now: now),
+           calendar.isDate(at, inSameDayAs: now) {
+            nextMinute = calendar.component(.hour, from: at) * 60 + calendar.component(.minute, from: at)
         }
+        let axis = WaterCupPage.axis(window: WaterReminder(config: instance.config),
+                                     entries: today.entries.map(\.minute),
+                                     now: context.isPreview ? nil : nowMinute, next: nextMinute)
+        let lineY: CGFloat = 18
+        return GeometryReader { proxy in
+            let width = proxy.size.width
+            let inset: CGFloat = 8
+            let usable = max(1, width - inset * 2)
+            let x: (Int) -> CGFloat = { minute in inset + usable * CGFloat(axis.fraction(minute)) }
+            ZStack(alignment: .topLeading) {
+                Capsule()
+                    .fill(.white.opacity(0.18))
+                    .frame(width: usable, height: 2)
+                    .position(x: inset + usable / 2, y: lineY)
+                if let nextMinute {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .position(x: x(nextMinute), y: lineY)
+                        .help(tr("下次提醒 \(PostureSchedule.clock(nextMinute))"))
+                }
+                if !context.isPreview, nowMinute >= axis.start, nowMinute <= axis.end {
+                    Capsule()
+                        .fill(.white.opacity(0.8))
+                        .frame(width: 1.5, height: 14)
+                        .position(x: x(nowMinute), y: lineY)
+                    Text("现在")
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize()
+                        .position(x: x(nowMinute), y: 4)
+                }
+                ForEach(Array(today.entries.enumerated()), id: \.offset) { _, entry in
+                    Image(systemName: entry.type.symbol)
+                        .font(.system(size: 7.5, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 14, height: 14)
+                        .background(Circle().fill(entry.type == .water ? WaterStyle.water.opacity(0.85)
+                                                  : Color.white.opacity(0.28)))
+                        .position(x: x(entry.minute), y: lineY)
+                        .help("\(entry.clock) \(entry.type.title) \(WaterIntake.amount(entry.amount, ounces: ounces))")
+                }
+                ForEach(axis.ticks, id: \.self) { tick in
+                    Text(verbatim: WaterCupPage.tickLabel(tick))
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .monospacedDigit()
+                        .fixedSize()
+                        .position(x: x(tick), y: 34)
+                }
+            }
+        }
+        .frame(height: 40)
+        .accessibilityHidden(true)
+    }
+
+    private static func clock(_ date: Date) -> String {
+        PostureSchedule.clock(WaterIntake.calendar.component(.hour, from: date) * 60
+                              + WaterIntake.calendar.component(.minute, from: date))
     }
 
     private func lastDrinkLine(_ all: [WaterDay], now: Date) -> String {
@@ -350,11 +566,6 @@ struct WaterDetail: View {
         case .overdue(let seconds):
             return seconds >= 60 ? tr("已超时 \(Self.spelled(seconds))") : tr("该喝水了")
         }
-    }
-
-    private static func clock(_ date: Date) -> String {
-        PostureSchedule.clock(WaterIntake.calendar.component(.hour, from: date) * 60
-                              + WaterIntake.calendar.component(.minute, from: date))
     }
 
     /// "45 分钟", "1 小时 30 分钟": a span, not a ticking countdown.
@@ -391,7 +602,7 @@ struct WaterDetail: View {
             }
             Button {
                 guard !context.isPreview else { return }
-                withAnimation(.snappy(duration: 0.25)) { WaterLog.remove(at: index, in: instance) }
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { WaterLog.remove(at: index, in: instance) }
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))
@@ -736,7 +947,9 @@ struct WaterDetail: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(selected ? accent.opacity(0.75) : Color.white.opacity(0.08)))
+                            .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)

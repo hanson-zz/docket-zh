@@ -1266,6 +1266,17 @@
         }
       }
     },
+    "%@ 杯 · 计入 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ cups · %@ counted"
+          }
+        }
+      }
+    },
     "%@ 次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3539,6 +3550,28 @@
         }
       }
     },
+    "一杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cup"
+          }
+        }
+      }
+    },
+    "一杯 %@，%@ 杯达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a cup, %@ cups to the goal"
+          }
+        }
+      }
+    },
     "一杯的容量（卡片上的 +）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4041,6 +4074,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next reminder"
+          }
+        }
+      }
+    },
+    "下次提醒 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next reminder %@"
           }
         }
       }
@@ -5449,6 +5493,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Water today"
+          }
+        }
+      }
+    },
+    "今天已喝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drunk today"
           }
         }
       }
@@ -8903,6 +8958,17 @@
         }
       }
     },
+    "加一杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a drink"
+          }
+        }
+      }
+    },
     "加一点" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12257,6 +12323,17 @@
         }
       }
     },
+    "大杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large"
+          }
+        }
+      }
+    },
     "大毛毛雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13100,6 +13177,17 @@
         }
       }
     },
+    "小杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Small"
+          }
+        }
+      }
+    },
     "小毛毛雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13789,6 +13877,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open AI Chat"
+          }
+        }
+      }
+    },
+    "展开全部 %@ 条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all %@"
           }
         }
       }
@@ -30653,6 +30752,17 @@
         }
       }
     },
+    "记录%@，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log %@, %@"
+          }
+        }
+      }
+    },
     "记录一杯水，%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31929,6 +32039,17 @@
         }
       }
     },
+    "达标啦！%@喝饱了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal reached! %@ is full"
+          }
+        }
+      }
+    },
     "达标啦！小熊猫喝饱了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32178,6 +32299,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ to go"
+          }
+        }
+      }
+    },
+    "还差 %@，约 %@ 杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ to go, about %@ cups"
           }
         }
       }

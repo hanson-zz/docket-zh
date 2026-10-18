@@ -24,6 +24,8 @@ struct WaterPanda: View {
     var height: CGFloat
     /// 渴成骷髅（见 `WaterParched`）：换成骷髅图，水照样从底下涨。
     var parched: Bool = false
+    /// 减少动态效果：涨水、换表情、骷髅都直接跳过去，不做过渡。
+    var reduceMotion: Bool = false
 
     private var picture: NSImage? {
         if parched, let skeleton = WaterArt.skeleton(character) { return skeleton }
@@ -52,10 +54,10 @@ struct WaterPanda: View {
             }
         }
         .frame(width: width, height: height)
-        .animation(.smooth(duration: 0.6), value: level)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: level)
         // A new mood swaps the picture with a short cross-fade.
-        .animation(.easeInOut(duration: 0.25), value: mood)
-        .animation(.easeInOut(duration: 0.35), value: parched)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: mood)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: parched)
         .overlay(alignment: .topTrailing) {
             // The other characters' cheer picture has its own confetti.
             if celebrating, !parched, !character.hasMoods {
@@ -63,7 +65,7 @@ struct WaterPanda: View {
                     .font(.system(size: max(8, height * 0.26), weight: .semibold))
                     .foregroundStyle(Color(hex: PaletteColor.yellow.hex))
                     .offset(x: height * 0.06, y: -height * 0.08)
-                    .phaseAnimator([false, true]) { mark, up in
+                    .phaseAnimator(reduceMotion ? [false] : [false, true]) { mark, up in
                         mark.scaleEffect(up ? 1.15 : 0.85).opacity(up ? 1 : 0.7)
                     } animation: { _ in .easeInOut(duration: 0.8) }
                     .transition(.scale.combined(with: .opacity))

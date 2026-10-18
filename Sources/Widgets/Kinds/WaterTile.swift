@@ -2,8 +2,9 @@ import Foundation
 import SwiftUI
 
 /// 喝水：今天喝了多少。角色样式以一只杯子和它的水位为主，右边八个小杯是
-/// 今天的进度，选的角色（默认小熊猫）缩小到杯边探个头：喝一杯举一下杯子，
-/// 达标欢呼，提醒时段外打盹，很久没喝渴成骷髅（见 `WaterParched`）。电子
+/// 今天的进度，选的角色（默认小熊猫）站在杯子旁边，身上是原来的灰/彩水位
+/// 效果，水位和杯子同步：喝一杯两边一起涨、举一下杯子，达标欢呼，提醒时段
+/// 外打盹，很久没喝渴成骷髅（见 `WaterParched`）。电子
 /// 宠物那边角色才是主角，两张卡片不再长得一样（见 `WaterPetCards`）。
 ///
 /// Three styles. 角色 leads with the cup and its level; 圆环
@@ -31,7 +32,7 @@ struct WaterTile: View {
         !context.isPreview && WaterParched.isParched(instance.config, now: context.now)
     }
     /// 只有角色样式画骷髅；刚喝下那几秒举着杯子，先不变。
-    private var showsSkeleton: Bool { parched && !isRing && !isLiquid && mood != .drink }
+    private var showsSkeleton: Bool { !isRing && !isLiquid && WaterCupPage.showsSkeleton(parched: parched, mood: mood) }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
     /// The library's preview draws the sample week against its own 2000 ml.
     private var goal: Int {
@@ -111,7 +112,7 @@ struct WaterTile: View {
         }
     }
 
-    /// 角色样式：大杯和水位在左，角色在杯边探头；右边大数字、目标和八个小杯。
+    /// 角色样式：大杯和水位在左，角色站在杯子旁边；右边大数字、目标和八个小杯。
     private func cupWide(_ day: WaterDay, level: Double, done: Bool) -> some View {
         HStack(spacing: 10) {
             WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
@@ -174,8 +175,10 @@ struct WaterTile: View {
             if isRing {
                 ring(level: lap, done: done, diameter: 34)
             } else {
+                // 竖排只有 56 宽：角色小一点、多站到杯子前面一些。
                 WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
-                              parched: showsSkeleton, height: 34, reduceMotion: reduceMotion)
+                              parched: showsSkeleton, height: 34, reduceMotion: reduceMotion,
+                              characterScale: 0.72, overlap: 0.35)
             }
             VStack(spacing: 0) {
                 Text(WaterIntake.figure(day.total, ounces: ounces))

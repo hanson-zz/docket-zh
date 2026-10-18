@@ -1,13 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// 喝水角色样式的主角：一只玻璃杯，水位是今天的进度；选的角色缩小到杯子
-/// 右下角探个头，表情跟着 `WaterMood` 换（举杯、欢呼、打盹），渴成骷髅时
-/// 换成骷髅图（见 `WaterParched`），喝一杯就复活。
+/// 喝水角色样式的主角：一只玻璃杯，水位是今天的进度；选的角色站在杯子
+/// 旁边（不再缩成探头），身上还是原来那套灰/彩水位效果（见 `WaterPanda`：
+/// 水面以下全彩、以上去饱和发灰，中间一条白色波浪水面），水位和杯子同步。
+/// 表情跟着 `WaterMood` 换（举杯、欢呼、打盹），渴成骷髅时换成骷髅图（见
+/// `WaterParched`），水照样从底下涨，喝一杯就复活。六只角色都一样。
 ///
 /// 杯子用代码画，不用新图；角色用原来的图，所以六只角色都不用重画。
-/// 水面不随时间动（扩展栏上一整天不重画），涨水时平滑过渡，打开“减少动态
-/// 效果”时直接跳到新水位。
+/// `phase` 为 nil 时水面不随时间动（扩展栏上一整天不重画），相位跟着水位
+/// 走，涨水那半秒里杯子和角色的水面一起漂一段波；面板传自己的时钟让水面
+/// 一直轻轻动。打开“减少动态效果”时直接跳到新水位。
 struct WaterCupGauge: View {
     var character: WaterCharacter
     var mood: WaterMood
@@ -15,65 +18,88 @@ struct WaterCupGauge: View {
     var level: Double
     var celebrating: Bool
     var parched: Bool
-    /// 杯子的高度；角色约为它的一半。
+    /// 杯子的高度。
     var height: CGFloat
     var reduceMotion: Bool
+    /// 水面的相位（秒）；nil 是静止水面，见 `WaterCupPage.restingPhase`。
+    var phase: Double? = nil
+    /// 角色的高度是杯子的几成。
+    var characterScale: CGFloat = 0.82
+    /// 角色有这么一截（按角色宽度算）站到杯子前面，省一点宽度。
+    var overlap: CGFloat = 0.1
+    /// 面板里的大杯：多画刻度和杯壁高光。
+    var detailed: Bool = false
 
     private var cupWidth: CGFloat { height * 0.64 }
-    private var peekHeight: CGFloat { height * 0.5 }
-    private var peekWidth: CGFloat { peekHeight * CGFloat(character.aspect) }
-    /// 角色有一部分压在杯子上，只多占这么宽。
-    private var overhang: CGFloat { peekWidth * 0.62 }
+    private var characterHeight: CGFloat { height * characterScale }
+    private var characterWidth: CGFloat { characterHeight * CGFloat(character.aspect) }
 
-    private var picture: NSImage? {
-        if parched, let skeleton = WaterArt.skeleton(character) { return skeleton }
-        return WaterArt.image(character, mood)
+    /// 整个组件的宽度，排版用。
+    static func width(height: CGFloat, character: WaterCharacter,
+                      characterScale: CGFloat = 0.82, overlap: CGFloat = 0.1) -> CGFloat {
+        height * 0.64 + height * characterScale * CGFloat(character.aspect) * (1 - overlap)
     }
 
     var body: some View {
-        let cup = WaterCupShape()
-        let amplitude = max(1, height * 0.03)
-        ZStack(alignment: .bottomLeading) {
+        let surface = phase ?? WaterCupPage.restingPhase(level: level)
+        HStack(alignment: .bottom, spacing: -characterWidth * overlap) {
+            WaterCupGlass(level: level, phase: surface, reduceMotion: reduceMotion, detailed: detailed)
+                .frame(width: cupWidth, height: height)
+            WaterPanda(character: character, mood: mood, level: level, phase: surface,
+                       celebrating: celebrating, height: characterHeight, parched: parched,
+                       reduceMotion: reduceMotion)
+        }
+        .frame(width: Self.width(height: height, character: character,
+                                 characterScale: characterScale, overlap: overlap),
+               height: height, alignment: .bottomLeading)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 只有杯子：杯身、水、白色波浪水面和杯沿。
+struct WaterCupGlass: View {
+    var level: Double
+    var phase: Double
+    var reduceMotion: Bool
+    var detailed: Bool = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            let height = proxy.size.height
+            let width = proxy.size.width
+            let cup = WaterCupShape()
+            let amplitude = max(1, height * (detailed ? 0.02 : 0.03))
             ZStack {
-                cup.fill(WidgetStyle.primary.opacity(0.06))
-                WaterWave(level: level, phase: 0.3, amplitude: amplitude)
-                    .fill(LinearGradient(colors: [WaterStyle.water.opacity(0.7), WaterStyle.water.opacity(0.9)],
+                cup.fill(detailed ? Color.black.opacity(0.28) : WidgetStyle.primary.opacity(0.06))
+                WaterWave(level: level, phase: phase, amplitude: amplitude)
+                    .fill(LinearGradient(colors: [WaterStyle.water.opacity(detailed ? 0.55 : 0.7),
+                                                  WaterStyle.water.opacity(detailed ? 0.8 : 0.9)],
                                          startPoint: .top, endPoint: .bottom))
                     .clipShape(cup)
-                WaterWave(level: level, phase: 0.3, amplitude: amplitude, closed: false)
+                WaterWave(level: level, phase: phase, amplitude: amplitude, closed: false)
                     .stroke(WaterStyle.surface.opacity(level > 0.005 && level < 0.995 ? 0.9 : 0),
                             style: StrokeStyle(lineWidth: max(1, height / 40), lineCap: .round))
                     .clipShape(cup)
-                cup.stroke(WidgetStyle.primary.opacity(0.55),
-                           style: StrokeStyle(lineWidth: max(1.2, height / 30), lineJoin: .round))
+                if detailed {
+                    // 25% / 50% / 75% 的刻度。
+                    ForEach([0.25, 0.5, 0.75], id: \.self) { mark in
+                        Capsule()
+                            .fill(Color.white.opacity(0.4))
+                            .frame(width: width * 0.12, height: 1.2)
+                            .position(x: width * 0.2, y: height * (1 - mark))
+                    }
+                    // 杯壁一道淡高光。
+                    Capsule()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 3.5, height: height * 0.7)
+                        .rotationEffect(.degrees(-2))
+                        .position(x: width * 0.84, y: height * 0.45)
+                }
+                cup.stroke(detailed ? Color.white.opacity(0.6) : WidgetStyle.primary.opacity(0.55),
+                           style: StrokeStyle(lineWidth: max(1.2, height / (detailed ? 70 : 30)), lineJoin: .round))
             }
-            .frame(width: cupWidth, height: height)
             .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: level)
-
-            if let picture {
-                Image(nsImage: picture)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: peekWidth, height: peekHeight)
-                    .id(parched ? "skeleton" : mood.rawValue)
-                    .transition(.opacity)
-                    .offset(x: cupWidth + overhang - peekWidth)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: mood)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: parched)
-            }
         }
-        .frame(width: cupWidth + overhang, height: height, alignment: .bottomLeading)
-        .overlay(alignment: .topLeading) {
-            if celebrating, !parched {
-                Image(systemName: "sparkles")
-                    .font(.system(size: max(7, height * 0.22), weight: .semibold))
-                    .foregroundStyle(Color(hex: PaletteColor.yellow.hex))
-                    .offset(x: cupWidth - height * 0.1, y: -height * 0.06)
-                    .transition(.opacity)
-            }
-        }
-        .accessibilityHidden(true)
     }
 }
 
