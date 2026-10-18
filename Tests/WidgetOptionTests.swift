@@ -277,6 +277,8 @@ final class OptionApplicabilityTests: XCTestCase {
         // 黄金白银单位只在列表里有贵金属时有用；只有一只股票时没有可轮播的；
         // 自选股有了分组就不再读原来那串代码。
         "stock.metalUnit", "stock.rotate", "watchlist.metalUnit", "watchlist.symbols",
+        // 四格没有周期可选；旧的单个闹钟才有时间和名称；倒计时的预设在面板里改。
+        "progress.period", "alarm.time", "alarm.name", "countdown.presets",
     ]
 
     func testStockOptionsFollowTheList() {
