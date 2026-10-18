@@ -21,26 +21,57 @@ extension WidgetStyle {
 
 // MARK: - 拖入态
 
-/// 拖入时的颜色：默认是隔空投送那种系统蓝；废纸篓扔东西是删除，用红。
+/// 拖入时的颜色，颜色就是结果：系统蓝是发出去（隔空投送、翻译），红是扔进
+/// 废纸篓，青是先暂存，橙是记成待办。数值在 Core 的 `DropPrompt.Tint`。
 enum DropTint {
-    case blue, destructive
+    case blue, destructive, teal, orange
+
+    init(_ tint: DropPrompt.Tint) {
+        switch tint {
+        case .blue: self = .blue
+        case .red: self = .destructive
+        case .teal: self = .teal
+        case .orange: self = .orange
+        }
+    }
+
+    var core: DropPrompt.Tint {
+        switch self {
+        case .blue: .blue
+        case .destructive: .red
+        case .teal: .teal
+        case .orange: .orange
+        }
+    }
 
     func color(_ scheme: ColorScheme) -> Color {
-        switch self {
-        case .blue: WidgetStyle.dropBlue(scheme)
-        case .destructive: scheme == .dark ? Color(hex: "#FF453A") : Color(hex: "#FF3B30")
-        }
+        Color(hex: scheme == .dark ? core.darkHex : core.lightHex)
     }
 }
 
 extension View {
     /// 拖着东西停在卡片上时的虚线框，底下垫一层很淡的同色。
     ///
-    /// 从隔空投送卡片抽出来的，文件暂存、废纸篓、翻译和它们的面板都用这一个，
-    /// 拖入的样子全货架一致。`corner` 默认是卡片圆角，面板里的投放区可以传自己的。
+    /// 从隔空投送卡片抽出来的，文件暂存、废纸篓、快速待办、翻译和它们的面板都用
+    /// 这一个，拖入的样子全货架一致。`corner` 默认是卡片圆角，面板里的投放区可以
+    /// 传自己的。
+    ///
+    /// 给了 `prompt` 时框里还写明放下去会怎样：同色的图标，第一行结果，第二行
+    /// 数量或后果，颜色跟着 `prompt` 走。卡片自己的内容要用 `dropHidden` 让开，
+    /// 松手后回到平时的样子。`compact` 是竖排或窄卡：图标在上，结果拆两行。
     func dropTargetOutline(_ active: Bool, tint: DropTint = .blue,
-                           corner: CGFloat = WidgetStyle.corner) -> some View {
-        overlay { DropTargetOutline(active: active, tint: tint, corner: corner) }
+                           corner: CGFloat = WidgetStyle.corner,
+                           prompt: DropPrompt? = nil, compact: Bool = false) -> some View {
+        overlay {
+            DropTargetOutline(active: active, tint: prompt.map { DropTint($0.tint) } ?? tint,
+                              corner: corner, prompt: prompt, compact: compact)
+        }
+    }
+
+    /// 拖入提示出现时把卡片自己的内容藏起来（只淡掉内容，卡片底还在）。
+    func dropHidden(_ active: Bool) -> some View {
+        opacity(active ? 0 : 1)
+            .dockAnimation(.snappy(duration: 0.15), value: active)
     }
 
     /// 禁用：内容降透明度。
@@ -82,22 +113,97 @@ struct DropTargetOutline: View {
     var active: Bool
     var tint: DropTint = .blue
     var corner: CGFloat = WidgetStyle.corner
+    var prompt: DropPrompt?
+    var compact = false
 
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         let color = tint.color(scheme)
         RoundedRectangle(cornerRadius: corner, style: .continuous)
-            .fill(color.opacity(scheme == .dark ? DockMetrics.dropFillDark : DockMetrics.dropFillLight))
+            .fill(color.opacity(tint.core.fillOpacity(dark: scheme == .dark)))
             .overlay {
                 RoundedRectangle(cornerRadius: corner, style: .continuous)
                     .strokeBorder(color.opacity(DockMetrics.dropStrokeOpacity),
                                   style: StrokeStyle(lineWidth: DockMetrics.dropLineWidth,
                                                      dash: DockMetrics.dropDash.map { CGFloat($0) }))
             }
+            .overlay {
+                if let prompt {
+                    DropPromptLabel(prompt: prompt, color: color, compact: compact)
+                }
+            }
             .opacity(active ? 1 : 0)
             .dockAnimation(.snappy(duration: 0.15), value: active)
             .allowsHitTesting(false)
+            .accessibilityHidden(!active)
+    }
+}
+
+/// 虚线框里的字：同色图标，结果一行，数量或后果一行。
+private struct DropPromptLabel: View {
+    var prompt: DropPrompt
+    var color: Color
+    var compact: Bool
+
+    var body: some View {
+        Group {
+            if compact {
+                VStack(spacing: 3) {
+                    badge(size: WidgetStyle.badgeColumn)
+                    Text(prompt.compactTitle)
+                        .font(WidgetStyle.label(11))
+                        .foregroundStyle(color)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                }
+                .padding(.horizontal, 4)
+            } else {
+                HStack(spacing: WidgetStyle.rowSpacing) {
+                    badge(size: WidgetStyle.badge)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(prompt.title)
+                            .font(WidgetStyle.label(15))
+                            .foregroundStyle(color)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Text(prompt.caption)
+                            .font(WidgetStyle.note)
+                            .foregroundStyle(WidgetStyle.secondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, WidgetStyle.inset)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func badge(size: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: CGFloat(DockMetrics.badgeCorner(Double(size))), style: .continuous)
+                .fill(color.opacity(0.18))
+            if case .airDrop(_) = prompt {
+                AirDropGlyph()
+                    .stroke(color, style: StrokeStyle(lineWidth: max(1.4, size * 0.05), lineCap: .round))
+                    .frame(width: size * 0.56, height: size * 0.56)
+                    .overlay {
+                        Circle()
+                            .fill(color)
+                            .frame(width: size * 0.1, height: size * 0.1)
+                            .offset(y: size * 0.56 * 0.08)
+                    }
+            } else {
+                Image(systemName: prompt.symbol)
+                    .font(.system(size: size * CGFloat(DockMetrics.badgeGlyphRatio), weight: .medium))
+                    .foregroundStyle(color)
+            }
+        }
+        .frame(width: size, height: size)
     }
 }
 

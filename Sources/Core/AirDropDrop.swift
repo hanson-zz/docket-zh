@@ -16,7 +16,7 @@ public enum AirDropDrop {
 
         public var title: String {
             switch self {
-            case .targeted: tr("松手发送")
+            case .targeted(let files): DropPrompt.airDrop(files: files).title
             case .idle, .noFiles, .unavailable: tr("隔空投送")
             }
         }
@@ -24,7 +24,7 @@ public enum AirDropDrop {
         public var caption: String {
             switch self {
             case .idle: tr("拖文件到这里")
-            case .targeted(let files): tr("\(files) 个文件")
+            case .targeted(let files): DropPrompt.airDrop(files: files).caption
             case .noFiles: tr("只能发送文件")
             case .unavailable: tr("此 Mac 不支持")
             }

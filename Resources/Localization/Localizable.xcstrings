@@ -452,6 +452,17 @@
         }
       }
     },
+    "%@ 个 · 之后还能拿回来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · you can still get them back"
+          }
+        }
+      }
+    },
     "%@ 个复刻" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -514,6 +525,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ files · drag out to use"
+          }
+        }
+      }
+    },
+    "%@ 个文件 · 松手选设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ files · release to pick a device"
           }
         }
       }
@@ -3803,6 +3825,17 @@
         }
       }
     },
+    "上面写的字会一起扔掉。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is written on it goes with it."
+          }
+        }
+      }
+    },
     "下一个 %@后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4844,6 +4877,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Then %@ %@"
+          }
+        }
+      }
+    },
+    "之后还能拿回来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can still get them back"
           }
         }
       }
@@ -7697,6 +7741,17 @@
         }
       }
     },
+    "再贴一张，最多 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stick on another, up to %@"
+          }
+        }
+      }
+    },
     "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9508,6 +9563,17 @@
         }
       }
     },
+    "发给\n附近设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send\nnearby"
+          }
+        }
+      }
+    },
     "发给 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9559,6 +9625,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Send Feedback…"
+          }
+        }
+      }
+    },
+    "发送给附近设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to nearby devices"
           }
         }
       }
@@ -9900,6 +9977,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Files only"
+          }
+        }
+      }
+    },
+    "只记位置，原文件不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only remembered, the files stay put"
           }
         }
       }
@@ -18049,6 +18137,28 @@
         }
       }
     },
+    "撕掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tear Off"
+          }
+        }
+      }
+    },
+    "撕掉这张便签？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tear off this note?"
+          }
+        }
+      }
+    },
     "撤销" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18815,6 +18925,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Event"
+          }
+        }
+      }
+    },
+    "新的一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Note"
           }
         }
       }
@@ -20509,6 +20630,28 @@
         }
       }
     },
+    "暂存\n在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep\nit here"
+          }
+        }
+      }
+    },
+    "暂存在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep it here"
+          }
+        }
+      }
+    },
     "暂无报价。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20681,6 +20824,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@ anniversaries"
+          }
+        }
+      }
+    },
+    "最多 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@"
           }
         }
       }
@@ -21909,6 +22063,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drop to add a to-do"
+          }
+        }
+      }
+    },
+    "松手选设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to pick a device"
           }
         }
       }
@@ -26976,6 +27141,17 @@
         }
       }
     },
+    "移到\n废纸篓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to\nTrash"
+          }
+        }
+      }
+    },
     "移到废纸篓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27357,6 +27533,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Year %@"
+          }
+        }
+      }
+    },
+    "第 %@ 张，共 %@ 张，翻到下一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note %@ of %@, flip to the next"
           }
         }
       }
@@ -28567,6 +28754,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "United States"
+          }
+        }
+      }
+    },
+    "翻到下一张便签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip to the next note"
           }
         }
       }
@@ -30066,6 +30264,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Issues"
+          }
+        }
+      }
+    },
+    "记一条\n待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a\nto-do"
           }
         }
       }
@@ -32178,6 +32387,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This Mac has no built-in display with readable brightness."
+          }
+        }
+      }
+    },
+    "这张纸的颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This note's color"
           }
         }
       }

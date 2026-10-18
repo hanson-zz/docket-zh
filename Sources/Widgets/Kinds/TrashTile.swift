@@ -12,6 +12,8 @@ struct TrashTile: View {
 
     private var monitor: TrashMonitor { TrashMonitor.shared }
     @State private var targeted = false
+    /// 拖进来的有几个文件，写在拖入提示的第二行。
+    @State private var dragged = 0
     @State private var scaredAt: Date?
     @State private var hovering = false
     @State private var swallowAt: Date?
@@ -31,30 +33,37 @@ struct TrashTile: View {
 
     var body: some View {
         WidgetSurface {
-            if context.position.isVertical {
-                VStack(spacing: 4) {
-                    bin(size: WidgetStyle.badgeCompact)
-                    Text(TrashFlies.format(bytes: bytes))
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
-            } else {
-                HStack(spacing: WidgetStyle.rowSpacing) {
-                    bin(size: WidgetStyle.badge)
-                    TileReading(value: value, caption: caption, valueSize: 15)
-                    Spacer(minLength: 0)
+            Group {
+                if context.position.isVertical {
+                    VStack(spacing: 4) {
+                        bin(size: WidgetStyle.badgeCompact)
+                        Text(TrashFlies.format(bytes: bytes))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
+                } else {
+                    HStack(spacing: WidgetStyle.rowSpacing) {
+                        bin(size: WidgetStyle.badge)
+                        TileReading(value: value, caption: caption, valueSize: 15)
+                        Spacer(minLength: 0)
+                    }
                 }
             }
+            .dropHidden(targeted)
         }
-        // 共用的拖入虚线框；扔进废纸篓是删除，用红色那档。
-        .dropTargetOutline(targeted, tint: .destructive)
+        // 共用的拖入提示，红色：“移到废纸篓 / 3 个 · 之后还能拿回来”。
+        // 不是真删，所以不写“删除”。
+        .dropTargetOutline(targeted, prompt: .trash(items: dragged), compact: context.position.isVertical)
         .permissionLock(locked ? permission : nil, preview: context.isPreview)
-        .dropDestination(for: URL.self) { urls, _ in
-            guard !context.isPreview else { return false }
-            return monitor.trash(urls)
-        } isTargeted: { targeted = $0 }
+        .onDrop(of: FileDropDelegate.types, delegate: FileDropDelegate(
+            enabled: !context.isPreview,
+            update: { inside, count in
+                targeted = inside
+                dragged = count
+            },
+            receive: { urls in _ = monitor.trash(urls) }))
         .onHover { inside in
             hovering = inside
             // Entering scares them; leaving starts the slow return.
@@ -79,7 +88,7 @@ struct TrashTile: View {
 
     private var value: String {
         if locked { return tr("需要权限") }
-        return targeted ? tr("松开以删除") : TrashFlies.format(bytes: bytes)
+        return TrashFlies.format(bytes: bytes)
     }
 
     private var caption: String {
@@ -97,7 +106,7 @@ struct TrashTile: View {
             SwallowingBin(startedAt: swallowAt, binSize: size * 0.42) {
                 Image(systemName: items > 0 ? "trash.fill" : "trash")
                     .font(.system(size: size * 0.42, weight: .medium))
-                    .foregroundStyle(targeted ? Color.red : WidgetStyle.primary)
+                    .foregroundStyle(WidgetStyle.primary)
                     .scaleEffect(targeted && !reduceMotion ? 1.15 : 1)
                     .dockAnimation(.snappy(duration: 0.2), value: targeted)
             }

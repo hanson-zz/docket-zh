@@ -59,12 +59,11 @@ struct TodoTile: View {
                     list(card, openCount: open.count)
                 }
             }
-            .opacity(targeted ? 0 : 1)
-            .overlay {
-                if targeted { TodoDropHint(compact: context.position.isVertical) }
-            }
+            // 拖入时不再在清单上盖一层字：和文件暂存、隔空投送、废纸篓同一排法，
+            // 橙色虚线框写“记一条待办 / 文字、链接、文件都行”，松手回到清单。
+            .dropHidden(targeted)
         }
-        .dropTargetOutline(targeted)
+        .dropTargetOutline(targeted, prompt: .todo, compact: context.position.isVertical)
         .onDrop(of: TodoDropDelegate.types, delegate: TodoDropDelegate(
             enabled: !context.isPreview,
             targeted: { targeted = $0 },

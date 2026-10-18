@@ -29,11 +29,11 @@ struct FileShelfDetail: View {
                                 .strokeBorder(.white.opacity(targeted ? 0 : 0.2),
                                               style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                         }
-                        .dropTargetOutline(targeted, corner: 12)
+                        .dropTargetOutline(targeted, tint: .teal, corner: 12)
                 } else {
                     FileRows(files: files, now: context.now,
                              onRemove: { FileShelf.remove($0.url, from: instance) })
-                        .dropTargetOutline(targeted, corner: 12)
+                        .dropTargetOutline(targeted, tint: .teal, corner: 12)
                 }
                 HStack(spacing: 8) {
                     PanelButton(title: tr("在访达中显示"), symbol: "folder", prominent: true) {

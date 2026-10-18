@@ -1,6 +1,11 @@
+import AppKit
 import SwiftUI
 
-/// A scrap of paper on the shelf (160×100, always expanded).
+/// 便签：一张长期贴着的纸（160×100，始终展开；底栏上实际 58pt 高）。
+///
+/// 纸感卡片：小圆角、顶上一条半透明胶带、右下角卷起，手写字。可以叠几张
+/// （最多 3 张，见 `StickyStack`），每张一种颜色，后面的露出纸边；右下角的
+/// “1/3”点一下翻到下一张。不能勾选，也不会自动清空，一直贴着直到自己撕掉。
 ///
 /// The words are only shown here; they are written in the note's detail panel,
 /// on paper the size of something you write on rather than glance at. A field
@@ -11,27 +16,18 @@ struct StickyNoteTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    /// Every `PaperColor` is a light swatch in both appearances, so the ink is
-    /// deliberately fixed dark rather than semantic - `Color.primary` would go
-    /// white in dark mode and vanish into the paper.
-    private var ink: Color { Color(hex: swatch.inkHex) }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var swatch: PaperColor {
-        // 没解锁码头 Pro 时，Pro 纸色退回默认的柠檬黄（最浅的五种免费）。
-        ProLicenseGate.noteColor(config: instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
-    }
+    private var unlocked: Bool { ProAccess.isUnlocked || context.isPreview }
 
-    private var paper: Color {
-        WidgetStyle.paper(swatch)
-    }
-
-    private var stored: String { instance.config.string("text") }
-
-    private var text: String {
-        guard stored.isEmpty else { return stored }
-        // An empty note on the shelf stays empty; the library needs something
-        // to show.
-        return context.isPreview ? tr("买咖啡\n给小王回电话") : ""
+    private var pile: StickyStack.Pile {
+        if context.isPreview {
+            // 添加面板里的样例：三张叠着，看得出能放几张。
+            return StickyStack.Pile(sheets: [StickySheet(text: tr("买咖啡\n给小王回电话"), color: PaperColor.cream.rawValue),
+                                             StickySheet(color: PaperColor.pink.rawValue),
+                                             StickySheet(color: PaperColor.mint.rawValue)])
+        }
+        return StickyStack.pile(instance.config)
     }
 
     var body: some View {
@@ -39,34 +35,83 @@ struct StickyNoteTile: View {
         // ink, one more line, and the text shrinks a little rather than
         // trailing off in an ellipsis inside 56pt of usable width.
         let column = context.position.isVertical
-        return WidgetSurface(fill: paper) {
-            // An empty note is blank paper, not a blank widget.
-            //
-            // There was no prompt here at all, on the reasoning that grey
-            // placeholder words on a sticky note read as a note someone
-            // already wrote. That reasoning holds, and the conclusion did
-            // not: an entirely empty yellow rectangle reads as a widget that
-            // failed to load. Ruled lines and a pencil are the way out.
-            // Nobody mistakes a ruling for handwriting, and paper you can
-            // see the lines on is obviously paper waiting to be written on.
-            if text.isEmpty {
-                blankPaper(column: column)
-            } else {
-                Text(text)
-                .font(.system(size: column ? 10 : 13, weight: .semibold))
+        let pile = self.pile
+        let front = pile.front.paper(unlocked: unlocked)
+        // 纸自己就是卡片：底板透明，纸铺在卡片里，四边留一点让叠着的纸边露出来。
+        return WidgetSurface(fill: .clear) {
+            ZStack {
+                ForEach(Array(pile.behind.prefix(2).enumerated().reversed()), id: \.offset) { index, sheet in
+                    StickyPaper(color: sheet.paper(unlocked: unlocked), tape: false, curl: false)
+                        .rotationEffect(.degrees(index == 0 ? 2.2 : 4))
+                        .offset(x: CGFloat(index + 1) * 2, y: -CGFloat(index + 1) * 1.5)
+                }
+                StickyPaper(color: front, tape: true, curl: true)
+                    .overlay { words(pile.front.text, ink: Color(hex: front.inkHex), column: column) }
+                    .rotationEffect(.degrees(-0.8))
+                    .id(pile.page)
+                    .transition(reduceMotion ? .opacity
+                                : .asymmetric(insertion: .opacity,
+                                              removal: .offset(x: -18, y: 0).combined(with: .opacity)))
+            }
+            .padding(.horizontal, -WidgetStyle.inset + (column ? 5 : 6))
+            .padding(.top, 6)
+            .padding(.bottom, 5)
+            .overlay(alignment: .bottomTrailing) {
+                if let marker = pile.marker { flipButton(marker, ink: Color(hex: front.inkHex)) }
+            }
+        }
+    }
+
+    /// 字：手写体，最上面那张的。空白的纸画两条横线和一支铅笔。
+    @ViewBuilder
+    private func words(_ text: String, ink: Color, column: Bool) -> some View {
+        if text.isEmpty {
+            blankPaper(ink: ink, column: column)
+        } else {
+            Text(text)
+                .font(StickyFont.hand(size: column ? 11 : 14))
                 .foregroundStyle(ink)
                 .multilineTextAlignment(.leading)
+                .lineSpacing(-1)
                 .lineLimit(column ? 5 : 4)
-                .minimumScaleFactor(column ? 0.8 : 1)
+                .minimumScaleFactor(0.75)
                 .truncationMode(.tail)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.vertical, column ? 8 : 9)
+                .padding(.horizontal, column ? 6 : 9)
+                .padding(.top, column ? 8 : 9)
+                .padding(.bottom, 4)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 // No button trait: the note itself is read, not activated -
                 // writing is its own control and the card belongs to the shelf.
-                .accessibilityLabel(tr("便签：\(stored)"))
-            }
+                .accessibilityLabel(tr("便签：\(text)"))
         }
+    }
+
+    /// 翻下一张：右下角的“1/3”。只有一张时没有。
+    private func flipButton(_ marker: String, ink: Color) -> some View {
+        Button {
+            flip()
+        } label: {
+            Text(marker)
+                .font(.system(size: 9, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(.black.opacity(0.5)))
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .padding(.trailing, 9)
+        .padding(.bottom, 8)
+        .help(tr("翻到下一张便签"))
+        .accessibilityLabel(tr("第 \(pile.page + 1) 张，共 \(pile.count) 张，翻到下一张"))
+    }
+
+    private func flip() {
+        guard !context.isPreview else { return }
+        let animation: Animation = reduceMotion ? .easeInOut(duration: 0.12) : .snappy(duration: 0.25)
+        withAnimation(animation) { StickyLog.flip(instance) }
     }
 
     /// Ruled lines under a pencil, at the weight of a watermark.
@@ -75,12 +120,12 @@ struct StickyNoteTile: View {
     /// in both appearances, so a semantic grey would go white in the dark and
     /// disappear. Opacity does the work instead, which keeps it a hint at any
     /// paper colour.
-    private func blankPaper(column: Bool) -> some View {
-        VStack(alignment: .leading, spacing: column ? 5 : 7) {
+    private func blankPaper(ink: Color, column: Bool) -> some View {
+        VStack(alignment: .leading, spacing: column ? 5 : 6) {
             Image(systemName: "pencil.line")
-                .font(.system(size: column ? 11 : 13, weight: .semibold))
+                .font(.system(size: column ? 11 : 12, weight: .semibold))
                 .foregroundStyle(ink.opacity(0.28))
-            ForEach(0..<(column ? 2 : 2), id: \.self) { line in
+            ForEach(0..<2, id: \.self) { line in
                 Capsule()
                     .fill(ink.opacity(0.14))
                     // The second line is shorter, the way a written one runs
@@ -88,8 +133,109 @@ struct StickyNoteTile: View {
                     .frame(width: line == 0 ? nil : 34, height: 2)
             }
         }
-        .padding(.vertical, column ? 8 : 9)
+        .padding(.horizontal, column ? 6 : 9)
+        .padding(.top, column ? 8 : 9)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityLabel("空白便签")
+        .accessibilityLabel(tr("空白便签"))
     }
+}
+
+/// 一张纸：小圆角、一点投影；最上面那张顶上一条胶带、右下角卷起。
+struct StickyPaper: View {
+    var color: PaperColor
+    var tape: Bool
+    var curl: Bool
+    /// 面板里的大纸角卷得大一些。
+    var curlSize: CGFloat = 12
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 4, style: .continuous)
+        shape
+            .fill(Color(hex: color.hex))
+            .shadow(color: .black.opacity(0.28), radius: 1.5, x: 1, y: 1.5)
+            .overlay(alignment: .bottomTrailing) {
+                if curl { StickyCurl(dark: color.isDark).frame(width: curlSize, height: curlSize) }
+            }
+            .overlay(alignment: .top) {
+                if tape {
+                    RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                        .fill(.white.opacity(color.isDark ? 0.28 : 0.45))
+                        .frame(width: 30, height: 9)
+                        .rotationEffect(.degrees(-4))
+                        .offset(y: -3)
+                }
+            }
+    }
+}
+
+/// 右下角卷起的纸角：一块阴影加一块翻过来的浅色三角。
+private struct StickyCurl: View {
+    var dark: Bool
+
+    var body: some View {
+        Canvas { canvas, size in
+            let w = size.width, h = size.height
+            var shadow = Path()
+            shadow.move(to: CGPoint(x: w, y: 0))
+            shadow.addLine(to: CGPoint(x: 0, y: h))
+            shadow.addLine(to: CGPoint(x: w * 0.6, y: h))
+            shadow.addQuadCurve(to: CGPoint(x: w, y: h * 0.6), control: CGPoint(x: w, y: h))
+            shadow.closeSubpath()
+            canvas.fill(shadow, with: .color(.black.opacity(0.12)))
+            var flap = Path()
+            flap.move(to: CGPoint(x: w, y: 0))
+            flap.addLine(to: CGPoint(x: 0, y: h))
+            flap.addQuadCurve(to: CGPoint(x: w, y: 0), control: CGPoint(x: w * 0.25, y: h * 0.25))
+            flap.closeSubpath()
+            canvas.fill(flap, with: .color(.white.opacity(dark ? 0.25 : 0.5)))
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// 便签的手写字：优先系统自带的“手札体”（Hannotate SC），没有就回退系统字体。
+enum StickyFont {
+    /// 手札体的几种字重，按想要的先后试。
+    private static let names = ["HannotateSC-W5", "HannotateSC-W7"]
+
+    @MainActor private static var resolved: String?? = nil
+
+    @MainActor
+    static func hand(size: CGFloat) -> Font {
+        if resolved == nil {
+            resolved = .some(names.first { NSFont(name: $0, size: 12) != nil })
+        }
+        if let name = resolved ?? nil {
+            return .custom(name, fixedSize: size)
+        }
+        return .system(size: size, weight: .semibold)
+    }
+}
+
+/// 卡片和面板对便签的几种写法，都从现在保存着的那份改，两边不会打架。
+@MainActor
+enum StickyLog {
+    private static func latest(_ instance: WidgetInstance) -> WidgetInstance {
+        WidgetWriter.current(instance.id) ?? instance
+    }
+
+    static func change(_ instance: WidgetInstance, _ edit: (StickyStack.Pile) -> StickyStack.Pile) {
+        WidgetWriter.write(latest(instance)) { config in
+            StickyStack.store(edit(StickyStack.pile(config)), in: &config)
+        }
+    }
+
+    static func flip(_ instance: WidgetInstance) { change(instance) { $0.flipped() } }
+
+    static func write(_ text: String, in instance: WidgetInstance) { change(instance) { $0.writing(text) } }
+
+    static func color(_ color: PaperColor, in instance: WidgetInstance) {
+        change(instance) { $0.coloring(color.rawValue) }
+    }
+
+    static func addSheet(_ instance: WidgetInstance) {
+        change(instance) { $0.adding(color: StickyStack.nextColor(after: $0)) }
+    }
+
+    static func tearOff(_ instance: WidgetInstance) { change(instance) { $0.removingFront() } }
 }
