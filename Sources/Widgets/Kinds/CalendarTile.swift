@@ -17,8 +17,12 @@ struct CalendarTile: View {
 
     @State private var access = EKEventStore.authorizationStatus(for: .event)
     @State private var events: [TileEvent] = []
+    /// 时间线上指针下面是第几块，没有指着时是 nil。
+    @State private var pointed: Int?
+    @Environment(\.widgetHovered) private var tileHovered
 
-    private var layout: String { instance.config.string("layout", default: "nextEvent") }
+    /// 存的旧值 agenda 也当成今日时间线，见 `CalendarDay.layout`。
+    private var layout: String { CalendarDay.layout(instance.config) }
 
     private var showsAllDay: Bool { instance.config.bool("allDay", default: true) }
 
@@ -29,9 +33,14 @@ struct CalendarTile: View {
     /// Only full access can read a day; write-only is no better than none here.
     private var hasAccess: Bool { context.isPreview || access == .fullAccess }
 
-    /// The date layouts are a calendar page, not an agenda, so a shelf full of
-    /// them never touches EventKit at all.
-    private var needsEvents: Bool { layout != "date" }
+    /// 日期样式也画当天会议的小点，所以每个样式都要读日历。
+    private var needsEvents: Bool { true }
+
+    /// 小组件库里固定在早上 10:05，和设计稿一样：倒计时、时间线和变暗的过去都有东西可看。
+    private var now: Date {
+        guard context.isPreview else { return context.now }
+        return Calendar.current.date(bySettingHour: 10, minute: 5, second: 0, of: context.now) ?? context.now
+    }
 
     /// Midnight of the day being drawn. Derived from the tick, so the tile
     /// turns the page rather than holding yesterday open.
@@ -62,98 +71,290 @@ struct CalendarTile: View {
     private var wide: some View {
         switch layout {
         case "date":
-            dateBlock(weekday: 12, day: 28)
+            dateBlock(weekday: 12, day: 28, dots: true)
         case "dateAndEvent":
             HStack(spacing: 12) {
-                dateBlock(weekday: 10, day: 24)
+                dateBlock(weekday: 10, day: 24, dots: true)
                 nextEvent
             }
-        case "agenda":
-            HStack(spacing: 12) {
-                dateBlock(weekday: 10, day: 24)
-                agenda
-            }
+        case CalendarDay.timelineLayout:
+            timeline
         default:
             nextEvent
         }
     }
 
-    /// Title over "time · calendar", which is the panel's own row: two events
-    /// at the same hour are told apart by the calendar they came from.
+    // MARK: 下一个日程
+
+    /// 还有多久、会议名、时间和地点，有会议链接就有「加入」，底下一行是之后那个。
     @ViewBuilder
     private var nextEvent: some View {
-        if let event = upcoming.first {
+        let queue = upcomingTimed
+        if let event = queue.first {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    dot(accent, size: 6)
+                    Text(CalendarDay.countdown(start: event.start, end: event.end, now: now))
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundStyle(accent)
+                        .monospacedDigit()
+                    Spacer(minLength: 2)
+                    Text(CalendarDay.clock(event.start))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+                Text(event.title)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .padding(.top, 1)
+                Text(event.whereLine)
+                    .font(.system(size: 11))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+                Spacer(minLength: 2)
+                if let link = event.link {
+                    joinButton(link)
+                }
+                if let after = queue.dropFirst().first {
+                    Rectangle()
+                        .fill(WidgetStyle.primary.opacity(0.1))
+                        .frame(height: 0.5)
+                        .padding(.top, 2)
+                    Text(tr("之后 \(CalendarDay.clock(after.start)) \(after.title)"))
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+            }
+            // Truncated rather than wrapped: a second line would not fit the
+            // card, and half a clipped title is worse than an honest ellipsis.
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        } else if let allDay = upcoming.first {
+            // 今天只剩全天日程：和原来一样一行标题一行说明。
             HStack(alignment: .top, spacing: 8) {
-                dot(event.color, size: 7)
-                    // Aligned to the cap of the title, not the middle of the
-                    // two-line block.
-                    .padding(.top, 4)
+                dot(allDay.color, size: 7).padding(.top, 4)
                 VStack(alignment: .leading, spacing: 1) {
-                    // The shelf's value and caption styles, a step down for a
-                    // title that is words rather than a figure.
-                    Text(event.title)
+                    Text(allDay.title)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
-                    Text(event.detail)
+                    Text(allDay.detail)
                         .font(.system(size: 12))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
                 Spacer(minLength: 0)
             }
-            // Truncated rather than wrapped: a second line would not fit the
-            // card, and half a clipped title is worse than an honest ellipsis.
             .lineLimit(1)
         } else {
             note(stateLine)
         }
     }
 
-    /// The next few entries, one line each. Three is what a 58pt card holds at
-    /// a size that can still be read across a desk.
+    /// 绿色的「加入腾讯会议」。只占按钮自己那块，卡片别处照旧点开面板。
+    private func joinButton(_ link: MeetingLink) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            NSWorkspace.shared.open(link.url)
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "video.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(link.provider.joinTitle)
+                    .font(.system(size: 11.5, weight: .bold))
+            }
+            .foregroundStyle(Color.black.opacity(0.82))
+            .frame(maxWidth: .infinity)
+            .frame(height: 24)
+            .background(Capsule().fill(joinGreen))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(link.provider.joinTitle)
+    }
+
+    // MARK: 今日时间线
+
+    /// 今天的定时日程按时长画在一根轴上：9 点到 19 点（日程更早更晚就往外扩），
+    /// 过去的变暗，红线是现在。指着一块，标题换成它的详情；有会议链接的那块点一下就加入。
     @ViewBuilder
-    private var agenda: some View {
-        let rows = Array(upcoming.prefix(3))
-        if rows.isEmpty {
+    private var timeline: some View {
+        let spans = timedEvents.map(\.span)
+        if !hasAccess {
             note(stateLine)
         } else {
+            let hours = DayTimeline.hourRange(spans, day: day)
+            let blocks = DayTimeline.blocks(spans, hours: hours, day: day, now: now)
+            let lit = tileHovered && !context.isPreview ? pointed.flatMap { blocks.indices.contains($0) ? $0 : nil } : nil
+            let left = CalendarDay.remaining(spans, now: now)
             VStack(alignment: .leading, spacing: 3) {
-                ForEach(rows) { event in
-                    HStack(spacing: 6) {
-                        dot(event.color, size: 6)
-                        Text(event.timeText)
-                            .font(WidgetStyle.label(11))
-                            .foregroundStyle(WidgetStyle.primary)
-                            .monospacedDigit()
-                            // Fixed column so the titles line up under each
-                            // other instead of stepping in and out with the
-                            // width of each time.
-                            .frame(width: 54, alignment: .leading)
-                        Text(event.title)
-                            .font(WidgetStyle.note)
-                            .foregroundStyle(WidgetStyle.secondary)
-                        Spacer(minLength: 0)
-                    }
+                timelineHeader(lit: lit.flatMap { event(id: blocks[$0].id) }, remaining: left)
+                GeometryReader { proxy in
+                    timelineBand(blocks, hours: hours, size: proxy.size)
+                }
+                .frame(height: 15)
+                GeometryReader { proxy in
+                    timelineTicks(hours, width: proxy.size.width)
+                }
+                .frame(height: 10)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func timelineHeader(lit: TileEvent?, remaining: [CalendarSpan]) -> some View {
+        HStack(spacing: 6) {
+            if let lit {
+                dot(lit.color, size: 6)
+                Text(lit.title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .layoutPriority(1)
+                Text(lit.hoverLine)
+                    .font(.system(size: 10))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+                Spacer(minLength: 2)
+                if lit.link != nil, lit.end > now {
+                    Text("点按加入")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.82))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1.5)
+                        .background(Capsule().fill(joinGreen))
+                }
+            } else {
+                Text(remaining.isEmpty
+                     ? (timedEvents.isEmpty ? tr("今天没有日程") : tr("今天的日程都结束了"))
+                     : tr("今天还剩 \(remaining.count) 个"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.primary)
+                Spacer(minLength: 4)
+                if let next = remaining.first {
+                    Text(CalendarDay.nextLine(start: next.start, now: now))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(accent)
+                        .monospacedDigit()
                 }
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
+    private func timelineBand(_ blocks: [TimelineBlock], hours: ClosedRange<Int>, size: CGSize) -> some View {
+        let width = size.width, height = size.height
+        let nowX = DayTimeline.nowFraction(now, hours: hours, day: day).map { CGFloat($0) * width }
+        return ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(WidgetStyle.primary.opacity(0.07))
+                .frame(width: width, height: height)
+            // 过去的部分压暗。
+            if let nowX, nowX > 0 {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.black.opacity(0.22))
+                    .frame(width: nowX, height: height)
+            }
+            ForEach(Array(blocks.enumerated()), id: \.element.id) { index, block in
+                let x = CGFloat(block.from) * width
+                let w = max(3, CGFloat(block.to - block.from) * width - 1)
+                let laneHeight = (height - CGFloat(block.lanes - 1)) / CGFloat(block.lanes)
+                let y = CGFloat(block.lane) * (laneHeight + 1)
+                let item = event(id: block.id)
+                let color = item?.color ?? accent
+                let lit = tileHovered && pointed == index && !context.isPreview
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(color.opacity(block.isPast ? 0.35 : (lit ? 1 : 0.88)))
+                    if let item, w > 26, block.lanes == 1 {
+                        Text(item.title)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundStyle(Color.black.opacity(block.isPast ? 0.5 : 0.8))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .padding(.horizontal, 3)
+                    }
+                }
+                .frame(width: w, height: laneHeight)
+                .overlay {
+                    if lit {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.8), lineWidth: 1)
+                    }
+                }
+                .offset(x: x, y: y)
+            }
+            if let nowX {
+                Rectangle()
+                    .fill(nowRed)
+                    .frame(width: 1.5, height: height + 4)
+                    .offset(x: nowX - 0.75, y: -2)
+                Circle()
+                    .fill(nowRed)
+                    .frame(width: 5, height: 5)
+                    .offset(x: nowX - 2.5, y: -4)
+            }
+            // 有会议链接、还没开完的那块可以点一下加入；别的地方交给卡片自己的点击开面板。
+            if !context.isPreview {
+                ForEach(Array(blocks.enumerated()), id: \.element.id) { _, block in
+                    if let item = event(id: block.id), let link = item.link, !block.isPast {
+                        let x = CGFloat(block.from) * width
+                        let w = max(6, CGFloat(block.to - block.from) * width)
+                        Button {
+                            NSWorkspace.shared.open(link.url)
+                        } label: {
+                            Color.clear
+                                .frame(width: w, height: height)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .offset(x: x)
+                        .accessibilityLabel(tr("\(link.provider.joinTitle)：\(item.title)"))
+                    }
+                }
+                PointerFraction { fraction in
+                    let index = fraction.flatMap { DayTimeline.block(at: Double($0.x), in: blocks) }
+                    if index != pointed { pointed = index }
+                }
+                .frame(width: width, height: height)
+            }
+        }
+        .frame(width: width, height: height, alignment: .topLeading)
+    }
+
+    private func timelineTicks(_ hours: ClosedRange<Int>, width: CGFloat) -> some View {
+        let span = CGFloat(max(1, hours.upperBound - hours.lowerBound))
+        let labels = DayTimeline.labelHours(hours)
+        return ZStack(alignment: .topLeading) {
+            ForEach(labels, id: \.self) { hour in
+                let x = CGFloat(hour - hours.lowerBound) / span * width
+                let text = String(format: "%d:00", hour)
+                // 两头的字往里收，不出卡片。
+                let w: CGFloat = 30
+                let left = min(max(0, x - (hour == hours.lowerBound ? 0 : w / 2)), width - w)
+                Text(verbatim: text)
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+                    .frame(width: w, alignment: hour == hours.lowerBound ? .leading : .center)
+                    .offset(x: left)
+            }
+        }
+        .frame(width: width, height: 10, alignment: .topLeading)
     }
 
     // MARK: Column layouts
     //
-    // 56pt of usable width and 76pt of height. Four layouts do not survive
-    // that intact: "Date + agenda" is the one that genuinely cannot, because
-    // three rows of "09:30  Standup" here would each be squeezed past reading
-    // size, so it degrades to the date over the single next event - the same
-    // thing "Date + next event" shows, which is the part of an agenda a column
-    // can actually carry. The rest of the day is one click away in the panel.
+    // 56pt of usable width and 76pt of height. 今日时间线在竖排里画不开：一根
+    // 56pt 的轴上十个小时，每块只剩一两个点宽，所以它和「日期 + 下一个日程」
+    // 一样退成日期加下一个日程。The rest of the day is one click away in the panel.
 
     @ViewBuilder
     private var column: some View {
         switch layout {
         case "date":
-            dateBlock(weekday: 11, day: 27)
+            dateBlock(weekday: 11, day: 27, dots: true)
         case "nextEvent":
             columnEvent
         default:
@@ -201,8 +402,8 @@ struct CalendarTile: View {
 
     /// Weekday over the day number, the calendar page every Dock has had since
     /// there were Docks. Sized to its content so the agenda beside it keeps
-    /// every point it is not using.
-    private func dateBlock(weekday: CGFloat, day: CGFloat) -> some View {
+    /// every point it is not using. `dots` 时下面一排小点，一个点一个会，开完的变淡。
+    private func dateBlock(weekday: CGFloat, day: CGFloat, dots: Bool = false) -> some View {
         VStack(spacing: 0) {
             // Grey, not the calendar's red: colour on the shelf is kept to
             // small marks, and the dots beside each event already carry it.
@@ -213,6 +414,18 @@ struct CalendarTile: View {
                 .font(WidgetStyle.value(day))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
+            if dots, hasAccess {
+                let marks = CalendarDay.dots(timedEvents.map(\.span), now: now)
+                if !marks.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(marks, id: \.id) { mark in
+                            dot(event(id: mark.id)?.color ?? accent, size: 5)
+                                .opacity(mark.past ? 0.35 : 1)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -284,13 +497,27 @@ struct CalendarTile: View {
     }
 
     private var upcoming: [TileEvent] {
-        // Nothing in the library is in the past: the samples are the whole of
-        // its day, and hiding them after lunch would leave the preview blank.
-        let ahead = context.isPreview ? dayEvents : dayEvents.filter { $0.end > context.now }
+        let ahead = dayEvents.filter { $0.end > now }
         // Timed first, all-day after, which is the order the panel lists them
         // in: an entry with no time does not belong in a queue sorted by time.
         return ahead.filter { !$0.isAllDay } + ahead.filter(\.isAllDay)
     }
+
+    /// 还没结束的定时日程，下一个日程和「之后」从这里取。
+    private var upcomingTimed: [TileEvent] { upcoming.filter { !$0.isAllDay } }
+
+    /// 今天全部定时日程，时间线和日期小点用。
+    private var timedEvents: [TileEvent] {
+        (context.isPreview ? TileEvent.samples(on: day) : events).filter { !$0.isAllDay }
+    }
+
+    private func event(id: String) -> TileEvent? {
+        timedEvents.first { $0.id == id }
+    }
+
+    private var accent: Color { Color(hex: "#FF9F45") }
+    private var joinGreen: Color { Color(hex: "#6FDC9A") }
+    private var nowRed: Color { Color(hex: "#FF5A5F") }
 
     /// Reads the day straight through on the main actor, as the panel does:
     /// EventKit answers a single day out of its local cache, and carrying
@@ -351,7 +578,7 @@ private let calendarAccent = Color(hex: WidgetCatalog.accentHex(.calendar) ?? Pa
 /// The tile keeps these instead of the events themselves: an `EKEvent` is a
 /// live object the store may mutate or invalidate underneath the shelf, and
 /// Apple's own advice is to re-fetch rather than hold one.
-private struct TileEvent: Identifiable, Hashable {
+private struct TileEvent: Identifiable {
     var id: String
     var title: String
     var start: Date
@@ -359,9 +586,13 @@ private struct TileEvent: Identifiable, Hashable {
     var isAllDay: Bool
     var calendar: String
     var color: Color
+    /// 地点；只是一条会议链接时为空，链接放进 `link`。
+    var location: String
+    var link: MeetingLink?
 
     init(id: String, title: String, start: Date, end: Date,
-         isAllDay: Bool = false, calendar: String, color: Color) {
+         isAllDay: Bool = false, calendar: String, color: Color,
+         location: String = "", link: MeetingLink? = nil) {
         self.id = id
         self.title = title
         self.start = start
@@ -369,11 +600,14 @@ private struct TileEvent: Identifiable, Hashable {
         self.isAllDay = isAllDay
         self.calendar = calendar
         self.color = color
+        self.location = location
+        self.link = link
     }
 
     init?(_ event: EKEvent) {
         guard let start = event.startDate else { return nil }
         let title = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let place = (event.location ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         self.init(
             // Recurring instances share one identifier, so the start has to be
             // part of it or two occurrences on one day collide in the list.
@@ -384,7 +618,9 @@ private struct TileEvent: Identifiable, Hashable {
             end: event.endDate ?? start,
             isAllDay: event.isAllDay,
             calendar: event.calendar?.title ?? "",
-            color: Self.tint(event.calendar))
+            color: Self.tint(event.calendar),
+            location: MeetingLink.isOnlyLink(place) ? "" : place,
+            link: MeetingLink.find(url: event.url, location: place, notes: event.notes))
     }
 
     /// The calendar's own colour, which is the only thing that makes a dot
@@ -394,6 +630,8 @@ private struct TileEvent: Identifiable, Hashable {
         guard let color = calendar?.color else { return calendarAccent }
         return Color(nsColor: color)
     }
+
+    var span: CalendarSpan { CalendarSpan(id: id, start: start, end: end, isAllDay: isAllDay) }
 
     /// Where the clock goes for something that has no clock.
     var timeText: String {
@@ -406,24 +644,44 @@ private struct TileEvent: Identifiable, Hashable {
         calendar.isEmpty ? timeText : "\(timeText) · \(calendar)"
     }
 
+    /// 「10:30-11:15 · 3 号会议室」；没有地点时写会议来源或日历名。
+    var whereLine: String {
+        let range = CalendarDay.range(start, end)
+        let place = location.isEmpty ? (link?.provider.title ?? calendar) : location
+        return place.isEmpty ? range : "\(range) · \(place)"
+    }
+
+    /// 时间线悬停时标题后面那句：「14:00-15:00 · 飞书会议」。
+    var hoverLine: String {
+        let range = CalendarDay.range(start, end)
+        let place = link?.provider.title ?? (location.isEmpty ? calendar : location)
+        return place.isEmpty ? range : "\(range) · \(place)"
+    }
+
     /// A representative day for the widget library, which has no store behind
     /// it. Anchored to the date being drawn so the ids hold still between
-    /// ticks rather than churning the list once a second.
+    /// ticks rather than churning the list once a second. 小组件库里的“现在”是 10:05。
     static func samples(on day: Date) -> [TileEvent] {
         let calendar = Calendar.current
         func at(_ hour: Int, _ minute: Int) -> Date {
             calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
         }
+        let tencent = URL(string: "https://meeting.tencent.com/dm/sample").map { MeetingLink(url: $0, provider: .tencent) }
+        let feishu = URL(string: "https://vc.feishu.cn/j/sample").map { MeetingLink(url: $0, provider: .feishu) }
         return [
+            TileEvent(id: "sample-standup", title: tr("站会"),
+                      start: at(9, 0), end: at(9, 30),
+                      calendar: tr("工作"), color: Color(hex: "#3E7A5E")),
+            TileEvent(id: "sample-weekly", title: tr("产品周会"),
+                      start: at(10, 30), end: at(11, 15),
+                      calendar: tr("工作"), color: Color(hex: "#FF9F45"),
+                      location: tr("3 号会议室"), link: tencent),
             TileEvent(id: "sample-review", title: tr("设计评审"),
-                      start: at(9, 30), end: at(10, 15),
-                      calendar: tr("工作"), color: calendarAccent),
-            TileEvent(id: "sample-one", title: tr("与小李一对一沟通"),
-                      start: at(11, 0), end: at(11, 30),
-                      calendar: tr("工作"), color: Color(hex: PaletteColor.blue.hex)),
-            TileEvent(id: "sample-lunch", title: tr("团队午餐"),
-                      start: at(13, 0), end: at(14, 0),
-                      calendar: tr("个人"), color: Color(hex: PaletteColor.green.hex))
+                      start: at(14, 0), end: at(15, 0),
+                      calendar: tr("工作"), color: Color(hex: "#FF7AA8"), link: feishu),
+            TileEvent(id: "sample-one", title: "1:1",
+                      start: at(16, 30), end: at(17, 15),
+                      calendar: tr("工作"), color: Color(hex: "#B48CFF")),
         ]
     }
 }

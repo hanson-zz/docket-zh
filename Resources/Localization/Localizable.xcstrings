@@ -254,6 +254,17 @@
         }
       }
     },
+    "%@ · 农历%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Lunar %@"
+          }
+        }
+      }
+    },
     "%@ · 就是今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -272,6 +283,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · passed"
+          }
+        }
+      }
+    },
+    "%@ · 放 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ days off"
+          }
+        }
+      }
+    },
+    "%@ · 放 1 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 1 day off"
+          }
+        }
+      }
+    },
+    "%@ · 放假 · 农历%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Day off · Lunar %@"
           }
         }
       }
@@ -529,6 +573,17 @@
         }
       }
     },
+    "%@ 以后全空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free after %@"
+          }
+        }
+      }
+    },
     "%@ 元" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -760,6 +815,28 @@
         }
       }
     },
+    "%@ 天后上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work in %@ days"
+          }
+        }
+      }
+    },
+    "%@ 天后要上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makeup workday in %@ days"
+          }
+        }
+      }
+    },
     "%@ 天额度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -877,6 +954,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ yr"
+          }
+        }
+      }
+    },
+    "%@ 年 %@ 月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@/%1$@"
           }
         }
       }
@@ -1574,6 +1662,17 @@
         }
       }
     },
+    "%@月%@日 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@/%2$@ %3$@"
+          }
+        }
+      }
+    },
     "%@月%@日 · 放假安排未公布" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1607,6 +1706,28 @@
         }
       }
     },
+    "%@月%@日 调休补班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/%@ makeup workday"
+          }
+        }
+      }
+    },
+    "%@月%@日是%@调休补班，记得定闹钟。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/%@ is a makeup workday for %@. Remember to set an alarm."
+          }
+        }
+      }
+    },
     "%@月%@日解锁" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1625,6 +1746,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "From %1$@/%2$@, %3$@ days off"
+          }
+        }
+      }
+    },
+    "%@月%@日起 连放 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %1$@/%2$@, %3$@ days off in a row"
           }
         }
       }
@@ -1728,6 +1860,17 @@
         }
       }
     },
+    "%@调休 · 上班 · 农历%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ makeup · Workday · Lunar %@"
+          }
+        }
+      }
+    },
     "%@输入框或剪贴板里的文字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1757,6 +1900,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ the text in the input box (or the clipboard when empty), sent straight to %@"
+          }
+        }
+      }
+    },
+    "%@还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in %@ days"
           }
         }
       }
@@ -1911,6 +2065,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, %@ s left"
+          }
+        }
+      }
+    },
+    "%@：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %@"
           }
         }
       }
@@ -2153,6 +2318,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stops in 24:13"
+          }
+        }
+      }
+    },
+    "3 号会议室" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Room 3"
           }
         }
       }
@@ -3099,6 +3275,17 @@
         }
       }
     },
+    "一周日程，本周 %@ 个日程，已排 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week, %@ events this week, %@ hours booked"
+          }
+        }
+      }
+    },
     "一天都不落下" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3451,6 +3638,17 @@
         }
       }
     },
+    "下一个 %@后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next in %@"
+          }
+        }
+      }
+    },
     "下一个提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3506,6 +3704,17 @@
         }
       }
     },
+    "下一个马上开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next starting now"
+          }
+        }
+      }
+    },
     "下一张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3535,6 +3744,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next month"
+          }
+        }
+      }
+    },
+    "下午 %@-%@ 空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon free %@-%@"
+          }
+        }
+      }
+    },
+    "下午排满了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon fully booked"
+          }
+        }
+      }
+    },
+    "下周%@要上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work next %@"
           }
         }
       }
@@ -4397,6 +4639,17 @@
         }
       }
     },
+    "之后 %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then %@ %@"
+          }
+        }
+      }
+    },
     "乌克兰语" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4628,6 +4881,17 @@
         }
       }
     },
+    "产品周会" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Product Weekly"
+          }
+        }
+      }
+    },
     "京东" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4826,6 +5090,28 @@
         }
       }
     },
+    "今天上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work today"
+          }
+        }
+      }
+    },
+    "今天下午空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This afternoon free"
+          }
+        }
+      }
+    },
     "今天全部完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4980,6 +5266,17 @@
         }
       }
     },
+    "今天没有日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No events today"
+          }
+        }
+      }
+    },
     "今天没有日程。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4998,6 +5295,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All clear today"
+          }
+        }
+      }
+    },
+    "今天的日程都结束了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done for today"
           }
         }
       }
@@ -5042,6 +5350,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Goal reached today"
+          }
+        }
+      }
+    },
+    "今天还剩 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left today"
           }
         }
       }
@@ -5112,6 +5431,17 @@
         }
       }
     },
+    "今日%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today: %@"
+          }
+        }
+      }
+    },
     "今日已起身 %@ 次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5119,6 +5449,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stood up %@ times today"
+          }
+        }
+      }
+    },
+    "今日时间线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Timeline"
           }
         }
       }
@@ -5174,6 +5515,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exercise and fever or diarrhea count for today only and reset tomorrow."
+          }
+        }
+      }
+    },
+    "从今天 %@月%@日 算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counted from today, %@/%@"
           }
         }
       }
@@ -5449,6 +5801,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Istanbul"
+          }
+        }
+      }
+    },
+    "休" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
           }
         }
       }
@@ -6542,6 +6905,17 @@
         }
       }
     },
+    "全天空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free all day"
+          }
+        }
+      }
+    },
     "全球" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7015,6 +7389,17 @@
         }
       }
     },
+    "农历%@，%@，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunar %@, %@, %@"
+          }
+        }
+      }
+    },
     "农历与假期" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7407,6 +7792,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just due"
+          }
+        }
+      }
+    },
+    "刚结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just ended"
           }
         }
       }
@@ -7902,6 +8298,50 @@
         }
       }
     },
+    "加入 Google Meet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Google Meet"
+          }
+        }
+      }
+    },
+    "加入 Teams 会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Teams"
+          }
+        }
+      }
+    },
+    "加入 Zoom 会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Zoom"
+          }
+        }
+      }
+    },
+    "加入会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join meeting"
+          }
+        }
+      }
+    },
     "加入收藏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7913,6 +8353,17 @@
         }
       }
     },
+    "加入腾讯会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Tencent Meeting"
+          }
+        }
+      }
+    },
     "加入购物车" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7920,6 +8371,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Added to cart"
+          }
+        }
+      }
+    },
+    "加入飞书会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join Feishu Meeting"
           }
         }
       }
@@ -9328,6 +9790,17 @@
         }
       }
     },
+    "周%@下午空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ afternoon free"
+          }
+        }
+      }
+    },
     "周一" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10248,6 +10721,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show next to it"
+          }
+        }
+      }
+    },
+    "在日历里打开%@，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@ in Calendar, %@"
           }
         }
       }
@@ -12975,6 +13459,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Granted"
+          }
+        }
+      }
+    },
+    "已排 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr booked"
           }
         }
       }
@@ -16091,6 +16586,17 @@
         }
       }
     },
+    "接下来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming Up"
+          }
+        }
+      }
+    },
     "接下来一年" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16384,6 +16890,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminders start at %@"
+          }
+        }
+      }
+    },
+    "提醒提前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind ahead"
           }
         }
       }
@@ -18309,6 +18826,17 @@
         }
       }
     },
+    "明天上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work tomorrow"
+          }
+        }
+      }
+    },
     "明天开始放%@假" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18316,6 +18844,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ break starts tomorrow"
+          }
+        }
+      }
+    },
+    "明天要上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work tomorrow"
           }
         }
       }
@@ -18679,6 +19218,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show Background and Border"
+          }
+        }
+      }
+    },
+    "显示节气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show solar terms"
           }
         }
       }
@@ -20050,6 +20600,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This week · %@"
+          }
+        }
+      }
+    },
+    "本周%@要上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work this %@"
+          }
+        }
+      }
+    },
+    "本周已排 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr booked this week"
           }
         }
       }
@@ -23181,6 +23753,17 @@
         }
       }
     },
+    "点按加入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to join"
+          }
+        }
+      }
+    },
     "点按卡片时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23639,6 +24222,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coral"
+          }
+        }
+      }
+    },
+    "班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work"
           }
         }
       }
@@ -25227,6 +25821,17 @@
         }
       }
     },
+    "站会" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standup"
+          }
+        }
+      }
+    },
     "站起来走动、伸展一下" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26719,6 +27324,17 @@
         }
       }
     },
+    "腾讯会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tencent Meeting"
+          }
+        }
+      }
+    },
     "自动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27573,6 +28189,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your question"
+          }
+        }
+      }
+    },
+    "视频会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video call"
           }
         }
       }
@@ -28453,6 +29080,28 @@
         }
       }
     },
+    "调休上班提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makeup workday reminder"
+          }
+        }
+      }
+    },
+    "调休补班会提前 %@ 天出现在卡片上，前一天晚上再提醒一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makeup workdays show on the card %@ days ahead, with one more reminder the evening before."
+          }
+        }
+      }
+    },
     "调节内建显示器亮度时，在屏幕顶部中央显示当前亮度。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29234,6 +29883,17 @@
         }
       }
     },
+    "还剩 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days left"
+          }
+        }
+      }
+    },
     "还在回答，先停止或等它答完。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29274,6 +29934,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ to go"
+          }
+        }
+      }
+    },
+    "还有 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more"
           }
         }
       }
@@ -29835,6 +30506,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Progress bar"
+          }
+        }
+      }
+    },
+    "进行中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress"
+          }
+        }
+      }
+    },
+    "进行中 · 还剩 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress · %@ left"
           }
         }
       }
@@ -32064,6 +32757,17 @@
         }
       }
     },
+    "飞书会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feishu Meeting"
+          }
+        }
+      }
+    },
     "饱食" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32137,6 +32841,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hong Kong"
+          }
+        }
+      }
+    },
+    "马上开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting now"
           }
         }
       }

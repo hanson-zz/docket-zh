@@ -118,16 +118,17 @@ public enum WidgetCatalog {
               defaults: c(["time": .string("14:30"), "name": .string(tr("给小王回电话"))]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // No `showCallButton`: read by nothing. A join-call affordance needs
-        // the event's conference URL and a row to put it in, neither of which
-        // exists, so the switch promised something that was never built.
+        // 日历只管今天和下一个会。「加入」按钮不是开关：日程带会议链接
+        // （URL 字段，或地点、备注里的腾讯会议、Zoom、Teams、飞书、Meet）就显示，
+        // 没有就不显示，见 MeetingLink。原来的「日期 + 日程列表」换成今日时间线，
+        // 放好的卡片读配置时 agenda 自动换成 timeline，见 CalendarDay.migratingLayout。
         Entry(kind: .calendar, name: tr("日历"), category: .time,
               defaults: c(["layout": .string("nextEvent"), "allDay": .bool(true),
                            "calendars": .list([])]),
               variants: [(tr("下一个日程"), ["layout": .string("nextEvent")]),
-                         (tr("日期 + 下一个日程"), ["layout": .string("dateAndEvent")]),
-                         (tr("日期 + 日程列表"), ["layout": .string("agenda")]),
-                         (tr("日期"), ["layout": .string("date")])],
+                         (tr("今日时间线"), ["layout": .string(CalendarDay.timelineLayout)]),
+                         (tr("日期"), ["layout": .string("date")]),
+                         (tr("日期 + 下一个日程"), ["layout": .string("dateAndEvent")])],
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .reminders, name: tr("提醒事项"), category: .todo,
@@ -458,8 +459,10 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
+        // 同一张卡按优先级只说一件事：调休上班 > 节气节日当天 > 下一个假期，见 LunarCard。
         Entry(kind: .lunar, name: tr("农历与假期"), category: .time,
-              defaults: c(["showTerm": .bool(true), "workAlert": .bool(true)]),
+              defaults: c(["showTerm": .bool(true), "workAlert": .bool(true),
+                           LunarCard.leadKey: .string("\(LunarCard.defaultLead)")]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // The Trash's size, a drop target, and flies; see TrashFlies.
@@ -572,6 +575,10 @@ public enum WidgetCatalog {
         return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
     }
 
+    static let keyOrder: [WidgetKind: [String]] = [
+        .lunar: ["showTerm", "workAlert", LunarCard.leadKey],
+    ]
+
     /// Whether an option means anything given the rest of the configuration.
     ///
     /// Some options only apply to one layout. System Activity's chart is
@@ -623,6 +630,9 @@ public enum WidgetCatalog {
         // 仅图标 draws bare glyphs; there is no gauge for a look to change.
         case (.battery, BatteryLook.key):
             config.string("layout", default: "status") != "icon"
+        // 提醒提前几天只管调休上班提醒，提醒关了它就没有意义。
+        case (.lunar, LunarCard.leadKey):
+            config.bool("workAlert", default: true)
         // 水面动效只有液态外观有。
         case (.progress, TimeProgress.motionKey):
             TimeProgress.layout(config) == LiquidMotion.layout
@@ -768,7 +778,8 @@ public enum WidgetCatalog {
             switch cfg.string("layout", default: "nextEvent") {
             case "date": return CGSize(width: 88, height: 76)
             case "dateAndEvent": return CGSize(width: 244, height: 132)
-            case "agenda": return CGSize(width: 300, height: 132)
+            // 今日时间线一行高，旧的 agenda 也按它算。
+            case CalendarDay.timelineLayout, CalendarDay.legacyAgendaLayout: return CGSize(width: 300, height: 62)
             default: return CGSize(width: 168, height: 132)
             }
         case .reminders:

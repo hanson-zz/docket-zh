@@ -424,6 +424,8 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
             case .github: config = GitHubWatch.migratingRepo(stored)
             // 时钟并掉的旧样式（大号数字、秒圈、折叠翻页、极简）读成新样式加选项。
             case .clock: config = ClockStyles.migrating(stored)
+            // 日历的「日期 + 日程列表」换成了今日时间线。
+            case .calendar: config = CalendarDay.migratingLayout(stored)
             default: config = stored
             }
         } else if raw == WaterIntake.legacyHydrationKind {
