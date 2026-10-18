@@ -119,6 +119,8 @@ struct TodoDetail: View {
                         .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            // 拖着东西停在面板上时把清单压暗，让“松手记一条待办”看得清。
+            .opacity(targeted ? 0.3 : 1)
             .overlay {
                 if let celebrateAt {
                     TodoCheer(startedAt: celebrateAt)
