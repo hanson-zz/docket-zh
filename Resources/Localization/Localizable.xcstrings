@@ -3825,6 +3825,17 @@
         }
       }
     },
+    "不设日期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No date"
+          }
+        }
+      }
+    },
     "不限地区和语言" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4793,6 +4804,28 @@
         }
       }
     },
+    "今天三件事" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's three"
+          }
+        }
+      }
+    },
+    "今天三件事已经标满 3 条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's three is full (3 items)"
+          }
+        }
+      }
+    },
     "今天全部完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4954,6 +4987,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing scheduled today."
+          }
+        }
+      }
+    },
+    "今天清空啦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All clear today"
           }
         }
       }
@@ -5130,6 +5174,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exercise and fever or diarrhea count for today only and reset tomorrow."
+          }
+        }
+      }
+    },
+    "从今天三件事里拿掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from today's three"
           }
         }
       }
@@ -6340,6 +6395,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Write your question first."
+          }
+        }
+      }
+    },
+    "先在扩展栏上添加一个快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a Quick To-do to the shelf first"
           }
         }
       }
@@ -8386,6 +8452,17 @@
         }
       }
     },
+    "去开启" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on"
+          }
+        }
+      }
+    },
     "去授权" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8558,6 +8635,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Undo today's check-in"
+          }
+        }
+      }
+    },
+    "取消今天要做" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmark for today"
           }
         }
       }
@@ -9669,6 +9757,17 @@
         }
       }
     },
+    "回复产品评审" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply to product review"
+          }
+        }
+      }
+    },
     "回复产品评审意见" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9714,6 +9813,17 @@
       }
     },
     "回车保存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to save"
+          }
+        }
+      }
+    },
+    "回车记下" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -14881,6 +14991,17 @@
         }
       }
     },
+    "打开“%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open \"%@\""
+          }
+        }
+      }
+    },
     "打开“下载”文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15013,6 +15134,17 @@
         }
       }
     },
+    "打开文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open file"
+          }
+        }
+      }
+    },
     "打开系统设置" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15042,6 +15174,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "打开链接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open link"
           }
         }
       }
@@ -15365,6 +15508,17 @@
         }
       }
     },
+    "把文字、链接或文件拖到这里，记一条待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop text, a link or a file here to add a to-do"
+          }
+        }
+      }
+    },
     "把时间、日程、待办、音乐这些常看的东西，做成小组件放进一条像程序坞一样的扩展栏，一眼就能看到。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15669,6 +15823,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wherever the pointer is"
+          }
+        }
+      }
+    },
+    "按 Esc 关闭" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Esc to close"
           }
         }
       }
@@ -16168,6 +16333,17 @@
         }
       }
     },
+    "提醒日期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder date"
+          }
+        }
+      }
+    },
     "提醒时段" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16652,6 +16828,17 @@
         }
       }
     },
+    "放弃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give up"
+          }
+        }
+      }
+    },
     "效率" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16802,6 +16989,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "File Shelf"
+          }
+        }
+      }
+    },
+    "文字、链接、文件都行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text, links or files"
           }
         }
       }
@@ -18129,6 +18327,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yesterday"
+          }
+        }
+      }
+    },
+    "昨天还有 %@ 件没做完" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left over from yesterday"
           }
         }
       }
@@ -19988,6 +20197,17 @@
         }
       }
     },
+    "松手记一条待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop to add a to-do"
+          }
+        }
+      }
+    },
     "极夜" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20116,6 +20336,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shiba"
+          }
+        }
+      }
+    },
+    "标为今天要做" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark for today"
+          }
+        }
+      }
+    },
+    "标为今天要做（最多 3 条）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark for today (up to 3)"
           }
         }
       }
@@ -21359,6 +21601,17 @@
         }
       }
     },
+    "没有可以写入的提醒事项列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Reminders list to save to"
+          }
+        }
+      }
+    },
     "没有可用的输出设备" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21707,6 +21960,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't open %@."
+          }
+        }
+      }
+    },
+    "没能转成提醒事项：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't move to Reminders: %@"
           }
         }
       }
@@ -27452,6 +27716,28 @@
         }
       }
     },
+    "记一条待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a to-do"
+          }
+        }
+      }
+    },
+    "记一条快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a quick to-do"
+          }
+        }
+      }
+    },
     "记录一杯水，%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28449,6 +28735,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Conversion rate"
+          }
+        }
+      }
+    },
+    "转成提醒事项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Reminders"
           }
         }
       }
@@ -29498,6 +29795,17 @@
         }
       }
     },
+    "连续 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-day streak"
+          }
+        }
+      }
+    },
     "连续 3 天收到竹叶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29813,6 +30121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose the folder for the photo slideshow"
+          }
+        }
+      }
+    },
+    "选日期…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose date…"
           }
         }
       }
@@ -30737,6 +31056,17 @@
         }
       }
     },
+    "随手记，不同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jot it down, never synced"
+          }
+        }
+      }
+    },
     "随时可以跳过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31107,6 +31437,17 @@
         }
       }
     },
+    "需要提醒事项权限才能转过去，可以在系统设置里开启。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving it needs access to Reminders. You can turn it on in System Settings."
+          }
+        }
+      }
+    },
     "需要权限" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31470,6 +31811,17 @@
         }
       }
     },
+    "顺延到今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to today"
+          }
+        }
+      }
+    },
     "须含 ⌃⌥⌘" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31829,6 +32181,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not set by default. Avoid Option+Space, which ChatGPT desktop uses."
+          }
+        }
+      }
+    },
+    "默认不设。按下弹出一个小输入框，回车记到扩展栏上第一个快速待办。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not set by default. Press it to open a small field; Return adds the line to the first Quick To-do on the shelf."
           }
         }
       }

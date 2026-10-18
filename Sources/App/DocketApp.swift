@@ -148,6 +148,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AINotchController.shared.apply(state.state.aiNotch)
         state.onAINotchChanged = { settings in AINotchController.shared.apply(settings) }
 
+        // 快速待办的小输入框：快捷键默认不设，在设置 ▸ 快捷键里录制。
+        QuickTodoCapture.shared.app = state
+        QuickTodoCapture.shared.apply(state.state.quickTodoHotKey)
+        state.onQuickTodoHotKeyChanged = { combo in QuickTodoCapture.shared.apply(combo) }
+
         // Layout hotkeys. Registered now and again whenever a layout gains,
         // loses or changes its combination; the service ignores a list that
         // has not changed, so the didSet that reports it can be generous.

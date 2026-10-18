@@ -10,35 +10,80 @@ import Foundation
 /// Each item is one string, `id<TAB>0|1<TAB>text`. A string so the existing
 /// config type carries it without a new Codable shape, and tab-separated
 /// because a tab cannot be typed into the single-line field that adds items.
+///
+/// 今天三件事、拖进来的链接和当天清用到的几样东西跟在后面，每样一段
+/// `键=值`（`s=1` 标为今天、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天）。
+/// 一样都没有时写出来和原来一模一样。
 public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     public var id: String
     public var text: String
     public var done: Bool
+    /// 标为“今天三件事”之一。
+    public var today: Bool
+    /// 拖进来的链接或文件地址（绝对 URL 字符串），点一下打开。
+    public var link: String?
+    /// 记下这一条的那天（`TodoDay` 的 yyyy-MM-dd），当天清用来认出“昨天没做完的”。
+    public var addedDay: String?
+    /// 勾掉的那天，第二天打开时据此收起。
+    public var doneDay: String?
 
-    public init(id: String = TodoItem.newID(), text: String, done: Bool = false) {
+    public init(id: String = TodoItem.newID(), text: String, done: Bool = false,
+                today: Bool = false, link: String? = nil,
+                addedDay: String? = nil, doneDay: String? = nil) {
         self.id = id
         self.text = text
         self.done = done
+        self.today = today
+        self.link = link
+        self.addedDay = addedDay
+        self.doneDay = doneDay
     }
 
     public static func newID() -> String {
         String(UUID().uuidString.prefix(8)).lowercased()
     }
 
+    /// 能打开的地址：网页链接或本机文件。
+    public var url: URL? {
+        guard let link, let url = URL(string: link), url.scheme != nil else { return nil }
+        return url
+    }
+
     var encoded: String {
-        "\(id)\t\(done ? 1 : 0)\t\(text)"
+        var fields = ["\(id)\t\(done ? 1 : 0)\t\(text)"]
+        if today { fields.append("s=1") }
+        if let link, !link.isEmpty { fields.append("u=\(link)") }
+        if let addedDay { fields.append("a=\(addedDay)") }
+        if let doneDay { fields.append("d=\(doneDay)") }
+        return fields.joined(separator: "\t")
     }
 
     /// Tolerant on purpose: a string written by hand or by an older build is
     /// still somebody's task, so anything without the two tabs is read as an
     /// open item with the whole string as its words.
     init?(decoding raw: String, fallbackID: String) {
-        let parts = raw.split(separator: "\t", maxSplits: 2, omittingEmptySubsequences: false)
-        if parts.count == 3, parts[1] == "0" || parts[1] == "1" {
-            let text = String(parts[2]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = raw.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        if parts.count >= 3, parts[1] == "0" || parts[1] == "1" {
+            // 文字里不会有制表符（`QuickTodo.clean` 换掉了），后面不认识的段
+            // 是手写的就接回文字里，不丢字。
+            var words = [parts[2]]
+            var today = false
+            var link: String?
+            var added: String?
+            var finished: String?
+            for field in parts.dropFirst(3) {
+                if field == "s=1" { today = true }
+                else if field.hasPrefix("u=") { link = String(field.dropFirst(2)) }
+                else if field.hasPrefix("a="), TodoDay.isKey(String(field.dropFirst(2))) { added = String(field.dropFirst(2)) }
+                else if field.hasPrefix("d="), TodoDay.isKey(String(field.dropFirst(2))) { finished = String(field.dropFirst(2)) }
+                else { words.append(field) }
+            }
+            let text = words.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
-            let id = String(parts[0])
-            self.init(id: id.isEmpty ? fallbackID : id, text: text, done: parts[1] == "1")
+            let id = parts[0]
+            self.init(id: id.isEmpty ? fallbackID : id, text: text, done: parts[1] == "1",
+                      today: today, link: link?.isEmpty == true ? nil : link,
+                      addedDay: added, doneDay: finished)
         } else {
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
@@ -93,24 +138,42 @@ public enum QuickTodo {
     }
 
     /// A new open item after the other open ones.
-    public static func adding(_ text: String, to items: [TodoItem], id: String = TodoItem.newID()) -> [TodoItem] {
+    ///
+    /// - Parameters:
+    ///   - link: 拖进来的链接或文件地址，没有时为 nil。
+    ///   - day: 记下的那天（`TodoDay.key`），当天清用；nil 时不记。
+    public static func adding(_ text: String, to items: [TodoItem], id: String = TodoItem.newID(),
+                              link: String? = nil, day: String? = nil) -> [TodoItem] {
         guard let words = clean(text), items.count < maxItems else { return ordered(items) }
         let current = ordered(items)
-        return open(current) + [TodoItem(id: id, text: words)] + current.filter(\.done)
+        let address = link.map { String($0.prefix(maxLinkLength)) }
+        let item = TodoItem(id: id, text: words, link: address, addedDay: day)
+        return open(current) + [item] + current.filter(\.done)
     }
+
+    /// 链接最长存多少个字符。
+    public static let maxLinkLength = 2_000
 
     /// Finished items go to the bottom; reopened ones go to the end of the
     /// open list, which is where a task you just put back belongs.
-    public static func toggling(_ id: String, in items: [TodoItem]) -> [TodoItem] {
+    ///
+    /// - Parameter day: 勾掉的那天，记在这一条上，第二天据此收起；重新打开时清掉。
+    public static func toggling(_ id: String, in items: [TodoItem], day: String? = nil) -> [TodoItem] {
         guard var item = items.first(where: { $0.id == id }) else { return ordered(items) }
         item.done.toggle()
+        item.doneDay = item.done ? day : nil
         let rest = ordered(items.filter { $0.id != id })
         return open(rest) + (item.done ? [] : [item]) + rest.filter(\.done) + (item.done ? [item] : [])
     }
 
     public static func renaming(_ id: String, to text: String, in items: [TodoItem]) -> [TodoItem] {
         guard let words = clean(text) else { return removing(id, from: items) }
-        return ordered(items.map { $0.id == id ? TodoItem(id: $0.id, text: words, done: $0.done) : $0 })
+        return ordered(items.map { item in
+            guard item.id == id else { return item }
+            var renamed = item
+            renamed.text = words
+            return renamed
+        })
     }
 
     public static func removing(_ id: String, from items: [TodoItem]) -> [TodoItem] {

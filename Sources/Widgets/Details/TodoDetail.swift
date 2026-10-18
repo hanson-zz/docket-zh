@@ -8,6 +8,11 @@ import SwiftUI
 /// Dragging a row to the left deletes it, and deleting or checking a task can
 /// be undone for a few seconds, the last five steps one at a time, each put
 /// back where it was. Checking the last open task brings out the red panda.
+///
+/// 星标或右键把最多三条标为“今天三件事”，卡片上优先画它们。右键还能打开拖进来
+/// 的链接或文件、转成系统提醒事项（这时才请求权限）。新的一天第一次打开时，
+/// 昨天没做完的会在顶部问一句顺延到今天还是放弃。文字、链接、文件也可以直接
+/// 拖进面板。
 struct TodoDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -22,6 +27,13 @@ struct TodoDetail: View {
     /// 每记一步换一个，撤销条从最后一次改动起再停几秒。
     @State private var undoToken = UUID()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var targeted = false
+    /// 正在挑日期转成提醒事项的那一条。
+    @State private var converting: String?
+    @State private var convertDate = Date()
+    /// 转成提醒事项没成功时的一句话。
+    @State private var notice: String?
+    @State private var noticeNeedsSettings = false
 
     private enum Field: Hashable {
         case add
@@ -30,8 +42,8 @@ struct TodoDetail: View {
 
     private var items: [TodoItem] {
         if context.isPreview {
-            return [TodoItem(id: "s1", text: tr("回复产品评审意见")),
-                    TodoItem(id: "s2", text: tr("取快递")),
+            return [TodoItem(id: "s1", text: tr("回复产品评审意见"), today: true),
+                    TodoItem(id: "s2", text: tr("取快递"), today: true),
                     TodoItem(id: "s3", text: tr("订周五的会议室")),
                     TodoItem(id: "s4", text: tr("交电费"), done: true)]
         }
@@ -50,7 +62,15 @@ struct TodoDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(open: open.count, done: done.count)
+                let late = context.isPreview ? [] : QuickTodo.leftover(all, today: today)
+                if !late.isEmpty {
+                    leftoverBanner(count: late.count)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
                 addField
+                if let notice {
+                    noticeLine(notice)
+                }
                 if shown.isEmpty {
                     Text(all.isEmpty ? tr("清单是空的。输入一件事，按回车添加。") : tr("都做完了。"))
                         .font(.system(size: 12))
@@ -105,8 +125,26 @@ struct TodoDetail: View {
                         .frame(width: 220, height: 200)
                 }
             }
+            .overlay {
+                if targeted {
+                    TodoDropHint()
+                        .padding(18)
+                        .glassPane(cornerRadius: 12)
+                }
+            }
+            .dropTargetOutline(targeted, corner: 12)
+            .onDrop(of: TodoDropDelegate.types, delegate: TodoDropDelegate(
+                enabled: !context.isPreview,
+                targeted: { targeted = $0 },
+                receive: { drops in
+                    withAnimation(listAnimation) { TodoLog.add(drops, to: instance) }
+                }))
         }
-        .onAppear { if !context.isPreview { focus = .add } }
+        .onAppear {
+            guard !context.isPreview else { return }
+            TodoLog.rollOver(instance, today: today)
+            focus = .add
+        }
         .task(id: undoToken) {
             guard !undo.isEmpty else { return }
             try? await Task.sleep(for: .seconds(6))
@@ -126,7 +164,7 @@ struct TodoDetail: View {
     private func header(open: Int, done: Int) -> some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("待办")
+                Text("随手记，不同步")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
@@ -162,6 +200,21 @@ struct TodoDetail: View {
     }
 
     private func row(_ item: TodoItem) -> some View {
+        let canMark = QuickTodo.canMarkToday(items)
+        return VStack(alignment: .leading, spacing: 6) {
+            rowLine(item, canMark: canMark)
+            if converting == item.id {
+                convertPicker(item)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(.white.opacity(item.today && !item.done ? 0.09 : 0.05)))
+        .contextMenu { menu(item, canMark: canMark) }
+    }
+
+    private func rowLine(_ item: TodoItem, canMark: Bool) -> some View {
         HStack(spacing: 8) {
             Button {
                 toggle(item)
@@ -196,6 +249,23 @@ struct TodoDetail: View {
                     .help("双击编辑")
             }
 
+            if item.url != nil {
+                Button {
+                    TodoLinkOpener.open(item)
+                } label: {
+                    Image(systemName: TodoLinkOpener.symbol(item))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 20, height: 20)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .help(item.url?.isFileURL == true ? tr("打开文件") : tr("打开链接"))
+                .accessibilityLabel(tr("打开 \(item.text)"))
+            }
+
+            starButton(item, canMark: canMark)
+
             Button {
                 delete(item, animated: true)
             } label: {
@@ -209,16 +279,190 @@ struct TodoDetail: View {
             .accessibilityLabel(tr("删除 \(item.text)"))
             .help("删除，也可以把这一行往左拖")
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.05)))
+    }
+
+    // MARK: 今天三件事
+
+    private func starButton(_ item: TodoItem, canMark: Bool) -> some View {
+        let available = item.today || canMark
+        return Button {
+            markToday(item)
+        } label: {
+            Image(systemName: item.today ? "star.fill" : "star")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(item.today ? Color(hex: "#FFCC00") : .white.opacity(available ? 0.45 : 0.2))
+                .frame(width: 20, height: 20)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(!available || context.isPreview)
+        .help(item.today ? tr("从今天三件事里拿掉")
+              : (canMark ? tr("标为今天要做（最多 3 条）") : tr("今天三件事已经标满 3 条")))
+        .accessibilityLabel(item.today ? tr("取消今天要做") : tr("标为今天要做"))
+    }
+
+    private func markToday(_ item: TodoItem) {
+        guard !context.isPreview else { return }
+        withAnimation(listAnimation) {
+            TodoLog.change(instance) { QuickTodo.togglingToday(item.id, in: $0) }
+        }
+    }
+
+    @ViewBuilder
+    private func menu(_ item: TodoItem, canMark: Bool) -> some View {
+        if item.today {
+            Button("从今天三件事里拿掉") { markToday(item) }
+        } else {
+            Button("标为今天要做") { markToday(item) }
+                .disabled(!canMark || context.isPreview)
+        }
+        if item.url != nil {
+            Button(item.url?.isFileURL == true ? tr("打开文件") : tr("打开链接")) { TodoLinkOpener.open(item) }
+        }
+        Divider()
+        Menu("转成提醒事项") {
+            Button("今天") { convert(item, due: Date()) }
+            Button("明天") { convert(item, due: Calendar.current.date(byAdding: .day, value: 1, to: Date())) }
+            Button("选日期…") {
+                convertDate = Date()
+                withAnimation(listAnimation) { converting = item.id }
+            }
+            Divider()
+            Button("不设日期") { convert(item, due: nil) }
+        }
+        .disabled(context.isPreview)
+        Divider()
+        Button("删除", role: .destructive) { delete(item, animated: true) }
+            .disabled(context.isPreview)
+    }
+
+    // MARK: 转成提醒事项
+
+    private func convertPicker(_ item: TodoItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "bell")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.6))
+            Text("提醒日期")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+            DatePicker("", selection: $convertDate, displayedComponents: .date)
+                .labelsHidden()
+                .datePickerStyle(.field)
+                .controlSize(.small)
+            Spacer(minLength: 0)
+            Button("取消") { withAnimation(listAnimation) { converting = nil } }
+                .buttonStyle(.plain)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(.white.opacity(0.6))
+            Button("转成提醒事项") { convert(item, due: convertDate) }
+                .buttonStyle(.plain)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(.white)
+        }
+        .padding(.leading, 24)
+    }
+
+    /// 在系统提醒事项里建一条，成功后从快速待办里拿掉（可以撤销）。
+    private func convert(_ item: TodoItem, due: Date?) {
+        guard !context.isPreview else { return }
+        Task { @MainActor in
+            let outcome = await TodoReminderExport.export(item, due: due)
+            switch outcome {
+            case .saved:
+                withAnimation(listAnimation) {
+                    converting = nil
+                    notice = nil
+                }
+                delete(item, animated: true)
+            case .denied:
+                noticeNeedsSettings = true
+                withAnimation(listAnimation) { notice = tr("需要提醒事项权限才能转过去，可以在系统设置里开启。") }
+            case .failed(let reason):
+                noticeNeedsSettings = false
+                withAnimation(listAnimation) { notice = tr("没能转成提醒事项：\(reason)") }
+            }
+        }
+    }
+
+    private func noticeLine(_ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 11))
+            Text(text)
+                .font(.system(size: 11))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if noticeNeedsSettings {
+                Button("去开启") { TodoReminderExport.openPrivacySettings() }
+                    .buttonStyle(.plain)
+                    .font(WidgetStyle.label(11))
+                    .foregroundStyle(.white)
+            }
+            Button {
+                withAnimation(listAnimation) { notice = nil }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("关闭"))
+        }
+        .foregroundStyle(.white.opacity(0.75))
+    }
+
+    // MARK: 当天清
+
+    private var today: String { TodoDay.key(context.now) }
+
+    /// 昨天没做完的：顺延到今天，或者放弃。
+    private func leftoverBanner(count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(tr("昨天还有 \(count) 件没做完"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+            HStack(spacing: 8) {
+                Button {
+                    let day = today
+                    withAnimation(listAnimation) {
+                        TodoLog.change(instance) { QuickTodo.carryingOver($0, today: day) }
+                    }
+                } label: {
+                    Text("顺延到今天")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 26)
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.white.opacity(0.16)))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                Button {
+                    let day = today
+                    withAnimation(listAnimation) {
+                        TodoLog.change(instance) { QuickTodo.droppingLeftover($0, today: day) }
+                    }
+                } label: {
+                    Text("放弃")
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 26)
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.white.opacity(0.08)))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
     }
 
     private func add() {
         guard !context.isPreview, QuickTodo.clean(draft) != nil else { return }
         let text = draft
         withAnimation(.snappy(duration: 0.3)) {
-            TodoLog.change(instance) { QuickTodo.adding(text, to: $0) }
+            TodoLog.add(text, to: instance)
         }
         draft = ""
         focus = .add

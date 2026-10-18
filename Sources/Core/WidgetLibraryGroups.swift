@@ -39,6 +39,7 @@ public enum WidgetLibraryGroups {
     public static func note(_ kind: WidgetKind) -> String? {
         switch kind {
         case .reminders: tr("和系统提醒事项同步")
+        case .todo: tr("随手记，不同步")
         default: nil
         }
     }

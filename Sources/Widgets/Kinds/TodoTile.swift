@@ -1,23 +1,32 @@
 import SwiftUI
 
-/// The next thing to do, with a check to finish it.
+/// 快速待办的卡片：“今天三件事”，拖进来就记，做完了小熊猫庆祝。
 ///
 /// The list is the widget's own (see `QuickTodo`), never the system's
 /// Reminders, so it works with no permission and no account. The card's
-/// click opens the panel, where items are added; the check beside the task
-/// is the only control on the card.
+/// click opens the panel, where items are added and marked for today. On the
+/// card the circle beside each row finishes it and a link or file row has a
+/// small button that opens it. Text, links and files dropped on the card each
+/// become a task.
+///
+/// 第二天第一次显示时先收拾一遍（`QuickTodo.applyRollover`）：昨天做完的收起，
+/// 没做完的留给面板顶部问顺延还是放弃。
 struct TodoTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var celebrateAt: Date?
+    @State private var targeted = false
+
+    private var today: String { TodoDay.key(context.now) }
 
     private var items: [TodoItem] {
         if context.isPreview {
-            return [TodoItem(id: "s1", text: tr("回复产品评审意见")),
-                    TodoItem(id: "s2", text: tr("取快递")),
-                    TodoItem(id: "s3", text: tr("订周五的会议室")),
-                    TodoItem(id: "s4", text: tr("交电费"), done: true)]
+            let day = TodoDay.key(context.now)
+            return [TodoItem(id: "s1", text: tr("回复产品评审"), done: true, today: true, doneDay: day),
+                    TodoItem(id: "s2", text: tr("取快递"), today: true),
+                    TodoItem(id: "s3", text: tr("交电费"), today: true),
+                    TodoItem(id: "s4", text: tr("订周五的会议室"))]
         }
         return QuickTodo.items(instance.config)
     }
@@ -27,47 +36,49 @@ struct TodoTile: View {
         let open = QuickTodo.open(all)
         let done = all.count - open.count
         let progress = all.isEmpty ? 0 : Double(done) / Double(all.count)
+        let card = QuickTodo.cardRows(all)
         return WidgetSurface {
-            if context.position.isVertical {
-                VStack(spacing: 4) {
-                    TileBadge(size: WidgetStyle.badgeCompact) {
-                        badge(open: open.count, progress: progress, size: 13, empty: empty(all, open: open),
-                              badgeSize: WidgetStyle.badgeCompact)
-                    }
-                        .overlay { cheer(size: 60) }
-                    Text(open.isEmpty ? (empty(all, open: open) ?? .todo).line(compact: true) : tr("\(open.count) 项"))
-                        .font(WidgetStyle.title)
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    checkButton(open.first, size: 10)
-                }
-            } else {
-                HStack(spacing: WidgetStyle.rowSpacing) {
-                    TileBadge {
-                        badge(open: open.count, progress: progress, size: 15, empty: empty(all, open: open),
-                              badgeSize: WidgetStyle.badge)
-                    }
-                        .overlay { cheer(size: 70) }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(open.first?.text ?? (all.isEmpty ? PandaEmpty.todo : PandaEmpty.todoDone).line())
-                            .font(.system(size: 14, weight: .semibold))
+            Group {
+                if context.position.isVertical {
+                    VStack(spacing: 4) {
+                        TileBadge(size: WidgetStyle.badgeCompact) {
+                            badge(open: open.count, progress: progress, size: 13, empty: empty(all, open: open),
+                                  badgeSize: WidgetStyle.badgeCompact)
+                        }
+                            .overlay { cheer(size: 60) }
+                        Text(open.isEmpty ? (empty(all, open: open) ?? .todo).line(compact: true) : tr("\(open.count) 项"))
+                            .font(WidgetStyle.title)
                             .foregroundStyle(WidgetStyle.primary)
                             .lineLimit(1)
-                            .truncationMode(.tail)
-                        Text(QuickTodo.caption(open: open.count, done: done))
-                            .font(.system(size: 12))
-                            .foregroundStyle(WidgetStyle.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(0.6)
+                        checkButton(card.rows.first(where: { !$0.done }) ?? open.first, size: 10)
                     }
-                    Spacer(minLength: 0)
-                    checkButton(open.first, size: 12)
+                } else if all.isEmpty || open.isEmpty {
+                    finished(all: all)
+                } else {
+                    list(card, openCount: open.count)
                 }
             }
+            .opacity(targeted ? 0 : 1)
+            .overlay {
+                if targeted { TodoDropHint(compact: context.position.isVertical) }
+            }
         }
+        .dropTargetOutline(targeted)
+        .onDrop(of: TodoDropDelegate.types, delegate: TodoDropDelegate(
+            enabled: !context.isPreview,
+            targeted: { targeted = $0 },
+            receive: { drops in
+                withAnimation(.snappy(duration: 0.3)) { TodoLog.add(drops, to: instance) }
+            }))
+        .help(context.isPreview ? "" : tr("把文字、链接或文件拖到这里，记一条待办"))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(open.first.map { tr("快速待办：\($0.text)") } ?? tr("快速待办"))
+        .accessibilityLabel(card.rows.first.map { tr("快速待办：\($0.text)") } ?? tr("快速待办"))
+        // 第二天第一次画出来时收拾一遍；`now` 每秒走一下，日子变了才会再跑。
+        .task(id: today) {
+            guard !context.isPreview else { return }
+            TodoLog.rollOver(instance, today: today)
+        }
         .task(id: celebrateAt) {
             guard celebrateAt != nil else { return }
             try? await Task.sleep(for: .seconds(CheerMotion.duration))
@@ -86,6 +97,116 @@ struct TodoTile: View {
             }
             TodoLog.endCheer(instance)
         }
+    }
+
+    // MARK: 横排
+
+    /// 今天三件事，或者前几条没做完的。标题一行，下面最多三行，每行左边的圆圈勾完成。
+    private func list(_ card: TodoCardRows, openCount: Int) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                Text(card.focused ? tr("今天三件事") : tr("快速待办"))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text(card.focused ? "\(card.done)/\(card.total)" : tr("\(openCount) 项"))
+                    .font(WidgetStyle.caption(10))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+            ForEach(card.rows) { item in
+                row(item)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay { cheer(size: 60) }
+    }
+
+    private func row(_ item: TodoItem) -> some View {
+        HStack(spacing: 5) {
+            Button {
+                toggle(item)
+            } label: {
+                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(item.done ? Self.green : WidgetStyle.secondary)
+                    .frame(width: 13, height: 13)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .disabled(context.isPreview)
+            .help(item.done ? tr("标为未完成") : tr("完成“\(item.text)”"))
+            .accessibilityLabel(item.done ? tr("标为未完成") : tr("完成 \(item.text)"))
+
+            Text(item.text)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(item.done ? WidgetStyle.secondary : WidgetStyle.primary)
+                .strikethrough(item.done, color: WidgetStyle.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 0)
+            if item.url != nil {
+                Button {
+                    TodoLinkOpener.open(item)
+                } label: {
+                    Image(systemName: TodoLinkOpener.symbol(item))
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .frame(width: 14, height: 13)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(context.isPreview)
+                .help(tr("打开“\(item.text)”"))
+                .accessibilityLabel(tr("打开 \(item.text)"))
+            }
+        }
+        .frame(height: 14)
+    }
+
+    /// 没有待办，或者全部做完：小熊猫，做完时是“今天清空啦”和连续清空的天数。
+    private func finished(all: [TodoItem]) -> some View {
+        let streak = context.isPreview ? 0 : QuickTodo.streak(instance.config, today: today)
+        return HStack(spacing: WidgetStyle.rowSpacing) {
+            TileBadge {
+                PandaEmptyBadge(empty: all.isEmpty ? .todo : .todoDone, size: WidgetStyle.badge, fallback: "checklist")
+            }
+                .overlay { cheer(size: 70) }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(all.isEmpty ? PandaEmpty.todo.line() : tr("今天清空啦"))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Group {
+                    if all.isEmpty {
+                        Text(QuickTodo.caption(open: 0, done: 0))
+                            .foregroundStyle(WidgetStyle.secondary)
+                    } else if streak > 0 {
+                        Text(tr("连续 \(streak) 天"))
+                            .foregroundStyle(Self.green)
+                    } else {
+                        Text(QuickTodo.caption(open: 0, done: all.count))
+                            .foregroundStyle(WidgetStyle.secondary)
+                    }
+                }
+                .font(.system(size: 12))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private static let green = Color(hex: "#34C759")
+
+    private func toggle(_ item: TodoItem) {
+        guard !context.isPreview else { return }
+        let finishing = QuickTodo.finishesAll(toggling: item.id, in: QuickTodo.items(instance.config))
+        withAnimation(.snappy(duration: 0.3)) { TodoLog.toggle(item.id, in: instance, cheering: finishing) }
+        if finishing { celebrateAt = .now }
     }
 
     /// 庆祝的截止时刻，没有时为 nil。
@@ -162,25 +283,57 @@ struct TodoTile: View {
 /// current list so the two can never disagree.
 @MainActor
 enum TodoLog {
+    /// 现在保存着的那份：拖放和转成提醒事项是异步落下的，手里的可能已经旧了。
+    private static func latest(_ instance: WidgetInstance) -> WidgetInstance {
+        WidgetWriter.current(instance.id) ?? instance
+    }
+
+    static var today: String { TodoDay.key(Date()) }
+
     static func change(_ instance: WidgetInstance, _ edit: ([TodoItem]) -> [TodoItem]) {
-        WidgetWriter.write(instance) { config in
+        WidgetWriter.write(latest(instance)) { config in
             QuickTodo.store(edit(QuickTodo.items(config)), in: &config)
         }
     }
 
     /// - Parameter cheering: 这一下勾掉了最后一项。同一次写入里记下庆祝的截止
-    ///   时刻，免得“有未完成的待办时显示”在动效播出来之前就把卡片收走。
+    ///   时刻，免得“有未完成的待办时显示”在动效播出来之前就把卡片收走，也记一笔
+    ///   连续清空的天数。
     static func toggle(_ id: String, in instance: WidgetInstance, cheering: Bool = false) {
-        WidgetWriter.write(instance) { config in
-            QuickTodo.store(QuickTodo.toggling(id, in: QuickTodo.items(config)), in: &config)
-            if cheering { QuickTodo.startCheer(in: &config) }
+        let day = today
+        WidgetWriter.write(latest(instance)) { config in
+            QuickTodo.store(QuickTodo.toggling(id, in: QuickTodo.items(config), day: day), in: &config)
+            if cheering {
+                QuickTodo.startCheer(in: &config)
+                QuickTodo.recordCleared(in: &config, today: day)
+            }
         }
+    }
+
+    /// 记一条：输入框、快捷键小框和拖放都走这里，记下今天的日子。
+    static func add(_ text: String, link: String? = nil, to instance: WidgetInstance) {
+        let day = today
+        change(instance) { QuickTodo.adding(text, to: $0, link: link, day: day) }
+    }
+
+    static func add(_ drops: [TodoDrop], to instance: WidgetInstance) {
+        let day = today
+        change(instance) { items in
+            drops.reduce(items) { QuickTodo.adding($1.text, to: $0, link: $1.link, day: day) }
+        }
+    }
+
+    /// 新的一天第一次显示时收拾一遍。今天已经收拾过就什么也不写。
+    static func rollOver(_ instance: WidgetInstance, today: String) {
+        let current = latest(instance)
+        guard QuickTodo.needsRollover(current.config, today: today) else { return }
+        WidgetWriter.write(current) { QuickTodo.applyRollover(in: &$0, today: today) }
     }
 
     /// 庆祝播完：清掉记号。读的是现在保存着的那份，不会把中途的改动写回去。
     static func endCheer(_ instance: WidgetInstance) {
-        let latest = WidgetWriter.current(instance.id) ?? instance
-        guard latest.config[QuickTodo.cheerKey] != nil else { return }
-        WidgetWriter.write(latest) { QuickTodo.endCheer(in: &$0) }
+        let saved = latest(instance)
+        guard saved.config[QuickTodo.cheerKey] != nil else { return }
+        WidgetWriter.write(saved) { QuickTodo.endCheer(in: &$0) }
     }
 }

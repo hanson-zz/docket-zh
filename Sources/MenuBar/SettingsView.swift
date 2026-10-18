@@ -388,6 +388,23 @@ struct SettingsView: View {
                 Text("AI 助手")
             }
 
+            Section {
+                LabeledContent {
+                    HStack(spacing: 6) {
+                        ShortcutRecorder(combo: state.quickTodoHotKey) { state.quickTodoHotKey = $0 }
+                        if state.quickTodoHotKey != nil {
+                            Button("清除") { state.quickTodoHotKey = nil }
+                                .controlSize(.small)
+                        }
+                    }
+                } label: {
+                    subtitled(tr("记一条快速待办"),
+                              tr("默认不设。按下弹出一个小输入框，回车记到扩展栏上第一个快速待办。"))
+                }
+            } header: {
+                Text("快速待办")
+            }
+
             shortcutList(.customDock, title: tr("切换扩展栏布局"))
                 .disabled(state.setup == .macOSDockOnly)
             shortcutList(.macOSDock, title: tr("切换系统程序坞布局"))
@@ -1429,6 +1446,7 @@ final class ShortcutKeyRecorder {
         rejected = false
         HotKeyService.shared.suspend()
         AIHotKey.shared.suspend()
+        TodoHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1444,6 +1462,7 @@ final class ShortcutKeyRecorder {
         rejected = false
         HotKeyService.shared.resume()
         AIHotKey.shared.resume()
+        TodoHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

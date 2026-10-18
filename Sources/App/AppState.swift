@@ -48,6 +48,9 @@ public final class AppState {
             if state.aiNotch != oldValue.aiNotch {
                 onAINotchChanged?(state.aiNotch)
             }
+            if state.quickTodoHotKey != oldValue.quickTodoHotKey {
+                onQuickTodoHotKeyChanged?(state.quickTodoHotKey)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them
@@ -74,6 +77,8 @@ public final class AppState {
     @ObservationIgnored public var onIslandChanged: (@MainActor (IslandSettings) -> Void)?
     /// AI 助手的刘海入口和快捷键。
     @ObservationIgnored public var onAINotchChanged: (@MainActor (AINotchSettings) -> Void)?
+    /// 快速待办小输入框的快捷键。
+    @ObservationIgnored public var onQuickTodoHotKeyChanged: (@MainActor (KeyCombo?) -> Void)?
     /// Layout hotkeys, for the service that registers them with the system.
     @ObservationIgnored public var onShortcutsChanged: (@MainActor ([ShortcutBinding]) -> Void)?
 

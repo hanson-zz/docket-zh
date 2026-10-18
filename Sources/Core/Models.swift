@@ -1003,6 +1003,8 @@ public struct PersistedState: Codable, Sendable {
     public var widgetSounds = WidgetSoundSettings()
     /// AI 助手的刘海对话：入口、快捷键、每个服务的打开方式和接口。密钥不在这里。
     public var aiNotch = AINotchSettings()
+    /// 弹出快速待办小输入框的全局快捷键。默认不设。
+    public var quickTodoHotKey: KeyCombo?
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1030,6 +1032,7 @@ public struct PersistedState: Codable, Sendable {
         island = try c.decodeIfPresent(IslandSettings.self, forKey: .island) ?? IslandSettings()
         widgetSounds = try c.decodeIfPresent(WidgetSoundSettings.self, forKey: .widgetSounds) ?? WidgetSoundSettings()
         aiNotch = (try? c.decodeIfPresent(AINotchSettings.self, forKey: .aiNotch)) ?? AINotchSettings()
+        quickTodoHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .quickTodoHotKey)
     }
 
     public init() {}
