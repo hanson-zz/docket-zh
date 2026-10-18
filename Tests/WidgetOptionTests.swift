@@ -91,7 +91,7 @@ final class WidgetOptionTests: XCTestCase {
             .emoji: ["emoji"],
             .search: ["engine"],
             .github: ["repos", "notify", "interval"],
-            .currency: ["from", "to", "amount"],
+            .calculator: ["currencyFrom", "currencyTo"],
             .recorder: ["folder"],
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],

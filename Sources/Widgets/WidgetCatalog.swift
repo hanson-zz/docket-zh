@@ -301,11 +301,6 @@ public enum WidgetCatalog {
         Entry(kind: .colorPicker, name: tr("取色器"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // Category, units and value are edited in the panel, where the unit
-        // menus can follow the category; see ConverterState.
-        Entry(kind: .converter, name: tr("单位换算"), category: .tools, defaults: c([:]),
-              variants: [], supportsCompact: false, selfContained: true),
-
         Entry(kind: .capture, name: tr("截图工具"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -365,8 +360,15 @@ public enum WidgetCatalog {
         Entry(kind: .mail, name: tr("邮件"), category: .ai, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // The last sum is kept under `expression`, written by the panel.
-        Entry(kind: .calculator, name: tr("计算器"), category: .tools, defaults: c([:]),
+        // 「算」：计算器、单位换算和汇率换算合成一张，输入什么自动认（SmartCalc）。
+        // 最后一次输入在 `expression`，最近记录在 `history`，固定到卡片的在
+        // `pinned`，旧单位换算留下的一对单位在 `unitFrom`、`unitTo`，都由面板写，
+        // 不进设置页。币种对是设置：只写了一种币种时换成哪种。汇率来自
+        // open.er-api.com，离线时用缓存，见 CurrencyService。旧的单位换算和
+        // 汇率换算读配置时自动变成它，见 SmartCalc.migratingConverter / migratingCurrency。
+        Entry(kind: .calculator, name: tr("算"), category: .tools,
+              defaults: c([SmartCalc.currencyFromKey: .string(SmartCalc.defaultCurrencyFrom),
+                           SmartCalc.currencyToKey: .string(SmartCalc.defaultCurrencyTo)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Apple's on-device Translation: free, no key, nothing leaves the Mac.
@@ -374,12 +376,6 @@ public enum WidgetCatalog {
         // `history`) are kept by the panel; see Translate.
         Entry(kind: .translate, name: tr("翻译"), category: .ai,
               defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true)]),
-              variants: [], supportsCompact: false, selfContained: true),
-
-        // Rates from open.er-api.com, cached for offline use; see
-        // CurrencyService. The amount is typed in the panel.
-        Entry(kind: .currency, name: tr("汇率换算"), category: .tools,
-              defaults: c(["from": .string("USD"), "to": .string("CNY"), "amount": .number(100)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Public numbers need no token; one in the keychain adds notifications
@@ -577,10 +573,9 @@ public enum WidgetCatalog {
              .mail,
              .calculator,
              .translate,
-             .currency,
              .github,
              .microphone, .gauges,
-             .colorPicker, .converter, .capture, .emoji, .search, .volume, .toggles:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles:
             nil
         }
     }
@@ -765,7 +760,7 @@ public enum WidgetCatalog {
         // and `water` are self-contained, and the business tiles are for
         // dashboards we cannot address.
         case .music, .progress, .stripe, .paddle, .shopify,
-             .clipboard, .converter, .emoji, .appSwitcher, .bookmarks, .calculator, .currency, .github, .search, .posture,
+             .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
              .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant:
             nil
@@ -900,7 +895,6 @@ public enum WidgetCatalog {
         case .clipboard: return CGSize(width: 196, height: 62)
         // 一排六个最近颜色，下面 HEX 和吸管。
         case .colorPicker: return CGSize(width: 160, height: 62)
-        case .converter: return CGSize(width: 188, height: 62)
         // 截区域、截窗口、识字、录屏四个按钮，各带两个字。
         case .capture: return CGSize(width: 184, height: 62)
         case .emoji: return CGSize(width: 160, height: 62)
@@ -908,8 +902,8 @@ public enum WidgetCatalog {
         case .volume: return CGSize(width: 200, height: 62)
         case .toggles: return CGSize(width: QuickToggle.length(count: QuickToggle.chosen(cfg).count), height: 62)
         case .github: return CGSize(width: 196, height: 62)
-        case .currency: return CGSize(width: 196, height: 62)
-        case .calculator: return CGSize(width: 168, height: 62)
+        // 「算」：字牌、输入和结果、右上角的类别小标签。
+        case .calculator: return CGSize(width: 184, height: 62)
         case .translate: return CGSize(width: 196, height: 62)
         case .mail: return CGSize(width: 160, height: 62)
         case .recorder: return CGSize(width: 168, height: 62)
@@ -1006,14 +1000,12 @@ public enum WidgetCatalog {
             return cfg.string("display", default: "both") == "both" ? 76 : 46
         case .photos:
             return cfg.string("layout", default: "standard") == "wide" ? 112 : 76
-        case .colorPicker, .converter:
+        case .colorPicker, .calculator:
             return 84
         case .capture:
             return 112
         case .toggles:
             return Double(QuickToggle.chosen(cfg).count * 30 + 8)
-        case .currency:
-            return 84
         // The badge, the pair and two lines of the last result.
         case .translate:
             return 96

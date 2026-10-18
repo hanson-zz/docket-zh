@@ -27,7 +27,7 @@ public enum WidgetLibraryGroups {
         .todo, .reminders, .anniversary, .notes,
         .water, .posture, .habit, .timer, .perfectDay, .pet,
         .aiAssistant, .aiUsage, .translate, .clipboard, .search, .bookmarks, .github, .mail,
-        .calculator, .converter, .currency, .colorPicker, .capture, .emoji, .toggles,
+        .calculator, .colorPicker, .capture, .emoji, .toggles,
         .music, .podcast, .radio, .ambient, .recorder, .photos, .volume, .appVolume,
         .downloads, .trash, .fileShelf, .screenshots, .airdrop,
         .battery, .system, .network, .gauges, .microphone, .wallpaper,

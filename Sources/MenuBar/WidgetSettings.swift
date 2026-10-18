@@ -531,9 +531,6 @@ struct WidgetSettingsSections: View {
         "engine": tr("搜索引擎"),
         "allScreens": tr("应用到所有显示器"),
         "links": tr("网址"),
-        "from": tr("原币种"),
-        "to": tr("目标币种"),
-        "amount": tr("金额"),
         "repo": tr("仓库"),
         "repos": tr("仓库列表"),
         "rings": tr("圆环"),
@@ -584,6 +581,9 @@ struct WidgetSettingsSections: View {
         "github.notify": tr("有新议题、拉取请求或评论时通知"),
         "github.repos": tr("关注的项目（最多 \(GitHubWatch.maxRepos) 个）"),
         "podcast.notify": tr("有新单集时通知"),
+        // 「算」只写了一种币种时：是「默认换成」那种就换成常用币种，否则换成「默认换成」。
+        "calculator.currencyFrom": tr("常用币种（输入本币时换成它）"),
+        "calculator.currencyTo": tr("默认换成（只写一种币种时）"),
         "battery.look": tr("外观"),
         "countdown.look": tr("数字外观"),
         "countdown.sound": tr("到点响提示音"),
@@ -656,7 +656,6 @@ struct WidgetSettingsSections: View {
         case "duration": 60...14_400
         case "skip": 5...60
         case "interval": 5...3_600
-        case "amount": 0...1_000_000
         case "alertAt": 50...95
         case "volume": 0...100
         case "goal": Double(WaterIntake.goalRange.lowerBound)...Double(WaterIntake.goalRange.upperBound)
@@ -670,7 +669,6 @@ struct WidgetSettingsSections: View {
     static func step(_ key: String) -> Double {
         switch key {
         case "duration": 300
-        case "amount": 100
         case "goal": 100
         case "cupSize": 50
         case "payday": 1
@@ -681,7 +679,6 @@ struct WidgetSettingsSections: View {
 
     static func format(_ key: String, _ value: Double) -> String {
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
-        if key == "amount" { return UnitConverter.format(value) }
         if key == "goal" || key == "cupSize" { return tr("\(Int(value)) 毫升") }
         if key == "payday" { return tr("每月 \(Int(value)) 日") }
         if key == "income" { return tr("\(Int(value)) 元") }
@@ -725,8 +722,8 @@ struct WidgetSettingsSections: View {
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },
         "ai-usage.show": [(tr("已用"), "used"), (tr("剩余"), "remaining")],
         "search.engine": SearchSites.builtIn.map { ($0.title, $0.id) },
-        "currency.from": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
-        "currency.to": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
+        "calculator.currencyFrom": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
+        "calculator.currencyTo": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "lunar.workAlertLead": LunarCard.leadChoices.map { (tr("\($0) 天"), "\($0)") },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
         "crypto.currency": [(tr("人民币 CNY"), "cny"), (tr("美元 USD"), "usd")],

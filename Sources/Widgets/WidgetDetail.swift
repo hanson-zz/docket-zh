@@ -533,13 +533,13 @@ enum WidgetDetail {
         case .weather: 340
         case .music: 330
         case .photos, .screenshots: 340
-        case .downloads, .fileShelf, .clipboard, .converter, .search: 320
+        case .downloads, .fileShelf, .clipboard, .search: 320
         case .wallpaper: 340
         case .appSwitcher: 320
         case .bookmarks: 300
         case .recorder: 320
-        case .calculator: 280
-        case .currency: 320
+        // 「算」：输入框、结果、最近记录，和原来汇率换算的面板一样宽。
+        case .calculator: 320
         case .github: 320
         case .posture: 320
         case .aiUsage: 340

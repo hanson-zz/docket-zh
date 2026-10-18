@@ -1,14 +1,15 @@
 import Foundation
 
-/// Offline unit conversion for the converter widget.
+/// Offline unit conversion for 「算」, the calculator that also converts.
 ///
 /// Pure and here in the core so the maths is tested without the app. Every
 /// linear unit is stored as its factor to the category's base unit (metres,
 /// grams); temperature is the one category that is affine rather than linear,
 /// so it goes through Celsius instead of a single factor.
 ///
-/// Currency is deliberately absent: a rate that is out of date is worse than
-/// no rate, and fetching one is a network service this widget does not need.
+/// Currency is deliberately absent here: rates come from the network and age,
+/// so they live in `CurrencyRates` and `SmartCalc` decides which of the two
+/// an input means.
 public enum UnitCategory: String, CaseIterable, Sendable {
     case length, weight, temperature
 

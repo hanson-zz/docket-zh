@@ -261,24 +261,25 @@ private func shots(since started: Date) -> [Shot] {
         Shot(name: "color-picker", instance: widget(.colorPicker),
              isPreview: true, source: .sample),
 
-        // Live: the conversion is arithmetic, and the panel opens on its own
-        // default units and value.
-        Shot(name: "converter", instance: widget(.converter),
-             isPreview: false, source: .live),
-
-        // Live: arithmetic on a sum written into the config, the way the
-        // panel's own "=" keeps one.
+        // Live: 「算」 on a sum written into the config, the way the panel's
+        // own Return keeps one, with a unit conversion in its recent list.
         Shot(name: "calculator",
-             instance: widget(.calculator, ["expression": .string("1280×(1+6%)")]),
+             instance: widget(.calculator, ["expression": .string("1280×(1+6%)"),
+                                            "history": .list([.string("1280×(1+6%)"), .string("5 km"),
+                                                              .string("3 斤")])]),
              isPreview: false, source: .live),
 
         // Live: the catalog's own links, which are the widget's content
         // rather than a reading of anything.
         Shot(name: "bookmarks", instance: widget(.bookmarks), isPreview: false, source: .live),
 
-        // Live: today's rates from open.er-api.com, fetched here because the
-        // panel only fetches when the table is stale.
-        Shot(name: "currency", instance: widget(.currency), isPreview: false, source: .live,
+        // Live: 「算」 converting money, with today's rates from
+        // open.er-api.com, fetched here because the panel only fetches when
+        // the table is stale.
+        Shot(name: "currency",
+             instance: widget(.calculator, ["expression": .string("100 USD"),
+                                            "history": .list([.string("100 USD")])]),
+             isPreview: false, source: .live,
              prepare: {
                  CurrencyService.shared.refresh(force: true)
                  for _ in 0..<40 where CurrencyService.shared.rates == nil {
@@ -802,7 +803,7 @@ private func shelves() -> [ShelfShot] {
                   sample: true),
         // 实用小工具
         ShelfShot(name: "shelf-tools",
-                  widgets: [widget(.clipboard), widget(.converter), widget(.emoji),
+                  widgets: [widget(.clipboard), widget(.calculator, ["expression": .string("5 km")]), widget(.emoji),
                             widget(.weather), widget(.world, ["zone": .string("Asia/Tokyo"),
                                                               "city": .string(tr("东京"))])],
                   sample: true),
@@ -814,7 +815,7 @@ private func shelves() -> [ShelfShot] {
                   sample: true),
         // v0.4.0：效率工具
         ShelfShot(name: "shelf-utilities",
-                  widgets: [widget(.calculator), widget(.currency), widget(.bookmarks),
+                  widgets: [widget(.calculator), widget(.bookmarks),
                             widget(.github), widget(.mail)],
                   sample: true),
         // v0.4.0：桌面与应用
@@ -841,7 +842,7 @@ private func shelves() -> [ShelfShot] {
                   widgets: [widget(.clock), widget(.calendar), widget(.reminders), widget(.timer),
                             widget(.water), widget(.posture), widget(.weather),
                             widget(.music), widget(.system), widget(.gauges), widget(.microphone),
-                            widget(.search), widget(.clipboard), widget(.currency),
+                            widget(.search), widget(.clipboard), widget(.calculator),
                             widget(.watchlist)],
                   sample: true, shrink: true),
         // v0.5.0：Codex 用量

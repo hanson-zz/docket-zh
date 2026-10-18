@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Grammar, loosest first:
 ///
-///     sum      = product (("+" | "-") product)*
+///     sum      = product (("+" | "-") product)*    a + b% is a × (1 + b%)
 ///     product  = unary (("*" | "/") unary)*
 ///     unary    = ("+" | "-") unary | power   so -2^2 is -4
 ///     power    = postfix ("^" unary)?        right-associative
@@ -122,19 +122,36 @@ public enum Calculator {
 
         private var current: Character? { index < characters.count ? characters[index] : nil }
 
+        /// Where the last `%` ended, so `product` can tell a term that is
+        /// nothing but a percentage ("10%") from one that merely contains one.
+        var percentEnd = -1
+        /// Whether the term `product` just read was a bare percentage.
+        var lastTermWasPercent = false
+
         mutating func sum(depth: Int) throws -> Double {
             var value = try product(depth: depth)
             while let c = current, c == "+" || c == "-" {
                 index += 1
                 let rhs = try product(depth: depth)
-                value = c == "+" ? value + rhs : value - rhs
+                // 200 + 10% is 220, the way a shop till and every phone
+                // calculator read it, not 200.1. Only a bare percentage
+                // added to or taken off something; 200 * 10% is still 20.
+                if lastTermWasPercent {
+                    value = c == "+" ? value * (1 + rhs) : value * (1 - rhs)
+                } else {
+                    value = c == "+" ? value + rhs : value - rhs
+                }
             }
+            lastTermWasPercent = false
             return value
         }
 
         mutating func product(depth: Int) throws -> Double {
             var value = try unary(depth: depth)
+            var single = percentEnd == index
+            defer { lastTermWasPercent = single }
             while let c = current, c == "*" || c == "/" {
+                single = false
                 index += 1
                 let rhs = try unary(depth: depth)
                 if c == "*" {
@@ -175,6 +192,7 @@ public enum Calculator {
             while current == "%" {
                 index += 1
                 value /= 100
+                percentEnd = index
             }
             return value
         }

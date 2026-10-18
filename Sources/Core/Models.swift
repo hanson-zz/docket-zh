@@ -214,15 +214,16 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     // Registry order drives library order.
     // `hydration` (喝水提醒) was folded into `water`; a saved one is read
     // back as `water` by `WidgetInstance`, see `WaterIntake.legacyHydrationKind`.
+    // `converter` (单位换算) and `currency` (汇率换算) were folded into
+    // `calculator`, now 「算」; see `SmartCalc.legacyConverterKind`.
     case clock, world, stopwatch, timer, progress, countdown, alarm
     case calendar, reminders, notes, music, battery, system
     case network, aiUsage = "ai-usage", shortcut, airdrop, weather
     case stripe, paddle, stock, watchlist, shopify
     case photos, screenshots, downloads, fileShelf = "file-shelf"
-    case clipboard, colorPicker = "color-picker", converter
+    case clipboard, colorPicker = "color-picker"
     case capture, emoji, search, volume, toggles
     case github
-    case currency
     case calculator
     case mail
     case recorder
@@ -405,7 +406,9 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
         case id, kind, expanded, config
     }
 
-    /// The synthesized decode, plus one alias: the old 喝水提醒 widget
+    /// The synthesized decode, plus aliases: the old 单位换算 (`converter`)
+    /// and 汇率换算 (`currency`) come back as 「算」 (`calculator`), see
+    /// `SmartCalc`. And the old 喝水提醒 widget
     /// (`hydration`) comes back as 喝水 (`water`), its interval carried over
     /// by `WaterIntake.migratingHydration`. Same id, so the tile keeps its
     /// place, and the next save writes it as `water`, which makes the move
@@ -426,11 +429,21 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
             case .clock: config = ClockStyles.migrating(stored)
             // 日历的「日期 + 日程列表」换成了今日时间线。
             case .calendar: config = CalendarDay.migratingLayout(stored)
+            // 计算器并成了「算」：算式照旧，补一条最近记录。
+            case .calculator: config = SmartCalc.migratingCalculator(stored)
             default: config = stored
             }
         } else if raw == WaterIntake.legacyHydrationKind {
             kind = .water
             config = WaterIntake.migratingHydration(stored)
+        } else if raw == SmartCalc.legacyConverterKind {
+            // 单位换算并进「算」：同一个 id，卡片位置不变，那一对单位留作默认。
+            kind = .calculator
+            config = SmartCalc.migratingConverter(stored)
+        } else if raw == SmartCalc.legacyCurrencyKind {
+            // 汇率换算并进「算」：币种对变成默认币种对。
+            kind = .calculator
+            config = SmartCalc.migratingCurrency(stored)
         } else {
             throw DecodingError.dataCorruptedError(forKey: .kind, in: c,
                                                    debugDescription: "Unknown widget kind \(raw)")

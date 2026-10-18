@@ -2377,6 +2377,17 @@
         }
       }
     },
+    "100 USD、5 km、3*4+2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100 USD, 5 km, 3*4+2"
+          }
+        }
+      }
+    },
     "100% 是应用原本的音量，不做任何处理。调高、调低或静音时，码头会通过系统的音频接入处理这个应用的声音。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4624,6 +4635,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When both are on one edge, reaching for one uncovers the other."
+          }
+        }
+      }
+    },
+    "两边不是同一类，没法换算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Those two can't be converted into each other"
           }
         }
       }
@@ -7785,6 +7807,17 @@
         }
       }
     },
+    "再算一次这一条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work this out again"
+          }
+        }
+      }
+    },
     "再贴一张，最多 %@ 张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9783,6 +9816,17 @@
         }
       }
     },
+    "取消固定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin"
+          }
+        }
+      }
+    },
     "取消星标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11077,6 +11121,28 @@
         }
       }
     },
+    "固定到卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin to card"
+          }
+        }
+      }
+    },
+    "固定后卡片一直显示这一条，汇率会跟着更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card keeps showing this line, with the rate kept up to date"
+          }
+        }
+      }
+    },
     "国内" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11960,6 +12026,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy and Open in Notch"
+          }
+        }
+      }
+    },
+    "复制结果 %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy result %@ %@"
           }
         }
       }
@@ -14079,6 +14156,17 @@
         }
       }
     },
+    "已复制" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
     "已复制 %@（RGB %@, %@, %@）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14808,6 +14896,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "常用"
+          }
+        }
+      }
+    },
+    "常用币种（输入本币时换成它）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usual currency (your home currency converts to this)"
           }
         }
       }
@@ -20828,6 +20927,17 @@
         }
       }
     },
+    "暂时没有 %@ 的汇率" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rate for %@ yet"
+          }
+        }
+      }
+    },
     "暂时连不上小宇宙" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23563,6 +23673,17 @@
         }
       }
     },
+    "汇率" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency"
+          }
+        }
+      }
+    },
     "汇率换算" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24787,6 +24908,17 @@
         }
       }
     },
+    "清空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
     "清空…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25553,6 +25685,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to edit, right-click to postpone"
+          }
+        }
+      }
+    },
+    "点按输入 100 USD、5 km 或 3*4+2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to type 100 USD, 5 km or 3*4+2"
+          }
+        }
+      }
+    },
+    "点数字复制结果" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the number to copy it"
           }
         }
       }
@@ -27819,6 +27973,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simple"
+          }
+        }
+      }
+    },
+    "算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calc"
           }
         }
       }
@@ -30356,6 +30521,17 @@
         }
       }
     },
+    "计算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Math"
+          }
+        }
+      }
+    },
     "计算器" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30418,6 +30594,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subscribers"
+          }
+        }
+      }
+    },
+    "认不出“%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read \"%@\""
           }
         }
       }
@@ -31610,6 +31797,17 @@
         }
       }
     },
+    "输入什么都行：带币种算汇率，带单位做换算，其余当算式。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type anything: a currency converts money, a unit converts units, and the rest is worked out as a sum."
+          }
+        }
+      }
+    },
     "输入或粘贴要翻译的文字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31639,6 +31837,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type a file name and press Return."
+          }
+        }
+      }
+    },
+    "输入算式、单位或币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a sum, a unit or a currency"
           }
         }
       }
@@ -35327,6 +35536,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not set by default. Press it to open a small field; Return adds the line to the first Quick To-do on the shelf."
+          }
+        }
+      }
+    },
+    "默认换成（只写一种币种时）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert to (when you type one currency)"
           }
         }
       }

@@ -4,9 +4,9 @@ import SwiftUI
 /// The last translation at a glance: what it came out as, and which way it
 /// went ("中 ⇄ 英").
 ///
-/// Typing happens in the panel, for the same reason the calculator and the
-/// converter are worked in theirs: a field on the card would take the click
-/// that opens it. Text dropped on the card is translated right here, and
+/// Typing happens in the panel, for the same reason 「算」 (the calculator,
+/// converter and currency in one) is worked in its own: a field on the card
+/// would take the click that opens it. Text dropped on the card is translated right here, and
 /// lands in the panel's history like any other.
 struct TranslateTile: View {
     var instance: WidgetInstance
