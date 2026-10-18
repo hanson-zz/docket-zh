@@ -3,7 +3,8 @@ import SwiftUI
 
 /// AI 助手：最左边是小熊猫（点它打开提问面板），一道细分隔线，后面是勾选
 /// 的 AI 服务字牌（单色玻璃字牌，首字或短缩写，不用官方图标），末尾一块
-/// 虚线“＋”。默认服务的字牌右上角有一个小蓝点。
+/// 虚线“＋”。默认服务的字牌右上角有一个小蓝点。竖版只有一只大的小熊猫，
+/// 点一下用默认 AI 提问，字牌留给横版。
 ///
 /// 点字牌：装了它的 Mac App 就开 App，否则开网页。右键字牌：设为默认、
 /// 左移、右移、隐藏。点“＋”：按国内、国外列出全部服务，打勾的显示在卡片
@@ -22,7 +23,7 @@ struct AIAssistantTile: View {
         let defaultID = AIServices.defaultService(in: config, enabled: shown)?.id
         return WidgetSurface {
             if context.position.isVertical {
-                column(shown, defaultID: defaultID)
+                if square { tallSquare(shown) } else { column(shown, defaultID: defaultID) }
             } else if square {
                 compact(shown, defaultID: defaultID)
             } else {
@@ -51,21 +52,76 @@ struct AIAssistantTile: View {
         }
     }
 
+    /// 竖版（108×62）：一只大的小熊猫，旁边“问 AI”和默认服务。点哪里都是用
+    /// 默认 AI 提问（和横版的小熊猫一样），字牌、排序和“＋”留给横版。
     private func compact(_ shown: [AIService], defaultID: String?) -> some View {
-        let visible = Array(shown.prefix(AIServices.visibleCount(shown.count, square: true, vertical: false)))
-        return HStack(spacing: 6) {
-            pandaButton(size: 34)
-            if visible.isEmpty {
-                plusButton(size: 26)
-            } else {
-                LazyVGrid(columns: [GridItem(.fixed(22), spacing: 4), GridItem(.fixed(22), spacing: 4)],
-                          spacing: 4) {
-                    ForEach(visible) { letter($0, size: 22, isDefault: $0.id == defaultID) }
-                    plusButton(size: 22)
+        let fallback = AIServices.defaultService(in: config, enabled: shown)
+        return askButton {
+            HStack(spacing: 4) {
+                AIPandaAvatar(size: 50, pose: AIPandaArt.cheer)
+                    .offset(y: 2)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("问 AI")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    defaultLine(fallback)
                 }
-                .frame(width: 48)
+                Spacer(minLength: 0)
             }
         }
+    }
+
+    /// 竖版在侧边栏：小熊猫在上，下面“问 AI”和默认服务。
+    private func tallSquare(_ shown: [AIService]) -> some View {
+        let fallback = AIServices.defaultService(in: config, enabled: shown)
+        return askButton {
+            VStack(spacing: 4) {
+                AIPandaAvatar(size: 50, pose: AIPandaArt.cheer)
+                Text("问 AI")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                defaultLine(fallback)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func defaultLine(_ service: AIService?) -> some View {
+        if let service {
+            HStack(spacing: 3) {
+                AIGlyph(initial: service.initial, size: 15, style: .shelf)
+                Text("默认")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .lineLimit(1)
+            }
+            .help(tr("默认：\(service.title)，在横版或面板里改"))
+        }
+    }
+
+    /// 整块都是提问按钮，和小熊猫按钮做同一件事。
+    private func askButton<Label: View>(@ViewBuilder _ label: () -> Label) -> some View {
+        Button {
+            ask()
+        } label: {
+            label().contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("问问 AI")
+        .accessibilityLabel("用默认 AI 提问")
+    }
+
+    private func ask() {
+        guard !context.isPreview else { return }
+        // 当前服务是网页或 API：打开刘海里的同一个对话。是跳转时照旧
+        // 打开原来的提问面板。
+        if AINotchController.shared.openFromShelf(instance) { return }
+        AIPanelState.shared.requestPanel(instance.id, mode: .ask, toggle: true)
     }
 
     private func column(_ shown: [AIService], defaultID: String?) -> some View {
@@ -93,11 +149,7 @@ struct AIAssistantTile: View {
     /// 否则点开提问面板，再点一次关上（面板开着时扩展栏照常切换）。
     private func pandaButton(size: CGFloat) -> some View {
         Button {
-            guard !context.isPreview else { return }
-            // 当前服务是网页或 API：打开刘海里的同一个对话。是跳转时照旧
-            // 打开原来的提问面板。
-            if AINotchController.shared.openFromShelf(instance) { return }
-            AIPanelState.shared.requestPanel(instance.id, mode: .ask, toggle: true)
+            ask()
         } label: {
             AIPandaAvatar(size: size)
         }
@@ -229,10 +281,12 @@ struct AIGlyph: View {
 /// 小熊猫头像，用电子宠物的那张。读不到图（截图工具里）时画个符号。
 struct AIPandaAvatar: View {
     var size: CGFloat
+    /// 哪一张：平时是站着的，竖版用举手欢呼的那张。
+    var pose: String = AIPandaArt.name
 
     var body: some View {
         Group {
-            if let image = AIPandaArt.image {
+            if let image = AIPandaArt.image(pose) {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
@@ -252,17 +306,16 @@ struct AIPandaAvatar: View {
 @MainActor
 enum AIPandaArt {
     static let name = "pet-panda-idle"
-    private static var loaded = false
-    private static var cached: NSImage?
+    static let cheer = "pet-panda-cheer"
+    private static var cached: [String: NSImage?] = [:]
 
-    static var image: NSImage? {
-        if !loaded {
-            loaded = true
-            if let url = Bundle.main.url(forResource: name, withExtension: "png") {
-                cached = NSImage(contentsOf: url)
-            }
-        }
-        return cached
+    static var image: NSImage? { image(name) }
+
+    static func image(_ pose: String) -> NSImage? {
+        if let known = cached[pose] { return known }
+        let loaded = Bundle.main.url(forResource: pose, withExtension: "png").flatMap { NSImage(contentsOf: $0) }
+        cached[pose] = loaded
+        return loaded
     }
 }
 

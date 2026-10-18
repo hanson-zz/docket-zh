@@ -51,6 +51,10 @@ public enum WidgetLibraryGroups {
         case .capture: tr("截区域、窗口，识字，录屏")
         case .screenshots: tr("刚截的图，可直接拖出")
         case .colorPicker: tr("最近颜色，点一下拷贝")
+        // 声音三张分工：音量管输出和总闸，应用音量管每个应用，正在播放只管这首歌。
+        case .volume: tr("换输出设备和总音量")
+        case .appVolume: tr("每个应用各调各的")
+        case .music: tr("只管这首歌")
         default: nil
         }
     }

@@ -22,6 +22,7 @@ struct PhotoFrameDetail: View {
                             title: tr("相册"),
                             subtitle: subtitle)
                 content
+                if instance.config.string("layout", default: "standard") == "wide" { memoriesNote }
                 HStack(spacing: 8) {
                     PanelButton(title: tr("选择文件夹…"), symbol: "folder", prominent: true, action: choose)
                     PanelButton(title: tr("在访达中打开"), symbol: nil) {
@@ -66,6 +67,29 @@ struct PhotoFrameDetail: View {
         } else {
             FileGrid(files: feed.files)
         }
+    }
+
+    /// 宽幅卡片的“那年今天”从照片图库来，这里说清楚现在是哪种情况。
+    @ViewBuilder
+    private var memoriesNote: some View {
+        let memories = PhotoMemories.shared
+        HStack(spacing: 6) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 11, weight: .semibold))
+            if context.isPreview || memories.access == .granted {
+                Text(memories.memories.isEmpty && !context.isPreview
+                     ? tr("那年今天：照片图库里今天没有往年的照片，先轮播这个文件夹")
+                     : tr("那年今天：宽幅卡片在轮播照片图库里往年今天拍的照片"))
+            } else {
+                Text(tr("那年今天要读取照片图库"))
+                Button(tr("打开隐私设置")) { memories.openPrivacySettings() }
+                    .buttonStyle(.plain)
+                    .underline()
+            }
+        }
+        .font(WidgetStyle.caption(11))
+        .foregroundStyle(.white.opacity(0.75))
+        .lineLimit(2)
     }
 
     private func choose() {

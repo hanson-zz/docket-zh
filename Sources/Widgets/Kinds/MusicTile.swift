@@ -2,7 +2,11 @@ import AppKit
 import SwiftUI
 
 /// Now Playing: artwork, track, transport and a scrubber (264×62 on a bottom
-/// shelf, a stacked 76pt column on a side one, or a 64pt artwork-only chip).
+/// shelf, a stacked 76pt column on a side one, or a 64pt chip with the play
+/// key and the bouncing bars).
+///
+/// 正在播放只管这首歌：封面、曲目、上一首 / 暂停 / 下一首、进度。不放音量，
+/// 总音量和输出设备在“音量”，每个应用的音量在“应用音量”。
 ///
 /// Reads Spotify and Apple Music directly, and falls back to whatever video is
 /// playing in a scriptable browser tab.
@@ -28,7 +32,8 @@ struct MusicTile: View {
 
     /// The artwork, when there is one to stand on.
     private var cover: NSImage? {
-        guard !context.isPreview else { return nil }
+        // 迷你只有播放键和小竖条，不铺封面。
+        guard !context.isPreview, !isMini else { return nil }
         return playing?.artwork
     }
 
@@ -122,36 +127,53 @@ struct MusicTile: View {
     @ViewBuilder
     private var content: some View {
         if isMini {
-            // Just the control.
+            // 迷你：一个播放键加一排跳动的小竖条（`PlayingBars`）。
             //
             // Mini is a 64pt chip and artwork there is a thumbnail cropped to
             // a square: an album cover survives it, a video thumbnail becomes
             // two faces and half a word of somebody's title. At that size it
-            // is texture rather than information, and it was competing with
-            // the one thing the chip is for.
+            // is texture rather than information, so the chip keeps the
+            // control and the bars, which say "this is playing" at a glance
+            // and stop (a low still row) when it is paused. With Reduce
+            // Motion they hold still.
             //
             // Still a glyph rather than the whole card, so the rest of the
             // chip keeps the shelf's click and the panel stays reachable.
-            // It is simply the only thing on the chip now, so it can be the
-            // size it deserves instead of tucked into a corner.
-            let side: CGFloat = context.position.isVertical ? 15 : 13
-            if let playing, !context.isPreview {
-                TileGlyph(symbol: playing.isPlaying ? "pause.fill" : "play.fill",
-                          size: side, morphs: true) { toggle(playing) }
-                    .accessibilityLabel(playing.isPlaying ? tr("暂停") : tr("播放"))
-            } else {
-                // Nothing playing is nothing to toggle, so the chip shows what
-                // it is and the whole of it opens the panel.
-                Image(systemName: "music.note")
-                    .font(.system(size: side * 1.4, weight: .medium))
-                    .foregroundStyle(subInk)
-            }
+            mini
         } else if needsPermission, playing == nil {
             connect
         } else if let playing {
             if context.position.isVertical { column(playing) } else { strip(playing) }
         } else {
             idle
+        }
+    }
+
+    // MARK: Mini, 64×62
+
+    @ViewBuilder
+    private var mini: some View {
+        let vertical = context.position.isVertical
+        // 64pt 宽、左右各 10 的内边距，剩 44：22 的圆键、4 的间距、约 17 的四根竖条。
+        let side: CGFloat = vertical ? 13 : 11
+        let track = playing
+        if let track {
+            let layout = vertical ? AnyLayout(VStackLayout(spacing: 5)) : AnyLayout(HStackLayout(spacing: 4))
+            let tap: (() -> Void)? = context.isPreview ? nil : { toggle(track) }
+            layout {
+                TileGlyph(symbol: track.isPlaying ? "pause.fill" : "play.fill", size: side, morphs: true,
+                          action: tap)
+                    .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+                PlayingBarsView(playing: track.isPlaying, tint: Color(hex: PaletteColor.green.hex),
+                                height: vertical ? 12 : 14,
+                                visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+            }
+        } else {
+            // Nothing playing is nothing to toggle, so the chip shows what
+            // it is and the whole of it opens the panel.
+            Image(systemName: "music.note")
+                .font(.system(size: side * 1.4, weight: .medium))
+                .foregroundStyle(subInk)
         }
     }
 

@@ -28,6 +28,7 @@
 	<key>NSRemovableVolumesUsageDescription</key><string>Dockling reads the folder on an external disk you chose for Photo Frame to show its pictures.</string>
 	<key>NSNetworkVolumesUsageDescription</key><string>Dockling reads the folder on a network volume you chose for Photo Frame to show its pictures.</string>
 	<key>NSAudioCaptureUsageDescription</key><string>When you change or mute an app's volume in the App Volume widget, Dockling taps that app's sound and plays it back at your level. Nothing is recorded or saved.</string>
+	<key>NSPhotoLibraryUsageDescription</key><string>The wide Photo Frame card shows photos taken on this day in earlier years, with their date and place. Dockling only reads them to show on the card.</string>
 	<key>NSCameraUsageDescription</key><string>Dockling turns on the camera when you click Mirror in Quick Toggles, showing the picture in a small window. Nothing is recorded or saved, and the camera stops when you close the window.</string>
 	<key>NSMicrophoneUsageDescription</key><string>Dockling uses the microphone to record voice memos when you press the Recorder widget's button. Recordings are saved only in the folder you choose.</string>
 </dict>

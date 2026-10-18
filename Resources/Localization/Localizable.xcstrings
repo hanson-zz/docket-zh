@@ -2102,6 +2102,17 @@
         }
       }
     },
+    "%@（正在使用）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (in use)"
+          }
+        }
+      }
+    },
     "%@（默认）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2230,6 +2241,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@: %@"
+          }
+        }
+      }
+    },
+    "%@：左右拖调音量，按住图标静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: drag left or right to set the volume, press and hold the icon to mute"
           }
         }
       }
@@ -2450,6 +2472,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2000/2000 ml"
+          }
+        }
+      }
+    },
+    "2024.10.18 · 杭州" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2024.10.18 · Hangzhou"
           }
         }
       }
@@ -7411,6 +7444,17 @@
         }
       }
     },
+    "全部输出设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All output devices"
+          }
+        }
+      }
+    },
     "全部退出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9926,6 +9970,17 @@
         }
       }
     },
+    "只有一个输出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only one output"
+          }
+        }
+      }
+    },
     "只有程序坞预留了屏幕空间，窗口才会停在扩展栏边上，而这只有程序坞本身能做到。Docket 会把系统程序坞移到屏幕%@，关闭其自动隐藏，将其大小调整为与扩展栏一致，然后用扩展栏覆盖它。\n\n你当前的程序坞设置会被保存，在关闭此功能或退出 Docket 时恢复。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9955,6 +10010,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rings at the same time every day"
+          }
+        }
+      }
+    },
+    "只管这首歌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just this song"
           }
         }
       }
@@ -13738,6 +13804,28 @@
         }
       }
     },
+    "左右拖调音量，按住图标静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to set volume, hold icon to mute"
+          }
+        }
+      }
+    },
+    "左右拖调音量，按住图标静音 · 还有 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to set volume, hold icon to mute · %@ more"
+          }
+        }
+      }
+    },
     "左移" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16036,6 +16124,17 @@
         }
       }
     },
+    "总音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
+          }
+        }
+      }
+    },
     "恒生指数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17539,6 +17638,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unlink before moving to a new Mac so the activation goes to the next one. Gift codes are also one Mac each and can move after unlinking."
+          }
+        }
+      }
+    },
+    "换输出设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change output"
+          }
+        }
+      }
+    },
+    "换输出设备和总音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output device and volume"
+          }
+        }
+      }
+    },
+    "换输出设备，现在是 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change output, now %@"
           }
         }
       }
@@ -23156,6 +23288,17 @@
         }
       }
     },
+    "每个应用各调各的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each app on its own"
+          }
+        }
+      }
+    },
     "每周额度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25106,6 +25249,17 @@
         }
       }
     },
+    "点图标换输出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click an icon to switch"
+          }
+        }
+      }
+    },
     "点开卡片添加" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25949,6 +26103,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Explain the content below in plain English, with an example if it helps.\n\n{文本}"
+          }
+        }
+      }
+    },
+    "用默认 AI 提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the default AI"
           }
         }
       }
@@ -33029,6 +33194,61 @@
         }
       }
     },
+    "那年今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this day"
+          }
+        }
+      }
+    },
+    "那年今天要读取照片图库" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On This Day needs access to your photo library"
+          }
+        }
+      }
+    },
+    "那年今天：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this day: %@"
+          }
+        }
+      }
+    },
+    "那年今天：宽幅卡片在轮播照片图库里往年今天拍的照片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this day: the wide card shows photos from your library taken on this day in earlier years"
+          }
+        }
+      }
+    },
+    "那年今天：照片图库里今天没有往年的照片，先轮播这个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this day: no photos from this day in earlier years, so the card shows this folder for now"
+          }
+        }
+      }
+    },
     "邮件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33542,6 +33762,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hold 3 seconds to unlock"
+          }
+        }
+      }
+    },
+    "问 AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI"
           }
         }
       }
@@ -34249,6 +34480,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Needs audio recording permission"
+          }
+        }
+      }
+    },
+    "需要录音权限，点这里打开设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs audio recording permission, click to open Settings"
           }
         }
       }
@@ -35118,6 +35360,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default color"
+          }
+        }
+      }
+    },
+    "默认：%@，在横版或面板里改" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default: %@, change it on the wide card or in the panel"
           }
         }
       }

@@ -349,6 +349,35 @@
         }
       }
     },
+    "NSPhotoLibraryUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wide Photo Frame card shows photos taken on this day in earlier years, with their date and place. Dockling only reads them to show on the card."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宽幅相册卡片会显示往年今天拍的照片，以及拍摄日期和地点。码头只读取照片用来显示在卡片上。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宽幅相册卡片会显示往年今天拍的照片，以及拍摄日期和地点。码头只读取照片用来显示在卡片上。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宽幅相册卡片会显示往年今天拍的照片，以及拍摄日期和地点。码头只读取照片用来显示在卡片上。"
+          }
+        }
+      }
+    },
     "NSRemindersFullAccessUsageDescription" : {
       "extractionState" : "manual",
       "localizations" : {

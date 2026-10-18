@@ -452,7 +452,8 @@ public enum AIServices {
 
     /// 底部货架上的宽度：左右各 10 的内边距，小熊猫 38，分隔线和两边的
     /// 间距 13，每块字牌 24 加 5 的间距，末尾的“＋”24。一块都没有时是
-    /// “添加”按钮（52）。方块样式是小熊猫加 2x2 的格子。
+    /// “添加”按钮（52）。竖版是一只大的小熊猫加“问 AI”和默认服务，字牌
+    /// 留给横版，宽度固定。
     public static func tileWidth(count: Int, square: Bool) -> Double {
         if square { return 108 }
         let shown = visibleCount(count, square: false, vertical: false)
@@ -460,8 +461,12 @@ public enum AIServices {
         return Double(20 + 38 + 13 + shown * 29 + 24)
     }
 
-    /// 侧边栏一列的高度：小熊猫在上，字牌两个一行，最后是“＋”。
+    /// 竖版在侧边栏：大的小熊猫在上，下面“问 AI”和默认服务，没有字牌。
+    public static let squareColumnHeight = 112.0
+
+    /// 侧边栏一列的高度：小熊猫在上，字牌两个一行，最后是“＋”。竖版是固定高度。
     public static func columnHeight(count: Int, square: Bool) -> Double {
+        if square { return squareColumnHeight }
         let shown = visibleCount(count, square: square, vertical: true)
         let cells = shown + 1
         let rows = (cells + 1) / 2
