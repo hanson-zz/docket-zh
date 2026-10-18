@@ -272,6 +272,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "progress.liquidMotion",
         // 时钟的子选项只在所属样式下列出（ClockStyles.applies）。
         "clock.clockSize", "clock.clockWeight", "clock.clockDial", "clock.clockCard", "clock.clockFlip",
+        // 调休提醒关掉时，提醒提前几天没有意义。
+        "lunar.workAlertLead",
     ]
 
     /// Everything else is unconditional, and a rule added carelessly would
