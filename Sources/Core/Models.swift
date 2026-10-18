@@ -1083,6 +1083,10 @@ public struct TimerState: Codable, Hashable, Sendable {
     public var deadline: Date?
     public var paused: TimeInterval?
     public var duration: TimeInterval?
+    /// 休息时提醒起身：休息环节卡片变绿，写“站起来走走”，同时让久坐提醒让位。
+    public var standUp: Bool = true
+    /// 上一次休息环节结束的时刻，久坐提醒从这里重新算已坐多久。
+    public var stoodUp: Date?
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1106,6 +1110,8 @@ public struct TimerState: Codable, Hashable, Sendable {
         deadline = try c.decodeIfPresent(Date.self, forKey: .deadline)
         paused = try c.decodeIfPresent(TimeInterval.self, forKey: .paused)
         duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
+        standUp = try c.decodeIfPresent(Bool.self, forKey: .standUp) ?? true
+        stoodUp = try c.decodeIfPresent(Date.self, forKey: .stoodUp)
     }
 
     public init() {}

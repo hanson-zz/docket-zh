@@ -40,6 +40,11 @@ public enum WidgetLibraryGroups {
         switch kind {
         case .reminders: tr("和系统提醒事项同步")
         case .todo: tr("随手记，不同步")
+        // 数剩余时间的四个按尺度分工，卡片上写明各管多长。
+        case .countdown: tr("几分钟内")
+        case .alarm: tr("今天某个时刻")
+        case .anniversary: tr("按天")
+        case .progress: tr("年月周日百分比")
         default: nil
         }
     }

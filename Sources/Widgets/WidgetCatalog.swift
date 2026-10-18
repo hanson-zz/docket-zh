@@ -88,13 +88,17 @@ public enum WidgetCatalog {
               variants: [(tr("圆环"), ["layout": .string("ring")]),
                          (tr("百分比"), ["layout": .string("percentage")]),
                          (tr("液态"), ["layout": .string(LiquidMotion.layout)]),
-                         (tr("进度条"), ["layout": .string("bars")])],
+                         (tr("进度条"), ["layout": .string("bars")]),
+                         // 四格：年、月、周、今天一起看。
+                         (tr("四格"), ["layout": .string(TimeProgress.quadLayout)])],
               supportsCompact: true, selfContained: true),
 
         // 倒计时没有样式选择，数字的外观（普通或折叠翻页）用 look 键，默认普通。
+        // 卡片上的三个预设（presets）在面板里改，没设时是 3、5、10 分钟（CountdownRun）。
         Entry(kind: .countdown, name: tr("倒计时"), category: .time,
               defaults: c(["duration": .number(300), "name": .string(""), "presets": .list([]),
-                           FoldFlip.countdownLookKey: .string(FoldFlip.CountdownLook.plain.rawValue)]),
+                           FoldFlip.countdownLookKey: .string(FoldFlip.CountdownLook.plain.rawValue),
+                           CountdownRun.soundKey: .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 摸鱼时钟：工作日倒数下班，周末祝周末快乐，四个小格是发薪、周五、
@@ -114,8 +118,11 @@ public enum WidgetCatalog {
                            SlackerClock.lookKey: .string(SlackerClock.Look.illustrated.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 一张卡片多个闹钟，存在 alarms 里（AlarmBook）。time 和 name 是旧的单个
+        // 闹钟，没有 alarms 的旧卡片按它们读成一个，新卡片也从它们开始。
         Entry(kind: .alarm, name: tr("闹钟"), category: .time,
-              defaults: c(["time": .string("14:30"), "name": .string(tr("给小王回电话"))]),
+              defaults: c(["time": .string("14:30"), "name": .string(tr("给小王回电话")),
+                           AlarmBook.soundKey: .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 日历只管今天和下一个会。「加入」按钮不是开关：日程带会议链接
@@ -655,6 +662,15 @@ public enum WidgetCatalog {
         // 水面动效只有液态外观有。
         case (.progress, TimeProgress.motionKey):
             TimeProgress.layout(config) == LiquidMotion.layout
+        // 四格四个周期一起看，没有“周期”可选。
+        case (.progress, TimeProgress.periodKey):
+            TimeProgress.layout(config) != TimeProgress.quadLayout
+        // 旧的单个闹钟的时间和名字；换成多个闹钟后在面板里改。
+        case (.alarm, "time"), (.alarm, "name"):
+            AlarmBook.isLegacy(config)
+        // 三个预设在面板里改。
+        case (.countdown, CountdownRun.presetsKey):
+            false
         // 渴成骷髅只画在角色上；圆环和液态没有角色。
         case (.water, WaterParched.key):
             config.string("layout", default: "character") == "character"
@@ -791,8 +807,10 @@ public enum WidgetCatalog {
             case "ring", "percentage", LiquidMotion.layout: return CGSize(width: 176, height: 76)
             default: return CGSize(width: 176, height: 78)
             }
-        case .countdown: return CGSize(width: 140, height: 72)
-        case .alarm: return CGSize(width: 168, height: 124)
+        // 168：名字、三个预设放得下。
+        case .countdown: return CGSize(width: 168, height: 72)
+        // 220：下一个闹钟的时间和名字一行，后面的闹钟一行小字。
+        case .alarm: return CGSize(width: 220, height: 124)
         case .calendar:
             switch cfg.string("layout", default: "nextEvent") {
             case "date": return CGSize(width: 88, height: 76)

@@ -1,43 +1,26 @@
 import SwiftUI
 
-/// The countdown at reading size, with the restart the tile deliberately
-/// refuses to offer and the lengths it has no room for.
+/// 倒计时面板：大圆环里的剩余时间，开始、暂停、取消，卡片上三个预设在这里改。
 ///
-/// The model is one key: `deadline`, an epoch, written by the tile's play
-/// glyph. Present and in the future means running; absent means idle, and the
-/// figure then stands at the full `duration` rather than at zero - again the
-/// tile's own rule, so the card and the panel cannot disagree.
-///
-/// There is no pause. A paused countdown would have to bank what is left
-/// somewhere the tile does not read, and the card would go on showing the
-/// full length while the panel showed the banked one. Cancelling is honest
-/// about what it costs; pausing would not be.
+/// 状态全部来自 `CountdownRun`，和卡片读同样的键（`deadline`、`paused`、
+/// `duration`、`presets`），所以面板和卡片不会说两样。时间到了还没人点停时，
+/// 面板上的主按钮就是“停”。
 struct CountdownDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    /// For a config that has not named its own lengths in `presets`. Minutes,
-    /// like the setting they write.
-    private static let fallbackPresets = [1, 5, 10, 15]
-
     var body: some View {
-        // The panel's context is captured once, when the panel opens, so it
-        // carries the shelf's tick no further than the first second. The
-        // schedule stands in for it rather than a timer of this view's own.
+        // 面板的 context 只在打开那一刻取一次，靠这个每秒刷新。
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             content(now: tick.date)
         }
     }
 
     private func content(now: Date) -> some View {
-        let total = duration
-        let left = remaining(duration: total, now: now)
-        let running = isRunning(now: now)
+        let total = CountdownRun.duration(instance.config)
+        let phase: CountdownRun.Phase = context.isPreview ? .idle : CountdownRun.phase(instance.config, now: now)
+        let (left, fraction) = Self.reading(phase, total: total)
 
-        let fraction = total > 0 ? left / total : 0
-
-        // The time left inside a ring that empties as it runs, on the
-        // countdown's own colour.
         return DetailCard {
             MeshBackdrop(color: accent)
         } content: {
@@ -46,18 +29,18 @@ struct CountdownDetail: View {
                     Circle()
                         .stroke(.white.opacity(0.12), lineWidth: 5)
                     Circle()
-                        .trim(from: 0, to: min(1, max(0, fraction)))
+                        .trim(from: 0, to: min(1, max(0, 1 - fraction)))
                         .stroke(.white.opacity(0.8), style: StrokeStyle(lineWidth: 5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     VStack(spacing: 2) {
-                        Text(docketClockString(left))
+                        Text(isRinging(phase) ? tr("时间到") : docketClockString(left))
                             .font(.system(size: 40, weight: .semibold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.primary)
                             .rollingValue(Int(left.rounded(.up)))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
-                        Text(caption(running: running, duration: total))
+                        Text(caption(phase, duration: total))
                             .font(WidgetStyle.label(11))
                             .foregroundStyle(.white.opacity(0.75))
                             .lineLimit(1)
@@ -69,22 +52,15 @@ struct CountdownDetail: View {
                 .frame(maxWidth: .infinity)
 
                 HStack(spacing: 10) {
-                    // Restarting in flight throws away time already run, which is
-                    // why the tile keeps it off the card and the panel carries it.
-                    ClockPanelButton(title: running ? tr("重新开始") : tr("开始"),
-                                     fill: .white.opacity(0.24), ink: .white) { start(duration: total) }
+                    ClockPanelButton(title: primaryTitle(phase), fill: .white.opacity(0.24), ink: .white) {
+                        primary(phase, duration: total)
+                    }
                     ClockPanelButton(title: tr("取消"), fill: nil, action: cancel)
-                        .disabled(deadline == nil)
-                        .opacity(deadline == nil ? 0.4 : 1)
+                        .disabled(phase == .idle)
+                        .opacity(phase == .idle ? 0.4 : 1)
                 }
 
-                HStack(spacing: 6) {
-                    ForEach(presets, id: \.self) { minutes in
-                        preset(minutes,
-                               active: Int((total / 60).rounded()) == minutes,
-                               now: now)
-                    }
-                }
+                presetEditor
             }
         }
     }
@@ -94,119 +70,148 @@ struct CountdownDetail: View {
         Color(hex: WidgetCatalog.accentHex(.countdown) ?? PaletteColor.indigo.hex)
     }
 
+    /// 还剩多少、走过了多少。
+    private static func reading(_ phase: CountdownRun.Phase, total: TimeInterval) -> (TimeInterval, Double) {
+        switch phase {
+        case .idle: (total, 0)
+        case .running(let left, let fraction), .paused(let left, let fraction): (left, fraction)
+        case .ringing: (0, 1)
+        }
+    }
+
+    private func isRinging(_ phase: CountdownRun.Phase) -> Bool {
+        if case .ringing = phase { return true }
+        return false
+    }
+
     // MARK: Pieces
 
-    private func preset(_ minutes: Int, active: Bool, now: Date) -> some View {
-        Button { pick(minutes, now: now) } label: {
-            Text(tr("\(minutes) 分钟"))
+    /// 卡片上的三个预设：点数字开始，加减号改分钟。
+    private var presetEditor: some View {
+        let presets = CountdownRun.presets(instance.config)
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(tr("卡片上的预设"))
                 .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(active ? 1 : 0.75))
-                .frame(maxWidth: .infinity)
-                .frame(height: 26)
-                .background(Capsule().fill(Color.white.opacity(active ? 0.28 : 0.1)))
+                .foregroundStyle(.white.opacity(0.7))
+            HStack(spacing: 6) {
+                ForEach(Array(presets.enumerated()), id: \.offset) { index, minutes in
+                    HStack(spacing: 2) {
+                        stepButton("minus", enabled: minutes > CountdownRun.presetRange.lowerBound) {
+                            setPreset(index, to: minutes - step(minutes, down: true))
+                        }
+                        Button { start(duration: Double(minutes * 60)) } label: {
+                            Text(CountdownRun.presetLabel(minutes))
+                                .font(WidgetStyle.label(11))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 26)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(tr("开始 \(minutes) 分钟倒计时"))
+                        stepButton("plus", enabled: minutes < CountdownRun.presetRange.upperBound) {
+                            setPreset(index, to: minutes + step(minutes, down: false))
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                    .background(Capsule().fill(Color.white.opacity(0.1)))
+                }
+            }
+        }
+    }
+
+    private func stepButton(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white.opacity(enabled ? 0.8 : 0.3))
+                .frame(width: 16, height: 26)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tr("\(minutes) 分钟倒计时"))
-        .accessibilityAddTraits(active ? [.isSelected] : [])
+        .disabled(!enabled)
+        .accessibilityLabel(symbol == "plus" ? tr("加一点") : tr("减一点"))
     }
 
-    /// What the countdown is for, and then the thing the tile cannot fit: the
-    /// clock time it lands on while it runs, the length it will run for while
-    /// it waits.
-    private func caption(running: Bool, duration: TimeInterval) -> String {
+    /// 10 分钟以内一分钟一档，再往上五分钟一档。
+    private func step(_ minutes: Int, down: Bool) -> Int {
+        (down ? minutes > 10 : minutes >= 10) ? 5 : 1
+    }
+
+    private func caption(_ phase: CountdownRun.Phase, duration: TimeInterval) -> String {
         let name = instance.config.string("name")
         let title = name.isEmpty ? tr("倒计时") : name
-        guard running, let deadline else {
-            return "\(title) · \(Self.lengthLabel(duration))"
+        switch phase {
+        case .idle:
+            return "\(title) · \(CountdownRun.lengthText(duration))"
+        case .paused:
+            return tr("已暂停 · \(title)")
+        case .ringing:
+            return tr("\(title) \(CountdownRun.lengthText(duration))")
+        case .running(let left, _):
+            let ends = Date.now.addingTimeInterval(left).formatted(.dateTime.hour().minute())
+            return tr("\(title) · \(ends) 结束")
         }
-        let ends = Date(timeIntervalSince1970: deadline)
-            .formatted(.dateTime.hour().minute())
-        return tr("\(title) · \(ends) 结束")
     }
 
-    // MARK: State
-    //
-    // The tile's accessors, key for key.
-
-    private var duration: TimeInterval {
-        max(0, instance.config.double("duration", default: 300))
-    }
-
-    /// Absent while idle, so the panel can tell "not started" from "finished"
-    /// - both of which read 0:00 on a card.
-    private var deadline: TimeInterval? {
-        guard !context.isPreview, instance.config["deadline"] != nil else { return nil }
-        return instance.config.double("deadline")
-    }
-
-    private func isRunning(now: Date) -> Bool {
-        guard let deadline else { return false }
-        return deadline > now.timeIntervalSince1970
-    }
-
-    private func remaining(duration: TimeInterval, now: Date) -> TimeInterval {
-        guard let deadline else { return duration }
-        return max(0, min(deadline - now.timeIntervalSince1970, duration))
-    }
-
-    /// `presets` in the widget's own config, read as minutes. The settings
-    /// pane has no editor for the key, so an unset list falls back to the
-    /// lengths a countdown is usually cut to rather than leaving the row
-    /// empty - these are controls, not a claim about the user's timers.
-    private var presets: [Int] {
-        let configured = instance.config.strings("presets")
-            .compactMap { Int($0.prefix(while: \.isNumber)) }
-            .filter { $0 > 0 }
-        return configured.isEmpty ? Self.fallbackPresets : configured
-    }
-
-    /// Reads a length the way the settings stepper does, so the panel and the
-    /// setting behind it never word the same number differently.
-    private static func lengthLabel(_ duration: TimeInterval) -> String {
-        WidgetSettingsSections.format("duration", duration)
+    private func primaryTitle(_ phase: CountdownRun.Phase) -> String {
+        switch phase {
+        case .idle: tr("开始")
+        case .running: tr("暂停")
+        case .paused: tr("继续")
+        case .ringing: tr("停")
+        }
     }
 
     // MARK: Actions
 
-    /// The deadline is stored rather than a remaining time, so the countdown
-    /// keeps running across a relaunch instead of resuming where it stopped.
-    private func start(duration: TimeInterval) {
+    private func primary(_ phase: CountdownRun.Phase, duration: TimeInterval) {
         guard !context.isPreview else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("deadline", .number(Date.now.timeIntervalSince1970 + duration))
-            }
-        }
-    }
-
-    /// Clearing the key rather than zeroing it: a countdown with no deadline
-    /// is the idle state the tile draws, sitting at its full length with its
-    /// start glyph back.
-    private func cancel() {
-        guard !context.isPreview else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
+        switch phase {
+        case .idle: start(duration: duration)
+        case .running(let left, _):
+            write { config in
+                config.set("paused", .number(left))
                 config.set("deadline", nil)
             }
+        case .paused(let left, _):
+            write { config in
+                config.set("paused", nil)
+                config.set("deadline", .number(Date.now.timeIntervalSince1970 + left))
+            }
+        case .ringing: cancel()
         }
     }
 
-    /// A preset sets the length the countdown runs for, and trims one already
-    /// in flight rather than restarting it - restarting is the button above.
-    private func pick(_ minutes: Int, now: Date) {
+    private func start(duration: TimeInterval) {
+        guard !context.isPreview, duration > 0 else { return }
+        write { config in
+            config.set("duration", .number(duration))
+            config.set("paused", nil)
+            config.set("deadline", .number(Date.now.timeIntervalSince1970 + duration))
+        }
+    }
+
+    private func cancel() {
         guard !context.isPreview else { return }
-        let picked = Double(minutes * 60)
-        let left = remaining(duration: duration, now: now)
-        let running = isRunning(now: now)
+        write { config in
+            config.set("paused", nil)
+            config.set("deadline", nil)
+        }
+    }
+
+    private func setPreset(_ index: Int, to minutes: Int) {
+        guard !context.isPreview else { return }
+        let list = CountdownRun.settingPreset(index, to: minutes, in: instance.config)
+        write { config in
+            config.set(CountdownRun.presetsKey, .list(list.map { .string(String($0)) }))
+        }
+    }
+
+    private func write(_ change: (inout WidgetConfig) -> Void) {
         withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("duration", .number(picked))
-                if running {
-                    config.set("deadline",
-                               .number(Date.now.timeIntervalSince1970 + min(left, picked)))
-                }
-            }
+            WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance, change)
         }
     }
 }

@@ -586,6 +586,8 @@ struct WidgetSettingsSections: View {
         "podcast.notify": tr("有新单集时通知"),
         "battery.look": tr("外观"),
         "countdown.look": tr("数字外观"),
+        "countdown.sound": tr("到点响提示音"),
+        "alarm.sound": tr("响铃时出声"),
         "slacker.start": tr("上班时间"),
         "slacker.end": tr("下班时间（要晚于上班时间）"),
         "slacker.look": tr("外观"),

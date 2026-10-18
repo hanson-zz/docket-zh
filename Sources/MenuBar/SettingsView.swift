@@ -1009,7 +1009,10 @@ struct SettingsView: View {
                     }
                     LabeledContent("颜色") { swatches }
                     Toggle("提醒", isOn: $state.timer.alerts)
-                        .help("专注或休息结束时发出通知。")
+                        .help("专注或休息结束时响一声。")
+                    // 吸收久坐提醒：休息环节卡片变绿提示起身，开着专注时久坐提醒让位。
+                    Toggle("休息时提醒起身", isOn: $state.timer.standUp)
+                        .help("休息时卡片变绿，提示站起来走走；专注计时开着时，久坐提醒不再另外提醒。")
                 } header: {
                     Text("专注计时")
                 } footer: {

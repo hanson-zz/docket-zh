@@ -1,150 +1,243 @@
 import SwiftUI
 
-/// One alarm, said properly.
+/// 闹钟面板：一张列表管今天的全部闹钟。加、删、开关、改时间和名字。
 ///
-/// The widget holds exactly one - `time`, `name` and `enabled` in its own
-/// config - so this is a single-alarm panel rather than a list pretending to
-/// be one. Several alarms means several widgets, each with its own tile and
-/// its own panel.
-///
-/// What the card cannot fit: which day the next ring lands on, the count to it
-/// to the second rather than rounded up to the minute, and a switch you have
-/// to mean - silencing an alarm is how you sleep through something, which is
-/// why the tile keeps it to a glyph the size of itself and the panel gives it
-/// a button.
+/// 卡片上只放得下下一个和后面一行小字，这里把每个都列出来：时间、名字、
+/// 还有多久，右边一个开关。正在响的那个排在最上面，带“稍后”和“关掉”。
+/// 读写的都是 `AlarmBook`，和卡片同一份配置，旧的单个闹钟第一次改动时写成列表。
 struct AlarmDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @State private var editing: String?
+    @State private var draftName = ""
+    @State private var draftTime = Date()
+
     var body: some View {
-        // The panel's context is frozen at the moment it opened, so the
-        // schedule is what carries the count down - and what rolls the next
-        // occurrence over to tomorrow the second this one passes.
+        // 面板的 context 只在打开那一刻取一次，靠这个每秒刷新还有多久。
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             content(now: tick.date)
         }
     }
 
-    private func content(now: Date) -> some View {
-        let next = nextOccurrence(after: now)
-        let enabled = instance.config.bool("enabled", default: true)
-        let name = instance.config.string("name")
+    private var config: WidgetConfig {
+        (WidgetWriter.current(instance.id) ?? instance).config
+    }
 
-        // Night, because that is when an alarm is set for, lit orange only
-        // while it will actually ring.
+    private func content(now: Date) -> some View {
+        let config = config
+        let items = AlarmBook.items(config)
+        let ringing = context.isPreview ? nil : AlarmBook.ringing(config, now: now)
+        let headline = AlarmBook.headline(config, now: now)
+
         return DetailCard {
             ZStack(alignment: .topTrailing) {
                 MeshBackdrop(color: Color(red: 0.16, green: 0.14, blue: 0.42))
                 Circle()
-                    .fill(RadialGradient(colors: [Self.orange.opacity(enabled ? 0.45 : 0), .clear],
+                    .fill(RadialGradient(colors: [Color.timerOrange.opacity(headline?.enabled == true ? 0.45 : 0), .clear],
                                          center: .center, startRadius: 0, endRadius: 110))
                     .frame(width: 220, height: 220)
                     .offset(x: 70, y: -80)
             }
         } content: {
-            VStack(alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(name.isEmpty ? tr("闹钟") : name)
-                        .font(WidgetStyle.label(14))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .lineLimit(1)
-                    Text(next.formatted(.dateTime.hour().minute()))
-                        .font(.system(size: 60, weight: .light, design: .rounded))
+            VStack(alignment: .leading, spacing: 12) {
+                header(headline, config: config, now: now)
+
+                if let ringing { ringingRow(ringing.item) }
+
+                VStack(spacing: 6) {
+                    ForEach(items) { item in
+                        if editing == item.id {
+                            editor(item)
+                        } else {
+                            row(item, config: config, now: now)
+                        }
+                    }
+                }
+
+                HStack {
+                    Button(action: add) {
+                        Label(tr("添加闹钟"), systemImage: "plus")
+                            .font(WidgetStyle.label(12))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .frame(height: 30)
+                            .background(Capsule().fill(Color.white.opacity(0.16)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(items.count >= AlarmBook.maxAlarms)
+                    Spacer()
+                    Text(tr("只管今天，每天到点响"))
+                        .font(WidgetStyle.label(10))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+            }
+        }
+    }
+
+    // MARK: Pieces
+
+    private func header(_ headline: AlarmItem?, config: WidgetConfig, now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(headline.map { $0.enabled ? tr("下一个 · \($0.title)") : tr("全部已关闭") } ?? tr("还没有闹钟"))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.white.opacity(0.8))
+                .lineLimit(1)
+            if let headline {
+                let at = AlarmBook.nextRing(headline, config: config, now: now)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(AlarmBook.clockText(at))
+                        .font(.system(size: 54, weight: .light, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
-                // The time itself is never hidden while off: you set a switch
-                // by knowing what it is set to.
-                .opacity(enabled ? 1 : 0.55)
-
-                HStack(spacing: 8) {
-                    StatChip(label: tr("响铃时间"), value: dayLine(next, now: now))
-                    // A countdown to something that will not ring is a lie,
-                    // so a silenced alarm says so instead.
-                    StatChip(label: tr("倒计时"), value: enabled ? countdown(to: next, from: now) : tr("已静音"))
-                }
-
-                armSwitch(enabled)
-            }
-        }
-    }
-
-    private static let orange = Color(hex: PaletteColor.orange.hex)
-
-    /// The whole row is the switch. Arming is the action that makes the alarm
-    /// do its job, so the lit state is the loud one; silencing is how you
-    /// sleep through something, so it is a switch you have to mean rather
-    /// than a glyph you can brush.
-    private func armSwitch(_ enabled: Bool) -> some View {
-        Button(action: toggle) {
-            HStack(spacing: 10) {
-                Image(systemName: enabled ? "bell.fill" : "bell.slash.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(enabled ? Self.orange : .white.opacity(0.6))
-                    .frame(width: 20)
-                Text(enabled ? tr("已开启") : tr("已静音"))
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white)
-                Spacer(minLength: 8)
-                Capsule()
-                    .fill(enabled ? Self.orange : Color.white.opacity(0.18))
-                    .frame(width: 42, height: 24)
-                    .overlay(alignment: enabled ? .trailing : .leading) {
-                        Circle().fill(.white).padding(2.5).shadow(radius: 1)
+                    if headline.enabled {
+                        Text(AlarmBook.untilText(at, now: now))
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(Color.timerOrange)
                     }
+                }
+                .opacity(headline.enabled ? 1 : 0.55)
             }
-            .padding(.horizontal, 12)
-            .frame(height: 44)
-            .glassPane()
-            .contentShape(.rect)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(enabled ? tr("关闭闹钟") : tr("开启闹钟"))
     }
 
-    // MARK: Data
-    //
-    // The tile's accessors, key for key: the panel must not disagree with the
-    // card that opened it about when this alarm next rings.
-
-    /// Next time today's clock reaches the configured `HH:mm`; tomorrow once
-    /// it has already passed.
-    private func nextOccurrence(after now: Date) -> Date {
-        let parts = instance.config.string("time", default: "14:30").split(separator: ":")
-        let hour = parts.count == 2 ? Int(parts[0]) ?? 14 : 14
-        let minute = parts.count == 2 ? Int(parts[1]) ?? 30 : 30
-        let cal = Calendar.current
-        guard let today = cal.date(bySettingHour: min(hour, 23), minute: min(minute, 59),
-                                   second: 0, of: now) else { return now }
-        guard today <= now else { return today }
-        return cal.date(byAdding: .day, value: 1, to: today) ?? today
+    private func ringingRow(_ item: AlarmItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "alarm.waves.left.and.right.fill")
+                .foregroundStyle(Color.timerOrange)
+            Text(tr("\(item.time) \(item.title) 正在响"))
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            Spacer(minLength: 6)
+            ClockPanelButton(title: tr("稍后 \(AlarmBook.snoozeMinutes) 分钟"), fill: nil) {
+                write { AlarmBook.snooze(item.id, in: &$0, now: .now) }
+            }
+            .frame(width: 104)
+            ClockPanelButton(title: tr("关掉"), fill: Color.timerOrange) {
+                write { AlarmBook.dismiss(item.id, in: &$0, now: .now) }
+            }
+            .frame(width: 64)
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.timerOrange.opacity(0.2)))
     }
 
-    /// An alarm repeats daily, so the next one is today's or tomorrow's and
-    /// nothing else - but which of the two, and what date that is, is exactly
-    /// what a 24-hour time on a card leaves you to work out.
-    private func dayLine(_ date: Date, now: Date) -> String {
-        let day = Calendar.current.isDate(date, inSameDayAs: now) ? tr("今天") : tr("明天")
-        return "\(day)，\(date.formatted(.dateTime.day().month(.abbreviated)))"
+    private func row(_ item: AlarmItem, config: WidgetConfig, now: Date) -> some View {
+        HStack(spacing: 10) {
+            Button { beginEditing(item) } label: {
+                HStack(spacing: 10) {
+                    Text(item.time)
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white.opacity(item.enabled ? 1 : 0.45))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(item.title)
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(.white.opacity(item.enabled ? 0.92 : 0.45))
+                            .lineLimit(1)
+                        if item.enabled {
+                            Text(AlarmBook.untilText(AlarmBook.nextRing(item, config: config, now: now), now: now))
+                                .font(WidgetStyle.label(10))
+                                .foregroundStyle(.white.opacity(0.55))
+                        }
+                    }
+                    Spacer(minLength: 6)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("点按修改时间和名字"))
+
+            Toggle("", isOn: Binding(
+                get: { item.enabled },
+                set: { on in write { AlarmBook.setEnabled(item.id, on, in: &$0) } }))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(Color.timerOrange)
+                .labelsHidden()
+                .accessibilityLabel(tr("开关 \(item.time) 的闹钟"))
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .glassPane()
     }
 
-    private func countdown(to date: Date, from now: Date) -> String {
-        let total = max(0, Int(date.timeIntervalSince(now)))
-        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
-        return h > 0 ? String(format: tr("%d 小时 %02d 分 %02d 秒后"), h, m, s)
-                     : String(format: tr("%d 分 %02d 秒后"), m, s)
+    private func editor(_ item: AlarmItem) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                DatePicker("", selection: $draftTime, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                    .datePickerStyle(.stepperField)
+                TextField(tr("做什么"), text: $draftName)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { save(item) }
+            }
+            HStack(spacing: 8) {
+                ClockPanelButton(title: tr("保存"), fill: Color.timerOrange) { save(item) }
+                ClockPanelButton(title: tr("取消"), fill: nil) { editing = nil }
+                ClockPanelButton(title: tr("删除"), fill: nil) { delete(item) }
+            }
+        }
+        .padding(10)
+        .glassPane()
     }
 
     // MARK: Actions
 
-    private func toggle() {
+    private func beginEditing(_ item: AlarmItem) {
         guard !context.isPreview else { return }
-        let enabled = instance.config.bool("enabled", default: true)
+        draftName = item.name
+        draftTime = AlarmBook.at(item.minutes, on: .now, calendar: .current)
+        editing = item.id
+    }
+
+    private func save(_ item: AlarmItem) {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: draftTime)
+        let minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        write { config in
+            var list = AlarmBook.items(config)
+            guard let index = list.firstIndex(where: { $0.id == item.id }) else { return }
+            list[index].minutes = minutes
+            list[index].name = name
+            AlarmBook.store(list, in: &config)
+        }
+        editing = nil
+    }
+
+    private func delete(_ item: AlarmItem) {
+        write { config in
+            AlarmBook.store(AlarmBook.items(config).filter { $0.id != item.id }, in: &config)
+        }
+        editing = nil
+    }
+
+    /// 新闹钟放在一小时后的整点，名字空着，马上打开编辑。
+    private func add() {
+        guard !context.isPreview else { return }
+        let parts = Calendar.current.dateComponents([.hour], from: .now)
+        let minutes = (((parts.hour ?? 8) + 1) % 24) * 60
+        var created: AlarmItem?
+        write { config in
+            var list = AlarmBook.items(config)
+            let item = AlarmItem(id: AlarmBook.newID(existing: list), minutes: minutes, name: "")
+            list.append(item)
+            created = item
+            AlarmBook.store(list, in: &config)
+        }
+        if let created { beginEditing(created) }
+    }
+
+    /// 旧的单个闹钟第一次改动时顺手写成列表。
+    private func write(_ change: (inout WidgetConfig) -> Void) {
+        guard !context.isPreview else { return }
+        let current = WidgetWriter.current(instance.id) ?? instance
         withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("enabled", .bool(!enabled))
+            WidgetWriter.write(current) { config in
+                if AlarmBook.isLegacy(config) { AlarmBook.store(AlarmBook.items(config), in: &config) }
+                change(&config)
             }
         }
     }

@@ -119,11 +119,11 @@ struct FocusTimerDetail: View {
         .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 
-    /// Nothing in the app closes a session yet, so the count comes from the
-    /// stored figure rather than from one invented here.
+    /// 第几轮按 `FocusCycle` 数：专注时是正在做的这一轮，休息时是刚做完的那一轮。
+    /// 休息环节开着“休息时提醒起身”时，提醒站起来走走。
     private func sessionLine(_ state: TimerState) -> String {
-        let session = min(state.completed + 1, max(1, state.sessions))
-        return tr("\(state.phase.label) · 第 \(session)/\(state.sessions) 轮")
+        if FocusCycle.showsStandUp(state) { return FocusCycle.caption(state) }
+        return tr("\(state.phase.label) · 第 \(FocusCycle.round(state))/\(state.sessions) 轮")
     }
 
     /// A countdown at zero has nothing to resume, so it offers a fresh start -

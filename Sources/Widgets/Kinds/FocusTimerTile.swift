@@ -83,14 +83,17 @@ struct FocusTimerTile: View {
         let liquid = LiquidMotion.timerLook(instance.config) == .liquid
         let golden = LiquidMotion.timerGolden(
             secondsSinceEnd: state.deadline.map { context.now.timeIntervalSince($0) })
+        // 休息环节、开着“休息时提醒起身”：卡片变绿，写“站起来走走”。
+        let standUp = FocusCycle.showsStandUp(state)
+        let ringTint = standUp ? Color.timerGreen : tint
 
-        WidgetSurface {
+        WidgetSurface(fill: standUp ? Color.timerGreen.opacity(0.18) : nil) {
             if context.position.isVertical {
                 // 76x92 column: the ring is the widget, with the clock inside
                 // it and the phase named underneath.
                 VStack(spacing: 5) {
                     ZStack {
-                        dial(liquid: liquid, remaining: remaining, total: total, tint: tint,
+                        dial(liquid: liquid, remaining: remaining, total: total, tint: ringTint,
                              running: running, golden: golden, diameter: 44, width: 6)
                         Text(docketClockString(remaining))
                             .font(WidgetStyle.title)
@@ -100,9 +103,9 @@ struct FocusTimerTile: View {
                             .minimumScaleFactor(0.5)
                             .frame(width: 34)
                     }
-                    Text(state.phase.label)
+                    Text(standUp ? tr("站起来走走") : state.phase.label)
                         .font(WidgetStyle.caption(9))
-                        .foregroundStyle(WidgetStyle.secondary)
+                        .foregroundStyle(standUp ? Color.timerGreen : WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     // 44 ring + label + this comes to 86 of the column's 92,
@@ -111,23 +114,39 @@ struct FocusTimerTile: View {
                     toggleButton(running: running, size: 10)
                 }
             } else if instance.expanded {
-                HStack(spacing: 10) {
-                    // The session's colour as the ring and nothing else, and
-                    // muted at that: the badge is neutral like every other
-                    // tile's, and the colour is an accent on it. A 180-minute
-                    // session reads 3:00:00, which TileReading shrinks to fit.
-                    TileBadge {
-                        if liquid {
-                            LiquidWater(level: LiquidMotion.timerLevel(remaining: remaining, total: total),
-                                        tint: tint, shape: .circle, visible: liquidVisible,
-                                        still: !running && !golden, golden: golden)
-                                .padding(4)
-                        } else {
-                            TileRing(progress: remaining / total,
-                                     tint: tint.mix(with: WidgetStyle.primary, by: 0.25))
+                HStack(spacing: 9) {
+                    // 码头上只有专注计时还是圆环：环随这一段时间走空，环心一个
+                    // 小圆点（专注）或站起来的小人（休息时提醒起身）。
+                    ZStack {
+                        dial(liquid: liquid, remaining: remaining, total: total, tint: ringTint,
+                             running: running, golden: golden, diameter: 38, width: 4.5)
+                        if !liquid {
+                            if standUp {
+                                Image(systemName: "figure.walk")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.timerGreen)
+                            } else {
+                                Circle().fill(ringTint).frame(width: 7, height: 7)
+                            }
                         }
                     }
-                    TileReading(value: docketClockString(remaining), caption: state.phase.label)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(docketClockString(remaining))
+                            .font(.system(size: 19, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(WidgetStyle.primary)
+                            .rollingValue(Int(remaining.rounded(.up)))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(FocusCycle.caption(state))
+                                .font(.system(size: 10, weight: standUp ? .semibold : .regular))
+                                .foregroundStyle(standUp ? Color.timerGreen : WidgetStyle.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            if !standUp { roundDots(state, tint: ringTint) }
+                        }
+                    }
                     Spacer(minLength: 0)
                     toggleButton(running: running, size: 12)
                 }
@@ -191,6 +210,7 @@ struct FocusTimerTile: View {
         guard context.isPreview else { return TimerStateProvider.shared.state }
         var preview = TimerState()
         preview.phase = .focus
+        preview.completed = 1
         preview.duration = Double(preview.work * 60)
         preview.deadline = context.now.addingTimeInterval(300)
         return preview
@@ -202,6 +222,18 @@ struct FocusTimerTile: View {
         if let paused = state.paused { return max(0, min(paused, total)) }
         guard let deadline = state.deadline else { return total }
         return max(0, min(deadline.timeIntervalSince(context.now), total))
+    }
+
+    /// 第几轮的小点：一组几轮就几颗，做到第几轮亮到第几颗，满一组是长休息。
+    private func roundDots(_ state: TimerState, tint: Color) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<FocusCycle.dotCount(state), id: \.self) { index in
+                Circle()
+                    .fill(index < FocusCycle.litDots(state) ? tint : WidgetStyle.primary.opacity(0.2))
+                    .frame(width: 4.5, height: 4.5)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     /// 液态只在卡片可见、并且不是小组件库预览时动。

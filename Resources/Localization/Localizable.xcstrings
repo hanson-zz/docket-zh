@@ -111,6 +111,17 @@
         }
       }
     },
+    "%@ %@ 正在响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ is ringing"
+          }
+        }
+      }
+    },
     "%@ %@ 的闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -199,6 +210,17 @@
         }
       }
     },
+    "%@ · %@ 次计次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ laps"
+          }
+        }
+      }
+    },
     "%@ · %@ 结束" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -250,6 +272,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · Today"
+          }
+        }
+      }
+    },
+    "%@ · 共 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ total"
           }
         }
       }
@@ -349,6 +382,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · Popular stations"
+          }
+        }
+      }
+    },
+    "%@ · 站起来走走" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Stand up and move"
+          }
+        }
+      }
+    },
+    "%@ · 第 %@ 轮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Round %@"
           }
         }
       }
@@ -672,6 +727,17 @@
         }
       }
     },
+    "%@ 分钟时叫你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nudges you at %@ min"
+          }
+        }
+      }
+    },
     "%@ 分钟额度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -903,6 +969,17 @@
         }
       }
     },
+    "%@ 小时 %@ 分时叫你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nudges you at %@ h %@ min"
+          }
+        }
+      }
+    },
     "%@ 小时 %@ 分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -921,6 +998,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hr ago"
+          }
+        }
+      }
+    },
+    "%@ 小时时叫你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nudges you at %@ h"
           }
         }
       }
@@ -3693,6 +3781,17 @@
         }
       }
     },
+    "下一个 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next · %@"
+          }
+        }
+      }
+    },
     "下一个提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4232,6 +4331,17 @@
         }
       }
     },
+    "专注中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focusing"
+          }
+        }
+      }
+    },
     "专注或休息结束时发出通知。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4239,6 +4349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notify when a focus session or break ends."
+          }
+        }
+      }
+    },
+    "专注或休息结束时响一声。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play a sound when a focus session or break ends."
           }
         }
       }
@@ -5288,6 +5409,17 @@
         }
       }
     },
+    "今天某个时刻" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A time today"
+          }
+        }
+      }
+    },
     "今天没有到期事项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5926,6 +6058,39 @@
         }
       }
     },
+    "休息时再起身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stand up on the break"
+          }
+        }
+      }
+    },
+    "休息时卡片变绿，提示站起来走走；专注计时开着时，久坐提醒不再另外提醒。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On breaks the card turns green and asks you to stand up. While the Focus Timer runs, the stand-up reminder stays quiet."
+          }
+        }
+      }
+    },
+    "休息时提醒起身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me to stand up on breaks"
+          }
+        }
+      }
+    },
     "休息时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5988,6 +6153,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : " with thunder"
+          }
+        }
+      }
+    },
+    "伸个懒腰吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to stretch"
           }
         }
       }
@@ -6542,6 +6718,17 @@
         }
       }
     },
+    "做什么" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What for"
+          }
+        }
+      }
+    },
     "做完了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6549,6 +6736,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        }
+      }
+    },
+    "停" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
           }
         }
       }
@@ -7070,6 +7268,17 @@
         }
       }
     },
+    "全部已关闭" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All off"
+          }
+        }
+      }
+    },
     "全部时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7213,6 +7422,17 @@
         }
       }
     },
+    "共 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ total"
+          }
+        }
+      }
+    },
     "共 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7275,6 +7495,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About Dockling"
+          }
+        }
+      }
+    },
+    "关掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn Off"
           }
         }
       }
@@ -7627,6 +7858,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subtract"
+          }
+        }
+      }
+    },
+    "减一点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less"
+          }
+        }
+      }
+    },
+    "几分钟内" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Within minutes"
           }
         }
       }
@@ -8115,6 +8368,17 @@
         }
       }
     },
+    "到点响提示音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play a sound when time is up"
+          }
+        }
+      }
+    },
     "刷新" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8448,6 +8712,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add 1 %@"
+          }
+        }
+      }
+    },
+    "加一点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
           }
         }
       }
@@ -8947,6 +9222,17 @@
         }
       }
     },
+    "卡片上的预设" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presets on the card"
+          }
+        }
+      }
+    },
     "卡片上还没有 AI 字牌。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9299,6 +9585,17 @@
         }
       }
     },
+    "取消倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel countdown"
+          }
+        }
+      }
+    },
     "取消分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9519,6 +9816,17 @@
         }
       }
     },
+    "只管今天，每天到点响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings at the same time every day"
+          }
+        }
+      }
+    },
     "只统计完整结束的专注轮次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9735,6 +10043,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Munching away"
+          }
+        }
+      }
+    },
+    "吃药" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take medicine"
           }
         }
       }
@@ -10153,6 +10472,17 @@
         }
       }
     },
+    "响铃时出声" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play a sound when ringing"
+          }
+        }
+      }
+    },
     "响铃时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10402,6 +10732,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Month 4"
+          }
+        }
+      }
+    },
+    "四格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four Bars"
           }
         }
       }
@@ -11095,6 +11436,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wrong format. Use \"host:port\"."
+          }
+        }
+      }
+    },
+    "坐了 %@ 分钟 · 今天第 %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sat %@ min · break %@ today"
           }
         }
       }
@@ -13441,6 +13793,39 @@
         }
       }
     },
+    "已坐 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting %@ min"
+          }
+        }
+      }
+    },
+    "已坐 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting %@ h"
+          }
+        }
+      }
+    },
+    "已坐 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitting %@ h %@ min"
+          }
+        }
+      }
+    },
     "已填密钥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14313,6 +14698,17 @@
         }
       }
     },
+    "年月周日百分比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year, month, week, day as a percentage"
+          }
+        }
+      }
+    },
     "年龄" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14566,6 +14962,17 @@
         }
       }
     },
+    "开关 %@ 的闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle the %@ alarm"
+          }
+        }
+      }
+    },
     "开发" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14606,6 +15013,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start"
+          }
+        }
+      }
+    },
+    "开始 %@ 分钟倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a %@ min countdown"
           }
         }
       }
@@ -16751,6 +17169,17 @@
         }
       }
     },
+    "按天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By the day"
+          }
+        }
+      }
+    },
     "按天统计的" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17066,6 +17495,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Receiving Off"
+          }
+        }
+      }
+    },
+    "接着 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then %@"
           }
         }
       }
@@ -19156,6 +19596,28 @@
         }
       }
     },
+    "时间到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time's up"
+          }
+        }
+      }
+    },
+    "时间到，点按停止" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time's up, click to stop"
+          }
+        }
+      }
+    },
     "时间线" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19174,6 +19636,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time Progress"
+          }
+        }
+      }
+    },
+    "时间进度，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time progress, %@"
           }
         }
       }
@@ -19823,6 +20296,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pause focus timer"
+          }
+        }
+      }
+    },
+    "暂停倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause countdown"
           }
         }
       }
@@ -21781,6 +22265,17 @@
         }
       }
     },
+    "正在响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ringing"
+          }
+        }
+      }
+    },
     "正在回答" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23676,6 +24171,17 @@
         }
       }
     },
+    "添加闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Alarm"
+          }
+        }
+      }
+    },
     "清单是空的。输入一件事，按回车添加。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24160,6 +24666,17 @@
         }
       }
     },
+    "点一下停" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to stop"
+          }
+        }
+      }
+    },
     "点一下刘海展开对话，刘海两侧不多出任何东西；没有刘海的屏幕在菜单栏下方正中放一个小胶囊。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24193,6 +24710,17 @@
         }
       }
     },
+    "点开卡片添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the card to add one"
+          }
+        }
+      }
+    },
     "点开生成分享图" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24222,6 +24750,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to record a shortcut that switches to this layout."
+          }
+        }
+      }
+    },
+    "点按修改时间和名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to change the time and name"
           }
         }
       }
@@ -26316,6 +26855,28 @@
         }
       }
     },
+    "稍后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze"
+          }
+        }
+      }
+    },
+    "稍后 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze %@ min"
+          }
+        }
+      }
+    },
     "空" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26389,6 +26950,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stand up, walk around and stretch"
+          }
+        }
+      }
+    },
+    "站起来走走" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stand up and move"
           }
         }
       }
@@ -26488,6 +27060,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of %@"
+          }
+        }
+      }
+    },
+    "第 %@ 圈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lap %@"
           }
         }
       }
@@ -27280,6 +27863,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Resumed "
+          }
+        }
+      }
+    },
+    "继续倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume countdown"
           }
         }
       }
@@ -29102,6 +29696,17 @@
         }
       }
     },
+    "计次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lap"
+          }
+        }
+      }
+    },
     "计算器" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29971,6 +30576,17 @@
         }
       }
     },
+    "起来了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'm Up"
+          }
+        }
+      }
+    },
     "起身" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30719,6 +31335,17 @@
         }
       }
     },
+    "还有 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ min"
+          }
+        }
+      }
+    },
     "还有 %@ 只" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30737,6 +31364,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ days left"
+          }
+        }
+      }
+    },
+    "还有 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ h"
+          }
+        }
+      }
+    },
+    "还有 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ h %@ min"
           }
         }
       }
@@ -30946,6 +31595,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No habits set up yet"
+          }
+        }
+      }
+    },
+    "还没有闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alarms yet"
           }
         }
       }

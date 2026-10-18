@@ -55,7 +55,9 @@ struct TimeProgressTile: View {
                 if context.position.isVertical {
                     // The 52-bar run cannot survive 56pt of usable width, so a
                     // column always rings - whatever the horizontal layout is.
-                    if layout == "percentage" {
+                    if layout == TimeProgress.quadLayout {
+                        columnQuad
+                    } else if layout == "percentage" {
                         columnPercentage
                     } else if layout == LiquidMotion.layout {
                         columnLiquid
@@ -67,6 +69,7 @@ struct TimeProgressTile: View {
                     case "ring": ringLayout
                     case "percentage": percentageLayout
                     case LiquidMotion.layout: liquidLayout
+                    case TimeProgress.quadLayout: quadLayout
                     default: barsLayout
                     }
                 }
@@ -74,7 +77,15 @@ struct TimeProgressTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(tr("时间进度，\(period.spoken)已过去 \(percent)%，\(TimeProgress.remaining(period, now: context.now))"))
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        guard layout == TimeProgress.quadLayout else {
+            return tr("时间进度，\(period.spoken)已过去 \(percent)%，\(TimeProgress.remaining(period, now: context.now))")
+        }
+        let parts = TimeProgress.quadRows(now: context.now).map { "\($0.period.spoken) \($0.percent)%" }
+        return tr("时间进度，\(parts.joined(separator: "，"))")
     }
 
     /// Every layout reads `period`, so one write swaps the span in place and
@@ -163,7 +174,61 @@ struct TimeProgressTile: View {
             .fillingCard()
     }
 
+    /// 四格：年、月、周、今天四行，每行名字、一条进度、百分比。今天那条最亮。
+    private var quadLayout: some View {
+        VStack(spacing: 2.5) {
+            ForEach(TimeProgress.quadRows(now: context.now), id: \.period) { row in
+                HStack(spacing: 6) {
+                    Text(row.title)
+                        .font(.system(size: 8.5, weight: .semibold))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .frame(width: 20, alignment: .leading)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    quadBar(row.fraction, bright: row.period == .day)
+                    Text(verbatim: "\(row.percent)%")
+                        .font(.system(size: 8.5, weight: .bold))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                        .frame(width: 26, alignment: .trailing)
+                }
+            }
+        }
+    }
+
+    private func quadBar(_ fraction: Double, bright: Bool, height: CGFloat = 4) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(WidgetStyle.primary.opacity(0.12))
+                Capsule()
+                    .fill(accent.opacity(bright ? 0.95 : 0.6))
+                    .frame(width: max(height, geo.size.width * min(1, max(0, fraction))))
+            }
+        }
+        .frame(height: height)
+    }
+
     // MARK: Column layouts (76pt wide, 56pt usable)
+
+    /// 竖排的四格：一样四行，名字和百分比，下面一条细线。
+    private var columnQuad: some View {
+        VStack(spacing: 4) {
+            ForEach(TimeProgress.quadRows(now: context.now), id: \.period) { row in
+                VStack(spacing: 1.5) {
+                    HStack {
+                        Text(row.title)
+                            .foregroundStyle(WidgetStyle.secondary)
+                        Spacer(minLength: 2)
+                        Text(verbatim: "\(row.percent)%")
+                            .foregroundStyle(WidgetStyle.primary)
+                            .monospacedDigit()
+                    }
+                    .font(.system(size: 8.5, weight: .semibold))
+                    quadBar(row.fraction, bright: row.period == .day, height: 2.5)
+                }
+            }
+        }
+    }
 
     /// 侧边栏里的液态：一样铺满，数字在上，时段在下。
     private var columnLiquid: some View {

@@ -8,8 +8,7 @@ import SwiftUI
 /// and writes them exactly as the tile does, so the two can never disagree
 /// about whether the watch is running.
 ///
-/// There is no lap list. Nothing in the model records a lap, and a panel is
-/// not the place to invent one.
+/// 计次记在 `laps` 里（`StopwatchLaps`），卡片放最近三圈，这里列全部，最快那圈标绿。
 struct StopwatchDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -66,22 +65,53 @@ struct StopwatchDetail: View {
                 HStack(spacing: 10) {
                     ClockPanelButton(title: running ? tr("停止") : tr("开始"),
                                      fill: Self.orange, action: toggle)
-                    ClockPanelButton(title: tr("重置"), fill: nil, action: reset)
-                        .disabled(untouched)
-                        .opacity(untouched ? 0.4 : 1)
+                    if running {
+                        ClockPanelButton(title: tr("计次"), fill: nil) {
+                            guard !context.isPreview else { return }
+                            StopwatchActions.lap(instance)
+                        }
+                    } else {
+                        ClockPanelButton(title: tr("重置"), fill: nil, action: reset)
+                            .disabled(untouched)
+                            .opacity(untouched ? 0.4 : 1)
+                    }
                 }
+
+                lapList
             }
         }
     }
 
     private static let orange = Color(hex: PaletteColor.orange.hex)
 
+    /// 全部计次，新的在上，最多显示 8 圈；最快那圈标绿。
+    @ViewBuilder
+    private var lapList: some View {
+        let laps = StopwatchLaps.laps((WidgetWriter.current(instance.id) ?? instance).config)
+        if !laps.isEmpty {
+            VStack(spacing: 4) {
+                ForEach(StopwatchLaps.recent(laps, count: 8), id: \.number) { lap in
+                    HStack {
+                        Text(tr("第 \(lap.number) 圈"))
+                            .foregroundStyle(.white.opacity(0.6))
+                        Spacer()
+                        Text(StopwatchLaps.lapText(lap.seconds))
+                            .foregroundStyle(lap.fastest ? Color.timerGreen : .white)
+                    }
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
     // MARK: State
     //
     // The tile's accessors, key for key.
 
-    private var startedAt: TimeInterval { instance.config.double("started") }
-    private var banked: TimeInterval { instance.config.double("elapsed") }
+    private var startedAt: TimeInterval { (WidgetWriter.current(instance.id) ?? instance).config.double("started") }
+    private var banked: TimeInterval { (WidgetWriter.current(instance.id) ?? instance).config.double("elapsed") }
     private var running: Bool { startedAt > 0 }
     /// A watch that has never run has nothing to clear.
     private var untouched: Bool { !running && banked == 0 }
@@ -104,33 +134,16 @@ struct StopwatchDetail: View {
 
     // MARK: Actions
 
-    /// Banks what has run so far when stopping, so starting again continues
-    /// rather than beginning from zero - the tile's own rule.
+    /// 停下时把跑过的攒起来，再开始是接着数，和卡片同一套写法。
     private func toggle() {
         guard !context.isPreview else { return }
-        let started = startedAt
-        let banked = banked
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                if started > 0 {
-                    config.set("elapsed",
-                               .number(banked + max(0, Date.now.timeIntervalSince1970 - started)))
-                    config.set("started", .number(0))
-                } else {
-                    config.set("started", .number(Date.now.timeIntervalSince1970))
-                }
-            }
-        }
+        StopwatchActions.toggle(instance)
     }
 
+    /// 清零，计次一起清掉。
     private func reset() {
         guard !context.isPreview else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("started", .number(0))
-                config.set("elapsed", .number(0))
-            }
-        }
+        StopwatchActions.reset(instance)
     }
 }
 

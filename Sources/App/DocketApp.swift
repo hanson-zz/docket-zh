@@ -101,6 +101,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PetFocusWatcher.shared.start()
         // 专注计时面板的“近七天”：每轮专注结束时记下分钟数，同样从启动起就看着。
         FocusLogStore.shared.start()
+        // 专注计时一轮到点后接休息、休息完回到专注，同样从启动起就看着。
+        FocusCycleDriver.shared.start()
 
         // 小熊猫的竹篮 reads 喝水, 习惯打卡 and 专注计时 wherever they sit, so it
         // is handed every widget on every layout. Focus minutes come from

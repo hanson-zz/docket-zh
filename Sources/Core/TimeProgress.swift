@@ -120,6 +120,36 @@ public enum TimeProgress {
         }
     }
 
+    /// 四格外观：年、月、周、今天四个周期一起看，只给百分比。
+    public static let quadLayout = "quad"
+
+    /// 四格里的一行。
+    public struct QuadRow: Equatable, Sendable {
+        public var period: Period
+        public var title: String
+        public var fraction: Double
+        public var percent: Int
+    }
+
+    /// 四格的四行，从长到短：年、月、周、今天。
+    public static func quadRows(now: Date, calendar: Calendar = .current) -> [QuadRow] {
+        [Period.year, .month, .week, .day].map { period in
+            let value = TimeProgress.fraction(period, now: now, calendar: calendar)
+            return QuadRow(period: period, title: quadTitle(period), fraction: value,
+                           percent: TimeProgress.percent(value))
+        }
+    }
+
+    /// 四格行首的字：年、月、周、今天。
+    public static func quadTitle(_ period: Period) -> String {
+        switch period {
+        case .year: tr("年", context: "period")
+        case .month: tr("月", context: "period")
+        case .week: tr("周", context: "period")
+        case .day: tr("今天")
+        }
+    }
+
     /// 圆环版的说明：「2026年 · 剩 80 天」。
     public static func caption(_ period: Period, now: Date, calendar: Calendar = .current) -> String {
         let rest = remaining(period, now: now, calendar: calendar)

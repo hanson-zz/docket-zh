@@ -20,9 +20,11 @@ struct PostureDetail: View {
 
     private var schedule: PostureSchedule { PostureSchedule(config: instance.config) }
 
+    /// 自己记的起身和专注计时的休息结束，取晚的那个，和卡片一样。
     private var lastBreak: Date? {
         let raw = instance.config.double("lastBreak")
-        return raw > 0 ? Date(timeIntervalSince1970: raw) : nil
+        return SitFocus.lastBreak(posture: raw > 0 ? Date(timeIntervalSince1970: raw) : nil,
+                                  timer: TimerStateProvider.shared.state)
     }
 
     private func content(now: Date) -> some View {
