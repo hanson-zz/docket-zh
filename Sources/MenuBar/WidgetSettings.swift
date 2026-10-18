@@ -533,7 +533,7 @@ struct WidgetSettingsSections: View {
         "pasteOnClick": tr("点按后直接粘贴（需要辅助功能权限）"),
         "actions": tr("开关"),
         "showStreak": tr("显示连续打卡天数"),
-        "showRing": tr("显示进度圈（单个样式）"),
+        "showRing": tr("显示日历页（单个样式）"),
         "coins": tr("币种（BTC、ETH 等代码，或 CoinGecko ID）"),
         "currency": tr("计价货币"),
         "colors": tr("涨跌颜色"),

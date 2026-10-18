@@ -221,6 +221,28 @@
         }
       }
     },
+    "%@ · %@年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · 下个周年 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · next anniversary in %@ days"
+          }
+        }
+      }
+    },
     "%@ · 今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -239,6 +261,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · Today"
+          }
+        }
+      }
+    },
+    "%@ · 已过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · passed"
           }
         }
       }
@@ -1405,6 +1438,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Resets in %@ (%@)"
+          }
+        }
+      }
+    },
+    "%@啦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@!"
           }
         }
       }
@@ -3062,6 +3106,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not a single day missed"
+          }
+        }
+      }
+    },
+    "一年内没有要到的纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing coming up within a year"
           }
         }
       }
@@ -14848,6 +14903,17 @@
         }
       }
     },
+    "打开「%@」，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@, %@"
+          }
+        }
+      }
+    },
     "打开专属页" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15801,6 +15867,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "From the day before, until %@"
+          }
+        }
+      }
+    },
+    "接下来一年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next 12 Months"
           }
         }
       }
@@ -18265,6 +18342,17 @@
         }
       }
     },
+    "显示日历页（单个样式）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show calendar page (single style)"
+          }
+        }
+      }
+    },
     "显示更多" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18360,17 +18448,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show Details"
-          }
-        }
-      }
-    },
-    "显示进度圈（单个样式）" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show progress ring (single style)"
           }
         }
       }
@@ -22719,6 +22796,17 @@
         }
       }
     },
+    "点开生成分享图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to make a share image"
+          }
+        }
+      }
+    },
     "点按下方的值即可拷贝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25443,6 +25531,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Anniversary, %@%@"
+          }
+        }
+      }
+    },
+    "纪念日，接下来一年 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversaries, %@ in the next 12 months"
           }
         }
       }

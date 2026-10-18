@@ -558,19 +558,19 @@ public enum Anniversary {
 
     // MARK: Sizing
 
-    /// Events the multi card shows side by side.
+    /// Events the multi card lists on a side shelf, nearest first.
     public static let multiCount = 3
 
+    /// 单个是撕页加一行字；多个是一条一年的时间轴，宽度固定，点多点少都一样宽，
+    /// 点放不下名字时只画点。
     public static func tileWidth(layout: String, count: Int) -> Double {
-        guard layout == "multi" else { return 172 }
-        // Nothing yet reads as the full card: the library draws three samples.
-        let shown = count == 0 ? multiCount : min(max(count, 2), multiCount)
-        return shown == 2 ? 148 : 196
+        layout == "multi" ? 236 : 188
     }
 
-    /// The column stacks one event, or up to three for the multi layout.
+    /// The column stacks one torn-off page, or up to three nearest dates on a
+    /// short rail for the multi layout.
     public static func columnHeight(layout: String, count: Int) -> Double {
-        guard layout == "multi" else { return 84 }
+        guard layout == "multi" else { return 96 }
         let rows = count == 0 ? multiCount : min(count, multiCount)
         return max(84, Double(rows * 38 + 10))
     }

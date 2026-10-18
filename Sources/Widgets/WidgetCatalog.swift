@@ -617,8 +617,7 @@ public enum WidgetCatalog {
             config.string("layout", default: "current") == "cities"
         case (.weather, "city"):
             config.string("layout", default: "current") != "cities"
-        // The ring sits beside the one big number; three columns have no
-        // room for it and never draw one.
+        // 旧键名 showRing，现在管单个卡片左边那页撕页；多个是时间轴，没有撕页。
         case (.anniversary, "showRing"):
             config.string("layout", default: "single") == "single"
         // The Wi-Fi rings read the signal, not throughput, so the direction
