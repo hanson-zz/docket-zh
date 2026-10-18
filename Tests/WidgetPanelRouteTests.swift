@@ -4,7 +4,7 @@ import XCTest
 /// 点弹出卡片主体时面板挂在哪里，以及喝水提醒交给后台计时器以后每秒交来的时间怎么处理。
 final class WidgetPanelRouteTests: XCTestCase {
     private let water = WidgetInstance(kind: .water, config: WidgetConfig())
-    private let stock = WidgetInstance(kind: .stocks, config: WidgetConfig())
+    private let stock = WidgetInstance(kind: .stock, config: WidgetConfig())
 
     private func route(_ id: UUID, _ items: [DockItem], anywhere: Bool = true, shelf: Bool = true,
                        detail: Bool = true) -> WidgetPanelRoute {
