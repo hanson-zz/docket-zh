@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Every configured coin with its name, price, 24-hour change and a larger
-/// 24-hour line, a switch between 人民币 and 美元, and the credit CoinGecko's
+/// Every configured coin with its badge, name, price, 24-hour change and a
+/// larger seven-day line with its own change, a switch between 人民币 and 美元, and the credit CoinGecko's
 /// terms ask for wherever its prices are shown.
 struct CryptoDetail: View {
     var instance: WidgetInstance
@@ -64,17 +64,32 @@ struct CryptoDetail: View {
         let ink = CryptoInk.color(tone, scheme: .dark)
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(CryptoMarket.label(id: id, quote: quote))
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white)
+                HStack(spacing: 4) {
+                    let symbol = CryptoMarket.label(id: id, quote: quote)
+                    Text(CryptoMarket.badgeLetter(symbol))
+                        .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(width: 14, height: 14)
+                        .background(Circle().fill(Color(hex: CryptoMarket.badgeHex(symbol))))
+                    Text(symbol)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.white)
+                }
                 Text(quote?.name ?? tr("暂无数据"))
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(.white.opacity(0.6))
             }
             .frame(width: 72, alignment: .leading)
-            DitherChart(samples: quote?.sparkline ?? [], tint: ink)
-                .frame(maxWidth: .infinity)
-                .frame(height: 28)
+            VStack(alignment: .trailing, spacing: 1) {
+                MiniTrend(samples: quote?.sparkline ?? [], tint: weekInk(quote),
+                          baseline: quote?.sparkline.first, lineWidth: 1.3, guide: .white)
+                    .frame(height: 24)
+                Text(tr("7 天 \(CryptoMarket.changeText(quote?.change7d))"))
+                    .font(WidgetStyle.label(9))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity)
             VStack(alignment: .trailing, spacing: 2) {
                 Text(quote.map { CryptoMarket.priceText($0.price, currency: currency) } ?? "-")
                     .font(.system(size: 14, weight: .semibold))
@@ -116,7 +131,7 @@ struct CryptoDetail: View {
                     .foregroundStyle(.white.opacity(0.55))
                     .monospacedDigit()
             }
-            Text("涨跌幅为 24 小时，走势线为最近 24 小时；每 5 分钟最多刷新一次。")
+            Text("色块是 24 小时涨跌，走势线是最近 7 天，虚线是 7 天前的价格；每 5 分钟最多刷新一次。")
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.45))
                 .fixedSize(horizontal: false, vertical: true)
@@ -138,6 +153,10 @@ struct CryptoDetail: View {
     private func track() {
         guard !context.isPreview else { return }
         CryptoService.shared.track(ids, currency: currency)
+    }
+
+    private func weekInk(_ quote: CryptoQuote?) -> Color {
+        CryptoInk.color(CryptoMarket.tone(quote?.change7d, colors: colors), scheme: .dark)
     }
 
     private var accent: Color {

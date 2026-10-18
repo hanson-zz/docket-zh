@@ -683,6 +683,17 @@
         }
       }
     },
+    "%@ 到 %@ 了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hit %@"
+          }
+        }
+      }
+    },
     "%@ 副本" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2399,6 +2410,17 @@
         }
       }
     },
+    "7 天 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7d %@"
+          }
+        }
+      }
+    },
     "7 天完成次数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2417,6 +2439,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7-day average"
+          }
+        }
+      }
+    },
+    "7天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7d"
           }
         }
       }
@@ -3627,6 +3660,17 @@
         }
       }
     },
+    "上证指数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSE Composite"
+          }
+        }
+      }
+    },
     "上限可以先调好。真正暂停充电要先安装一个后台助手（输入一次管理员密码），装好后马上按 %@%% 执行。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4826,6 +4870,17 @@
         }
       }
     },
+    "亚马逊" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amazon"
+          }
+        }
+      }
+    },
     "交换单位" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5431,6 +5486,17 @@
         }
       }
     },
+    "今日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
+    },
     "今日%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5471,6 +5537,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today Overview"
+          }
+        }
+      }
+    },
+    "今日盈亏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's P&L"
           }
         }
       }
@@ -5691,6 +5768,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Code review"
+          }
+        }
+      }
+    },
+    "代码，空格隔开：NVDA TSLA 600519.SS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbols, space separated: NVDA TSLA 600519.SS"
           }
         }
       }
@@ -6626,6 +6714,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Y"
+          }
+        }
+      }
+    },
+    "元/克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CNY/g"
           }
         }
       }
@@ -7620,6 +7719,28 @@
         }
       }
     },
+    "分组名，比如 科技" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group name, e.g. Tech"
+          }
+        }
+      }
+    },
+    "分组（科技=NVDA TSLA，一组一项）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groups (Tech=NVDA TSLA, one per entry)"
+          }
+        }
+      }
+    },
     "分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7895,6 +8016,28 @@
         }
       }
     },
+    "删除这个分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete This Group"
+          }
+        }
+      }
+    },
+    "删除这条提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this alert"
+          }
+        }
+      }
+    },
     "删除，也可以把这一行往左拖" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7946,6 +8089,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Record or clear it on the Shortcuts tab."
+          }
+        }
+      }
+    },
+    "到价提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRICE ALERTS"
+          }
+        }
+      }
+    },
+    "到价提醒（AAPL>237 是涨到，AAPL<220 是跌到）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price alerts (AAPL>237 rises to, AAPL<220 falls to)"
           }
         }
       }
@@ -8749,6 +8914,17 @@
         }
       }
     },
+    "博通" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Broadcom"
+          }
+        }
+      }
+    },
     "卡片" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9482,6 +9658,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Taiwan"
+          }
+        }
+      }
+    },
+    "台积电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TSMC"
           }
         }
       }
@@ -10802,6 +10989,17 @@
         }
       }
     },
+    "在设置里填上持仓（比如 NVDA 100），这里会算这一组的今日盈亏。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add holdings in Settings (e.g. NVDA 100) to see today's P&L for this group here."
+          }
+        }
+      }
+    },
     "在访达中始终显示文件扩展名" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11304,6 +11502,17 @@
         }
       }
     },
+    "多只时每 10 秒自动轮播" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotate every 10 seconds when there are several"
+          }
+        }
+      }
+    },
     "多城市" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11582,6 +11791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back Again"
+          }
+        }
+      }
+    },
+    "奈飞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netflix"
           }
         }
       }
@@ -13144,6 +13364,17 @@
         }
       }
     },
+    "已到提醒价" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert price reached"
+          }
+        }
+      }
+    },
     "已加入「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13503,6 +13734,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collected "
+          }
+        }
+      }
+    },
+    "已收盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closed"
           }
         }
       }
@@ -13994,6 +14236,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dry or heated room"
+          }
+        }
+      }
+    },
+    "平 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flat %@"
           }
         }
       }
@@ -14797,6 +15050,17 @@
         }
       }
     },
+    "微软" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microsoft"
+          }
+        }
+      }
+    },
     "德国" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14914,6 +15178,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The shortcut did not finish."
+          }
+        }
+      }
+    },
+    "快捷添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick add"
           }
         }
       }
@@ -15134,6 +15409,17 @@
         }
       }
     },
+    "恒生指数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hang Seng"
+          }
+        }
+      }
+    },
     "恢复…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15251,6 +15537,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Italian"
+          }
+        }
+      }
+    },
+    "成交量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
           }
         }
       }
@@ -16344,6 +16641,28 @@
         }
       }
     },
+    "拼多多" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDD"
+          }
+        }
+      }
+    },
+    "持仓（NVDA 100，填了才显示今日盈亏）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holdings (NVDA 100, shows today's P&L once filled in)"
+          }
+        }
+      }
+    },
     "指针" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16421,6 +16740,17 @@
         }
       }
     },
+    "按填写顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As entered"
+          }
+        }
+      }
+    },
     "按天统计的" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16465,6 +16795,17 @@
         }
       }
     },
+    "按涨跌幅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By change"
+          }
+        }
+      }
+    },
     "换一个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16505,6 +16846,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change…"
+          }
+        }
+      }
+    },
+    "换下一个分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next group"
           }
         }
       }
@@ -16571,6 +16923,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The license server is unavailable right now. Try again later."
+          }
+        }
+      }
+    },
+    "排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
           }
         }
       }
@@ -16890,6 +17253,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminders start at %@"
+          }
+        }
+      }
+    },
+    "提醒价 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert at %@"
+          }
+        }
+      }
+    },
+    "提醒价，比如 237" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert price, e.g. 237"
           }
         }
       }
@@ -17737,6 +18122,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Habit"
+          }
+        }
+      }
+    },
+    "新建分组，比如 科技、A股" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New group, e.g. Tech or China A-shares"
           }
         }
       }
@@ -18932,6 +19328,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ left over from yesterday"
+          }
+        }
+      }
+    },
+    "昨收" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prev close"
           }
         }
       }
@@ -21033,6 +21440,17 @@
         }
       }
     },
+    "标普 500" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S&P 500"
+          }
+        }
+      }
+    },
     "标题 网址, …" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21502,6 +21920,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show while listening"
+          }
+        }
+      }
+    },
+    "正在显示的代码" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol on show"
           }
         }
       }
@@ -22840,6 +23269,39 @@
         }
       }
     },
+    "涨 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@"
+          }
+        }
+      }
+    },
+    "涨 %@ 跌 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@ Down %@"
+          }
+        }
+      }
+    },
+    "涨到 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rises to %@"
+          }
+        }
+      }
+    },
     "涨跌幅为 24 小时，走势线为最近 24 小时；每 5 分钟最多刷新一次。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22946,6 +23408,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dark glass"
+          }
+        }
+      }
+    },
+    "深证成指" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SZSE Component"
           }
         }
       }
@@ -23709,6 +24182,17 @@
         }
       }
     },
+    "点一下换下一个分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click for the next group"
+          }
+        }
+      }
+    },
     "点开生成分享图" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24050,6 +24534,17 @@
         }
       }
     },
+    "特斯拉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tesla"
+          }
+        }
+      }
+    },
     "特殊状态" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24156,6 +24651,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CRI News Radio"
+          }
+        }
+      }
+    },
+    "现价 %@，已涨到你设的提醒价。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now %@, up to the price you set."
+          }
+        }
+      }
+    },
+    "现价 %@，已跌到你设的提醒价。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now %@, down to the price you set."
           }
         }
       }
@@ -24721,6 +25238,17 @@
         }
       }
     },
+    "白银" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silver"
+          }
+        }
+      }
+    },
     "百分之 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24794,6 +25322,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Case"
+          }
+        }
+      }
+    },
+    "盘中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trading"
           }
         }
       }
@@ -25557,6 +26096,17 @@
         }
       }
     },
+    "科技=NVDA TSLA, A股=600519.SS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tech=NVDA TSLA, China=600519.SS"
+          }
+        }
+      }
+    },
     "秒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25927,6 +26477,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Station %@ of %@"
+          }
+        }
+      }
+    },
+    "第 %@ 只，共 %@ 只" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@"
           }
         }
       }
@@ -26525,6 +27086,17 @@
         }
       }
     },
+    "纳斯达克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nasdaq"
+          }
+        }
+      }
+    },
     "纽约" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26844,6 +27416,17 @@
         }
       }
     },
+    "编辑这个分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit This Group"
+          }
+        }
+      }
+    },
     "网址" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27064,6 +27647,17 @@
         }
       }
     },
+    "美元/盎司" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "USD/oz"
+          }
+        }
+      }
+    },
     "美元计价" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27071,6 +27665,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In USD"
+          }
+        }
+      }
+    },
+    "美团" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meituan"
           }
         }
       }
@@ -27269,6 +27874,17 @@
         }
       }
     },
+    "股票代码（多只时轮播）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbols (rotates when there are several)"
+          }
+        }
+      }
+    },
     "背景" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27331,6 +27947,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tencent Meeting"
+          }
+        }
+      }
+    },
+    "腾讯控股" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tencent"
           }
         }
       }
@@ -27533,6 +28160,17 @@
         }
       }
     },
+    "自选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watchlist"
+          }
+        }
+      }
+    },
     "自选股" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27540,6 +28178,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Watchlist"
+          }
+        }
+      }
+    },
+    "自选股 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watchlist %@"
           }
         }
       }
@@ -27573,6 +28222,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Good"
+          }
+        }
+      }
+    },
+    "色块是 24 小时涨跌，走势线是最近 7 天，虚线是 7 天前的价格；每 5 分钟最多刷新一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The chip is the 24-hour change, the line is the last 7 days and the dashed line is the price 7 days ago. Refreshes at most every 5 minutes."
           }
         }
       }
@@ -27665,6 +28325,17 @@
         }
       }
     },
+    "英伟达" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NVIDIA"
+          }
+        }
+      }
+    },
     "英国" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27698,6 +28369,17 @@
         }
       }
     },
+    "英特尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intel"
+          }
+        }
+      }
+    },
     "英语" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27727,6 +28409,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "British pound"
+          }
+        }
+      }
+    },
+    "苹果" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple"
           }
         }
       }
@@ -27870,6 +28563,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blue"
+          }
+        }
+      }
+    },
+    "蔚来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NIO"
           }
         }
       }
@@ -29135,6 +29839,17 @@
         }
       }
     },
+    "谷歌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google"
+          }
+        }
+      }
+    },
     "谷歌不允许在内嵌网页登录，请改用邮箱或 Apple 登录，或用浏览器打开。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29234,6 +29949,17 @@
         }
       }
     },
+    "贵州茅台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kweichow Moutai"
+          }
+        }
+      }
+    },
     "赞助" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29252,6 +29978,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stand"
+          }
+        }
+      }
+    },
+    "超威半导体" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AMD"
           }
         }
       }
@@ -29300,6 +30037,28 @@
         }
       }
     },
+    "跌 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down %@"
+          }
+        }
+      }
+    },
+    "跌到 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falls to %@"
+          }
+        }
+      }
+    },
     "距%@还有 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29329,6 +30088,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edge distance"
+          }
+        }
+      }
+    },
+    "距提醒价 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% to alert"
           }
         }
       }
@@ -29939,6 +30709,17 @@
       }
     },
     "还有 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "还有 %@ 只" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -31049,6 +31830,17 @@
         }
       }
     },
+    "道琼斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dow Jones"
+          }
+        }
+      }
+    },
     "邮件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31789,6 +32581,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "UAE dirham"
+          }
+        }
+      }
+    },
+    "阿里巴巴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alibaba"
           }
         }
       }
@@ -32911,6 +33714,17 @@
         }
       }
     },
+    "高于现价是涨到提醒，低于现价是跌到提醒；到价时发一次系统通知，卡片闪一下橙边。黄金白银按面板上显示的单位。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above the current price alerts on a rise, below it on a fall. When it is reached you get one notification and the card flashes orange. Gold and silver use the unit shown in this panel."
+          }
+        }
+      }
+    },
     "高海拔" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32984,6 +33798,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yellow"
+          }
+        }
+      }
+    },
+    "黄金" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold"
+          }
+        }
+      }
+    },
+    "黄金、白银用国际期货价，默认按美元兑人民币汇率换算成元/克。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold and silver use international futures prices, converted to CNY per gram at the USD/CNY rate by default."
+          }
+        }
+      }
+    },
+    "黄金白银" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold and silver"
+          }
+        }
+      }
+    },
+    "黄金白银单位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold and silver unit"
           }
         }
       }
@@ -33127,6 +33985,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "(local time)"
+          }
+        }
+      }
+    },
+    "＋ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ %@"
           }
         }
       }

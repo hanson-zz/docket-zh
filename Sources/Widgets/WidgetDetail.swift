@@ -429,6 +429,8 @@ enum WidgetDetail {
         case .habit: 340
         case .week: 320
         case .crypto: 340
+        // 分时图、提醒列表；自选股每行有代码、迷你走势、现价和色块。
+        case .stock, .watchlist: 360
         case .appVolume: 320
         case .radio: 340
         case .anniversary: 360

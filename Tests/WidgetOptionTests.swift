@@ -84,8 +84,8 @@ final class WidgetOptionTests: XCTestCase {
             .system: ["chart", "metrics"],
             .network: ["display", "chart"],
             .shortcut: ["name"],
-            .stock: ["symbol", "symbols", "chart"],
-            .watchlist: ["symbols"],
+            .stock: ["symbol", "symbols", "chart", "alerts", "rotate", "colors", "metalUnit"],
+            .watchlist: ["symbols", "groups", "holdings", "sort", "colors", "metalUnit"],
             .weather: ["city", "cities", "fahrenheit"],
             .photos: ["folder", "interval", "shuffle"],
             .emoji: ["emoji"],
@@ -274,7 +274,22 @@ final class OptionApplicabilityTests: XCTestCase {
         "clock.clockSize", "clock.clockWeight", "clock.clockDial", "clock.clockCard", "clock.clockFlip",
         // 调休提醒关掉时，提醒提前几天没有意义。
         "lunar.workAlertLead",
+        // 黄金白银单位只在列表里有贵金属时有用；只有一只股票时没有可轮播的；
+        // 自选股有了分组就不再读原来那串代码。
+        "stock.metalUnit", "stock.rotate", "watchlist.metalUnit", "watchlist.symbols",
     ]
+
+    func testStockOptionsFollowTheList() {
+        let metal = WidgetConfig(["symbols": .list([.string("AAPL"), .string("GC=F")])])
+        XCTAssertTrue(WidgetCatalog.applies("metalUnit", to: metal, kind: .stock))
+        XCTAssertTrue(WidgetCatalog.applies("rotate", to: metal, kind: .stock))
+        XCTAssertFalse(WidgetCatalog.applies("metalUnit", to: WidgetConfig(), kind: .stock))
+        XCTAssertFalse(WidgetCatalog.applies("rotate", to: WidgetConfig(), kind: .stock))
+        let grouped = WidgetConfig(["groups": .list([.string("避险=GC=F SI=F")])])
+        XCTAssertFalse(WidgetCatalog.applies("symbols", to: grouped, kind: .watchlist))
+        XCTAssertTrue(WidgetCatalog.applies("metalUnit", to: grouped, kind: .watchlist))
+        XCTAssertTrue(WidgetCatalog.applies("symbols", to: WidgetConfig(), kind: .watchlist))
+    }
 
     /// Everything else is unconditional, and a rule added carelessly would
     /// silently hide a working control.

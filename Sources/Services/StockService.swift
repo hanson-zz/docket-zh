@@ -10,6 +10,19 @@ struct StockQuote: Sendable {
     var currency: String
     var history: [Double]
     var stale: Bool
+    /// When each point of `history` was, seconds since 1970, one per point;
+    /// empty when the endpoint sent no timestamps.
+    var times: [Double] = []
+    /// The volume traded in each point's interval, one per point.
+    var volumes: [Double] = []
+    /// Yesterday's close: the dashed line the day is read against.
+    var previousClose: Double?
+    /// Today's regular session, so the chart spans the whole day and a
+    /// morning's trading fills only the morning.
+    var sessionStart: Date?
+    var sessionEnd: Date?
+    /// The day's volume so far.
+    var volume: Double?
 }
 
 /// Quotes and intraday history for the Stock and Watchlist widgets.
@@ -138,18 +151,23 @@ final class StockService {
     /// Mirrors only the handful of fields we read, all optional - a shape
     /// change drops us to `nil`, never a trap.
     private struct Payload: Decodable {
+        struct Period: Decodable { var start: Double?; var end: Double? }
+        struct Periods: Decodable { var regular: Period? }
         struct Meta: Decodable {
             var currency: String?
+            var regularMarketVolume: Double?
+            var currentTradingPeriod: Periods?
             var shortName: String?
             var longName: String?
             var regularMarketPrice: Double?
             var chartPreviousClose: Double?
             var previousClose: Double?
         }
-        struct Series: Decodable { var close: [Double?]? }
+        struct Series: Decodable { var close: [Double?]?; var volume: [Double?]? }
         struct Indicators: Decodable { var quote: [Series]? }
         struct Result: Decodable {
             var meta: Meta?
+            var timestamp: [Double]?
             var indicators: Indicators?
         }
         struct Chart: Decodable { var result: [Result]? }
@@ -163,20 +181,34 @@ final class StockService {
         else { return nil }
 
         // Gaps in the series are nulls, not zeros - dropping them keeps the
-        // chart honest instead of drawing a cliff to the x-axis.
-        let closes = (result.indicators?.quote?.first?.close ?? [])
-            .compactMap { $0 }
-            .filter(\.isFinite)
+        // chart honest instead of drawing a cliff to the x-axis. A point's
+        // time and volume go with it, so the three stay in step.
+        let rawCloses = result.indicators?.quote?.first?.close ?? []
+        let rawVolumes = result.indicators?.quote?.first?.volume ?? []
+        let rawTimes = result.timestamp ?? []
+        let timed = rawTimes.count == rawCloses.count
+        var closes: [Double] = []
+        var times: [Double] = []
+        var volumes: [Double] = []
+        for index in rawCloses.indices {
+            guard let close = rawCloses[index], close.isFinite else { continue }
+            closes.append(close)
+            if timed { times.append(rawTimes[index]) }
+            let volume = index < rawVolumes.count ? rawVolumes[index] ?? 0 : 0
+            volumes.append(volume.isFinite ? volume : 0)
+        }
 
         guard let price = meta.regularMarketPrice ?? closes.last, price.isFinite else { return nil }
 
         var change = 0.0
         var percent = 0.0
-        if let previous = meta.chartPreviousClose ?? meta.previousClose ?? closes.first,
-           previous.isFinite, previous > 0 {
+        let previous = meta.chartPreviousClose ?? meta.previousClose ?? closes.first
+        if let previous, previous.isFinite, previous > 0 {
             change = price - previous
             percent = change / previous * 100
         }
+        let period = meta.currentTradingPeriod?.regular
+        let tradedVolume = meta.regularMarketVolume ?? volumes.reduce(0, +)
 
         return StockQuote(
             symbol: symbol,
@@ -186,7 +218,13 @@ final class StockService {
             changePercent: percent,
             currency: meta.currency ?? "USD",
             history: Array(closes.suffix(160)),
-            stale: false
+            stale: false,
+            times: Array(times.suffix(160)),
+            volumes: Array(volumes.suffix(160)),
+            previousClose: previous.flatMap { $0.isFinite && $0 > 0 ? $0 : nil },
+            sessionStart: period?.start.map { Date(timeIntervalSince1970: $0) },
+            sessionEnd: period?.end.map { Date(timeIntervalSince1970: $0) },
+            volume: tradedVolume > 0 ? tradedVolume : nil
         )
     }
 }
@@ -195,6 +233,19 @@ final class StockService {
 
 extension StockQuote {
     var rising: Bool { changePercent >= 0 }
+
+    /// The same quote with every price multiplied by `factor`: a metal's
+    /// dollars an ounce shown as yuan a gram. Percentages and volumes do not
+    /// change with the unit.
+    func scaled(by factor: Double) -> StockQuote {
+        guard factor != 1, factor.isFinite, factor > 0 else { return self }
+        var copy = self
+        copy.price *= factor
+        copy.change *= factor
+        copy.history = history.map { $0 * factor }
+        copy.previousClose = previousClose.map { $0 * factor }
+        return copy
+    }
 
     /// The user's own locale decides the decimal separator, so the shipped
     /// render's "333,08" and an en_US "333.08" are the same call.
@@ -215,20 +266,56 @@ extension StockQuote {
     static func preview(_ symbol: String) -> StockQuote {
         let key = StockService.normalised(symbol)
         let known: [String: (price: Double, percent: Double, name: String)] = [
-            "AAPL": (333.08, 0.24, "Apple Inc."),
-            "MSFT": (505.41, 1.97, "Microsoft Corporation"),
-            "NVDA": (210.96, -3.36, "NVIDIA Corporation"),
+            "AAPL": (232.18, 2.41, "Apple Inc."),
+            "MSFT": (428.55, 1.05, "Microsoft Corporation"),
+            "NVDA": (142.86, 4.82, "NVIDIA Corporation"),
+            "TSLA": (251.30, 3.10, "Tesla, Inc."),
+            "GOOGL": (171.20, 0.38, "Alphabet Inc."),
+            "AMZN": (186.42, -0.62, "Amazon.com, Inc."),
+            "600519.SS": (1486.20, -1.51, "KWEICHOW MOUTAI"),
+            "GC=F": (2412.50, 0.64, "Gold"),
+            "SI=F": (30.85, -0.42, "Silver"),
+            PreciousMetal.exchangeSymbol: (7.12, 0.02, "USD/CNY"),
         ]
         let sample = known[key] ?? (128.40, 0.86, key)
+        let previous = sample.price / (1 + sample.percent / 100)
+        // The walk is a shape; pinned to run from yesterday's close to today's
+        // price so the dashed line and the last point agree with the figures.
+        let walk = sampleHistory(seed: key, rising: sample.percent >= 0)
+        let low = walk.min() ?? 0, high = walk.max() ?? 1
+        let first = walk.first ?? 0, last = walk.last ?? 1
+        let history = walk.enumerated().map { index, value -> Double in
+            let t = Double(index) / Double(max(walk.count - 1, 1))
+            let line = previous + (sample.price - previous) * t
+            let wiggle = (value - (first + (last - first) * t)) / max(high - low, 0.001)
+            return line + wiggle * abs(sample.price - previous) * 0.8 + wiggle * sample.price * 0.002
+        }
+        // A session of 6.5 hours, three-quarters gone.
+        let start = Date(timeIntervalSince1970: 1_760_000_000)
+        let step = 300.0
+        let times = history.indices.map { start.timeIntervalSince1970 + Double($0) * step }
+        var state = key.unicodeScalars.reduce(UInt64(0x51ED_270B)) { $0 &* 33 &+ UInt64($1.value) }
+        let volumes: [Double] = history.indices.map { index in
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            let noise = Double((state >> 33) % 1000) / 1000
+            let edge = index < 6 || index > history.count - 6 ? 2.2 : 1
+            return (40_000 + noise * 90_000) * edge
+        }
         return StockQuote(
             symbol: key.isEmpty ? "AAPL" : key,
             name: sample.name,
             price: sample.price,
-            change: sample.price * sample.percent / 100,
+            change: sample.price - previous,
             changePercent: sample.percent,
-            currency: "USD",
-            history: sampleHistory(seed: key, rising: sample.percent >= 0),
-            stale: false
+            currency: key == "600519.SS" ? "CNY" : "USD",
+            history: history,
+            stale: false,
+            times: times,
+            volumes: volumes,
+            previousClose: previous,
+            sessionStart: start,
+            sessionEnd: start.addingTimeInterval(step * Double(history.count) * 4 / 3),
+            volume: volumes.reduce(0, +)
         )
     }
 

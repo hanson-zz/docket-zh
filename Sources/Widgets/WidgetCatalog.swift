@@ -207,10 +207,17 @@ public enum WidgetCatalog {
         // DitherChart has no reference line and no styles, and no reader ever
         // asked for a metric. Every one of them persisted and changed nothing.
         // They come back with the code that honours them, not before.
+        // 股票盯一只：分时、昨收、量、到价提醒（`alerts`，`AAPL>237`），
+        // 多只时自动轮播（`rotate`）。涨跌颜色和加密货币行情同一个键，默认红涨绿跌；
+        // 黄金白银默认按元/克显示（`metalUnit`）。见 StockBoard、PreciousMetal。
         Entry(kind: .stock, name: tr("股票"), category: .stocks,
               defaults: c(["symbol": .string("AAPL"),
                            "symbols": .list([.string("AAPL")]),
-                           "chart": .bool(true)]),
+                           "chart": .bool(true),
+                           "alerts": .list([]),
+                           "rotate": .bool(true),
+                           "colors": .string(ChangeColors.redUp.rawValue),
+                           "metalUnit": .string(PreciousMetal.DisplayUnit.cnyPerGram.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // Prices from CoinGecko's free API, at most every five minutes, the
@@ -221,10 +228,16 @@ public enum WidgetCatalog {
                            "chart": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // No `chart` here, unlike Stock: this tile is a list of rows and has
-        // never drawn one, so the switch had nothing to switch.
+        // 自选股管一组：按涨跌幅排序（`sort`）、分组（`groups`，`科技=NVDA TSLA`，
+        // 卡片上正在看的分组记在 `group`，不在设置里列）、持仓（`holdings`，填了才算
+        // 今日盈亏）。没有 `chart` 开关：每行的迷你走势就是这张卡片本身。
         Entry(kind: .watchlist, name: tr("自选股"), category: .stocks,
-              defaults: c(["symbols": .list([.string("AAPL"), .string("MSFT"), .string("NVDA")])]),
+              defaults: c(["symbols": .list(StockBoard.defaultWatchlist.map { .string($0) }),
+                           "groups": .list([]),
+                           "holdings": .list([]),
+                           "sort": .string(StockBoard.Order.change.rawValue),
+                           "colors": .string(ChangeColors.redUp.rawValue),
+                           "metalUnit": .string(PreciousMetal.DisplayUnit.cnyPerGram.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         Entry(kind: .weather, name: tr("天气"), category: .weather,
@@ -610,6 +623,16 @@ public enum WidgetCatalog {
         // 搜索站的一排和自定义站在面板里点图标、点“添加”来改，设置里不列。
         case (.search, "sites"), (.search, "customSites"):
             false
+        // 有了分组就按分组看，原来那串代码不再读；黄金白银的单位只在列表里有贵金属时才有用；
+        // 只有一只股票时没有可轮播的。
+        case (.watchlist, "symbols"):
+            config.strings("groups", default: []).compactMap(StockBoard.Group.parse).isEmpty
+        case (.watchlist, "metalUnit"):
+            StockBoard.groups(config).contains { $0.symbols.contains { PreciousMetal(symbol: $0) != nil } }
+        case (.stock, "metalUnit"):
+            StockBoard.rotation(config).contains { PreciousMetal(symbol: $0) != nil }
+        case (.stock, "rotate"):
+            StockBoard.rotation(config).count > 1
         // The multi-city card shows its own list of places and no other;
         // every other layout reads the one city and never the list.
         case (.weather, "cities"):
@@ -846,8 +869,8 @@ public enum WidgetCatalog {
             return cfg.bool("chart", default: true)
                 ? CGSize(width: 200, height: 144) : CGSize(width: 148, height: 108)
         case .shopify: return CGSize(width: 200, height: 132)
-        case .stock: return CGSize(width: 192, height: 132)
-        case .watchlist: return CGSize(width: 276, height: 176)
+        case .stock: return CGSize(width: StockBoard.stockTileWidth(chart: cfg.bool("chart", default: true)), height: 132)
+        case .watchlist: return CGSize(width: StockBoard.watchlistTileWidth, height: 176)
         case .photos:
             return cfg.string("layout", default: "standard") == "wide"
                 ? CGSize(width: 176, height: 62) : CGSize(width: 112, height: 62)
@@ -993,6 +1016,11 @@ public enum WidgetCatalog {
             }
         case .week:
             return 112
+        // 代码、价格、涨跌，下面一段分时和轮播圆点。
+        case .stock:
+            return 100
+        case .watchlist:
+            return StockBoard.watchlistColumnHeight(count: StockBoard.currentGroup(cfg).symbols.count)
         case .crypto:
             return CryptoMarket.columnHeight(count: CryptoMarket.coinIDs(cfg).count,
                                              chart: cfg.bool("chart", default: true))

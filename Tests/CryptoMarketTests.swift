@@ -30,16 +30,52 @@ final class CryptoMarketTests: XCTestCase {
         XCTAssertEqual(quotes["ethereum"]?.change24h ?? 0, -2.3141, accuracy: 1e-9)
     }
 
-    func testKeepsOnlyTheLastDayOfTheSparkline() throws {
-        let points = (0..<168).map { "\($0)" }.joined(separator: ",")
+    func testKeepsTheWholeWeekThinned() throws {
+        let points = (0..<168).map { "\($0 + 100)" }.joined(separator: ",")
         let data = Data("""
         [{"id":"solana","symbol":"sol","name":"Solana","current_price":1300,
           "sparkline_in_7d":{"price":[\(points)]}}]
         """.utf8)
         let sol = try XCTUnwrap(CryptoMarket.parse(data)?["solana"])
-        XCTAssertEqual(sol.sparkline.count, 25)
-        XCTAssertEqual(sol.sparkline.last, 167)
+        XCTAssertEqual(sol.sparkline.count, CryptoMarket.sparklinePoints)
+        XCTAssertEqual(sol.sparkline.first, 100, "the line starts seven days ago")
+        XCTAssertEqual(sol.sparkline.last, 267, "and ends now")
         XCTAssertNil(sol.change24h)
+        XCTAssertEqual(sol.change7d ?? 0, 167, accuracy: 1e-9, "no figure from CoinGecko: first to last")
+    }
+
+    func testTheWeekChangeFromCoinGeckoWins() throws {
+        let data = Data("""
+        [{"id":"bitcoin","symbol":"btc","name":"Bitcoin","current_price":1,
+          "price_change_percentage_7d_in_currency":-4.1,
+          "sparkline_in_7d":{"price":[10,20]}}]
+        """.utf8)
+        let btc = try XCTUnwrap(CryptoMarket.parse(data)?["bitcoin"])
+        XCTAssertEqual(btc.change7d ?? 0, -4.1, accuracy: 1e-9)
+        XCTAssertEqual(btc.sparkline, [10, 20], "a short line is kept as is")
+    }
+
+    func testAQuoteCachedBeforeTheWeekChangeStillDecodes() throws {
+        let old = Data(#"{"id":"bitcoin","symbol":"BTC","name":"Bitcoin","price":1,"change24h":2,"sparkline":[1,2]}"#.utf8)
+        let quote = try JSONDecoder().decode(CryptoQuote.self, from: old)
+        XCTAssertNil(quote.change7d)
+        XCTAssertEqual(quote.sparkline, [1, 2])
+    }
+
+    func testThinningKeepsBothEnds() {
+        XCTAssertEqual(CryptoMarket.thinned([1, 2, 3, 4, 5], to: 3), [1, 3, 5])
+        XCTAssertEqual(CryptoMarket.thinned([1, 2], to: 3), [1, 2])
+        XCTAssertNil(CryptoMarket.weekChange([0, 5]))
+        XCTAssertEqual(CryptoMarket.weekChange([100, 110]) ?? 0, 10, accuracy: 1e-9)
+    }
+
+    func testBadges() {
+        XCTAssertEqual(CryptoMarket.badgeLetter("BTC"), "B")
+        XCTAssertEqual(CryptoMarket.badgeLetter("eth"), "Ξ")
+        XCTAssertEqual(CryptoMarket.badgeLetter("SOL"), "S")
+        XCTAssertEqual(CryptoMarket.badgeHex("BTC"), "#F7931A")
+        XCTAssertEqual(CryptoMarket.badgeHex("XYZ"), CryptoMarket.badgeHex("XYZ"), "a coin keeps its colour")
+        XCTAssertEqual(CryptoMarket.tileWidth(count: 3), 308, "96pt a coin, as the design asks")
     }
 
     func testAnErrorAnswerIsNotATable() {

@@ -282,9 +282,30 @@ struct WidgetSettingsSections: View {
         if entry.kind == .world, key == "zone" {
             // 时区不再手打：从可搜索的城市列表里选，城市名一起写好。
             worldCityControl(instance)
+        } else if entry.kind == .stock || entry.kind == .watchlist, key == "symbols" || key == "groups" {
+            // 代码框下面两个快捷项：黄金、白银（Yahoo 的 GC=F、SI=F）。
+            plainControl(key, entry: entry, instance: instance)
+            metalShortcuts(instance)
         } else {
             plainControl(key, entry: entry, instance: instance)
         }
+    }
+
+    /// “＋ 黄金”“＋ 白银”：自选股有分组时加进卡片上正在看的分组，否则加在代码列表最后。
+    private func metalShortcuts(_ instance: WidgetInstance) -> some View {
+        LabeledContent("快捷添加") {
+            HStack(spacing: 6) {
+                ForEach(PreciousMetal.allCases, id: \.self) { metal in
+                    Button(tr("＋ \(metal.title)")) {
+                        let isWatchlist = instance.kind == .watchlist
+                        write(instance) { config in
+                            config = StockBoard.adding(metal.symbol, to: config, watchlist: isWatchlist)
+                        }
+                    }
+                }
+            }
+        }
+        .help(tr("黄金、白银用国际期货价，默认按美元兑人民币汇率换算成元/克。"))
     }
 
     /// 世界时钟的“选择城市”：按钮上是现在的城市和时区，点开是城市列表。
@@ -431,8 +452,9 @@ struct WidgetSettingsSections: View {
                                 .map { $0.trimmingCharacters(in: .whitespaces) }
                                 .filter { !$0.isEmpty }
                             // An empty field is a half-finished edit, not a
-                            // request for a widget with nothing in it.
-                            guard !list.isEmpty else { return }
+                            // request for a widget with nothing in it. 提醒、
+                            // 分组和持仓本来就可以一条都没有，清空就是删光。
+                            guard !list.isEmpty || Self.mayBeEmpty(key) else { return }
                             write(instance) { $0.set(key, .list(list.map { .string($0) })) }
                         }),
                         prompt: Text(Self.prompt(key)))
@@ -572,6 +594,15 @@ struct WidgetSettingsSections: View {
         "perfect-day.look": tr("外观"),
         "water.dryUp": tr("很久没喝水时角色渴成骷髅"),
         "progress.liquidMotion": tr("水面动效（波纹和气泡）"),
+        "stock.symbols": tr("股票代码（多只时轮播）"),
+        "stock.symbol": tr("正在显示的代码"),
+        "stock.alerts": tr("到价提醒（AAPL>237 是涨到，AAPL<220 是跌到）"),
+        "stock.rotate": tr("多只时每 10 秒自动轮播"),
+        "watchlist.groups": tr("分组（科技=NVDA TSLA，一组一项）"),
+        "watchlist.holdings": tr("持仓（NVDA 100，填了才显示今日盈亏）"),
+        "watchlist.sort": tr("排序"),
+        "stock.metalUnit": tr("黄金白银单位"),
+        "watchlist.metalUnit": tr("黄金白银单位"),
     ]
 
     static func label(_ key: String) -> String {
@@ -611,6 +642,9 @@ struct WidgetSettingsSections: View {
         case "start": "09:00"
         case "end": "18:00"
         case "coins": "BTC, ETH, SOL"
+        case "alerts": "AAPL>237, AAPL<220"
+        case "groups": tr("科技=NVDA TSLA, A股=600519.SS")
+        case "holdings": "NVDA 100, AAPL 50"
         default: ""
         }
     }
@@ -694,6 +728,11 @@ struct WidgetSettingsSections: View {
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
         "crypto.currency": [(tr("人民币 CNY"), "cny"), (tr("美元 USD"), "usd")],
         "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
+        "stock.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
+        "watchlist.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
+        "stock.metalUnit": PreciousMetal.DisplayUnit.allCases.map { ($0.title, $0.rawValue) },
+        "watchlist.metalUnit": PreciousMetal.DisplayUnit.allCases.map { ($0.title, $0.rawValue) },
+        "watchlist.sort": StockBoard.Order.allCases.map { ($0.title, $0.rawValue) },
         "water.remindEvery": WaterIntake.reminderChoices.map { ($0 == 0 ? tr("关闭") : tr("每 \($0) 分钟"), "\($0)") },
         "water.unit": [(tr("毫升"), "ml"), (tr("盎司"), "oz")],
         "water.character": WaterCharacter.allCases.map { ($0.title, $0.rawValue) },
@@ -726,6 +765,10 @@ struct WidgetSettingsSections: View {
     /// written by nothing, so a watchlist was whatever it shipped as, for
     /// ever. A fixed set is impossible here because the set is every ticker
     /// there is.
+    static func mayBeEmpty(_ key: String) -> Bool {
+        ["alerts", "groups", "holdings"].contains(key)
+    }
+
     static func isFreeformList(_ key: String) -> Bool {
         choices[key] == nil
     }

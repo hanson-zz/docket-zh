@@ -147,13 +147,14 @@ extension CryptoQuote {
         let rate = currency == "usd" ? 1 : 7.12
         var state = id.unicodeScalars.reduce(UInt64(0x9E37_79B9)) { $0 &* 31 &+ UInt64($1.value) }
         var value = 100.0
-        let walk: [Double] = (0..<25).map { _ in
+        let walk: [Double] = (0..<CryptoMarket.sparklinePoints).map { _ in
             state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
             let noise = Double((state >> 33) % 1000) / 1000 - 0.5
             value += noise * 1.2 + sample.change * 0.04
             return value
         }
         return CryptoQuote(id: id, symbol: sample.symbol, name: sample.name,
-                           price: sample.price * rate, change24h: sample.change, sparkline: walk)
+                           price: sample.price * rate, change24h: sample.change, sparkline: walk,
+                           change7d: CryptoMarket.weekChange(walk))
     }
 }

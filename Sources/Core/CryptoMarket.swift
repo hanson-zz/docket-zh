@@ -10,18 +10,23 @@ public struct CryptoQuote: Codable, Equatable, Sendable {
     public var price: Double
     /// Percent over the last 24 hours; nil when CoinGecko has none.
     public var change24h: Double?
-    /// Roughly the last 24 hours, hourly, oldest first. Shape only: see
-    /// `CryptoMarket.parse` for why it is not drawn against `price`.
+    /// The last seven days, one point every few hours, oldest first. Shape
+    /// only: see `CryptoMarket.parse` for why it is not drawn against `price`.
     public var sparkline: [Double]
+    /// Percent over the last seven days; nil when CoinGecko has none and the
+    /// sparkline is too short to tell. Missing in a cache written before it
+    /// existed, which decodes as nil.
+    public var change7d: Double?
 
     public init(id: String, symbol: String, name: String, price: Double,
-                change24h: Double?, sparkline: [Double] = []) {
+                change24h: Double?, sparkline: [Double] = [], change7d: Double? = nil) {
         self.id = id
         self.symbol = symbol
         self.name = name
         self.price = price
         self.change24h = change24h
         self.sparkline = sparkline
+        self.change7d = change7d
     }
 }
 
@@ -137,7 +142,7 @@ public enum CryptoMarket {
             URLQueryItem(name: "vs_currency", value: currency),
             URLQueryItem(name: "ids", value: ids.joined(separator: ",")),
             URLQueryItem(name: "sparkline", value: "true"),
-            URLQueryItem(name: "price_change_percentage", value: "24h"),
+            URLQueryItem(name: "price_change_percentage", value: "24h,7d"),
         ]
         return components?.url
     }
@@ -147,8 +152,10 @@ public enum CryptoMarket {
     /// is not the array, so a bad answer never replaces a good table.
     ///
     /// The sparkline CoinGecko returns is priced in US dollars whatever
-    /// `vs_currency` says, so it is kept as a shape only: the last 24 hourly
-    /// points, drawn against their own range, never against `price`.
+    /// `vs_currency` says, so it is kept as a shape only: the seven days
+    /// thinned to `sparklinePoints`, drawn against their own range, never
+    /// against `price`. The seven-day change is CoinGecko's own figure in the
+    /// quote currency, or the sparkline's first to last when it has none.
     public static func parse(_ data: Data) -> [String: CryptoQuote]? {
         struct Wire: Decodable {
             struct Spark: Decodable { var price: [Double?]? }
@@ -158,6 +165,7 @@ public enum CryptoMarket {
             var current_price: Double?
             var price_change_percentage_24h: Double?
             var price_change_percentage_24h_in_currency: Double?
+            var price_change_percentage_7d_in_currency: Double?
             var sparkline_in_7d: Spark?
         }
         guard let rows = try? JSONDecoder().decode([Wire].self, from: data) else { return nil }
@@ -167,15 +175,64 @@ public enum CryptoMarket {
                   price.isFinite, price >= 0 else { continue }
             let change = row.price_change_percentage_24h_in_currency ?? row.price_change_percentage_24h
             let points = (row.sparkline_in_7d?.price ?? []).compactMap { $0 }.filter(\.isFinite)
+            let week = row.price_change_percentage_7d_in_currency.flatMap { $0.isFinite ? $0 : nil }
+                ?? weekChange(points)
             result[id] = CryptoQuote(
                 id: id,
                 symbol: (row.symbol ?? id).uppercased(),
                 name: row.name ?? id,
                 price: price,
                 change24h: change.flatMap { $0.isFinite ? $0 : nil },
-                sparkline: Array(points.suffix(25)))
+                sparkline: thinned(points, to: sparklinePoints),
+                change7d: week)
         }
         return result
+    }
+
+    /// How many points of the seven-day line are kept: one every four hours
+    /// is plenty for a 96pt card and keeps the cache small.
+    public static let sparklinePoints = 43
+
+    /// Evenly spaced points from a series, always keeping the first and the
+    /// last, so the line starts seven days ago and ends now.
+    public static func thinned(_ points: [Double], to count: Int) -> [Double] {
+        guard count >= 2, points.count > count else { return points }
+        let step = Double(points.count - 1) / Double(count - 1)
+        return (0..<count).map { points[Int((Double($0) * step).rounded())] }
+    }
+
+    /// The seven-day change from the sparkline itself: first point to last.
+    public static func weekChange(_ points: [Double]) -> Double? {
+        guard points.count >= 2, let first = points.first, let last = points.last,
+              first.isFinite, last.isFinite, first > 0 else { return nil }
+        return (last - first) / first * 100
+    }
+
+    /// The letter on the coin's round badge: `B` for BTC, `Ξ` for ETH, as
+    /// the coin itself writes it where it has a sign of its own.
+    public static func badgeLetter(_ symbol: String) -> String {
+        switch symbol.uppercased() {
+        case "BTC": "B"
+        case "ETH": "Ξ"
+        case "USDT", "USDC": "$"
+        case "": "?"
+        default: String(symbol.uppercased().prefix(1))
+        }
+    }
+
+    /// The badge's colour, the coin's own where it is well known, otherwise a
+    /// hue picked from the ticker so each coin keeps one.
+    public static func badgeHex(_ symbol: String) -> String {
+        let known: [String: String] = [
+            "BTC": "#F7931A", "ETH": "#627EEA", "SOL": "#14B8A6", "BNB": "#F0B90B",
+            "XRP": "#5A6B7B", "DOGE": "#C2A633", "ADA": "#2A71D0", "TRX": "#E5312F",
+            "TON": "#0098EA", "LTC": "#A6A9AA", "DOT": "#E6007A", "AVAX": "#E84142",
+            "LINK": "#2A5ADA", "USDT": "#26A17B", "USDC": "#2775CA",
+        ]
+        if let hex = known[symbol.uppercased()] { return hex }
+        let palette = ["#E8854A", "#7C6CF0", "#3FA7D6", "#59B36B", "#D65DB1", "#C9A227"]
+        let sum = symbol.unicodeScalars.reduce(0) { $0 + Int($1.value) }
+        return palette[sum % palette.count]
     }
 
     /// Whether a fetch may start: never more than every five minutes, or
@@ -251,10 +308,14 @@ public enum CryptoMarket {
 
     // MARK: Sizing
 
-    /// One column per coin on the shelf, up to `tileCoins`.
+    /// One 96pt column per coin on the shelf, up to `tileCoins`: room for the
+    /// badge, the ticker and the 24-hour chip on one line and the seven-day
+    /// line under the price.
+    public static let coinWidth = 96
+
     public static func tileWidth(count: Int) -> Double {
         let shown = min(max(count, 1), tileCoins)
-        return Double(shown * 76 + 20)
+        return Double(shown * coinWidth + 20)
     }
 
     /// A row per coin in the 76pt column: ticker and change over the price,

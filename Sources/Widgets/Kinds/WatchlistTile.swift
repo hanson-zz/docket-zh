@@ -1,121 +1,231 @@
 import SwiftUI
 
-/// Several symbols at a glance, no charts (276×62 wide).
+/// 自选股：管一组对比。一眼看出谁领涨、谁拖后腿，这一组今天赚没赚。
 ///
-/// Wide, each symbol is its own centred column - ticker, price, signed
-/// percentage - sharing the tile equally. In a 76pt column there is only room
-/// for one line of figures per symbol, so each becomes a compact two-line row
-/// with the ticker and the percentage on top and the price under them.
+/// 宽卡片顶部是分组名（有多个分组时点一下换下一个）、“涨 5 跌 3”和红绿比例条，
+/// 填了持仓时右边是今日盈亏；下面两列、每列三行，按涨跌幅从高到低（也可按填写
+/// 顺序），每行是代码、当日迷你走势、现价和涨跌幅色块，幅度越大色块越深。放不下时
+/// 最后一格写“还有 N 只”，点开面板看全部。竖排扩展栏只放涨跌统计和代码加色块。
 ///
-/// Click to open the panel, which lists every configured symbol with room for
-/// the figures the tile has to crop - the tile itself is a readout.
+/// 涨跌颜色跟设置走，默认红涨绿跌；黄金白银按设置的单位显示，默认元/克。
 struct WatchlistTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @Environment(\.colorScheme) private var scheme
 
-    private var symbols: [String] {
-        let configured = instance.config
-            .strings("symbols", default: ["AAPL", "MSFT", "NVDA"])
-            .map(StockService.normalised)
-            .filter { !$0.isEmpty }
-        // An empty list would render an empty tile; fall back to the default
-        // rather than to nothing.
-        return configured.isEmpty ? ["AAPL", "MSFT", "NVDA"] : configured
-    }
+    private var group: StockBoard.Group { StockBoard.currentGroup(instance.config) }
+    private var groupCount: Int { StockBoard.groups(instance.config).count }
+    private var unit: PreciousMetal.DisplayUnit { .from(instance.config) }
+    private var colors: ChangeColors { StockBoard.colors(instance.config) }
+    private var order: StockBoard.Order { .from(instance.config) }
 
     private func quote(_ symbol: String) -> StockQuote? {
-        context.isPreview ? .preview(symbol) : StockService.shared.quote(symbol)
+        StockDisplay.quote(symbol, preview: context.isPreview, unit: unit)
+    }
+
+    /// 这一组按设置排好的代码。
+    private func ordered(_ symbols: [String]) -> [String] {
+        var percents: [String: Double] = [:]
+        for symbol in symbols {
+            if let quote = quote(symbol) { percents[symbol] = quote.changePercent }
+        }
+        return StockBoard.sorted(symbols, percents: percents, order: order)
     }
 
     var body: some View {
-        let symbols = symbols
+        let symbols = ordered(group.symbols)
+        let tracked = StockDisplay.tracked(group.symbols, unit: unit)
         WidgetSurface {
             Group {
                 if context.position.isVertical { column(symbols) } else { wide(symbols) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: symbols) {
+        .task(id: tracked) {
             guard !context.isPreview else { return }
-            StockService.shared.track(symbols)
+            StockService.shared.track(tracked)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(tr("自选股 \(group.name)"))
     }
 
-    // MARK: Layouts
+    // MARK: 宽卡片
 
     private func wide(_ symbols: [String]) -> some View {
-        HStack(spacing: 0) {
-            // Indexed rather than keyed on the ticker, because nothing stops a
-            // watchlist from carrying the same symbol twice.
-            ForEach(symbols.indices, id: \.self) { index in
-                let symbol = symbols[index]
-                let quote = quote(symbol)
-                VStack(spacing: 1) {
-                    Text(symbol)
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(WidgetStyle.primary)
-                    // The shelf's value style, level with every other tile.
-                    Text(quote?.priceText ?? "-")
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .monospacedDigit()
-                        .rollingValue(quote?.priceText ?? "-")
-                    Text(quote?.percentText ?? "")
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(accent(quote))
-                        .monospacedDigit()
-                        .rollingValue(quote?.percentText ?? "")
+        let fit = StockBoard.fit(count: symbols.count, capacity: StockBoard.watchlistCapacity)
+        let shown = Array(symbols.prefix(fit.shown))
+        let perColumn = StockBoard.watchlistRowsPerColumn
+        return VStack(alignment: .leading, spacing: 3) {
+            header(symbols)
+                .frame(height: 12)
+            HStack(alignment: .top, spacing: 10) {
+                ForEach(0..<2, id: \.self) { columnIndex in
+                    VStack(spacing: 1) {
+                        ForEach(0..<perColumn, id: \.self) { rowIndex in
+                            let slot = columnIndex * perColumn + rowIndex
+                            Group {
+                                if slot < shown.count {
+                                    row(shown[slot])
+                                } else if slot == shown.count, fit.hidden > 0 {
+                                    Text(StockBoard.moreText(fit.hidden))
+                                        .font(WidgetStyle.caption(8.5))
+                                        .foregroundStyle(WidgetStyle.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                } else {
+                                    Color.clear
+                                }
+                            }
+                            .frame(height: 12)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .opacity(fade(quote))
-                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 5)
+    }
+
+    private func header(_ symbols: [String]) -> some View {
+        let breadth = StockBoard.breadth(symbols.map { quote($0)?.changePercent })
+        return HStack(spacing: 6) {
+            groupName
+            breadthText(breadth, size: 9)
+            BreadthBar(breadth: breadth, colors: colors, height: 3)
+                .frame(width: 36)
+            Spacer(minLength: 0)
+            profit(symbols)
+        }
+        .lineLimit(1)
+    }
+
+    /// 分组名。只有一个分组时就是个标题；多个时点一下换下一个分组。
+    @ViewBuilder
+    private var groupName: some View {
+        let label = Text(group.name)
+            .font(WidgetStyle.label(9.5))
+            .foregroundStyle(WidgetStyle.primary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 0.5)
+            .background(Capsule().fill(Color.primary.opacity(0.1)))
+        if groupCount > 1, !context.isPreview {
+            Button(action: { nextGroup() }) {
+                HStack(spacing: 2) {
+                    label
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("点一下换下一个分组"))
+            .accessibilityLabel(tr("换下一个分组"))
+        } else {
+            label
+        }
+    }
+
+    private func breadthText(_ breadth: StockBoard.Breadth, size: CGFloat) -> some View {
+        HStack(spacing: 3) {
+            Text(tr("涨 \(breadth.up)"))
+                .foregroundStyle(StockInk.color(rising: true, colors: colors, scheme: scheme))
+            Text(tr("跌 \(breadth.down)"))
+                .foregroundStyle(StockInk.color(rising: false, colors: colors, scheme: scheme))
+        }
+        .font(.system(size: size, weight: .semibold))
+        .monospacedDigit()
+    }
+
+    /// 今日盈亏：填了持仓才显示，没填这一块收起。
+    @ViewBuilder
+    private func profit(_ symbols: [String]) -> some View {
+        let holdings = StockBoard.holdings(instance.config)
+        if !holdings.isEmpty, let first = StockBoard.todayProfit(positions(symbols), holdings: holdings).first {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text("今日")
+                    .font(WidgetStyle.caption(8))
+                    .foregroundStyle(WidgetStyle.secondary)
+                Text(StockBoard.profitText(first))
+                    .font(WidgetStyle.label(9.5))
+                    .foregroundStyle(StockInk.color(first.amount, colors: colors, scheme: scheme))
+                    .monospacedDigit()
+                    .rollingValue(StockBoard.profitText(first))
             }
         }
     }
+
+    /// 算盈亏用的报价：黄金白银换成元/克时货币记成人民币。
+    private func positions(_ symbols: [String]) -> [StockBoard.Position] {
+        symbols.compactMap { symbol in
+            guard let quote = quote(symbol), !quote.stale else { return nil }
+            let unitLabel = StockDisplay.unitLabel(symbol, preview: context.isPreview, unit: unit)
+            let currency = unitLabel == PreciousMetal.DisplayUnit.cnyPerGram.title ? "CNY" : quote.currency
+            return StockBoard.Position(symbol: symbol, price: quote.price, change: quote.change, currency: currency)
+        }
+    }
+
+    private func row(_ symbol: String) -> some View {
+        let quote = quote(symbol)
+        let ink = StockInk.color(quote?.changePercent, colors: colors, scheme: scheme)
+        return HStack(spacing: 4) {
+            Text(StockBoard.displaySymbol(symbol))
+                .font(WidgetStyle.label(9.5))
+                .foregroundStyle(WidgetStyle.primary)
+                .frame(width: 36, alignment: .leading)
+            MiniTrend(samples: quote?.history ?? [], tint: ink, baseline: quote?.previousClose, lineWidth: 1)
+                .frame(width: 24, height: 9)
+            Spacer(minLength: 0)
+            Text(StockBoard.priceText(quote?.price))
+                .font(WidgetStyle.caption(8.5))
+                .foregroundStyle(WidgetStyle.primary)
+                .monospacedDigit()
+                .rollingValue(StockBoard.priceText(quote?.price))
+            ChangeChip(percent: quote?.changePercent, colors: colors, size: 8.5, minWidth: 38)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .opacity(quote?.stale == true ? 0.55 : 1)
+    }
+
+    // MARK: 竖排
 
     private func column(_ symbols: [String]) -> some View {
-        VStack(spacing: 0) {
-            ForEach(symbols.indices, id: \.self) { index in
-                let symbol = symbols[index]
+        let breadth = StockBoard.breadth(symbols.map { quote($0)?.changePercent })
+        let fit = StockBoard.fit(count: symbols.count, capacity: StockBoard.watchlistCapacity)
+        return VStack(alignment: .leading, spacing: 2) {
+            breadthText(breadth, size: 8.5)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            BreadthBar(breadth: breadth, colors: colors, height: 2.5)
+            ForEach(Array(symbols.prefix(fit.shown)), id: \.self) { symbol in
                 let quote = quote(symbol)
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 4) {
-                        Text(symbol)
-                            .font(WidgetStyle.label(9))
-                            .foregroundStyle(WidgetStyle.secondary)
-                        Spacer(minLength: 0)
-                        Text(quote?.percentText ?? "")
-                            .font(WidgetStyle.label(9))
-                            .foregroundStyle(accent(quote))
-                            .monospacedDigit()
-                            .rollingValue(quote?.percentText ?? "")
-                    }
-                    Text(quote?.priceText ?? "-")
-                        .font(WidgetStyle.value(13))
+                HStack(spacing: 2) {
+                    Text(StockBoard.displaySymbol(symbol))
+                        .font(WidgetStyle.label(8.5))
                         .foregroundStyle(WidgetStyle.primary)
-                        .monospacedDigit()
-                        .rollingValue(quote?.priceText ?? "-")
+                    Spacer(minLength: 0)
+                    ChangeChip(percent: quote?.changePercent, colors: colors, size: 7.5)
                 }
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .opacity(fade(quote))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .minimumScaleFactor(0.6)
+                .frame(height: 16)
+                .opacity(quote?.stale == true ? 0.55 : 1)
+            }
+            if fit.hidden > 0 {
+                Text(StockBoard.moreText(fit.hidden))
+                    .font(WidgetStyle.caption(7.5))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .frame(height: 16)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
     }
 
-    /// A failed refresh keeps the last good numbers and admits it by fading,
-    /// rather than blanking or showing a zero. The same fade as the Stock tile,
-    /// applied per row because each symbol refreshes on its own.
-    private func fade(_ quote: StockQuote?) -> Double {
-        quote?.stale == true ? 0.55 : 1
-    }
+    // MARK: 分组
 
-    private func accent(_ quote: StockQuote?) -> Color {
-        StockInk.accent(rising: quote?.rising ?? true, scheme: scheme)
+    private func nextGroup() {
+        let current = WidgetWriter.current(instance.id) ?? instance
+        let next = StockBoard.nextGroupName(current.config)
+        withAnimation(.snappy(duration: 0.3)) {
+            WidgetWriter.write(current) { config in config.set("group", .string(next)) }
+        }
     }
 }

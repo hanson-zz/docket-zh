@@ -1,185 +1,272 @@
 import SwiftUI
 
-/// One symbol: ticker, price, signed percentage, and a dithered intraday chart.
+/// 股票：只盯一只。看清它今天怎么走，离提醒价还有多远。
 ///
-/// Wide (192×62) puts the readout on the left and the chart in the right half.
-/// The 76pt column has no room beside anything, so it stacks - ticker, price,
-/// percentage, then the chart across the full width.
+/// 宽卡片左边是代码和中文名、大号价格、涨跌幅和涨跌额；右边是当日分时（按交易时段
+/// 铺满，盘中只画到现在）、昨收虚线、底部的成交量小柱，设了到价提醒时一条橙色细线
+/// 和“距提醒价 2.1%”。没设提醒时右上角写盘中或已收盘。竖排扩展栏只有 76pt 宽，
+/// 叠成代码、价格、涨跌和一小段分时。
 ///
-/// A click on the card opens the panel. When more than one of the configured
-/// `symbols` is set, a chevron beside the ticker steps to the next of them -
-/// the one on show is `symbol` in the widget's own config, so it survives a
-/// relaunch.
+/// 设了多只时每 10 秒自动轮播一只（可在设置里关掉），底部圆点指示，点圆点直接换。
+/// 到了提醒价发一次系统通知，卡片闪一下橙边。涨跌颜色跟设置走，默认红涨绿跌。
+/// 黄金白银按设置的单位显示，默认元/克。
 struct StockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @Environment(\.colorScheme) private var scheme
 
+    /// 轮播到第几只。nil 时用设置里记的 `symbol`。
+    @State private var index: Int?
+    /// 手动点了圆点就从头计时，不会刚点完就被自动轮播换走。
+    @State private var manualTick = 0
+    /// 发了到价通知就加一，卡片闪橙边。
+    @State private var flash = 0
+
+    private var rotation: [String] { StockBoard.rotation(instance.config) }
+
     private var symbol: String {
-        let raw = StockService.normalised(instance.config.string("symbol", default: "AAPL"))
-        return raw.isEmpty ? "AAPL" : raw
+        let list = rotation
+        if let index, list.indices.contains(index) { return list[index] }
+        let saved = StockBoard.normalised(instance.config.string("symbol", default: ""))
+        return list.contains(saved) ? saved : list[0]
     }
 
-    /// The symbols the user configured, deduplicated so a repeated entry cannot
-    /// leave the chevron landing on the ticker already showing.
-    private var rotation: [String] {
-        instance.config.strings("symbols", default: [])
-            .map(StockService.normalised)
-            .filter { !$0.isEmpty }
-            .reduce(into: [String]()) { unique, symbol in
-                if !unique.contains(symbol) { unique.append(symbol) }
-            }
+    private var currentIndex: Int { rotation.firstIndex(of: symbol) ?? 0 }
+    private var unit: PreciousMetal.DisplayUnit { .from(instance.config) }
+    private var colors: ChangeColors { StockBoard.colors(instance.config) }
+    private var alerts: [StockBoard.Alert] { StockBoard.alerts(instance.config) }
+    private var rotates: Bool { instance.config.bool("rotate", default: true) && rotation.count > 1 }
+    private var showsChart: Bool { instance.config.bool("chart", default: true) }
+
+    private func quote(_ symbol: String) -> StockQuote? {
+        StockDisplay.quote(symbol, preview: context.isPreview, unit: unit)
     }
 
-    /// The library shows sample values; the shelf shows the cache, which is
-    /// empty only until the first fetch lands.
-    private var quote: StockQuote? {
-        context.isPreview ? .preview(symbol) : StockService.shared.quote(symbol)
-    }
-
-    private var accent: Color {
-        StockInk.accent(rising: quote?.rising ?? true, scheme: scheme)
+    /// 要取的代码：轮播的每一只、提醒里的每一只，贵金属要元/克时加上汇率。
+    private var tracked: [String] {
+        StockDisplay.tracked(StockBoard.unique(rotation + alerts.map(\.symbol)), unit: unit)
     }
 
     var body: some View {
+        let quote = quote(symbol)
+        let alert = StockBoard.nearestAlert(for: symbol, price: quote?.price, in: alerts)
         WidgetSurface {
             Group {
-                if context.position.isVertical { column } else { wide }
+                if context.position.isVertical {
+                    column(quote, alert: alert)
+                } else {
+                    wide(quote, alert: alert)
+                }
             }
-            // A failed refresh keeps the last good numbers and admits it by
-            // fading, rather than blanking or showing a zero.
+            // 刷新失败时留着上次的数，变淡表示不是最新的，不清空也不写零。
             .opacity(quote?.stale == true ? 0.55 : 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: symbol) {
+        .phaseAnimator([0.0, 1.0, 0.0, 1.0, 0.0], trigger: flash) { content, glow in
+            content.overlay {
+                RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
+                    .strokeBorder(StockInk.alert, lineWidth: 1.5)
+                    .opacity(glow)
+                    .allowsHitTesting(false)
+            }
+        } animation: { _ in .easeInOut(duration: 0.25) }
+        .task(id: tracked) {
             guard !context.isPreview else { return }
-            StockService.shared.track([symbol])
+            StockService.shared.track(tracked)
         }
+        .task(id: "\(rotates)|\(rotation.joined(separator: ","))|\(manualTick)") {
+            await autoRotate()
+        }
+        .onChange(of: alertSignature, initial: true) { _, _ in checkAlerts() }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityText(quote))
     }
 
-    /// One symbol is not a rotation, and a control that did nothing would
-    /// still swallow the click the card owes the panel - so the chevron is
-    /// only rendered when there is somewhere for it to go.
-    private var showsAdvance: Bool {
-        !context.isPreview && rotation.count > 1
-    }
+    // MARK: 布局
 
-    /// A symbol that is no longer in the list has no successor; the first
-    /// entry is the way back in.
-    private func advance() {
-        let next = rotation.firstIndex(of: symbol)
-            .map { rotation[($0 + 1) % rotation.count] } ?? rotation.first
-        guard let next else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("symbol", .string(next))
+    private func wide(_ quote: StockQuote?, alert: StockBoard.Alert?) -> some View {
+        HStack(spacing: 8) {
+            readout(quote, symbolSize: 10.5, priceSize: 19, percentSize: 10)
+                .frame(width: showsChart ? 88 : nil, alignment: .leading)
+                .frame(maxWidth: showsChart ? nil : .infinity, alignment: .leading)
+            if showsChart {
+                VStack(spacing: 2) {
+                    HStack(spacing: 4) {
+                        dots(size: 3.5)
+                        Spacer(minLength: 0)
+                        corner(quote, alert: alert)
+                    }
+                    .frame(height: 11)
+                    chart(quote, alert: alert, volume: true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
-    }
-
-    // MARK: Layouts
-
-    private var wide: some View {
-        HStack(spacing: 8) {
-            // Fixed only when there is a chart to give the rest of the width
-            // to. Without one the readout should spread rather than sit in a
-            // column with empty space beside it.
-            readout(ticker: 11, price: 19, percent: 11, fixed: showsChart)
-            if showsChart { chart.frame(maxWidth: .infinity, maxHeight: 32) }
+        .overlay(alignment: .bottomTrailing) {
+            if !showsChart { dots(size: 3.5) }
         }
+        .padding(.vertical, 6)
     }
 
-    private var column: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            readout(ticker: 9, price: 15, percent: 9, fixed: false)
-            if showsChart { chart.frame(maxWidth: .infinity, maxHeight: .infinity) }
-        }
-        .padding(.vertical, 5)
-    }
-
-    /// The tile drew its chart unconditionally, so the Chart switch in
-    /// Settings persisted and changed nothing.
-    private var showsChart: Bool { instance.config.bool("chart", default: true) }
-
-    private var chart: DitherChart {
-        DitherChart(samples: quote?.history ?? [], tint: accent)
-    }
-
-    private func readout(ticker: CGFloat, price: CGFloat, percent: CGFloat,
-                         fixed: Bool) -> some View {
+    private func column(_ quote: StockQuote?, alert: StockBoard.Alert?) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            tickerRow(ticker)
-            Text(quote?.priceText ?? "-")
-                .font(.system(size: price, weight: .semibold))
+            readout(quote, symbolSize: 9, priceSize: 14, percentSize: 9, compact: true)
+            if showsChart {
+                chart(quote, alert: alert, volume: false)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 2)
+            } else {
+                Spacer(minLength: 0)
+            }
+            if let alert {
+                Text(StockBoard.distanceText(alert, price: quote?.price))
+                    .font(.system(size: 7.5, weight: .semibold))
+                    .foregroundStyle(StockInk.alert)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            HStack { Spacer(minLength: 0); dots(size: 3); Spacer(minLength: 0) }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func readout(_ quote: StockQuote?, symbolSize: CGFloat, priceSize: CGFloat,
+                         percentSize: CGFloat, compact: Bool = false) -> some View {
+        let ink = StockInk.color(quote?.changePercent, colors: colors, scheme: scheme)
+        let subtitle = StockDisplay.subtitle(symbol, quote: quote, preview: context.isPreview, unit: unit)
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(StockBoard.displaySymbol(symbol))
+                    .font(WidgetStyle.label(symbolSize))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .layoutPriority(1)
+                if !compact, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(WidgetStyle.caption(symbolSize - 2))
+                        .foregroundStyle(WidgetStyle.secondary)
+                }
+            }
+            Text(StockBoard.priceText(quote?.price))
+                .font(.system(size: priceSize, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
-                .rollingValue(quote?.priceText ?? "-")
-            Text(quote?.percentText ?? "")
-                .font(WidgetStyle.label(percent))
-                .foregroundStyle(accent)
-                .monospacedDigit()
-                .rollingValue(quote?.percentText ?? "")
+                .rollingValue(StockBoard.priceText(quote?.price))
+            HStack(spacing: 4) {
+                Text(StockBoard.percentText(quote?.changePercent))
+                    .font(WidgetStyle.label(percentSize))
+                    .monospacedDigit()
+                    .rollingValue(StockBoard.percentText(quote?.changePercent))
+                if !compact {
+                    Text(StockBoard.changeText(quote?.change))
+                        .font(WidgetStyle.caption(percentSize - 1.5))
+                        .monospacedDigit()
+                        .opacity(0.85)
+                }
+            }
+            .foregroundStyle(ink)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.6)
-        .frame(maxWidth: fixed ? nil : .infinity, alignment: .leading)
-        .fixedSize(horizontal: fixed, vertical: false)
     }
 
-    /// The ticker and its chevron are one control, because the chevron changes
-    /// the ticker: a target of the two together is easier to hit than a 10pt
-    /// arrow, and still nowhere near the whole card, which the shelf needs for
-    /// the panel. This is the same shape the Time Progress tile's period name
-    /// wears.
-    ///
-    /// It wears no disc - that is `TileGlyph`, for a control standing on its
-    /// own somewhere on the card. A chevron sitting inside a line of type is
-    /// already attached to what it acts on, and a disc here would only break
-    /// the readout's first line in half.
-    ///
-    /// Sized off the ticker beside it: the readout drops from 11pt to 9pt in
-    /// the 76pt column, and a glyph at a fixed size would dominate it there.
+    private func chart(_ quote: StockQuote?, alert: StockBoard.Alert?, volume: Bool) -> some View {
+        IntradayChart(quote: quote,
+                      tint: StockInk.color(quote?.changePercent, colors: colors, scheme: scheme),
+                      alert: alert?.price,
+                      showsVolume: volume,
+                      upInk: StockInk.color(rising: true, colors: colors, scheme: scheme),
+                      downInk: StockInk.color(rising: false, colors: colors, scheme: scheme),
+                      lineWidth: context.position.isVertical ? 1.1 : 1.3)
+    }
+
+    /// 右上角：有提醒时写离提醒价多远，没有时写盘中或已收盘。
     @ViewBuilder
-    private func tickerRow(_ size: CGFloat) -> some View {
-        if showsAdvance {
-            Button(action: { advance() }) {
-                HStack(spacing: 3) {
-                    tickerText(size)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: size - 1, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.secondary)
-                        .frame(width: size + 5, height: size + 5)
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("显示下一只股票")
+    private func corner(_ quote: StockQuote?, alert: StockBoard.Alert?) -> some View {
+        if let alert {
+            Text(StockBoard.distanceText(alert, price: quote?.price))
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(StockInk.alert)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 0.5)
+                .overlay(Capsule().strokeBorder(StockInk.alert.opacity(0.8), lineWidth: 0.7))
         } else {
-            tickerText(size)
+            Text(StockBoard.session(now: .now, start: quote?.sessionStart, end: quote?.sessionEnd).title)
+                .font(WidgetStyle.caption(8))
+                .foregroundStyle(WidgetStyle.secondary)
+                .lineLimit(1)
         }
     }
 
-    private func tickerText(_ size: CGFloat) -> some View {
-        Text(symbol)
-            .font(WidgetStyle.label(size))
-            .foregroundStyle(WidgetStyle.primary)
-    }
-}
-
-/// Gain green and loss red, picked for contrast against the tile in each
-/// appearance rather than left to one system swatch that goes muddy in the
-/// other. Shared with the Watchlist tile and the panel.
-///
-/// Muted in the dark: the system's signal green and red were the brightest
-/// things on the shelf, louder than the figures they qualify. These keep the
-/// meaning at a glance and sit with the neutral cards.
-enum StockInk {
-    static func accent(rising: Bool, scheme: ColorScheme) -> Color {
-        if rising {
-            Color(hex: scheme == .dark ? "#6CC18A" : "#0D7533")
-        } else {
-            Color(hex: scheme == .dark ? "#E0858B" : "#C7212B")
+    @ViewBuilder
+    private func dots(size: CGFloat) -> some View {
+        if rotation.count > 1 {
+            RotationDots(count: rotation.count, index: currentIndex, size: size) { pick($0) }
+                .disabled(context.isPreview)
         }
+    }
+
+    // MARK: 轮播
+
+    private func pick(_ item: Int) {
+        guard rotation.indices.contains(item) else { return }
+        withAnimation(.snappy(duration: 0.3)) { index = item }
+        manualTick += 1
+        let next = rotation[item]
+        WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) { config in
+            config.set("symbol", .string(next))
+        }
+    }
+
+    private func autoRotate() async {
+        guard rotates, !context.isPreview else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(StockBoard.rotationInterval))
+            guard !Task.isCancelled else { return }
+            let count = rotation.count
+            guard count > 1 else { return }
+            withAnimation(.snappy(duration: 0.35)) { index = (currentIndex + 1) % count }
+        }
+    }
+
+    // MARK: 到价提醒
+
+    /// 提醒和它们对应的现价，任何一个变了就检查一遍。
+    private var alertSignature: String {
+        alerts.map { alert in
+            let price = quote(alert.symbol).flatMap { $0.stale ? nil : $0.price }
+            return "\(alert.text)=\(price.map { String($0) } ?? "-")"
+        }
+        .joined(separator: ",")
+    }
+
+    private func checkAlerts() {
+        guard !context.isPreview, !alerts.isEmpty else { return }
+        var prices: [String: Double] = [:]
+        for alert in alerts {
+            if let quote = quote(alert.symbol), !quote.stale { prices[alert.symbol] = quote.price }
+        }
+        let fired = Set(instance.config.strings("alertsFired", default: []))
+        let hits = StockBoard.newlyReached(alerts, prices: prices, fired: fired)
+        guard !hits.isEmpty else { return }
+        for hit in hits {
+            let name = StockBoard.displaySymbol(hit.symbol)
+            StockAlertNotifier.shared.post(hit, name: name, price: prices[hit.symbol] ?? hit.price)
+        }
+        WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) { config in
+            let kept = StockBoard.prunedFired(config.strings("alertsFired", default: []),
+                                              alerts: StockBoard.alerts(config))
+            config.set("alertsFired", .list((kept + hits.map(\.text)).map { .string($0) }))
+        }
+        flash += 1
+    }
+
+    private func accessibilityText(_ quote: StockQuote?) -> String {
+        guard let quote else { return StockBoard.displaySymbol(symbol) }
+        return "\(StockBoard.displaySymbol(symbol)) \(StockBoard.priceText(quote.price)) "
+            + StockBoard.percentText(quote.changePercent)
     }
 }
