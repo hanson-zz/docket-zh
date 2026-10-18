@@ -439,14 +439,11 @@ public enum WidgetCatalog {
                            "start": .string("09:00"), "end": .string("21:00"),
                            "unit": .string("ml"), "character": .string("panda"),
                            WaterParched.key: .bool(true)]),
-              // The red panda's card names its character, so a 柴犬 config is
-              // not also matched by it; the other five are Pro 专属.
-              variants: [(tr("小熊猫"), ["layout": .string("character"), "character": .string("panda")]),
-                         (tr("柴犬"), ["layout": .string("character"), "character": .string("shiba")]),
-                         (tr("橘猫"), ["layout": .string("character"), "character": .string("cat")]),
-                         (tr("企鹅"), ["layout": .string("character"), "character": .string("penguin")]),
-                         (tr("水獭"), ["layout": .string("character"), "character": .string("otter")]),
-                         (tr("章鱼"), ["layout": .string("character"), "character": .string("octopus")]),
+              // 添加面板只列长相不同的三张：角色、圆环、液态。六只角色在面板或
+              // 设置里选（`character`），柴犬等五只照旧 Pro 专属；原来的六张
+              // 角色卡片本来就存成 layout = character 加角色，读出来就是“角色”
+              // 样式，样子不变（见 WaterPetCards）。
+              variants: [(tr("角色"), ["layout": .string(WaterPetCards.characterLayout)]),
                          (tr("圆环"), ["layout": .string("ring")]),
                          (tr("液态"), ["layout": .string(LiquidMotion.layout)])],
               supportsCompact: false, selfContained: true),
@@ -454,15 +451,12 @@ public enum WidgetCatalog {
         // A pet of its own: four needs kept with the time they were true, so
         // they run down without anything running (see VirtualPet), and the
         // same six characters as 喝水 under `character`, the red panda free
-        // and the other five Pro 专属.
+        // and the other five Pro 专属. 角色不再作为样式列在添加面板里，只有
+        // 一张卡片，角色在面板或设置里选；已放好的卡片的角色照旧存在
+        // `character` 里，样子不变（见 WaterPetCards）。
         Entry(kind: .pet, name: tr("电子宠物"), category: .health,
               defaults: c(["character": .string("panda")]),
-              variants: [(tr("小熊猫"), ["character": .string("panda")]),
-                         (tr("柴犬"), ["character": .string("shiba")]),
-                         (tr("橘猫"), ["character": .string("cat")]),
-                         (tr("企鹅"), ["character": .string("penguin")]),
-                         (tr("水獭"), ["character": .string("otter")]),
-                         (tr("章鱼"), ["character": .string("octopus")])],
+              variants: [],
               supportsCompact: false, selfContained: true),
 
         // 喝水、习惯打卡、专注计时 summed up as a bamboo leaf a day for the

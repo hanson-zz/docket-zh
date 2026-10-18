@@ -166,6 +166,17 @@
         }
       }
     },
+    "%@ %@，点一下%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@, click to %@"
+          }
+        }
+      }
+    },
     "%@ · %@ 个小组件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32875,13 +32886,13 @@
         }
       }
     },
-    "配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水小组件里：柴犬、橘猫、企鹅、水獭、章鱼。" : {
+    "配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水和电子宠物的面板或设置里选：柴犬、橘猫、企鹅、水獭、章鱼。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo and LCD, and the Flip style's cards can be set to Large with h, m, s; characters are in the Water widget: Shiba, Tabby, Penguin, Otter, Octopus."
+            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo and LCD, and the Flip style's cards can be set to Large with h, m, s; characters are picked in the Water and Virtual Pet panels or settings: Shiba, Tabby, Penguin, Otter, Octopus."
           }
         }
       }

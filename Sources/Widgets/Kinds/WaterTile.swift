@@ -1,11 +1,12 @@
 import Foundation
 import SwiftUI
 
-/// 喝水：the chosen character (the red panda by default) fills up as today's
-/// glasses go in, holds up a cup for a moment after each one, cheers when
-/// the goal is met and dozes outside the reminder hours.
+/// 喝水：今天喝了多少。角色样式以一只杯子和它的水位为主，右边八个小杯是
+/// 今天的进度，选的角色（默认小熊猫）缩小到杯边探个头：喝一杯举一下杯子，
+/// 达标欢呼，提醒时段外打盹，很久没喝渴成骷髅（见 `WaterParched`）。电子
+/// 宠物那边角色才是主角，两张卡片不再长得一样（见 `WaterPetCards`）。
 ///
-/// Two styles. 角色 leads with the character and the water inside it; 圆环
+/// Three styles. 角色 leads with the cup and its level; 圆环
 /// is the Codex tile's ring with the percentage in the middle, for a shelf
 /// that wants something quieter. Both have today's tally and a "+" that logs
 /// one cup of water (`cupSize`). Like the other reminder tiles, the "+" is the only
@@ -20,6 +21,7 @@ struct WaterTile: View {
 
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
     /// 液态：整张卡片是一杯水，水位是今天的进度（见 `LiquidLooks`）。
@@ -100,13 +102,50 @@ struct WaterTile: View {
     // MARK: Wide
 
     private func wide(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
-        HStack(spacing: 10) {
+        Group {
             if isRing {
-                ring(level: lap, done: done, diameter: 40)
+                ringWide(day, lap: lap, done: done)
             } else {
-                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 40,
-                           parched: showsSkeleton)
+                cupWide(day, level: level, done: done)
             }
+        }
+    }
+
+    /// 角色样式：大杯和水位在左，角色在杯边探头；右边大数字、目标和八个小杯。
+    private func cupWide(_ day: WaterDay, level: Double, done: Bool) -> some View {
+        HStack(spacing: 10) {
+            WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
+                          parched: showsSkeleton, height: 44, reduceMotion: reduceMotion)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(WaterIntake.figure(day.total, ounces: ounces))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                        .rollingValue(day.total)
+                    Text(done ? tr("达标啦")
+                         : showsSkeleton ? tr("渴成骷髅了")
+                         : "/ \(WaterIntake.figure(day.goal, ounces: ounces)) \(WaterIntake.unitLabel(ounces: ounces))")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(done ? WaterStyle.water
+                                         : showsSkeleton ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+                WaterCupRow(filled: WaterPetCards.filledCups(total: day.total, goal: day.goal),
+                            slots: WaterPetCards.cupSlots, cupWidth: 7, spacing: 3.5)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: day.total)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            Spacer(minLength: 0)
+            drinkButton(size: 12)
+        }
+    }
+
+    /// 圆环样式。
+    private func ringWide(_ day: WaterDay, lap: Double, done: Bool) -> some View {
+        HStack(spacing: 10) {
+            ring(level: lap, done: done, diameter: 40)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
                     .font(.system(size: 16, weight: .semibold))
@@ -129,14 +168,14 @@ struct WaterTile: View {
 
     // MARK: Column
 
-    /// 56pt across: the character (or ring), the amount, the goal, the "+".
+    /// 56pt across: the cup (or ring), the amount, the goal, the "+".
     private func column(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
         VStack(spacing: 3) {
             if isRing {
                 ring(level: lap, done: done, diameter: 34)
             } else {
-                WaterPanda(character: character, mood: mood, level: level, celebrating: done, height: 34,
-                           parched: showsSkeleton)
+                WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
+                              parched: showsSkeleton, height: 34, reduceMotion: reduceMotion)
             }
             VStack(spacing: 0) {
                 Text(WaterIntake.figure(day.total, ounces: ounces))

@@ -172,7 +172,7 @@ struct SponsorView: View {
                     if unlocked {
                         Label("已解锁 Pro 专属配色、表盘和角色，谢谢你！", systemImage: "heart.fill")
                             .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
-                        Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水小组件里：柴犬、橘猫、企鹅、水獭、章鱼。")
+                        Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水和电子宠物的面板或设置里选：柴犬、橘猫、企鹅、水獭、章鱼。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {

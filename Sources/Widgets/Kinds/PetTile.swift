@@ -2,12 +2,11 @@ import AppKit
 import SwiftUI
 @preconcurrency import UserNotifications
 
-/// 电子宠物：the chosen character (the red panda by default) with how it is
-/// doing, a bar for its four needs averaged, and a bowl to feed it.
-///
-/// Like 喝水, the bowl is the tile's only control and the card's own click
-/// opens the panel, where it is played with, put to bed and washed. Feeding
-/// from the shelf is the one thing worth not opening anything for.
+/// 电子宠物：它过得怎么样。角色是主角，放大到约 54pt 占满卡片高度，旁边一行
+/// 名字和状态，下面四个需求小格（饱食、心情、精力、清洁）两两一排，每格一条
+/// 小进度条；最要紧的那一格标红。点一格直接喂、玩、睡（睡着时叫醒）、洗，
+/// 卡片别的地方照旧打开面板，看病、提醒和换角色在面板里。喝水那边杯子才是
+/// 主角，两张卡片不再长得一样（见 `WaterPetCards`）。
 ///
 /// The tile is also where treats from elsewhere in 码头 arrive: a glass of
 /// water, a habit checked off or a focus session that ran out (noticed by
@@ -24,6 +23,7 @@ struct PetTile: View {
     }
 
     @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var dried: Bool {
         !context.isPreview && VirtualPet.isDried(instance.config, missedDays: missedDays)
@@ -77,28 +77,35 @@ struct PetTile: View {
     }
 
     private func wide(_ s: PetState, look: PetLook) -> some View {
-        HStack(spacing: 10) {
-            PetFigure(character: character, look: look, height: 44,
+        let urgent = WaterPetCards.mostNeeded(s)
+        return HStack(spacing: 6) {
+            PetFigure(character: character, look: look, height: 54,
                       effect: VirtualPet.effect(s, now: context.now))
             VStack(alignment: .leading, spacing: 3) {
-                Text(character.title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.primary)
-                Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
-                    .font(WidgetStyle.note)
-                    .foregroundStyle(PetStyle.tint(look: look, health: s.health))
-                PetBar(value: s.health, height: 4)
-                    .frame(maxWidth: 80)
+                Text(verbatim: "\(character.title) · \(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(PetStyle.headline(look: look, health: s.health))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Grid(horizontalSpacing: 3, verticalSpacing: 3) {
+                    GridRow {
+                        needCell(.food, s, urgent: urgent)
+                        needCell(.mood, s, urgent: urgent)
+                    }
+                    GridRow {
+                        needCell(.energy, s, urgent: urgent)
+                        needCell(.clean, s, urgent: urgent)
+                    }
+                }
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
             Spacer(minLength: 0)
-            feedButton(size: 12)
         }
     }
 
+    /// 竖排 56pt 宽：角色、一行状态、四个小格两两一排（只画图标）。
     private func column(_ s: PetState, look: PetLook) -> some View {
-        VStack(spacing: 4) {
+        let urgent = WaterPetCards.mostNeeded(s)
+        return VStack(spacing: 4) {
             PetFigure(character: character, look: look, height: 40,
                       effect: VirtualPet.effect(s, now: context.now))
             Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
@@ -106,18 +113,60 @@ struct PetTile: View {
                 .foregroundStyle(PetStyle.tint(look: look, health: s.health))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            PetBar(value: s.health, height: 3)
-                .padding(.horizontal, 6)
-            feedButton(size: 10)
+            Grid(horizontalSpacing: 3, verticalSpacing: 3) {
+                GridRow {
+                    needCell(.food, s, urgent: urgent, compact: true)
+                    needCell(.mood, s, urgent: urgent, compact: true)
+                }
+                GridRow {
+                    needCell(.energy, s, urgent: urgent, compact: true)
+                    needCell(.clean, s, urgent: urgent, compact: true)
+                }
+            }
         }
     }
 
-    private func feedButton(size: CGFloat) -> some View {
-        TileGlyph(symbol: "fork.knife", size: size, tint: PetStyle.accent, action: context.isPreview ? nil : {
-            withAnimation(.snappy(duration: 0.3)) { PetLog.act(.feed, in: instance) }
-        })
-        .help("喂它吃一顿")
-        .accessibilityLabel("喂食")
+    /// 一个需求小格：名字（竖排时是图标）和一条小进度条，点一下做对应的事。
+    /// 添加面板的预览里只画不点。
+    private func needCell(_ need: PetNeed, _ s: PetState, urgent: PetNeed?, compact: Bool = false) -> some View {
+        let action = WaterPetCards.action(for: need)
+        let hot = need == urgent
+        let red = Color(hex: PaletteColor.red.hex)
+        let label = Group {
+            if compact {
+                // 竖排太窄放不下进度条：只画图标，颜色就是这一项的高低。
+                Image(systemName: need.symbol)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(hot ? red : PetStyle.level(s[need]))
+            } else {
+                HStack(spacing: 4) {
+                    Text(need.title)
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(hot ? red : WidgetStyle.primary.opacity(0.85))
+                        .lineLimit(1)
+                        .fixedSize()
+                    PetBar(value: s[need], height: 3.5, tint: hot ? red : nil)
+                }
+                .padding(.horizontal, 5)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: compact ? 14 : 17)
+        .background(RoundedRectangle(cornerRadius: compact ? 4 : 5, style: .continuous)
+            .fill(hot ? red.opacity(0.16) : WidgetStyle.primary.opacity(0.07)))
+        .contentShape(.rect)
+        return Group {
+            if context.isPreview {
+                label
+            } else {
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { PetLog.act(action, in: instance) }
+                } label: { label }
+                .buttonStyle(.plain)
+            }
+        }
+        .help(WaterPetCards.cellHelp(need, state: s))
+        .accessibilityLabel(WaterPetCards.cellHelp(need, state: s))
     }
 
     private func collectTreats() {
@@ -481,6 +530,15 @@ enum PetStyle {
         if value >= 60 { return Color(hex: PaletteColor.green.hex) }
         if value >= 30 { return Color(hex: PaletteColor.yellow.hex) }
         return Color(hex: PaletteColor.red.hex)
+    }
+
+    /// 卡片上“名字 · 状态”那一行：平常是正文色，饿了、病了这类时候和状态一样标红，
+    /// 吃饭、开心时用宠物的颜色。
+    static func headline(look: PetLook, health: Double) -> Color {
+        switch look {
+        case .sick, .hungry, .dried, .melted, .cheer, .eat: tint(look: look, health: health)
+        default: health < 30 ? tint(look: look, health: health) : WidgetStyle.primary
+        }
     }
 
     static func tint(look: PetLook, health: Double) -> Color {

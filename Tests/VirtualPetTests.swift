@@ -297,7 +297,9 @@ final class VirtualPetTests: XCTestCase {
         XCTAssertTrue(WidgetVisibility.supportsCondition(.pet))
         var widget = WidgetCatalog.make(.pet)!
         XCTAssertEqual(WidgetVisibility.conditionTitle(.pet, config: widget.config), "需要照顾时显示")
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: widget.config, kind: .pet), "小熊猫")
+        // 角色在面板和设置里选，添加面板只有一张电子宠物卡片。
+        XCTAssertEqual(entry?.variants.isEmpty, true)
+        XCTAssertNil(WidgetCatalog.variantTitle(matching: widget.config, kind: .pet))
         XCTAssertTrue(WidgetCatalog.isSupporterOnly(["character": .string("shiba")]))
         XCTAssertFalse(WidgetCatalog.isSupporterOnly(["character": .string("panda")]))
 
