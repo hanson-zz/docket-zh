@@ -92,7 +92,8 @@ struct StickyNoteDetail: View {
                 }
         }
         .id(pile.page)
-        .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(x: 12, y: 0)))
+        .transition(reduceMotion ? AnyTransition.opacity
+                    : AnyTransition.opacity.combined(with: AnyTransition.offset(x: 12, y: 0)))
     }
 
     // MARK: 颜色
