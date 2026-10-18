@@ -105,7 +105,7 @@ final class ProFeaturesTests: XCTestCase {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
         XCTAssertEqual(pro.count, 20)
-        XCTAssertEqual(kinds.count - pro.count, 40, "官网和 README 写的免费小组件数量")
+        XCTAssertEqual(kinds.count - pro.count, 38, "官网和 README 写的免费小组件数量")
     }
 
     func testWeatherCitiesIsPro() {
