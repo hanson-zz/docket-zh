@@ -59,11 +59,12 @@ struct TileReading: View {
     var value: String
     var caption: String
     var valueSize: CGFloat = 19
+    var valueWeight: Font.Weight = .semibold
 
     var body: some View {
         VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
             Text(value)
-                .font(.system(size: valueSize, weight: .semibold))
+                .font(.system(size: valueSize, weight: valueWeight))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
                 .rollingValue(value)

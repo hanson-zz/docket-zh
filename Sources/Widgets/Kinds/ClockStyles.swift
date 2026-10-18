@@ -2,6 +2,9 @@ import SwiftUI
 
 /// The clock's other faces: a full analogue dial, flip cards, folding flip
 /// cards, and a dot matrix. Each is the same time from the same tick, only drawn differently.
+///
+/// `style` 是画法的内部名字，由 `ClockTile.draw(_:)` 按 `ClockFace` 传进来，
+/// 不是存在配置里的 layout 值（那个归 `ClockStyles` 管）。
 struct ClockStyleReadout: View {
     var style: String
     var now: Date
@@ -9,6 +12,8 @@ struct ClockStyleReadout: View {
     var vertical: Bool
     /// Show the seconds on the faces that are digits.
     var seconds = true
+    /// 大号数字的粗细：粗（原“大号数字”的样子）或常规。
+    var heavy = true
 
     private var secondText: String {
         var calendar = Calendar.current
@@ -23,7 +28,7 @@ struct ClockStyleReadout: View {
             switch style {
             case "analog": analog
             case "flip": flip
-            case FoldFlip.clockLayout: fold
+            case "fold": fold
             case "digital": digital
             case "ring": ring
             case "words": words
@@ -133,7 +138,7 @@ struct ClockStyleReadout: View {
             if vertical {
                 VStack(spacing: 1) {
                     Text(parts.time)
-                        .font(.system(size: 20, weight: .heavy, design: .rounded).monospacedDigit())
+                        .font(.system(size: 20, weight: heavy ? .heavy : .semibold, design: .rounded).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .rollingValue(parts.time)
                     if seconds {
@@ -149,7 +154,7 @@ struct ClockStyleReadout: View {
                 VStack(alignment: .center, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(parts.time)
-                            .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
+                            .font(.system(size: 30, weight: heavy ? .heavy : .semibold, design: .rounded).monospacedDigit())
                             .foregroundStyle(WidgetStyle.primary)
                             .rollingValue(parts.time)
                         if seconds {

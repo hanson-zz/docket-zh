@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Pro 专属表盘：霓虹、实景（辉光管）、简约（液晶）、极简（翻页）。
+/// Pro 专属表盘：霓虹、实景（辉光管）、液晶（原简约），以及翻页样式的
+/// “大号带时分秒”卡片（原极简，style 传 minimal）。
 ///
 /// Each face is drawn at one fixed design size and scaled as a whole to the
 /// space the tile has, then centred. Laying them out with flexible stacks let
@@ -237,7 +238,7 @@ private struct NixieColon: View {
     }
 }
 
-// MARK: - 简约（液晶）
+// MARK: - 液晶（原简约）
 
 private struct LCDFace: View {
     var t: ClockDigits
@@ -341,7 +342,7 @@ struct SevenSegmentDigit: View {
     }
 }
 
-// MARK: - 极简（翻页）
+// MARK: - 翻页的大号带时分秒卡片（原极简）
 
 private struct MinimalFlipFace: View {
     var t: ClockDigits

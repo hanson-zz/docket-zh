@@ -59,20 +59,12 @@ public enum WidgetCatalog {
     private static func c(_ pairs: [String: WidgetConfig.Value]) -> WidgetConfig { WidgetConfig(pairs) }
 
     public static let entries: [Entry] = [
+        // 时钟的样式和子选项都从注册表 `ClockStyles` 来（Core/ClockStyle.swift），
+        // 新增样式只改那里和绘制视图，这里不用动。
         Entry(kind: .clock, name: tr("时钟"), category: .time,
-              defaults: c(["layout": .string("standard"), "seconds": .bool(true)]),
-              variants: [(tr("标准"), ["layout": .string("standard")]),
-                         (tr("模拟表盘"), ["layout": .string("analog")]),
-                         (tr("翻页"), ["layout": .string("flip")]),
-                         (tr("折叠翻页"), ["layout": .string(FoldFlip.clockLayout)]),
-                         (tr("像素"), ["layout": .string("pixel")]),
-                         (tr("大号数字"), ["layout": .string("digital")]),
-                         (tr("秒圈"), ["layout": .string("ring")]),
-                         (tr("中文"), ["layout": .string("words")]),
-                         (tr("霓虹"), ["layout": .string("neon")]),
-                         (tr("实景"), ["layout": .string("nixie")]),
-                         (tr("简约"), ["layout": .string("lcd")]),
-                         (tr("极简"), ["layout": .string("minimal")])],
+              defaults: c(ClockStyles.defaultOptionValues.merging(
+                  ["layout": .string(ClockStyles.defaultStyleID), "seconds": .bool(true)]) { _, new in new }),
+              variants: ClockStyles.all.map { (title: $0.title, overrides: ["layout": .string($0.id)]) },
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .world, name: tr("世界时钟"), category: .time,
@@ -576,7 +568,11 @@ public enum WidgetCatalog {
     /// plain text field alongside that picker let the two disagree.
     public static func configurableKeys(_ kind: WidgetKind) -> [String] {
         guard let entry = entry(kind) else { return [] }
-        return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
+        let keys = entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
+        // 时钟的子选项按注册表里的顺序排在前面（大小在粗细前，卡片在翻法前）。
+        guard kind == .clock else { return keys }
+        let options = ClockStyles.optionKeys.filter(keys.contains)
+        return options + keys.filter { !options.contains($0) }
     }
 
     /// Whether an option means anything given the rest of the configuration.
@@ -595,6 +591,9 @@ public enum WidgetCatalog {
     public static func applies(_ key: String, to config: WidgetConfig,
                                kind: WidgetKind) -> Bool {
         switch (kind, key) {
+        // 时钟的子选项只在它所属的样式下列出（见 `ClockStyles.applies`）。
+        case (.clock, _):
+            ClockStyles.applies(key, to: config)
         case (.system, "chart"):
             config.string("layout", default: "numbers") == "numbers"
         // Mini is a 64pt chip: artwork and one glyph, which is play and

@@ -8287,6 +8287,17 @@
         }
       }
     },
+    "卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards"
+          }
+        }
+      }
+    },
     "卡片上的顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10867,6 +10878,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "大"
+          }
+        }
+      }
+    },
+    "大号" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large"
+          }
+        }
+      }
+    },
+    "大号带时分秒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large with h, m, s"
           }
         }
       }
@@ -15563,6 +15596,17 @@
         }
       }
     },
+    "折叠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fold"
+          }
+        }
+      }
+    },
     "折叠翻页" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15801,6 +15845,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy Link"
+          }
+        }
+      }
+    },
+    "指针" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands"
           }
         }
       }
@@ -18144,13 +18199,13 @@
         }
       }
     },
-    "时钟的霓虹、实景、简约、极简表盘；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼" : {
+    "时钟的霓虹、实景、液晶表盘和翻页的大号卡片；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neon, Photo, Simple and Minimal clock faces; Shiba, Tabby, Penguin, Otter and Octopus for Water and the virtual pet"
+            "value" : "Neon, Photo and LCD clock faces and the large flip cards; Shiba, Tabby, Penguin, Otter and Octopus for Water and the virtual pet"
           }
         }
       }
@@ -18701,6 +18756,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Morning Routine"
+          }
+        }
+      }
+    },
+    "普通" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
           }
         }
       }
@@ -22246,6 +22312,17 @@
         }
       }
     },
+    "液晶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LCD"
+          }
+        }
+      }
+    },
     "淘宝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25502,6 +25579,28 @@
         }
       }
     },
+    "粗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bold"
+          }
+        }
+      }
+    },
+    "粗细" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight"
+          }
+        }
+      }
+    },
     "粘贴 API 密钥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25652,6 +25751,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple's Dock for apps, a shelf of widgets on another edge."
+          }
+        }
+      }
+    },
+    "紧凑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compact"
           }
         }
       }
@@ -26367,6 +26477,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "United States"
+          }
+        }
+      }
+    },
+    "翻法" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flip motion"
           }
         }
       }
@@ -27243,6 +27364,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Emoji"
+          }
+        }
+      }
+    },
+    "表盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dial"
           }
         }
       }
@@ -30301,13 +30433,13 @@
         }
       }
     },
-    "配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、简约、极简；角色在喝水小组件里：柴犬、橘猫、企鹅、水獭、章鱼。" : {
+    "配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水小组件里：柴犬、橘猫、企鹅、水獭、章鱼。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo, Simple, Minimal; characters are in the Water widget: Shiba, Tabby, Penguin, Otter, Octopus."
+            "value" : "Colors are in Settings ▸ Shelf ▸ Look; faces are in the Clock widget's styles: Neon, Photo and LCD, and the Flip style's cards can be set to Large with h, m, s; characters are in the Water widget: Shiba, Tabby, Penguin, Otter, Octopus."
           }
         }
       }

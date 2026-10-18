@@ -11,31 +11,57 @@ struct ClockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    /// A supporter face falls back to flip cards while it is locked, so a
-    /// config copied from another Mac still shows the time.
-    private var style: String {
-        let layout = instance.config.string("layout", default: "standard")
-        if WidgetCatalog.supporterClockLayouts.contains(layout), !ProAccess.isUnlocked, !context.isPreview { return "flip" }
-        return layout
+    /// 样式和选项读自时钟样式注册表 `ClockStyles`（Core/ClockStyle.swift），
+    /// 旧的 layout 值在那里映射成新样式加选项。Pro 样式没解锁时画成翻页，
+    /// 从别的 Mac 拷来的配置也能看时间。
+    private var face: ClockFace {
+        ClockStyles.face(instance.config, unlocked: ProAccess.isUnlocked, preview: context.isPreview)
     }
+
+    private var seconds: Bool { instance.config.bool("seconds", default: true) }
+    private var vertical: Bool { context.position.isVertical }
 
     var body: some View {
         // The compact tile is the time and nothing else, whatever the style:
         // 88pt has no room for a face or a card.
-        if style == "standard" || !instance.expanded && !context.position.isVertical {
-            standard
-        } else if WidgetCatalog.supporterClockLayouts.contains(style) {
-            SupporterClockFace(style: style, now: context.now, zone: .current,
-                               vertical: context.position.isVertical,
-                               seconds: instance.config.bool("seconds", default: true))
+        if !instance.expanded && !vertical {
+            standard(bold: false)
         } else {
-            ClockStyleReadout(style: style, now: context.now, zone: .current,
-                              vertical: context.position.isVertical,
-                              seconds: instance.config.bool("seconds", default: true))
+            draw(face)
         }
     }
 
-    private var standard: some View {
+    /// 每种画法的绘制视图。新增时钟样式时在 `ClockFace` 加一个画法，再在这里
+    /// 加一个分支；没有 default，漏写编译不过。
+    @ViewBuilder
+    private func draw(_ face: ClockFace) -> some View {
+        switch face {
+        case .standard(let bold): standard(bold: bold)
+        case .bigDigits(let heavy): readout("digital", heavy: heavy)
+        case .analog: readout("analog")
+        case .secondsRing: readout("ring")
+        case .flip: readout("flip")
+        case .foldFlip: readout("fold")
+        case .pixel: readout("pixel")
+        case .words: readout("words")
+        case .bigFlipCards: proFace("minimal")
+        case .neon: proFace("neon")
+        case .nixie: proFace("nixie")
+        case .lcd: proFace("lcd")
+        }
+    }
+
+    private func readout(_ style: String, heavy: Bool = true) -> some View {
+        ClockStyleReadout(style: style, now: context.now, zone: .current,
+                          vertical: vertical, seconds: seconds, heavy: heavy)
+    }
+
+    private func proFace(_ style: String) -> some View {
+        SupporterClockFace(style: style, now: context.now, zone: .current,
+                           vertical: vertical, seconds: seconds)
+    }
+
+    private func standard(bold: Bool) -> some View {
         ClockReadout(
             now: context.now,
             zone: .current,
@@ -43,7 +69,8 @@ struct ClockTile: View {
             // Compact clock is the time and nothing else.
             compactCaption: nil,
             expanded: instance.expanded,
-            vertical: context.position.isVertical
+            vertical: vertical,
+            bold: bold
         )
     }
 }
@@ -64,6 +91,8 @@ struct ClockReadout: View {
     var columnLabel: String?
     /// Tiny trailing marker on that line - World Clock's "+1" / "−1".
     var columnBadge: String?
+    /// 时钟“标准”样式的粗细选了“粗”：时间用更粗的字。
+    var bold: Bool = false
 
     var body: some View {
         WidgetSurface {
@@ -76,7 +105,8 @@ struct ClockReadout: View {
                     TileBadge {
                         AnalogClockFace(now: now, zone: zone, diameter: 26)
                     }
-                    TileReading(value: ClockFormat.time(now, zone: zone), caption: caption)
+                    TileReading(value: ClockFormat.time(now, zone: zone), caption: caption,
+                                valueWeight: bold ? .heavy : .semibold)
                     Spacer(minLength: 0)
                 }
             } else {
@@ -96,7 +126,7 @@ struct ClockReadout: View {
             AnalogClockFace(now: now, zone: zone)
             HStack(alignment: .firstTextBaseline, spacing: 1.5) {
                 Text(parts.time)
-                    .font(WidgetStyle.value(15))
+                    .font(.system(size: 15, weight: bold ? .heavy : .bold))
                     .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
                     .rollingValue(parts.time)
@@ -128,7 +158,7 @@ struct ClockReadout: View {
 
     private var time: some View {
         Text(ClockFormat.time(now, zone: zone))
-            .font(WidgetStyle.value(21))
+            .font(.system(size: 21, weight: bold ? .heavy : .bold))
             .foregroundStyle(WidgetStyle.primary)
             .monospacedDigit()
             .lineLimit(1)

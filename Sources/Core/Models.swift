@@ -419,8 +419,13 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
         let stored = try c.decode(WidgetConfig.self, forKey: .config)
         if let known = WidgetKind(rawValue: raw) {
             kind = known
+            switch known {
             // GitHub followed one `repo`; it now keeps a list under `repos`.
-            config = known == .github ? GitHubWatch.migratingRepo(stored) : stored
+            case .github: config = GitHubWatch.migratingRepo(stored)
+            // 时钟并掉的旧样式（大号数字、秒圈、折叠翻页、极简）读成新样式加选项。
+            case .clock: config = ClockStyles.migrating(stored)
+            default: config = stored
+            }
         } else if raw == WaterIntake.legacyHydrationKind {
             kind = .water
             config = WaterIntake.migratingHydration(stored)

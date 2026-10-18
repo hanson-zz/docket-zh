@@ -23,9 +23,14 @@ final class FoldFlipTests: XCTestCase {
     }
 
     func testTheCatalogOffersTheFoldingClockAndCountdownLook() {
+        // 折叠翻页并进了“翻页”的“翻法：折叠”，旧的 fold 值仍画成折叠翻页、仍免费。
         let clock = WidgetCatalog.entry(.clock)!
-        XCTAssertTrue(clock.variants.contains { $0.overrides["layout"] == .string(FoldFlip.clockLayout) })
+        XCTAssertFalse(clock.variants.contains { $0.overrides["layout"] == .string(FoldFlip.clockLayout) })
+        XCTAssertEqual(ClockStyles.resolve(WidgetConfig(["layout": .string(FoldFlip.clockLayout)])).face, .foldFlip)
+        XCTAssertEqual(ClockStyles.resolve(WidgetConfig(["layout": .string("flip"),
+                                                         ClockStyles.Key.flip: .string("fold")])).face, .foldFlip)
         XCTAssertFalse(WidgetCatalog.isSupporterOnly(["layout": .string(FoldFlip.clockLayout)]))
+        XCTAssertFalse(WidgetCatalog.isSupporterOnly([ClockStyles.Key.flip: .string("fold")]))
         let countdown = WidgetCatalog.entry(.countdown)!
         XCTAssertEqual(countdown.defaults[FoldFlip.countdownLookKey], .string(FoldFlip.CountdownLook.plain.rawValue))
     }

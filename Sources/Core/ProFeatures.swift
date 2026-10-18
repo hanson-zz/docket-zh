@@ -5,7 +5,8 @@ import Foundation
 /// 界面上的“Pro”标识和 `ProLicenseGate` 的锁都从这里读哪些东西是 Pro。
 ///
 /// 清单按用户定的来：
-/// - 原来的赞助者专属样式：时钟的霓虹、实景、简约、极简表盘，喝水和电子宠物
+/// - 原来的赞助者专属样式：时钟的霓虹、实景、液晶（原简约）表盘和翻页的
+///   “大号带时分秒”卡片（原极简），清单在 `ClockStyles`；喝水和电子宠物
 ///   除小熊猫外的角色，网络活动的数字、点状、细线 Wi-Fi，电池的像素电池、
 ///   能量粒子、小熊猫抱电池。
 /// - 整种是 Pro 的小组件，见 `proKinds`。
@@ -45,8 +46,9 @@ public enum ProFeatures {
     /// 柠檬黄），默认的柠檬黄在里面。其余纸色都是 Pro。
     public static let freeNoteColors: Set<PaperColor> = [.cream, .mint, .peach, .lavender, .yellow]
 
-    /// 原来的赞助者专属表盘（时钟的 layout）。
-    public static let proClockLayouts: Set<String> = ["neon", "nixie", "lcd", "minimal"]
+    /// 原来的赞助者专属表盘（时钟的 layout）：霓虹、实景、液晶，以及并进翻页的
+    /// 旧值 minimal。从时钟样式注册表 `ClockStyles` 算出来，加样式时不用改这里。
+    public static var proClockLayouts: Set<String> { ClockStyles.proLayouts }
 
     /// 液态外观在配置里的值，放在 `layout` 或 `look` 键下。
     public static let liquidValue = "liquid"
@@ -75,7 +77,8 @@ public enum ProFeatures {
     /// `WidgetCatalog.isSupporterOnly` 原来的判断一样，那边现在调这里。
     /// 只有这些受 `Supporter.isUnlocked` 管。
     public static func isSupporterStyle(_ overrides: [String: WidgetConfig.Value]) -> Bool {
-        if case .string(let layout) = overrides["layout"], proClockLayouts.contains(layout) { return true }
+        // 时钟：Pro 样式（layout）或 Pro 选项值（翻页的大号带时分秒卡片）。
+        if ClockStyles.isProOverrides(overrides) { return true }
         if case .string(let raw) = overrides["character"],
            let character = WaterCharacter(rawValue: raw), character.isSupporterOnly { return true }
         if case .string(let layout) = overrides["layout"], WifiRingStyle.from(layout: layout)?.isSupporterOnly == true { return true }

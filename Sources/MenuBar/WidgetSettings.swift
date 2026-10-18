@@ -578,7 +578,9 @@ struct WidgetSettingsSections: View {
     }
 
     static func label(_ key: String, kind: WidgetKind) -> String {
-        kindLabels["\(kind.rawValue).\(key)"] ?? label(key)
+        // 时钟的子选项（大小、粗细、表盘、卡片、翻法）名字在样式注册表里。
+        if kind == .clock, let option = ClockStyles.option(key) { return option.title }
+        return kindLabels["\(kind.rawValue).\(key)"] ?? label(key)
     }
 
     /// What a run of toggles is choosing between.
@@ -706,7 +708,10 @@ struct WidgetSettingsSections: View {
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)
         -> [(title: String, value: String)]? {
-        stringChoices["\(kind.rawValue).\(key)"]
+        if kind == .clock, let option = ClockStyles.option(key) {
+            return option.choices.map { (title: $0.title, value: $0.value) }
+        }
+        return stringChoices["\(kind.rawValue).\(key)"]
     }
 
     private static func optionLabel(_ raw: String) -> String {
