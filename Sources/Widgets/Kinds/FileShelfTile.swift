@@ -13,6 +13,8 @@ struct FileShelfTile: View {
     var context: WidgetContext
 
     @State private var targeted = false
+    /// 拖进来的有几个文件，写在拖入提示的第二行。
+    @State private var dragged = 0
     @Environment(\.colorScheme) private var scheme
 
     private var files: [ListedFile] { context.isPreview ? [] : FileShelf.files(instance) }
@@ -21,28 +23,35 @@ struct FileShelfTile: View {
         let column = context.position.isVertical
         let count = context.isPreview ? 3 : files.count
         return WidgetSurface {
-            if column {
-                VStack(spacing: WidgetStyle.columnSpacing) {
-                    badge(size: WidgetStyle.badgeColumn)
-                    Text(count == 0 ? PandaEmpty.fileShelf.line(compact: true) : tr("\(count) 个"))
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                }
-            } else {
-                HStack(spacing: WidgetStyle.rowSpacing) {
-                    badge(size: WidgetStyle.badge)
-                    TileReading(value: count == 0 ? PandaEmpty.fileShelf.line() : tr("\(count) 个文件"),
-                                caption: tr("文件暂存"), valueSize: 15)
-                    Spacer(minLength: 0)
+            Group {
+                if column {
+                    VStack(spacing: WidgetStyle.columnSpacing) {
+                        badge(size: WidgetStyle.badgeColumn)
+                        Text(count == 0 ? PandaEmpty.fileShelf.line(compact: true) : tr("\(count) 个"))
+                            .font(WidgetStyle.label(11))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .lineLimit(1)
+                    }
+                } else {
+                    HStack(spacing: WidgetStyle.rowSpacing) {
+                        badge(size: WidgetStyle.badge)
+                        TileReading(value: count == 0 ? PandaEmpty.fileShelf.line() : tr("\(count) 个文件"),
+                                    caption: tr("文件暂存"), valueSize: 15)
+                        Spacer(minLength: 0)
+                    }
                 }
             }
+            .dropHidden(targeted)
         }
-        .dropTargetOutline(targeted)
-        .dropDestination(for: URL.self) { urls, _ in
-            guard !context.isPreview else { return false }
-            return FileShelf.add(urls, to: instance)
-        } isTargeted: { targeted = $0 }
+        // 拖入：青色虚线框，“暂存在这里 / 3 个文件”。原文件不动，只记位置。
+        .dropTargetOutline(targeted, prompt: .fileShelf(files: dragged), compact: column)
+        .onDrop(of: FileDropDelegate.types, delegate: FileDropDelegate(
+            enabled: !context.isPreview,
+            update: { inside, count in
+                targeted = inside
+                dragged = count
+            },
+            receive: { urls in _ = FileShelf.add(urls, to: instance) }))
     }
 
     private func badge(size: CGFloat) -> some View {
@@ -65,9 +74,9 @@ struct FileShelfTile: View {
                 }
             } else if targeted || context.isPreview {
                 // 库里的缩略图写着“3 个文件”，配托盘而不是空状态的小熊猫。
-                Image(systemName: targeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
+                Image(systemName: "tray.and.arrow.down")
                     .font(.system(size: size * CGFloat(DockMetrics.badgeGlyphRatio), weight: .medium))
-                    .foregroundStyle(targeted ? WidgetStyle.dropBlue(scheme) : WidgetStyle.primary)
+                    .foregroundStyle(WidgetStyle.primary)
             } else {
                 // 空着：小熊猫等着接文件。
                 PandaEmptyBadge(empty: .fileShelf, size: size, fallback: "tray.and.arrow.down")

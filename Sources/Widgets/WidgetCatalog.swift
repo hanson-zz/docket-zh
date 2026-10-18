@@ -148,7 +148,10 @@ public enum WidgetCatalog {
 
         Entry(kind: .notes, name: tr("便签"), category: .todo,
               defaults: c(["text": .string(""), "color": .string("yellow")]),
-              variants: PaperColor.picker.map { ($0.title, ["color": .string($0.rawValue)]) },
+              // 纸色不再当样式列出来：添加面板只放一张便签，颜色在面板和设置里选
+              // （免费五种，其余 Pro）。原来按颜色放好的那张本来就把 color 写进了
+              // 配置，读出来就是这张纸的颜色，样子不变。
+              variants: [],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .music, name: tr("正在播放"), category: .media,

@@ -158,8 +158,11 @@ final class ProFeaturesTests: XCTestCase {
         }
         XCTAssertTrue(proStyles.contains("weather:多城市"))
         XCTAssertTrue(proStyles.contains("battery:电池格"))
-        // 便签十五种纸色里，免费五种，其余十种是 Pro。
-        XCTAssertEqual(proStyles.filter { $0.hasPrefix("notes:") }.count, PaperColor.picker.count - 5)
+        // 便签的纸色不再列成样式，改在面板和设置里选；十五种里免费五种，其余十种是 Pro 选项。
+        XCTAssertTrue(proStyles.filter { $0.hasPrefix("notes:") }.isEmpty)
+        XCTAssertEqual(PaperColor.picker.filter {
+            ProFeatures.isProChoice(kind: .notes, key: "color", value: $0.rawValue)
+        }.count, PaperColor.picker.count - 5)
     }
 
     func testNoteColorsSplitIntoFreeAndPro() {

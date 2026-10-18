@@ -5,7 +5,8 @@ import UniformTypeIdentifiers
 /// 隔空投送：把文件拖到卡片上，松手交给系统的隔空投送面板。
 ///
 /// - 普通态横排：左边圆角方底的同心弧图标，右边「隔空投送」和「拖文件到这里」。
-/// - 拖着文件停在卡片上：蓝色虚线高亮，文字换成「松手发送」和「N 个文件」。
+/// - 拖着文件停在卡片上：系统蓝虚线框、很淡的蓝底，写「发送给附近设备」和
+///   「N 个文件 · 松手选设备」（共用的拖入提示，见 `DropPrompt`）。
 /// - 竖排只在空间不够时用（竖排货架或窄卡）：图标在上，「隔空投送」拆两行。
 /// - 用不了（系统没有隔空投送服务）或拖来的不是文件时整张灰掉。
 ///
@@ -57,9 +58,10 @@ struct AirDropTile: View {
                 }
             }
             .tileDisabled(state.disabled)
+            .dropHidden(state.highlighted)
             .dockAnimation(.snappy(duration: 0.18), value: state)
         }
-        .dropTargetOutline(state.highlighted)
+        .dropTargetOutline(state.highlighted, prompt: .airDrop(files: files), compact: column)
         .onDrop(of: [.fileURL, .item], delegate: AirDropDropDelegate(
             enabled: !context.isPreview && Self.available,
             update: { inside, count in
@@ -95,7 +97,7 @@ struct AirDropTile: View {
     private var columnLayout: some View {
         VStack(spacing: 4) {
             badge(size: WidgetStyle.badgeColumn)
-            Text(state.highlighted ? tr("松手\n发送") : AirDropDrop.columnTitle)
+            Text(AirDropDrop.columnTitle)
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(state.highlighted ? blue : WidgetStyle.primary)
                 .multilineTextAlignment(.center)

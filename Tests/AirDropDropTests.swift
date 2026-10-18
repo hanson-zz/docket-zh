@@ -13,8 +13,8 @@ final class AirDropDropTests: XCTestCase {
     func testCopy() {
         XCTAssertEqual(AirDropDrop.State.idle.title, "隔空投送")
         XCTAssertEqual(AirDropDrop.State.idle.caption, "拖文件到这里")
-        XCTAssertEqual(AirDropDrop.State.targeted(files: 2).title, "松手发送")
-        XCTAssertEqual(AirDropDrop.State.targeted(files: 2).caption, "2 个文件")
+        XCTAssertEqual(AirDropDrop.State.targeted(files: 2).title, "发送给附近设备")
+        XCTAssertEqual(AirDropDrop.State.targeted(files: 2).caption, "2 个文件 · 松手选设备")
         XCTAssertTrue(AirDropDrop.State.targeted(files: 1).highlighted)
         XCTAssertFalse(AirDropDrop.State.idle.highlighted)
         XCTAssertTrue(AirDropDrop.State.unavailable.disabled)

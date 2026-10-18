@@ -134,7 +134,7 @@ struct TodoDetail: View {
                         .glassPane(cornerRadius: 12)
                 }
             }
-            .dropTargetOutline(targeted, corner: 12)
+            .dropTargetOutline(targeted, tint: .orange, corner: 12)
             .onDrop(of: TodoDropDelegate.types, delegate: TodoDropDelegate(
                 enabled: !context.isPreview,
                 targeted: { targeted = $0 },

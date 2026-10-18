@@ -92,13 +92,13 @@ struct TodoDropHint: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text("松手记一条待办")
+            Text(DropPrompt.todo.title)
                 .font(WidgetStyle.label(compact ? 11 : 13))
                 .foregroundStyle(WidgetStyle.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             if !compact {
-                Text("文字、链接、文件都行")
+                Text(DropPrompt.todo.caption)
                     .font(WidgetStyle.caption(10))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
