@@ -49,9 +49,9 @@ struct StickyNoteTile: View {
                     .overlay { words(pile.front.text, ink: Color(hex: front.inkHex), column: column) }
                     .rotationEffect(.degrees(-0.8))
                     .id(pile.page)
-                    .transition(reduceMotion ? .opacity
-                                : .asymmetric(insertion: .opacity,
-                                              removal: .offset(x: -18, y: 0).combined(with: .opacity)))
+                    .transition(reduceMotion ? AnyTransition.opacity
+                                : AnyTransition.asymmetric(insertion: .opacity,
+                                                           removal: AnyTransition.offset(x: -18, y: 0).combined(with: .opacity)))
             }
             .padding(.horizontal, -WidgetStyle.inset + (column ? 5 : 6))
             .padding(.top, 6)
