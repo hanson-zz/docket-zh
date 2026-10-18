@@ -22,7 +22,7 @@ public struct CalendarSpan: Identifiable, Hashable, Sendable {
 // MARK: - 会议链接
 
 /// 日程里能「加入」的视频会议链接。
-public struct MeetingLink: Equatable, Sendable {
+public struct MeetingLink: Equatable, Hashable, Sendable {
     public enum Provider: String, CaseIterable, Sendable {
         case tencent, zoom, teams, feishu, meet, other
 

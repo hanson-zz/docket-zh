@@ -124,18 +124,18 @@ final class TimersSplitTests: XCTestCase {
         XCTAssertEqual(AlarmBook.ringing(config, now: date(2026, 10, 18, 14, 31), calendar: calendar)?.item.id, "a1")
         XCTAssertNil(AlarmBook.ringing(config, now: date(2026, 10, 18, 14, 41), calendar: calendar), "十分钟没人管就停")
 
-        // 稍后 10 分钟：现在不响，10 分钟后再响。
+        // 稍后 9 分钟：现在不响，9 分钟后再响。
         let snoozedAt = date(2026, 10, 18, 14, 31)
         AlarmBook.snooze("a1", in: &config, now: snoozedAt, calendar: calendar)
         XCTAssertNil(AlarmBook.ringing(config, now: date(2026, 10, 18, 14, 35), calendar: calendar))
         let again = AlarmBook.ringing(config, now: date(2026, 10, 18, 14, 41, 30), calendar: calendar)
         XCTAssertEqual(again?.item.id, "a1")
-        XCTAssertEqual(again?.since, snoozedAt.addingTimeInterval(600))
+        XCTAssertEqual(again?.since, snoozedAt.addingTimeInterval(540))
         // 稍后再响的时刻排进下一个。
         let first = AlarmBook.items(config).first { $0.id == "a1" }!
         XCTAssertEqual(AlarmBook.nextRing(first, config: config,
                                           now: date(2026, 10, 18, 14, 35), calendar: calendar),
-                       snoozedAt.addingTimeInterval(600))
+                       snoozedAt.addingTimeInterval(540))
 
         // 关掉：今天不再响，明天照常。
         AlarmBook.dismiss("a1", in: &config, now: date(2026, 10, 18, 14, 42), calendar: calendar)

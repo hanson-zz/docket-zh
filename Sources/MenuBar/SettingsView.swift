@@ -840,7 +840,7 @@ struct SettingsView: View {
                               tr("提醒事项、喝水、待办到点弹出时轻响一声，用上面的音量。勿扰或专注模式、屏幕共享时不响，几条一起到点只响一声。"))
                 }
                 if state.reminderSounds.enabled {
-                    ForEach(ReminderSoundKind.allCases, id: \.self) { kind in
+                    ForEach(ReminderSoundKind.toneKinds, id: \.self) { kind in
                         reminderToneRow(kind)
                     }
                 }
@@ -848,13 +848,16 @@ struct SettingsView: View {
             // 到点弹出卡片不跟音效开关走：音效全关了也照样弹，只是不响。
             VStack(alignment: .leading, spacing: 6) {
                 subtitled(tr("到点弹出卡片"),
-                          tr("从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起，指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。关掉喝水时改回系统通知。"))
-                HStack(spacing: 16) {
-                    ForEach(ReminderSoundKind.allCases, id: \.self) { kind in
-                        Toggle(kind.title, isOn: Binding(
-                            get: { state.reminderPopups.enabled(kind) },
-                            set: { state.reminderPopups.setEnabled($0, for: kind) }))
-                            .toggleStyle(.checkbox)
+                          tr("从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起（闹钟的陪它响完两分钟），指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。扩展栏隐藏、卡片不在当前布局时也会弹。关掉喝水时改回系统通知；关掉倒计时或闹钟时照样到点响，只是不弹卡片。"))
+                // 两行：提醒类三个，计时类两个。
+                ForEach([ReminderSoundKind.toneKinds, ReminderSoundKind.allCases.filter(\.isTimer)], id: \.self) { row in
+                    HStack(spacing: 16) {
+                        ForEach(row, id: \.self) { kind in
+                            Toggle(kind.title, isOn: Binding(
+                                get: { state.reminderPopups.enabled(kind) },
+                                set: { state.reminderPopups.setEnabled($0, for: kind) }))
+                                .toggleStyle(.checkbox)
+                        }
                     }
                 }
             }

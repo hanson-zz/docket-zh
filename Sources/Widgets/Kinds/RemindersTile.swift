@@ -93,27 +93,8 @@ struct RemindersTile: View {
         // A reminder ticked off in Reminders.app, or access granted in the
         // panel, both land here.
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
-        // 带时刻的提醒到点那一秒弹出卡片并轻响一声（到点弹出卡片、提醒音效 ▸
-        // 提醒事项）。几个卡片、几条同时到点都合成一张、一声。弹出卡片关着时只响。
-        .onChange(of: context.now) { old, new in chimeIfDue(from: old, to: new) }
-    }
-
-    private func chimeIfDue(from old: Date, to new: Date) {
-        guard interactive else { return }
-        let due = ReminderSoundDecision.newlyDue(items.map { (id: $0.id, due: $0.dueValue) },
-                                                 after: old, upTo: new)
-        guard !due.isEmpty else { return }
-        guard ReminderPopupCenter.shared.shows(.reminders) else {
-            ReminderSoundPlayer.shared.play(.reminders, now: new)
-            return
-        }
-        let byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let alerts = due.compactMap { id -> ReminderAlert? in
-            guard let item = byID[id] else { return nil }
-            return ReminderAlert(kind: .reminders, itemID: item.id, widgetID: instance.id, title: item.title,
-                                 due: item.due, list: item.list, highPriority: item.isHighPriority)
-        }
-        ReminderPopupCenter.shared.post(alerts, now: new)
+        // 带时刻的提醒到点时弹出卡片、轻响一声，由 `TimedAlertDriver` 在后台看着，
+        // 扩展栏隐藏或这张卡片不在当前布局也照样弹。
     }
 
     // MARK: Wide layouts

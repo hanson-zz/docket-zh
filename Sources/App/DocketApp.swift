@@ -70,22 +70,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Widgets write their own state through here - see WidgetWriter. An
         // open detail panel holds the instance by value, so it is redrawn from
         // the same funnel rather than left showing what the tile used to say.
+        //
+        // 到点弹出的卡片和后台调度要动的小组件可能在文件夹里或别的布局里，
+        // 所以读写都先找当前布局、再找其余的（见 WidgetLookup.swift）。
         WidgetWriter.update = { [state] instance in
-            state.updateWidget(instance)
+            state.writeWidgetAnywhere(instance)
             WidgetDetailWindow.shared.refresh(instance)
         }
         WidgetWriter.current = { [state] id in
-            func find(_ items: [DockItem]) -> WidgetInstance? {
-                for item in items {
-                    switch item {
-                    case .widget(let widget) where widget.id == id: return widget
-                    case .group(let group): if let found = find(group.items) { return found }
-                    default: continue
-                    }
-                }
-                return nil
-            }
-            return find(state.customProfile?.items ?? [])
+            state.widgetAnywhere(id)
         }
 
         shelf = DockPanelController(app: state)
@@ -111,6 +104,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FocusLogStore.shared.start()
         // 专注计时一轮到点后接休息、休息完回到专注，同样从启动起就看着。
         FocusCycleDriver.shared.start()
+        // 倒计时、闹钟、快速待办和提醒事项到点：从启动起就看着每个布局里的这几种
+        // 小组件，扩展栏隐藏、卡片不在当前布局也照样响、照样弹出卡片。
+        TimedAlertDriver.shared.widgets = { [state] in state.allWidgets }
+        TimedAlertDriver.shared.start()
 
         // 小熊猫的竹篮 reads 喝水, 习惯打卡 and 专注计时 wherever they sit, so it
         // is handed every widget on every layout. Focus minutes come from

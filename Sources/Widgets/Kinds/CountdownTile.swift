@@ -6,8 +6,9 @@ import SwiftUI
 /// - 没开始：名字、“上次 5 分钟”，下面三个预设，点一个就开始，上次用的那个高亮。
 ///   预设在面板里改。
 /// - 正在跑：大数字、“泡面 · 共 3 分钟”、一条细进度条，右边暂停。暂停后是继续和取消。
-/// - 时间到：卡片变橙、左右晃一阵、响提示音，点卡片任何地方就停。打开“减少动态
-///   效果”时不晃，只变色。
+/// - 时间到：卡片变橙、左右晃一阵，点卡片任何地方就停。打开“减少动态效果”时
+///   不晃，只变色。提示音和到点弹出的卡片由 `TimedAlertDriver` 管，扩展栏隐藏、
+///   卡片不在当前布局也照样响。
 ///
 /// 平时卡片的点按留给码头（打开面板），按钮都只有自己那么大；只有到点时整张卡片
 /// 是“停”，这时候要的就是随手一点就安静。
@@ -52,16 +53,6 @@ struct CountdownTile: View {
                 }
             }
         }
-        .onChange(of: chimeBucket) { _, bucket in
-            guard bucket != nil, instance.config.bool(CountdownRun.soundKey, default: true) else { return }
-            TimerChime.play(.countdown)
-        }
-    }
-
-    /// 到点后的第几段（每 4 秒一段），段数变了就响一声；没到点或响够了是 nil。
-    private var chimeBucket: Int? {
-        guard case .ringing(let since) = phase else { return nil }
-        return CountdownRun.chimeBucket(since: since)
     }
 
     // MARK: 横排（168 × 58）

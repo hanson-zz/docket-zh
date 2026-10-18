@@ -8,13 +8,16 @@ import Foundation
 
 // MARK: - 设置
 
-/// 设置 ▸ 扩展栏 ▸ 音效 ▸ 提醒音效旁边的「到点弹出卡片」，三类各自一个开关，默认都开。
+/// 设置 ▸ 扩展栏 ▸ 音效 ▸ 提醒音效旁边的「到点弹出卡片」，每类各自一个开关，默认都开。
 ///
-/// 喝水关掉时退回原来的系统通知；提醒事项和待办关掉时只响一声（音效照旧）。
+/// 喝水关掉时退回原来的系统通知；提醒事项和待办关掉时只响一声（音效照旧）；
+/// 倒计时和闹钟关掉时照样到点响、卡片照样变橙，只是不弹这张卡片。
 public struct ReminderPopupSettings: Codable, Hashable, Sendable {
     public var reminders: Bool = true
     public var water: Bool = true
     public var todo: Bool = true
+    public var countdown: Bool = true
+    public var alarm: Bool = true
 
     public init() {}
 
@@ -23,6 +26,8 @@ public struct ReminderPopupSettings: Codable, Hashable, Sendable {
         case .reminders: reminders
         case .water: water
         case .todo: todo
+        case .countdown: countdown
+        case .alarm: alarm
         }
     }
 
@@ -31,6 +36,8 @@ public struct ReminderPopupSettings: Codable, Hashable, Sendable {
         case .reminders: reminders = on
         case .water: water = on
         case .todo: todo = on
+        case .countdown: countdown = on
+        case .alarm: alarm = on
         }
     }
 
@@ -40,6 +47,8 @@ public struct ReminderPopupSettings: Codable, Hashable, Sendable {
         reminders = (try? c.decodeIfPresent(Bool.self, forKey: .reminders)) ?? true
         water = (try? c.decodeIfPresent(Bool.self, forKey: .water)) ?? true
         todo = (try? c.decodeIfPresent(Bool.self, forKey: .todo)) ?? true
+        countdown = (try? c.decodeIfPresent(Bool.self, forKey: .countdown)) ?? true
+        alarm = (try? c.decodeIfPresent(Bool.self, forKey: .alarm)) ?? true
     }
 }
 
@@ -59,6 +68,21 @@ public enum ReminderPopupDecision {
     public static func isFresh(due: Date, now: Date) -> Bool {
         let late = now.timeIntervalSince(due)
         return late >= -1 && late <= ReminderSoundDecision.maxGap
+    }
+
+    /// 不点的话多久自动收起。闹钟要响两分钟，卡片陪它响完；其余 30 秒。
+    public static func autoHideSeconds(_ kind: ReminderSoundKind) -> TimeInterval {
+        switch kind {
+        case .alarm: TimeInterval(AlarmBook.chimeSeconds)
+        case .countdown: max(ReminderPopupCountdown.defaultDuration, TimeInterval(CountdownRun.chimeSeconds))
+        case .reminders, .water, .todo: ReminderPopupCountdown.defaultDuration
+        }
+    }
+
+    /// 按 Esc 时要不要连计时一起停：倒计时和闹钟的卡片就是“响着的那个”，
+    /// 关掉卡片却让它接着响没有意义；其余几类 Esc 只收起卡片。
+    public static func escapeStops(_ kind: ReminderSoundKind) -> Bool {
+        kind.isTimer
     }
 }
 
@@ -128,6 +152,29 @@ public struct TodoPopupInfo: Equatable, Hashable, Sendable {
     }
 }
 
+/// 倒计时和闹钟卡片上的东西。
+public struct TimerPopupInfo: Equatable, Hashable, Sendable {
+    /// 倒计时这一轮的时长（秒），「再来一次」照这个再计。闹钟为 0。
+    public var duration: TimeInterval
+    /// 闹钟在小组件里的 id；倒计时为空。
+    public var alarmID: String
+    /// 闹钟定的时刻“14:30”；倒计时为空。
+    public var clock: String
+    /// 这次是稍后再响的那一次。
+    public var snoozed: Bool
+    /// 卡片设置里提示音开着。
+    public var sound: Bool
+
+    public init(duration: TimeInterval = 0, alarmID: String = "", clock: String = "",
+                snoozed: Bool = false, sound: Bool = true) {
+        self.duration = duration
+        self.alarmID = alarmID
+        self.clock = clock
+        self.snoozed = snoozed
+        self.sound = sound
+    }
+}
+
 /// 一条到点的提醒，从卡片、计时器交给弹出页。
 public struct ReminderAlert: Equatable, Hashable, Sendable, Identifiable {
     public var kind: ReminderSoundKind
@@ -143,10 +190,11 @@ public struct ReminderAlert: Equatable, Hashable, Sendable, Identifiable {
     public var highPriority: Bool
     public var water: WaterPopupInfo?
     public var todo: TodoPopupInfo?
+    public var timer: TimerPopupInfo?
 
     public init(kind: ReminderSoundKind, itemID: String, widgetID: UUID? = nil, title: String, due: Date,
                 list: String = "", highPriority: Bool = false,
-                water: WaterPopupInfo? = nil, todo: TodoPopupInfo? = nil) {
+                water: WaterPopupInfo? = nil, todo: TodoPopupInfo? = nil, timer: TimerPopupInfo? = nil) {
         self.kind = kind
         self.itemID = itemID
         self.widgetID = widgetID
@@ -156,6 +204,7 @@ public struct ReminderAlert: Equatable, Hashable, Sendable, Identifiable {
         self.highPriority = highPriority
         self.water = water
         self.todo = todo
+        self.timer = timer
     }
 
     /// 同一条同一时刻只算一次：几张卡片同时看到同一条到点，也只弹一张。
@@ -200,6 +249,9 @@ public struct ReminderPopupQueue: Sendable {
     }
 
     public var front: ReminderPopupCard? { cards.first }
+
+    /// 所有还没收起的（正显示的和排着的）。
+    public var alerts: [ReminderAlert] { cards.flatMap(\.alerts) }
 
     /// 卡片底下要不要叠一层：这一张合了几条，或者后面还排着。
     public var stacked: Bool { cards.count > 1 || (front?.alerts.count ?? 0) > 1 }
@@ -331,6 +383,8 @@ public enum ReminderPopupSnooze {
     public static let waterMinutes = 15
     /// 待办的「稍后」。
     public static let todoMinutes = 10
+    /// 闹钟的「稍后」，和卡片、面板上的一样。
+    public static var alarmMinutes: Int { AlarmBook.snoozeMinutes }
 
     /// 今晚 8 点；已经不到 10 分钟就到或者过了时为 nil（菜单里不列）。
     public static func tonight(now: Date, calendar: Calendar = .current) -> Date? {
@@ -386,6 +440,13 @@ public struct ReminderPopupSoundChip: Equatable, Sendable {
         let playing = ReminderSoundDecision.toneToPlay(for: kind, settings: settings, master: master,
                                                        environment: environment)
         return ReminderPopupSoundChip(label: chosen.title, muted: playing == nil)
+    }
+}
+
+extension ReminderPopupSoundChip {
+    /// 倒计时和闹钟的喇叭：写出计时器自己的提示音，卡片设置里关了提示音时划掉。
+    public static func timer(_ kind: ReminderSoundKind, sound: Bool) -> ReminderPopupSoundChip {
+        ReminderPopupSoundChip(label: kind == .alarm ? "Sosumi" : "Glass", muted: !sound)
     }
 }
 
@@ -475,6 +536,35 @@ public enum ReminderPopupText {
         return tr("\(parts.month ?? 0) 月 \(parts.day ?? 0) 日记下的")
     }
 
+    // MARK: 倒计时和闹钟
+
+    /// 倒计时的大字：“泡面 时间到”，没起名字时“时间到”。
+    public static func countdownTitle(name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? tr("时间到") : tr("\(trimmed) 时间到")
+    }
+
+    /// 倒计时第三行：“15:03 到点 · 共 3 分钟”。
+    public static func countdownDetail(due: Date, duration: TimeInterval, calendar: Calendar = .current) -> String {
+        "\(tr("\(clock(due, calendar: calendar)) 到点")) · \(tr("共 \(CountdownRun.lengthText(duration))"))"
+    }
+
+    /// 闹钟第三行：“14:30 · 闹钟”，稍后再响的那次“14:39 · 稍后再响 · 原定 14:30”。
+    public static func alarmDetail(due: Date, info: TimerPopupInfo, calendar: Calendar = .current) -> String {
+        let time = clock(due, calendar: calendar)
+        guard info.snoozed else { return "\(time) · \(tr("闹钟"))" }
+        let planned = info.clock.isEmpty ? "" : " · \(tr("原定 \(info.clock)"))"
+        return "\(time) · \(tr("稍后再响"))\(planned)"
+    }
+
+    /// 倒计时和闹钟底下那行小字。
+    public static func timerHint(_ kind: ReminderSoundKind, info: TimerPopupInfo?) -> String {
+        if kind == .alarm {
+            return tr("稍后：\(ReminderPopupSnooze.alarmMinutes) 分钟后再响一次")
+        }
+        return tr("再来一次：重新计 \(CountdownRun.lengthText(info?.duration ?? 0))")
+    }
+
     /// “今天 1 / 3”。
     public static func todoProgress(done: Int, total: Int) -> String {
         tr("今天 \(done) / \(total)")
@@ -487,6 +577,7 @@ public enum ReminderPopupText {
             return tr("推迟：\(choices.map(\.title).joined(separator: " / "))")
         case .water: return tr("喝下后举杯 3 秒，达标换欢呼")
         case .todo: return tr("点完成：小熊猫欢呼，卡片划掉")
+        case .countdown, .alarm: return timerHint(kind, info: nil)
         }
     }
 }

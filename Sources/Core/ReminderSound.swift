@@ -5,18 +5,29 @@ import Foundation
 // 这里只放纯逻辑（选哪个音色、该不该响、短时间里几条合成一声、哪些提醒刚刚
 // 到点），播放在 Services/ReminderSoundPlayer.swift，方便单独测试。
 
-// MARK: - 三类提醒
+// MARK: - 几类提醒
 
+/// 到点会弹出卡片的几类。前三类各选一个提醒音色；倒计时和闹钟沿用自己卡片
+/// 设置里的提示音开关和 `TimerChime` 的声音，不进“提醒音效”的音色列表。
 public enum ReminderSoundKind: String, Codable, CaseIterable, Sendable {
-    case reminders, water, todo
+    case reminders, water, todo, countdown, alarm
 
     public var title: String {
         switch self {
         case .reminders: tr("提醒事项")
         case .water: tr("喝水")
         case .todo: tr("待办")
+        case .countdown: tr("倒计时")
+        case .alarm: tr("闹钟")
         }
     }
+
+    /// 设置里能选音色的三类。
+    public static let toneKinds: [ReminderSoundKind] = [.reminders, .water, .todo]
+
+    /// 倒计时和闹钟：响声由计时器自己管（到点后每 4 秒一声），弹出卡片时不再
+    /// 另响提醒音色。
+    public var isTimer: Bool { self == .countdown || self == .alarm }
 
     /// 本应用排的系统通知用哪一类的音色，按通知标识的前缀认。不是这三类的
     /// （股票到价、电量、姿势等）为 nil，照旧用系统默认提示音。
@@ -84,6 +95,8 @@ public struct ReminderSoundSettings: Codable, Hashable, Sendable {
         case .reminders: .glass
         case .water: .pop
         case .todo: .tink
+        // 计时类不走这里的音色，见 `ReminderSoundKind.isTimer`。
+        case .countdown, .alarm: .off
         }
     }
 
@@ -94,6 +107,7 @@ public struct ReminderSoundSettings: Codable, Hashable, Sendable {
         case .reminders: reminders
         case .water: water
         case .todo: todo
+        case .countdown, .alarm: .off
         }
     }
 
@@ -102,6 +116,7 @@ public struct ReminderSoundSettings: Codable, Hashable, Sendable {
         case .reminders: reminders = tone
         case .water: water = tone
         case .todo: todo = tone
+        case .countdown, .alarm: break
         }
     }
 

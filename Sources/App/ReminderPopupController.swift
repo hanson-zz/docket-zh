@@ -67,11 +67,22 @@ final class ReminderPopupCenter {
         var chime: ReminderSoundKind?
         for alert in alerts where shows(alert.kind) {
             switch queue.post(alert, now: now) {
-            case .shown, .queued: chime = chime ?? alert.kind
+            // 倒计时和闹钟自己每 4 秒响一声（`TimedAlertDriver`），这里不再叠一声。
+            case .shown, .queued: if !alert.kind.isTimer { chime = chime ?? alert.kind }
             case .merged, .ignored: break
             }
         }
         if let chime { ReminderSoundPlayer.shared.play(chime, now: now) }
+        refresh()
+    }
+
+    /// 还没收起的几条（正显示的和排着的）。
+    var pending: [ReminderAlert] { queue.alerts }
+
+    /// 这几条在别处处理掉了（卡片上点了停、关掉、稍后）：从弹出页拿掉。
+    func withdraw(_ ids: Set<String>) {
+        guard model.finishing == nil else { return }
+        for id in ids { queue.resolve(id) }
         refresh()
     }
 
@@ -86,6 +97,10 @@ final class ReminderPopupCenter {
         case later
         case open
         case dismiss
+        /// 倒计时「再来一次」。
+        case again
+        /// 倒计时、闹钟「关闭」：停下这次响铃。
+        case stop
     }
 
     private func perform(_ action: Action) {
@@ -93,8 +108,20 @@ final class ReminderPopupCenter {
         let now = Date.now
         switch action {
         case .dismiss:
+            // 倒计时和闹钟的卡片按 Esc 连响铃一起停，见 `ReminderPopupDecision.escapeStops`。
+            if ReminderPopupDecision.escapeStops(card.kind) { return perform(.stop) }
             queue.dismissFront()
             refresh()
+        case .again:
+            if let id = primary.widgetID, let instance = WidgetWriter.current(id) {
+                WidgetWriter.write(instance) {
+                    TimedAlertScan.restartingCountdown(&$0, duration: primary.timer?.duration ?? 0, now: now)
+                }
+            }
+            queue.resolve(primary.id)
+            refresh()
+        case .stop:
+            stopTimer(primary, now: now)
         case .open:
             if let id = primary.widgetID {
                 NotificationCenter.default.post(name: Self.openPanelRequest, object: nil,
@@ -136,10 +163,31 @@ final class ReminderPopupCenter {
             let finishing = QuickTodo.finishesAll(toggling: item.id, in: items)
             // 和卡片上勾掉一样：勾掉最后一项时记下庆祝，卡片上的小熊猫跟着欢呼。
             TodoLog.toggle(item.id, in: instance, cheering: finishing)
-        case .water:
+        case .water, .countdown, .alarm:
             break
         }
         finish(alert.id, all: false)
+    }
+
+    /// 倒计时回到没开始；闹钟这次关掉（今天不再响，稍后再响的也取消）。
+    private func stopTimer(_ alert: ReminderAlert, now: Date) {
+        if let id = alert.widgetID, let instance = WidgetWriter.current(id) {
+            switch alert.kind {
+            case .countdown:
+                WidgetWriter.write(instance) { TimedAlertScan.stoppingCountdown(&$0) }
+            case .alarm:
+                if let alarmID = alert.timer?.alarmID {
+                    WidgetWriter.write(instance) { config in
+                        if AlarmBook.isLegacy(config) { AlarmBook.store(AlarmBook.items(config), in: &config) }
+                        AlarmBook.dismiss(alarmID, in: &config, now: now)
+                    }
+                }
+            case .reminders, .water, .todo:
+                break
+            }
+        }
+        queue.resolve(alert.id)
+        refresh()
     }
 
     /// 完成以后先划掉、换成欢呼，停一下再收起这一条（下一条顶上来）。
@@ -178,7 +226,7 @@ final class ReminderPopupCenter {
         }
     }
 
-    /// 喝水稍后 15 分钟、待办稍后 10 分钟。
+    /// 喝水稍后 15 分钟、待办稍后 10 分钟、闹钟稍后 9 分钟。
     private func later(_ alert: ReminderAlert, now: Date) {
         switch alert.kind {
         case .water:
@@ -191,7 +239,14 @@ final class ReminderPopupCenter {
                 let at = ReminderPopupSnooze.later(minutes: ReminderPopupSnooze.todoMinutes, now: now)
                 TodoLog.change(instance) { QuickTodo.settingReminder(alert.itemID, at: at, in: $0) }
             }
-        case .reminders:
+        case .alarm:
+            if let id = alert.widgetID, let instance = WidgetWriter.current(id), let alarmID = alert.timer?.alarmID {
+                WidgetWriter.write(instance) { config in
+                    if AlarmBook.isLegacy(config) { AlarmBook.store(AlarmBook.items(config), in: &config) }
+                    AlarmBook.snooze(alarmID, in: &config, now: now)
+                }
+            }
+        case .reminders, .countdown:
             break
         }
         queue.resolve(alert.id)
@@ -222,11 +277,17 @@ final class ReminderPopupCenter {
         model.card = front
         model.stacked = queue.stacked
         if let front {
-            model.chip = ReminderPopupSoundChip.make(front.kind, settings: ReminderSoundPlayer.shared.settings,
-                                                     master: ReminderSoundPlayer.shared.master,
-                                                     environment: ReminderSoundPlayer.environment())
+            if front.kind.isTimer {
+                model.chip = .timer(front.kind, sound: front.primary?.timer?.sound ?? true)
+            } else {
+                model.chip = ReminderPopupSoundChip.make(front.kind, settings: ReminderSoundPlayer.shared.settings,
+                                                         master: ReminderSoundPlayer.shared.master,
+                                                         environment: ReminderSoundPlayer.environment())
+            }
             if shownCardID != front.id {
                 shownCardID = front.id
+                // 闹钟要响两分钟，卡片陪它响完；其余 30 秒。
+                countdown = ReminderPopupCountdown(duration: ReminderPopupDecision.autoHideSeconds(front.kind))
                 countdown.start(at: .now)
             }
             show()
@@ -534,6 +595,10 @@ private struct ReminderPopupCardView: View {
             ReminderPopupText.waterDetail(due: primary.due, lastDrink: primary.water?.lastDrink, now: now)
         case .todo:
             ReminderPopupText.todoDetail(primary.todo, today: TodoDay.key(now))
+        case .countdown:
+            ReminderPopupText.countdownDetail(due: primary.due, duration: primary.timer?.duration ?? 0)
+        case .alarm:
+            ReminderPopupText.alarmDetail(due: primary.due, info: primary.timer ?? TimerPopupInfo())
         }
     }
 
@@ -552,6 +617,8 @@ private struct ReminderPopupCardView: View {
             } else if let info = primary.todo, info.today, !info.others.isEmpty {
                 todayRows(info)
             }
+        case .countdown, .alarm:
+            if !card.others.isEmpty { othersList(dashes: false) }
         }
     }
 
@@ -644,7 +711,8 @@ private struct ReminderPopupCardView: View {
     private func footer(now: Date) -> some View {
         let choices = ReminderPopupSnooze.choices(now: now)
         return HStack(spacing: 6) {
-            Text(ReminderPopupText.hint(card.kind, choices: choices))
+            Text(card.kind.isTimer ? ReminderPopupText.timerHint(card.kind, info: primary.timer)
+                                   : ReminderPopupText.hint(card.kind, choices: choices))
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.5))
                 .lineLimit(1)
@@ -665,6 +733,14 @@ private struct ReminderPopupCardView: View {
             case .todo:
                 PopupButton(title: tr("完成"), primary: true) { model.perform(.complete) }
                 PopupButton(title: tr("稍后 \(ReminderPopupSnooze.todoMinutes) 分钟")) { model.perform(.later) }
+            case .countdown:
+                PopupButton(title: tr("再来一次"), primary: true) { model.perform(.again) }
+                PopupButton(title: tr("关闭")) { model.perform(.stop) }
+            case .alarm:
+                PopupButton(title: tr("稍后 \(ReminderPopupSnooze.alarmMinutes) 分钟"), primary: true) {
+                    model.perform(.later)
+                }
+                PopupButton(title: tr("关闭")) { model.perform(.stop) }
             }
         }
         .disabled(model.finishing != nil)
@@ -677,6 +753,7 @@ private struct ReminderPopupCardView: View {
         case .reminders: Color(hex: "#FF8D28")
         case .water: Color(hex: "#5ac8fa")
         case .todo: Color(hex: "#6fdc9a")
+        case .countdown, .alarm: Color.timerOrange
         }
     }
 
@@ -688,6 +765,8 @@ private struct ReminderPopupCardView: View {
             return finishing ? "pet-panda-cheer" : "pet-panda-idle"
         case .todo:
             return finishing ? "pet-panda-cheer" : "pet-panda-idle"
+        case .countdown, .alarm:
+            return "pet-panda-idle"
         case .water:
             let character = WaterCharacter(rawValue: primary.water?.character ?? "") ?? .redPanda
             let met = primary.water.map { WaterIntake.isMet(total: $0.total, goal: $0.goal) } ?? false

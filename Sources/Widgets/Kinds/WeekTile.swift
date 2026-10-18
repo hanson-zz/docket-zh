@@ -4,9 +4,10 @@ import SwiftUI
 
 /// 这周哪天忙、哪天空：七列，周一开头，每天两格（上半格下午、下半格上午），
 /// 填多少是那半天被占了几小时（满格 4 小时），不是日程个数。标题写本周一共排了
-/// 几小时，右边绿色标出本周剩下工作日里最空的下午。指着某天，标题换成那天排了多久、
-/// 几点以后全空；点一下在日历里打开那天，可以直接新建。会议名不写在卡片上，那是
-/// 日历小组件的事。忙闲的算法在 `WeekBusy`。
+/// 几小时，右边绿色标出本周剩下工作日里最空的下午。指着某天，旁边浮出那天的详情：
+/// 排了多久、几点以后全空，和每个日程的标题、时间、地点、日历颜色，有会议链接的带
+/// 「加入会议」（见 `EventPeekWindow`）；点一下在日历里打开那天，可以直接新建。
+/// 会议名不写在卡片上，那是日历小组件的事。忙闲的算法在 `WeekBusy`。
 ///
 /// Reads EventKit the way the Calendar tile does: on the main actor, every
 /// `EKEvent` flattened into a value the moment the fetch returns, and never
@@ -65,35 +66,52 @@ struct WeekTile: View {
         let todayIndex = days.first(where: \.isToday)?.index
         let lit = tileHovered && !context.isPreview ? pointed.flatMap { days.indices.contains($0) ? days[$0] : nil } : nil
         return VStack(spacing: 3) {
-            header(days, free: free, todayIndex: todayIndex, lit: lit)
+            header(days, free: free, todayIndex: todayIndex)
             GeometryReader { proxy in
                 grid(days, free: free, size: proxy.size, lit: lit?.index)
             }
         }
+        // 整张（标题和七列）跟着指针：横向对上哪天就浮出哪天。不拦点击。
+        .overlay {
+            if !context.isPreview {
+                PointerPeekTracker { fraction, rect in
+                    let index = fraction.map { min(6, max(0, Int(Double($0.x) * 7))) }
+                    if index != pointed { pointed = index }
+                    peek(index.flatMap { days.indices.contains($0) ? days[$0] : nil }, rect: rect)
+                }
+            }
+        }
+        .onChange(of: tileHovered) { _, hovered in
+            if !hovered { EventPeekWindow.shared.leave(owner: instance.id) }
+        }
+        .onDisappear { EventPeekWindow.shared.dismiss(owner: instance.id) }
     }
 
-    private func header(_ days: [WeekDay], free: FreeAfternoon?, todayIndex: Int?, lit: WeekDay?) -> some View {
+    /// 指着的那天浮出详情；没指着时等一会儿收起。
+    private func peek(_ day: WeekDay?, rect: CGRect) {
+        guard let day, rect.width > 0 else {
+            EventPeekWindow.shared.leave(owner: instance.id)
+            return
+        }
+        let heading = "\(WeekAgenda.dayTitle(day)) \(tr("\(WeekAgenda.calendar.component(.day, from: day.date))日"))"
+        let content = EventPeek.day(heading: heading, subheading: dayLine(day), entries: day.entries.map(\.peekItem))
+        let focus = rect.minX + (CGFloat(day.index) + 0.5) / 7 * rect.width
+        EventPeekWindow.shared.show(content, key: "\(instance.id)#\(day.index)", owner: instance.id,
+                                    accent: accent, tile: rect, focusX: focus, edge: context.position)
+    }
+
+    private func header(_ days: [WeekDay], free: FreeAfternoon?, todayIndex: Int?) -> some View {
         HStack(spacing: 4) {
-            if let lit {
-                Text(verbatim: "\(WeekAgenda.dayTitle(lit)) \(tr("\(WeekAgenda.calendar.component(.day, from: lit.date))日"))")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.primary)
-                Text(dayLine(lit))
-                    .font(.system(size: 10))
-                    .foregroundStyle(WidgetStyle.secondary)
-                Spacer(minLength: 0)
-            } else {
-                Text(tr("本周已排 \(WeekBusy.hoursText(WeekBusy.totalHours(days))) 小时"))
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .monospacedDigit()
-                Spacer(minLength: 2)
-                if let free {
-                    Circle().fill(freeGreen).frame(width: 5, height: 5)
-                    Text(WeekBusy.freeTitle(free, todayIndex: todayIndex))
-                        .font(.system(size: 10.5, weight: .bold))
-                        .foregroundStyle(freeGreen)
-                }
+            Text(tr("本周已排 \(WeekBusy.hoursText(WeekBusy.totalHours(days))) 小时"))
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(WidgetStyle.primary)
+                .monospacedDigit()
+            Spacer(minLength: 2)
+            if let free {
+                Circle().fill(freeGreen).frame(width: 5, height: 5)
+                Text(WeekBusy.freeTitle(free, todayIndex: todayIndex))
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundStyle(freeGreen)
             }
         }
         .lineLimit(1)
@@ -130,15 +148,9 @@ struct WeekTile: View {
                                 .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
-                        .help(tooltip(day))
                         .accessibilityLabel(tr("在日历里打开\(WeekAgenda.dayTitle(day))，\(dayLine(day))"))
                     }
                 }
-                PointerFraction { fraction in
-                    let index = fraction.map { min(6, max(0, Int(Double($0.x) * 7))) }
-                    if index != pointed { pointed = index }
-                }
-                .frame(width: size.width, height: size.height)
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -184,15 +196,6 @@ struct WeekTile: View {
                 }
             }
         }
-    }
-
-    /// 悬停提示：那天的日程列表。卡片上不写会议名，想看就指着。
-    private func tooltip(_ day: WeekDay) -> String {
-        let lines = day.entries.prefix(6).map { entry in
-            entry.isAllDay ? "\(tr("全天"))  \(entry.title)" : "\(CalendarDay.clock(entry.start))  \(entry.title)"
-        }
-        let head = "\(WeekAgenda.dayTitle(day)) · \(dayLine(day))"
-        return ([head] + lines + (day.count > 6 ? [tr("还有 \(day.count - 6) 个")] : [])).joined(separator: "\n")
     }
 
     /// 本周哪几天算工作日：按法定假日和调休，平常是周一到周五。
@@ -320,6 +323,7 @@ enum WeekEvents {
     static func entry(_ event: EKEvent) -> WeekEntry? {
         guard let start = event.startDate else { return nil }
         let title = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let place = (event.location ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return WeekEntry(
             // Recurring instances share an identifier; the start tells them apart.
             id: "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)",
@@ -328,14 +332,13 @@ enum WeekEvents {
             end: event.endDate ?? start,
             isAllDay: event.isAllDay,
             calendar: event.calendar?.title ?? "",
-            colorHex: hex(event.calendar?.color))
+            colorHex: hex(event.calendar?.color),
+            location: MeetingLink.isOnlyLink(place) ? "" : place,
+            link: MeetingLink.find(url: event.url, location: place, notes: event.notes))
     }
 
     static func hex(_ color: NSColor?) -> String {
-        guard let rgb = color?.usingColorSpace(.sRGB) else { return "" }
-        func byte(_ value: CGFloat) -> Int { Int((min(max(value, 0), 1) * 255).rounded()) }
-        return String(format: "#%02X%02X%02X", byte(rgb.redComponent), byte(rgb.greenComponent),
-                      byte(rgb.blueComponent))
+        CalendarColorHex.hex(color)
     }
 
     /// A representative week for the library, which has no store behind it,

@@ -13,7 +13,8 @@ import SwiftUI
 /// 没做完的留给面板顶部问顺延还是放弃。
 ///
 /// 设了提醒时间的一行后面有个小闹钟和时刻；到点那一秒弹出卡片（到点弹出卡片
-/// ▸ 待办），在卡片上点完成时这里照样庆祝。弹出卡片关着时只响一声。
+/// ▸ 待办，由 `TimedAlertDriver` 在后台读存储看着），在卡片上点完成时这里照样
+/// 庆祝。弹出卡片关着时只响一声。
 struct TodoTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -100,25 +101,12 @@ struct TodoTile: View {
             }
             TodoLog.endCheer(instance)
         }
-        // 到点的提醒弹出卡片。`now` 每秒走一下，只看这一秒里到点的。
-        .onChange(of: context.now) { old, new in popIfDue(from: old, to: new) }
+        // 到点的提醒弹出卡片由 `TimedAlertDriver` 在后台读存储看着，扩展栏隐藏或
+        // 这张卡片不在当前布局也照样弹。
         // 在弹出卡片上勾掉了最后一项：卡片上的小熊猫也欢呼。
         .onChange(of: cheerDeadline) { old, new in
             if old == nil, new != nil, celebrateAt == nil, !context.isPreview { celebrateAt = .now }
         }
-    }
-
-    private func popIfDue(from old: Date, to new: Date) {
-        guard !context.isPreview else { return }
-        let all = items
-        let due = QuickTodo.dueReminders(all, after: old, upTo: new)
-        guard !due.isEmpty else { return }
-        guard ReminderPopupCenter.shared.shows(.todo) else {
-            ReminderSoundPlayer.shared.play(.todo, now: new)
-            return
-        }
-        ReminderPopupCenter.shared.post(due.compactMap { ReminderPopupAlerts.todo($0, in: all, widget: instance.id) },
-                                        now: new)
     }
 
     // MARK: 横排

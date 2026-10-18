@@ -42,8 +42,9 @@ public enum AlarmBook {
     public static let handledKey = "handled"
     public static let snoozesKey = "snoozes"
     public static let soundKey = "sound"
-    /// 稍后再响隔几分钟。
-    public static let snoozeMinutes = 10
+    /// 稍后再响隔几分钟：和 iPhone 的闹钟一样是 9 分钟，卡片、面板和到点弹出的
+    /// 卡片都用这一个数。
+    public static let snoozeMinutes = 9
     /// 一次响铃最多响多久，没人管就自己停（秒）。
     public static let ringWindow: TimeInterval = 10 * 60
     /// 提示音只在前两分钟里每 4 秒响一下，之后卡片仍显示“正在响”，不再出声。
@@ -155,7 +156,7 @@ public enum AlarmBook {
         storeSnoozes(snoozed, in: &config)
     }
 
-    /// 稍后 10 分钟：这次记成已处理，10 分钟后再响。
+    /// 稍后 9 分钟：这次记成已处理，9 分钟后再响。
     public static func snooze(_ id: String, in config: inout WidgetConfig, now: Date,
                               calendar: Calendar = .current) {
         markHandled(id, in: &config, now: now, calendar: calendar)

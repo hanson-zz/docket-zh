@@ -15,9 +15,14 @@ public struct WeekEntry: Identifiable, Hashable, Sendable {
     public var calendar: String
     /// The calendar's colour as `#RRGGBB`, or empty for the widget's accent.
     public var colorHex: String
+    /// 地点，悬停详情里写；只是一条会议链接时为空。
+    public var location: String
+    /// 会议链接，悬停详情里给「加入」按钮。
+    public var link: MeetingLink?
 
     public init(id: String, title: String, start: Date, end: Date,
-                isAllDay: Bool = false, calendar: String = "", colorHex: String = "") {
+                isAllDay: Bool = false, calendar: String = "", colorHex: String = "",
+                location: String = "", link: MeetingLink? = nil) {
         self.id = id
         self.title = title
         self.start = start
@@ -25,6 +30,14 @@ public struct WeekEntry: Identifiable, Hashable, Sendable {
         self.isAllDay = isAllDay
         self.calendar = calendar
         self.colorHex = colorHex
+        self.location = location
+        self.link = link
+    }
+
+    /// 悬停详情里的一条。
+    public var peekItem: EventPeekItem {
+        EventPeekItem(id: id, title: title, start: start, end: end, isAllDay: isAllDay,
+                      calendar: calendar, colorHex: colorHex, location: location, link: link)
     }
 }
 

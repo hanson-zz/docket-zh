@@ -1200,6 +1200,17 @@
         }
       }
     },
+    "%@ 时间到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is done"
+          }
+        }
+      }
+    },
     "%@ 暂无数据，可能是网络断开了。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6190,13 +6201,13 @@
         }
       }
     },
-    "从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起，指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。关掉喝水时改回系统通知。" : {
+    "从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起（闹钟的陪它响完两分钟），指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。扩展栏隐藏、卡片不在当前布局时也会弹。关掉喝水时改回系统通知；关掉倒计时或闹钟时照样到点响，只是不弹卡片。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A card slides out under the notch with quick actions. It tucks away after about 30 seconds, stays while the pointer is on it, closes with Esc, and clicking it opens that widget's panel. With Drink water off, water reminders go back to system notifications."
+            "value" : "A card slides out below the notch with quick actions. It tucks away after about 30 seconds (an alarm's card stays for its two minutes of ringing), stays while the pointer is on it, closes with Esc, and opens the widget's panel when clicked. It appears even when the shelf is hidden or the widget is on another layout. Turning water off goes back to system notifications; turning the countdown or alarm off keeps them ringing, just without the card."
           }
         }
       }
@@ -8126,6 +8137,28 @@
         }
       }
     },
+    "再来一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Again"
+          }
+        }
+      }
+    },
+    "再来一次：重新计 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Again: runs %@ once more"
+          }
+        }
+      }
+    },
     "再算一次这一条" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9889,6 +9922,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Centimeters"
+          }
+        }
+      }
+    },
+    "原定 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "set for %@"
           }
         }
       }
@@ -15127,6 +15171,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already bought or got a gift code? Enter it here"
+          }
+        }
+      }
+    },
+    "已结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ended"
           }
         }
       }
@@ -28409,6 +28464,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snooze %@ min"
+          }
+        }
+      }
+    },
+    "稍后再响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snoozed"
+          }
+        }
+      }
+    },
+    "稍后：%@ 分钟后再响一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze: rings again in %@ minutes"
           }
         }
       }

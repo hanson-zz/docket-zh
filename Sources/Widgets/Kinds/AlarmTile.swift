@@ -4,8 +4,9 @@ import SwiftUI
 ///
 /// - 平时：左边铃铛（点它开关下一个闹钟），下一个最醒目，“14:30 给小王回电话”，
 ///   下面橙色的“还有 2 小时”，再下面一行小字是后面的闹钟。
-/// - 正在响：卡片变橙，写着在响的那个，“稍后 10 分钟”和“关掉”直接在卡片上按，
-///   不用跳去别的 App。响铃两分钟内每 4 秒响一声，十分钟没人管就自己停。
+/// - 正在响：卡片变橙，写着在响的那个，“稍后 9 分钟”和“关掉”直接在卡片上按，
+///   不用跳去别的 App。响铃两分钟内每 4 秒响一声，十分钟没人管就自己停。提示音
+///   和到点弹出的卡片由 `TimedAlertDriver` 管，扩展栏隐藏、卡片不在当前布局也照样响。
 ///
 /// 卡片其余地方的点按留给码头（打开面板，面板里加、删、开关）。闹钟、已处理的
 /// 响铃和稍后再响都在小组件自己的配置里（`AlarmBook`），旧的单个闹钟自动读成一个。
@@ -41,17 +42,6 @@ struct AlarmTile: View {
                 }
             }
         }
-        .onChange(of: chimeBucket(ringing)) { _, bucket in
-            guard bucket != nil, instance.config.bool(AlarmBook.soundKey, default: true) else { return }
-            TimerChime.play(.alarm)
-        }
-    }
-
-    /// 响铃开始后的第几段（每 4 秒一段），段数变了就响一声。
-    private func chimeBucket(_ ringing: (item: AlarmItem, since: Date)?) -> String? {
-        guard let ringing, let bucket = AlarmBook.chimeBucket(since: context.now.timeIntervalSince(ringing.since))
-        else { return nil }
-        return "\(ringing.item.id)#\(bucket)"
     }
 
     // MARK: 平时（220 × 58）
