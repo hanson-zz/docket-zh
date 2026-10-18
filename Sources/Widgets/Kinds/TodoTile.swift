@@ -11,6 +11,9 @@ import SwiftUI
 ///
 /// 第二天第一次显示时先收拾一遍（`QuickTodo.applyRollover`）：昨天做完的收起，
 /// 没做完的留给面板顶部问顺延还是放弃。
+///
+/// 设了提醒时间的一行后面有个小闹钟和时刻；到点那一秒弹出卡片（到点弹出卡片
+/// ▸ 待办），在卡片上点完成时这里照样庆祝。弹出卡片关着时只响一声。
 struct TodoTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -25,7 +28,8 @@ struct TodoTile: View {
             let day = TodoDay.key(context.now)
             return [TodoItem(id: "s1", text: tr("回复产品评审"), done: true, today: true, doneDay: day),
                     TodoItem(id: "s2", text: tr("取快递"), today: true),
-                    TodoItem(id: "s3", text: tr("交电费"), today: true),
+                    TodoItem(id: "s3", text: tr("交电费"), today: true,
+                             remindAt: Calendar.current.date(bySettingHour: 16, minute: 0, second: 0, of: context.now)),
                     TodoItem(id: "s4", text: tr("订周五的会议室"))]
         }
         return QuickTodo.items(instance.config)
@@ -96,6 +100,25 @@ struct TodoTile: View {
             }
             TodoLog.endCheer(instance)
         }
+        // 到点的提醒弹出卡片。`now` 每秒走一下，只看这一秒里到点的。
+        .onChange(of: context.now) { old, new in popIfDue(from: old, to: new) }
+        // 在弹出卡片上勾掉了最后一项：卡片上的小熊猫也欢呼。
+        .onChange(of: cheerDeadline) { old, new in
+            if old == nil, new != nil, celebrateAt == nil, !context.isPreview { celebrateAt = .now }
+        }
+    }
+
+    private func popIfDue(from old: Date, to new: Date) {
+        guard !context.isPreview else { return }
+        let all = items
+        let due = QuickTodo.dueReminders(all, after: old, upTo: new)
+        guard !due.isEmpty else { return }
+        guard ReminderPopupCenter.shared.shows(.todo) else {
+            ReminderSoundPlayer.shared.play(.todo, now: new)
+            return
+        }
+        ReminderPopupCenter.shared.post(due.compactMap { ReminderPopupAlerts.todo($0, in: all, widget: instance.id) },
+                                        now: new)
     }
 
     // MARK: 横排
@@ -146,6 +169,20 @@ struct TodoTile: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)
+            if let at = item.remindAt, !item.done {
+                HStack(spacing: 2) {
+                    Image(systemName: "alarm")
+                        .font(.system(size: 8, weight: .semibold))
+                    Text(QuickTodo.reminderLabel(at, now: context.now))
+                        .font(WidgetStyle.caption(9))
+                        .monospacedDigit()
+                }
+                .foregroundStyle(WidgetStyle.secondary.opacity(QuickTodo.reminderPassed(item, now: context.now) ? 0.6 : 1))
+                .lineLimit(1)
+                .fixedSize()
+                .help(tr("\(QuickTodo.reminderLabel(at, now: context.now)) 提醒"))
+                .accessibilityLabel(tr("\(QuickTodo.reminderLabel(at, now: context.now)) 提醒"))
+            }
             if item.url != nil {
                 Button {
                     TodoLinkOpener.open(item)

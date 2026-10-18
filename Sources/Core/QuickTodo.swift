@@ -12,8 +12,9 @@ import Foundation
 /// because a tab cannot be typed into the single-line field that adds items.
 ///
 /// 今天三件事、拖进来的链接和当天清用到的几样东西跟在后面，每样一段
-/// `键=值`（`s=1` 标为今天、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天）。
-/// 一样都没有时写出来和原来一模一样。
+/// `键=值`（`s=1` 标为今天、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天、
+/// `r=` 提醒时间，1970 年起的秒数）。一样都没有时写出来和原来一模一样，旧数据
+/// 读出来就是没有提醒时间。
 public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     public var id: String
     public var text: String
@@ -26,10 +27,12 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     public var addedDay: String?
     /// 勾掉的那天，第二天打开时据此收起。
     public var doneDay: String?
+    /// 可选的提醒时间：到点弹出卡片（见 `QuickTodo.dueReminders`）。
+    public var remindAt: Date?
 
     public init(id: String = TodoItem.newID(), text: String, done: Bool = false,
                 today: Bool = false, link: String? = nil,
-                addedDay: String? = nil, doneDay: String? = nil) {
+                addedDay: String? = nil, doneDay: String? = nil, remindAt: Date? = nil) {
         self.id = id
         self.text = text
         self.done = done
@@ -37,6 +40,7 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         self.link = link
         self.addedDay = addedDay
         self.doneDay = doneDay
+        self.remindAt = remindAt.map { Date(timeIntervalSince1970: $0.timeIntervalSince1970.rounded(.down)) }
     }
 
     public static func newID() -> String {
@@ -55,6 +59,7 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         if let link, !link.isEmpty { fields.append("u=\(link)") }
         if let addedDay { fields.append("a=\(addedDay)") }
         if let doneDay { fields.append("d=\(doneDay)") }
+        if let remindAt { fields.append("r=\(Int(remindAt.timeIntervalSince1970))") }
         return fields.joined(separator: "\t")
     }
 
@@ -71,11 +76,15 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             var link: String?
             var added: String?
             var finished: String?
+            var remind: Date?
             for field in parts.dropFirst(3) {
                 if field == "s=1" { today = true }
                 else if field.hasPrefix("u=") { link = String(field.dropFirst(2)) }
                 else if field.hasPrefix("a="), TodoDay.isKey(String(field.dropFirst(2))) { added = String(field.dropFirst(2)) }
                 else if field.hasPrefix("d="), TodoDay.isKey(String(field.dropFirst(2))) { finished = String(field.dropFirst(2)) }
+                else if field.hasPrefix("r="), let seconds = Int(field.dropFirst(2)), seconds > 0 {
+                    remind = Date(timeIntervalSince1970: TimeInterval(seconds))
+                }
                 else { words.append(field) }
             }
             let text = words.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -83,7 +92,7 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             let id = parts[0]
             self.init(id: id.isEmpty ? fallbackID : id, text: text, done: parts[1] == "1",
                       today: today, link: link?.isEmpty == true ? nil : link,
-                      addedDay: added, doneDay: finished)
+                      addedDay: added, doneDay: finished, remindAt: remind)
         } else {
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }

@@ -495,6 +495,11 @@ struct DockShelfView: View {
         .onReceive(NotificationCenter.default.publisher(for: AIPanelState.openRequest)) { note in
             openAIPanel(note, solved)
         }
+        // 到点提醒弹出卡片上点了卡片主体：打开那张小组件的面板，从它在扩展栏上
+        // 的位置长出来。
+        .onReceive(NotificationCenter.default.publisher(for: ReminderPopupCenter.openPanelRequest)) { note in
+            openWidgetPanel(note, solved)
+        }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
         .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
         .onChange(of: WidgetConditionMonitor.conditionalKinds(in: app.customProfile?.items ?? []),
@@ -1059,6 +1064,35 @@ struct DockShelfView: View {
             return
         }
         open(entry)
+    }
+
+    /// 按小组件 id 打开它的面板，锚点是那张卡片在扩展栏上的外沿正中（和悬停时
+    /// 一样算），不靠指针在不在上面。几条扩展栏都有这张卡片时只开一次。
+    private func openWidgetPanel(_ note: Notification, _ solved: Solved) {
+        guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
+              let window = shelfWindow, window.isVisible,
+              let index = solved.slots.indices.first(where: { index in
+                  if case .item(let entry) = solved.slots[index] { return entry.item.widget?.id == id }
+                  return false
+              }),
+              case .item(let entry) = solved.slots[index], let widget = entry.item.widget,
+              WidgetDetail.exists(for: widget.kind),
+              WidgetDetailWindow.shared.openWidgetID != id else { return }
+        let along = plateCentre(of: index, solved) + shelfInset(solved)
+        let cross: CGFloat = switch position {
+        case .bottom, .right: crossHeadroom
+        case .top, .left: solved.restCross
+        }
+        let frame = window.frame
+        let anchor: CGPoint = switch position {
+        case .bottom, .top: CGPoint(x: frame.minX + along, y: frame.maxY - cross)
+        case .left, .right: CGPoint(x: frame.minX + cross, y: frame.maxY - along)
+        }
+        TooltipWindow.shared.hide()
+        GroupWindow.shared.close()
+        WidgetDetailWindow.shared.toggle(widget,
+                                         context: WidgetContext(position: position, now: app.now),
+                                         anchor: anchor, edge: position, host: frame)
     }
 
     /// Apple's Dock bounces until the app checks in: the same height every

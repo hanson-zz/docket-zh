@@ -9,6 +9,10 @@ import SwiftUI
 /// be undone for a few seconds, the last five steps one at a time, each put
 /// back where it was. Checking the last open task brings out the red panda.
 ///
+/// 每一条可以设一个提醒时间（行尾的小闹钟或右键「提醒我」：1 小时后、今晚 20:00、
+/// 明天 9:00 或自定义），到点从刘海下方弹出卡片。顺延到今天时，定在昨天以前的
+/// 提醒挪到今天同一时刻，那个时刻已经过了就清掉。
+///
 /// 星标或右键把最多三条标为“今天三件事”，卡片上优先画它们。右键还能打开拖进来
 /// 的链接或文件、转成系统提醒事项（这时才请求权限）。新的一天第一次打开时，
 /// 昨天没做完的会在顶部问一句顺延到今天还是放弃。文字、链接、文件也可以直接
@@ -34,6 +38,9 @@ struct TodoDetail: View {
     /// 转成提醒事项没成功时的一句话。
     @State private var notice: String?
     @State private var noticeNeedsSettings = false
+    /// 正在自定义提醒时间的那一条。
+    @State private var reminding: String?
+    @State private var remindDate = Date()
 
     private enum Field: Hashable {
         case add
@@ -208,6 +215,9 @@ struct TodoDetail: View {
             if converting == item.id {
                 convertPicker(item)
             }
+            if reminding == item.id {
+                reminderPicker(item)
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -266,6 +276,8 @@ struct TodoDetail: View {
                 .accessibilityLabel(tr("打开 \(item.text)"))
             }
 
+            reminderButton(item)
+
             starButton(item, canMark: canMark)
 
             Button {
@@ -321,6 +333,8 @@ struct TodoDetail: View {
         if item.url != nil {
             Button(item.url?.isFileURL == true ? tr("打开文件") : tr("打开链接")) { TodoLinkOpener.open(item) }
         }
+        Menu("提醒我") { reminderItems(item) }
+            .disabled(context.isPreview || item.done)
         Divider()
         Menu("转成提醒事项") {
             Button("今天") { convert(item, due: Date()) }
@@ -336,6 +350,80 @@ struct TodoDetail: View {
         Divider()
         Button("删除", role: .destructive) { delete(item, animated: true) }
             .disabled(context.isPreview)
+    }
+
+    // MARK: 提醒时间
+
+    /// 行尾的小闹钟：没设时是空心的，设了时带上时刻；点开是快捷选项。
+    private func reminderButton(_ item: TodoItem) -> some View {
+        Menu {
+            reminderItems(item)
+        } label: {
+            HStack(spacing: 3) {
+                Image(systemName: item.remindAt == nil ? "alarm" : "alarm.fill")
+                if let at = item.remindAt {
+                    Text(QuickTodo.reminderLabel(at, now: context.now))
+                        .monospacedDigit()
+                }
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(item.remindAt == nil ? .white.opacity(0.45) : accent)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(context.isPreview || item.done)
+        .help(item.remindAt.map { tr("\(QuickTodo.reminderLabel($0, now: context.now)) 提醒，点按修改") } ?? tr("设提醒时间，到点弹出卡片"))
+        .accessibilityLabel(tr("提醒时间"))
+    }
+
+    @ViewBuilder
+    private func reminderItems(_ item: TodoItem) -> some View {
+        let now = Date()
+        ForEach(TodoReminderChoice.available(now: now), id: \.self) { choice in
+            Button(choice.title) { setReminder(item, at: choice.date(now: Date())) }
+        }
+        Button("自定义…") {
+            remindDate = item.remindAt ?? TodoReminderChoice.inOneHour.date(now: Date()) ?? Date()
+            withAnimation(listAnimation) { reminding = item.id }
+        }
+        if item.remindAt != nil {
+            Divider()
+            Button("清除提醒") { setReminder(item, at: nil) }
+        }
+    }
+
+    private func reminderPicker(_ item: TodoItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "alarm")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.6))
+            Text("提醒时间")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+            DatePicker("", selection: $remindDate, displayedComponents: [.date, .hourAndMinute])
+                .labelsHidden()
+                .datePickerStyle(.field)
+                .controlSize(.small)
+            Spacer(minLength: 0)
+            Button("取消") { withAnimation(listAnimation) { reminding = nil } }
+                .buttonStyle(.plain)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(.white.opacity(0.6))
+            Button("设定") { setReminder(item, at: remindDate) }
+                .buttonStyle(.plain)
+                .font(WidgetStyle.label(11))
+                .foregroundStyle(.white)
+        }
+        .padding(.leading, 24)
+    }
+
+    private func setReminder(_ item: TodoItem, at date: Date?) {
+        guard !context.isPreview else { return }
+        withAnimation(listAnimation) {
+            reminding = nil
+            TodoLog.change(instance) { QuickTodo.settingReminder(item.id, at: date, in: $0) }
+        }
     }
 
     // MARK: 转成提醒事项
@@ -427,7 +515,7 @@ struct TodoDetail: View {
                 Button {
                     let day = today
                     withAnimation(listAnimation) {
-                        TodoLog.change(instance) { QuickTodo.carryingOver($0, today: day) }
+                        TodoLog.change(instance) { QuickTodo.carryingOver($0, today: day, now: .now) }
                     }
                 } label: {
                     Text("顺延到今天")

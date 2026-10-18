@@ -48,6 +48,9 @@ public final class AppState {
             if state.widgetSounds != oldValue.widgetSounds || state.reminderSounds != oldValue.reminderSounds {
                 ReminderSoundPlayer.shared.configure(master: state.widgetSounds, reminders: state.reminderSounds)
             }
+            if state.reminderPopups != oldValue.reminderPopups {
+                ReminderPopupCenter.shared.configure(state.reminderPopups)
+            }
             if state.aiNotch != oldValue.aiNotch {
                 onAINotchChanged?(state.aiNotch)
             }
@@ -129,6 +132,7 @@ public final class AppState {
     private func startTicking() {
         // 两个 init 都从这里过：提醒音效从一开始就用存下来的设置。
         ReminderSoundPlayer.shared.configure(master: state.widgetSounds, reminders: state.reminderSounds)
+        ReminderPopupCenter.shared.configure(state.reminderPopups)
         tickTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))

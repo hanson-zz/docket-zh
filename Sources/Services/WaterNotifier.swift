@@ -10,6 +10,11 @@ import Foundation
 /// skips the hours outside the window, the rest of a day whose goal is met,
 /// and anything sooner than an interval after the last drink. Permission is
 /// asked the first time a reminder is scheduled, not at launch.
+///
+/// 设置里喝水的「到点弹出卡片」开着时（默认）不排系统通知，改为应用里的计时器
+/// 到点弹出码头自己的卡片（`ReminderPopupCenter`），同一次提醒不会出现两回；
+/// 码头没在运行时也就不提醒。关掉时照旧排系统通知。合盖睡眠醒来时晚了太久的
+/// 那一次不补弹，下一次照常。
 @MainActor
 final class WaterNotifier {
     static let shared = WaterNotifier()
@@ -17,6 +22,11 @@ final class WaterNotifier {
     private var scheduled: [UUID: Date] = [:]
     private var asked = false
     private let presenter = BannerPresenter()
+    /// 弹卡片时用的计时器，每个小组件一个。
+    private var timers: [UUID: Timer] = [:]
+    private var armed: [UUID: Date] = [:]
+    /// 每个小组件最近一次交来的下一次提醒，设置切换时按它重排。
+    private var latest: [UUID: (instance: WidgetInstance, next: Date?)] = [:]
 
     private init() {}
 
@@ -24,7 +34,17 @@ final class WaterNotifier {
 
     /// `next` nil (reminders off) withdraws the pending one.
     func update(_ instance: WidgetInstance, next: Date?) {
+        latest[instance.id] = (instance, next)
         let id = Self.identifier(instance.id)
+        if ReminderPopupCenter.shared.shows(.water) {
+            // 弹卡片：撤掉排着的系统通知，改由应用里的计时器到点弹出。
+            if scheduled.removeValue(forKey: instance.id) != nil {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+            }
+            arm(instance.id, at: next)
+            return
+        }
+        disarm(instance.id)
         guard let next else {
             if scheduled.removeValue(forKey: instance.id) != nil {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
@@ -41,6 +61,47 @@ final class WaterNotifier {
         let message = WaterReminder.message(at: next, total: total, goal: today.goal,
                                             ounces: WaterIntake.usesOunces(instance.config))
         Task { await schedule(id: id, at: next, title: message.title, body: message.body) }
+    }
+
+    /// 「到点弹出卡片」的喝水开关变了：每个小组件按最近一次的下一次提醒重排。
+    func popupSettingChanged() {
+        for (_, value) in latest {
+            update(value.instance, next: value.next)
+        }
+    }
+
+    // MARK: 弹卡片
+
+    private func arm(_ widget: UUID, at date: Date?) {
+        // 下一次提醒往后挪的那一刻，往往就是上一次刚到点的那一秒（卡片每秒重算
+        // 下一次）：还没来得及响的那一次先弹出来，不让它被新的顶掉。
+        if let pending = armed[widget], pending != date, pending <= Date.now.addingTimeInterval(0.5) {
+            fire(widget, due: pending)
+        }
+        guard let date else { return disarm(widget) }
+        if let pending = armed[widget], abs(pending.timeIntervalSince(date)) < 1 { return }
+        timers[widget]?.invalidate()
+        armed[widget] = date
+        let timer = Timer(fire: date, interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.fire(widget, due: date) }
+        }
+        timer.tolerance = 1
+        RunLoop.main.add(timer, forMode: .common)
+        timers[widget] = timer
+    }
+
+    private func disarm(_ widget: UUID) {
+        timers.removeValue(forKey: widget)?.invalidate()
+        armed[widget] = nil
+    }
+
+    private func fire(_ widget: UUID, due: Date) {
+        guard armed[widget] == due else { return }
+        disarm(widget)
+        let now = Date.now
+        guard ReminderPopupDecision.isFresh(due: due, now: now), ReminderPopupCenter.shared.shows(.water),
+              let instance = WidgetWriter.current(widget) ?? latest[widget]?.instance else { return }
+        ReminderPopupCenter.shared.post([ReminderPopupAlerts.water(instance, due: due, now: now)], now: now)
     }
 
     private func schedule(id: String, at date: Date, title: String, body: String) async {

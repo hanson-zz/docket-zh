@@ -845,6 +845,19 @@ struct SettingsView: View {
                     }
                 }
             }
+            // 到点弹出卡片不跟音效开关走：音效全关了也照样弹，只是不响。
+            VStack(alignment: .leading, spacing: 6) {
+                subtitled(tr("到点弹出卡片"),
+                          tr("从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起，指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。关掉喝水时改回系统通知。"))
+                HStack(spacing: 16) {
+                    ForEach(ReminderSoundKind.allCases, id: \.self) { kind in
+                        Toggle(kind.title, isOn: Binding(
+                            get: { state.reminderPopups.enabled(kind) },
+                            set: { state.reminderPopups.setEnabled($0, for: kind) }))
+                            .toggleStyle(.checkbox)
+                    }
+                }
+            }
         } header: {
             Text("音效")
         }
@@ -870,7 +883,7 @@ struct SettingsView: View {
                 }
             }
             if kind == .todo {
-                Text(tr("快速待办还没有到点时间，这个音色留给以后的待办提醒；现在不会响。"))
+                Text(tr("在快速待办面板里给一条设上提醒时间，到点就用这个音色。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
