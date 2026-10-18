@@ -304,12 +304,12 @@ final class LunarCardTests: XCTestCase {
 
     func testLeadDaysSetting() {
         XCTAssertEqual(LunarCard.leadDays(WidgetConfig()), 7)
-        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["leadDays": .string("14")])), 14)
-        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["leadDays": .string("3")])), 3)
-        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["leadDays": .string("5")])), 7)
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.lunar), ["showTerm", "workAlert", "leadDays"])
-        XCTAssertFalse(WidgetCatalog.applies("leadDays", to: WidgetConfig(["workAlert": .bool(false)]), kind: .lunar))
-        XCTAssertTrue(WidgetCatalog.applies("leadDays", to: WidgetConfig(), kind: .lunar))
+        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("14")])), 14)
+        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("3")])), 3)
+        XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("5")])), 7)
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.lunar), ["showTerm", "workAlert", "workAlertLead"])
+        XCTAssertFalse(WidgetCatalog.applies("workAlertLead", to: WidgetConfig(["workAlert": .bool(false)]), kind: .lunar))
+        XCTAssertTrue(WidgetCatalog.applies("workAlertLead", to: WidgetConfig(), kind: .lunar))
     }
 
     func testMakeupWorkdayComesFirstWithinTheLead() {

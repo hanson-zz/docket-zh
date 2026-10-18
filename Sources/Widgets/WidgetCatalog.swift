@@ -575,10 +575,6 @@ public enum WidgetCatalog {
         return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
     }
 
-    static let keyOrder: [WidgetKind: [String]] = [
-        .lunar: ["showTerm", "workAlert", LunarCard.leadKey],
-    ]
-
     /// Whether an option means anything given the rest of the configuration.
     ///
     /// Some options only apply to one layout. System Activity's chart is

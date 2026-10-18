@@ -80,7 +80,7 @@ public struct MeetingLink: Equatable, Sendable {
             // Zoom 官网首页、下载页不算，会议链接都带 /j/、/s/、/my/ 或 /wc/。
             if provider == .zoom {
                 let path = url.path.lowercased()
-                guard ["/j/", "/s/", "/my/", "/wc/", "/w/"].contains(where: path.hasPrefix) else { return nil }
+                guard ["/j/", "/s/", "/my/", "/wc/", "/w/"].contains(where: { path.hasPrefix($0) }) else { return nil }
             }
             // Teams 的会议链接是 /l/meetup-join/ 或 /meet/。
             if provider == .teams {

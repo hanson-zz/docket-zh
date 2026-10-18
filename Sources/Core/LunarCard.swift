@@ -11,7 +11,7 @@ import Foundation
 /// 这里不写任何日期。
 public enum LunarCard {
     /// 提醒提前几天：可选 3、7、14，默认 7。
-    public static let leadKey = "leadDays"
+    public static let leadKey = "workAlertLead"
     public static let leadChoices = [3, 7, 14]
     public static let defaultLead = 7
 
