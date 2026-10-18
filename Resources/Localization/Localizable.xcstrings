@@ -1101,6 +1101,17 @@
         }
       }
     },
+    "%@ 年 %@ 月的竹篮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/%@ basket"
+          }
+        }
+      }
+    },
     "%@ 年前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3693,6 +3704,17 @@
         }
       }
     },
+    "三项全部达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All three met"
+          }
+        }
+      }
+    },
     "三项全部达标是%@（%@），" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3700,6 +3722,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All three is a %@ (%@), "
+          }
+        }
+      }
+    },
+    "三项达标两项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two of three met"
           }
         }
       }
@@ -5475,6 +5508,17 @@
         }
       }
     },
+    "今天先喝杯水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a glass of water first"
+          }
+        }
+      }
+    },
     "今天全部完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5493,6 +5537,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "due today"
+          }
+        }
+      }
+    },
+    "今天喝杯水，第一片就来了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a glass of water today and the first leaf arrives"
           }
         }
       }
@@ -10080,6 +10135,28 @@
         }
       }
     },
+    "只开了一项：达标算铜叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only one on: met is bronze"
+          }
+        }
+      }
+    },
+    "只开了两项：都达标也是金叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only two on: both met is gold too"
+          }
+        }
+      }
+    },
     "只打开 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10175,6 +10252,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only remembered, the files stay put"
+          }
+        }
+      }
+    },
+    "只达标一项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only one met"
           }
         }
       }
@@ -14794,6 +14882,28 @@
         }
       }
     },
+    "已过 %@ 天 · 收到 %@ 片竹叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days so far · %@ leaves"
+          }
+        }
+      }
+    },
+    "已过 %@ 天 · 收到 0 片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days so far · no leaves yet"
+          }
+        }
+      }
+    },
     "已过期" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18727,6 +18837,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Got %@"
+          }
+        }
+      }
+    },
+    "收到第一片竹叶后就能分享" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can share once the first leaf arrives"
           }
         }
       }
@@ -23596,6 +23717,17 @@
         }
       }
     },
+    "每天怎么拿竹叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How to earn a leaf each day"
+          }
+        }
+      }
+    },
     "每天的收入" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26877,6 +27009,17 @@
         }
       }
     },
+    "看喝水、习惯、专注达标几项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By how many of water, habits and focus you meet"
+          }
+        }
+      }
+    },
     "看牙医" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28237,6 +28380,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Campfire"
+          }
+        }
+      }
+    },
+    "篮里 %@ 片竹叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ leaves in the basket"
           }
         }
       }
@@ -32380,6 +32534,17 @@
         }
       }
     },
+    "还是空篮子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still an empty basket"
+          }
+        }
+      }
+    },
     "还有" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32805,6 +32970,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This Month"
+          }
+        }
+      }
+    },
+    "这个月没有收到竹叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No leaves this month"
           }
         }
       }

@@ -243,23 +243,30 @@ struct PerfectDayDetail: View {
     // MARK: Sharing
 
     private func shareRow(_ all: [PerfectDayRecord], month: Date) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        // 空月（到今天一片都没有）不分享：按钮置灰，写上先去拿第一片。
+        let blocked = PerfectDay.shareBlockedHint(all, month: month, today: context.now)
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Button {
                     share(all, month: month)
                 } label: {
-                    Label(monthsBack == 0 ? tr("分享本月竹篮") : tr("分享这个月的竹篮"), systemImage: "square.and.arrow.up")
+                    if let blocked {
+                        Label(blocked, systemImage: monthsBack == 0 ? "drop" : "square.and.arrow.up")
+                    } else {
+                        Label(monthsBack == 0 ? tr("分享本月竹篮") : tr("分享这个月的竹篮"), systemImage: "square.and.arrow.up")
+                    }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: PerfectDay.bambooHex))
+                .tint(blocked == nil ? Color(hex: PerfectDay.bambooHex) : .gray)
                 .background(ShareAnchor(box: anchor))
+                .help(blocked == nil ? "" : tr("收到第一片竹叶后就能分享"))
                 Button("存储到桌面") { saveToDesktop(all, month: month) }
                     .buttonStyle(.bordered)
                 Button("拷贝图片") { copy(all, month: month) }
                     .buttonStyle(.bordered)
             }
             .controlSize(.small)
-            .disabled(context.isPreview)
+            .disabled(context.isPreview || blocked != nil)
             if let notice {
                 Text(notice)
                     .font(.system(size: 10))
@@ -368,8 +375,9 @@ struct PandaWithLeaf: View {
     }
 }
 
-/// The picture shared from the panel: the basket, the three counts, the
-/// calendar, 码头's name and the month, on a bamboo grove's dark green.
+/// The picture shared from the panel: the basket, the counts (or, for an
+/// empty month, how a leaf is earned), one status line, the calendar, 码头's
+/// name and the month, on a bamboo grove's dark green.
 struct PerfectDayShareCard: View {
     var records: [PerfectDayRecord]
     var month: Date
@@ -379,52 +387,53 @@ struct PerfectDayShareCard: View {
     var body: some View {
         let counts = PerfectDay.counts(records, month: month)
         let leaves = PerfectDay.leaves(records, month: month)
+        let got = PerfectDay.leavesSoFar(records, month: month, today: today)
+        let isEmpty = got == 0
         VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .center) {
+            HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("码头 · 小熊猫的竹篮")
                         .font(.system(size: 13, weight: .semibold))
                         .tracking(1)
                         .foregroundStyle(.white.opacity(0.7))
-                    Text(tr("\(PerfectDay.monthTitle(month))的竹篮"))
+                    Text(PerfectDay.shareTitle(month))
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                Spacer()
-                PandaWithLeaf(tier: .gold, size: 60)
+                .padding(.top, 4)
+                Spacer(minLength: 8)
+                panda(cheer: !isEmpty)
+                    .padding(.top, -8)
+                    .padding(.trailing, -4)
             }
-            HStack(alignment: .center, spacing: 22) {
-                BambooBasket(leaves: leaves, width: 200)
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(PerfectDayTier.allCases.reversed()) { tier in
-                        HStack(spacing: 10) {
-                            LeafGlyph(tier: tier, size: 34)
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(tier.title)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                Text(tier.leafName)
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.55))
-                            }
-                            Spacer(minLength: 8)
-                            Text("×\(counts[tier] ?? 0)")
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .monospacedDigit()
-                                .foregroundStyle(Color(hex: tier.hexes.light))
-                        }
-                    }
-                    Text(tr("小熊猫这个月收到 \(leaves.count) 片竹叶"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+            HStack(alignment: .center, spacing: 26) {
+                VStack(spacing: 8) {
+                    BambooBasket(leaves: isEmpty ? [] : leaves, width: 196, emptyText: nil, heapAtRim: true)
+                    Text(PerfectDay.basketCaption(leaves: got))
+                        .font(.system(size: isEmpty ? 15 : 14, weight: isEmpty ? .semibold : .medium))
+                        .foregroundStyle(.white.opacity(isEmpty ? 0.78 : 0.75))
+                        .lineLimit(1)
+                        .fixedSize()
                 }
-                .frame(maxWidth: .infinity)
+                .padding(.leading, 6)
+                if isEmpty { rules } else { tally(counts) }
             }
-            PerfectFrequencyStrip(days: PerfectDay.monthDays(records, month: month, today: today), height: 18)
+            VStack(alignment: .leading, spacing: 12) {
+                Rectangle()
+                    .fill(.white.opacity(0.08))
+                    .frame(height: 1)
+                Text(PerfectDay.shareStatus(records, month: month, today: today))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
             PerfectCalendarGrid(weeks: PerfectDay.monthGrid(records, month: month, today: today,
                                                             firstWeekday: firstWeekday),
                                 weekdays: PerfectDay.weekdaySymbols(firstWeekday: firstWeekday),
-                                leafSize: 26)
+                                leafSize: 22, shareStyle: true)
             HStack {
                 Text("喝水 · 习惯 · 专注，每天给小熊猫一片竹叶")
                 Spacer()
@@ -437,17 +446,98 @@ struct PerfectDayShareCard: View {
         .padding(28)
         .frame(width: 520)
         .background {
-            ZStack(alignment: .bottomTrailing) {
+            ZStack(alignment: .topTrailing) {
                 LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
                                startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [Color(hex: "#C0502A").opacity(0.22), .clear],
                                center: .topTrailing, startRadius: 0, endRadius: 360)
-                BambooStalks(height: 220)
-                    .opacity(0.18)
-                    .padding(.trailing, 18)
+                // 竹子贴着右上角页边，在小熊猫后面，止于标题区，不进日历。
+                BambooStalks(height: 118)
+                    .opacity(0.16)
+                    .padding(.trailing, 10)
             }
         }
         .environment(\.colorScheme, .dark)
+    }
+
+    /// 右上角的小熊猫：空月是 idle 在等，有收获是 cheer。
+    @ViewBuilder
+    private func panda(cheer: Bool) -> some View {
+        if let image = PetArt.image(.redPanda, cheer ? .cheer : .idle) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(height: 88)
+                .accessibilityHidden(true)
+        } else {
+            LeafGlyph(tier: cheer ? .gold : nil, size: 60, emptyInk: .white)
+        }
+    }
+
+    /// 有收获：三档各几片。
+    private func tally(_ counts: [PerfectDayTier: Int]) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            ForEach(PerfectDayTier.allCases.reversed()) { tier in
+                HStack(spacing: 10) {
+                    LeafGlyph(tier: tier, size: 32)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(tier.title)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text(tier.leafName)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                    Spacer(minLength: 8)
+                    Text("×\(counts[tier] ?? 0)")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Color(hex: tier.hexes.light))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// 空月：每天怎么拿竹叶，和 `PerfectDay.tier` 的规则一致。
+    private var rules: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("每天怎么拿竹叶")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white.opacity(0.95))
+            Text("看喝水、习惯、专注达标几项")
+                .font(.system(size: 10.5))
+                .foregroundStyle(.white.opacity(0.55))
+                .padding(.top, 3)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(PerfectDay.shareRuleLines) { line in
+                    HStack(spacing: 8) {
+                        LeafGlyph(tier: line.tier, size: 28)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(line.condition)
+                                .font(.system(size: 13.5, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.95))
+                            Text(line.tier.leafName)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Color(hex: line.tier.hexes.light).opacity(0.9))
+                        }
+                    }
+                }
+            }
+            .padding(.top, 14)
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(PerfectDay.shareRuleNotes, id: \.self) { note in
+                    Text(note)
+                }
+            }
+            .font(.system(size: 10.5))
+            .foregroundStyle(.white.opacity(0.55))
+            .padding(.top, 12)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

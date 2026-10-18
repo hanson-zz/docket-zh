@@ -93,7 +93,10 @@ struct LeafGlyph: View {
 struct BambooBasket: View {
     var leaves: [PerfectDayTier]
     var width: CGFloat = 170
-    var emptyText = tr("这个月的竹篮还空着")
+    /// 空篮时写在篮身中间的话；nil 不写（分享图把它挪到篮子下面）。
+    var emptyText: String? = tr("这个月的竹篮还空着")
+    /// 叶子堆在篮口、从篮沿上探出来（分享图）；false 时照旧堆在篮里、隔着藤条看。
+    var heapAtRim = false
 
     private var height: CGFloat { width * 1.05 }
     private var rimY: CGFloat { height * 0.34 }
@@ -108,6 +111,18 @@ struct BambooBasket: View {
         ZStack(alignment: .topLeading) {
             handle
 
+            // 分享图：叶子插在篮口，下半截被篮身和篮沿挡住。
+            if heapAtRim {
+                ZStack(alignment: .topLeading) {
+                    ForEach(Array(rimPlacements.enumerated()), id: \.offset) { _, place in
+                        LeafGlyph(tier: place.tier, size: place.size)
+                            .rotationEffect(.degrees(place.tilt))
+                            .position(place.center)
+                    }
+                }
+                .frame(width: width, height: height, alignment: .topLeading)
+            }
+
             // The inside of the basket, dark, so leaves stand out.
             shape
                 .fill(LinearGradient(colors: [Color(hex: "#3B2A1A").opacity(0.85), Color(hex: "#24190F").opacity(0.9)],
@@ -116,7 +131,7 @@ struct BambooBasket: View {
 
             // The leaves, clipped to the basket.
             ZStack(alignment: .topLeading) {
-                ForEach(Array(placements.enumerated()), id: \.offset) { _, place in
+                ForEach(Array((heapAtRim ? [] : placements).enumerated()), id: \.offset) { _, place in
                     LeafGlyph(tier: place.tier, size: place.size)
                         .rotationEffect(.degrees(place.tilt))
                         .position(place.center)
@@ -150,7 +165,7 @@ struct BambooBasket: View {
                 .frame(width: width * 0.94, height: width * 0.07)
                 .offset(x: width * 0.03, y: rimY - width * 0.035)
 
-            if leaves.isEmpty {
+            if leaves.isEmpty, let emptyText {
                 Text(emptyText)
                     .font(.system(size: max(10, width * 0.068)))
                     .foregroundStyle(.white.opacity(0.75))
@@ -161,7 +176,8 @@ struct BambooBasket: View {
         }
         .frame(width: width, height: height, alignment: .topLeading)
         .accessibilityElement()
-        .accessibilityLabel(leaves.isEmpty ? emptyText : tr("竹篮里有 \(leaves.count) 片竹叶"))
+        .accessibilityLabel(leaves.isEmpty ? (emptyText ?? tr("这个月的竹篮还空着"))
+                                           : tr("竹篮里有 \(leaves.count) 片竹叶"))
     }
 
     private var handle: some View {
@@ -227,6 +243,22 @@ struct BambooBasket: View {
         var center: CGPoint
         var size: CGFloat
         var tilt: Double
+    }
+
+    /// 篮口一排扇形散开的叶子：左右各斜向外，中间的探得高些，单双交错一高一低。
+    /// 叶子本身画的时候已经右倾 36 度，这里先扶正再按位置转。
+    private var rimPlacements: [Placement] {
+        guard !leaves.isEmpty else { return [] }
+        let k = width / 196
+        let n = leaves.count
+        let size = 34 * k * (n > 20 ? 0.85 : 1)
+        return leaves.enumerated().map { index, tier in
+            let t = (CGFloat(index) + 0.5) / CGFloat(n)
+            let x = width * 22 / 196 + (width - width * 44 / 196) * t
+            let lift = (22 + (index % 2 == 0 ? 10 : 0) + 12 * (1 - abs(t - 0.5) * 2)) * k
+            return Placement(tier: tier, center: CGPoint(x: x, y: rimY - lift + 10 * k),
+                             size: size, tilt: Double(-40 + 80 * t) - 36)
+        }
     }
 
     /// Half the basket's width at height `y`: wide at the rim, narrower at the base.
@@ -495,13 +527,19 @@ struct PerfectCalendarGrid: View {
     var weeks: [[PerfectDayCell?]]
     var weekdays: [String]
     var leafSize: CGFloat = 22
+    /// 分享图的画法：还没到的日子只写日期不画叶，今天没收到时画一片淡虚线叶，
+    /// 字号略大。面板用默认的 false，保持原样。
+    var shareStyle = false
+
+    private var dateSize: CGFloat { shareStyle ? 11.5 : 10 }
+    private var todayHex: String { shareStyle ? "#3FA34D" : PerfectDay.bambooHex }
 
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 0) {
                 ForEach(Array(weekdays.enumerated()), id: \.offset) { _, name in
                     Text(name)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: shareStyle ? 11 : 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                         .frame(maxWidth: .infinity)
                 }
@@ -517,20 +555,38 @@ struct PerfectCalendarGrid: View {
         }
     }
 
+    private func dateOpacity(_ day: PerfectDayCell) -> Double {
+        if shareStyle { return day.isFuture ? 0.32 : 0.85 }
+        return day.isFuture ? 0.3 : 0.75
+    }
+
     @ViewBuilder
     private func cell(_ day: PerfectDayCell?) -> some View {
         if let day {
             VStack(spacing: 2) {
                 Text("\(day.day)")
-                    .font(.system(size: 10, weight: day.isToday ? .bold : .regular))
+                    .font(.system(size: dateSize, weight: day.isToday ? .bold : (shareStyle ? .semibold : .regular)))
                     .monospacedDigit()
-                    .foregroundStyle(day.isToday ? Color.white : .white.opacity(day.isFuture ? 0.3 : 0.75))
-                    .padding(.horizontal, 5)
+                    .foregroundStyle(day.isToday ? Color.white : .white.opacity(dateOpacity(day)))
+                    .padding(.horizontal, shareStyle ? 7 : 5)
+                    .padding(.vertical, shareStyle && day.isToday ? 1 : 0)
                     .background {
-                        if day.isToday { Capsule().fill(Color(hex: PerfectDay.bambooHex)) }
+                        if day.isToday { Capsule().fill(Color(hex: todayHex)) }
                     }
-                LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
-                    .opacity(day.isFuture ? 0.35 : 1)
+                if shareStyle {
+                    switch day.phase {
+                    case .past:
+                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                    case .today:
+                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                            .opacity(day.tier == nil ? 0.45 : 1)
+                    case .future:
+                        Color.clear.frame(width: leafSize, height: leafSize)
+                    }
+                } else {
+                    LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                        .opacity(day.isFuture ? 0.35 : 1)
+                }
             }
             .accessibilityElement()
             .accessibilityLabel(tr("\(day.day) 日，\(day.tier.map { "\($0.title)，\($0.leafName)" } ?? tr("没有竹叶"))"))

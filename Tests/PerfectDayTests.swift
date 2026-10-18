@@ -238,6 +238,74 @@ final class PerfectDayTests: XCTestCase {
         XCTAssertEqual(PerfectDay.monthTitle(day(2026, 10, 15), calendar: calendar), "2026年10月")
     }
 
+    // MARK: Share card
+
+    func testDayPhases() {
+        let today = day(2026, 10, 18)
+        let cells = PerfectDay.monthDays([], month: today, today: today, calendar: calendar)
+        XCTAssertEqual(cells[16].phase, .past)
+        XCTAssertEqual(cells[17].phase, .today)
+        XCTAssertEqual(cells[18].phase, .future)
+        let september = PerfectDay.monthDays([], month: day(2026, 9, 10), today: today, calendar: calendar)
+        XCTAssertTrue(september.allSatisfy { $0.phase == .past })
+        let november = PerfectDay.monthDays([], month: day(2026, 11, 10), today: today, calendar: calendar)
+        XCTAssertTrue(november.allSatisfy { $0.phase == .future })
+    }
+
+    func testDaysPassed() {
+        let today = day(2026, 10, 18)
+        XCTAssertEqual(PerfectDay.daysPassed(month: today, today: today, calendar: calendar), 18)
+        XCTAssertEqual(PerfectDay.daysPassed(month: day(2026, 9, 3), today: today, calendar: calendar), 30,
+                       "a past month counts all its days")
+        XCTAssertEqual(PerfectDay.daysPassed(month: day(2026, 2, 3), today: today, calendar: calendar), 28)
+        XCTAssertEqual(PerfectDay.daysPassed(month: day(2026, 11, 3), today: today, calendar: calendar), 0)
+    }
+
+    func testEmptyMonthAndLeavesSoFar() {
+        let today = day(2026, 10, 18)
+        XCTAssertTrue(PerfectDay.isEmptyMonth([], month: today, today: today, calendar: calendar))
+        let missed = [record("20261001", "000"), record("20261002", "-0-")]
+        XCTAssertTrue(PerfectDay.isEmptyMonth(missed, month: today, today: today, calendar: calendar),
+                      "settled days without a leaf are still an empty basket")
+        // 时钟拨回去时留下的明天的记录不算。
+        let ahead = [record("20261020", "111")]
+        XCTAssertEqual(PerfectDay.leavesSoFar(ahead, month: today, today: today, calendar: calendar), 0)
+        let some = [record("20261001", "111"), record("20261005", "100"), record("20260930", "111")]
+        XCTAssertEqual(PerfectDay.leavesSoFar(some, month: today, today: today, calendar: calendar), 2)
+        XCTAssertFalse(PerfectDay.isEmptyMonth(some, month: today, today: today, calendar: calendar))
+    }
+
+    func testShareWords() {
+        let today = day(2026, 10, 18)
+        XCTAssertEqual(PerfectDay.shareTitle(today, calendar: calendar), "2026 年 10 月的竹篮")
+        XCTAssertEqual(PerfectDay.basketCaption(leaves: 0), "还是空篮子")
+        XCTAssertEqual(PerfectDay.basketCaption(leaves: 13), "篮里 13 片竹叶")
+        XCTAssertEqual(PerfectDay.shareStatus([], month: today, today: today, calendar: calendar),
+                       "已过 18 天 · 收到 0 片 · 今天喝杯水，第一片就来了")
+        XCTAssertEqual(PerfectDay.shareStatus([], month: day(2026, 9, 1), today: today, calendar: calendar),
+                       "已过 30 天 · 收到 0 片", "a past month has no today to drink in")
+        let some = [record("20261001", "111"), record("20261003", "110"), record("20261005", "100")]
+        XCTAssertEqual(PerfectDay.shareStatus(some, month: today, today: today, calendar: calendar),
+                       "已过 18 天 · 收到 3 片竹叶")
+        XCTAssertEqual(PerfectDay.shareBlockedHint([], month: today, today: today, calendar: calendar), "今天先喝杯水")
+        XCTAssertEqual(PerfectDay.shareBlockedHint([], month: day(2026, 9, 1), today: today, calendar: calendar),
+                       "这个月没有收到竹叶")
+        XCTAssertNil(PerfectDay.shareBlockedHint(some, month: today, today: today, calendar: calendar))
+    }
+
+    func testShareRulesMatchTheTier() {
+        let lines = PerfectDay.shareRuleLines
+        XCTAssertEqual(lines.map(\.tier), [.gold, .silver, .bronze])
+        XCTAssertEqual(lines.map(\.condition), ["三项全部达标", "三项达标两项", "只达标一项"])
+        XCTAssertEqual(PerfectDay.tier(met: 3, participating: 3), lines[0].tier)
+        XCTAssertEqual(PerfectDay.tier(met: 2, participating: 3), lines[1].tier)
+        XCTAssertEqual(PerfectDay.tier(met: 1, participating: 3), lines[2].tier)
+        // 两行小字。
+        XCTAssertEqual(PerfectDay.shareRuleNotes, ["只开了两项：都达标也是金叶", "只开了一项：达标算铜叶"])
+        XCTAssertEqual(PerfectDay.tier(met: 2, participating: 2), .gold)
+        XCTAssertEqual(PerfectDay.tier(met: 1, participating: 1), .bronze)
+    }
+
     // MARK: Badges
 
     private func run(from start: Date, days: Int, marks: String) -> [PerfectDayRecord] {

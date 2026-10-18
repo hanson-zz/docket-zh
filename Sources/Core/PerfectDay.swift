@@ -186,6 +186,28 @@ public struct PerfectDayCell: Equatable, Hashable, Sendable {
     public var tier: PerfectDayTier?
     public var isToday: Bool
     public var isFuture: Bool
+
+    /// 已过、今天还是还没到：分享图的日历按这个决定画不画叶子。
+    public var phase: PerfectDayPhase { isToday ? .today : (isFuture ? .future : .past) }
+}
+
+/// 空月分享图上的一行拿叶规则：什么条件给哪一档。
+public struct PerfectDayRuleLine: Equatable, Hashable, Sendable, Identifiable {
+    public var tier: PerfectDayTier
+    public var condition: String
+
+    public var id: PerfectDayTier { tier }
+}
+
+/// 日历里一天相对今天的位置。
+///
+/// - past：已经过去，收到了就是那片叶子，没收到留一片虚线叶；
+/// - today：绿色小胶囊，收到了画叶子，还没收到画一片淡虚线叶（今天还在等）；
+/// - future：还没到，只写日期不画叶。
+public enum PerfectDayPhase: String, Sendable, Hashable {
+    case past
+    case today
+    case future
 }
 
 /// Everything 小熊猫的竹篮 keeps, as one small file: the settled days and the
@@ -499,6 +521,72 @@ public enum PerfectDay {
             + tr("只达标一项是\(PerfectDayTier.bronze.title)（\(PerfectDayTier.bronze.leafName)）。")
             + tr("没放喝水或专注计时小组件、或没设习惯时，那一项不计入：两项都达标算金竹叶，只达标一项算铜竹叶。")
             + tr("每天的竹叶放进本月的竹篮，记录从放上这个小组件那天开始，按这台 Mac 的本地日历结算。")
+    }
+
+    // MARK: Share card
+
+    /// 这个月到今天为止过了几天（含今天）：本月是今天的日期，往月是整月天数，
+    /// 还没到的月份是 0。分享图状态行里的「已过 N 天」。
+    public static func daysPassed(month: Date, today: Date, calendar: Calendar = PerfectDay.calendar) -> Int {
+        monthDays([], month: month, today: today, calendar: calendar).filter { $0.phase != .future }.count
+    }
+
+    /// 这个月到今天为止收到几片竹叶。今天之后的日子不算（时钟拨回去时也不会多算）。
+    public static func leavesSoFar(_ records: [PerfectDayRecord], month: Date, today: Date,
+                                   calendar: Calendar = PerfectDay.calendar) -> Int {
+        monthDays(records, month: month, today: today, calendar: calendar).filter { $0.tier != nil }.count
+    }
+
+    /// 空月：到今天为止一片竹叶都没收到。
+    public static func isEmptyMonth(_ records: [PerfectDayRecord], month: Date, today: Date,
+                                    calendar: Calendar = PerfectDay.calendar) -> Bool {
+        leavesSoFar(records, month: month, today: today, calendar: calendar) == 0
+    }
+
+    /// 分享图的标题，数字两侧留空格："2026 年 10 月的竹篮"。
+    public static func shareTitle(_ month: Date, calendar: Calendar = PerfectDay.calendar) -> String {
+        let c = calendar.dateComponents([.year, .month], from: month)
+        return tr("\(c.year ?? 0) 年 \(c.month ?? 0) 月的竹篮")
+    }
+
+    /// 分享图竹篮下面那一行："还是空篮子" 或 "篮里 13 片竹叶"。
+    public static func basketCaption(leaves: Int) -> String {
+        leaves > 0 ? tr("篮里 \(leaves) 片竹叶") : tr("还是空篮子")
+    }
+
+    /// 分享图日历上方的一行状态，替代原来的 31 格频率条：
+    /// "已过 18 天 · 收到 13 片竹叶"；空的本月再加一句"今天喝杯水，第一片就来了"，
+    /// 空的往月只写"已过 31 天 · 收到 0 片"。
+    public static func shareStatus(_ records: [PerfectDayRecord], month: Date, today: Date,
+                                   calendar: Calendar = PerfectDay.calendar) -> String {
+        let passed = daysPassed(month: month, today: today, calendar: calendar)
+        let got = leavesSoFar(records, month: month, today: today, calendar: calendar)
+        guard got == 0 else { return tr("已过 \(passed) 天 · 收到 \(got) 片竹叶") }
+        let line = tr("已过 \(passed) 天 · 收到 0 片")
+        guard monthDays([], month: month, today: today, calendar: calendar).contains(where: \.isToday) else {
+            return line
+        }
+        return line + " · " + tr("今天喝杯水，第一片就来了")
+    }
+
+    /// 面板分享按钮在空月时的提示（按钮置灰）；有竹叶时为 nil，照常分享。
+    public static func shareBlockedHint(_ records: [PerfectDayRecord], month: Date, today: Date,
+                                        calendar: Calendar = PerfectDay.calendar) -> String? {
+        guard isEmptyMonth(records, month: month, today: today, calendar: calendar) else { return nil }
+        let isCurrent = monthDays([], month: month, today: today, calendar: calendar).contains(where: \.isToday)
+        return isCurrent ? tr("今天先喝杯水") : tr("这个月没有收到竹叶")
+    }
+
+    /// 空月分享图右侧的"每天怎么拿竹叶"：三档各一行，和 `tier` 的规则一一对应。
+    public static var shareRuleLines: [PerfectDayRuleLine] {
+        [PerfectDayRuleLine(tier: .gold, condition: tr("三项全部达标")),
+         PerfectDayRuleLine(tier: .silver, condition: tr("三项达标两项")),
+         PerfectDayRuleLine(tier: .bronze, condition: tr("只达标一项"))]
+    }
+
+    /// 规则下面的两行小字：不到三项时怎么算（见 `tier`）。
+    public static var shareRuleNotes: [String] {
+        [tr("只开了两项：都达标也是金叶"), tr("只开了一项：达标算铜叶")]
     }
 
     /// "2026年10月".
