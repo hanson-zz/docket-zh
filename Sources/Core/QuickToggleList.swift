@@ -53,6 +53,7 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     }
 
     /// The tooltip, which says what a click does rather than what it is.
+    /// 截图识字和取色器另有自己的卡片，这里写明是“快捷按钮”：一键开始，不显示结果。
     public var help: String {
         switch self {
         case .darkMode: tr("切换深色模式")
@@ -68,8 +69,8 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         case .clearClipboard: tr("清空当前剪贴板内容")
         case .cleanScreen: tr("黑屏并暂时锁住键盘，方便擦拭")
         case .quitApps: tr("正常退出其他应用（会先确认，未存储的内容由各应用询问）")
-        case .textCapture: tr("框选屏幕上的一块区域，识别其中的文字并拷贝")
-        case .colorPicker: tr("用放大镜取屏幕上任意一点的颜色，拷贝 HEX")
+        case .textCapture: tr("快捷按钮：框选屏幕上的一块区域，识别其中的文字并拷贝（截图工具卡片里也有）")
+        case .colorPicker: tr("快捷按钮：用放大镜取屏幕上任意一点的颜色，拷贝 HEX，并记进取色器的最近颜色")
         case .presentation: tr("隐藏桌面图标和其他应用并保持唤醒，再点一次恢复原样")
         case .keyboardLock: tr("暂时锁住键盘，屏幕照常显示，长按浮窗按钮 3 秒解锁")
         case .qrCode: tr("把剪贴板文字生成二维码，或识别屏幕上的二维码")

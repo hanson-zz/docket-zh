@@ -743,8 +743,8 @@ public enum WidgetCatalog {
             .app(bundleID: "com.apple.finder")
         case .colorPicker:
             .app(bundleID: "com.apple.DigitalColorMeter")
-        // The card around the three buttons opens the system's own
-        // Screenshot app, where recording and the timer are.
+        // The card around the four buttons opens the system's own
+        // Screenshot app, where the timer and region recording are.
         case .capture:
             .app(bundleID: "com.apple.screenshot.launcher")
         case .volume:
@@ -896,13 +896,16 @@ public enum WidgetCatalog {
         case .photos:
             return cfg.string("layout", default: "standard") == "wide"
                 ? CGSize(width: 176, height: 62) : CGSize(width: 112, height: 62)
-        case .screenshots: return CGSize(width: 132, height: 62)
+        // 最新一张大图加 2×2 四格缩略图。
+        case .screenshots: return CGSize(width: 184, height: 62)
         case .downloads: return CGSize(width: 176, height: 62)
         case .fileShelf: return CGSize(width: 148, height: 62)
         case .clipboard: return CGSize(width: 196, height: 62)
-        case .colorPicker: return CGSize(width: 136, height: 62)
+        // 一排六个最近颜色，下面 HEX 和吸管。
+        case .colorPicker: return CGSize(width: 160, height: 62)
         case .converter: return CGSize(width: 188, height: 62)
-        case .capture: return CGSize(width: 136, height: 62)
+        // 截区域、截窗口、识字、录屏四个按钮，各带两个字。
+        case .capture: return CGSize(width: 184, height: 62)
         case .emoji: return CGSize(width: 160, height: 62)
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)

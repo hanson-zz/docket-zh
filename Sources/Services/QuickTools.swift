@@ -195,11 +195,14 @@ enum TextCapture {
 
 // MARK: - 取色器
 
+/// 快速开关里的取色按钮：一键取色并拷贝。取到的颜色记进取色器卡片的同一个历史
+/// （`ColorHistory`），放了取色器卡片的话卡片上马上能看到。
 @MainActor
 enum ColorPickerTool {
     static func start() {
         ColorSampling.sample { code in
             QuickTool.copy(code.hex)
+            ColorHistory.record(code)
             QuickHint.show(code.copiedHint, symbol: "circle.fill",
                            tint: Color(.sRGB, red: code.red, green: code.green, blue: code.blue))
         }

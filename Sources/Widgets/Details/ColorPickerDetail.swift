@@ -2,15 +2,19 @@ import AppKit
 import SwiftUI
 
 /// The picked colour large, its three codes to copy, and the history.
+///
+/// 历史和卡片、快速开关里的取色按钮共用一份（`ColorHistory`）。
 struct ColorPickerDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var selected: ColorCode?
     @State private var copied: String?
+    /// 共享的取色历史（快速开关里取的颜色也在这里），变了就重画。
+    @AppStorage(ColorHistory.defaultsKey) private var stored = ""
 
     private var recent: [ColorCode] {
-        context.isPreview ? ColorPicking.samples : ColorPicking.recent(instance)
+        context.isPreview ? ColorPicking.samples : ColorPicking.recent(instance, stored: stored)
     }
 
     private var shown: ColorCode? { selected ?? recent.first }

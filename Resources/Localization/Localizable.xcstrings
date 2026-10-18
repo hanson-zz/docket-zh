@@ -8203,6 +8203,17 @@
         }
       }
     },
+    "刚截的图，可直接拖出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fresh captures, drag them out"
+          }
+        }
+      }
+    },
     "刚结束" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15358,6 +15369,17 @@
         }
       }
     },
+    "录制整个屏幕，再点一次停止，存到截图文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record the whole screen; click again to stop. Saved to your screenshots folder"
+          }
+        }
+      }
+    },
     "录制系统音频" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15365,6 +15387,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "System Audio Recording"
+          }
+        }
+      }
+    },
+    "录屏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record"
+          }
+        }
+      }
+    },
+    "录屏已存到“%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording saved to \"%@\""
           }
         }
       }
@@ -15640,6 +15684,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The shortcut did not finish."
+          }
+        }
+      }
+    },
+    "快捷按钮：框选屏幕上的一块区域，识别其中的文字并拷贝（截图工具卡片里也有）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut button: select an area of the screen to recognise and copy its text (also on the Capture card)"
+          }
+        }
+      }
+    },
+    "快捷按钮：用放大镜取屏幕上任意一点的颜色，拷贝 HEX，并记进取色器的最近颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut button: pick any color on screen with the loupe, copy its HEX and add it to the Color Picker's recent colors"
           }
         }
       }
@@ -16091,6 +16157,28 @@
         }
       }
     },
+    "截区域" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Area"
+          }
+        }
+      }
+    },
+    "截区域、窗口，识字，录屏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Area, window, text, recording"
+          }
+        }
+      }
+    },
     "截取全屏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16142,6 +16230,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text from Screen"
+          }
+        }
+      }
+    },
+    "截窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window"
           }
         }
       }
@@ -18984,6 +19083,17 @@
         }
       }
     },
+    "无法开始录屏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not start recording"
+          }
+        }
+      }
+    },
     "无法开始录音。请检查输入设备。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20883,6 +20993,17 @@
         }
       }
     },
+    "最近颜色，点一下拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent colors, click to copy"
+          }
+        }
+      }
+    },
     "最长" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22001,6 +22122,28 @@
         }
       }
     },
+    "框选一块区域截图，存到截图文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select an area to capture, saved to your screenshots folder"
+          }
+        }
+      }
+    },
+    "框选一块区域，识别其中的文字并拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select an area to recognise and copy its text"
+          }
+        }
+      }
+    },
     "框选屏幕上的一块区域，识别其中的文字并拷贝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22371,6 +22514,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Setting up your Dockling"
+          }
+        }
+      }
+    },
+    "正在录屏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording"
+          }
+        }
+      }
+    },
+    "正在录屏，点一下停止" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording, click to stop"
           }
         }
       }
@@ -23247,6 +23412,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No sound"
+          }
+        }
+      }
+    },
+    "没有录到画面：请在“系统设置 ▸ 隐私与安全性 ▸ 屏幕录制”中允许码头。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing was recorded: allow Dockling in System Settings ▸ Privacy & Security ▸ Screen Recording."
           }
         }
       }
@@ -25058,6 +25234,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dots"
+          }
+        }
+      }
+    },
+    "点色块拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a swatch to copy"
+          }
+        }
+      }
+    },
+    "点选一个窗口截图，存到截图文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a window to capture it, saved to your screenshots folder"
           }
         }
       }
@@ -30103,6 +30301,17 @@
         }
       }
     },
+    "识字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        }
+      }
+    },
     "译文会显示在这里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31463,6 +31672,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In %@ h %@ min"
+          }
+        }
+      }
+    },
+    "还有 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more"
           }
         }
       }

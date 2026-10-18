@@ -47,6 +47,10 @@ public enum WidgetLibraryGroups {
         case .progress: tr("年月周日百分比")
         // 圆只留给圆环仪表：存储、电池、CPU、内存任意拼。
         case .gauges: tr("任意拼装多个指标")
+        // 截图三件套分工：截图工具是动作，最近截图是结果，取色器是最近颜色。
+        case .capture: tr("截区域、窗口，识字，录屏")
+        case .screenshots: tr("刚截的图，可直接拖出")
+        case .colorPicker: tr("最近颜色，点一下拷贝")
         default: nil
         }
     }
