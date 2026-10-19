@@ -354,7 +354,8 @@ struct BatteryTile: View {
                     }
                     .frame(width: geo.size.width, height: geo.size.height)
                 }
-                .frame(maxWidth: .infinity)
+                // 一格最多 84 宽，一台设备时整组在卡片里居中，不贴左边。
+                .frame(maxWidth: CGFloat(BatteryHourglass.iconSlotWidth))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(slot.name)
                 .accessibilityValue("\(percentText(reading)) \(caption(reading))")
