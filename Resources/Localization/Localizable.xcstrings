@@ -33883,6 +33883,17 @@
         }
       }
     },
+    "还没有截图": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No screenshots yet"
+          }
+        }
+      }
+    },
     "还没有截图。按 ⇧⌘3、⇧⌘4 或 ⇧⌘5 截取屏幕。" : {
       "extractionState" : "manual",
       "localizations" : {

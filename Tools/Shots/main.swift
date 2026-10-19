@@ -482,7 +482,8 @@ private func makePanel(_ shot: Shot, on screen: NSScreen) -> NSWindow? {
         edge: .bottom,
         session: UUID(),
         // 截图要整张面板，不套滚动区域，按内容的自然高度画。
-        measuring: true)
+        viewport: shot.instance.kind == .weather ? 600 : nil,
+        measuring: shot.instance.kind != .weather)
 
     guard let (window, _) = makeWindow(chrome, shadow: true, on: screen) else {
         log("\(shot.name): the panel measured empty, skipping")
@@ -914,7 +915,7 @@ private func shelves() -> [ShelfShot] {
                   sample: true),
         // 股票盯一只、自选股一列、加密货币、黄金白银（元/克）。
         ShelfShot(name: "shelf-stocks",
-                  widgets: [widget(.stock), widget(.watchlist), widget(.crypto),
+                  widgets: [widget(.stock), widget(.watchlist, ["symbols": .list(["AAPL", "MSFT", "NVDA", "TSLA"].map { .string($0) })]), widget(.watchlist, ["symbols": .list(["AAPL", "MSFT", "NVDA", "TSLA", "GOOGL", "AMZN"].map { .string($0) })]), widget(.crypto),
                             widget(.stock, ["symbol": .string(PreciousMetal.gold.symbol),
                                             "symbols": .list([.string(PreciousMetal.gold.symbol),
                                                               .string(PreciousMetal.silver.symbol)])])],
