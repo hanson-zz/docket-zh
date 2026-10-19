@@ -16,6 +16,15 @@ struct HabitTile: View {
 
     private var showsStreak: Bool { instance.config.bool("showStreak", default: true) }
 
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+    /// 没解锁时免费 3 个习惯，第 4 个起只读（竖排第 4 行画淡、不能打卡）。
+    private var unlocked: Bool { licenseUnlocked || supporter || context.isPreview }
+
+    private func isLocked(_ habit: Habit, in all: [Habit]) -> Bool {
+        ProLicenseGate.isHabitLocked(habit.id, in: all, unlocked: unlocked)
+    }
+
     var body: some View {
         let all = habits
         let done = HabitTracker.doneToday(all, today: context.now)
@@ -111,8 +120,15 @@ struct HabitTile: View {
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(all.prefix(4)) { habit in
+                    let locked = isLocked(habit, in: all)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 2) {
+                            if locked {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 8, weight: .semibold))
+                                    .foregroundStyle(WidgetStyle.secondary)
+                                    .accessibilityLabel(ProFeatures.label)
+                            }
                             Text(habit.name)
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(WidgetStyle.primary)
@@ -126,9 +142,10 @@ struct HabitTile: View {
                                     .monospacedDigit()
                             }
                         }
-                        dots(habit, size: 5.5, spacing: 2)
+                        dots(habit, size: 5.5, spacing: 2, locked: locked)
                     }
                     .frame(height: 26)
+                    .opacity(locked ? 0.5 : 1)
                 }
             }
         }
@@ -147,11 +164,12 @@ struct HabitTile: View {
             .help(tr("连续打卡 \(streak) 天"))
     }
 
-    /// Seven dots, today last. Only today's dot is a control.
-    private func dots(_ habit: Habit, size: CGFloat, spacing: CGFloat) -> some View {
+    /// Seven dots, today last. Only today's dot is a control, and not on a
+    /// habit past the free three when Pro is locked.
+    private func dots(_ habit: Habit, size: CGFloat, spacing: CGFloat, locked: Bool = false) -> some View {
         HStack(spacing: spacing) {
             ForEach(HabitTracker.week(habit, today: context.now), id: \.key) { day in
-                if day.isToday {
+                if day.isToday, !locked {
                     Button {
                         guard !context.isPreview else { return }
                         withAnimation(.snappy(duration: 0.25)) {
@@ -207,15 +225,33 @@ struct HabitTile: View {
 
 /// The writes both the tile and the panel make, from the instance's current
 /// list so the two can never disagree.
+///
+/// Every write goes through `ProLicenseGate.allowedHabitEdit`: without Pro a
+/// fourth habit is not added and the ones past the free three stay read only,
+/// whichever button asked.
 @MainActor
 enum HabitLog {
+    static var unlocked: Bool { ProAccess.isUnlocked }
+
     static func change(_ instance: WidgetInstance, _ edit: ([Habit]) -> [Habit]) {
+        let unlocked = unlocked
         WidgetWriter.write(instance) { config in
-            HabitTracker.store(edit(HabitTracker.habits(config)), in: &config)
+            let before = HabitTracker.habits(config)
+            HabitTracker.store(ProLicenseGate.allowedHabitEdit(before: before, after: edit(before), unlocked: unlocked),
+                               in: &config)
         }
     }
 
+    /// 锁着的习惯（没解锁时第 4 个起）点了只弹付费墙。
+    static func isLocked(_ id: String, in instance: WidgetInstance) -> Bool {
+        ProLicenseGate.isHabitLocked(id, in: HabitTracker.habits(instance.config), unlocked: unlocked)
+    }
+
     static func toggle(_ id: String, day: Date, in instance: WidgetInstance) {
+        if isLocked(id, in: instance) {
+            PaywallWindow.shared.show()
+            return
+        }
         // Checking off today (not unchecking, not filling in a past day) is
         // a treat for the pet.
         let wasDone = HabitTracker.habits(instance.config).first { $0.id == id }
@@ -230,6 +266,10 @@ enum HabitLog {
     /// 打卡按钮：目标 1 次时勾选或取消，目标多次时加一次，加满算完成。
     /// 只有今天从没完成变成完成的那一下才喂宠物。
     static func tap(_ id: String, day: Date, in instance: WidgetInstance) {
+        if isLocked(id, in: instance) {
+            PaywallWindow.shared.show()
+            return
+        }
         let before = HabitTracker.habits(instance.config)
         let wasDone = before.first { $0.id == id }.map { HabitTracker.isDone($0, on: day) } ?? true
         let nowDone = HabitTracker.tapping(id, day: day, in: before).first { $0.id == id }

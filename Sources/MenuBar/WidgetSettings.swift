@@ -605,6 +605,8 @@ struct WidgetSettingsSections: View {
         "watchlist.sort": tr("排序"),
         "stock.metalUnit": tr("黄金白银单位"),
         "watchlist.metalUnit": tr("黄金白银单位"),
+        "weather.caption": tr("副标题"),
+        "weather.days": tr("天数"),
     ]
 
     static func label(_ key: String) -> String {
@@ -745,6 +747,8 @@ struct WidgetSettingsSections: View {
         "ai-usage.look": LiquidLooks.CodexLook.allCases.map { ($0.title, $0.rawValue) },
         "perfect-day.look": LiquidLooks.BasketLook.allCases.map { ($0.title, $0.rawValue) },
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
+        "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
+        "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
     ]
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)

@@ -36,6 +36,14 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.health], available: []), [])
     }
 
+    func testHealthAddsHabitsNowThatTheyAreFree() {
+        // 习惯打卡 2026-10-19 起免费 3 个，健康用途又会加上它。
+        XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.health], available: ["water", "posture", "habit"]),
+                       ["water", "posture", "habit"])
+        XCTAssertFalse(Onboarding.isPro("habit"))
+        XCTAssertFalse(Onboarding.isPro("progress"))
+    }
+
     func testNoDuplicatesAndStableOrder() {
         let a = Onboarding.kinds(for: [OnboardingUse.fun, .system, .fun, .productivity], available: catalog)
         let b = Onboarding.kinds(for: [OnboardingUse.productivity, .system, .fun], available: catalog)

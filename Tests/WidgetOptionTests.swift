@@ -86,7 +86,7 @@ final class WidgetOptionTests: XCTestCase {
             .shortcut: ["name"],
             .stock: ["symbol", "symbols", "chart", "alerts", "rotate", "colors", "metalUnit"],
             .watchlist: ["symbols", "groups", "holdings", "sort", "colors", "metalUnit"],
-            .weather: ["city", "cities", "fahrenheit"],
+            .weather: ["city", "cities", "fahrenheit", "caption", "days"],
             .photos: ["folder", "interval", "shuffle"],
             .emoji: ["emoji"],
             .search: ["engine"],

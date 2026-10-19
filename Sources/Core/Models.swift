@@ -431,6 +431,9 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
             case .calendar: config = CalendarDay.migratingLayout(stored)
             // 计算器并成了「算」：算式照旧，补一条最近记录。
             case .calculator: config = SmartCalc.migratingCalculator(stored)
+            // 天气七个样式并成四个：天气状况、风与日出日落读成“当前”加副标题，
+            // 未来 7 天、10 天读成“多日预报”加天数。
+            case .weather: config = WeatherStyle.migrating(stored)
             default: config = stored
             }
         } else if raw == WaterIntake.legacyHydrationKind {

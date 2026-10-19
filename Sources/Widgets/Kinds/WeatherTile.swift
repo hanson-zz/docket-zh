@@ -1,7 +1,12 @@
 import SwiftUI
 
-/// Current conditions for one city: symbol, temperature and either the city
-/// name, the condition text, or a short hourly strip.
+/// Current conditions for one city: symbol, temperature and a caption (the
+/// city, the condition, wind, the next sunrise or sunset), or the forecast:
+/// a day row of 7 or 10 days, an hourly strip, or several cities.
+///
+/// Four layouts, read through `WeatherStyle` so a card still holding one of
+/// the seven old layout values draws as its new layout and option. Within two
+/// hours of rain the Current caption says so first: 约 40 分钟后有雨.
 struct WeatherTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -13,7 +18,8 @@ struct WeatherTile: View {
                                            condition: tr("多云"),
                                            windSpeed: 4.2, windFrom: 45, humidity: 62)
 
-    private var layout: String { instance.config.string("layout", default: "current") }
+    private var layout: String { WeatherStyle.layout(instance.config) }
+    private var captionChoice: WeatherStyle.Caption { WeatherStyle.caption(instance.config) }
     private var fahrenheit: Bool { instance.config.bool("fahrenheit") }
 
     /// An empty `city` means "wherever I am".
@@ -56,18 +62,16 @@ struct WeatherTile: View {
         WidgetSurface {
             if context.position.isVertical {
                 switch layout {
-                case "week", "tenDays": forecastColumn
-                case "cities": citiesColumn
+                case WeatherStyle.forecastLayout: forecastColumn
+                case WeatherStyle.citiesLayout: citiesColumn
                 default: column
                 }
             } else {
                 switch layout {
-                case "week", "tenDays": forecastRow
-                case "cities": citiesRow
-                case "hourly": hourlyStrip
-                case "conditions": wide(caption: weather?.condition ?? "-")
-                case "sky": wide(caption: skyCaption)
-                default: wide(caption: placeCaption)
+                case WeatherStyle.forecastLayout: forecastRow
+                case WeatherStyle.citiesLayout: citiesRow
+                case WeatherStyle.hourlyLayout: hourlyStrip
+                default: wide(caption: currentCaption)
                 }
             }
         }
@@ -102,11 +106,11 @@ struct WeatherTile: View {
     /// service, so calling this on every 15-minute tick costs nothing.
     private func refreshForecasts() async {
         switch layout {
-        case "week", "tenDays":
+        case WeatherStyle.forecastLayout:
             if let place = WeatherService.shared.place {
                 await ForecastService.shared.refresh(place)
             }
-        case "cities":
+        case WeatherStyle.citiesLayout:
             await ForecastService.shared.load(cities: cities)
         default:
             break
@@ -117,7 +121,7 @@ struct WeatherTile: View {
         guard !context.isPreview else { return }
         // The multi-city card is its own list of places. It never points the
         // shared service at a city, so the other weather tiles keep theirs.
-        if layout == "cities" {
+        if layout == WeatherStyle.citiesLayout {
             Task { await refreshForecasts() }
             return
         }
@@ -135,17 +139,35 @@ struct WeatherTile: View {
     }
 
     /// Wind and the next sunrise or sunset: the two things the forecast
-    /// already knows, or can work out, beyond the temperature.
-    private var skyCaption: String {
+    /// already knows, or can work out, beyond the temperature. The caption
+    /// option picks one of them or both.
+    private func skyCaption(wind: Bool, sun: Bool) -> String {
         var parts: [String] = []
-        if let weather, let speed = weather.windSpeed {
+        if wind, let weather, let speed = weather.windSpeed {
             let force = Wind.beaufort(speed)
             parts.append(force == 0 ? tr("无风") : tr("\(Wind.direction(weather.windFrom ?? 0)) \(force) 级"))
         }
-        if let next = WeatherSun.next(after: context.now, preview: context.isPreview) {
+        if sun, let next = WeatherSun.next(after: context.now, preview: context.isPreview) {
             parts.append("\(next.rising ? tr("日出") : tr("日落")) \(WeatherSun.time(next.date, zone: next.zone))")
         }
         return parts.isEmpty ? placeCaption : parts.joined(separator: " · ")
+    }
+
+    /// Minutes until rain within the next two hours, from the hourly
+    /// forecast the card already fetches; nil when it is dry or already raining.
+    private var minutesUntilRain: Int? {
+        WeatherStyle.minutesUntilRain(now: context.now, currentHourMM: weather?.precipitationMM,
+                                      hours: hours.map { (start: $0.date, mm: $0.precipitationMM) })
+    }
+
+    /// The Current layout's third line: rain on its way wins, then the chosen caption.
+    private var currentCaption: String {
+        if let minutes = minutesUntilRain { return WeatherStyle.rainSoonText(minutes: minutes) }
+        switch captionChoice {
+        case .city: return placeCaption
+        case .condition: return weather?.condition ?? "-"
+        case .wind, .sun, .sky: return skyCaption(wind: captionChoice.showsWind, sun: captionChoice.showsSun)
+        }
     }
 
     // MARK: - Layouts
@@ -279,14 +301,14 @@ struct WeatherTile: View {
     /// shows the part of the forecast that does: the next hour.
     private var columnCaption: String {
         switch layout {
-        case "conditions":
-            return weather?.condition ?? "-"
-        case "hourly":
+        case WeatherStyle.hourlyLayout:
             guard let next = hours.first else { return city }
             let hour = next.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)))
             return "\(hour)  \(degrees(next.temperatureC))"
         default:
-            return city
+            // 56pt 宽放不下“风 · 日出”，竖排只写城市或天气状况；快下雨时照样先说雨。
+            if let minutes = minutesUntilRain { return WeatherStyle.rainSoonText(minutes: minutes) }
+            return captionChoice == .condition ? (weather?.condition ?? "-") : city
         }
     }
 
@@ -316,7 +338,7 @@ struct WeatherTile: View {
     /// reading until the forecast lands.
     @ViewBuilder private var forecastRow: some View {
         let forecast = dailyForecast
-        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.days(layout: layout)) ?? []
+        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.days(instance.config)) ?? []
         if shown.isEmpty {
             wide(caption: placeCaption)
         } else {
@@ -360,7 +382,7 @@ struct WeatherTile: View {
     /// stays a tile rather than a tower.
     @ViewBuilder private var forecastColumn: some View {
         let forecast = dailyForecast
-        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.columnDays(layout: layout)) ?? []
+        let shown = forecast?.upcoming(now: context.now, limit: WeatherLayout.columnDays(instance.config)) ?? []
         if shown.isEmpty {
             column
         } else {

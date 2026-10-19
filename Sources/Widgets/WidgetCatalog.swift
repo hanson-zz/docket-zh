@@ -258,16 +258,18 @@ public enum WidgetCatalog {
               // `cities` is only read by the multi-city layout, which shows
               // those places (at most three) and ignores `city`; see
               // WeatherLayout.cities.
-              defaults: c(["layout": .string("current"), "fahrenheit": .bool(false),
+              // 七个样式并成四个（见 WeatherStyle）：原来的天气状况、风与日出日落
+              // 是“当前”的副标题（caption），未来 7 天、10 天是“多日预报”的天数
+              // （days）。放好的旧卡片读配置时自动迁过来，见 WeatherStyle.migrating。
+              defaults: c(["layout": .string(WeatherStyle.currentLayout), "fahrenheit": .bool(false),
                            "city": .string(""),
-                           "cities": .list(WeatherLayout.defaultCities.map { .string($0) })]),
-              variants: [(tr("当前"), ["layout": .string("current")]),
-                         (tr("天气状况"), ["layout": .string("conditions")]),
-                         (tr("逐小时预报"), ["layout": .string("hourly")]),
-                         (tr("风与日出日落"), ["layout": .string("sky")]),
-                         (tr("未来 7 天"), ["layout": .string("week")]),
-                         (tr("未来 10 天"), ["layout": .string("tenDays")]),
-                         (tr("多城市"), ["layout": .string("cities")])],
+                           "cities": .list(WeatherLayout.defaultCities.map { .string($0) }),
+                           WeatherStyle.captionKey: .string(WeatherStyle.Caption.city.rawValue),
+                           WeatherStyle.daysKey: .string(String(WeatherStyle.defaultDays))]),
+              variants: [(tr("当前"), ["layout": .string(WeatherStyle.currentLayout)]),
+                         (tr("多日预报"), ["layout": .string(WeatherStyle.forecastLayout)]),
+                         (tr("逐小时预报"), ["layout": .string(WeatherStyle.hourlyLayout)]),
+                         (tr("多城市"), ["layout": .string(WeatherStyle.citiesLayout)])],
               supportsCompact: true, selfContained: true),
 
         // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
@@ -638,9 +640,14 @@ public enum WidgetCatalog {
         // The multi-city card shows its own list of places and no other;
         // every other layout reads the one city and never the list.
         case (.weather, "cities"):
-            config.string("layout", default: "current") == "cities"
+            WeatherStyle.layout(config) == WeatherStyle.citiesLayout
         case (.weather, "city"):
-            config.string("layout", default: "current") != "cities"
+            WeatherStyle.layout(config) != WeatherStyle.citiesLayout
+        // 副标题只有“当前”有，天数只有“多日预报”有。
+        case (.weather, WeatherStyle.captionKey):
+            WeatherStyle.layout(config) == WeatherStyle.currentLayout
+        case (.weather, WeatherStyle.daysKey):
+            WeatherStyle.layout(config) == WeatherStyle.forecastLayout
         // 旧键名 showRing，现在管单个卡片左边那页撕页；多个是时间轴，没有撕页。
         case (.anniversary, "showRing"):
             config.string("layout", default: "single") == "single"
@@ -867,17 +874,19 @@ public enum WidgetCatalog {
         // 横排：左边图标，右边“隔空投送”和一行说明。
         case .airdrop: return CGSize(width: 176, height: 76)
         case .weather:
-            switch cfg.string("layout", default: "current") {
-            case "hourly": return CGSize(width: 216, height: 132)
-            // Wind and the next sun time are a longer caption than a city.
-            case "sky": return CGSize(width: 196, height: 132)
+            switch WeatherStyle.layout(cfg) {
+            case WeatherStyle.hourlyLayout: return CGSize(width: 216, height: 132)
             // A row of day columns, each as wide as "24° 16°".
-            case "week", "tenDays":
-                return CGSize(width: WeatherLayout.forecastWidth(layout: cfg.string("layout")), height: 132)
-            case "cities":
+            case WeatherStyle.forecastLayout:
+                return CGSize(width: WeatherLayout.forecastWidth(cfg), height: 132)
+            case WeatherStyle.citiesLayout:
                 let count = WeatherLayout.cities(cfg.strings("cities", default: WeatherLayout.defaultCities)).count
                 return CGSize(width: WeatherLayout.citiesWidth(count: count), height: 132)
-            default: return CGSize(width: 148, height: 132)
+            // Wind and the next sun time are a longer caption than a city or
+            // a condition, so those captions keep the old 风与日出日落 width.
+            default:
+                let caption = WeatherStyle.caption(cfg)
+                return CGSize(width: caption.showsWind || caption.showsSun ? 196 : 148, height: 132)
             }
         case .stripe, .paddle:
             return cfg.bool("chart", default: true)
@@ -1020,10 +1029,9 @@ public enum WidgetCatalog {
         case .todo, .ambient, .lunar, .trash, .appVolume, .radio, .podcast:
             return 112
         case .weather:
-            let layout = cfg.string("layout", default: "current")
-            switch layout {
-            case "week", "tenDays": return WeatherLayout.forecastColumnHeight(layout: layout)
-            case "cities":
+            switch WeatherStyle.layout(cfg) {
+            case WeatherStyle.forecastLayout: return WeatherLayout.forecastColumnHeight(cfg)
+            case WeatherStyle.citiesLayout:
                 let count = WeatherLayout.cities(cfg.strings("cities", default: WeatherLayout.defaultCities)).count
                 return WeatherLayout.citiesColumnHeight(count: count)
             default: return 76

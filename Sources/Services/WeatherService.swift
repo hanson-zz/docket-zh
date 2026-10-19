@@ -15,6 +15,8 @@ struct WeatherNow: Sendable {
     var windFrom: Double? = nil
     /// Percent.
     var humidity: Double? = nil
+    /// 现在所在这一小时预计的降水量（毫米）。在下雨时天气卡片不写“约 N 分钟后有雨”。
+    var precipitationMM: Double? = nil
 }
 
 /// One point of the hourly forecast.
@@ -182,7 +184,8 @@ final class WeatherService {
                                  condition: Self.condition(for: code),
                                  windSpeed: details.windSpeed,
                                  windFrom: details.windFromDirection,
-                                 humidity: details.relativeHumidity)
+                                 humidity: details.relativeHumidity,
+                                 precipitationMM: currentEntry.data.next1Hours?.details?.precipitationAmount)
         }
 
         hourly = series.lazy

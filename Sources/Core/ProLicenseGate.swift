@@ -9,6 +9,9 @@ import Foundation
 /// - 原来的赞助者外观（表盘、角色、Wi-Fi、电池外观）照旧退回免费外观显示，不盖遮罩。
 /// - 电池的液态外观也是 Pro，同样退回免费的经典外观显示，不盖遮罩。
 /// - 天气的多城市和电池格没有同样大小的免费样式可退，盖小锁遮罩。
+/// - 时间进度整种免费，液态和四格是 Pro，没解锁时退回圆环显示，不盖遮罩。
+/// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
+///   超过 3 个的不删数据，超出的只读带小锁；近七天报告是 Pro。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
 /// - 颜色与背景里的自定义颜色和渐变背景退回默认颜色、无背景显示。
 /// - 快速开关的 Pro 工具：设置里照样列出并带 Pro 标识，勾选时弹付费墙；已经勾上的
@@ -70,7 +73,8 @@ public enum ProLicenseGate {
         default:
             break
         }
-        if instance.kind == .battery { return false }
+        // 电池和时间进度的 Pro 外观有免费外观可退，不盖。
+        if instance.kind == .battery || instance.kind == .progress { return false }
         return ProFeatures.isLiquid(values)
     }
 
@@ -87,6 +91,59 @@ public enum ProLicenseGate {
         let look = BatteryLook.shown(config: config, unlocked: unlocked)
         if look == .liquid, !unlocked { return .classic }
         return look
+    }
+
+    /// 时间进度卡片实际画哪种外观：没解锁时液态和四格退回圆环。
+    public static func timeProgressLayout(config: WidgetConfig, unlocked: Bool) -> String {
+        let layout = TimeProgress.layout(config)
+        guard !unlocked, layout == LiquidMotion.layout || layout == TimeProgress.quadLayout else { return layout }
+        return TimeProgress.newWidgetLayout
+    }
+
+    // MARK: 习惯打卡
+
+    /// 这张卡片最多能有几个习惯：没解锁时 3 个，解锁后 `HabitTracker.maxHabits` 个。
+    public static func habitLimit(unlocked: Bool) -> Int {
+        unlocked ? HabitTracker.maxHabits : min(ProFeatures.freeHabitLimit, HabitTracker.maxHabits)
+    }
+
+    /// 现在有 `count` 个习惯时还能不能新建。不能时（没解锁且满 3 个）点“新建”弹付费墙。
+    public static func canAddHabit(count: Int, unlocked: Bool) -> Bool {
+        count < habitLimit(unlocked: unlocked)
+    }
+
+    /// 排在第 `index` 个（从 0 数）的习惯是不是锁着：没解锁时第 4 个起只读。
+    public static func isHabitLocked(at index: Int, unlocked: Bool) -> Bool {
+        !unlocked && index >= ProFeatures.freeHabitLimit
+    }
+
+    /// 这个习惯是不是锁着（按它在列表里的位置）。
+    public static func isHabitLocked(_ id: String, in habits: [Habit], unlocked: Bool) -> Bool {
+        guard let index = habits.firstIndex(where: { $0.id == id }) else { return false }
+        return isHabitLocked(at: index, unlocked: unlocked)
+    }
+
+    /// 习惯面板的近七天报告是不是能看。
+    public static func canSeeHabitReport(unlocked: Bool) -> Bool { unlocked }
+
+    /// 习惯列表的一次改动在没解锁时能不能生效，不能就原样退回改动前的列表。
+    ///
+    /// - 新加习惯：改完超过 3 个就不行。
+    /// - 锁着的习惯（第 4 个起）：内容不能变（打卡、补卡、改名、改目标都不行），
+    ///   也不能挪进前 3 个；前面的习惯删掉后它自然顶上来是可以的。
+    /// - 删除任何一个都可以，数据是用户自己的。
+    public static func allowedHabitEdit(before: [Habit], after: [Habit], unlocked: Bool) -> [Habit] {
+        guard !unlocked else { return after }
+        let limit = ProFeatures.freeHabitLimit
+        let beforeIDs = before.map(\.id)
+        let added = after.contains { !beforeIDs.contains($0.id) }
+        if added, after.count > limit { return before }
+        let locked = Set(beforeIDs.dropFirst(limit))
+        for (index, habit) in after.enumerated() where locked.contains(habit.id) {
+            guard let old = before.first(where: { $0.id == habit.id }), old == habit else { return before }
+            if index < limit, after.count >= before.count { return before }
+        }
+        return after
     }
 
     // MARK: 快速开关

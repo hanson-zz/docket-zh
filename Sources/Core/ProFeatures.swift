@@ -13,7 +13,9 @@ import Foundation
 /// - 快速开关里的截图识字、二维码、演示模式、只锁键盘、低电量模式。
 /// - 所有小组件的“液态”外观（`layout` 或 `look` 为 liquid）。
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
-///   电池格（原百分比圆环）、便签除最浅五种以外的纸色。
+///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格。
+/// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
+///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
 /// - AI 刘海对话的设置和电池面板里的充电上限。
 public enum ProFeatures {
@@ -25,16 +27,21 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 20 种：摸鱼时钟、时间进度、环境音、播客、
-    /// 废纸篓、GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及
-    /// 后来加进来的应用音量、录音、股票、自选股、加密货币行情、壁纸切换、
-    /// 收音机、文件暂存、翻译、习惯打卡。
+    /// 整种都是 Pro 的小组件，共 18 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
+    /// 应用音量、录音、股票、自选股、加密货币行情、壁纸切换、收音机、文件暂存、
+    /// 翻译。时间进度和习惯打卡 2026-10-19 起改为免费：时间进度的液态和四格、
+    /// 习惯打卡第 4 个起和报告仍是 Pro。
     public static let proKinds: Set<WidgetKind> = [
-        .slacker, .progress, .ambient, .podcast, .trash,
+        .slacker, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
         .appVolume, .recorder, .stock, .watchlist, .crypto,
-        .wallpaper, .radio, .fileShelf, .translate, .habit,
+        .wallpaper, .radio, .fileShelf, .translate,
     ]
+
+    /// 习惯打卡免费能用的习惯个数。第 4 个起和近七天报告是 Pro；已经有更多
+    /// 习惯的不删数据，超出的只读并带小锁。
+    public static let freeHabitLimit = 3
 
     /// 天气的多城市样式（`layout` 为 cities）是 Pro。
     public static let weatherCitiesLayout = "cities"
@@ -110,6 +117,8 @@ public enum ProFeatures {
             if case .string(let layout) = overrides["layout"] { return layout == batteryGaugeLayout }
         case .notes:
             if case .string(let raw) = overrides[noteColorKey] { return isProNoteColor(raw) }
+        case .progress:
+            if case .string(let layout) = overrides[TimeProgress.layoutKey] { return layout == TimeProgress.quadLayout }
         default:
             break
         }

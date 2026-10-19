@@ -7620,6 +7620,39 @@
         }
       }
     },
+    "免费版 %@ 个 · 解锁 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ free · Unlock Pro"
+          }
+        }
+      }
+    },
+    "免费版可用 3 个习惯。解锁码头 Pro 后不限个数，还能看近七天报告。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The free version has 3 habits. Dockling Pro removes the limit and adds the 7-day report."
+          }
+        }
+      }
+    },
+    "免费版可用 3 个习惯，这个只读。解锁码头 Pro 后可以继续打卡。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The free version has 3 habits, so this one is read only. Unlock Dockling Pro to keep checking it in."
+          }
+        }
+      }
+    },
     "兑换码格式不对，应为 DKG-XXXX-XXXX-XXXX，请检查是否完整复制。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9262,6 +9295,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clipboard: %@"
+          }
+        }
+      }
+    },
+    "副标题" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caption"
           }
         }
       }
@@ -11341,13 +11385,13 @@
         }
       }
     },
-    "喝水、久坐提醒" : {
+    "喝水、久坐提醒、习惯打卡" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Water, stand-up reminders"
+            "value" : "Water, stand-up reminders, habits"
           }
         }
       }
@@ -12675,6 +12719,17 @@
         }
       }
     },
+    "多日预报" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily forecast"
+          }
+        }
+      }
+    },
     "夜猫子" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12876,6 +12931,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "days to go"
+          }
+        }
+      }
+    },
+    "天数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Days"
           }
         }
       }
@@ -13756,13 +13822,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格；习惯打卡第 4 个起和近七天报告" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather and the Battery Cells style"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style and the Time Progress grid; a fourth habit and beyond, and the 7-day habit report"
           }
         }
       }
@@ -20523,6 +20589,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sunrise"
+          }
+        }
+      }
+    },
+    "日出日落" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunrise and sunset"
           }
         }
       }
@@ -29271,6 +29348,17 @@
         }
       }
     },
+    "约 %@ 分钟后有雨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain in about %@ min"
+          }
+        }
+      }
+    },
     "约 %@充满" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33025,6 +33113,28 @@
         }
       }
     },
+    "近七天报告" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7-day report"
+          }
+        }
+      }
+    },
+    "近七天报告是码头 Pro 专属，点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The 7-day report is part of Dockling Pro. Click to buy, enter a code or start a trial."
+          }
+        }
+      }
+    },
     "近期新增的小组件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36137,6 +36247,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : " wind"
+          }
+        }
+      }
+    },
+    "风 (caption)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wind"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "风"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "风"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "风"
           }
         }
       }

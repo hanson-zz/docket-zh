@@ -3,12 +3,23 @@ import SwiftUI
 /// 上面是两列习惯卡片（见 `HabitGrid`）：点卡片编辑名称、图标、颜色和每日目标，
 /// 末尾的卡片新建习惯（有模板一点即加），右键可排序和删除。下面是每个习惯这个月
 /// 的热力图：一天一格，做到了就填色，点一格补打或取消那天的卡。
+///
+/// 免费 3 个习惯：没解锁 Pro 时第 4 个起只读（画淡、带小锁，不能打卡、补卡、编辑，
+/// 可以删除），近七天报告换成一行 Pro 提示。
 struct HabitDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var editor: HabitEditTarget?
     @State private var pendingDelete: Habit?
+
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+    private var unlocked: Bool { licenseUnlocked || supporter || context.isPreview }
+
+    private func isLocked(_ habit: Habit, in all: [Habit]) -> Bool {
+        ProLicenseGate.isHabitLocked(habit.id, in: all, unlocked: unlocked)
+    }
 
     private var habits: [Habit] {
         context.isPreview ? HabitSamples.habits(today: context.now) : HabitTracker.habits(instance.config)
@@ -31,7 +42,11 @@ struct HabitDetail: View {
                 .scrollIndicators(.never)
 
                 if !all.isEmpty {
-                    HabitWeeklyReport(habits: all, accent: accent, now: context.now)
+                    if ProLicenseGate.canSeeHabitReport(unlocked: unlocked) {
+                        HabitWeeklyReport(habits: all, accent: accent, now: context.now)
+                    } else {
+                        lockedReport
+                    }
                 }
             }
             .frame(minHeight: editor == nil ? nil : 470, alignment: .top)
@@ -49,11 +64,34 @@ struct HabitDetail: View {
         }
     }
 
+    /// 没解锁时报告的位置：一行说明，点一下弹付费墙。
+    private var lockedReport: some View {
+        Button { PaywallWindow.shared.show() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                Text("近七天报告")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Spacer(minLength: 4)
+                Text(ProLicenseGate.lockTitle)
+                    .font(WidgetStyle.label(11))
+                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+            }
+            .padding(10)
+            .contentShape(.rect)
+            .glassPane(cornerRadius: 12)
+        }
+        .buttonStyle(.plain)
+        .help("近七天报告是码头 Pro 专属，点一下购买、输入激活码或开始试用。")
+    }
+
     // MARK: Grid and month
 
     private func list(_ all: [Habit]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HabitGrid(habits: all, now: context.now, isPreview: context.isPreview,
+            HabitGrid(habits: all, now: context.now, isPreview: context.isPreview, unlocked: unlocked,
                       onOpen: { editor = $0 },
                       onTap: { tap($0) },
                       onMove: { habit, offset in move(habit, by: offset) },
@@ -69,7 +107,7 @@ struct HabitDetail: View {
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
                     .padding(.top, 4)
-                ForEach(all) { habit in card(habit) }
+                ForEach(all) { habit in card(habit, locked: isLocked(habit, in: all)) }
             }
         }
     }
@@ -122,7 +160,7 @@ struct HabitDetail: View {
 
     // MARK: One habit
 
-    private func card(_ habit: Habit) -> some View {
+    private func card(_ habit: Habit, locked: Bool) -> some View {
         let streak = HabitTracker.streak(habit, today: context.now)
         let todayDone = HabitTracker.isDone(habit, on: context.now)
         let color = HabitStyle.color(habit)
@@ -134,27 +172,44 @@ struct HabitDetail: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .contentShape(.rect)
-                    .onTapGesture { if !context.isPreview { editor = .edit(habit.id) } }
-                    .help("点按编辑")
+                    .onTapGesture {
+                        guard !context.isPreview else { return }
+                        if locked { PaywallWindow.shared.show() } else { editor = .edit(habit.id) }
+                    }
+                    .help(locked ? "" : tr("点按编辑"))
                 Spacer(minLength: 4)
-                Button {
-                    tap(habit)
-                } label: {
-                    Label(todayLabel(habit, done: todayDone),
-                          systemImage: todayDone ? "checkmark.circle.fill" : (habit.goal > 1 ? "plus.circle" : "circle"))
-                        .font(WidgetStyle.label(11))
-                        .monospacedDigit()
-                        .foregroundStyle(todayDone ? Color.white : Color.white.opacity(0.85))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(todayDone ? color.opacity(0.75) : Color.white.opacity(0.12)))
-                        .contentShape(Capsule())
+                if locked {
+                    Button { PaywallWindow.shared.show() } label: {
+                        Label(ProLicenseGate.lockTitle, systemImage: "lock.fill")
+                            .font(WidgetStyle.label(11))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Color(hex: ShelfColor.redPanda.hex).opacity(0.85)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help(tr("免费版可用 3 个习惯，这个只读。解锁码头 Pro 后可以继续打卡。"))
+                } else {
+                    Button {
+                        tap(habit)
+                    } label: {
+                        Label(todayLabel(habit, done: todayDone),
+                              systemImage: todayDone ? "checkmark.circle.fill" : (habit.goal > 1 ? "plus.circle" : "circle"))
+                            .font(WidgetStyle.label(11))
+                            .monospacedDigit()
+                            .foregroundStyle(todayDone ? Color.white : Color.white.opacity(0.85))
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(todayDone ? color.opacity(0.75) : Color.white.opacity(0.12)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             HStack(alignment: .top, spacing: 12) {
-                heatmap(habit)
+                heatmap(habit, locked: locked)
                 VStack(alignment: .leading, spacing: 6) {
                     StatChip(label: tr("连续"), value: tr("\(streak) 天"))
                     StatChip(label: tr("本月"), value: tr("\(HabitTracker.doneCount(habit, month: context.now)) 天"))
@@ -164,11 +219,12 @@ struct HabitDetail: View {
             }
         }
         .padding(10)
+        .opacity(locked ? 0.6 : 1)
         .glassPane(cornerRadius: 12)
     }
 
     /// The month, Monday first, a square per day.
-    private func heatmap(_ habit: Habit) -> some View {
+    private func heatmap(_ habit: Habit, locked: Bool = false) -> some View {
         let weeks = HabitTracker.monthGrid(habit, month: context.now, today: context.now)
         let cell: CGFloat = 22
         return VStack(spacing: 3) {
@@ -184,7 +240,7 @@ struct HabitDetail: View {
                 HStack(spacing: 3) {
                     ForEach(0..<7, id: \.self) { column in
                         if let day = weeks[row][column] {
-                            square(habit, day, size: cell)
+                            square(habit, day, size: cell, locked: locked)
                         } else {
                             Color.clear.frame(width: cell, height: cell)
                         }
@@ -194,7 +250,7 @@ struct HabitDetail: View {
         }
     }
 
-    private func square(_ habit: Habit, _ day: HabitDay, size: CGFloat) -> some View {
+    private func square(_ habit: Habit, _ day: HabitDay, size: CGFloat, locked: Bool = false) -> some View {
         Button {
             guard !context.isPreview, !day.isFuture else { return }
             withAnimation(.snappy(duration: 0.2)) {
@@ -219,8 +275,8 @@ struct HabitDetail: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(day.isFuture || context.isPreview)
-        .help(day.isFuture ? "" : (day.done ? tr("取消这天的打卡") : tr("补打这天的卡")))
+        .disabled(day.isFuture || context.isPreview || locked)
+        .help(day.isFuture || locked ? "" : (day.done ? tr("取消这天的打卡") : tr("补打这天的卡")))
     }
 
     // MARK: Editing
@@ -241,6 +297,11 @@ struct HabitDetail: View {
     private func save(_ target: HabitEditTarget, name: String, icon: String?, color: PaletteColor?,
                       goal: Int, unit: String?) {
         guard !context.isPreview else { return }
+        if target == .new, !ProLicenseGate.canAddHabit(count: habits.count, unlocked: unlocked) {
+            editor = nil
+            PaywallWindow.shared.show()
+            return
+        }
         withAnimation(.snappy(duration: 0.3)) {
             switch target {
             case .new:
@@ -258,6 +319,11 @@ struct HabitDetail: View {
 
     private func addTemplate(_ template: HabitTemplate) {
         guard !context.isPreview else { return }
+        if !ProLicenseGate.canAddHabit(count: habits.count, unlocked: unlocked) {
+            editor = nil
+            PaywallWindow.shared.show()
+            return
+        }
         withAnimation(.snappy(duration: 0.3)) {
             HabitLog.change(instance) { HabitTracker.adding(template, to: $0) }
         }

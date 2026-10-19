@@ -6,10 +6,14 @@ import SwiftUI
 /// 中间是名称和今天的状态，底部左边是大号的每日目标和单位，右边是最近十周的周格子
 /// （像贡献图，一列一周，做满最深）。点卡片打开编辑弹层，
 /// 右键可以编辑、上移、下移和删除。思路借鉴 Grow 的习惯卡片网格。
+///
+/// 没解锁 Pro 时免费 3 个：第 4 个起的卡片画淡、带小锁，点按弹付费墙，右键只能删除；
+/// 满 3 个时“新建习惯”带 Pro 标识，点按弹付费墙。
 struct HabitGrid: View {
     var habits: [Habit]
     var now: Date
     var isPreview: Bool
+    var unlocked: Bool = true
     var onOpen: (HabitEditTarget) -> Void
     var onTap: (Habit) -> Void
     var onMove: (Habit, Int) -> Void
@@ -20,19 +24,30 @@ struct HabitGrid: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
-                HabitCard(habit: habit, now: now, isPreview: isPreview, onTap: { onTap(habit) })
+                let locked = ProLicenseGate.isHabitLocked(at: index, unlocked: unlocked)
+                // 没解锁时排序只在前 3 个里挪，免得把锁着的挪上来、把能用的挪下去。
+                let lastMovable = unlocked ? habits.count - 1 : min(habits.count, ProFeatures.freeHabitLimit) - 1
+                HabitCard(habit: habit, now: now, isPreview: isPreview, locked: locked, onTap: { onTap(habit) })
                     .contentShape(.rect(cornerRadius: 14))
-                    .onTapGesture { if !isPreview { onOpen(.edit(habit.id)) } }
+                    .onTapGesture {
+                        guard !isPreview else { return }
+                        if locked { PaywallWindow.shared.show() } else { onOpen(.edit(habit.id)) }
+                    }
                     .contextMenu {
-                        Button("编辑", systemImage: "pencil") { onOpen(.edit(habit.id)) }
-                        Button("上移", systemImage: "arrow.up") { onMove(habit, -1) }
-                            .disabled(index == 0)
-                        Button("下移", systemImage: "arrow.down") { onMove(habit, 1) }
-                            .disabled(index == habits.count - 1)
+                        if locked {
+                            Button(ProLicenseGate.lockTitle, systemImage: "lock.fill") { PaywallWindow.shared.show() }
+                        } else {
+                            Button("编辑", systemImage: "pencil") { onOpen(.edit(habit.id)) }
+                            Button("上移", systemImage: "arrow.up") { onMove(habit, -1) }
+                                .disabled(index == 0)
+                            Button("下移", systemImage: "arrow.down") { onMove(habit, 1) }
+                                .disabled(index >= lastMovable)
+                        }
                         Divider()
                         Button("删除…", systemImage: "trash", role: .destructive) { onDelete(habit) }
                     }
-                    .help("点按编辑，右键可排序或删除")
+                    .help(locked ? tr("免费版可用 3 个习惯，这个只读。解锁码头 Pro 后可以继续打卡。")
+                                 : tr("点按编辑，右键可排序或删除"))
             }
             if habits.count < HabitTracker.maxHabits {
                 newCard
@@ -40,20 +55,29 @@ struct HabitGrid: View {
         }
     }
 
+    private var canAdd: Bool { ProLicenseGate.canAddHabit(count: habits.count, unlocked: unlocked) }
+
     private var newCard: some View {
         Button {
             guard !isPreview else { return }
-            onOpen(.new)
+            if canAdd { onOpen(.new) } else { PaywallWindow.shared.show() }
         } label: {
             VStack(spacing: 6) {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
+                Image(systemName: canAdd ? "plus" : "lock.fill")
+                    .font(.system(size: canAdd ? 18 : 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
                     .frame(width: 30, height: 30)
                     .background(Circle().fill(.white.opacity(0.12)))
                 Text("新建习惯")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
+                if !canAdd {
+                    Text(tr("免费版 \(ProFeatures.freeHabitLimit) 个 · 解锁 Pro"))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: HabitCard.height)
@@ -65,6 +89,7 @@ struct HabitGrid: View {
         }
         .buttonStyle(.plain)
         .disabled(isPreview)
+        .help(canAdd ? "" : tr("免费版可用 3 个习惯。解锁码头 Pro 后不限个数，还能看近七天报告。"))
         .accessibilityLabel("新建习惯")
     }
 }
@@ -87,6 +112,8 @@ struct HabitCard: View {
     var habit: Habit
     var now: Date
     var isPreview: Bool
+    /// 没解锁时第 4 个起：画淡、右上角是小锁，不能打卡。
+    var locked: Bool = false
     var onTap: () -> Void
 
     static let height: CGFloat = 136
@@ -107,7 +134,16 @@ struct HabitCard: View {
             HStack(alignment: .top) {
                 HabitIconBadge(icon: habit.iconName, color: color, size: 30)
                 Spacer(minLength: 4)
-                checkButton(color: color, done: done)
+                if locked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex).opacity(0.85)))
+                        .accessibilityLabel(ProLicenseGate.lockTitle)
+                } else {
+                    checkButton(color: color, done: done)
+                }
             }
             Text(habit.name)
                 .font(.system(size: 13, weight: .semibold))
@@ -138,6 +174,7 @@ struct HabitCard: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: Self.height)
+        .opacity(locked ? 0.55 : 1)
         .glassPane(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tr("\(habit.name)，\(HabitTracker.goalText(habit))，今天\(HabitTracker.todayText(habit, today: now))"))

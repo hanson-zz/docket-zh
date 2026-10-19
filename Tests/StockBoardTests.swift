@@ -264,6 +264,25 @@ final class StockBoardTests: XCTestCase {
         XCTAssertEqual(StockBoard.moreText(3), "还有 3 只")
     }
 
+    /// 自选股宽卡片两列两行：行高约 18pt、字不小于 9.5pt，放进 58pt 高的卡片；
+    /// 第 5 只起最后一格写“还有 N 只”。竖排照旧一行一只最多 6 行。
+    func testWatchlistWideCardIsTwoByTwo() {
+        XCTAssertEqual(StockBoard.watchlistRowsPerColumn, 2)
+        XCTAssertEqual(StockBoard.watchlistCapacity, 4)
+        XCTAssertEqual(StockBoard.watchlistRowHeight, 18)
+        XCTAssertGreaterThanOrEqual(StockBoard.watchlistMinFontSize, 9.5)
+        XCTAssertLessThanOrEqual(StockBoard.watchlistWideContentHeight, 58, "放得进 58pt 高的扩展栏卡片")
+        XCTAssertGreaterThanOrEqual(StockBoard.watchlistRowHeight, StockBoard.watchlistMinFontSize * 1.6,
+                                    "行高留够 9.5pt 的字和涨跌色块")
+        XCTAssertEqual(StockBoard.fit(count: 4, capacity: StockBoard.watchlistCapacity).hidden, 0)
+        let five = StockBoard.fit(count: 5, capacity: StockBoard.watchlistCapacity)
+        XCTAssertEqual(five.shown, 3)
+        XCTAssertEqual(five.hidden, 2)
+        XCTAssertEqual(StockBoard.moreText(five.hidden), "还有 2 只")
+        XCTAssertEqual(StockBoard.watchlistColumnCapacity, 6)
+        XCTAssertEqual(StockBoard.watchlistColumnHeight(count: 9), StockBoard.watchlistColumnHeight(count: 6))
+    }
+
     func testTodaysProfitNeedsHoldings() {
         let config = WidgetConfig(["holdings": .list([.string("NVDA 100"), .string("aapl:50"), .string("bad")])])
         let holdings = StockBoard.holdings(config)

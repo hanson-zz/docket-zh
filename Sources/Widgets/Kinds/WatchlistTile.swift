@@ -3,9 +3,10 @@ import SwiftUI
 /// 自选股：管一组对比。一眼看出谁领涨、谁拖后腿，这一组今天赚没赚。
 ///
 /// 宽卡片顶部是分组名（有多个分组时点一下换下一个）、“涨 5 跌 3”和红绿比例条，
-/// 填了持仓时右边是今日盈亏；下面两列、每列三行，按涨跌幅从高到低（也可按填写
-/// 顺序），每行是代码、当日迷你走势、现价和涨跌幅色块，幅度越大色块越深。放不下时
-/// 最后一格写“还有 N 只”，点开面板看全部。竖排扩展栏只放涨跌统计和代码加色块。
+/// 填了持仓时右边是今日盈亏；下面两列、每列两行（行高 18pt，字不小于 9.5pt），
+/// 按涨跌幅从高到低（也可按填写顺序），每行是代码、当日迷你走势、现价和涨跌幅色块，
+/// 幅度越大色块越深。放不下时最后一格写“还有 N 只”，点开面板或点分组名翻看其余的。
+/// 竖排扩展栏只放涨跌统计和代码加色块。
 ///
 /// 涨跌颜色跟设置走，默认红涨绿跌；黄金白银按设置的单位显示，默认元/克。
 struct WatchlistTile: View {
@@ -52,16 +53,19 @@ struct WatchlistTile: View {
 
     // MARK: 宽卡片
 
+    /// 最小字号，见 `StockBoard.watchlistMinFontSize`。
+    private static let font = CGFloat(StockBoard.watchlistMinFontSize)
+
     private func wide(_ symbols: [String]) -> some View {
         let fit = StockBoard.fit(count: symbols.count, capacity: StockBoard.watchlistCapacity)
         let shown = Array(symbols.prefix(fit.shown))
         let perColumn = StockBoard.watchlistRowsPerColumn
-        return VStack(alignment: .leading, spacing: 3) {
+        return VStack(alignment: .leading, spacing: CGFloat(StockBoard.watchlistHeaderSpacing)) {
             header(symbols)
-                .frame(height: 12)
-            HStack(alignment: .top, spacing: 10) {
+                .frame(height: CGFloat(StockBoard.watchlistHeaderHeight))
+            HStack(alignment: .top, spacing: 8) {
                 ForEach(0..<2, id: \.self) { columnIndex in
-                    VStack(spacing: 1) {
+                    VStack(spacing: 0) {
                         ForEach(0..<perColumn, id: \.self) { rowIndex in
                             let slot = columnIndex * perColumn + rowIndex
                             Group {
@@ -69,28 +73,29 @@ struct WatchlistTile: View {
                                     row(shown[slot])
                                 } else if slot == shown.count, fit.hidden > 0 {
                                     Text(StockBoard.moreText(fit.hidden))
-                                        .font(WidgetStyle.caption(8.5))
+                                        .font(WidgetStyle.caption(Self.font))
                                         .foregroundStyle(WidgetStyle.secondary)
+                                        .lineLimit(1)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 } else {
                                     Color.clear
                                 }
                             }
-                            .frame(height: 12)
+                            .frame(height: CGFloat(StockBoard.watchlistRowHeight))
                         }
                     }
                     .frame(maxWidth: .infinity)
                 }
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, CGFloat(StockBoard.watchlistVerticalPadding))
     }
 
     private func header(_ symbols: [String]) -> some View {
         let breadth = StockBoard.breadth(symbols.map { quote($0)?.changePercent })
         return HStack(spacing: 6) {
             groupName
-            breadthText(breadth, size: 9)
+            breadthText(breadth, size: Self.font)
             BreadthBar(breadth: breadth, colors: colors, height: 3)
                 .frame(width: 36)
             Spacer(minLength: 0)
@@ -141,7 +146,7 @@ struct WatchlistTile: View {
         if !holdings.isEmpty, let first = StockBoard.todayProfit(positions(symbols), holdings: holdings).first {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text("今日")
-                    .font(WidgetStyle.caption(8))
+                    .font(WidgetStyle.caption(Self.font))
                     .foregroundStyle(WidgetStyle.secondary)
                 Text(StockBoard.profitText(first))
                     .font(WidgetStyle.label(9.5))
@@ -165,23 +170,27 @@ struct WatchlistTile: View {
     private func row(_ symbol: String) -> some View {
         let quote = quote(symbol)
         let ink = StockInk.color(quote?.changePercent, colors: colors, scheme: scheme)
-        return HStack(spacing: 4) {
+        // 不缩字：放不下时代码截断，现价和涨跌幅保持 9.5pt。
+        return HStack(spacing: 3) {
             Text(StockBoard.displaySymbol(symbol))
-                .font(WidgetStyle.label(9.5))
+                .font(WidgetStyle.label(Self.font))
                 .foregroundStyle(WidgetStyle.primary)
+                .truncationMode(.tail)
                 .frame(width: 36, alignment: .leading)
             MiniTrend(samples: quote?.history ?? [], tint: ink, baseline: quote?.previousClose, lineWidth: 1)
-                .frame(width: 24, height: 9)
+                .frame(width: 18, height: 10)
             Spacer(minLength: 0)
             Text(StockBoard.priceText(quote?.price))
-                .font(WidgetStyle.caption(8.5))
+                .font(WidgetStyle.caption(Self.font))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
+                .layoutPriority(1)
                 .rollingValue(StockBoard.priceText(quote?.price))
-            ChangeChip(percent: quote?.changePercent, colors: colors, size: 8.5, minWidth: 38)
+            ChangeChip(percent: quote?.changePercent, colors: colors, size: Self.font, minWidth: 40,
+                       minimumScale: 1)
+                .layoutPriority(1)
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
         .opacity(quote?.stale == true ? 0.55 : 1)
     }
 
@@ -189,7 +198,7 @@ struct WatchlistTile: View {
 
     private func column(_ symbols: [String]) -> some View {
         let breadth = StockBoard.breadth(symbols.map { quote($0)?.changePercent })
-        let fit = StockBoard.fit(count: symbols.count, capacity: StockBoard.watchlistCapacity)
+        let fit = StockBoard.fit(count: symbols.count, capacity: StockBoard.watchlistColumnCapacity)
         return VStack(alignment: .leading, spacing: 2) {
             breadthText(breadth, size: 8.5)
                 .lineLimit(1)

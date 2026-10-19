@@ -22,7 +22,7 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     public var caption: String {
         switch self {
         case .productivity: tr("待办、日历、专注计时")
-        case .health: tr("喝水、久坐提醒")
+        case .health: tr("喝水、久坐提醒、习惯打卡")
         case .system: tr("电池、网络、系统活动")
         case .fun: tr("音乐、相册")
         case .developer: tr("剪贴板、取色器")
@@ -53,7 +53,7 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
     public var candidates: [String] {
         switch self {
         case .productivity: ["todo", "calendar", "timer", "reminders"]
-        case .health: ["water", "posture"]
+        case .health: ["water", "posture", "habit"]
         case .system: ["battery", "network", "system", "gauges"]
         case .fun: ["music", "photos"]
         case .developer: ["clipboard", "color-picker"]

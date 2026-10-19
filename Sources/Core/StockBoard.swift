@@ -528,13 +528,31 @@ public enum StockBoard {
         tr("涨 \(breadth.up) 跌 \(breadth.down)")
     }
 
-    /// 宽卡片一列放 3 行，共两列。
-    public static let watchlistRowsPerColumn = 3
-    public static let watchlistCapacity = 6
+    /// 宽卡片两列、每列 2 行，一共 4 格。58pt 高的卡片放三行时每行只有 12pt、
+    /// 字 7.5 到 8.5pt，扩展栏一缩小就看不清，所以改成两行。
+    public static let watchlistRowsPerColumn = 2
+    public static let watchlistCapacity = watchlistRowsPerColumn * 2
+    /// 宽卡片每行的高度。
+    public static let watchlistRowHeight: Double = 18
+    /// 宽卡片上最小的字号（代码、现价、涨跌幅、“还有 N 只”都不小于它）。
+    public static let watchlistMinFontSize: Double = 9.5
+    /// 宽卡片的顶行（分组名、涨跌统计、今日盈亏）高度，和它与下面两行的间距、上下留白。
+    public static let watchlistHeaderHeight: Double = 12
+    public static let watchlistHeaderSpacing: Double = 2
+    public static let watchlistVerticalPadding: Double = 3
+
+    /// 宽卡片的内容一共多高：留白、顶行、间距和两行，要放得进 58pt 的卡片。
+    public static var watchlistWideContentHeight: Double {
+        watchlistVerticalPadding * 2 + watchlistHeaderHeight + watchlistHeaderSpacing
+            + Double(watchlistRowsPerColumn) * watchlistRowHeight
+    }
+
+    /// 竖排扩展栏一行一只，最多 6 行（竖排不受宽卡片两行的限制）。
+    public static let watchlistColumnCapacity = 6
 
     /// 竖排扩展栏的自选股：顶部涨跌统计，下面一行一只，最多 6 行。
     public static func watchlistColumnHeight(count: Int) -> Double {
-        let rows = min(max(count, 1), watchlistCapacity)
+        let rows = min(max(count, 1), watchlistColumnCapacity)
         return Double(24 + rows * 18 + 6)
     }
 

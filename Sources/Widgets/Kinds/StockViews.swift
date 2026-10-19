@@ -189,6 +189,8 @@ struct ChangeChip: View {
     var colors: ChangeColors
     var size: CGFloat = 9
     var minWidth: CGFloat = 0
+    /// 放不下时最多缩到多少。自选股的宽卡片传 1：字不小于 9.5pt。
+    var minimumScale: CGFloat = 0.7
 
     @Environment(\.colorScheme) private var scheme
 
@@ -200,7 +202,7 @@ struct ChangeChip: View {
             .monospacedDigit()
             .foregroundStyle(tone == .neutral ? WidgetStyle.secondary : Color.white)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(minimumScale)
             .padding(.horizontal, size * 0.4)
             .padding(.vertical, size * 0.1)
             .frame(minWidth: minWidth)

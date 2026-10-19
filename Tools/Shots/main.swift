@@ -830,7 +830,7 @@ private func shelves() -> [ShelfShot] {
         // v0.4.0：外观预设（深色玻璃 + 单色）、时钟样式与天气
         ShelfShot(name: "shelf-styles",
                   widgets: [widget(.clock, ["layout": .string("analog")]),
-                            widget(.weather, ["layout": .string("sky")]),
+                            widget(.weather, ["layout": .string(WeatherStyle.currentLayout), WeatherStyle.captionKey: .string(WeatherStyle.Caption.sky.rawValue)]),
                             widget(.world, ["zone": .string("Asia/Tokyo"), "city": .string(tr("东京"))]),
                             widget(.calculator)],
                   sample: true, look: .darkGlass, monochrome: true),

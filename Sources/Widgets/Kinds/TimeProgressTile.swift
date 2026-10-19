@@ -29,7 +29,11 @@ struct TimeProgressTile: View {
 
     private var period: TimeProgress.Period { TimeProgress.period(instance.config) }
 
-    private var layout: String { TimeProgress.layout(instance.config) }
+    /// 实际画的外观：液态和四格是 Pro，没解锁时退回圆环（预览照常画）。
+    private var layout: String {
+        ProLicenseGate.timeProgressLayout(config: instance.config,
+                                          unlocked: ProAccess.isUnlocked || context.isPreview)
+    }
 
     /// 0…1 through the current period.
     private var fraction: Double { TimeProgress.fraction(period, now: context.now) }

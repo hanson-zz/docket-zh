@@ -6,18 +6,19 @@ final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsMatchTheAgreedList() {
         XCTAssertEqual(ProFeatures.proKinds, [
-            .slacker, .progress, .ambient, .podcast, .trash,
+            .slacker, .ambient, .podcast, .trash,
             .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
             .appVolume, .recorder, .stock, .watchlist, .crypto,
-            .wallpaper, .radio, .fileShelf, .translate, .habit,
+            .wallpaper, .radio, .fileShelf, .translate,
         ])
-        XCTAssertEqual(ProFeatures.proKinds.count, 20)
+        XCTAssertEqual(ProFeatures.proKinds.count, 18)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))
         }
         for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar,
-                     .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume] {
+                     .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume,
+                     .progress, .habit] {
             XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind) 不是整种 Pro")
             XCTAssertFalse(ProFeatures.isPro(kind, overrides: [:]))
         }
@@ -91,7 +92,7 @@ final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsAddedInThisRoundAreLocked() {
         for kind in [WidgetKind.appVolume, .recorder, .stock, .watchlist, .crypto,
-                     .wallpaper, .radio, .fileShelf, .translate, .habit] {
+                     .wallpaper, .radio, .fileShelf, .translate] {
             XCTAssertTrue(ProFeatures.isProKind(kind), "\(kind)")
             XCTAssertFalse(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: false), "\(kind)")
             XCTAssertTrue(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: true), "\(kind)")
@@ -104,8 +105,8 @@ final class ProFeaturesTests: XCTestCase {
     func testFreeAndProCountsOfTheLibrary() {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
-        XCTAssertEqual(pro.count, 20)
-        XCTAssertEqual(kinds.count - pro.count, 38, "官网和 README 写的免费小组件数量")
+        XCTAssertEqual(pro.count, 18)
+        XCTAssertEqual(kinds.count - pro.count, 40, "官网和 README 写的免费小组件数量")
     }
 
     func testWeatherCitiesIsPro() {
@@ -118,7 +119,7 @@ final class ProFeaturesTests: XCTestCase {
         // 只对天气算：同样的值放在别的小组件上不是 Pro。
         XCTAssertFalse(ProFeatures.isProStyle(cities))
         XCTAssertFalse(ProFeatures.isProStyle(.clock, cities))
-        for layout in ["current", "conditions", "hourly", "sky", "week", "tenDays"] {
+        for layout in ["current", "forecast", "hourly", "conditions", "sky", "week", "tenDays"] {
             XCTAssertFalse(ProFeatures.isPro(.weather, overrides: ["layout": .string(layout)]), layout)
         }
         let placed = WidgetInstance(kind: .weather, config: WidgetConfig(cities))
@@ -158,6 +159,7 @@ final class ProFeaturesTests: XCTestCase {
         }
         XCTAssertTrue(proStyles.contains("weather:多城市"))
         XCTAssertTrue(proStyles.contains("battery:电池格"))
+        XCTAssertTrue(proStyles.contains("progress:四格"))
         // 便签的纸色不再列成样式，改在面板和设置里选；十五种里免费五种，其余十种是 Pro 选项。
         XCTAssertTrue(proStyles.filter { $0.hasPrefix("notes:") }.isEmpty)
         XCTAssertEqual(PaperColor.picker.filter {
@@ -230,6 +232,118 @@ final class ProFeaturesTests: XCTestCase {
         let photos = WidgetCatalog.entry(.photos)!.variants
         XCTAssertEqual(photos.map(\.title), ["相册标准", "相册宽幅"])
         XCTAssertEqual(photos.map { $0.overrides["layout"] }, [.string("standard"), .string("wide")])
+    }
+
+    // MARK: 时间进度和习惯打卡改为免费（2026-10-19）
+
+    func testTimeProgressIsFreeExceptLiquidAndQuad() {
+        XCTAssertFalse(ProFeatures.isProKind(.progress))
+        XCTAssertTrue(ProLicenseGate.canAdd(.progress, overrides: [:], unlocked: false))
+        for layout in ["ring", "percentage", "bars"] {
+            let overrides: [String: WidgetConfig.Value] = ["layout": .string(layout)]
+            XCTAssertFalse(ProFeatures.isPro(.progress, overrides: overrides), layout)
+            XCTAssertTrue(ProLicenseGate.canAdd(.progress, overrides: overrides, unlocked: false), layout)
+        }
+        for layout in [LiquidMotion.layout, TimeProgress.quadLayout] {
+            let overrides: [String: WidgetConfig.Value] = ["layout": .string(layout)]
+            XCTAssertTrue(ProFeatures.isPro(.progress, overrides: overrides), layout)
+            XCTAssertFalse(ProLicenseGate.canAdd(.progress, overrides: overrides, unlocked: false), layout)
+            XCTAssertFalse(ProLicenseGate.canChoose(.progress, overrides, unlocked: false), layout)
+            XCTAssertTrue(ProLicenseGate.canChoose(.progress, overrides, unlocked: true), layout)
+            XCTAssertTrue(ProFeatures.isProChoice(kind: .progress, key: "layout", value: layout), layout)
+            // 放好的液态、四格卡片没解锁时退回圆环，不盖遮罩。
+            let config = WidgetConfig(overrides)
+            let placed = WidgetInstance(kind: .progress, config: config)
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false), layout)
+            XCTAssertEqual(ProLicenseGate.timeProgressLayout(config: config, unlocked: false), "ring", layout)
+            XCTAssertEqual(ProLicenseGate.timeProgressLayout(config: config, unlocked: true), layout)
+        }
+        // 免费外观照原样画；没存外观的旧卡片仍是进度条。
+        XCTAssertEqual(ProLicenseGate.timeProgressLayout(config: WidgetConfig(["layout": .string("percentage")]),
+                                                         unlocked: false), "percentage")
+        XCTAssertEqual(ProLicenseGate.timeProgressLayout(config: WidgetConfig(), unlocked: false), "bars")
+        // 新放上去的是圆环，免费。
+        XCTAssertFalse(ProFeatures.isPro(WidgetCatalog.make(.progress)!))
+        // 四格只对时间进度算 Pro。
+        XCTAssertFalse(ProFeatures.isProStyle(.clock, ["layout": .string(TimeProgress.quadLayout)]))
+    }
+
+    func testHabitTrackerIsFreeForThreeHabits() {
+        XCTAssertFalse(ProFeatures.isProKind(.habit))
+        XCTAssertEqual(ProFeatures.freeHabitLimit, 3)
+        XCTAssertTrue(ProLicenseGate.canAdd(.habit, overrides: [:], unlocked: false))
+        let placed = WidgetInstance(kind: .habit, config: WidgetConfig())
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false), "习惯打卡整张卡片不再盖锁")
+        XCTAssertEqual(ProLicenseGate.habitLimit(unlocked: false), 3)
+        XCTAssertEqual(ProLicenseGate.habitLimit(unlocked: true), HabitTracker.maxHabits)
+        XCTAssertTrue(ProLicenseGate.canAddHabit(count: 2, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.canAddHabit(count: 3, unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canAddHabit(count: 3, unlocked: true))
+        XCTAssertFalse(ProLicenseGate.canAddHabit(count: HabitTracker.maxHabits, unlocked: true))
+        for index in 0..<HabitTracker.maxHabits {
+            XCTAssertEqual(ProLicenseGate.isHabitLocked(at: index, unlocked: false), index >= 3, "\(index)")
+            XCTAssertFalse(ProLicenseGate.isHabitLocked(at: index, unlocked: true), "\(index)")
+        }
+        XCTAssertFalse(ProLicenseGate.canSeeHabitReport(unlocked: false), "近七天报告是 Pro")
+        XCTAssertTrue(ProLicenseGate.canSeeHabitReport(unlocked: true))
+        // 竹篮仍是 Pro，它的三项（喝水、习惯、专注）现在都免费可用。
+        XCTAssertTrue(ProFeatures.isProKind(.perfectDay))
+        for kind in [WidgetKind.water, .habit, .timer] {
+            XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind)")
+        }
+    }
+
+    private func habits(_ count: Int) -> [Habit] {
+        (0..<count).map { Habit(id: "h\($0)", name: "习惯\($0)") }
+    }
+
+    func testFreeUsersCannotAddAFourthHabit() {
+        let three = habits(3)
+        let added = HabitTracker.adding("第四个", to: three, id: "new")
+        XCTAssertEqual(added.count, 4)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: three, after: added, unlocked: false), three)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: three, after: added, unlocked: true), added)
+        // 不满 3 个时照常加。
+        let two = habits(2)
+        let third = HabitTracker.adding("第三个", to: two, id: "new")
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: two, after: third, unlocked: false), third)
+        // 已经有 5 个的再加也不行。
+        let five = habits(5)
+        let six = HabitTracker.adding("第六个", to: five, id: "new")
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: six, unlocked: false), five)
+    }
+
+    func testHabitsPastThreeAreReadOnlyButKept() {
+        let today = Date(timeIntervalSince1970: 1_760_000_000)
+        let five = habits(5)
+        // 免费的前 3 个照常打卡。
+        let first = HabitTracker.tapping("h0", day: today, in: five, today: today)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: first, unlocked: false), first)
+        // 第 4 个起打卡、补卡、改名都退回原样，数据一条不删。
+        let tapped = HabitTracker.tapping("h3", day: today, in: five, today: today)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: tapped, unlocked: false), five)
+        let toggled = HabitTracker.toggling("h4", day: today, in: five, today: today)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: toggled, unlocked: false), five)
+        let renamed = HabitTracker.renaming("h4", to: "新名字", in: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: renamed, unlocked: false), five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: tapped, unlocked: true), tapped)
+        // 不能把锁着的挪进前 3 个，也不能把能用的挪到后面去换一个上来。
+        let up = HabitTracker.moving("h3", by: -1, in: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: up, unlocked: false), five)
+        let down = HabitTracker.moving("h2", by: 1, in: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: down, unlocked: false), five)
+        // 前 3 个之间挪可以。
+        let swap = HabitTracker.moving("h0", by: 1, in: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: swap, unlocked: false), swap)
+        // 删除哪个都可以；删了前面的，第 4 个顶上来变成能用的。
+        let deleted = HabitTracker.removing("h1", from: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: deleted, unlocked: false), deleted)
+        XCTAssertFalse(ProLicenseGate.isHabitLocked("h3", in: deleted, unlocked: false))
+        XCTAssertTrue(ProLicenseGate.isHabitLocked("h4", in: deleted, unlocked: false))
+        let deletedLocked = HabitTracker.removing("h4", from: five)
+        XCTAssertEqual(ProLicenseGate.allowedHabitEdit(before: five, after: deletedLocked, unlocked: false),
+                       deletedLocked)
+        XCTAssertFalse(ProLicenseGate.isHabitLocked("missing", in: five, unlocked: false))
     }
 
     func testProTools() {

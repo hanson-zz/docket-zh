@@ -303,15 +303,16 @@ public enum WeatherLayout {
         return result.isEmpty ? defaultCities : result
     }
 
-    /// How many days a forecast layout shows on a bottom shelf.
-    public static func days(layout: String) -> Int {
-        layout == "tenDays" ? 10 : 7
+    /// How many days the forecast layout shows on a bottom shelf: its 天数
+    /// option, 7 or 10. See `WeatherStyle.days`.
+    public static func days(_ config: WidgetConfig) -> Int {
+        WeatherStyle.days(config)
     }
 
     /// How many days the same layout shows stacked in a 76pt side column,
     /// where every day is a row and ten rows would make a tower.
-    public static func columnDays(layout: String) -> Int {
-        layout == "tenDays" ? 7 : 5
+    public static func columnDays(_ config: WidgetConfig) -> Int {
+        WeatherStyle.columnDays(config)
     }
 
     /// Width of one day's column on a bottom shelf. Enough for "24° 16°"
@@ -331,12 +332,12 @@ public enum WeatherLayout {
     /// read from WidgetStyle so the catalog stays free of SwiftUI.
     public static let inset: Double = 20
 
-    public static func forecastWidth(layout: String) -> Double {
-        Double(days(layout: layout)) * dayColumnWidth + inset
+    public static func forecastWidth(_ config: WidgetConfig) -> Double {
+        Double(days(config)) * dayColumnWidth + inset
     }
 
-    public static func forecastColumnHeight(layout: String) -> Double {
-        Double(columnDays(layout: layout)) * dayRowHeight + 17
+    public static func forecastColumnHeight(_ config: WidgetConfig) -> Double {
+        Double(columnDays(config)) * dayRowHeight + 17
     }
 
     public static func citiesWidth(count: Int) -> Double {
