@@ -189,4 +189,44 @@ final class CustomDrinksTests: XCTestCase {
         XCTAssertEqual(Set(CustomDrinks.symbols).count, CustomDrinks.symbols.count)
         XCTAssertTrue(CustomDrinks.symbols.contains(CustomDrinks.defaultSymbol))
     }
+
+    // MARK: 旧版「自定义」比例
+
+    func testLegacyFactorBecomesOneDrinkAndTheKeyGoes() {
+        var config = WidgetConfig(["customFactor": .number(0.7)])
+        let seed = UUID(uuidString: "ABCDEF12-0000-0000-0000-000000000000")!
+        XCTAssertTrue(CustomDrinks.migratingLegacyFactor(in: &config, name: "自定义", seed: seed))
+        XCTAssertNil(config[CustomDrinks.legacyFactorKey])
+        let drinks = CustomDrinks.all(config)
+        XCTAssertEqual(drinks.count, 1)
+        XCTAssertEqual(drinks.first?.name, "自定义")
+        XCTAssertEqual(drinks.first?.percent, 70)
+        XCTAssertEqual(drinks.first?.symbol, CustomDrinks.defaultSymbol)
+        XCTAssertEqual(drinks.first?.id, "abcdef")
+        // 第二次读到时什么都不做。
+        XCTAssertFalse(CustomDrinks.migratingLegacyFactor(in: &config, name: "自定义"))
+        XCTAssertEqual(CustomDrinks.all(config), drinks)
+    }
+
+    func testLegacyFactorAtFullShareOnlyDropsTheKey() {
+        var config = WidgetConfig(["customFactor": .number(1)])
+        XCTAssertTrue(CustomDrinks.migratingLegacyFactor(in: &config, name: "自定义"))
+        XCTAssertNil(config[CustomDrinks.legacyFactorKey])
+        XCTAssertEqual(CustomDrinks.all(config), [])
+    }
+
+    func testLegacyFactorLeavesExistingDrinksAlone() {
+        let drinks = added("豆浆", factor: 0.8, id: "b2")
+        var config = WidgetConfig(["customFactor": .number(0.5)])
+        CustomDrinks.store(drinks, in: &config)
+        XCTAssertTrue(CustomDrinks.migratingLegacyFactor(in: &config, name: "自定义"))
+        XCTAssertNil(config[CustomDrinks.legacyFactorKey])
+        XCTAssertEqual(CustomDrinks.all(config), drinks)
+    }
+
+    func testNoLegacyKeyChangesNothing() {
+        var config = WidgetConfig()
+        XCTAssertFalse(CustomDrinks.migratingLegacyFactor(in: &config, name: "自定义"))
+        XCTAssertEqual(config, WidgetConfig())
+    }
 }

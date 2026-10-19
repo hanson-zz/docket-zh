@@ -129,7 +129,7 @@ struct WaterDetail: View {
     private func todayPage(_ today: WaterDay, all: [WaterDay], now: Date, streak: Int) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             hero(today, all: all, now: now, streak: streak)
-            if let notice = earnedNotice { earnedBanner(notice) }
+            ForEach(earnedNotices) { notice in earnedBanner(notice) }
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("饮料")
@@ -463,10 +463,15 @@ struct WaterDetail: View {
 
     // MARK: A character just earned
 
-    /// The character the log has just earned, until the banner is closed.
-    private var earnedNotice: WaterCharacter? {
-        guard !context.isPreview else { return nil }
-        return WaterCharacter(rawValue: instance.config.string(WaterLog.earnedNoticeKey))
+    /// The characters the log has just earned, each until its banner is closed.
+    private var earnedNotices: [WaterCharacter] {
+        guard !context.isPreview else { return [] }
+        return WaterCharacter.notices(instance.config.string(WaterLog.earnedNoticeKey))
+    }
+
+    private func dropNotice(_ character: WaterCharacter, in config: inout WidgetConfig) {
+        let rest = WaterCharacter.removingNotice(character, from: config.string(WaterLog.earnedNoticeKey))
+        config.set(WaterLog.earnedNoticeKey, rest.map(WidgetConfig.Value.string))
     }
 
     private func earnedBanner(_ character: WaterCharacter) -> some View {
@@ -482,7 +487,7 @@ struct WaterDetail: View {
                 withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
                     WidgetWriter.write(instance) { config in
                         config.set("character", .string(character.rawValue))
-                        config.set(WaterLog.earnedNoticeKey, nil)
+                        dropNotice(character, in: &config)
                     }
                 }
             }
@@ -493,7 +498,7 @@ struct WaterDetail: View {
             .padding(.vertical, 3)
             .background(Capsule().fill(.white.opacity(0.18)))
             Button {
-                WaterLog.set(WaterLog.earnedNoticeKey, nil, in: instance)
+                WidgetWriter.write(instance) { config in dropNotice(character, in: &config) }
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))

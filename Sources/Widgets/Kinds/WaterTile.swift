@@ -88,7 +88,10 @@ struct WaterTile: View {
         .accessibilityLabel(tr("喝水，\(showsSkeleton ? tr("渴成骷髅了，") : "")\(WaterIntake.tally(total: day.total, goal: day.goal, ounces: ounces))"))
         // The pet's 渴成骷髅 reads this; written from here so it needs no
         // way to find the 喝水 widget itself.
-        .onAppear { publishMissed() }
+        .onAppear {
+            publishMissed()
+            if !context.isPreview { WaterLog.migrateLegacyFactor(instance) }
+        }
         .onChange(of: missedDays) { _, _ in publishMissed() }
     }
 
@@ -342,11 +345,22 @@ enum WaterLog {
     /// earned. A line in the panel rather than a notification.
     static let earnedNoticeKey = "earnedNotice"
 
-    /// Writes down any character the log has just earned and leaves the
-    /// newest for the panel to mention.
+    /// Writes down any character the log has just earned and leaves every
+    /// one of them for the panel to mention (a long-time drinker can earn the
+    /// shiba and the cat with the same cup).
     private static func noteEarned(_ config: inout WidgetConfig, now: Date) {
         let fresh = WaterCharacter.recordingEarned(in: &config, now: now)
-        if let newest = fresh.last { config.set(earnedNoticeKey, .string(newest.rawValue)) }
+        guard !fresh.isEmpty else { return }
+        let text = WaterCharacter.addingNotices(fresh, to: config.string(earnedNoticeKey))
+        config.set(earnedNoticeKey, text.map(WidgetConfig.Value.string))
+    }
+
+    /// 旧版的通用「自定义」比例迁成一个饮料，只做一次。
+    static func migrateLegacyFactor(_ instance: WidgetInstance) {
+        guard instance.config[CustomDrinks.legacyFactorKey] != nil else { return }
+        WidgetWriter.write(instance) { config in
+            CustomDrinks.migratingLegacyFactor(in: &config, name: tr("自定义"))
+        }
     }
 
     /// Removed drinks the log no longer names go.

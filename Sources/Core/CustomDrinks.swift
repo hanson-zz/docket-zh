@@ -99,6 +99,29 @@ public enum CustomDrinks {
         config.set(key, .string(text))
     }
 
+    // MARK: 旧版「自定义」比例
+
+    /// 旧版喝水面板只有一个通用的「自定义」芯片，比例存在这个键里。
+    public static let legacyFactorKey = "customFactor"
+
+    /// 把旧的通用比例迁成一个饮料：比例不是 100% 且还没有任何自己的饮料时，
+    /// 生成一个叫 `name`（「自定义」）的饮料带上这个比例。不论迁没迁，旧键都删掉，
+    /// 下次不再看。返回配置有没有变。
+    @discardableResult
+    public static func migratingLegacyFactor(in config: inout WidgetConfig, name: String,
+                                             seed: UUID = UUID()) -> Bool {
+        guard config[legacyFactorKey] != nil else { return false }
+        let raw = config.double(legacyFactorKey, default: 1)
+        config.set(legacyFactorKey, nil)
+        let factor = clampFactor(raw)
+        guard raw.isFinite, abs(raw - 1) > 0.001, all(config).isEmpty,
+              let clean = cleanName(name) else { return true }
+        let drink = CustomDrink(id: newID(among: [], seed: seed), name: clean,
+                                factor: factor, symbol: defaultSymbol)
+        store([drink], in: &config)
+        return true
+    }
+
     // MARK: Rules
 
     /// Lowercase letters and digits, at most 12: it sits inside a log token

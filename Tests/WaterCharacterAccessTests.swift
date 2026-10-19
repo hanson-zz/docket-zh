@@ -151,4 +151,21 @@ final class WaterCharacterAccessTests: XCTestCase {
         XCTAssertEqual(WaterCharacter.unlockHint(daysLeft: 0), "再达标 1 天解锁")
         XCTAssertEqual(WaterCharacter.cat.earnedLine, "橘猫解锁啦")
     }
+
+    // MARK: 刚解锁的提示
+
+    func testBothCharactersEarnedTogetherAreBothNoticed() {
+        let text = WaterCharacter.addingNotices([.shiba, .cat], to: "")
+        XCTAssertEqual(text, "shiba,cat")
+        XCTAssertEqual(WaterCharacter.notices(text ?? ""), [.shiba, .cat])
+        XCTAssertEqual(WaterCharacter.removingNotice(.shiba, from: text ?? ""), "cat")
+        XCTAssertNil(WaterCharacter.removingNotice(.cat, from: "cat"))
+    }
+
+    func testOldSingleNoticeStillReads() {
+        XCTAssertEqual(WaterCharacter.notices("cat"), [.cat])
+        XCTAssertEqual(WaterCharacter.addingNotices([.cat], to: "shiba,cat"), "shiba,cat")
+        XCTAssertEqual(WaterCharacter.notices("bogus,,shiba"), [.shiba])
+        XCTAssertNil(WaterCharacter.addingNotices([], to: ""))
+    }
 }

@@ -239,10 +239,6 @@ public enum WaterIntake {
         return min(1.5, max(0.1, (value * 100).rounded() / 100))
     }
 
-    public static func customFactor(_ config: WidgetConfig) -> Double {
-        clampFactor(config.double("customFactor", default: 1))
-    }
-
     public static func usesOunces(_ config: WidgetConfig) -> Bool {
         config.string("unit", default: "ml") == "oz"
     }
@@ -904,6 +900,31 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
 
     /// "柴犬解锁啦".
     public var earnedLine: String { tr("\(title)解锁啦") }
+
+    // MARK: 刚解锁的提示
+
+    /// 面板里还没提过的新角色，存成逗号分隔的 rawValue（旧版只存一个，照样读得出）。
+    public static func notices(_ raw: String) -> [WaterCharacter] {
+        var seen = Set<WaterCharacter>()
+        return raw.split(separator: ",").compactMap { WaterCharacter(rawValue: String($0)) }
+            .filter { seen.insert($0).inserted }
+    }
+
+    /// 把新解锁的角色接在还没提过的后面。没有可存的时返回 nil（删掉这个键）。
+    public static func addingNotices(_ fresh: [WaterCharacter], to raw: String) -> String? {
+        noticeText(notices(raw) + fresh)
+    }
+
+    /// 关掉或换上其中一个之后剩下的。
+    public static func removingNotice(_ character: WaterCharacter, from raw: String) -> String? {
+        noticeText(notices(raw).filter { $0 != character })
+    }
+
+    private static func noticeText(_ list: [WaterCharacter]) -> String? {
+        var seen = Set<WaterCharacter>()
+        let unique = list.filter { seen.insert($0).inserted }
+        return unique.isEmpty ? nil : unique.map(\.rawValue).joined(separator: ",")
+    }
 }
 
 /// How a character can be used on a 喝水 widget.
