@@ -851,6 +851,10 @@ public enum WidgetCatalog {
             // follows the configured devices, as it always did.
             let devices = BatteryShelf.configuredCount(cfg)
             let slots = BatteryShelf.slotCount(cfg)
+            // 仅图标每台设备是电量环加大号百分比，一格要 84 宽（见 `BatteryHourglass`）。
+            if cfg.string("layout", default: "status") == "icon" {
+                return CGSize(width: BatteryHourglass.iconCardWidth(slots: slots), height: devices > 2 ? 116 : 62)
+            }
             return CGSize(width: Double(slots * 44 + (slots - 1) * 8 + 20),
                           height: devices > 2 ? 116 : 62)
         case .system:

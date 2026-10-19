@@ -16,6 +16,7 @@ struct BatteryTile: View {
     /// 按电量上色（规则在 `BatteryTheme`）。
     @Environment(\.widgetTint) private var tintStyle
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         WidgetSurface {
@@ -181,9 +182,9 @@ struct BatteryTile: View {
         }
     }
 
-    /// 电池格（存的值仍是 gauge，原来的“百分比圆环”）：经典外观直接画电池。
-    /// 只有一台设备时是一块横向电池，旁边写百分比和状态；多台设备时每台
-    /// 一块竖电池，下面写百分比。液态外观也画电池，里面装的是会晃的水；
+    /// 电池格（存的值仍是 gauge，原来的“百分比圆环”）：经典外观画沙漏，沙量
+    /// 就是电量。只有一台设备时沙漏旁边写大号百分比和状态；多台设备时每台
+    /// 一个小沙漏，下面写百分比。液态外观画电池，里面装的是会晃的水；
     /// 像素电池、能量粒子、小熊猫照旧画它们自己的。
     private var gauges: some View {
         let axis = ShapeMeters.cellAxis(deviceCount: slots.count)
@@ -192,7 +193,18 @@ struct BatteryTile: View {
                 let reading = reading(slot)
                 Group {
                     let shown = look(for: slot)
-                    if ShapeMeters.drawsCell(look: shown.rawValue) {
+                    if shown == .classic {
+                        // 经典外观的电池格画沙漏，沙量就是电量（见 `BatteryHourglass`）。
+                        if axis == .horizontal {
+                            horizontalHourglass(slot, reading)
+                        } else {
+                            VStack(spacing: 3) {
+                                hourglass(slot, reading)
+                                    .frame(width: 22, height: 30)
+                                hourglassPercent(reading, size: 13)
+                            }
+                        }
+                    } else if ShapeMeters.drawsCell(look: shown.rawValue) {
                         if axis == .horizontal {
                             horizontalCell(slot, reading, liquid: shown == .liquid)
                         } else {
@@ -235,6 +247,72 @@ struct BatteryTile: View {
         }
     }
 
+    /// 一台设备：沙漏旁边写大号百分比和状态，窄卡片写在下面。
+    private func horizontalHourglass(_ slot: Slot, _ reading: Reading) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                hourglass(slot, reading)
+                    .frame(width: 34, height: 46)
+                VStack(alignment: .leading, spacing: 1) {
+                    hourglassPercent(reading, size: 22)
+                    Text(caption(reading))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(hourglassCaptionColor(reading))
+                }
+                .lineLimit(1)
+                .fixedSize()
+            }
+            VStack(spacing: 3) {
+                hourglass(slot, reading)
+                    .frame(width: 22, height: 30)
+                hourglassPercent(reading, size: 13)
+            }
+        }
+    }
+
+    /// 电池格经典外观的沙漏：充电时上泡的沙往下流（20 帧），减少动态效果时静止；
+    /// 默认红黄绿，选了颜色时沙子整体是主题色。
+    private func hourglass(_ slot: Slot, _ reading: Reading, showsBolt: Bool = true) -> some View {
+        let state = gaugeState(slot)
+        return BatteryHourglassCell(level: reading.level, present: reading.present, charging: reading.charging,
+                                    lowPower: state.lowPower,
+                                    visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                                    theme: theme, showsBolt: showsBolt)
+    }
+
+    /// 沙漏旁的数字：20% 及以下没在充电时变红（默认和选了颜色都一样），
+    /// 其余是普通前景色，% 小一号。
+    @ViewBuilder
+    private func hourglassPercent(_ reading: Reading, size: CGFloat) -> some View {
+        if reading.present {
+            let warns = BatteryHourglass.numberWarns(level: reading.level, charging: reading.charging,
+                                                     present: reading.present)
+            let value = Int((min(max(reading.level, 0), 1) * 100).rounded())
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text("\(value)")
+                    .font(.system(size: size, weight: .bold))
+                    .monospacedDigit()
+                    .rollingValue(value)
+                Text("%")
+                    .font(.system(size: max(13, size * 0.6), weight: .bold))
+                    .opacity(warns ? 1 : 0.8)
+            }
+            .foregroundStyle(warns ? BatteryTheme.warningRed.swiftUI : WidgetStyle.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        } else {
+            Text("-")
+                .font(.system(size: size, weight: .bold))
+                .foregroundStyle(WidgetStyle.secondary)
+        }
+    }
+
+    /// 沙漏旁的状态字：报警时和数字一起变红，其余是次要色。
+    private func hourglassCaptionColor(_ reading: Reading) -> Color {
+        BatteryHourglass.numberWarns(level: reading.level, charging: reading.charging, present: reading.present)
+            ? BatteryTheme.warningRed.swiftUI : WidgetStyle.secondary
+    }
+
     private func cell(_ slot: Slot, _ reading: Reading, vertical: Bool, liquid: Bool) -> some View {
         let state = gaugeState(slot)
         return BatteryCellShape(fill: ShapeMeters.cellFill(level: reading.level, present: reading.present),
@@ -261,20 +339,80 @@ struct BatteryTile: View {
         reading.present ? "\(Int((min(max(reading.level, 0), 1) * 100).rounded()))%" : "-"
     }
 
+    /// 仅图标：每台设备是设备图标外一圈细电量环，右边大号百分比；充电时数字
+    /// 前一道小闪电，20% 及以下没在充电时数字和环变红。一格放不下时先去掉
+    /// % 符号再缩小（`BatteryHourglass.readingFit`）。
     private var icons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: CGFloat(BatteryHourglass.iconSlotGap)) {
             ForEach(slots) { slot in
                 let reading = reading(slot)
-                Image(systemName: slot.symbol)
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(reading.present ? accent(reading) : WidgetStyle.secondary)
-                    .frame(width: 44)
-                    .overlay(alignment: .topTrailing) {
-                        if reading.charging { bolt }
+                GeometryReader { geo in
+                    HStack(spacing: 5) {
+                        iconRing(slot, reading, diameter: 30)
+                        iconReading(reading, size: 20, available: Double(geo.size.width) - 35)
+                        Spacer(minLength: 0)
                     }
-                    .help("\(slot.name) \(percentText(reading))")
+                    .frame(width: geo.size.width, height: geo.size.height)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(slot.name)
+                .accessibilityValue("\(percentText(reading)) \(caption(reading))")
+                .help("\(slot.name) \(percentText(reading))")
             }
         }
+    }
+
+    /// 设备图标 + 外圈电量环：默认电池绿，选了颜色是主题色，报警是红（`accent`）。
+    private func iconRing(_ slot: Slot, _ reading: Reading, diameter: CGFloat) -> some View {
+        let tint = reading.present ? accent(reading) : WidgetStyle.secondary
+        let line = max(2, diameter * 0.08)
+        return ZStack {
+            Circle()
+                .stroke(WidgetStyle.primary.opacity(0.13), lineWidth: line)
+            Circle()
+                .trim(from: 0, to: CGFloat(ShapeMeters.cellFill(level: reading.level, present: reading.present)))
+                .stroke(tint, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Image(systemName: slot.symbol)
+                .font(.system(size: diameter * 0.42, weight: .regular))
+                .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+        }
+        .padding(line / 2)
+        .frame(width: diameter, height: diameter)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: reading.level)
+    }
+
+    /// 仅图标的大号百分比：放不下先去 %，再缩小（最小 13pt）。
+    @ViewBuilder
+    private func iconReading(_ reading: Reading, size: CGFloat, available: Double) -> some View {
+        let label = BatteryStatusCell.label(level: reading.level, present: reading.present)
+        let charging = reading.present && reading.charging
+        let fit = BatteryHourglass.readingFit(available: available, label: label, fontSize: Double(size),
+                                              charging: charging, present: reading.present)
+        let font = size * CGFloat(fit.scale)
+        let warns = BatteryHourglass.numberWarns(level: reading.level, charging: reading.charging,
+                                                 present: reading.present)
+        HStack(alignment: .firstTextBaseline, spacing: 1) {
+            if charging {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: font * 0.55, weight: .bold))
+                    .foregroundStyle(accent(reading))
+            }
+            Text(label)
+                .font(.system(size: font, weight: .bold))
+                .monospacedDigit()
+                .rollingValue(label)
+            if fit.showsSign {
+                Text("%")
+                    .font(.system(size: max(13, font * 0.6), weight: .bold))
+                    .opacity(warns ? 1 : 0.8)
+            }
+        }
+        .foregroundStyle(!reading.present ? WidgetStyle.secondary
+                         : (warns ? BatteryTheme.warningRed.swiftUI : WidgetStyle.primary))
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
     }
 
     /// One 62pt row per slot - `WidgetCatalog.verticalHeight` hands out
@@ -288,7 +426,15 @@ struct BatteryTile: View {
                 let single = slots.count == 1
                 VStack(spacing: 3) {
                     let shown = look(for: slot)
-                    if layout == ProFeatures.batteryGaugeLayout, ShapeMeters.drawsCell(look: shown.rawValue) {
+                    if layout == "icon" {
+                        // 仅图标：电量环里是设备图标，下面是百分比。
+                        iconRing(slot, reading, diameter: single ? 38 : 32)
+                        iconReading(reading, size: single ? 16 : 14, available: 56)
+                    } else if layout == ProFeatures.batteryGaugeLayout, shown == .classic {
+                        hourglass(slot, reading, showsBolt: single)
+                            .frame(width: single ? 22 : 18, height: single ? 32 : 28)
+                        hourglassPercent(reading, size: 13)
+                    } else if layout == ProFeatures.batteryGaugeLayout, ShapeMeters.drawsCell(look: shown.rawValue) {
                         cell(slot, reading, vertical: true, liquid: shown == .liquid)
                             .frame(width: single ? 16 : 14, height: single ? 26 : 24)
                         percent(reading, size: single ? 12 : 11)
@@ -310,9 +456,11 @@ struct BatteryTile: View {
                                      center: .percent(single ? 14 : 11), isPreview: context.isPreview,
                                      theme: theme)
                     }
-                    Image(systemName: slot.symbol)
-                        .font(.system(size: single ? 13 : 11, weight: .regular))
-                        .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                    if layout != "icon" {
+                        Image(systemName: slot.symbol)
+                            .font(.system(size: single ? 13 : 11, weight: .regular))
+                            .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                    }
                 }
                 .frame(minHeight: 62, maxHeight: .infinity)
                 .help("\(slot.name) \(percentText(reading))")
