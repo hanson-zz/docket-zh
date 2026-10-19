@@ -63,6 +63,7 @@ struct BatteryDetail: View {
             state.lowPower = metrics.lowPowerMode
             state.watts = metrics.power.watts
             state.pluggedAt = metrics.pluggedAt
+            state.unpluggedAt = metrics.unpluggedAt
             state.fullAt = metrics.fullAt
         }
         return state

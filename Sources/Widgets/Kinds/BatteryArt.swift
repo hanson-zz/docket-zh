@@ -15,6 +15,8 @@ struct BatteryGaugeState: Equatable {
     /// The Mac only: the moments the looks animate from once.
     var pluggedAt: Date?
     var fullAt: Date?
+    /// The Mac only: when the adapter came out, for 液态's small slosh.
+    var unpluggedAt: Date?
 }
 
 /// What sits in the middle of a gauge.
@@ -57,9 +59,11 @@ struct BatteryGauge: View {
 
     var body: some View {
         let _ = flourishEnded
-        let tint = BatteryColorMap.tint(level: state.level, lowPower: state.lowPower, charging: state.charging)
+        let tint = gaugeTint
         let visible = inPanel || ShelfVisibility.shared.cardsOnScreen
         let flourish = BatteryMotion.isFlourishing(pluggedAt: state.pluggedAt, fullAt: state.fullAt, now: .now)
+            || (look == .liquid && BatteryLiquidFX.activeSlosh(pluggedAt: nil, unpluggedAt: state.unpluggedAt,
+                                                               now: .now) != nil)
         let fps: Double? = isPreview || !state.present ? nil : BatteryMotion.framesPerSecond(
             look: look, charging: state.charging, pulsing: tint.pulses, flourish: flourish,
             host: inPanel ? .panel : .card(visible: visible), reduceMotion: reduceMotion)
@@ -104,10 +108,23 @@ struct BatteryGauge: View {
         }
     }
 
+    /// The band colours, except that 液态's water (and its ring) runs
+    /// smoothly from red through yellow to green with the level
+    /// (`BatteryLiquidFX.gaugeWaterColor`); Low Power Mode stays yellow.
+    private var gaugeTint: BatteryColorMap.Tint {
+        var tint = BatteryColorMap.tint(level: state.level, lowPower: state.lowPower, charging: state.charging)
+        if look == .liquid {
+            tint.color = BatteryLiquidFX.gaugeWaterColor(level: state.level, lowPower: state.lowPower)
+            tint.highlight = tint.color.mixed(with: .white, 0.35)
+        }
+        return tint
+    }
+
     // MARK: Flourishes
 
     private var flourishKey: String {
-        "\(state.pluggedAt?.timeIntervalSince1970 ?? 0)|\(state.fullAt?.timeIntervalSince1970 ?? 0)"
+        "\(state.pluggedAt?.timeIntervalSince1970 ?? 0)|\(state.fullAt?.timeIntervalSince1970 ?? 0)|"
+            + "\(state.unpluggedAt?.timeIntervalSince1970 ?? 0)"
     }
 
     private func waitOutFlourish() async {
@@ -118,6 +135,9 @@ struct BatteryGauge: View {
         }
         if let fullAt = state.fullAt {
             remaining = max(remaining, BatteryMotion.fullDuration - now.timeIntervalSince(fullAt))
+        }
+        if look == .liquid, let unpluggedAt = state.unpluggedAt {
+            remaining = max(remaining, BatteryLiquidFX.unplugSloshDuration - now.timeIntervalSince(unpluggedAt))
         }
         guard remaining > 0 else { return }
         try? await Task.sleep(for: .seconds(remaining + 0.05))
@@ -273,6 +293,12 @@ struct BatteryGauge: View {
         let speed = state.charging ? 1.6 * charge : 0.6
         let baseY = rect.minY + rect.height * (1 - level)
         let steps = 28
+        // 插拔电源那一下水面晃一波（`BatteryLiquidFX`），减少动态效果时
+        // `frame.now` 是 nil，不晃。
+        let slosh = frame.now.flatMap {
+            BatteryLiquidFX.activeSlosh(pluggedAt: state.pluggedAt, unpluggedAt: state.unpluggedAt, now: $0)
+        }
+        let tilt = slosh.map { BatteryLiquidFX.slosh($0.event, elapsed: $0.elapsed) } ?? 0
         var front = Path()
         for layer in [1, 0] {
             var path = Path()
@@ -280,10 +306,17 @@ struct BatteryGauge: View {
             for i in 0...steps {
                 let x = Double(i) / Double(steps)
                 let lift = BatteryMotion.surface(x: x, t: frame.t, level: level, layer: layer, speed: speed)
+                    + BatteryLiquidFX.tiltLift(x: x, slosh: tilt) * (layer == 0 ? 1 : 0.7)
                 path.addLine(to: CGPoint(x: rect.minX + x * rect.width, y: baseY - lift * rect.height))
             }
             path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
             path.closeSubpath()
+            if layer == 0, BatteryLiquidFX.isLow(level: level, charging: state.charging, present: state.present) {
+                // 低电量：水面靠左鼓起一个圆滴，慢慢呼吸。
+                let r = rect.width * 0.11 * BatteryLiquidFX.blobScale(t: frame.moving ? frame.t : nil)
+                let center = CGPoint(x: rect.minX + rect.width * 0.3, y: baseY + r * 0.35)
+                path = path.union(Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r)))
+            }
             if layer == 1 {
                 context.fill(path, with: .color(tint.highlight.swiftUI.opacity(0.35 * frame.pulse)))
             } else {
@@ -313,6 +346,18 @@ struct BatteryGauge: View {
                 let alpha = min(1, (1 - p) * 3) * 0.7
                 context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r)),
                              with: .color(.white.opacity(alpha)))
+            }
+        }
+
+        // 插上电源时溅起几颗小水珠，落回水面。
+        if let slosh, slosh.event == .plugged, baseY > rect.minY + 3 {
+            let headroom = baseY - rect.minY
+            for drop in BatteryLiquidFX.droplets(.plugged, elapsed: slosh.elapsed) {
+                let r = max(0.8, drop.radius * rect.width * 0.6)
+                let x = rect.minX + drop.x * rect.width
+                let y = baseY - drop.height * min(headroom * 0.8, rect.height * 0.22)
+                let dot = Path(ellipseIn: CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r))
+                context.fill(dot, with: .color(tint.highlight.swiftUI.opacity(0.85 * drop.opacity)))
             }
         }
 

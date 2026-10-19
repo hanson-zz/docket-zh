@@ -76,6 +76,8 @@ final class BatteryMetrics {
     private(set) var history = BatteryHistory()
     /// When the adapter was last connected, for the plug-in sweep.
     private(set) var pluggedAt: Date?
+    /// When the adapter was last pulled out, for the liquid look's small slosh.
+    private(set) var unpluggedAt: Date?
     /// When the battery last reached 100% on the adapter, for the gold glow.
     private(set) var fullAt: Date?
 
@@ -232,7 +234,11 @@ final class BatteryMetrics {
     /// stamps a moment the looks animate from once.
     private func noteTransitions(_ mac: BatteryDevice) {
         let now = Date.now
-        if let was = lastOnPower, !was, mac.onPower { pluggedAt = now }
+        switch BatteryLiquidFX.plugEvent(previous: lastOnPower, current: mac.onPower) {
+        case .plugged: pluggedAt = now
+        case .unplugged: unpluggedAt = now
+        case nil: break
+        }
         lastOnPower = mac.onPower
         if mac.onPower, mac.level >= 0.995, let previous = lastLevel, previous < 0.995 { fullAt = now }
         lastLevel = mac.level

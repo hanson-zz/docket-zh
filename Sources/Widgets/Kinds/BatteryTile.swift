@@ -66,7 +66,7 @@ struct BatteryTile: View {
                 let shown = look(for: slot)
                 if BatteryStatusCell.drawsCell(look: shown.rawValue) {
                     // 经典和液态：和电池格一样画一块横向电池，百分比写在电池里。
-                    statusCell(reading, liquid: shown == .liquid)
+                    statusCell(slot, reading, liquid: shown == .liquid)
                     VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
                         Text(caption(reading))
                             .font(.system(size: 13, weight: .semibold))
@@ -97,7 +97,7 @@ struct BatteryTile: View {
     /// 状态样式的电池：约 61 x 29 的横向电池，百分比写在里面，充电时数字前面
     /// 一道闪电。压在电量那一截上的数字反色（见 `BatteryStatusCell.inkOnFill`），
     /// 低电量时那一截变橙、变红。
-    private func statusCell(_ reading: Reading, liquid: Bool) -> some View {
+    private func statusCell(_ slot: Slot, _ reading: Reading, liquid: Bool) -> some View {
         let size = BatteryStatusCell.cellSize(cardHeight: 58)
         let width = CGFloat(size.width)
         let height = CGFloat(size.height)
@@ -106,10 +106,13 @@ struct BatteryTile: View {
         let geometry = BatteryStatusCell.geometry(long: Double(width), short: Double(height))
         let label = statusLabel(reading, height: height)
             .frame(width: CGFloat(geometry.bodyLong), height: height)
+        let state = gaugeState(slot)
         return BatteryCellShape(fill: fill, tone: tone, charging: reading.charging, vertical: false,
                                 liquid: liquid,
                                 moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
-                                showsBolt: false)
+                                showsBolt: false,
+                                lowPower: state.lowPower, pluggedAt: state.pluggedAt,
+                                unpluggedAt: state.unpluggedAt)
             .frame(width: width, height: height)
             .overlay(alignment: .topLeading) {
                 ZStack(alignment: .topLeading) {
@@ -184,7 +187,7 @@ struct BatteryTile: View {
                             horizontalCell(slot, reading, liquid: shown == .liquid)
                         } else {
                             VStack(spacing: 3) {
-                                cell(reading, vertical: true, liquid: shown == .liquid)
+                                cell(slot, reading, vertical: true, liquid: shown == .liquid)
                                     .frame(width: 17, height: 30)
                                 percent(reading, size: 11)
                             }
@@ -209,27 +212,30 @@ struct BatteryTile: View {
     private func horizontalCell(_ slot: Slot, _ reading: Reading, liquid: Bool) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                cell(reading, vertical: false, liquid: liquid)
+                cell(slot, reading, vertical: false, liquid: liquid)
                     .frame(width: 54, height: 26)
                 TileReading(value: percentText(reading), caption: caption(reading))
                     .fixedSize()
             }
             VStack(spacing: 3) {
-                cell(reading, vertical: false, liquid: liquid)
+                cell(slot, reading, vertical: false, liquid: liquid)
                     .frame(width: 38, height: 19)
                 percent(reading, size: 11)
             }
         }
     }
 
-    private func cell(_ reading: Reading, vertical: Bool, liquid: Bool) -> some View {
-        BatteryCellShape(fill: ShapeMeters.cellFill(level: reading.level, present: reading.present),
+    private func cell(_ slot: Slot, _ reading: Reading, vertical: Bool, liquid: Bool) -> some View {
+        let state = gaugeState(slot)
+        return BatteryCellShape(fill: ShapeMeters.cellFill(level: reading.level, present: reading.present),
                          tone: ShapeMeters.cellTone(level: reading.level, charging: reading.charging,
                                                     present: reading.present),
                          charging: reading.charging,
                          vertical: vertical,
                          liquid: liquid,
-                         moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+                         moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                         lowPower: state.lowPower, pluggedAt: state.pluggedAt,
+                         unpluggedAt: state.unpluggedAt)
     }
 
     /// Low batteries earn a colour. Everything else stays the neutral fill, so
@@ -273,7 +279,7 @@ struct BatteryTile: View {
                 VStack(spacing: 3) {
                     let shown = look(for: slot)
                     if layout == ProFeatures.batteryGaugeLayout, ShapeMeters.drawsCell(look: shown.rawValue) {
-                        cell(reading, vertical: true, liquid: shown == .liquid)
+                        cell(slot, reading, vertical: true, liquid: shown == .liquid)
                             .frame(width: single ? 16 : 14, height: single ? 26 : 24)
                         percent(reading, size: single ? 12 : 11)
                     } else if shown == .classic {
@@ -343,6 +349,7 @@ struct BatteryTile: View {
             state.lowPower = metrics.lowPowerMode
             state.watts = metrics.power.watts
             state.pluggedAt = metrics.pluggedAt
+            state.unpluggedAt = metrics.unpluggedAt
             state.fullAt = metrics.fullAt
         }
         return state
@@ -539,6 +546,10 @@ struct BatteryCellShape: View {
     var moving = false
     /// 充电时中间画不画闪电。状态样式把闪电写在电池里的数字前面，这里不画。
     var showsBolt = true
+    /// 液态外观才用：低电量模式（水变黄）和 Mac 插拔电源的时刻（水面晃一下）。
+    var lowPower = false
+    var pluggedAt: Date?
+    var unpluggedAt: Date?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -609,10 +620,12 @@ struct BatteryCellShape: View {
     private func levelFill(width: CGFloat, height: CGFloat, corner: CGFloat, vertical: Bool) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         if liquid {
-            LiquidWater(level: vertical ? fill : (fill > 0 ? 0.88 : 0), tint: tint, shape: .rect, visible: moving)
-                .frame(width: vertical ? width : width * fill, height: height)
-                .clipShape(shape)
-                .frame(width: width, height: height, alignment: vertical ? .bottom : .leading)
+            // 水、插拔时的晃荡和水珠、低电量的圆滴和随电量变的颜色都在
+            // `BatteryLiquidCell` 里，规则在 `BatteryLiquidFX`。
+            BatteryLiquidCell(fill: fill, vertical: vertical, charging: charging, present: tone != .absent,
+                              lowPower: lowPower, pluggedAt: pluggedAt, unpluggedAt: unpluggedAt,
+                              visible: moving, corner: corner)
+                .frame(width: width, height: height)
         } else {
             shape.fill(tint)
                 .frame(width: vertical ? width : width * fill, height: vertical ? height * fill : height)

@@ -17396,13 +17396,13 @@
         }
       }
     },
-    "所有小组件的液态外观，电池的液态电量也包括在内" : {
+    "所有小组件的液态外观；电池的液态电量插电时水面会晃，低电量变红，颜色随电量渐变" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The liquid look for every widget, including the battery's liquid level"
+            "value" : "The liquid look for every widget; the battery's liquid level sloshes when you plug in, turns red when low and shifts color with the charge"
           }
         }
       }

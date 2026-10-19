@@ -19,7 +19,7 @@ private struct ProPerk: Identifiable {
         return [
             ProPerk(id: "kinds", symbol: "square.grid.2x2.fill", title: tr("Pro 小组件"), detail: kinds),
             ProPerk(id: "liquid", symbol: "drop.fill", title: tr("液态外观"),
-                    detail: tr("所有小组件的液态外观，电池的液态电量也包括在内")),
+                    detail: tr("所有小组件的液态外观；电池的液态电量插电时水面会晃，低电量变红，颜色随电量渐变")),
             ProPerk(id: "faces", symbol: "clock.fill", title: tr("专属表盘和角色"),
                     detail: tr("时钟的霓虹、实景、液晶表盘和翻页的大号卡片；企鹅、水獭、章鱼三个角色（柴犬、橘猫在喝水里累计达标 3 天、7 天免费解锁）")),
             ProPerk(id: "looks", symbol: "battery.100percent.bolt", title: tr("Wi-Fi 和电池外观"),
