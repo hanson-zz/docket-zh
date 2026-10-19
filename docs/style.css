@@ -32,6 +32,7 @@ html[data-lang="zh"] [data-l="en"],html:not([data-lang="zh"]) [data-l="zh"]{disp
 .early:hover{text-decoration:none;border-color:var(--acc)}
 .early .tag{background:rgba(217,101,59,.14);color:var(--acc);font-weight:600;padding:3px 12px;border-radius:999px}
 .btns{margin:26px 0;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-price{margin:-12px auto 0;font-size:14px;color:var(--mut)}
 .btns.left{justify-content:flex-start;margin:14px 0 0}
 .btn{display:inline-block;padding:12px 22px;border-radius:12px;font-weight:600;background:var(--acc);color:#fff}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}

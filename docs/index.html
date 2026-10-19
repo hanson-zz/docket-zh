@@ -33,6 +33,7 @@
 <h1><span data-l="zh" lang="zh-Hans">给程序坞加一条好用的扩展栏</span><span data-l="en" lang="en">A shelf of live widgets beside your Dock</span></h1>
 <p data-l="zh" lang="zh-Hans">码头（Dockling）是 macOS 程序坞扩展栏：在系统程序坞旁边摆上实时小组件、应用分组和文件夹，也可以直接用它替代程序坞。免费版就能用，码头 Pro 一次买断解锁更多小组件和外观。界面支持简体中文和英文。</p><p data-l="en" lang="en">Dockling (码头) is a Dock shelf for macOS. Put live widgets, app groups and folders right next to the system Dock, or use it in place of the Dock. It is free to use, and Dockling Pro adds more widgets and looks for a one-time price. The interface is in Simplified Chinese and English.</p>
 <div class="btns"><a class="btn" href="https://github.com/hanson-zz/docket-zh/releases/latest"><span data-l="zh" lang="zh-Hans">免费下载 Mac 版</span><span data-l="en" lang="en">Download free for Mac</span></a><a class="btn ghost" href="#pricing"><span data-l="zh" lang="zh-Hans" id="eb-hero-zh">码头 Pro · 首批特价 $6.90</span><span data-l="en" lang="en" id="eb-hero-en">Dockling Pro · $6.90 launch price</span></a></div>
+<p class="hero-price" id="eb-sub"><span data-l="zh" lang="zh-Hans" id="eb-sub-zh">之后售价 $9.90，正式版售价 $15.90 · 一次性付款 · 免费更新 · 实际价格以结账页为准</span><span data-l="en" lang="en" id="eb-sub-en">Then $9.90, and $15.90 at full release · One-time payment · Free updates · Final price at checkout</span></p>
 <p class="first-note"><span data-l="zh" lang="zh-Hans">第一次打开时 macOS 会拦一下（应用未经 Apple 公证）。<a href="#first-open">看看怎么打开</a></span><span data-l="en" lang="en">First launch: macOS asks once because Dockling is not notarized. <a href="#first-open">How to open it</a></span></p>
 <p class="small"><span data-l="zh" lang="zh-Hans">需要 macOS 26 · 无需账号 · 不追踪 · 源码公开</span><span data-l="en" lang="en">Requires macOS 26 · No account · No tracking · Source available</span></p>
 <div class="stage"><img class="strip" src="images/zh/shelf-showcase.png" alt="码头扩展栏：时钟、世界时钟、系统活动、便签，然后是一排应用图标 / The Dockling shelf: clock, world clock, system activity, a sticky note, then a row of app icons" width="1084" height="126"></div>
@@ -280,6 +281,8 @@
   var API = 'https://dockling-license.tudou-123.workers.dev/earlybird';
   var TAIL_ZH = '一次性付款 · 免费更新。实际价格以结账页为准。';
   var TAIL_EN = 'One-time payment · Free updates. The checkout page shows the final price.';
+  var SUB_ZH = ' · 一次性付款 · 免费更新 · 实际价格以结账页为准';
+  var SUB_EN = ' · One-time payment · Free updates · Final price at checkout';
   function $(id) { return document.getElementById(id); }
   function text(id, t) { var e = $(id); if (e) e.textContent = t; }
   function render(tier, total, left) {
@@ -301,6 +304,8 @@
       text('eb-cmp-en', 'launch price, then ' + next.price);
       text('eb-hero-zh', live ? '码头 Pro · 首批 ' + cur.price + '，剩 ' + left + ' 个' : '码头 Pro · 首批特价 ' + cur.price);
       text('eb-hero-en', live ? 'Dockling Pro · ' + cur.price + ', ' + left + ' left' : 'Dockling Pro · ' + cur.price + ' launch price');
+      text('eb-sub-zh', '之后售价 ' + next.price + '，正式版售价 ' + full + SUB_ZH);
+      text('eb-sub-en', 'Then ' + next.price + ', and ' + full + ' at full release' + SUB_EN);
       if (live) {
         $('eb-line-zh').innerHTML = '首批 ' + n + ' 个许可证特价，还剩 <b>' + left + '</b> 个。之后售价 ' + next.price + '，正式版售价 ' + full + '。' + TAIL_ZH;
         $('eb-line-en').innerHTML = 'Launch price for the first ' + n + ' licenses, <b>' + left + '</b> left. Then ' + next.price + ', and ' + full + ' at full release. ' + TAIL_EN;
@@ -312,6 +317,8 @@
     }
     text('eb-hero-zh', '码头 Pro · ' + cur.price);
     text('eb-hero-en', 'Dockling Pro · ' + cur.price);
+    text('eb-sub-zh', next ? '正式版售价 ' + next.price + SUB_ZH : SUB_ZH.slice(3));
+    text('eb-sub-en', next ? next.price + ' at full release' + SUB_EN : SUB_EN.slice(3));
     if (next) {
       text('eb-cmp-zh', '正式版 ' + next.price);
       text('eb-cmp-en', next.price + ' at full release');
