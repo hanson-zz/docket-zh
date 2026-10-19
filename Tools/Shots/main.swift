@@ -972,35 +972,35 @@ private struct ViewShot {
 /// 头部版式都照付费墙（`ProPaywallView`）来：540×860 的窗口，左上一只大的
 /// 小熊猫，右边大标题和两行副标题，下面两列卡片。卡片里是真实的
 /// `PandaEmptyState` 面板模式，整体放大 `scale` 倍，让最小的提示字也有 13pt 以上。
+/// 卡片高度不写死，三行平分标题以下的空间：英文标题折成两行时卡片跟着变矮一点，
+/// 中文不会在底部空出一大块。
 @MainActor
 private struct EmptyStatesShot: View {
     private static let size = CGSize(width: 540, height: 860)
     private static let padding: CGFloat = 26
     private static let pandaHeight: CGFloat = 108
     private static let spacing: CGFloat = 12
-    private static let cardHeight: CGFloat = 194
     /// 面板模式的提示字是 12pt，放大 1.1 倍后约 13.2pt。
     private static let scale: CGFloat = 1.1
     private static let accent = Color(hex: ShelfColor.redPanda.hex)
 
-    /// 九个里挑颜色和姿势差得最远的六个，两两一行。
-    private var states: [(PandaEmpty, String)] { [
-        (.habit, tr("添加习惯")), (.anniversary, tr("添加纪念日")),
-        (.alarm, tr("添加闹钟")), (.podcast, tr("添加订阅")),
-        (.screenshots, tr("截取屏幕")), (.photos, tr("选择相册")),
+    /// 九个里挑颜色和姿势差得最远的六个，两两一行。两个绿的放在对角。
+    private var rows: [[(PandaEmpty, String)]] { [
+        [(.habit, tr("添加习惯")), (.anniversary, tr("添加纪念日"))],
+        [(.alarm, tr("添加闹钟")), (.podcast, tr("添加订阅"))],
+        [(.screenshots, tr("截取屏幕")), (.basket, tr("添加小组件"))],
     ] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-                .padding(.bottom, 22)
+                .padding(.bottom, 18)
             cards
-            Spacer(minLength: 0)
-            Text(tr("还有竹篮、待办、剪贴板等，空着时都有小熊猫"))
+            Text(tr("还有书签、相册、待办等，空着时都有小熊猫"))
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.62))
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 4)
+                .padding(.top, 12)
         }
         .padding(.horizontal, Self.padding)
         .padding(.top, 24)
@@ -1054,19 +1054,30 @@ private struct EmptyStatesShot: View {
 
     private var cards: some View {
         let width = (Self.size.width - Self.padding * 2 - Self.spacing) / 2
-        let columns = Array(repeating: GridItem(.fixed(width), spacing: Self.spacing), count: 2)
-        return LazyVGrid(columns: columns, spacing: Self.spacing) {
-            ForEach(states.indices, id: \.self) { index in
-                PandaEmptyState(empty: states[index].0, title: states[index].1, panel: true, action: {})
-                    .frame(width: width / Self.scale, height: Self.cardHeight / Self.scale)
-                    .scaleEffect(Self.scale)
-                    .frame(width: width, height: Self.cardHeight)
-                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(.white.opacity(0.09), lineWidth: 1))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        return VStack(spacing: Self.spacing) {
+            ForEach(rows.indices, id: \.self) { row in
+                HStack(spacing: Self.spacing) {
+                    ForEach(rows[row].indices, id: \.self) { column in
+                        card(rows[row][column], width: width)
+                    }
+                }
             }
         }
+    }
+
+    private func card(_ state: (PandaEmpty, String), width: CGFloat) -> some View {
+        GeometryReader { proxy in
+            PandaEmptyState(empty: state.0, title: state.1, panel: true, action: {})
+                .frame(width: width / Self.scale, height: proxy.size.height / Self.scale)
+                .scaleEffect(Self.scale)
+                .frame(width: width, height: proxy.size.height)
+        }
+        .frame(width: width)
+        .frame(maxHeight: .infinity)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .strokeBorder(.white.opacity(0.09), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

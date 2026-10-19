@@ -34257,13 +34257,13 @@
         }
       }
     },
-    "还有竹篮、待办、剪贴板等，空着时都有小熊猫" : {
+    "还有书签、相册、待办等，空着时都有小熊猫" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The basket, to-dos, clipboard and more get one too"
+            "value" : "Bookmarks, photos, to-dos and more get one too"
           }
         }
       }
