@@ -4254,6 +4254,17 @@
         }
       }
     },
+    "下拉刷新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull to refresh"
+          }
+        }
+      }
+    },
     "下次提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22287,6 +22298,17 @@
         }
       }
     },
+    "更早的单集小宇宙页面没有提供，订阅后的新单集会一直保留" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaoyuzhou's page does not list older episodes. New episodes since you subscribed are kept."
+          }
+        }
+      }
+    },
     "曼谷" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23548,6 +23570,17 @@
         }
       }
     },
+    "松手刷新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to refresh"
+          }
+        }
+      }
+    },
     "松手发送" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24127,6 +24160,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Charging · %@"
+          }
+        }
+      }
+    },
+    "正在刷新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refreshing"
           }
         }
       }
@@ -25267,6 +25311,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing scheduled"
+          }
+        }
+      }
+    },
+    "没有更早的单集了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No older episodes"
           }
         }
       }

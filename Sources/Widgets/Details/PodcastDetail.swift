@@ -19,6 +19,14 @@ struct PodcastDetail: View {
     @State private var messageIsError = false
     /// The slider's value while dragging, so the player seeks once at the end.
     @State private var scrubbing: Double?
+    /// 单集列表顶部向下过拉了多少点（0 表示没在过拉）。
+    @State private var pull: CGFloat = 0
+    /// 过拉已经超过阈值，松手就刷新。
+    @State private var pullArmed = false
+    @State private var scrollPhase: ScrollPhase = .idle
+
+    /// 过拉超过这么多点松手才刷新。
+    private static let pullThreshold: CGFloat = 40
 
     private var shows: [PodcastShow] {
         context.isPreview ? [PodcastTile.sample] : service.library.shows
@@ -282,7 +290,7 @@ struct PodcastDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(show.author.isEmpty ? show.title : "\(show.title) · \(show.author)")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
                     .lineLimit(1)
                 Spacer()
@@ -293,7 +301,7 @@ struct PodcastDetail: View {
                         Task { await service.refresh(show.id) }
                     } label: {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.6))
                     }
                     .buttonStyle(.plain)
@@ -303,7 +311,7 @@ struct PodcastDetail: View {
             }
             if let problem = service.problems[show.id], !context.isPreview {
                 Text(problem)
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
                     .foregroundStyle(Color(hex: "#FF9F0A"))
             }
             if show.episodes.isEmpty {
@@ -313,15 +321,97 @@ struct PodcastDetail: View {
                     Task { await service.refresh(show.id) }
                 }
             } else {
+                let refreshing = !context.isPreview && service.loading.contains(show.id)
                 ScrollView {
                     LazyVStack(spacing: 4) {
+                        if refreshing { refreshingRow }
                         ForEach(show.episodes) { episode in episodeRow(episode, show: show) }
+                        listEnd(show)
                     }
                 }
                 .scrollIndicators(.never)
-                .frame(height: min(220, CGFloat(show.episodes.count) * 50))
+                // 内容不足一屏时也能向下过拉（弹性），下拉刷新才拉得动。
+                .scrollBounceBehavior(.always, axes: .vertical)
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    max(0, -(geometry.contentOffset.y + geometry.contentInsets.top))
+                } action: { _, value in
+                    pullChanged(value, show: show)
+                }
+                .onScrollPhaseChange { old, new in
+                    scrollPhase = new
+                    // 手指离开触控板（或松开鼠标）那一刻还拉过阈值，就刷新。
+                    if old == .interacting, new != .interacting, pullArmed { pullRefresh(show) }
+                }
+                .overlay(alignment: .top) { pullIndicator(refreshing: refreshing) }
+                .frame(height: min(260, CGFloat(show.episodes.count) * 54 + 44))
             }
         }
+    }
+
+    /// 跟着过拉的距离：超过阈值就待命；还按着的时候拉回阈值以内就取消；
+    /// 系统没有报告滚动阶段时，弹回顶部那一刻补一次刷新。
+    private func pullChanged(_ value: CGFloat, show: PodcastShow) {
+        pull = value
+        guard !context.isPreview else { return }
+        if value >= Self.pullThreshold {
+            pullArmed = true
+        } else if pullArmed, scrollPhase == .interacting, value > 0 {
+            pullArmed = false
+        } else if pullArmed, value <= 0.5 {
+            pullRefresh(show)
+        }
+    }
+
+    private func pullRefresh(_ show: PodcastShow) {
+        pullArmed = false
+        guard !context.isPreview, !service.loading.contains(show.id) else { return }
+        Task { await service.refresh(show.id) }
+    }
+
+    /// 过拉时露出来的那块：箭头加「下拉刷新」，过了阈值箭头朝上、写「松手刷新」。
+    @ViewBuilder
+    private func pullIndicator(refreshing: Bool) -> some View {
+        if pull > 2, !refreshing, !context.isPreview {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .rotationEffect(.degrees(pullArmed ? 180 : 0))
+                    .animation(.easeInOut(duration: 0.15), value: pullArmed)
+                Text(pullArmed ? tr("松手刷新") : tr("下拉刷新"))
+                    .font(.system(size: 12))
+            }
+            .foregroundStyle(.white.opacity(0.6))
+            .frame(maxWidth: .infinity)
+            .frame(height: pull, alignment: .center)
+            .clipped()
+            .opacity(min(1, pull / Self.pullThreshold))
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// 刷新中列表最上面的一行小转圈。
+    private var refreshingRow: some View {
+        HStack(spacing: 6) {
+            ProgressView().controlSize(.mini)
+            Text("正在刷新")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.55))
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 24)
+    }
+
+    /// 列表最底下一行：小宇宙页面只给最新一批，更早的拿不到，就写明白。
+    private func listEnd(_ show: PodcastShow) -> some View {
+        Text(PodcastLibrary.hasOlderEpisodes(show)
+             ? tr("更早的单集小宇宙页面没有提供，订阅后的新单集会一直保留")
+             : tr("没有更早的单集了"))
+            .font(.system(size: 12))
+            .foregroundStyle(.white.opacity(0.45))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
     }
 
     private func episodeRow(_ episode: PodcastEpisode, show: PodcastShow) -> some View {
@@ -339,7 +429,7 @@ struct PodcastDetail: View {
                         Circle().fill(Color(hex: "#FF3B30")).frame(width: 6, height: 6)
                     }
                     Text(episode.title)
-                        .font(.system(size: 12, weight: current ? .semibold : .regular))
+                        .font(.system(size: 13, weight: current ? .semibold : .regular))
                         .foregroundStyle(.white)
                         .lineLimit(1)
                 }
@@ -352,8 +442,9 @@ struct PodcastDetail: View {
                             .foregroundStyle(PodcastCover.accent.opacity(0.9))
                     }
                 }
-                .font(.system(size: 10))
+                .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.55))
+                .lineLimit(1)
             }
             Spacer(minLength: 0)
         }

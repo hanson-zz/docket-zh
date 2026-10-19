@@ -27,9 +27,11 @@ public struct PodcastEpisode: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// One subscribed show and the episodes its page listed the last time it
-/// was read. The page lists the newest episodes only, so `episodes` is not
-/// necessarily every episode the show has; `episodeCount` is.
+/// One subscribed show and every episode kept for it. The page lists the
+/// newest episodes only, so each read is merged into what was kept before
+/// (see `PodcastLibrary.combined`): episodes that fall off the page stay,
+/// up to `PodcastLibrary.episodeLimit`. `episodes` is still not necessarily
+/// every episode the show has; `episodeCount` is.
 public struct PodcastShow: Codable, Equatable, Sendable, Identifiable {
     /// 小宇宙's show id, `pid`.
     public var id: String
@@ -280,7 +282,7 @@ public struct PodcastLibrary: Codable, Equatable, Sendable {
     @discardableResult
     public mutating func subscribe(_ show: PodcastShow) -> Bool {
         if let index = shows.firstIndex(where: { $0.id == show.id }) {
-            shows[index] = show
+            shows[index] = Self.combined(shows[index], with: show)
             return false
         }
         shows.append(show)
@@ -300,14 +302,65 @@ public struct PodcastLibrary: Codable, Equatable, Sendable {
 
     /// Takes a fresh read of a subscribed show and returns the episodes not
     /// announced before, newest first. An unsubscribed show is ignored.
+    /// Episodes the page no longer lists are kept: see `combined`.
     public mutating func merge(_ fresh: PodcastShow) -> [PodcastEpisode] {
         guard let index = shows.firstIndex(where: { $0.id == fresh.id }) else { return [] }
         let fresher = Self.newEpisodes(in: fresh, after: notifiedThrough[fresh.id])
-        shows[index] = fresh
+        shows[index] = Self.combined(shows[index], with: fresh)
         if let newest = fresh.newestDate {
             notifiedThrough[fresh.id] = max(newest, notifiedThrough[fresh.id] ?? .distantPast)
         }
         return fresher
+    }
+
+    /// 每个节目最多保留的单集数，防止存档越积越大。
+    public static let episodeLimit = 500
+
+    /// 小宇宙节目页只给最新一批单集，所以新读到的一批和已保存的按单集 id
+    /// 合并：同一集用新数据的字段（新数据缺的可选字段沿用旧的），页面上已经
+    /// 没有的旧单集保留；按发布时间倒序，没有日期的排最后，超过 `limit` 的
+    /// 最旧单集丢弃。节目本身的标题、封面、集数等都用新数据。
+    public static func combined(_ kept: PodcastShow, with fresh: PodcastShow,
+                                limit: Int = episodeLimit) -> PodcastShow {
+        var byID: [String: PodcastEpisode] = [:]
+        for episode in kept.episodes where byID[episode.id] == nil { byID[episode.id] = episode }
+        for episode in fresh.episodes {
+            if let old = byID[episode.id] {
+                byID[episode.id] = updated(old, with: episode)
+            } else {
+                byID[episode.id] = episode
+            }
+        }
+        var result = fresh
+        result.episodes = Array(byID.values.sorted(by: newestFirst).prefix(max(0, limit)))
+        return result
+    }
+
+    /// `fresh` 的字段覆盖 `old`，但 `fresh` 缺的（没日期、没音频、没封面、
+    /// 没时间轴、时长为 0）沿用 `old`。
+    static func updated(_ old: PodcastEpisode, with fresh: PodcastEpisode) -> PodcastEpisode {
+        var episode = fresh
+        if episode.pubDate == nil { episode.pubDate = old.pubDate }
+        if episode.duration <= 0 { episode.duration = old.duration }
+        if episode.audioURL == nil { episode.audioURL = old.audioURL }
+        if episode.imageURL == nil { episode.imageURL = old.imageURL }
+        if episode.chapters == nil { episode.chapters = old.chapters }
+        return episode
+    }
+
+    /// 发布时间倒序；同一时间（或都没有日期）按 id 排，顺序稳定。
+    static func newestFirst(_ a: PodcastEpisode, _ b: PodcastEpisode) -> Bool {
+        switch (a.pubDate, b.pubDate) {
+        case let (x?, y?) where x != y: return x > y
+        case (.some, nil): return true
+        case (nil, .some): return false
+        default: return a.id > b.id
+        }
+    }
+
+    /// 单集列表底部那一行：已保存的单集是不是已经是节目的全部。
+    public static func hasOlderEpisodes(_ show: PodcastShow) -> Bool {
+        show.episodeCount > show.episodes.count
     }
 
     /// Episodes dated after `mark`. Without a mark nothing is new: a show
