@@ -224,7 +224,8 @@ struct ProPaywallView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, minHeight: PaywallMetrics.tileHeight, alignment: .leading)
+                // 同一行两块等高：英文标题折行时另一块跟着撑高。
+                .frame(maxWidth: .infinity, minHeight: PaywallMetrics.tileHeight, maxHeight: .infinity, alignment: .leading)
                 .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(.white.opacity(0.09), lineWidth: 1))
