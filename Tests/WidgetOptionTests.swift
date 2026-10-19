@@ -268,6 +268,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
         "search.engine",
         "weather.city", "weather.cities",
+        // 副标题只有“当前”有，天数只有“多日预报”有（WeatherStyle）。
+        "weather.caption", "weather.days",
         // 水面动效只有液态外观有。
         "progress.liquidMotion",
         // 时钟的子选项只在所属样式下列出（ClockStyles.applies）。
