@@ -1,8 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// 小熊猫的竹篮的面板：今天三项、月份切换、本月竹篮、三档计数、月度频率条、
-/// 日历视图、码头木牌徽章，以及把本月竹篮做成一张图分享出去。
+/// 小熊猫的竹篮的面板，和月度分享图用同一套竹篮、竹叶和日历：标题里直接
+/// 左右切月，今天三项（缺的项目给一个小胶囊），竹篮当主角配三档图例，一句
+/// 「已过 N 天 · 收到 M 片」，日历，底部固定两个按钮：徽章（点开是码头木牌
+/// 徽章和规则）和分享这个月。
 struct PerfectDayDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -11,9 +13,12 @@ struct PerfectDayDetail: View {
     @State private var monthsBack = 0
     @State private var anchor = ShareAnchorBox()
     @State private var notice: String?
+    @State private var showBadges = false
 
     /// As far back as the history is kept.
     private static let maxMonthsBack = 26
+    /// 分享按钮的颜色，和设计稿、分享图右上角的暖光同一个小熊猫橙。
+    private static let shareHex = "#C0502A"
 
     private var center: PerfectDayCenter { .shared }
     private var calendar: Calendar { PerfectDay.calendar }
@@ -36,181 +41,278 @@ struct PerfectDayDetail: View {
     var body: some View {
         let all = records
         let items = today
-        let tier = PerfectDay.record(items, key: "").tier
         let shownMonth = month
+        let got = PerfectDay.leavesSoFar(all, month: shownMonth, today: context.now)
         return DetailCard {
-            MeshBackdrop(color: Color(hex: PerfectDay.bambooHex))
+            BasketForestBackdrop(bambooHeight: 92)
         } content: {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    header(tier: tier)
-                    if items.isEmpty {
-                        PandaEmptyState(empty: .basket, title: tr("添加小组件"), panel: true) {
-                            guard !context.isPreview else { return }
-                            LibraryWindow.shared.openFromEmptyState()
-                        }
-                    } else {
-                        todayRows(items)
-                    }
-                    Divider().overlay(.white.opacity(0.1))
-                    monthBar(shownMonth)
-                    basketSection(all, month: shownMonth)
-                    section(tr("月度竹叶频率")) {
-                        PerfectFrequencyStrip(days: PerfectDay.monthDays(all, month: shownMonth, today: context.now))
-                    }
-                    section(tr("日历视图")) {
+            VStack(alignment: .leading, spacing: 12) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        header(month: shownMonth, cheer: got > 0)
+                        todaySection(items)
+                        basketSection(all, month: shownMonth, got: got)
+                        statusLine(all, month: shownMonth)
                         PerfectCalendarGrid(
                             weeks: PerfectDay.monthGrid(all, month: shownMonth, today: context.now,
                                                         firstWeekday: firstWeekday),
-                            weekdays: PerfectDay.weekdaySymbols(firstWeekday: firstWeekday))
+                            weekdays: PerfectDay.weekdaySymbols(firstWeekday: firstWeekday),
+                            leafSize: 18, shareStyle: true)
                     }
-                    badgeSection(all)
-                    shareRow(all, month: shownMonth)
-                    rules
+                    .padding(.bottom, 2)
                 }
-                .padding(.bottom, 2)
+                .frame(maxHeight: 580)
+                .scrollIndicators(.never)
+                .scrollBounceBehavior(.basedOnSize)
+                // 底部两个按钮在滚动区外面，内容再长也一直在。
+                bottomBar(all, month: shownMonth)
             }
-            .frame(maxHeight: 600)
-            .scrollIndicators(.never)
         }
         .onAppear { if !context.isPreview { center.refresh(now: context.now) } }
     }
 
-    // MARK: Today
+    // MARK: Header
 
-    private func header(tier: PerfectDayTier?) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 0) {
+    private func header(month: Date, cheer: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("小熊猫的竹篮")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(tier.map { tr("今天是\($0.title)") } ?? tr("今天还没有竹叶"))
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(PerfectDay.subline(tier))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-            Spacer(minLength: 0)
-            PandaWithLeaf(tier: tier, size: 56)
-        }
-    }
-
-    private func todayRows(_ items: [PerfectDayProgress]) -> some View {
-        HStack(spacing: 8) {
-            ForEach(items) { item in
-                VStack(spacing: 5) {
-                    PerfectItemRing(progress: item, size: 26, track: .white)
-                    Text(item.item.title)
-                        .font(.system(size: 11, weight: .semibold))
+                HStack(spacing: 4) {
+                    Button { monthsBack = min(Self.maxMonthsBack, monthsBack + 1) } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 18, height: 26)
+                            .contentShape(.rect)
+                    }
+                    .disabled(monthsBack >= Self.maxMonthsBack)
+                    .help("上个月")
+                    Text(PerfectDay.panelMonthTitle(month))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                    Text(item.mark == .met ? tr("已达标") : item.detail)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
+                    Button { monthsBack = max(0, monthsBack - 1) } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 18, height: 26)
+                            .contentShape(.rect)
+                    }
+                    .disabled(monthsBack == 0)
+                    .opacity(monthsBack == 0 ? 0.35 : 1)
+                    .help("下个月")
+                    // 只有不在本月时才有，整个面板就这一个。
+                    if monthsBack != 0 {
+                        Button { monthsBack = 0 } label: {
+                            Text("回到本月")
+                                .font(.system(size: 10, weight: .semibold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(.white.opacity(0.14)))
+                        }
+                        .padding(.leading, 4)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .glassPane(cornerRadius: 10)
-            }
-        }
-    }
-
-    // MARK: Month
-
-    private func monthBar(_ month: Date) -> some View {
-        HStack(spacing: 8) {
-            Button { monthsBack = min(Self.maxMonthsBack, monthsBack + 1) } label: {
-                Image(systemName: "chevron.left")
-            }
-            .disabled(monthsBack >= Self.maxMonthsBack)
-            .help("上个月")
-            Text(PerfectDay.monthTitle(month))
-                .font(.system(size: 14, weight: .semibold))
+                .buttonStyle(.plain)
                 .foregroundStyle(.white)
-                .monospacedDigit()
-                .frame(minWidth: 90)
-            Button { monthsBack = max(0, monthsBack - 1) } label: {
-                Image(systemName: "chevron.right")
             }
-            .disabled(monthsBack == 0)
-            .help("下个月")
-            Spacer()
-            if monthsBack != 0 {
-                Button("回到本月") { monthsBack = 0 }
-                    .controlSize(.small)
-            }
+            Spacer(minLength: 0)
+            BasketPanda(cheer: cheer, height: 70)
+                .padding(.top, -6)
         }
-        .buttonStyle(.borderless)
-        .foregroundStyle(.white)
     }
 
-    private func basketSection(_ all: [PerfectDayRecord], month: Date) -> some View {
-        let counts = PerfectDay.counts(all, month: month)
-        return VStack(spacing: 12) {
-            if PerfectDay.leaves(all, month: month).isEmpty {
-                PandaEmptyState(empty: .basket, title: monthsBack == 0 ? tr("去打卡") : tr("回到本月"),
-                                panel: true, message: tr("这个月的竹篮还空着")) {
-                    guard !context.isPreview else { return }
-                    if monthsBack != 0 { monthsBack = 0; return }
-                    if let source = center.widgets().first(where: { [WidgetKind.habit, .water, .timer].contains($0.kind) }) {
-                        WidgetPanelOpener.shared.open(source.id)
-                    } else {
-                        LibraryWindow.shared.openFromEmptyState()
-                    }
-                }
-            } else {
-                BambooBasket(leaves: PerfectDay.leaves(all, month: month), width: 170)
-                    .frame(maxWidth: .infinity)
+    // MARK: Today
+
+    @ViewBuilder
+    private func todaySection(_ items: [PerfectDayProgress]) -> some View {
+        if items.isEmpty {
+            // 一个来源小组件都没有：照旧给小熊猫空状态，点一下去添加小组件。
+            PandaEmptyState(empty: .basket, title: tr("添加小组件"), panel: true) {
+                guard !context.isPreview else { return }
+                LibraryWindow.shared.openFromEmptyState()
             }
-            HStack(spacing: 8) {
-                ForEach(PerfectDayTier.allCases.reversed()) { tier in
-                    VStack(spacing: 4) {
-                        LeafGlyph(tier: tier, size: 30)
-                        Text(tier.title)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white)
-                        Text("×\(counts[tier] ?? 0)")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.black.opacity(0.75))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color(hex: tier.hexes.light)))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .glassPane(cornerRadius: 10)
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("今天")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                HStack(spacing: 8) {
+                    ForEach(items) { item in todayCard(item) }
                 }
             }
         }
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+    private func todayCard(_ item: PerfectDayProgress) -> some View {
+        let tint = Color(hex: item.item.hex)
+        return VStack(spacing: 5) {
+            PerfectItemRing(progress: item, size: 28, track: .white)
+            Text(item.item.title)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
-            content()
+                .foregroundStyle(.white)
+            if let fix = PerfectDay.fix(for: item) {
+                Button { open(fix, for: item.item) } label: {
+                    Text(fix.title)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(tint.opacity(0.2)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(item.detail)
+            } else {
+                Text(item.detail)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.vertical, 3)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 9)
+        .glassPane(cornerRadius: 10)
+    }
+
+    /// 没设习惯：有习惯打卡小组件就打开它的面板去新建，没有就去添加小组件；
+    /// 没放喝水或专注计时：去添加小组件。
+    private func open(_ fix: PerfectDayFix, for item: PerfectDayItem) {
+        guard !context.isPreview else { return }
+        if fix == .newHabit, let habit = center.widgets().first(where: { $0.kind == .habit }) {
+            WidgetPanelOpener.shared.open(habit.id)
+        } else {
+            LibraryWindow.shared.openFromEmptyState()
+        }
+    }
+
+    // MARK: Basket
+
+    private func basketSection(_ all: [PerfectDayRecord], month: Date, got: Int) -> some View {
+        let counts = PerfectDay.counts(all, month: month)
+        let leaves = PerfectDay.leaves(all, month: month)
+        return HStack(alignment: .center, spacing: 14) {
+            VStack(spacing: 6) {
+                BambooBasket(leaves: got == 0 ? [] : leaves, width: 150, emptyText: nil, heapAtRim: true)
+                Text(PerfectDay.basketCaption(leaves: got))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            legend(counts)
+        }
+    }
+
+    /// 三档各一行：竹叶、名字、拿叶条件和 ×N，0 片时整行淡下去。
+    private func legend(_ counts: [PerfectDayTier: Int]) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(PerfectDay.legendLines) { line in
+                let count = counts[line.tier] ?? 0
+                HStack(spacing: 8) {
+                    LeafGlyph(tier: line.tier, size: 24)
+                        .opacity(count == 0 ? 0.6 : 1)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(line.tier.title)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.95))
+                        Text(line.condition)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    Spacer(minLength: 4)
+                    Text("×\(count)")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(count == 0 ? Color.white.opacity(0.3) : Color(hex: line.tier.hexes.light))
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func statusLine(_ all: [PerfectDayRecord], month: Date) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+            Text(PerfectDay.shareStatus(all, month: month, today: context.now))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
+    // MARK: Bottom bar
+
+    private func badgeStatuses(_ all: [PerfectDayRecord]) -> [PerfectBadgeStatus] {
+        PerfectBadges.statuses(records: all,
+                               input: context.isPreview ? PerfectBadgeInput(focusMinutes: 900) : center.badgeInput(),
+                               earned: context.isPreview ? [:] : center.archive.earned,
+                               years: context.isPreview ? [:] : center.archive.festivalYears,
+                               today: context.now)
+    }
+
+    private func bottomBar(_ all: [PerfectDayRecord], month: Date) -> some View {
+        let statuses = badgeStatuses(all)
+        let unlocked = statuses.filter(\.unlocked).count
+        // 空月（到今天一片都没有）不分享：按钮置灰，写上先去拿第一片。
+        let blocked = PerfectDay.shareBlockedHint(all, month: month, today: context.now)
+        return VStack(spacing: 6) {
+            if let notice {
+                Text(notice)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.65))
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+            }
+            HStack(spacing: 10) {
+                Button { showBadges.toggle() } label: {
+                    Text(tr("徽章 \(unlocked) / \(statuses.count)"))
+                        .monospacedDigit()
+                }
+                .buttonStyle(BasketBarButtonStyle(fill: .white.opacity(0.1), stroke: .white.opacity(0.12)))
+                .popover(isPresented: $showBadges, arrowEdge: .top) {
+                    badgePopover(statuses)
+                }
+                Button { share(all, month: month) } label: {
+                    Text(blocked ?? (monthsBack == 0 ? tr("分享这个月") : tr("分享这个月的竹篮")))
+                }
+                .buttonStyle(BasketBarButtonStyle(fill: blocked == nil ? Color(hex: Self.shareHex) : .white.opacity(0.05),
+                                                  stroke: .white.opacity(blocked == nil ? 0 : 0.1),
+                                                  dimmed: blocked != nil))
+                .background(ShareAnchor(box: anchor))
+                .disabled(context.isPreview || blocked != nil)
+                .help(blocked == nil ? tr("右键可存储到桌面或拷贝图片") : tr("收到第一片竹叶后就能分享"))
+                .contextMenu {
+                    Button("分享…") { share(all, month: month) }
+                    Button("存储到桌面") { saveToDesktop(all, month: month) }
+                    Button("拷贝图片") { copy(all, month: month) }
+                }
+            }
         }
     }
 
     // MARK: Badges
 
-    private func badgeSection(_ all: [PerfectDayRecord]) -> some View {
-        let statuses = PerfectBadges.statuses(records: all,
-                                              input: context.isPreview ? PerfectBadgeInput(focusMinutes: 900)
-                                                  : center.badgeInput(),
-                                              earned: context.isPreview ? [:] : center.archive.earned,
-                                              years: context.isPreview ? [:] : center.archive.festivalYears,
-                                              today: context.now)
-        let unlocked = statuses.filter(\.unlocked).count
-        return section(tr("徽章 \(unlocked)/\(statuses.count)")) {
-            VStack(alignment: .leading, spacing: 12) {
+    /// 徽章弹层：原来面板底部的码头木牌徽章，按分类分组，下面是怎么算。
+    private func badgePopover(_ statuses: [PerfectBadgeStatus]) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(tr("徽章 \(statuses.filter(\.unlocked).count) / \(statuses.count)"))
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
                 ForEach(PerfectBadges.grouped(statuses)) { group in
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(group.category.title) \(group.statuses.filter(\.unlocked).count)/\(group.statuses.count)")
@@ -219,8 +321,15 @@ struct PerfectDayDetail: View {
                         badgeGrid(group.statuses)
                     }
                 }
+                rules
             }
+            .padding(16)
         }
+        .scrollIndicators(.automatic)
+        .frame(width: 380, height: 520)
+        .background(LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
+                                   startPoint: .top, endPoint: .bottom))
+        .environment(\.colorScheme, .dark)
     }
 
     private func badgeGrid(_ statuses: [PerfectBadgeStatus]) -> some View {
@@ -260,41 +369,19 @@ struct PerfectDayDetail: View {
         return tr("\(c.month ?? 0)月\(c.day ?? 0)日解锁")
     }
 
-    // MARK: Sharing
-
-    private func shareRow(_ all: [PerfectDayRecord], month: Date) -> some View {
-        // 空月（到今天一片都没有）不分享：按钮置灰，写上先去拿第一片。
-        let blocked = PerfectDay.shareBlockedHint(all, month: month, today: context.now)
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Button {
-                    share(all, month: month)
-                } label: {
-                    if let blocked {
-                        Label(blocked, systemImage: monthsBack == 0 ? "drop" : "square.and.arrow.up")
-                    } else {
-                        Label(monthsBack == 0 ? tr("分享本月竹篮") : tr("分享这个月的竹篮"), systemImage: "square.and.arrow.up")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(blocked == nil ? Color(hex: PerfectDay.bambooHex) : .gray)
-                .background(ShareAnchor(box: anchor))
-                .help(blocked == nil ? "" : tr("收到第一片竹叶后就能分享"))
-                Button("存储到桌面") { saveToDesktop(all, month: month) }
-                    .buttonStyle(.bordered)
-                Button("拷贝图片") { copy(all, month: month) }
-                    .buttonStyle(.bordered)
-            }
-            .controlSize(.small)
-            .disabled(context.isPreview || blocked != nil)
-            if let notice {
-                Text(notice)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.65))
-                    .transition(.opacity)
-            }
+    private var rules: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("怎么算")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+            Text(PerfectDay.rules(focusGoal: context.isPreview ? FocusLog.defaultGoal : center.focusGoal()))
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.5))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
+
+    // MARK: Sharing
 
     private func image(_ all: [PerfectDayRecord], month: Date) -> (NSImage, Data)? {
         PerfectDayShareImage.render(records: all, month: month, today: context.now, firstWeekday: firstWeekday)
@@ -352,48 +439,68 @@ struct PerfectDayDetail: View {
             withAnimation { if notice == text { notice = nil } }
         }
     }
+}
 
-    // MARK: Rules
+/// 面板底部的两个大按钮：等宽、圆角，置灰时字也淡下去。
+private struct BasketBarButtonStyle: ButtonStyle {
+    var fill: Color
+    var stroke: Color = .clear
+    var dimmed = false
 
-    private var rules: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text("怎么算")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.75))
-            Text(PerfectDay.rules(focusGoal: context.isPreview ? FocusLog.defaultGoal : center.focusGoal()))
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
-                .fixedSize(horizontal: false, vertical: true)
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(.white.opacity(dimmed ? 0.45 : 1))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, minHeight: 32)
+            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(fill))
+            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(stroke, lineWidth: 0.5))
+            .contentShape(.rect(cornerRadius: 11))
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+// MARK: - Shared with the share card
+
+/// 竹林深绿底：上浅下深，右上角一点小熊猫橙的暖光，竹子贴在右上角页边。
+/// 面板和分享图共用。
+struct BasketForestBackdrop: View {
+    var bambooHeight: CGFloat = 118
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color(hex: "#C0502A").opacity(0.22), .clear],
+                           center: .topTrailing, startRadius: 0, endRadius: 360)
+            BambooStalks(height: bambooHeight)
+                .opacity(0.16)
+                .padding(.trailing, 10)
+        }
+    }
+}
+
+/// 右上角的小熊猫：空月是 idle 在等，有收获是 cheer。面板和分享图共用。
+struct BasketPanda: View {
+    var cheer: Bool
+    var height: CGFloat
+
+    var body: some View {
+        if let image = PetArt.image(.redPanda, cheer ? .cheer : .idle) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(height: height)
+                .accessibilityHidden(true)
+        } else {
+            LeafGlyph(tier: cheer ? .gold : nil, size: height * 0.7, emptyInk: .white)
         }
     }
 }
 
 // MARK: - Share image
-
-/// The red panda with today's leaf in its paws: the pet's own drawing when
-/// the bundle has it, otherwise the leaf alone.
-struct PandaWithLeaf: View {
-    var tier: PerfectDayTier?
-    var size: CGFloat
-
-    var body: some View {
-        if let panda = PetArt.image(.redPanda, tier == nil ? .idle : .eat) {
-            ZStack(alignment: .bottomTrailing) {
-                Image(nsImage: panda)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: size, height: size)
-                LeafGlyph(tier: tier, size: size * 0.45, emptyInk: .white)
-                    .offset(x: size * 0.08, y: size * 0.04)
-            }
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
-        } else {
-            LeafGlyph(tier: tier, size: size, emptyInk: .white)
-        }
-    }
-}
 
 /// The picture shared from the panel: the basket, the counts (or, for an
 /// empty month, how a leaf is earned), one status line, the calendar, 码头's
@@ -424,7 +531,7 @@ struct PerfectDayShareCard: View {
                 }
                 .padding(.top, 4)
                 Spacer(minLength: 8)
-                panda(cheer: !isEmpty)
+                BasketPanda(cheer: !isEmpty, height: 88)
                     .padding(.top, -8)
                     .padding(.trailing, -4)
             }
@@ -465,34 +572,9 @@ struct PerfectDayShareCard: View {
         }
         .padding(28)
         .frame(width: 520)
-        .background {
-            ZStack(alignment: .topTrailing) {
-                LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
-                               startPoint: .top, endPoint: .bottom)
-                RadialGradient(colors: [Color(hex: "#C0502A").opacity(0.22), .clear],
-                               center: .topTrailing, startRadius: 0, endRadius: 360)
-                // 竹子贴着右上角页边，在小熊猫后面，止于标题区，不进日历。
-                BambooStalks(height: 118)
-                    .opacity(0.16)
-                    .padding(.trailing, 10)
-            }
-        }
+        // 竹子贴着右上角页边，在小熊猫后面，止于标题区，不进日历。
+        .background { BasketForestBackdrop(bambooHeight: 118) }
         .environment(\.colorScheme, .dark)
-    }
-
-    /// 右上角的小熊猫：空月是 idle 在等，有收获是 cheer。
-    @ViewBuilder
-    private func panda(cheer: Bool) -> some View {
-        if let image = PetArt.image(.redPanda, cheer ? .cheer : .idle) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(height: 88)
-                .accessibilityHidden(true)
-        } else {
-            LeafGlyph(tier: cheer ? .gold : nil, size: 60, emptyInk: .white)
-        }
     }
 
     /// 有收获：三档各几片。

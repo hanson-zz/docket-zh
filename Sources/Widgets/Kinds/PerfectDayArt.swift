@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 小熊猫的竹篮的图形，全部用 SwiftUI 画出来，不带任何图片素材：
 /// 竹叶（金银铜三色，没得到时是虚线轮廓）、编织竹篮、三项的小进度环、
-/// 码头木牌样式的徽章、月度频率条、日历和点缀用的竹子。
+/// 码头木牌样式的徽章、日历和点缀用的竹子。
 
 // MARK: - Leaf
 
@@ -485,40 +485,6 @@ struct PerfectBadgeMedal: View {
     }
 }
 
-// MARK: - Frequency strip
-
-/// A cell a day across the month, coloured by the leaf it got.
-struct PerfectFrequencyStrip: View {
-    var days: [PerfectDayCell]
-    var height: CGFloat = 22
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(days, id: \.key) { day in
-                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                    .fill(fill(day))
-                    .overlay {
-                        if day.isToday {
-                            RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                                .strokeBorder(.white.opacity(0.9), lineWidth: 1)
-                        }
-                    }
-            }
-        }
-        .frame(height: height)
-        .accessibilityElement()
-        .accessibilityLabel(tr("月度竹叶频率，\(days.filter { $0.tier != nil }.count) 天收到竹叶"))
-    }
-
-    private func fill(_ day: PerfectDayCell) -> AnyShapeStyle {
-        if let tier = day.tier {
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: tier.hexes.light), Color(hex: tier.hexes.deep)],
-                                                startPoint: .top, endPoint: .bottom))
-        }
-        return AnyShapeStyle(Color.white.opacity(day.isFuture ? 0.05 : 0.13))
-    }
-}
-
 // MARK: - Calendar
 
 /// The month as a calendar, a leaf or an empty outline under each date,
@@ -527,8 +493,8 @@ struct PerfectCalendarGrid: View {
     var weeks: [[PerfectDayCell?]]
     var weekdays: [String]
     var leafSize: CGFloat = 22
-    /// 分享图的画法：还没到的日子只写日期不画叶，今天没收到时画一片淡虚线叶，
-    /// 字号略大。面板用默认的 false，保持原样。
+    /// 分享图和面板的画法：还没到的日子只写日期不画叶，今天没收到时画一片
+    /// 淡虚线叶，字号略大。false 是原来每天都画叶的样子。
     var shareStyle = false
 
     private var dateSize: CGFloat { shareStyle ? 11.5 : 10 }

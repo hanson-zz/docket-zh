@@ -287,10 +287,35 @@ final class PerfectDayTests: XCTestCase {
         let some = [record("20261001", "111"), record("20261003", "110"), record("20261005", "100")]
         XCTAssertEqual(PerfectDay.shareStatus(some, month: today, today: today, calendar: calendar),
                        "已过 18 天 · 收到 3 片竹叶")
-        XCTAssertEqual(PerfectDay.shareBlockedHint([], month: today, today: today, calendar: calendar), "今天先喝杯水")
+        XCTAssertEqual(PerfectDay.shareBlockedHint([], month: today, today: today, calendar: calendar), "今天先喝杯水再分享")
         XCTAssertEqual(PerfectDay.shareBlockedHint([], month: day(2026, 9, 1), today: today, calendar: calendar),
                        "这个月没有收到竹叶")
         XCTAssertNil(PerfectDay.shareBlockedHint(some, month: today, today: today, calendar: calendar))
+    }
+
+    func testPanelWords() {
+        XCTAssertEqual(PerfectDay.panelMonthTitle(day(2026, 10, 18), calendar: calendar), "2026 年 10 月")
+        XCTAssertEqual(PerfectDay.panelMonthTitle(day(2027, 1, 1), calendar: calendar), "2027 年 1 月")
+        let lines = PerfectDay.legendLines
+        XCTAssertEqual(lines.map(\.tier), [.gold, .silver, .bronze])
+        XCTAssertEqual(lines.map(\.condition), ["三项全达标", "达标两项", "达标一项"])
+        XCTAssertEqual(PerfectDay.tier(met: 3, participating: 3), lines[0].tier)
+        XCTAssertEqual(PerfectDay.tier(met: 2, participating: 3), lines[1].tier)
+        XCTAssertEqual(PerfectDay.tier(met: 1, participating: 3), lines[2].tier)
+    }
+
+    func testFixPills() {
+        let noHabit = PerfectDay.habits([], on: day(2026, 10, 18))
+        XCTAssertEqual(PerfectDay.fix(for: noHabit), .newHabit)
+        XCTAssertEqual(PerfectDay.fix(for: noHabit)?.title, "＋ 新习惯")
+        let noWater = PerfectDay.water([], on: day(2026, 10, 18), today: day(2026, 10, 18), calendar: calendar)
+        XCTAssertEqual(PerfectDay.fix(for: noWater), .place)
+        XCTAssertEqual(PerfectDay.fix(for: noWater)?.title, "＋ 放上去")
+        let noTimer = PerfectDay.focus(minutes: 0, goal: 50, hasTimer: false)
+        XCTAssertEqual(PerfectDay.fix(for: noTimer), .place)
+        XCTAssertNil(PerfectDay.fix(for: PerfectDay.focus(minutes: 10, goal: 50, hasTimer: true)),
+                     "an item that takes part gets no pill, met or not")
+        XCTAssertNil(PerfectDay.fix(for: PerfectDay.focus(minutes: 60, goal: 50, hasTimer: true)))
     }
 
     func testShareRulesMatchTheTier() {

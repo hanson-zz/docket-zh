@@ -5706,17 +5706,6 @@
         }
       }
     },
-    "今天先喝杯水" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Have a glass of water first"
-          }
-        }
-      }
-    },
     "今天全部完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37552,6 +37541,116 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notch AI chat"
+          }
+        }
+      }
+    },
+    "＋ 新习惯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ New habit"
+          }
+        }
+      }
+    },
+    "＋ 放上去" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Add widget"
+          }
+        }
+      }
+    },
+    "今天先喝杯水再分享" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a glass of water, then share"
+          }
+        }
+      }
+    },
+    "三项全达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All three met"
+          }
+        }
+      }
+    },
+    "达标两项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two met"
+          }
+        }
+      }
+    },
+    "达标一项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One met"
+          }
+        }
+      }
+    },
+    "徽章 %@ / %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badges %@ / %@"
+          }
+        }
+      }
+    },
+    "分享这个月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share This Month"
+          }
+        }
+      }
+    },
+    "分享…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share…"
+          }
+        }
+      }
+    },
+    "右键可存储到桌面或拷贝图片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right-click to save to Desktop or copy the image"
           }
         }
       }

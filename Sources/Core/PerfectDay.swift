@@ -210,6 +210,20 @@ public enum PerfectDayPhase: String, Sendable, Hashable {
     case future
 }
 
+/// 面板「今天」卡片上缺的那一项直接给的小胶囊：没设习惯是「＋ 新习惯」，
+/// 没放喝水或专注计时小组件是「＋ 放上去」。
+public enum PerfectDayFix: String, Sendable, Hashable {
+    case newHabit
+    case place
+
+    public var title: String {
+        switch self {
+        case .newHabit: tr("＋ 新习惯")
+        case .place: tr("＋ 放上去")
+        }
+    }
+}
+
 /// Everything 小熊猫的竹篮 keeps, as one small file: the settled days and the
 /// badges earned with the day each was earned. Focus minutes are not here:
 /// they are the app's one `FocusLog`, kept by `FocusLogStore`.
@@ -574,7 +588,29 @@ public enum PerfectDay {
                                         calendar: Calendar = PerfectDay.calendar) -> String? {
         guard isEmptyMonth(records, month: month, today: today, calendar: calendar) else { return nil }
         let isCurrent = monthDays([], month: month, today: today, calendar: calendar).contains(where: \.isToday)
-        return isCurrent ? tr("今天先喝杯水") : tr("这个月没有收到竹叶")
+        return isCurrent ? tr("今天先喝杯水再分享") : tr("这个月没有收到竹叶")
+    }
+
+    // MARK: Panel
+
+    /// 面板标题里的月份，数字两侧留空格："2026 年 10 月"。
+    public static func panelMonthTitle(_ month: Date, calendar: Calendar = PerfectDay.calendar) -> String {
+        let c = calendar.dateComponents([.year, .month], from: month)
+        return tr("\(c.year ?? 0) 年 \(c.month ?? 0) 月")
+    }
+
+    /// 面板竹篮右边的三行图例：每档的名字下面一句拿叶条件，和 `tier` 一致。
+    public static var legendLines: [PerfectDayRuleLine] {
+        [PerfectDayRuleLine(tier: .gold, condition: tr("三项全达标")),
+         PerfectDayRuleLine(tier: .silver, condition: tr("达标两项")),
+         PerfectDayRuleLine(tier: .bronze, condition: tr("达标一项"))]
+    }
+
+    /// 今天这一项缺了什么：不计入（没设习惯、没放小组件）时给一个小胶囊，
+    /// 计入的项目（哪怕还没达标）不给。
+    public static func fix(for progress: PerfectDayProgress) -> PerfectDayFix? {
+        guard progress.mark == .off else { return nil }
+        return progress.item == .habit ? .newHabit : .place
     }
 
     /// 空月分享图右侧的"每天怎么拿竹叶"：三档各一行，和 `tier` 的规则一一对应。
