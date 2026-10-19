@@ -55,15 +55,18 @@ fail() { printf 'capture-shots: %s\n' "$1" >&2; exit 1; }
 command -v xcodebuild >/dev/null || fail "xcodebuild not found - install the Xcode command line tools."
 command -v screencapture >/dev/null || fail "screencapture not found."
 
-echo "capture-shots: building the Shots target…"
-# -target rather than -scheme, so this does not depend on a generated scheme -
-# but xcodebuild refuses -derivedDataPath without one, so the build lands in the
-# project's usual location and the binary is found by asking where that is.
-xcodebuild -project "$ROOT/Docket.xcodeproj" \
-           -target Shots \
-           -configuration Release \
-           build >"$DERIVED.log" 2>&1 \
-  || { tail -40 "$DERIVED.log" >&2; fail "build failed; the full log is at $DERIVED.log"; }
+# 双语工作流先单独构建一次，拍摄阶段只切换资源；本机直接运行仍会先构建。
+if [ "${SHOTS_SKIP_BUILD:-0}" != 1 ]; then
+  echo "capture-shots: building the Shots target…"
+  # -target rather than -scheme, so this does not depend on a generated scheme -
+  # but xcodebuild refuses -derivedDataPath without one, so the build lands in the
+  # project's usual location and the binary is found by asking where that is.
+  xcodebuild -project "$ROOT/Docket.xcodeproj" \
+             -target Shots \
+             -configuration Release \
+             build >"$DERIVED.log" 2>&1 \
+    || { tail -40 "$DERIVED.log" >&2; fail "build failed; the full log is at $DERIVED.log"; }
+fi
 
 PRODUCTS=$(xcodebuild -project "$ROOT/Docket.xcodeproj" -target Shots \
                       -configuration Release -showBuildSettings 2>/dev/null \
@@ -126,7 +129,23 @@ exec 4<"$FRAMES"
 WRITTEN=()
 FAILED=()
 
-while read -r name x y w h source <&4; do
+FRAME_TIMEOUT="${SHOTS_FRAME_TIMEOUT:-180}"
+case "$FRAME_TIMEOUT" in
+  ''|*[!0-9]*) fail "SHOTS_FRAME_TIMEOUT must be a positive number of seconds." ;;
+esac
+[ "$FRAME_TIMEOUT" -gt 0 ] || fail "SHOTS_FRAME_TIMEOUT must be greater than zero."
+LAST_FRAME="startup"
+while :; do
+  if read -r -t "$FRAME_TIMEOUT" name x y w h source <&4; then
+    LAST_FRAME="$name"
+  else
+    status=$?
+    if [ "$status" -gt 128 ]; then
+      kill "$SHOTS_PID" 2>/dev/null || true
+      fail "no frame for $FRAME_TIMEOUT seconds after $LAST_FRAME; see the last prepare/measure log."
+    fi
+    break
+  fi
   # A tool that predates the source column still gets its images captured;
   # only the label is unknown.
   source="${source:-unknown}"

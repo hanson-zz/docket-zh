@@ -534,12 +534,25 @@ private func makeShelfState(widgets: [WidgetInstance], apps: [String],
         // Skipped rather than drawn dead: an app that is genuinely not
         // installed has no icon to show, and the shelf would render it as a
         // repairable gap, which is not what this image is about.
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        // 首张货架准备阶段曾等了三十多分钟。拍摄只用系统自带应用，直接读其
+        // 已知位置，不让 LaunchServices 扫描整台临时机器；缺少的仍然跳过。
+        let paths = [
+            "com.apple.finder": "/System/Library/CoreServices/Finder.app",
+            "com.apple.Safari": "/Applications/Safari.app",
+            "com.apple.mail": "/System/Applications/Mail.app",
+            "com.apple.Terminal": "/System/Applications/Utilities/Terminal.app",
+            "com.apple.systempreferences": "/System/Applications/System Settings.app",
+            "com.apple.Notes": "/System/Applications/Notes.app",
+            "com.apple.Preview": "/System/Applications/Preview.app",
+            "com.apple.Photos": "/System/Applications/Photos.app",
+        ]
+        log("shelf: resolving \(bundleID)")
+        guard let path = paths[bundleID], FileManager.default.fileExists(atPath: path)
         else {
             log("shelf: \(bundleID) is not installed here, leaving it out")
             continue
         }
-        profile.items.append(.app(id: UUID(), bundleID: bundleID, ref: .capture(url)))
+        profile.items.append(.app(id: UUID(), bundleID: bundleID, ref: .capture(URL(fileURLWithPath: path))))
     }
 
     let shelf = AppState(store: Store(directory: directory))
@@ -715,6 +728,7 @@ private func run() async {
         .map { Set($0.split(separator: ",").map(String.init)) }
 
     for shot in shots(since: started) where only?.contains(shot.name) ?? true {
+        log("prepare \(shot.name)")
         await shot.prepare()
         guard let window = makePanel(shot, on: screen) else { continue }
         try? await Task.sleep(for: settle + shot.linger)
@@ -737,6 +751,7 @@ private func run() async {
     // them read the keychain, and a machine that answers that with a prompt
     // should cost these three images rather than every shelf.
     for shot in viewShots() where only?.contains(shot.name) ?? true {
+        log("prepare \(shot.name)")
         await shot.prepare()
         guard let (window, _) = makeWindow(shot.view(), shadow: shot.windowShadow, on: screen, key: true) else {
             log("\(shot.name): measured empty, skipping")
@@ -946,6 +961,31 @@ private struct ViewShot {
     var windowShadow = true
 }
 
+/// 拍真实共用空状态，不写入订阅、相册或截图数据。
+@MainActor
+private struct EmptyStatesShot: View {
+    private var states: [(PandaEmpty, String)] { [
+        (.habit, tr("添加习惯")), (.anniversary, tr("添加纪念日")), (.alarm, tr("添加闹钟")),
+        (.radio, tr("搜索电台")), (.podcast, tr("添加订阅")), (.bookmarks, tr("添加书签")),
+        (.screenshots, tr("截取屏幕")), (.photos, tr("选择相册")), (.basket, tr("添加小组件")),
+    ] }
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(190), spacing: 12), count: 3), spacing: 12) {
+            ForEach(states.indices, id: \.self) { index in
+                WidgetSurface {
+                    PandaEmptyState(empty: states[index].0, title: states[index].1, panel: true, action: {})
+                }
+                .frame(width: 190, height: 150)
+            }
+        }
+        .padding(16)
+        .frame(width: 626)
+        .background(Color(white: 0.12))
+        .environment(\.colorScheme, .dark)
+    }
+}
+
 /// Holds what the AI panel reads for as long as the run lasts:
 /// `AIChatCenter.app` is weak, and a shelf nobody holds is gone at once.
 @MainActor
@@ -979,6 +1019,10 @@ private enum ReminderPopupFixture {
 @MainActor
 private func viewShots() -> [ViewShot] {
     [
+        ViewShot(name: "empty-states", source: .empty, view: {
+            AnyView(EmptyStatesShot())
+        }),
+
         // The card that slides out under the notch when something comes due,
         // here a 喝水 reminder drawn from sample numbers: a shelf's own log is
         // the user's.
@@ -1030,11 +1074,13 @@ private func viewShots() -> [ViewShot] {
 
 @MainActor
 private func captureShelf(_ shot: ShelfShot, on screen: NSScreen) async {
+    log("prepare shelf \(shot.name)")
     guard let shelf = makeShelfState(widgets: shot.widgets, apps: shot.apps,
                                      sample: shot.sample) else { return }
     if let look = shot.look { look.apply(to: &shelf.state.customDock) }
     if shot.monochrome { shelf.state.customDock.widgetColor = .monochrome }
     if shot.shrink { shelf.state.customDock.overflow = .shrink }
+    log("measure shelf \(shot.name)")
     guard let (window, hosting) = makeWindow(DockShelfView().environment(shelf),
                                              shadow: false, on: screen) else {
         log("shelf: measured empty, skipping")

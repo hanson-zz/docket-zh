@@ -30,21 +30,25 @@ jobs:
     runs-on: macos-26
     # Two languages, each a full pass with its network waits and the minute
     # of system history.
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v7
+        timeout-minutes: 3
 
       - name: Install XcodeGen
+        timeout-minutes: 5
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: brew install --quiet xcodegen
 
       - name: Generate the project
+        timeout-minutes: 2
         run: xcodegen generate
 
       - name: Display
+        timeout-minutes: 2
         run: |
           system_profiler SPDisplaysDataType || true
           sw_vers
@@ -55,6 +59,7 @@ jobs:
       # plain one up to 1920. Allowed to fail: the capture
       # still runs at whatever the display is.
       - name: Larger display
+        timeout-minutes: 3
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -89,6 +94,7 @@ jobs:
       # file sizes the widgets format come out the way a reader of this
       # fork sees them. Read by the Shots process when it launches.
       - name: Chinese locale
+        timeout-minutes: 2
         run: |
           defaults write -g AppleLanguages -array zh-Hans
           defaults write -g AppleLocale -string zh_CN
@@ -102,6 +108,7 @@ jobs:
       # is why every insert is allowed to fail and the next step checks the
       # result instead of trusting this one.
       - name: Grant Screen Recording
+        timeout-minutes: 2
         run: |
           grant() {
             db="$1"; client="$2"; type="$3"
@@ -130,6 +137,7 @@ jobs:
       # own backdrop while it captures, but anything that peeks out around it,
       # a notification or the menu bar, should be plain too.
       - name: Quiet desktop
+        timeout-minutes: 2
         run: |
           defaults write com.apple.screencapture location "$HOME/Desktop"
           mkdir -p "$HOME/Desktop" "$HOME/Downloads"
@@ -140,6 +148,7 @@ jobs:
           kill %1 2>/dev/null || true
 
       - name: Check that a capture is not blank
+        timeout-minutes: 2
         run: |
           mkdir -p "$RUNNER_TEMP/check"
           screencapture -x "$RUNNER_TEMP/check/fullscreen.png" || true
@@ -151,9 +160,18 @@ jobs:
       # wrote into Downloads and the screenshot folder are cleared before the
       # next, or the English panels would list the Chinese file names too.
       # A failed language does not stop the other; the step fails at the end.
+      - name: Build screenshot tool
+        timeout-minutes: 20
+        run: |
+          xcodebuild -project Docket.xcodeproj -target Shots -configuration Release build \
+            > "${TMPDIR:-/tmp}/docket-shots-build.log" 2>&1
+
       - name: Capture
+        timeout-minutes: 12
         env:
           SHOTS_DISPOSABLE: "1"
+          SHOTS_SKIP_BUILD: "1"
+          SHOTS_FRAME_TIMEOUT: "180"
           SHOTS_ONLY: ${{ inputs.only }}
           SHOTS_LANGUAGES: ${{ inputs.languages }}
         run: |
@@ -177,6 +195,7 @@ jobs:
           fi
 
       - name: Upload screenshots
+        timeout-minutes: 3
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -188,6 +207,7 @@ jobs:
           retention-days: 7
 
       - name: Build log
+        timeout-minutes: 2
         if: failure()
         run: |
           for log in "${TMPDIR:-/tmp}"/docket-shots-build.log; do
