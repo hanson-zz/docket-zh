@@ -102,12 +102,18 @@ struct ProPaywallView: View {
                 Button {
                     license.buy()
                 } label: {
-                    Text(tr("购买 \(ProLicenseConfig.price)")).frame(minWidth: 90)
+                    Text(tr("购买")).frame(minWidth: 90)
                 }
                 .buttonStyle(.bordered)
-                Text(tr("早鸟价 \(ProLicenseConfig.earlyBirdPrice)"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(proAccent)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tr("首批特价 \(ProLicenseConfig.launchPrice)"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(proAccent)
+                    Text(tr("之后 \(ProLicenseConfig.price) · 正式版 \(ProLicenseConfig.fullPrice)"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
             .controlSize(.large)
 
@@ -255,7 +261,7 @@ struct ProSettingsPane: View {
                                 .buttonStyle(.borderedProminent)
                                 .tint(proAccent)
                         }
-                        Button(tr("购买 \(ProLicenseConfig.price)（早鸟 \(ProLicenseConfig.earlyBirdPrice)）")) { license.buy() }
+                        Button(tr("购买（首批特价 \(ProLicenseConfig.launchPrice)）")) { license.buy() }
                         Button("查看 Pro 功能…") { PaywallWindow.shared.show() }
                             .buttonStyle(.link)
                     }

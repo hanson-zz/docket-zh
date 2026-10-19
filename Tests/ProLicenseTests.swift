@@ -201,6 +201,8 @@ final class ProLicenseTests: XCTestCase {
         XCTAssertEqual(ProLicenseText.message(error: "weird", status: nil), "授权失败：weird")
         XCTAssertTrue(ProLicenseText.priceLine.contains("$9.90"))
         XCTAssertTrue(ProLicenseText.priceLine.contains("$6.90"))
+        XCTAssertTrue(ProLicenseText.priceLine.contains("$15.90"))
+        XCTAssertTrue(ProLicenseText.priceLine.contains("20"))
     }
 
     // MARK: 锁

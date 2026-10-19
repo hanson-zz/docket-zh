@@ -41,8 +41,8 @@ https://dockling-license.tudou-123.workers.dev/v1/licenses/
 
 ## Creem 后台
 
-- 产品“码头 Pro”一次买断 $9.90，打开“许可证密钥”（License keys），激活上限建议 2 到 3 台。
-- 首批限量：前 20 份 $6.90（产品现价），卖完恢复 $9.90。卖完后需要你自己去 Creem 后台把价格改回 $9.90，Worker 不会改价，也不会发邮件提醒；`/earlybird` 返回 `soldOut: true`、官网自动换成 $9.90 文案就是信号。App 里只显示价格，不内置优惠码。
+- 产品“码头 Pro”一次性付款，打开“许可证密钥”（License keys），激活上限建议 2 到 3 台。
+- 三档价格（2026-10-19 定）：首批 20 个许可证 $6.90，首批卖完后 $9.90，正式版 $15.90。每次换档都要你自己去 Creem 后台改产品价格，Worker 不会改价，也不会发邮件提醒；`/earlybird` 返回 `soldOut: true` 就是该改成 $9.90 的信号，正式版什么时候改 $15.90 由你决定。官网的档位写在 `docs/index.html` 价格脚本的 `TIERS` 和 `CURRENT` 里：Creem 改完价，把 `CURRENT` 改成对应档位（0 首批、1 $9.90、2 正式版）再推送。第 0 档时 `/earlybird` 报卖完，官网会自动按 $9.90 显示。App 里只显示三档价格，不内置优惠码，也不判断当前档位。
 - 购买链接：https://www.creem.io/payment/prod_XYf9P2X55fvYZQOLhs3Lr
 
 ## 首批限量计数 `/earlybird`
@@ -57,6 +57,6 @@ https://dockling-license.tudou-123.workers.dev/v1/licenses/
 - 计数口径：只数码头 Pro 产品（`PRODUCT_ID`）的一次性付款（`type=payment`），状态为 `paid` 或 `partialRefund`，实付大于 0，环境与 API 一致（正式环境只数 `prod`）。全额退款 `refunded`、拒付、作废、待付不算；同一订单只算一次；DKG- 兑换码不经过 Creem，本来就不算。
 - 只返回这几个数字，不返回买家、订单号或金额。
 - CORS 只允许 `https://docket.shiduo.app` 和 `https://hanson-zz.github.io`；在 Cloudflare 边缘缓存 60 秒，所以卖出后最多一分钟页面才变。
-- Creem 出错或没配密钥时返回 502 / 503，官网会退回“早鸟价 $6.90，以结账页为准”，不显示剩余数量。
+- Creem 出错或没配密钥时返回 502 / 503，官网退回静态的三档价格文案，不显示剩余数量。
 - 可选变量：`EARLYBIRD_TOTAL`（默认 20）；`EARLYBIRD_EXCLUDE`，填不想算进去的 Creem 订单号（英文逗号隔开），比如自己在正式环境下的测试单。
 - 本地测试：在本目录 `npm test`（只用 Node 自带的测试，不用装依赖）。

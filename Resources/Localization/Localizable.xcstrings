@@ -3715,13 +3715,13 @@
         }
       }
     },
-    "一次买断 %@，早鸟价 %@" : {
+    "一次性付款 · 免费更新。首批 %@ 个许可证特价 %@，之后 %@，正式版 %@，实际价格以结账页为准" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One-time purchase %@, early bird %@"
+            "value" : "One-time payment · Free updates. The first %@ licenses are %@, then %@, and %@ at full release. The checkout page shows the final price"
           }
         }
       }
@@ -5141,6 +5141,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Then %@ %@"
+          }
+        }
+      }
+    },
+    "之后 %@ · 正式版 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then %@ · Full release %@"
           }
         }
       }
@@ -20736,17 +20747,6 @@
         }
       }
     },
-    "早鸟价 %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Early bird %@"
-          }
-        }
-      }
-    },
     "时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32277,24 +32277,13 @@
         }
       }
     },
-    "购买 %@" : {
+    "购买" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buy %@"
-          }
-        }
-      }
-    },
-    "购买 %@（早鸟 %@）" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buy %@ (early bird %@)"
+            "value" : "Buy"
           }
         }
       }
@@ -32306,6 +32295,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buy or Enter Gift Code…"
+          }
+        }
+      }
+    },
+    "购买（首批特价 %@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy (launch price %@)"
           }
         }
       }
@@ -36214,6 +36214,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Seoul"
+          }
+        }
+      }
+    },
+    "首批特价 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch price %@"
           }
         }
       }

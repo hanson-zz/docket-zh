@@ -26,9 +26,12 @@ public enum ProLicenseConfig {
     /// 最多每 24 小时联网校验一次。
     public static let revalidateInterval: TimeInterval = 86_400
 
-    /// 原价和早鸟价，只用于显示。
+    /// 三档价格，只用于显示（2026-10-19 定）：首批特价，首批卖完后的价格，正式版价格。
+    /// App 不知道现在是哪一档，真实价格在 Creem 结账页，改价也在 Creem 后台手动改。
+    public static let launchPrice = "$6.90"
+    public static let launchCount = 20
     public static let price = "$9.90"
-    public static let earlyBirdPrice = "$6.90"
+    public static let fullPrice = "$15.90"
 
     /// 码头兑换码的前缀；拾掇的是 SDG。
     public static let giftPrefix = "DKG"
@@ -381,7 +384,7 @@ public enum ProLicenseText {
 
     /// 价格一句话，付费墙和设置里用。
     public static var priceLine: String {
-        tr("一次买断 \(ProLicenseConfig.price)，早鸟价 \(ProLicenseConfig.earlyBirdPrice)")
+        tr("一次性付款 · 免费更新。首批 \(ProLicenseConfig.launchCount) 个许可证特价 \(ProLicenseConfig.launchPrice)，之后 \(ProLicenseConfig.price)，正式版 \(ProLicenseConfig.fullPrice)，实际价格以结账页为准")
     }
 
     /// 许可证只显示前 4 位和后 4 位；兑换码只显示最后一组。
