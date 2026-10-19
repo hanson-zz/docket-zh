@@ -10091,6 +10091,17 @@
         }
       }
     },
+    "去打卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check In"
+          }
+        }
+      }
+    },
     "去授权" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -331,6 +331,7 @@ struct PandaEmptyState: View {
     var title: String
     var compact = false
     var panel = false
+    var message: String? = nil
     var action: () -> Void
 
     private var badge: some View {
@@ -353,7 +354,7 @@ struct PandaEmptyState: View {
             if panel || compact {
                 VStack(spacing: panel ? 8 : 3) {
                     badge
-                    Text(empty.line(compact: compact))
+                    Text(message ?? empty.line(compact: compact))
                         .font(.system(size: panel ? 12 : 10))
                         .foregroundStyle(panel ? .white.opacity(0.75) : WidgetStyle.secondary)
                         .fixedSize()
@@ -364,7 +365,7 @@ struct PandaEmptyState: View {
                 HStack(spacing: 8) {
                     badge
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(empty.line()).font(.system(size: 11)).fixedSize()
+                        Text(message ?? empty.line()).font(.system(size: 11)).fixedSize()
                         button
                     }
                 }
@@ -390,7 +391,17 @@ struct PandaEmptyTile: View {
     var body: some View {
         PandaEmptyState(empty: empty, title: title, compact: context.position.isVertical) {
             guard !context.isPreview else { return }
-            WidgetDetailWindow.shared.openFloating(WidgetWriter.current(instance.id) ?? instance, now: context.now)
+            let current = WidgetWriter.current(instance.id) ?? instance
+            switch empty {
+            case .screenshots:
+                ScreenCapture.capture(.region)
+            case .photos:
+                let folder = FolderFeed.shared(.pictures(current.config.string("folder"))).folder
+                guard let url = FileActions.chooseFolder(title: tr("选择相册要轮播的文件夹"), startingAt: folder) else { return }
+                WidgetWriter.write(current) { $0.set("folder", .string(url.path)) }
+            default:
+                WidgetDetailWindow.shared.openFloating(current, now: context.now)
+            }
         }
     }
 }

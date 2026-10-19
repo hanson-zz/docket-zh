@@ -305,9 +305,11 @@ struct PodcastDetail: View {
                     .foregroundStyle(Color(hex: "#FF9F0A"))
             }
             if show.episodes.isEmpty {
-                Text("这个节目还没有单集。")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
+                PandaEmptyState(empty: .podcast, title: tr("刷新"), panel: true,
+                                message: tr("这个节目还没有单集。")) {
+                    guard !context.isPreview else { return }
+                    Task { await service.refresh(show.id) }
+                }
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {

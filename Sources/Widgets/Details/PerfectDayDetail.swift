@@ -152,8 +152,21 @@ struct PerfectDayDetail: View {
     private func basketSection(_ all: [PerfectDayRecord], month: Date) -> some View {
         let counts = PerfectDay.counts(all, month: month)
         return VStack(spacing: 12) {
-            BambooBasket(leaves: PerfectDay.leaves(all, month: month), width: 170)
-                .frame(maxWidth: .infinity)
+            if PerfectDay.leaves(all, month: month).isEmpty {
+                PandaEmptyState(empty: .basket, title: monthsBack == 0 ? tr("去打卡") : tr("回到本月"),
+                                panel: true, message: tr("这个月的竹篮还空着")) {
+                    guard !context.isPreview else { return }
+                    if monthsBack != 0 { monthsBack = 0; return }
+                    if let source = center.widgets().first(where: { [WidgetKind.habit, .water, .timer].contains($0.kind) }) {
+                        WidgetPanelOpener.shared.open(source.id)
+                    } else {
+                        LibraryWindow.shared.openFromEmptyState()
+                    }
+                }
+            } else {
+                BambooBasket(leaves: PerfectDay.leaves(all, month: month), width: 170)
+                    .frame(maxWidth: .infinity)
+            }
             HStack(spacing: 8) {
                 ForEach(PerfectDayTier.allCases.reversed()) { tier in
                     VStack(spacing: 4) {
