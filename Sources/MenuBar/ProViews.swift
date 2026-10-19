@@ -209,10 +209,11 @@ struct ProPaywallView: View {
                         .frame(width: 46, height: 46)
                         .background(proAccent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     VStack(alignment: .leading, spacing: 4) {
+                        // 英文标题较长，允许折成两行，不截断。
                         Text(tile.title)
                             .font(.system(size: 16, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         Text(tile.detail)
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
@@ -222,6 +223,7 @@ struct ProPaywallView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, minHeight: PaywallMetrics.tileHeight, alignment: .leading)
                 .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
