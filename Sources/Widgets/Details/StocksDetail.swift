@@ -598,13 +598,12 @@ struct StocksDetail: View {
     /// 断网：顶上一条插头横幅，写「离线 · 10:32 的价」，点右边重新取一次。
     /// 和天气、GitHub 面板同一个 `ReconnectStateView`。
     private func staleNote(_ fetched: Date?) -> some View {
-        ReconnectStateView(title: OfflineQuote.label(fetched: fetched, now: .now),
-                           detail: tr("上次刷新失败，显示的是之前获取的有效数据"),
-                           style: .compact,
-                           retry: context.isPreview ? nil : retryQuotes)
-    }
-
-    private func retryQuotes() {
-        Task { await StockService.shared.refresh() }
+        let title: String = OfflineQuote.label(fetched: fetched, now: .now)
+        let detail: String = tr("上次刷新失败，显示的是之前获取的有效数据")
+        let preview = context.isPreview
+        return ReconnectStateView(title: title, detail: detail, style: .compact) {
+            guard !preview else { return }
+            Task { await StockService.shared.refresh() }
+        }
     }
 }
