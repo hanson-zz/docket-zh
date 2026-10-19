@@ -28435,6 +28435,17 @@
         }
       }
     },
+    "离线 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline · %@"
+          }
+        }
+      }
+    },
     "离线 · %@ 的价" : {
       "extractionState" : "manual",
       "localizations" : {

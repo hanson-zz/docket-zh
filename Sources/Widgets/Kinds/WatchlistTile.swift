@@ -99,18 +99,19 @@ struct WatchlistTile: View {
             BreadthBar(breadth: breadth, colors: colors, height: 3)
                 .frame(width: 36)
             Spacer(minLength: 0)
-            if let offline = offlineText(symbols) {
+            if offlineText(symbols) != nil {
                 // 断网时右上角写「离线 · 10:32 的价」，盈亏用的是旧价，先不显示。
-                Text(offline)
-                    .font(WidgetStyle.label(Self.font))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.7)
+                OfflineQuoteText(fetched: oldestStaleTime(symbols), now: context.now, stacked: false)
+                    .layoutPriority(1)
             } else {
                 profit(symbols)
             }
         }
         .lineLimit(1)
+    }
+
+    private func oldestStaleTime(_ symbols: [String]) -> Date? {
+        OfflineQuote.oldest(symbols.compactMap { quote($0) }.filter(\.stale).map(\.fetchedAt))
     }
 
     /// 这一组里有过期的报价时的那句话，时间取最早的那只。

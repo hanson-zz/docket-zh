@@ -18,6 +18,13 @@ final class OfflineQuoteTests: XCTestCase {
         XCTAssertEqual(OfflineQuote.label(fetched: date(19, 9, 5), now: now, calendar: calendar), "离线 · 09:05 的价")
     }
 
+    func testCompactLabelKeepsTheDateAndTime() {
+        let now = date(19, 15, 0)
+        XCTAssertEqual(OfflineQuote.compactLabel(fetched: date(19, 9, 5), now: now, calendar: calendar), "离线 · 09:05")
+        XCTAssertEqual(OfflineQuote.compactLabel(fetched: date(18, 9, 5), now: now, calendar: calendar), "离线 · 10/18 09:05")
+        XCTAssertEqual(OfflineQuote.compactLabel(fetched: nil, now: now, calendar: calendar), "离线")
+    }
+
     func testAnotherDayAddsTheDate() {
         let now = date(19, 9, 0)
         XCTAssertEqual(OfflineQuote.timeText(date(18, 22, 30), now: now, calendar: calendar), "10/18 22:30")

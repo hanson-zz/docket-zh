@@ -176,10 +176,7 @@ struct StockTile: View {
                 .rollingValue(StockBoard.priceText(quote?.price))
             if let quote, quote.stale, !context.isPreview {
                 // 底行换成断网说明：涨跌是上次的，写了反而像是现在的。
-                Text(OfflineQuote.label(fetched: quote.fetchedAt, now: .now))
-                    .font(WidgetStyle.label(percentSize - 1))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .monospacedDigit()
+                OfflineQuoteText(fetched: quote.fetchedAt, now: context.now)
             } else {
                 HStack(spacing: 4) {
                     Text(StockBoard.percentText(quote?.changePercent))

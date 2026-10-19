@@ -25,18 +25,8 @@ struct CryptoTile: View {
 
     private var stale: Bool { !context.isPreview && CryptoService.shared.isStale(currency) }
 
-    /// 断网时底行那句「离线 · 10:32 的价」。
-    private var offlineText: String {
-        OfflineQuote.label(fetched: CryptoService.shared.updated(currency), now: .now)
-    }
-
     private var offlineLine: some View {
-        Text(offlineText)
-            .font(WidgetStyle.label(9))
-            .foregroundStyle(WidgetStyle.primary)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+        OfflineQuoteText(fetched: CryptoService.shared.updated(currency), now: context.now)
     }
 
     var body: some View {

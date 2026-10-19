@@ -24,6 +24,12 @@ public enum OfflineQuote {
         return formatter.string(from: date)
     }
 
+    /// 窄卡省去「的价」，仍保留上次成功时间，不能把旧报价说成当前报价。
+    public static func compactLabel(fetched: Date?, now: Date, calendar: Calendar = .current) -> String {
+        guard let fetched else { return tr("离线") }
+        return tr("离线 · \(timeText(fetched, now: now, calendar: calendar))")
+    }
+
     /// 卡片底行：「离线 · 10:32 的价」；不知道是几点的价时只写「离线」。
     public static func label(fetched: Date?, now: Date, calendar: Calendar = .current) -> String {
         guard let fetched else { return tr("离线") }

@@ -263,3 +263,33 @@ struct RotationDots: View {
         .accessibilityLabel(tr("第 \(index + 1) 只，共 \(count) 只"))
     }
 }
+
+/// 离线说明不参与价格数字的缩放；窄卡分行，最窄时保留状态并用辅助功能读全时间。
+struct OfflineQuoteText: View {
+    var fetched: Date?
+    var now: Date
+    var stacked = true
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            Text(OfflineQuote.compactLabel(fetched: fetched, now: now))
+                .fixedSize()
+            if stacked, let fetched {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(tr("离线"))
+                    Text(OfflineQuote.timeText(fetched, now: now).replacingOccurrences(of: " ", with: "\n"))
+                }
+                .fixedSize()
+            }
+            Text(tr("离线")).fixedSize()
+        }
+        .font(WidgetStyle.label(9.5))
+        .foregroundStyle(WidgetStyle.primary)
+        .monospacedDigit()
+        .lineLimit(nil)
+        .minimumScaleFactor(1)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(OfflineQuote.label(fetched: fetched, now: now))
+        .help(OfflineQuote.label(fetched: fetched, now: now))
+    }
+}
