@@ -47,6 +47,12 @@ final class NotificationAccessTests: XCTestCase {
         }
     }
 
+    func testBareScreenshotToolCannotQueryNotificationCenter() {
+        XCTAssertTrue(NotificationAccess.canReadSettings(bundleURL: URL(fileURLWithPath: "/Applications/Dockling.app")))
+        XCTAssertFalse(NotificationAccess.canReadSettings(bundleURL: URL(fileURLWithPath: "/tmp/build/Release/")))
+        XCTAssertFalse(NotificationAccess.canReadSettings(bundleURL: URL(fileURLWithPath: "/tmp/build/Release/Shots")))
+    }
+
     func testWaterStockAndBatteryRules() {
         XCTAssertTrue(NotificationAccess.waterUsesNotifications(every: 60, popupShows: false))
         XCTAssertFalse(NotificationAccess.waterUsesNotifications(every: 60, popupShows: true), "弹卡片时不走通知")

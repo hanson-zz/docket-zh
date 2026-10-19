@@ -26,6 +26,11 @@ public enum NotificationAccess: Equatable, Sendable {
     /// 开关开着、通知却被关了，才提示。开关本来就关着的不用提。
     public func warns(switchOn: Bool) -> Bool { self == .denied && switchOn }
 
+    /// 裸拍摄工具没有应用代理，查询通知中心会抛系统异常，不能用 Swift 错误捕获。
+    public static func canReadSettings(bundleURL: URL) -> Bool {
+        bundleURL.pathExtension.lowercased() == "app"
+    }
+
     /// 系统设置 ▸ 通知 ▸ 码头。带不上 id 时打开通知总页。
     public static func settingsURL(bundleID: String?) -> URL? {
         let base = "x-apple.systempreferences:com.apple.Notifications-Settings.extension"

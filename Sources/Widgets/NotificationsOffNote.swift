@@ -18,6 +18,7 @@ final class NotificationAccessMonitor {
     private init() {}
 
     func refresh() {
+        guard NotificationAccess.canReadSettings(bundleURL: Bundle.main.bundleURL) else { return }
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             let raw = settings.authorizationStatus.rawValue
             Task { @MainActor in
@@ -69,8 +70,9 @@ struct NotificationsOffNote: View {
                 .accessibilityLabel(tr("系统通知已关闭，点按去开启"))
             }
         }
-        .task {
-            guard !preview else { return }
+        .task(id: active) {
+            guard active, !preview,
+                  NotificationAccess.canReadSettings(bundleURL: Bundle.main.bundleURL) else { return }
             while !Task.isCancelled {
                 monitor.refresh()
                 try? await Task.sleep(for: .seconds(4))
