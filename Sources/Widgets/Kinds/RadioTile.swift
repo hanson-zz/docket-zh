@@ -35,7 +35,9 @@ struct RadioTile: View {
 
     var body: some View {
         WidgetSurface {
-            if context.position.isVertical {
+            if station == nil {
+                PandaEmptyTile(empty: .radio, title: tr("搜索电台"), instance: instance, context: context)
+            } else if context.position.isVertical {
                 VStack(spacing: 4) {
                     RadioIcon(size: 34, playing: playing, animated: !context.isPreview)
                     Text(station?.name ?? tr("收音机"))

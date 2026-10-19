@@ -176,18 +176,6 @@ struct PhotoFrameTile: View {
     }
 
     private var empty: some View {
-        let column = context.position.isVertical
-        let message = feed.error != nil ? tr("无法访问") : feed.loadedAt == nil ? tr("正在读取") : tr("没有图片")
-        return VStack(spacing: 4) {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: column ? 15 : 16, weight: .medium))
-                .foregroundStyle(WidgetStyle.secondary)
-            Text(message)
-                .font(WidgetStyle.note)
-                .foregroundStyle(WidgetStyle.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        PandaEmptyTile(empty: .photos, title: tr("选择相册"), instance: instance, context: context)
     }
 }

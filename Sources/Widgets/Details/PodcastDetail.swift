@@ -12,6 +12,7 @@ struct PodcastDetail: View {
     private var service: PodcastService { PodcastService.shared }
     private var player: PodcastPlayer { PodcastPlayer.shared }
 
+    @FocusState private var addingFocused: Bool
     @State private var link = ""
     @State private var adding = false
     @State private var message: String?
@@ -44,8 +45,7 @@ struct PodcastDetail: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if shows.isEmpty {
-                    PanelNote(symbol: "mic",
-                              text: tr("在小宇宙里点“分享”拷贝节目链接，粘贴到上面即可订阅。也可以在书签小组件里把小宇宙链接“加到播客”。"))
+                    PandaEmptyState(empty: .podcast, title: tr("添加订阅"), panel: true) { addingFocused = true }
                         .frame(height: 120)
                 } else {
                     showStrip
@@ -65,6 +65,7 @@ struct PodcastDetail: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.6))
             TextField("", text: $link, prompt: Text("粘贴小宇宙链接，例如 xiaoyuzhoufm.com/podcast/…"))
+                .focused($addingFocused)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .foregroundStyle(.white)

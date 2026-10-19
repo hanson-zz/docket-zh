@@ -79,6 +79,7 @@ class HostedWindow {
 @MainActor
 final class LibraryWindow: HostedWindow {
     static let shared = LibraryWindow()
+    var openFromEmptyState: @MainActor () -> Void = {}
 
     /// Whether the library is up. The shelf stays out while it is: adding a
     /// widget is done by looking at the shelf it lands on, and an auto-hidden

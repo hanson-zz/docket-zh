@@ -154,18 +154,7 @@ struct ScreenshotsTile: View {
     }
 
     private var empty: some View {
-        let column = context.position.isVertical
-        return VStack(spacing: 4) {
-            Image(systemName: "camera.viewfinder")
-                .font(.system(size: column ? 15 : 16, weight: .medium))
-                .foregroundStyle(WidgetStyle.secondary)
-            Text(feed.error != nil ? tr("无法访问") : tr("没有截图"))
-                .font(WidgetStyle.note)
-                .foregroundStyle(WidgetStyle.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        PandaEmptyTile(empty: .screenshots, title: tr("截取屏幕"), instance: instance, context: context)
     }
 }
 

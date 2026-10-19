@@ -189,6 +189,8 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 
 ## In development (next version)
 
+- **Red panda empty states with actions**: Habits, Anniversaries, Alarms, Radio, Podcasts, Bookmarks, Screenshots, Photos and a Basket without sources share the existing red panda artwork, one caption and one working action. Buttons open add forms, search, subscription input, screen capture, folder selection or Add Widget. Narrow cards hide the caption and artwork before reducing to a button, without truncation. Not yet verified on a physical Mac.
+
 - **System Now Playing for three audio sources**: Radio, Podcasts and Ambient Sound share one media session and pause the other two when starting. System controls support play, pause, toggle and stop; Radio switches stations, Podcasts navigate chapters or skip back 15 seconds and forward 30 seconds. Titles, show names, available artwork and progress appear in Now Playing. Live radio has no duration; stopping clears metadata and command handlers. Not yet verified on a physical Mac.
 
 - **Readable offline quotes**: Stocks, Watchlist and Crypto keep offline captions at 9.5pt or larger. Narrow cards wrap or use "Offline", with the complete quote time in the tooltip and accessibility label. Weather's five Now captions and saved-style migration stay unchanged. Not yet verified on a physical Mac.

@@ -61,8 +61,7 @@ struct PhotoFrameDetail: View {
         } else if let error = feed.error {
             PanelNote(symbol: "lock", text: error).frame(height: 236)
         } else if feed.files.isEmpty {
-            PanelNote(symbol: "photo",
-                      text: feed.loadedAt == nil ? tr("正在读取…") : tr("这个文件夹里没有图片。点按“选择文件夹…”换一个。"))
+            PandaEmptyState(empty: .photos, title: tr("选择相册"), panel: true, action: choose)
                 .frame(height: 236)
         } else {
             FileGrid(files: feed.files)

@@ -38,7 +38,9 @@ struct AlarmTile: View {
                 ringingCard(ringing.item)
             } else {
                 WidgetSurface {
-                    if context.position.isVertical { column } else { row }
+                    if AlarmBook.items(config).isEmpty {
+                        PandaEmptyTile(empty: .alarm, title: tr("添加闹钟"), instance: instance, context: context)
+                    } else if context.position.isVertical { column } else { row }
                 }
             }
         }

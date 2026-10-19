@@ -54,7 +54,9 @@ struct PodcastTile: View {
 
     var body: some View {
         WidgetSurface {
-            if context.position.isVertical {
+            if show == nil {
+                PandaEmptyTile(empty: .podcast, title: tr("添加订阅"), instance: instance, context: context)
+            } else if context.position.isVertical {
                 VStack(spacing: 4) {
                     cover(size: 34)
                     Text(show?.title ?? tr("播客"))

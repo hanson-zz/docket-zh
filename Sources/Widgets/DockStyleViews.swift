@@ -325,6 +325,76 @@ struct PandaEmptyBadge: View {
     }
 }
 
+/// 大面板和小卡共用同一张小熊猫，放不下时依次让说明和插图让位给可执行按钮。
+struct PandaEmptyState: View {
+    var empty: PandaEmpty
+    var title: String
+    var compact = false
+    var panel = false
+    var action: () -> Void
+
+    private var badge: some View {
+        PandaEmptyBadge(empty: empty, size: panel ? 64 : 32, fallback: "plus")
+            .frame(width: panel ? 64 : 32, height: panel ? 64 : 32)
+    }
+
+    private var button: some View {
+        Button(action: action) { Text(title).fixedSize() }
+            .buttonStyle(.plain)
+            .font(.system(size: panel ? 12 : 10, weight: .semibold))
+            .foregroundStyle(panel ? .white : WidgetStyle.primary)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(.primary.opacity(0.12), in: Capsule())
+    }
+
+    var body: some View {
+        ViewThatFits {
+            if panel || compact {
+                VStack(spacing: panel ? 8 : 3) {
+                    badge
+                    Text(empty.line(compact: compact))
+                        .font(.system(size: panel ? 12 : 10))
+                        .foregroundStyle(panel ? .white.opacity(0.75) : WidgetStyle.secondary)
+                        .fixedSize()
+                    button
+                }
+                .fixedSize()
+            } else {
+                HStack(spacing: 8) {
+                    badge
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(empty.line()).font(.system(size: 11)).fixedSize()
+                        button
+                    }
+                }
+                .fixedSize()
+            }
+            button.fixedSize()
+            Button(action: action) { Image(systemName: "plus.circle.fill").font(.system(size: 18)) }
+                .buttonStyle(.plain)
+                .accessibilityLabel(title)
+                .help(title)
+                .fixedSize()
+        }
+        .frame(maxWidth: .infinity, maxHeight: panel ? nil : .infinity)
+    }
+}
+
+struct PandaEmptyTile: View {
+    var empty: PandaEmpty
+    var title: String
+    var instance: WidgetInstance
+    var context: WidgetContext
+
+    var body: some View {
+        PandaEmptyState(empty: empty, title: title, compact: context.position.isVertical) {
+            guard !context.isPreview else { return }
+            WidgetDetailWindow.shared.openFloating(WidgetWriter.current(instance.id) ?? instance, now: context.now)
+        }
+    }
+}
+
 // MARK: - 常量的 CGFloat 版本
 
 extension WidgetStyle {

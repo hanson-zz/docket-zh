@@ -49,15 +49,7 @@ struct HabitTile: View {
     // MARK: Wide
 
     private var empty: some View {
-        HStack(spacing: WidgetStyle.rowSpacing) {
-            TileBadge {
-                Image(systemName: "checkmark.seal")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(WidgetStyle.primary)
-            }
-            TileReading(value: tr("习惯打卡"), caption: HabitTracker.caption(done: 0, total: 0), valueSize: 15)
-            Spacer(minLength: 0)
-        }
+        PandaEmptyTile(empty: .habit, title: tr("添加习惯"), instance: instance, context: context)
     }
 
     /// One habit gets the whole card: its name and streak over bigger dots.
@@ -106,17 +98,7 @@ struct HabitTile: View {
     @ViewBuilder
     private func column(_ all: [Habit]) -> some View {
         if all.isEmpty {
-            VStack(spacing: 4) {
-                TileBadge(size: WidgetStyle.badgeCompact) {
-                    Image(systemName: "checkmark.seal")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(WidgetStyle.primary)
-                }
-                Text("添加习惯")
-                    .font(.system(size: 10))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .lineLimit(1)
-            }
+            empty
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(all.prefix(4)) { habit in

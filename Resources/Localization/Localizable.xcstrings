@@ -17242,6 +17242,17 @@
         }
       }
     },
+    "截取屏幕" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture Screen"
+          }
+        }
+      }
+    },
     "截取窗口" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19486,6 +19497,28 @@
         }
       }
     },
+    "收藏一个电台吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save a radio station"
+          }
+        }
+      }
+    },
+    "收藏一个网址吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save a website"
+          }
+        }
+      }
+    },
     "收藏是空的。到“搜索电台”里添加，或粘贴一个串流地址。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20212,6 +20245,28 @@
         }
       }
     },
+    "无习惯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No habits"
+          }
+        }
+      }
+    },
+    "无书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No bookmarks"
+          }
+        }
+      }
+    },
     "无到期事项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20234,6 +20289,17 @@
         }
       }
     },
+    "无图片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No photos"
+          }
+        }
+      }
+    },
     "无待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20241,6 +20307,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No to-dos"
+          }
+        }
+      }
+    },
+    "无截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No screenshots"
           }
         }
       }
@@ -20597,6 +20674,28 @@
         }
       }
     },
+    "无电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stations"
+          }
+        }
+      }
+    },
+    "无竹叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No leaves"
+          }
+        }
+      }
+    },
     "无色调" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20604,6 +20703,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No tint"
+          }
+        }
+      }
+    },
+    "无订阅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No subscriptions"
           }
         }
       }
@@ -20626,6 +20736,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No color"
+          }
+        }
+      }
+    },
+    "无闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alarms"
           }
         }
       }
@@ -25630,6 +25751,17 @@
         }
       }
     },
+    "添加书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Bookmark"
+          }
+        }
+      }
+    },
     "添加到分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25813,6 +25945,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Custom Service"
+          }
+        }
+      }
+    },
+    "添加订阅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Subscription"
           }
         }
       }
@@ -31738,6 +31881,17 @@
         }
       }
     },
+    "订阅一个节目吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscribe to a podcast"
+          }
+        }
+      }
+    },
     "订阅者" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31800,6 +31954,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add a quick to-do"
+          }
+        }
+      }
+    },
+    "记住一个好日子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remember a special day"
           }
         }
       }
@@ -33608,6 +33773,17 @@
         }
       }
     },
+    "还没有习惯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No habits yet"
+          }
+        }
+      }
+    },
     "还没有习惯。点“新建习惯”，可以从早起、阅读、喝水等模板一键添加，也可以自己起名字。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34455,6 +34631,17 @@
         }
       }
     },
+    "选一册喜欢的照片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your favorite photos"
+          }
+        }
+      }
+    },
     "选好后立即生效，以后可以在“设置 ▸ 扩展栏”里修改。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34572,6 +34759,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose Folder…"
+          }
+        }
+      }
+    },
+    "选择相册" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Photos"
           }
         }
       }

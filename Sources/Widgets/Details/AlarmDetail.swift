@@ -45,6 +45,9 @@ struct AlarmDetail: View {
 
                 if let ringing { ringingRow(ringing.item) }
 
+                if items.isEmpty {
+                    PandaEmptyState(empty: .alarm, title: tr("添加闹钟"), panel: true, action: add)
+                }
                 VStack(spacing: 6) {
                     ForEach(items) { item in
                         if editing == item.id {
@@ -55,22 +58,24 @@ struct AlarmDetail: View {
                     }
                 }
 
-                HStack {
-                    Button(action: add) {
-                        Label(tr("添加闹钟"), systemImage: "plus")
-                            .font(WidgetStyle.label(12))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .frame(height: 30)
-                            .background(Capsule().fill(Color.white.opacity(0.16)))
-                            .contentShape(Capsule())
+                if !items.isEmpty {
+                    HStack {
+                        Button(action: add) {
+                            Label(tr("添加闹钟"), systemImage: "plus")
+                                .font(WidgetStyle.label(12))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .frame(height: 30)
+                                .background(Capsule().fill(Color.white.opacity(0.16)))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(items.count >= AlarmBook.maxAlarms)
+                        Spacer()
+                        Text(tr("只管今天，每天到点响"))
+                            .font(WidgetStyle.label(10))
+                            .foregroundStyle(.white.opacity(0.55))
                     }
-                    .buttonStyle(.plain)
-                    .disabled(items.count >= AlarmBook.maxAlarms)
-                    Spacer()
-                    Text(tr("只管今天，每天到点响"))
-                        .font(WidgetStyle.label(10))
-                        .foregroundStyle(.white.opacity(0.55))
                 }
             }
         }

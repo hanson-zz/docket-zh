@@ -144,6 +144,15 @@ final class DockStyleTests: XCTestCase {
         }
     }
 
+    func testNewEmptyStatesHaveDistinctCaptionsAndExistingArtwork() {
+        let states: [PandaEmpty] = [.habit, .anniversary, .alarm, .radio, .podcast,
+                                   .bookmarks, .screenshots, .photos, .basket]
+        XCTAssertEqual(Set(states.map { $0.line() }).count, states.count)
+        for state in states {
+            XCTAssertEqual(state.imageName, "pet-panda-idle")
+        }
+    }
+
     func testTodoEmptyAndDoneAreDifferent() {
         XCTAssertNotEqual(PandaEmpty.todo.line(), PandaEmpty.todoDone.line())
         XCTAssertNotEqual(PandaEmpty.todo.imageName, PandaEmpty.todoDone.imageName)

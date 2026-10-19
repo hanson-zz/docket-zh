@@ -9,6 +9,7 @@ struct BookmarksDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    @FocusState private var addingFocused: Bool
     @State private var newLink = ""
     @State private var refreshing: Set<String> = []
     @State private var podcastStatus: [String: String] = [:]
@@ -44,7 +45,7 @@ struct BookmarksDetail: View {
                 }
                 addField
                 if links.isEmpty {
-                    PanelNote(symbol: "bookmark", text: tr("还没有网址。在上面粘贴一个，或在 设置 ▸ 小组件 中添加，用逗号分隔，例如“必应 cn.bing.com”。"))
+                    PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) { addingFocused = true }
                         .frame(height: 120)
                 } else {
                     ScrollView {
@@ -71,6 +72,7 @@ struct BookmarksDetail: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.6))
             TextField("", text: $newLink, prompt: Text("粘贴网址，回车添加"))
+                .focused($addingFocused)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .foregroundStyle(.white)

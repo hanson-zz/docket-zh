@@ -28,9 +28,12 @@ struct ScreenshotsDetail: View {
                                  onTrash: { feed.trash($0) })
                     }
                 } else {
-                    PanelNote(symbol: "camera.viewfinder",
-                              text: feed.loadedAt == nil ? tr("正在读取…") : tr("还没有截图。按 ⇧⌘3、⇧⌘4 或 ⇧⌘5 截取屏幕。"))
-                        .frame(height: 236)
+                    PandaEmptyState(empty: .screenshots, title: tr("截取屏幕"), panel: true) {
+                        guard !context.isPreview else { return }
+                        WidgetDetailWindow.shared.close()
+                        ScreenCapture.capture(.region)
+                    }
+                    .frame(height: 236)
                 }
             }
         }

@@ -91,16 +91,18 @@ struct HabitDetail: View {
 
     private func list(_ all: [Habit]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HabitGrid(habits: all, now: context.now, isPreview: context.isPreview, unlocked: unlocked,
-                      onOpen: { editor = $0 },
-                      onTap: { tap($0) },
-                      onMove: { habit, offset in move(habit, by: offset) },
-                      onDelete: { pendingDelete = $0 })
+            if !all.isEmpty {
+                HabitGrid(habits: all, now: context.now, isPreview: context.isPreview, unlocked: unlocked,
+                          onOpen: { editor = $0 },
+                          onTap: { tap($0) },
+                          onMove: { habit, offset in move(habit, by: offset) },
+                          onDelete: { pendingDelete = $0 })
+            }
             if all.isEmpty {
-                Text("还没有习惯。点“新建习惯”，可以从早起、阅读、喝水等模板一键添加，也可以自己起名字。")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .fixedSize(horizontal: false, vertical: true)
+                PandaEmptyState(empty: .habit, title: tr("添加习惯"), panel: true) {
+                    guard !context.isPreview else { return }
+                    editor = .new
+                }
             } else {
                 Text("本月记录")
                     .font(.system(size: 10, weight: .semibold))

@@ -40,16 +40,7 @@ struct BookmarksTile: View {
         let column = context.position.isVertical
         return WidgetSurface {
             if links.isEmpty {
-                VStack(spacing: 3) {
-                    Image(systemName: "bookmark")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(WidgetStyle.secondary)
-                    Text("拖链接到这里，或在设置中添加")
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(WidgetStyle.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
+                PandaEmptyTile(empty: .bookmarks, title: tr("添加书签"), instance: instance, context: context)
             } else if column {
                 LazyVGrid(columns: [GridItem(.fixed(30), spacing: 4), GridItem(.fixed(30), spacing: 4)],
                           spacing: 4) {

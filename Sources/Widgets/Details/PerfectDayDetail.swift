@@ -44,7 +44,14 @@ struct PerfectDayDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header(tier: tier)
-                    todayRows(items)
+                    if items.isEmpty {
+                        PandaEmptyState(empty: .basket, title: tr("添加小组件"), panel: true) {
+                            guard !context.isPreview else { return }
+                            LibraryWindow.shared.openFromEmptyState()
+                        }
+                    } else {
+                        todayRows(items)
+                    }
                     Divider().overlay(.white.opacity(0.1))
                     monthBar(shownMonth)
                     basketSection(all, month: shownMonth)

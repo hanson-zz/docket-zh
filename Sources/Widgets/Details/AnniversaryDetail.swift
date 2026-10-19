@@ -145,16 +145,12 @@ struct AnniversaryDetail: View {
                 if let draft {
                     editor(draft)
                 } else if all.isEmpty {
-                    Text("还没有纪念日。添加一个生日、节日或在一起的日子，卡片上会显示还有几天或已经几天。")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, 6)
+                    PandaEmptyState(empty: .anniversary, title: tr("添加纪念日"), panel: true) { beginNew() }
                 } else {
                     timeline(line)
                 }
 
-                if draft == nil { addButton(count: all.count) }
+                if draft == nil, !all.isEmpty { addButton(count: all.count) }
             }
         }
         .animation(.snappy(duration: 0.25), value: draft)

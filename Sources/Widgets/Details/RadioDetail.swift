@@ -286,11 +286,7 @@ struct RadioDetail: View {
     private var favourites: some View {
         Group {
             if stations.isEmpty {
-                Text("收藏是空的。到“搜索电台”里添加，或粘贴一个串流地址。")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 6)
+                PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) { tab = .search }
             } else {
                 ScrollView {
                     VStack(spacing: 2) {

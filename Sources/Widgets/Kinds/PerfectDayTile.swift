@@ -31,7 +31,12 @@ struct PerfectDayTile: View {
         let tier = PerfectDay.record(items, key: "").tier
         return WidgetSurface {
             Group {
-                if LiquidLooks.basketLook(instance.config) == .liquid {
+                if items.isEmpty {
+                    PandaEmptyState(empty: .basket, title: tr("添加小组件"), compact: context.position.isVertical) {
+                        guard !context.isPreview else { return }
+                        LibraryWindow.shared.openFromEmptyState()
+                    }
+                } else if LiquidLooks.basketLook(instance.config) == .liquid {
                     liquid(items, tier: tier)
                 } else if context.position.isVertical {
                     column(items, tier: tier)

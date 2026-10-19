@@ -185,6 +185,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             shelf.show()
         }
 
+        LibraryWindow.shared.openFromEmptyState = { [state] in LibraryWindow.shared.show(app: state) }
+
         OnboardingWindow.shared.showIfFirstLaunch(app: state, hadSavedSetup: hadSavedSetup)
 
         if ProcessInfo.processInfo.environment["PLINTH_OPEN_LIBRARY"] != nil {

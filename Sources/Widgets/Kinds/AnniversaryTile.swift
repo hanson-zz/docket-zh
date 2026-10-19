@@ -76,22 +76,7 @@ struct AnniversaryTile: View {
 
     @ViewBuilder
     private var empty: some View {
-        if context.position.isVertical {
-            VStack(spacing: 4) {
-                TileBadge(size: WidgetStyle.badgeCompact) { badgeGlyph(size: 14) }
-                Text("添加纪念日")
-                    .font(.system(size: 10))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        } else {
-            HStack(spacing: WidgetStyle.rowSpacing) {
-                TileBadge { badgeGlyph(size: 16) }
-                TileReading(value: tr("纪念日"), caption: tr("点按添加纪念日"), valueSize: 15)
-                Spacer(minLength: 0)
-            }
-        }
+        PandaEmptyTile(empty: .anniversary, title: tr("添加纪念日"), instance: instance, context: context)
     }
 
     private func badgeGlyph(size: CGFloat) -> some View {

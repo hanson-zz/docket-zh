@@ -189,6 +189,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
     case downloads
     /// 文件暂存里没有文件。
     case fileShelf
+    case habit, anniversary, alarm, radio, podcast, bookmarks, screenshots, photos, basket
 
     /// 资源名，不带扩展名。
     public var imageName: String {
@@ -197,7 +198,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .todoDone: "pet-panda-cheer"
         case .clipboard: "pet-panda-rest"
         case .downloads: "pet-panda-rest"
-        case .fileShelf: "pet-panda-idle"
+        case .fileShelf, .habit, .anniversary, .alarm, .radio, .podcast, .bookmarks, .screenshots, .photos, .basket: "pet-panda-idle"
         }
     }
 
@@ -209,6 +210,15 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .clipboard: compact ? tr("空") : tr("还没拷贝过东西")
         case .downloads: compact ? tr("空") : tr("下载文件夹是空的")
         case .fileShelf: compact ? tr("拖入") : tr("把文件拖到这里")
+        case .habit: compact ? tr("无习惯") : tr("还没有习惯")
+        case .anniversary: compact ? tr("纪念日") : tr("记住一个好日子")
+        case .alarm: compact ? tr("无闹钟") : tr("还没有闹钟")
+        case .radio: compact ? tr("无电台") : tr("收藏一个电台吧")
+        case .podcast: compact ? tr("无订阅") : tr("订阅一个节目吧")
+        case .bookmarks: compact ? tr("无书签") : tr("收藏一个网址吧")
+        case .screenshots: compact ? tr("无截图") : tr("还没有截图")
+        case .photos: compact ? tr("无图片") : tr("选一册喜欢的照片")
+        case .basket: compact ? tr("无竹叶") : tr("今天还没有竹叶")
         }
     }
 
