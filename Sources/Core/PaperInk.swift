@@ -21,24 +21,35 @@ public enum PaperInk {
     }
 
     /// 这张纸上用的墨：深墨、浅墨里对比度高的那个；还不够 `minimum` 时，
-    /// 朝同一个方向（深墨往黑、浅墨往白）一点点加深，最多到纯黑或纯白。
+    /// 两个方向（深墨往黑、浅墨往白）都试着一点点加深，先用达标的那个；
+    /// 都不达标就用对比度更高的那个。
     public static func ink(on paper: String, minimum: Double = minimumContrast) -> String {
         guard let fill = ColorCode(hex: paper) else { return darkInk }
         let dark = ColorCode(hex: darkInk)!
         let light = ColorCode(hex: lightInk)!
         let darkRatio = WidgetTint.contrastRatio(fill, dark)
         let lightRatio = WidgetTint.contrastRatio(fill, light)
-        let useLight = lightRatio > darkRatio
-        let base = useLight ? light : dark
-        if max(darkRatio, lightRatio) >= minimum { return base.hex }
-        let target = useLight ? ColorCode(red: 1, green: 1, blue: 1) : ColorCode(red: 0, green: 0, blue: 0)
-        var amount = 0.0
-        var result = base
-        while WidgetTint.contrastRatio(fill, result) < minimum, amount < 1 {
-            amount = min(1, amount + 0.1)
-            result = base.mixed(with: target, by: amount)
+        let preferLight = lightRatio > darkRatio
+        if max(darkRatio, lightRatio) >= minimum { return (preferLight ? light : dark).hex }
+        let black = ColorCode(red: 0, green: 0, blue: 0)
+        let white = ColorCode(red: 1, green: 1, blue: 1)
+        func pushed(_ base: ColorCode, toward target: ColorCode) -> ColorCode {
+            var amount = 0.0
+            var result = base
+            while WidgetTint.contrastRatio(fill, result) < minimum, amount < 1 {
+                amount = min(1, amount + 0.1)
+                result = base.mixed(with: target, by: amount)
+            }
+            return result
         }
-        return result.hex
+        let candidates = preferLight
+            ? [pushed(light, toward: white), pushed(dark, toward: black)]
+            : [pushed(dark, toward: black), pushed(light, toward: white)]
+        if let enough = candidates.first(where: { WidgetTint.contrastRatio(fill, $0) >= minimum }) {
+            return enough.hex
+        }
+        let best = candidates.max { WidgetTint.contrastRatio(fill, $0) < WidgetTint.contrastRatio(fill, $1) }!
+        return best.hex
     }
 
     /// 墨是浅色的（纸是深色的）。胶带和卷角的高光跟着它调。
