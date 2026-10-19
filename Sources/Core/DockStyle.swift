@@ -177,7 +177,7 @@ public enum TilePermission {
 /// 空状态的小熊猫：哪张卡片空着时画哪张图、说哪句话。
 ///
 /// 图都是 `Resources/Pet` 里现成的小熊猫（pet-panda-*.png），不新增素材，
-/// 也不用大熊猫。
+/// 也不用大熊猫。habit 到 basket 九格各有姿势、主题色、道具和一句提示。
 public enum PandaEmpty: String, CaseIterable, Sendable {
     /// 待办全空（一条都没有）。
     case todo
@@ -198,8 +198,104 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .todoDone: "pet-panda-cheer"
         case .clipboard: "pet-panda-rest"
         case .downloads: "pet-panda-rest"
-        case .fileShelf, .habit, .anniversary, .alarm, .radio, .podcast, .bookmarks, .screenshots, .photos, .basket: "pet-panda-idle"
+        case .fileShelf: "pet-panda-idle"
+        case .habit: "pet-panda-cheer"
+        case .anniversary: "pet-panda-eat"
+        case .alarm: "pet-panda-rest"
+        case .radio: "pet-panda-idle"
+        case .podcast: "pet-panda-hungry"
+        case .bookmarks: "pet-panda-idle"
+        case .screenshots: "pet-panda-cheer"
+        case .photos: "pet-panda-rest"
+        case .basket: "pet-panda-eat"
         }
+    }
+
+    /// 图要不要左右翻过来。同一张图用在两格时靠镜像区分开，九格的
+    /// （图，镜像）组合各不相同。
+    public var mirrored: Bool {
+        switch self {
+        case .anniversary, .radio, .screenshots, .photos: true
+        default: false
+        }
+    }
+
+    /// 这一格的主题色（`#RRGGBB`），和小组件图标同一种颜色。待办、剪贴板、
+    /// 下载、文件暂存保持原样，没有主题色。
+    public var themeHex: String? {
+        switch self {
+        case .habit: "#34C759"
+        case .anniversary: "#FF698C"
+        case .alarm: "#FF9F0A"
+        case .radio: "#BF5AF2"
+        case .podcast: "#AF52DE"
+        case .bookmarks: "#0A84FF"
+        case .screenshots: "#64D2FF"
+        case .photos: "#FFD60A"
+        case .basket: "#30D158"
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        }
+    }
+
+    /// 主题色拆成三个分量，没有主题色时为 nil。
+    public var theme: ColorCode? { themeHex.flatMap { ColorCode(hex: $0) } }
+
+    /// 右上角道具圆标里的 SF Symbol。
+    public var propSymbol: String? {
+        switch self {
+        case .habit: "checkmark"
+        case .anniversary: "heart.fill"
+        case .alarm: "bell.fill"
+        case .radio: "music.note"
+        case .podcast: "waveform"
+        case .bookmarks: "bookmark.fill"
+        case .screenshots: "viewfinder"
+        case .photos: "photo"
+        case .basket: "leaf.fill"
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        }
+    }
+
+    /// 大面板里标题下面那行灰字：告诉用户下一步具体做什么。小卡不显示。
+    public var hint: String? {
+        switch self {
+        case .habit: tr("先定一个小目标，比如早睡")
+        case .anniversary: tr("生日、纪念日，到了提醒你")
+        case .alarm: tr("小熊猫在打盹，帮它定个点")
+        case .radio: tr("搜搜城市名或喜欢的频道")
+        case .podcast: tr("粘贴 RSS 或按名字搜索")
+        case .bookmarks: tr("常去的网页，一点就开")
+        case .screenshots: tr("截的图会出现在这里")
+        case .photos: tr("选个文件夹，轮流播放")
+        case .basket: tr("喝杯水，第一片就来了")
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        }
+    }
+
+    /// 主题色按钮上的字用深色还是白色。按感知亮度（0.299R + 0.587G + 0.114B）
+    /// 算，只有很亮的颜色（相册的黄、截图的青）才用深色字。
+    public var usesDarkLabel: Bool {
+        guard let theme else { return false }
+        return Self.brightness(theme) > Self.darkLabelThreshold
+    }
+
+    /// 超过这个亮度，白字看不清，按钮换深色字。
+    public static let darkLabelThreshold = 0.7
+
+    /// 感知亮度，0...1。
+    public static func brightness(_ color: ColorCode) -> Double {
+        0.299 * color.red + 0.587 * color.green + 0.114 * color.blue
+    }
+
+    /// 小熊猫呼吸：一个来回的秒数和放大到的倍数。
+    public static let breathPeriod: Double = 3
+    public static let breathScale: Double = 1.03
+
+    /// 呼吸到 `t` 秒时的缩放，1.0 到 `breathScale` 之间平滑来回。
+    public static func breath(at t: Double) -> Double {
+        guard t.isFinite else { return 1 }
+        let phase = (1 - cos(2 * Double.pi * t / breathPeriod)) / 2
+        return 1 + (breathScale - 1) * phase
     }
 
     /// 一句话。`compact` 是竖排货架的短说法。
@@ -225,5 +321,6 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
     /// 允许的图，空状态只用这几张，测试里核对。
     public static let allowedImages: Set<String> = [
         "pet-panda-idle", "pet-panda-rest", "pet-panda-cheer",
+        "pet-panda-eat", "pet-panda-hungry",
     ]
 }

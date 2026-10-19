@@ -7598,6 +7598,17 @@
         }
       }
     },
+    "先定一个小目标，比如早睡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start with one small goal, like an early night"
+          }
+        }
+      }
+    },
     "先展开这一行填好密钥（以及接口地址和模型）。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11462,6 +11473,17 @@
         }
       }
     },
+    "喝杯水，第一片就来了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drink a glass of water and the first leaf arrives"
+          }
+        }
+      }
+    },
     "喝水" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13844,6 +13866,17 @@
         }
       }
     },
+    "小熊猫在打盹，帮它定个点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda is napping. Set a time for it"
+          }
+        }
+      }
+    },
     "小熊猫夜色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15648,6 +15681,17 @@
         }
       }
     },
+    "常去的网页，一点就开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sites you visit often, one click away"
+          }
+        }
+      }
+    },
     "常用" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17348,6 +17392,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text from Screen"
+          }
+        }
+      }
+    },
+    "截的图会出现在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your screenshots will show up here"
           }
         }
       }
@@ -19196,6 +19251,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Insert {文本}"
+          }
+        }
+      }
+    },
+    "搜搜城市名或喜欢的频道" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search a city or a favorite station"
           }
         }
       }
@@ -27346,6 +27412,17 @@
         }
       }
     },
+    "生日、纪念日，到了提醒你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birthdays and anniversaries, reminded on the day"
+          }
+        }
+      }
+    },
     "生病了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29520,6 +29597,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paste API key"
+          }
+        }
+      }
+    },
+    "粘贴 RSS 或按名字搜索" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste an RSS link or search by name"
           }
         }
       }
@@ -34781,6 +34869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose your favorite photos"
+          }
+        }
+      }
+    },
+    "选个文件夹，轮流播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a folder to play as a slideshow"
           }
         }
       }

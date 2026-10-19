@@ -148,9 +148,56 @@ final class DockStyleTests: XCTestCase {
         let states: [PandaEmpty] = [.habit, .anniversary, .alarm, .radio, .podcast,
                                    .bookmarks, .screenshots, .photos, .basket]
         XCTAssertEqual(Set(states.map { $0.line() }).count, states.count)
+        // 九格的（图，镜像）组合各不相同。
+        let looks = Set(states.map { "\($0.imageName)|\($0.mirrored)" })
+        XCTAssertEqual(looks.count, states.count)
+        XCTAssertEqual(PandaEmpty.habit.imageName, "pet-panda-cheer")
+        XCTAssertEqual(PandaEmpty.podcast.imageName, "pet-panda-hungry")
+        XCTAssertEqual(PandaEmpty.basket.imageName, "pet-panda-eat")
+        XCTAssertTrue(PandaEmpty.radio.mirrored)
+        XCTAssertFalse(PandaEmpty.bookmarks.mirrored)
+    }
+
+    func testThemedEmptyStatesHaveColorPropAndHint() {
+        let states: [PandaEmpty] = [.habit, .anniversary, .alarm, .radio, .podcast,
+                                   .bookmarks, .screenshots, .photos, .basket]
         for state in states {
-            XCTAssertEqual(state.imageName, "pet-panda-idle")
+            XCTAssertNotNil(state.theme, state.rawValue)
+            XCTAssertEqual(state.theme?.hex, state.themeHex, state.rawValue)
+            XCTAssertFalse(state.propSymbol?.isEmpty ?? true, state.rawValue)
+            let hint = state.hint ?? ""
+            XCTAssertFalse(hint.isEmpty, state.rawValue)
+            XCTAssertFalse(hint.contains("\u{2014}"))
         }
+        XCTAssertEqual(Set(states.compactMap(\.hint)).count, states.count)
+        XCTAssertEqual(PandaEmpty.photos.themeHex, "#FFD60A")
+        XCTAssertEqual(PandaEmpty.alarm.propSymbol, "bell.fill")
+        // 原有几格保持现状。
+        for state in [PandaEmpty.todo, .todoDone, .clipboard, .downloads, .fileShelf] {
+            XCTAssertNil(state.theme)
+            XCTAssertNil(state.propSymbol)
+            XCTAssertNil(state.hint)
+            XCTAssertFalse(state.mirrored)
+        }
+        XCTAssertEqual(PandaEmpty.todo.imageName, "pet-panda-idle")
+        XCTAssertEqual(PandaEmpty.clipboard.imageName, "pet-panda-rest")
+    }
+
+    func testOnlyBrightThemesUseDarkButtonLabel() {
+        let dark = Set(PandaEmpty.allCases.filter(\.usesDarkLabel))
+        XCTAssertEqual(dark, [.photos, .screenshots])
+    }
+
+    func testBreathStaysBetweenOneAndPeak() {
+        XCTAssertEqual(PandaEmpty.breath(at: 0), 1, accuracy: 1e-9)
+        XCTAssertEqual(PandaEmpty.breath(at: PandaEmpty.breathPeriod / 2), PandaEmpty.breathScale, accuracy: 1e-9)
+        XCTAssertEqual(PandaEmpty.breath(at: PandaEmpty.breathPeriod), 1, accuracy: 1e-9)
+        for i in 0..<60 {
+            let s = PandaEmpty.breath(at: Double(i) * 0.1)
+            XCTAssertGreaterThanOrEqual(s, 1 - 1e-9)
+            XCTAssertLessThanOrEqual(s, PandaEmpty.breathScale + 1e-9)
+        }
+        XCTAssertEqual(PandaEmpty.breath(at: .nan), 1)
     }
 
     func testTodoEmptyAndDoneAreDifferent() {

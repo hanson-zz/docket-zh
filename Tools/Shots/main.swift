@@ -973,16 +973,16 @@ private struct EmptyStatesShot: View {
     ] }
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(190), spacing: 12), count: 3), spacing: 12) {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(210), spacing: 12), count: 3), spacing: 12) {
             ForEach(states.indices, id: \.self) { index in
                 WidgetSurface {
                     PandaEmptyState(empty: states[index].0, title: states[index].1, panel: true, action: {})
                 }
-                .frame(width: 190, height: 150)
+                .frame(width: 210, height: 190)
             }
         }
         .padding(16)
-        .frame(width: 626)
+        .frame(width: 686)
         .background(Color(white: 0.12))
         .environment(\.colorScheme, .dark)
     }
