@@ -23,6 +23,9 @@ struct TimeProgressTile: View {
     @Environment(\.widgetHovered) private var hovered
     @Environment(\.widgetTint) private var tint
     @Environment(\.colorScheme) private var scheme
+    // 和习惯打卡一样读 @AppStorage：购买或试用到期时卡片马上换外观，不用等下次重绘。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
 
     /// One bar per 3pt of the 156pt content width.
     private static let barCount = 52
@@ -32,7 +35,7 @@ struct TimeProgressTile: View {
     /// 实际画的外观：液态和四格是 Pro，没解锁时退回圆环（预览照常画）。
     private var layout: String {
         ProLicenseGate.timeProgressLayout(config: instance.config,
-                                          unlocked: ProAccess.isUnlocked || context.isPreview)
+                                          unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
     }
 
     /// 0…1 through the current period.

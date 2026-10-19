@@ -142,5 +142,6 @@ final class WeatherStyleTests: XCTestCase {
         // 现在已经在下：不说“多少分钟后有雨”。
         XCTAssertNil(WeatherStyle.minutesUntilRain(now: now, currentHourMM: 0.8, hours: [hour(20, 1)]))
         XCTAssertEqual(WeatherStyle.rainSoonText(minutes: 40), "约 40 分钟后有雨")
+        XCTAssertEqual(WeatherStyle.rainSoonShortText(minutes: 40), "40 分钟后雨")
     }
 }

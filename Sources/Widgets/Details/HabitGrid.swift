@@ -89,7 +89,7 @@ struct HabitGrid: View {
         }
         .buttonStyle(.plain)
         .disabled(isPreview)
-        .help(canAdd ? "" : tr("免费版可用 3 个习惯。解锁码头 Pro 后不限个数，还能看近七天报告。"))
+        .help(canAdd ? "" : tr("免费版可用 3 个习惯。解锁码头 Pro 后最多 8 个，还能看近七天报告。"))
         .accessibilityLabel("新建习惯")
     }
 }

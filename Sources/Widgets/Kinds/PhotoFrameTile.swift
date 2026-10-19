@@ -175,7 +175,12 @@ struct PhotoFrameTile: View {
         Color.clear
     }
 
+    @ViewBuilder
     private var empty: some View {
-        PandaEmptyTile(empty: .photos, title: tr("选择相册"), instance: instance, context: context)
+        if feed.error != nil || feed.loadedAt == nil {
+            FeedStatusTile(symbol: "photo.on.rectangle.angled", failed: feed.error != nil, context: context)
+        } else {
+            PandaEmptyTile(empty: .photos, title: tr("选择相册"), instance: instance, context: context)
+        }
     }
 }

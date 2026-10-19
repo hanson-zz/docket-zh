@@ -136,6 +136,50 @@ struct PanelNote: View {
     }
 }
 
+/// 文件夹卡片还在读、或读不了时的样子。小熊猫空状态只给确实没有文件的时候，
+/// 不能盖住这两种情况（没权限时看到“还没有截图”会误导人）。
+struct FeedStatusTile: View {
+    var symbol: String
+    var failed: Bool
+    var context: WidgetContext
+
+    var body: some View {
+        let column = context.position.isVertical
+        VStack(spacing: 4) {
+            Image(systemName: failed ? "lock" : symbol)
+                .font(.system(size: column ? 15 : 16, weight: .medium))
+                .foregroundStyle(WidgetStyle.secondary)
+            Text(failed ? tr("无法访问") : tr("正在读取"))
+                .font(WidgetStyle.note)
+                .foregroundStyle(WidgetStyle.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// 面板里读不了文件夹时：说明原因，没权限时再给一个“打开隐私设置”。
+struct FeedErrorNote: View {
+    var text: String
+    var denied: Bool
+
+    var body: some View {
+        VStack(spacing: 10) {
+            PanelNote(symbol: "lock", text: text)
+                .frame(maxHeight: .infinity)
+            if denied {
+                Button(tr("打开隐私设置")) { FolderFeed.openPrivacySettings() }
+                    .buttonStyle(.plain)
+                    .font(WidgetStyle.caption(12))
+                    .foregroundStyle(.white)
+                    .underline()
+            }
+        }
+        .padding(.bottom, denied ? 12 : 0)
+    }
+}
+
 /// A grid of file thumbnails: click opens, drag carries the file out, and a
 /// secondary click offers the rest.
 ///

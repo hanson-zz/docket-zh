@@ -20,7 +20,9 @@ struct ScreenshotsDetail: View {
                     SamplePicture(symbol: "macwindow").frame(height: 150)
                         .clipShape(.rect(cornerRadius: 10))
                 } else if let error = feed.error {
-                    PanelNote(symbol: "lock", text: error).frame(height: 236)
+                    FeedErrorNote(text: error, denied: feed.accessDenied).frame(height: 236)
+                } else if feed.loadedAt == nil, feed.files.isEmpty {
+                    PanelNote(symbol: "hourglass", text: tr("正在读取…")).frame(height: 236)
                 } else if let latest = feed.files.first {
                     hero(latest)
                     if feed.files.count > 1 {

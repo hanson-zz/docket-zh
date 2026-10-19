@@ -50,9 +50,9 @@ public enum PreciousMetal: String, CaseIterable, Sendable {
             }
         }
 
-        /// 设置键 `metalUnit`，默认元/克。
+        /// 设置键 `metalUnit`。没存或存坏了时用地区默认（中文是元/克），和 WidgetCatalog 一致。
         public static func from(_ config: WidgetConfig) -> DisplayUnit {
-            DisplayUnit(rawValue: config.string("metalUnit", default: DisplayUnit.cnyPerGram.rawValue)) ?? .cnyPerGram
+            DisplayUnit(rawValue: config.string("metalUnit")) ?? RegionalDefaults.current.metalUnit
         }
     }
 

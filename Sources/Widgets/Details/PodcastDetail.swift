@@ -45,7 +45,9 @@ struct PodcastDetail: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if shows.isEmpty {
-                    PandaEmptyState(empty: .podcast, title: tr("添加订阅"), panel: true) { addingFocused = true }
+                    PandaEmptyState(empty: .podcast, title: tr("添加订阅"), panel: true) {
+                        WidgetDetailWindow.shared.focusField { addingFocused = true }
+                    }
                         .frame(height: 120)
                 } else {
                     showStrip

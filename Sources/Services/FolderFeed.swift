@@ -34,6 +34,8 @@ final class FolderFeed {
     /// `nil` until the first listing finished.
     private(set) var loadedAt: Date?
     private(set) var error: String?
+    /// 读不了是因为系统没给权限（文件与文件夹），面板据此给出“打开隐私设置”。
+    private(set) var accessDenied = false
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var inFlight = false
@@ -121,10 +123,12 @@ final class FolderFeed {
             switch result {
             case .success(let listed):
                 error = nil
+                accessDenied = false
                 if listed.files != files { files = listed.files }
                 if listed.downloading != downloading { downloading = listed.downloading }
             case .failure(let message):
                 error = message.text
+                accessDenied = message.denied
                 files = []
                 downloading = []
             }
@@ -145,7 +149,16 @@ final class FolderFeed {
 
     // MARK: Listing
 
-    struct Failure: Error, Sendable { var text: String }
+    struct Failure: Error, Sendable {
+        var text: String
+        var denied = false
+    }
+
+    /// 系统设置 ▸ 隐私与安全性 ▸ 文件与文件夹。
+    static func openPrivacySettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders") else { return }
+        NSWorkspace.shared.open(url)
+    }
 
     struct Listing: Sendable {
         var files: [ListedFile]
@@ -181,7 +194,7 @@ final class FolderFeed {
                 contents = try fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys,
                                                       options: [.skipsHiddenFiles])
             } catch {
-                return .failure(Failure(text: denied(folder)))
+                return .failure(Failure(text: denied(folder), denied: true))
             }
             var listed: [ListedFile] = []
             var partial: [ListedFile] = []

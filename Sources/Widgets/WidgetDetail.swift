@@ -250,6 +250,13 @@ final class WidgetDetailWindow {
         monitors.removeAll()
     }
 
+    /// 先让面板成为 key 再聚焦输入框：非 key 的面板不接受文字输入，
+    /// 空状态的“添加”按钮直接设焦点可能点了没反应。
+    func focusField(_ focus: @escaping @MainActor () -> Void) {
+        panel?.makeKey()
+        Task { @MainActor in focus() }
+    }
+
     func close() {
         guard let closing = openWidgetID else { return }
         openWidgetID = nil

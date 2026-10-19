@@ -733,7 +733,8 @@ struct ReminderPopupCardView: View {
     // MARK: 底
 
     /// 底下一行：说明小字和按钮。放得下就同一行；英文的说明和按钮都更长，放不下时
-    /// 说明单独占一行（最多两行），按钮靠右排在下面，不再截成“Raises the cup for 3…”。
+    /// 说明单独占一行（最多两行），按钮靠右排在下面，不再截成“Raises the cup for 3…”；
+    /// 按钮一行还放不下时竖排。
     private func footer(now: Date) -> some View {
         let choices = ReminderPopupSnooze.choices(now: now)
         let hint = card.kind.isTimer ? ReminderPopupText.timerHint(card.kind, info: primary.timer)
@@ -754,6 +755,16 @@ struct ReminderPopupCardView: View {
                     Spacer(minLength: 0)
                     buttons()
                 }
+            }
+            // 窄卡上三个按钮（完成、全部完成、推迟）的英文排一行也会超宽：按钮竖排靠右。
+            VStack(alignment: .leading, spacing: 6) {
+                hintText(hint)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .trailing, spacing: 5) {
+                    buttons()
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .disabled(model.finishing != nil)

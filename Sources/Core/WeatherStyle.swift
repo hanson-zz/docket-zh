@@ -161,4 +161,9 @@ public enum WeatherStyle {
     public static func rainSoonText(minutes: Int) -> String {
         tr("约 \(minutes) 分钟后有雨")
     }
+
+    /// 竖排 56pt 宽放不下整句，用短的：“40 分钟后雨”，英文 “Rain ~40m”。
+    public static func rainSoonShortText(minutes: Int) -> String {
+        tr("\(minutes) 分钟后雨")
+    }
 }

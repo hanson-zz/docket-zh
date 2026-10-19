@@ -59,7 +59,9 @@ struct PhotoFrameDetail: View {
         if context.isPreview {
             SamplePicture().frame(height: 236).clipShape(.rect(cornerRadius: 10))
         } else if let error = feed.error {
-            PanelNote(symbol: "lock", text: error).frame(height: 236)
+            FeedErrorNote(text: error, denied: feed.accessDenied).frame(height: 236)
+        } else if feed.loadedAt == nil {
+            PanelNote(symbol: "hourglass", text: tr("正在读取…")).frame(height: 236)
         } else if feed.files.isEmpty {
             PandaEmptyState(empty: .photos, title: tr("选择相册"), panel: true, action: choose)
                 .frame(height: 236)

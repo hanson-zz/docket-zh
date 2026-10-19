@@ -57,8 +57,9 @@ public enum ChangeColors: String, CaseIterable, Sendable {
         }
     }
 
+    /// 没存这个键（或存坏了）时用地区默认，和 WidgetCatalog 的默认值、设置页显示的一致。
     public static func from(_ config: WidgetConfig) -> ChangeColors {
-        ChangeColors(rawValue: config.string("colors", default: ChangeColors.redUp.rawValue)) ?? .redUp
+        ChangeColors(rawValue: config.string("colors")) ?? RegionalDefaults.current.colors
     }
 }
 
@@ -129,9 +130,13 @@ public enum CryptoMarket {
         return id
     }
 
-    /// `cny` or `usd`.
+    /// `cny` or `usd`. 没存或存坏了时用地区默认，和 WidgetCatalog 一致。
     public static func currency(_ config: WidgetConfig) -> String {
-        config.string("currency", default: "cny") == "usd" ? "usd" : "cny"
+        switch config.string("currency") {
+        case "usd": "usd"
+        case "cny": "cny"
+        default: RegionalDefaults.current.cryptoCurrency
+        }
     }
 
     /// `/coins/markets` answers price, 24h change and a seven-day hourly

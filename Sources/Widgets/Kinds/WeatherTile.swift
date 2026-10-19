@@ -306,8 +306,8 @@ struct WeatherTile: View {
             let hour = next.date.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)))
             return "\(hour)  \(degrees(next.temperatureC))"
         default:
-            // 56pt 宽放不下“风 · 日出”，竖排只写城市或天气状况；快下雨时照样先说雨。
-            if let minutes = minutesUntilRain { return WeatherStyle.rainSoonText(minutes: minutes) }
+            // 56pt 宽放不下“风 · 日出”，竖排只写城市或天气状况；快下雨时照样先说雨，用短文案。
+            if let minutes = minutesUntilRain { return WeatherStyle.rainSoonShortText(minutes: minutes) }
             return captionChoice == .condition ? (weather?.condition ?? "-") : city
         }
     }

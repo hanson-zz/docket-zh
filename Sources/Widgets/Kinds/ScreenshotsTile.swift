@@ -153,8 +153,13 @@ struct ScreenshotsTile: View {
         }
     }
 
+    @ViewBuilder
     private var empty: some View {
-        PandaEmptyTile(empty: .screenshots, title: tr("截取屏幕"), instance: instance, context: context)
+        if !context.isPreview, feed.error != nil || feed.loadedAt == nil {
+            FeedStatusTile(symbol: "camera.viewfinder", failed: feed.error != nil, context: context)
+        } else {
+            PandaEmptyTile(empty: .screenshots, title: tr("截取屏幕"), instance: instance, context: context)
+        }
     }
 }
 

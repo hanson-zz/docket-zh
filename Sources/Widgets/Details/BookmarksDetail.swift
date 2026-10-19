@@ -45,7 +45,9 @@ struct BookmarksDetail: View {
                 }
                 addField
                 if links.isEmpty {
-                    PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) { addingFocused = true }
+                    PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) {
+                        WidgetDetailWindow.shared.focusField { addingFocused = true }
+                    }
                         .frame(height: 120)
                 } else {
                     ScrollView {

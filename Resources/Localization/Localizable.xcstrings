@@ -7675,13 +7675,13 @@
         }
       }
     },
-    "免费版可用 3 个习惯。解锁码头 Pro 后不限个数，还能看近七天报告。" : {
+    "免费版可用 3 个习惯。解锁码头 Pro 后最多 8 个，还能看近七天报告。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The free version has 3 habits. Dockling Pro removes the limit and adds the 7-day report."
+            "value" : "The free version has 3 habits. Dockling Pro allows up to 8 and adds the 7-day report."
           }
         }
       }
@@ -34004,13 +34004,13 @@
         }
       }
     },
-    "还没有截图": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No screenshots yet"
+    "还没有截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No screenshots yet"
           }
         }
       }
@@ -37442,6 +37442,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : ", goal met"
+          }
+        }
+      }
+    },
+    "%@ 分钟后雨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain ~%@m"
           }
         }
       }

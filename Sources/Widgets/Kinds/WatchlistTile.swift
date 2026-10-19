@@ -188,7 +188,7 @@ struct WatchlistTile: View {
     private func row(_ symbol: String) -> some View {
         let quote = quote(symbol)
         let ink = StockInk.color(quote?.changePercent, colors: colors, scheme: scheme)
-        // 不缩字：放不下时代码截断，现价和涨跌幅保持 9.5pt。
+        // 放不下时代码截断；现价最多缩到 0.9（38,000.00 配 +10.25% 也不截断），涨跌幅保持 9.5pt。
         return HStack(spacing: 3) {
             Text(StockBoard.displaySymbol(symbol))
                 .font(WidgetStyle.label(Self.font))
@@ -202,9 +202,10 @@ struct WatchlistTile: View {
                 .font(WidgetStyle.caption(Self.font))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
+                .minimumScaleFactor(0.9)
                 .layoutPriority(1)
                 .rollingValue(StockBoard.priceText(quote?.price))
-            ChangeChip(percent: quote?.changePercent, colors: colors, size: Self.font, minWidth: 40,
+            ChangeChip(percent: quote?.changePercent, colors: colors, size: Self.font, minWidth: 36,
                        minimumScale: 1)
                 .layoutPriority(1)
         }
