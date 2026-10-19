@@ -1,6 +1,6 @@
 import Foundation
 
-/// 电池格（`layout` 为 gauge）经典外观的沙漏，和仅图标样式的「图标 + 电量环 +
+/// 电池格（`layout` 为 gauge）经典和液态外观的沙漏，和仅图标样式的「图标 + 电量环 +
 /// 大号数字」，两处的纯计算都在这里，界面只管照着画。
 ///
 /// 沙漏：下泡的沙面高度按电量线性对应（满电到颈口下方 8%），比按面积换算
@@ -9,9 +9,22 @@ import Foundation
 /// 低电量模式黄、其余绿），选了「外观 ▸ 颜色」时沙子整体换成主题色，报警
 /// 时只把数字和状态字变红，沙子不变。
 ///
-/// 存的值不变：仍是 `layout` 为 gauge、外观为经典，旧卡片读出来直接换成
-/// 沙漏，配置不用改。液态、像素电池、能量粒子、小熊猫照旧。
+/// 存的值不变：仍是 `layout` 为 gauge、外观为经典或液态，旧卡片读出来直接
+/// 换成沙漏，配置不用改。像素电池、能量粒子、小熊猫照旧；「电量」样式的
+/// 液态水也不变。
 public enum BatteryHourglass {
+
+    // MARK: 哪些外观画沙漏
+
+    /// 电池格这个外观画不画沙漏：经典和液态画；像素电池、能量粒子、小熊猫
+    /// 画它们自己的。认不出的值按经典算（和 `BatteryLook.shown` 一致）。
+    /// 小熊猫外观里非 Mac 的设备由界面先换成液态，所以也是沙漏。
+    public static func drawsHourglass(look raw: String) -> Bool {
+        switch BatteryLook(rawValue: raw) ?? .classic {
+        case .classic, .liquid: true
+        case .pixel, .particles, .panda: false
+        }
+    }
 
     // MARK: 沙量
 

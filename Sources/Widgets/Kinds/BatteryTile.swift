@@ -66,12 +66,13 @@ struct BatteryTile: View {
         } else {
             // A bottom shelf is a 58pt strip: three stacked rows overflow it
             // and the caption gets sliced off. Lay it out across instead.
-            // 经典和液态原来是图标外一圈百分比圆环，和电池格对不上，现在也画
-            // 横向电池（见 `BatteryStatusCell`）；其余外观画它们自己的仪表。
+            // 经典和液态原来是图标外一圈百分比圆环，现在画横向电池（见
+            // `BatteryStatusCell`），液态外观里装的是会晃的水；其余外观画它们
+            // 自己的仪表。电池格那边经典和液态都换成了沙漏，这里不变。
             HStack(spacing: 10) {
                 let shown = look(for: slot)
                 if BatteryStatusCell.drawsCell(look: shown.rawValue) {
-                    // 经典和液态：和电池格一样画一块横向电池，百分比写在电池里。
+                    // 经典和液态：画一块横向电池，百分比写在电池里。
                     statusCell(slot, reading, liquid: shown == .liquid)
                     VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
                         Text(caption(reading))
@@ -182,10 +183,11 @@ struct BatteryTile: View {
         }
     }
 
-    /// 电池格（存的值仍是 gauge，原来的“百分比圆环”）：经典外观画沙漏，沙量
-    /// 就是电量。只有一台设备时沙漏旁边写大号百分比和状态；多台设备时每台
-    /// 一个小沙漏，下面写百分比。液态外观画电池，里面装的是会晃的水；
-    /// 像素电池、能量粒子、小熊猫照旧画它们自己的。
+    /// 电池格（存的值仍是 gauge，原来的“百分比圆环”）：经典和液态外观都画
+    /// 沙漏，沙量就是电量（`BatteryHourglass.drawsHourglass`）。只有一台设备时
+    /// 沙漏旁边写大号百分比和状态；多台设备时每台一个小沙漏，下面写百分比。
+    /// 像素电池、能量粒子、小熊猫照旧画它们自己的；小熊猫外观里非 Mac 的
+    /// 设备本来走液态，所以也是沙漏。
     private var gauges: some View {
         let axis = ShapeMeters.cellAxis(deviceCount: slots.count)
         return HStack(spacing: 0) {
@@ -193,8 +195,8 @@ struct BatteryTile: View {
                 let reading = reading(slot)
                 Group {
                     let shown = look(for: slot)
-                    if shown == .classic {
-                        // 经典外观的电池格画沙漏，沙量就是电量（见 `BatteryHourglass`）。
+                    if BatteryHourglass.drawsHourglass(look: shown.rawValue) {
+                        // 经典和液态外观的电池格都画沙漏，沙量就是电量（见 `BatteryHourglass`）。
                         if axis == .horizontal {
                             horizontalHourglass(slot, reading)
                         } else {
@@ -202,16 +204,6 @@ struct BatteryTile: View {
                                 hourglass(slot, reading)
                                     .frame(width: 22, height: 30)
                                 hourglassPercent(reading, size: 13)
-                            }
-                        }
-                    } else if ShapeMeters.drawsCell(look: shown.rawValue) {
-                        if axis == .horizontal {
-                            horizontalCell(slot, reading, liquid: shown == .liquid)
-                        } else {
-                            VStack(spacing: 3) {
-                                cell(slot, reading, vertical: true, liquid: shown == .liquid)
-                                    .frame(width: 17, height: 30)
-                                percent(reading, size: 11)
                             }
                         }
                     } else {
@@ -228,23 +220,6 @@ struct BatteryTile: View {
             }
         }
         .lineLimit(1)
-    }
-
-    /// 一台设备：横向电池，放得下就在旁边写百分比和状态，窄卡片写在下面。
-    private func horizontalCell(_ slot: Slot, _ reading: Reading, liquid: Bool) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                cell(slot, reading, vertical: false, liquid: liquid)
-                    .frame(width: 54, height: 26)
-                TileReading(value: percentText(reading), caption: caption(reading))
-                    .fixedSize()
-            }
-            VStack(spacing: 3) {
-                cell(slot, reading, vertical: false, liquid: liquid)
-                    .frame(width: 38, height: 19)
-                percent(reading, size: 11)
-            }
-        }
     }
 
     /// 一台设备：沙漏旁边写大号百分比和状态，窄卡片写在下面。
@@ -270,7 +245,7 @@ struct BatteryTile: View {
         }
     }
 
-    /// 电池格经典外观的沙漏：充电时上泡的沙往下流（20 帧），减少动态效果时静止；
+    /// 电池格（经典、液态外观）的沙漏：充电时上泡的沙往下流（20 帧），减少动态效果时静止；
     /// 默认红黄绿，选了颜色时沙子整体是主题色。
     private func hourglass(_ slot: Slot, _ reading: Reading, showsBolt: Bool = true) -> some View {
         let state = gaugeState(slot)
@@ -311,19 +286,6 @@ struct BatteryTile: View {
     private func hourglassCaptionColor(_ reading: Reading) -> Color {
         BatteryHourglass.numberWarns(level: reading.level, charging: reading.charging, present: reading.present)
             ? BatteryTheme.warningRed.swiftUI : WidgetStyle.secondary
-    }
-
-    private func cell(_ slot: Slot, _ reading: Reading, vertical: Bool, liquid: Bool) -> some View {
-        let state = gaugeState(slot)
-        return BatteryCellShape(fill: ShapeMeters.cellFill(level: reading.level, present: reading.present),
-                         tone: ShapeMeters.cellTone(level: reading.level, charging: reading.charging,
-                                                    present: reading.present),
-                         charging: reading.charging,
-                         vertical: vertical,
-                         liquid: liquid,
-                         moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
-                         lowPower: state.lowPower, pluggedAt: state.pluggedAt,
-                         unpluggedAt: state.unpluggedAt, theme: theme)
     }
 
     /// Low batteries earn a colour. Everything else stays the neutral fill, so
@@ -431,14 +393,11 @@ struct BatteryTile: View {
                         // 仅图标：电量环里是设备图标，下面是百分比。
                         iconRing(slot, reading, diameter: single ? 38 : 32)
                         iconReading(reading, size: single ? 16 : 14, available: 56)
-                    } else if layout == ProFeatures.batteryGaugeLayout, shown == .classic {
+                    } else if layout == ProFeatures.batteryGaugeLayout,
+                              BatteryHourglass.drawsHourglass(look: shown.rawValue) {
                         hourglass(slot, reading, showsBolt: single)
                             .frame(width: single ? 22 : 18, height: single ? 32 : 28)
                         hourglassPercent(reading, size: 13)
-                    } else if layout == ProFeatures.batteryGaugeLayout, ShapeMeters.drawsCell(look: shown.rawValue) {
-                        cell(slot, reading, vertical: true, liquid: shown == .liquid)
-                            .frame(width: single ? 16 : 14, height: single ? 26 : 24)
-                        percent(reading, size: single ? 12 : 11)
                     } else if shown == .classic {
                         MetricProgressRing(progress: reading.present ? reading.level : 0,
                                            tint: accent(reading),

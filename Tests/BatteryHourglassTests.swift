@@ -4,6 +4,24 @@ import XCTest
 final class BatteryHourglassTests: XCTestCase {
     private let purple = ColorCode(hex: "#BF5AF2")!
 
+    // MARK: 哪些外观画沙漏
+
+    func testClassicAndLiquidDrawHourglass() {
+        XCTAssertTrue(BatteryHourglass.drawsHourglass(look: BatteryLook.classic.rawValue))
+        XCTAssertTrue(BatteryHourglass.drawsHourglass(look: BatteryLook.liquid.rawValue))
+    }
+
+    func testProLooksKeepTheirOwnArt() {
+        XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.pixel.rawValue))
+        XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.particles.rawValue))
+        XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.panda.rawValue))
+    }
+
+    func testUnknownLookReadsAsClassic() {
+        XCTAssertTrue(BatteryHourglass.drawsHourglass(look: "nonsense"))
+        XCTAssertTrue(BatteryHourglass.drawsHourglass(look: ""))
+    }
+
     // MARK: 沙量
 
     func testSandHeightFollowsLevelLinearly() {
