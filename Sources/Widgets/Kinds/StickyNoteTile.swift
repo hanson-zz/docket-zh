@@ -233,7 +233,10 @@ enum StickyFont {
     @MainActor
     static func hand(size: CGFloat) -> Font {
         if resolved == nil {
-            resolved = .some(names.first { NSFont(name: $0, size: 12) != nil })
+            // 只探测已安装字体。直接按名称解析缺失的按需字体会等待系统字体服务，
+            // 无人值守的 runner 上可能长时间没有响应。
+            let installed = Set(NSFontManager.shared.availableFonts)
+            resolved = .some(names.first { installed.contains($0) })
         }
         if let name = resolved ?? nil {
             return .custom(name, fixedSize: size)

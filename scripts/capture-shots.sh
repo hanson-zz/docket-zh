@@ -115,7 +115,7 @@ mkfifo "$FRAMES" "$ACK"
 
 SHOTS_PID=""
 cleanup() {
-  [ -n "$SHOTS_PID" ] && kill "$SHOTS_PID" 2>/dev/null || true
+  [ -n "$SHOTS_PID" ] && kill -KILL "$SHOTS_PID" 2>/dev/null || true
   rm -rf "$PIPES"
 }
 trap cleanup EXIT
@@ -141,7 +141,7 @@ while :; do
   else
     status=$?
     if [ "$status" -gt 128 ]; then
-      kill "$SHOTS_PID" 2>/dev/null || true
+      kill -KILL "$SHOTS_PID" 2>/dev/null || true
       fail "no frame for $FRAME_TIMEOUT seconds after $LAST_FRAME; see the last prepare/measure log."
     fi
     break
