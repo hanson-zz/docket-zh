@@ -294,12 +294,31 @@ struct PerfectDayDetail: View {
                                                   dimmed: blocked != nil))
                 .background(ShareAnchor(box: anchor))
                 .disabled(context.isPreview || blocked != nil)
-                .help(blocked == nil ? tr("右键可存储到桌面或拷贝图片") : tr("收到第一片竹叶后就能分享"))
+                .help(blocked == nil ? tr("分享这个月") : tr("收到第一片竹叶后就能分享"))
                 .contextMenu {
                     Button("分享…") { share(all, month: month) }
                     Button("存储到桌面") { saveToDesktop(all, month: month) }
                     Button("拷贝图片") { copy(all, month: month) }
                 }
+                // 看得见的「…」：存储到桌面、拷贝图片不只藏在右键里。
+                Menu {
+                    Button("存储到桌面") { saveToDesktop(all, month: month) }
+                    Button("拷贝图片") { copy(all, month: month) }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(blocked == nil ? 0.85 : 0.35))
+                        .frame(width: 34, height: 32)
+                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.1)))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.white.opacity(0.12)))
+                        .contentShape(Rectangle())
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .disabled(context.isPreview || blocked != nil)
+                .help(tr("存储到桌面或拷贝图片"))
             }
         }
     }

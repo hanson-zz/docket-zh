@@ -37644,13 +37644,13 @@
         }
       }
     },
-    "右键可存储到桌面或拷贝图片" : {
+    "存储到桌面或拷贝图片" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Right-click to save to Desktop or copy the image"
+            "value" : "Save to Desktop or copy the image"
           }
         }
       }
