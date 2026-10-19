@@ -122,8 +122,11 @@ struct PerfectDayDetail: View {
                 .foregroundStyle(.white)
             }
             Spacer(minLength: 0)
+            // 这一行在 ScrollView 里，ScrollView 会按自己的边界裁切内容：以前用
+            // .padding(.top, -6) 把小熊猫往上提，头顶和耳朵尖就落到滚动区外面被
+            // 切掉一截（卡片 16pt 的留白也救不回来）。素材里耳朵尖本来就贴着图片
+            // 上沿，所以这里不能再往上挪，让它从行顶开始完整画出来。
             BasketPanda(cheer: cheer, height: 70)
-                .padding(.top, -6)
         }
     }
 

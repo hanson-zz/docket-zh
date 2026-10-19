@@ -104,9 +104,12 @@ struct SlackerMetrics {
     var panda: CGFloat
     var pandaDrop: CGFloat
 
+    // 扩展栏卡片只有 58pt 高、按圆角裁切，60pt 的小熊猫居中后上下各多出 1pt，
+    // 素材上下只留了约 2pt 透明边，再往下沉就把脚和坐垫切掉（以前沉 5pt，
+    // 切掉约 4pt），所以扩展栏这张不下沉。
     static let shelf = SlackerMetrics(title: 16, cellWidth: CGFloat(SlackerClock.cellWidth), cellHeight: 27,
                                       cellLabel: 8.5, cellValue: 11.5, cellSpacing: CGFloat(SlackerClock.cellSpacing),
-                                      panda: 60, pandaDrop: 5)
+                                      panda: 60, pandaDrop: 0)
     static let panel = SlackerMetrics(title: 24, cellWidth: 54, cellHeight: 42,
                                       cellLabel: 10.5, cellValue: 16, cellSpacing: 6,
                                       panda: 92, pandaDrop: 8)
