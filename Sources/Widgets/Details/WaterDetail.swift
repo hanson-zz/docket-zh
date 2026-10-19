@@ -802,6 +802,10 @@ struct WaterDetail: View {
                     .labelsHidden()
                     .fixedSize()
             }
+            // 交给到点弹出卡片时不走系统通知，不用提示。
+            NotificationsOffNote(active: NotificationAccess.waterUsesNotifications(
+                every: reminder.every, popupShows: ReminderPopupCenter.shared.shows(.water)),
+                                 preview: context.isPreview)
             settingRow(tr("时段")) {
                 HStack(spacing: 4) {
                     timePicker(reminder.start, key: "start")

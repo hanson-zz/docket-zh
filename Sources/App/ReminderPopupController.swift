@@ -527,8 +527,10 @@ struct ReminderPopupCardView: View {
                     Text(detail(now: now))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.8))
-                        .lineLimit(1)
+                        // 英文的“last drink 2 h 5 min ago”更长，允许折成两行。
+                        .lineLimit(2)
                         .truncationMode(.tail)
+                        .fixedSize(horizontal: false, vertical: true)
                     section(now: now)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -658,7 +660,26 @@ struct ReminderPopupCardView: View {
         }
     }
 
+    /// 杯子、“1250 / 2000 毫升”和“还差 3 杯”。英文的“3 cups to go”更长，一行放不下时
+    /// “还差几杯”挪到下一行，喝了多少那串数字永远不截断。
     private func waterRow(_ info: WaterPopupInfo) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 4) {
+                cupsAndTally(info)
+                Spacer(minLength: 4)
+                cupsLeftText(info)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                cupsAndTally(info)
+                cupsLeftText(info)
+            }
+        }
+        .lineLimit(1)
+        .padding(.top, 8)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: info.total)
+    }
+
+    private func cupsAndTally(_ info: WaterPopupInfo) -> some View {
         HStack(spacing: 4) {
             ForEach(0..<WaterPetCards.cupSlots, id: \.self) { index in
                 let full = index < info.filledCups
@@ -673,14 +694,15 @@ struct ReminderPopupCardView: View {
                 .monospacedDigit()
                 .padding(.leading, 6)
                 .contentTransition(.numericText())
-            Spacer(minLength: 4)
-            Text(ReminderPopupText.cupsLeft(info))
-                .font(.system(size: 10.5))
-                .foregroundStyle(.white.opacity(0.55))
+                .fixedSize()
         }
-        .lineLimit(1)
-        .padding(.top, 8)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: info.total)
+    }
+
+    private func cupsLeftText(_ info: WaterPopupInfo) -> some View {
+        Text(ReminderPopupText.cupsLeft(info))
+            .font(.system(size: 10.5))
+            .foregroundStyle(.white.opacity(0.55))
+            .fixedSize()
     }
 
     private func todayRows(_ info: TodoPopupInfo) -> some View {
@@ -710,42 +732,65 @@ struct ReminderPopupCardView: View {
 
     // MARK: 底
 
+    /// 底下一行：说明小字和按钮。放得下就同一行；英文的说明和按钮都更长，放不下时
+    /// 说明单独占一行（最多两行），按钮靠右排在下面，不再截成“Raises the cup for 3…”。
     private func footer(now: Date) -> some View {
         let choices = ReminderPopupSnooze.choices(now: now)
-        return HStack(spacing: 6) {
-            Text(card.kind.isTimer ? ReminderPopupText.timerHint(card.kind, info: primary.timer)
-                                   : ReminderPopupText.hint(card.kind, choices: choices))
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Spacer(minLength: 6)
-            switch card.kind {
-            case .reminders:
-                PopupButton(title: tr("完成"), primary: true) { model.perform(.complete) }
-                if card.alerts.count > 1 {
-                    PopupButton(title: tr("全部完成")) { model.perform(.completeAll) }
+        let hint = card.kind.isTimer ? ReminderPopupText.timerHint(card.kind, info: primary.timer)
+                                     : ReminderPopupText.hint(card.kind, choices: choices)
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                hintText(hint)
+                    .lineLimit(1)
+                    .fixedSize()
+                Spacer(minLength: 6)
+                buttons()
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                hintText(hint)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    Spacer(minLength: 0)
+                    buttons()
                 }
-                PopupButton(title: tr("推迟"), chevron: true) { model.perform(.snoozeMenu) }
-            case .water:
-                if let info = primary.water {
-                    PopupButton(title: ReminderPopupText.drinkButton(info), primary: true) { model.perform(.drink) }
-                }
-                PopupButton(title: tr("稍后 \(ReminderPopupSnooze.waterMinutes) 分钟")) { model.perform(.later) }
-            case .todo:
-                PopupButton(title: tr("完成"), primary: true) { model.perform(.complete) }
-                PopupButton(title: tr("稍后 \(ReminderPopupSnooze.todoMinutes) 分钟")) { model.perform(.later) }
-            case .countdown:
-                PopupButton(title: tr("再来一次"), primary: true) { model.perform(.again) }
-                PopupButton(title: tr("关闭")) { model.perform(.stop) }
-            case .alarm:
-                PopupButton(title: tr("稍后 \(ReminderPopupSnooze.alarmMinutes) 分钟"), primary: true) {
-                    model.perform(.later)
-                }
-                PopupButton(title: tr("关闭")) { model.perform(.stop) }
             }
         }
         .disabled(model.finishing != nil)
+    }
+
+    private func hintText(_ hint: String) -> some View {
+        Text(hint)
+            .font(.system(size: 10))
+            .foregroundStyle(.white.opacity(0.5))
+    }
+
+    @ViewBuilder
+    private func buttons() -> some View {
+        switch card.kind {
+        case .reminders:
+            PopupButton(title: tr("完成"), primary: true) { model.perform(.complete) }
+            if card.alerts.count > 1 {
+                PopupButton(title: tr("全部完成")) { model.perform(.completeAll) }
+            }
+            PopupButton(title: tr("推迟"), chevron: true) { model.perform(.snoozeMenu) }
+        case .water:
+            if let info = primary.water {
+                PopupButton(title: ReminderPopupText.drinkButton(info), primary: true) { model.perform(.drink) }
+            }
+            PopupButton(title: tr("稍后 \(ReminderPopupSnooze.waterMinutes) 分钟")) { model.perform(.later) }
+        case .todo:
+            PopupButton(title: tr("完成"), primary: true) { model.perform(.complete) }
+            PopupButton(title: tr("稍后 \(ReminderPopupSnooze.todoMinutes) 分钟")) { model.perform(.later) }
+        case .countdown:
+            PopupButton(title: tr("再来一次"), primary: true) { model.perform(.again) }
+            PopupButton(title: tr("关闭")) { model.perform(.stop) }
+        case .alarm:
+            PopupButton(title: tr("稍后 \(ReminderPopupSnooze.alarmMinutes) 分钟"), primary: true) {
+                model.perform(.later)
+            }
+            PopupButton(title: tr("关闭")) { model.perform(.stop) }
+        }
     }
 
     // MARK: 角色

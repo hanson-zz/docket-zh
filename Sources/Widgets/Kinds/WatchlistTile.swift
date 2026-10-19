@@ -99,9 +99,26 @@ struct WatchlistTile: View {
             BreadthBar(breadth: breadth, colors: colors, height: 3)
                 .frame(width: 36)
             Spacer(minLength: 0)
-            profit(symbols)
+            if let offline = offlineText(symbols) {
+                // 断网时右上角写「离线 · 10:32 的价」，盈亏用的是旧价，先不显示。
+                Text(offline)
+                    .font(WidgetStyle.label(Self.font))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+            } else {
+                profit(symbols)
+            }
         }
         .lineLimit(1)
+    }
+
+    /// 这一组里有过期的报价时的那句话，时间取最早的那只。
+    private func offlineText(_ symbols: [String]) -> String? {
+        guard !context.isPreview else { return nil }
+        let stale = symbols.compactMap { quote($0) }.filter(\.stale)
+        guard !stale.isEmpty else { return nil }
+        return OfflineQuote.label(fetched: OfflineQuote.oldest(stale.map(\.fetchedAt)), now: .now)
     }
 
     /// 分组名。只有一个分组时就是个标题；多个时点一下换下一个分组。
@@ -191,7 +208,7 @@ struct WatchlistTile: View {
                 .layoutPriority(1)
         }
         .lineLimit(1)
-        .opacity(quote?.stale == true ? 0.55 : 1)
+        .opacity(quote?.stale == true ? OfflineQuote.staleOpacity : 1)
     }
 
     // MARK: 竖排
@@ -216,7 +233,7 @@ struct WatchlistTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .frame(height: 16)
-                .opacity(quote?.stale == true ? 0.55 : 1)
+                .opacity(quote?.stale == true ? OfflineQuote.staleOpacity : 1)
             }
             if fit.hidden > 0 {
                 Text(StockBoard.moreText(fit.hidden))

@@ -366,6 +366,13 @@ struct PodcastDetail: View {
     // MARK: Footer
 
     private var footer: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            footerRow
+            NotificationsOffNote(active: notify, preview: context.isPreview)
+        }
+    }
+
+    private var footerRow: some View {
         HStack(spacing: 6) {
             Toggle(isOn: Binding(get: { notify },
                                  set: { value in

@@ -23,6 +23,8 @@ struct StockQuote: Sendable {
     var sessionEnd: Date?
     /// The day's volume so far.
     var volume: Double?
+    /// 这份报价是什么时候成功取到的：刷新失败（`stale`）时卡片写「离线 · 10:32 的价」。
+    var fetchedAt: Date?
 }
 
 /// Quotes and intraday history for the Stock and Watchlist widgets.
@@ -88,7 +90,8 @@ final class StockService {
                 group.addTask { (symbol, await Self.fetch(symbol)) }
             }
             for await (symbol, fresh) in group {
-                if let fresh {
+                if var fresh {
+                    fresh.fetchedAt = .now
                     quotes[symbol] = fresh
                 } else if var last = quotes[symbol] {
                     // Keep the last good numbers; only admit they are old.

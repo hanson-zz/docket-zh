@@ -148,9 +148,16 @@ struct CalculatorTile: View {
 
     private func badge(size: CGFloat) -> some View {
         TileBadge(size: size) {
-            Text(verbatim: "算")
-                .font(.system(size: size * 0.48, weight: .heavy))
-                .foregroundStyle(accent)
+            switch SmartCalc.badge(english: L10n.isEnglish) {
+            case .character(let glyph):
+                Text(verbatim: glyph)
+                    .font(.system(size: size * 0.48, weight: .heavy))
+                    .foregroundStyle(accent)
+            case .symbol(let name):
+                Image(systemName: name)
+                    .font(.system(size: size * 0.42, weight: .heavy))
+                    .foregroundStyle(accent)
+            }
         }
         .accessibilityHidden(true)
     }

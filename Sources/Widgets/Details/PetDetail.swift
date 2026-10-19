@@ -209,6 +209,7 @@ struct PetDetail: View {
                 Text("饿了、脏了、困了或生病时发一条通知，夜里不打扰。")
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.5))
+                NotificationsOffNote(active: instance.config.bool("notify"), preview: context.isPreview)
             }
         }
         .toggleStyle(.switch)

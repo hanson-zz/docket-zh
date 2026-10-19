@@ -25,6 +25,14 @@ struct CryptoDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header
+                if !context.isPreview, CryptoService.shared.isStale(currency) {
+                    // 断网：和天气、GitHub 面板同一条插头横幅，点右边马上重取。
+                    ReconnectStateView(title: OfflineQuote.label(fetched: CryptoService.shared.updated(currency),
+                                                                 now: .now),
+                                       detail: tr("刷新失败，显示的是上次成功获取的价格"),
+                                       style: .compact,
+                                       retry: { CryptoService.shared.retryNow() })
+                }
                 VStack(spacing: 6) {
                     ForEach(ids, id: \.self) { id in row(id) }
                 }
@@ -116,11 +124,6 @@ struct CryptoDetail: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 3) {
-            if !context.isPreview, CryptoService.shared.isStale(currency) {
-                Text("刷新失败，显示的是上次成功获取的价格。")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
             HStack(spacing: 6) {
                 Link(CryptoMarket.attribution, destination: CryptoMarket.attributionURL)
                     .font(.system(size: 11))

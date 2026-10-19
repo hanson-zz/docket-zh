@@ -175,9 +175,14 @@ struct WidgetSettingsSections: View {
             Toggle(tr("电池温度高于 \(Int(BatteryAlertSettings.hotCelsius))°C"), isOn: Binding(
                 get: { settings.hot },
                 set: { on in write(instance) { $0.set(BatteryAlertSettings.hotKey, .bool(on)) } }))
-            Text("每一档每次充电或放电只提醒一次，发通知时电池卡片会闪一下。蓝牙设备包括 AirPods、妙控键盘、鼠标和触控板。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                NotificationsOffNote(active: NotificationAccess.batteryUsesNotifications(
+                    levels: settings.charge.count + settings.low.count,
+                    extras: [settings.accessory, settings.full, settings.hot]))
+                Text("每一档每次充电或放电只提醒一次，发通知时电池卡片会闪一下。蓝牙设备包括 AirPods、妙控键盘、鼠标和触控板。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -341,9 +346,21 @@ struct WidgetSettingsSections: View {
         // it is actually running with, so the control disagreed with the tile
         // until it was touched.
         case .bool(let fallback):
-            Toggle(Self.label(key, kind: entry.kind), isOn: Binding(
-                get: { instance.config.bool(key, default: fallback) },
-                set: { on in write(instance) { $0.set(key, .bool(on)) } }))
+            if NotificationAccess.isNotificationSwitch(kind: entry.kind.rawValue, key: key) {
+                // 发通知的开关：系统通知被关时在开关下面提示去开启。
+                Toggle(isOn: Binding(
+                    get: { instance.config.bool(key, default: fallback) },
+                    set: { on in write(instance) { $0.set(key, .bool(on)) } })) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Self.label(key, kind: entry.kind))
+                        NotificationsOffNote(active: instance.config.bool(key, default: fallback))
+                    }
+                }
+            } else {
+                Toggle(Self.label(key, kind: entry.kind), isOn: Binding(
+                    get: { instance.config.bool(key, default: fallback) },
+                    set: { on in write(instance) { $0.set(key, .bool(on)) } }))
+            }
 
         case .number(let fallback):
             Stepper(value: Binding(

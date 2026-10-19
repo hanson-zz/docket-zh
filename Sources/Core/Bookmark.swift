@@ -76,6 +76,33 @@ public struct Bookmark: Equatable, Sendable {
         return Int(hash % UInt32(count))
     }
 
+    /// 卡片上最多显示几个，拖入加书签也到这里为止。
+    public static let dropLimit = 8
+
+    /// 拖到书签卡上的一段文字或链接：整段就是一个网址时才算。
+    public static func dropped(_ text: String) -> URL? {
+        let words = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !words.isEmpty, words.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else { return nil }
+        return address(words)
+    }
+
+    /// 拖进来的链接加在最后，存成网址本身（标题之后由链接预览取）。
+    /// 已经有同一个地址、或者已经放满 `dropLimit` 个时返回 nil，卡片响一声。
+    public static func adding(_ url: URL, to entries: [String], limit: Int = dropLimit) -> [String]? {
+        let existing = list(entries)
+        guard existing.count < limit else { return nil }
+        let key = normalisedKey(url)
+        guard !existing.contains(where: { normalisedKey($0.url) == key }) else { return nil }
+        return entries + [url.absoluteString]
+    }
+
+    /// 比较两个地址是不是同一个：不分大小写，结尾的斜杠不算。
+    static func normalisedKey(_ url: URL) -> String {
+        var text = url.absoluteString.lowercased()
+        while text.hasSuffix("/") { text.removeLast() }
+        return text
+    }
+
     /// Every entry that parses, in order.
     public static func list(_ entries: [String]) -> [Bookmark] {
         entries.compactMap(Bookmark.init(parsing:))

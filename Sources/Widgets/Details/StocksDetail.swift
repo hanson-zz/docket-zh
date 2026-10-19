@@ -102,12 +102,12 @@ struct StocksDetail: View {
         VStack(alignment: .leading, spacing: 10) {
             if rotation.count > 1 { symbolPicker }
             if let quote = quote(symbol) {
+                if quote.stale { staleNote(quote.fetchedAt) }
                 identity(quote)
                 price(quote)
                 change(quote)
                 chart(quote)
                 stats(quote)
-                if quote.stale { staleNote }
             } else {
                 unavailable(symbol)
             }
@@ -251,6 +251,8 @@ struct StocksDetail: View {
                 .font(.system(size: 10, weight: .semibold))
                 .tracking(0.8)
                 .foregroundStyle(.white.opacity(0.7))
+            NotificationsOffNote(active: NotificationAccess.stockUsesNotifications(
+                alertCount: StockBoard.alerts(config).count), preview: context.isPreview)
             ForEach(mine, id: \.self) { alert in
                 HStack(spacing: 8) {
                     Circle().fill(StockInk.alert).frame(width: 6, height: 6)
@@ -365,7 +367,9 @@ struct StocksDetail: View {
         }
         let symbols = StockBoard.sorted(group.symbols, percents: percents, order: .from(config))
         let quotes = symbols.map { quote($0) }
+        let staleTimes = quotes.compactMap { $0 }.filter(\.stale).map(\.fetchedAt)
         return VStack(alignment: .leading, spacing: 8) {
+            if !staleTimes.isEmpty { staleNote(OfflineQuote.oldest(staleTimes)) }
             groupBar(current: group)
             if editingGroup { groupEditor }
             summary(symbols, quotes: quotes)
@@ -389,7 +393,6 @@ struct StocksDetail: View {
                 }
             }
             if hasMetal { unitPicker }
-            if quotes.contains(where: { $0?.stale == true }) { staleNote }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -592,13 +595,16 @@ struct StocksDetail: View {
         }
     }
 
-    private var staleNote: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "exclamationmark.triangle")
-            Text("上次刷新失败，以下为之前获取的有效数据。")
-        }
-        .font(WidgetStyle.caption(10))
-        .foregroundStyle(.white.opacity(0.7))
-        .lineLimit(2)
+    /// 断网：顶上一条插头横幅，写「离线 · 10:32 的价」，点右边重新取一次。
+    /// 和天气、GitHub 面板同一个 `ReconnectStateView`。
+    private func staleNote(_ fetched: Date?) -> some View {
+        ReconnectStateView(title: OfflineQuote.label(fetched: fetched, now: .now),
+                           detail: tr("上次刷新失败，显示的是之前获取的有效数据"),
+                           style: .compact,
+                           retry: context.isPreview ? nil : retryQuotes)
+    }
+
+    private func retryQuotes() {
+        Task { await StockService.shared.refresh() }
     }
 }

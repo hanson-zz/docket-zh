@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A row of links, each a lettered disc; a click opens it in the default
 /// browser.
@@ -19,6 +20,9 @@ struct BookmarksTile: View {
     }
 
     private var previews: [String: LinkPreview] { LinkPreview.stored(instance.config) }
+
+    /// 拖着链接停在卡片上。
+    @State private var targeted = false
 
     /// Every web link in the list with no preview yet, or whose last attempt
     /// failed long enough ago. The fetch below re-runs when this changes.
@@ -40,7 +44,7 @@ struct BookmarksTile: View {
                     Image(systemName: "bookmark")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(WidgetStyle.secondary)
-                    Text("在设置中添加网址")
+                    Text("拖链接到这里，或在设置中添加")
                         .font(WidgetStyle.caption(10))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
@@ -57,6 +61,15 @@ struct BookmarksTile: View {
                 }
             }
         }
+        // 拖链接过来：青色虚线框写“加一条书签”，松手加在最后，标题由链接预览取。
+        .dropTargetOutline(targeted, prompt: .bookmark, compact: column)
+        .onDrop(of: [.url, .plainText], delegate: ContentDropDelegate(
+            types: [.url, .plainText],
+            enabled: !context.isPreview,
+            targeted: { targeted = $0 },
+            receive: { things in
+                withAnimation(.snappy(duration: 0.3)) { BookmarkDrop.add(things, to: instance) }
+            }))
         .task(id: pending) {
             let urls = pending
             guard !urls.isEmpty else { return }

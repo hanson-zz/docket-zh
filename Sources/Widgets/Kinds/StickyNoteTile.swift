@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 便签：一张长期贴着的纸（160×100，始终展开；底栏上实际 58pt 高）。
 ///
@@ -19,6 +20,8 @@ struct StickyNoteTile: View {
     var context: WidgetContext
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 拖着文字停在便签上。
+    @State private var targeted = false
 
     private var unlocked: Bool { ProAccess.isUnlocked || context.isPreview }
 
@@ -65,7 +68,15 @@ struct StickyNoteTile: View {
             .overlay {
                 StickyScrollPager(enabled: pile.count > 1 && !context.isPreview) { step in flip(by: step) }
             }
+            .dropHidden(targeted)
         }
+        // 拖文字或链接过来：橙色虚线框写“贴到便签上 / 在最后追加一行”，松手接在最上面那张末尾。
+        .dropTargetOutline(targeted, prompt: .stickyNote, compact: column)
+        .onDrop(of: [.plainText, .url], delegate: ContentDropDelegate(
+            types: [.plainText, .url],
+            enabled: !context.isPreview,
+            targeted: { targeted = $0 },
+            receive: { things in StickyDrop.append(things, to: instance) }))
     }
 
     /// 字：手写体，最上面那张的。空白的纸画两条横线和一支铅笔。
@@ -74,17 +85,19 @@ struct StickyNoteTile: View {
         if text.isEmpty {
             blankPaper(ink: ink, column: column)
         } else {
+            // 字号放大、最多只缩到 0.9 倍：原来 14pt 缩到 0.75 倍，58pt 高的卡上
+            // 只剩 10pt 出头，手札体笔画又细，看不清。宁可少一行、尾巴省略。
             Text(text)
-                .font(StickyFont.hand(size: column ? 11 : 14))
+                .font(StickyFont.hand(size: column ? StickyFont.columnSize : StickyFont.cardSize))
                 .foregroundStyle(ink)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(-1)
-                .lineLimit(column ? 5 : 4)
-                .minimumScaleFactor(0.75)
+                .lineLimit(column ? 4 : 3)
+                .minimumScaleFactor(StickyFont.minimumScale)
                 .truncationMode(.tail)
                 .padding(.horizontal, column ? 6 : 9)
-                .padding(.top, column ? 8 : 9)
-                .padding(.bottom, 4)
+                .padding(.top, column ? 7 : 8)
+                .padding(.bottom, 3)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 // No button trait: the note itself is read, not activated -
                 // writing is its own control and the card belongs to the shelf.
@@ -200,10 +213,20 @@ private struct StickyCurl: View {
     }
 }
 
-/// 便签的手写字：优先系统自带的“手札体”（Hannotate SC），没有就回退系统字体。
+/// 便签的手写字：优先系统的“手札体”（Hannotate SC），没有就回退系统圆体。
+///
+/// 先试 W7（更粗），细的 W5 放后面：卡片上字只有 15pt，W5 的笔画在中间色纸上
+/// 发虚。手札体是按需下载的字体，很多 Mac 没装，回退时用圆体 semibold，
+/// 和手写的气质最接近，又比默认字体粗一档。
 enum StickyFont {
+    /// 卡片（横排）和竖排时的字号。
+    static let cardSize: CGFloat = 15
+    static let columnSize: CGFloat = 12
+    /// 最多缩到 0.9 倍，放不下就少一行。
+    static let minimumScale: CGFloat = 0.9
+
     /// 手札体的几种字重，按想要的先后试。
-    private static let names = ["HannotateSC-W5", "HannotateSC-W7"]
+    private static let names = ["HannotateSC-W7", "HannotateSC-W5"]
 
     @MainActor private static var resolved: String?? = nil
 
@@ -215,7 +238,7 @@ enum StickyFont {
         if let name = resolved ?? nil {
             return .custom(name, fixedSize: size)
         }
-        return .system(size: size, weight: .semibold)
+        return .system(size: size, weight: .semibold, design: .rounded)
     }
 }
 

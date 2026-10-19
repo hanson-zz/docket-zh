@@ -80,8 +80,8 @@ struct StockTile: View {
                     wide(quote, alert: alert)
                 }
             }
-            // 刷新失败时留着上次的数，变淡表示不是最新的，不清空也不写零。
-            .opacity(quote?.stale == true ? 0.55 : 1)
+            // 刷新失败时留着上次的数，变淡并在底行写「离线 · 10:32 的价」，不清空也不写零。
+            .opacity(quote?.stale == true ? OfflineQuote.staleOpacity : 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .phaseAnimator([0.0, 1.0, 0.0, 1.0, 0.0], trigger: flash) { content, glow in
@@ -174,19 +174,27 @@ struct StockTile: View {
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
                 .rollingValue(StockBoard.priceText(quote?.price))
-            HStack(spacing: 4) {
-                Text(StockBoard.percentText(quote?.changePercent))
-                    .font(WidgetStyle.label(percentSize))
+            if let quote, quote.stale, !context.isPreview {
+                // 底行换成断网说明：涨跌是上次的，写了反而像是现在的。
+                Text(OfflineQuote.label(fetched: quote.fetchedAt, now: .now))
+                    .font(WidgetStyle.label(percentSize - 1))
+                    .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
-                    .rollingValue(StockBoard.percentText(quote?.changePercent))
-                if !compact {
-                    Text(StockBoard.changeText(quote?.change))
-                        .font(WidgetStyle.caption(percentSize - 1.5))
+            } else {
+                HStack(spacing: 4) {
+                    Text(StockBoard.percentText(quote?.changePercent))
+                        .font(WidgetStyle.label(percentSize))
                         .monospacedDigit()
-                        .opacity(0.85)
+                        .rollingValue(StockBoard.percentText(quote?.changePercent))
+                    if !compact {
+                        Text(StockBoard.changeText(quote?.change))
+                            .font(WidgetStyle.caption(percentSize - 1.5))
+                            .monospacedDigit()
+                            .opacity(0.85)
+                    }
                 }
+                .foregroundStyle(ink)
             }
-            .foregroundStyle(ink)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.6)

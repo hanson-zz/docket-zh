@@ -228,15 +228,17 @@ public enum WidgetCatalog {
                            "chart": .bool(true),
                            "alerts": .list([]),
                            "rotate": .bool(true),
-                           "colors": .string(ChangeColors.redUp.rawValue),
-                           "metalUnit": .string(PreciousMetal.DisplayUnit.cnyPerGram.rawValue)]),
+                           "colors": .string(RegionalDefaults.current.colors.rawValue),
+                           "metalUnit": .string(RegionalDefaults.current.metalUnit.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         // Prices from CoinGecko's free API, at most every five minutes, the
         // last good table cached; see CryptoMarket and CryptoService.
         Entry(kind: .crypto, name: tr("加密货币行情"), category: .stocks,
               defaults: c(["coins": .list(CryptoMarket.defaultCoins.map { .string($0) }),
-                           "currency": .string("cny"), "colors": .string(ChangeColors.redUp.rawValue),
+                           // 英文界面按地区：美元计价、绿涨红跌，见 RegionalDefaults。
+                           "currency": .string(RegionalDefaults.current.cryptoCurrency),
+                           "colors": .string(RegionalDefaults.current.colors.rawValue),
                            "chart": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
@@ -248,8 +250,8 @@ public enum WidgetCatalog {
                            "groups": .list([]),
                            "holdings": .list([]),
                            "sort": .string(StockBoard.Order.change.rawValue),
-                           "colors": .string(ChangeColors.redUp.rawValue),
-                           "metalUnit": .string(PreciousMetal.DisplayUnit.cnyPerGram.rawValue)]),
+                           "colors": .string(RegionalDefaults.current.colors.rawValue),
+                           "metalUnit": .string(RegionalDefaults.current.metalUnit.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         Entry(kind: .weather, name: tr("天气"), category: .weather,
@@ -783,6 +785,10 @@ public enum WidgetCatalog {
         var config = entry.defaults
         if kind == .battery { config.set(BatteryLook.key, .string(BatteryLook.newWidgetDefault.rawValue)) }
         if kind == .progress { config.set(TimeProgress.layoutKey, .string(TimeProgress.newWidgetLayout)) }
+        // 摸鱼时钟的货币符号跟地区走，只写给新放的；不放进 defaults，免得设置页多一栏。
+        if kind == .slacker {
+            config.set(SlackerClock.currencyKey, .string(RegionalDefaults.current.currencySymbol))
+        }
         for (k, v) in overrides { config.set(k, v) }
         return WidgetInstance(kind: kind, expanded: true, config: config)
     }

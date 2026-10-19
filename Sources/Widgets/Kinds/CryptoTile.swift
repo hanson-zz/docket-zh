@@ -25,13 +25,27 @@ struct CryptoTile: View {
 
     private var stale: Bool { !context.isPreview && CryptoService.shared.isStale(currency) }
 
+    /// 断网时底行那句「离线 · 10:32 的价」。
+    private var offlineText: String {
+        OfflineQuote.label(fetched: CryptoService.shared.updated(currency), now: .now)
+    }
+
+    private var offlineLine: some View {
+        Text(offlineText)
+            .font(WidgetStyle.label(9))
+            .foregroundStyle(WidgetStyle.primary)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
     var body: some View {
         let shown = Array(ids.prefix(CryptoMarket.tileCoins))
         return WidgetSurface {
             Group {
                 if context.position.isVertical { column(shown) } else { wide(shown) }
             }
-            .opacity(stale ? 0.55 : 1)
+            .opacity(stale ? OfflineQuote.staleOpacity : 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task(id: "\(currency):\(ids.joined(separator: ","))") {
@@ -47,6 +61,15 @@ struct CryptoTile: View {
     /// 每币一列 96pt：币种圆标和代码、24 小时涨跌色块；价格；7 天迷你线，
     /// 虚线是 7 天前的价格，右下写 7 天涨跌。
     private func wide(_ shown: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            coins(shown)
+            // 断网时 7 天线让位给底行的说明。
+            if stale { offlineLine }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func coins(_ shown: [String]) -> some View {
         HStack(spacing: 8) {
             ForEach(shown, id: \.self) { id in
                 let quote = quote(id)
@@ -70,7 +93,7 @@ struct CryptoTile: View {
                             .font(WidgetStyle.caption(7.5))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
-                    if showsChart {
+                    if showsChart, !stale {
                         HStack(alignment: .bottom, spacing: 3) {
                             week(quote)
                                 .frame(height: 12)
@@ -92,7 +115,6 @@ struct CryptoTile: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.vertical, 4)
     }
 
     /// 币种圆标：币自己的颜色，中间是首字母（比特币是 B，以太坊是 Ξ）。
@@ -144,6 +166,7 @@ struct CryptoTile: View {
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            if stale { offlineLine }
         }
         .padding(.vertical, 4)
     }

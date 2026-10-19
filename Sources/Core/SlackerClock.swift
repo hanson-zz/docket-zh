@@ -23,6 +23,8 @@ public enum SlackerClock {
     public static let endKey = "end"
     public static let paydayKey = "payday"
     public static let incomeKey = "income"
+    /// 金额后面的货币符号。新放的按地区写（`RegionalDefaults`），老卡片没有这个键，照旧是 ¥。
+    public static let currencyKey = "currency"
     public static let itemsKey = "more"
     public static let fontKey = "font"
     public static let tintKey = "tint"
@@ -134,11 +136,13 @@ public enum SlackerClock {
         public var income: Double
         public var items: [Item]
         public var followsHolidays: Bool
+        public var currencySymbol: String
 
         public init(workdays: Set<Int> = Set(SlackerClock.weekdays),
                     start: Int = SlackerClock.defaultStart, end: Int = SlackerClock.defaultEnd,
                     payday: Int = SlackerClock.defaultPayday, income: Double = SlackerClock.defaultIncome,
-                    items: [Item] = Item.allCases, followsHolidays: Bool = true) {
+                    items: [Item] = Item.allCases, followsHolidays: Bool = true,
+                    currencySymbol: String = "¥") {
             self.workdays = workdays
             let window = SlackerClock.window(start: start, end: end)
             self.start = window.start
@@ -148,6 +152,8 @@ public enum SlackerClock {
                                                 SlackerClock.incomeRange.upperBound) : SlackerClock.defaultIncome
             self.items = SlackerClock.items(items.map(\.rawValue))
             self.followsHolidays = followsHolidays
+            let symbol = currencySymbol.trimmingCharacters(in: .whitespaces)
+            self.currencySymbol = symbol.isEmpty ? "¥" : String(symbol.prefix(4))
         }
 
         public init(config: WidgetConfig) {
@@ -161,7 +167,8 @@ public enum SlackerClock {
                       income: config.double(SlackerClock.incomeKey, default: SlackerClock.defaultIncome),
                       items: SlackerClock.items(config.strings(SlackerClock.itemsKey,
                                                                default: Item.allCases.map(\.rawValue))),
-                      followsHolidays: config.bool(SlackerClock.holidaysKey, default: true))
+                      followsHolidays: config.bool(SlackerClock.holidaysKey, default: true),
+                      currencySymbol: config.string(SlackerClock.currencyKey, default: "¥"))
         }
 
         /// 一天上班多少秒。
@@ -537,10 +544,10 @@ public enum SlackerClock {
         case .earned:
             if case .dayOff = phase {
                 let month = earnedThisMonth(now: now, settings: settings, calendar: calendar, known: known)
-                return Cell(item: item, label: tr("本月已赚"), value: monthMoney(month), unit: "¥")
+                return Cell(item: item, label: tr("本月已赚"), value: monthMoney(month), unit: settings.currencySymbol)
             }
             return Cell(item: item, label: tr("今天赚了"), value: money(earnedToday(phase: phase, settings: settings)),
-                        unit: "¥")
+                        unit: settings.currencySymbol)
         }
     }
 

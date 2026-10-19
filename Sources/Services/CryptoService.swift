@@ -38,6 +38,12 @@ final class CryptoService {
 
     func isStale(_ currency: String) -> Bool { failed.contains(currency) }
 
+    /// 面板里点“重新连接”：不等五分钟的节流，马上再取一次。
+    func retryNow() {
+        lastAttempt = [:]
+        tick()
+    }
+
     /// Registers what a widget is showing and fetches if the gate allows.
     func track(_ ids: [String], currency: String) {
         let wanted = Set(ids)

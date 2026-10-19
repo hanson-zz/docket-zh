@@ -81,6 +81,16 @@ public enum StickyStack {
             return next
         }
 
+        /// 拖到便签上的文字：在最上面那张末尾另起一行接上。空白的纸直接写上；
+        /// 拖来的是空白时不动。多行的文字照原样保留换行，只去掉首尾空白。
+        public func appendingLine(_ line: String) -> Pile {
+            let words = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !words.isEmpty else { return self }
+            let current = front.text
+            let trimmed = String(current.reversed().drop(while: { $0 == "\n" || $0 == " " }).reversed())
+            return writing(trimmed.isEmpty ? words : trimmed + "\n" + words)
+        }
+
         /// 只给最上面那张换颜色，其余几张不动。
         public func coloring(_ color: String) -> Pile {
             var next = self

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// AI 助手：最左边是小熊猫（点它打开提问面板），一道细分隔线，后面是勾选
 /// 的 AI 服务字牌（单色玻璃字牌，首字或短缩写，不用官方图标），末尾一块
@@ -15,6 +16,8 @@ struct AIAssistantTile: View {
     var context: WidgetContext
 
     private var config: WidgetConfig { instance.config }
+    /// 拖着文字或文件停在卡片上。
+    @State private var targeted = false
     private var services: [AIService] { AIServices.enabled(in: config) }
     private var square: Bool { AIServices.isSquare(config) }
 
@@ -30,6 +33,13 @@ struct AIAssistantTile: View {
                 wide(shown, defaultID: defaultID)
             }
         }
+        // 拖文字或文件过来：蓝色虚线框写“拿去问 AI”，松手打开提问面板并带进去。
+        .dropTargetOutline(targeted, prompt: .askAI, compact: context.position.isVertical)
+        .onDrop(of: [.fileURL, .url, .plainText], delegate: ContentDropDelegate(
+            types: [.fileURL, .url, .plainText],
+            enabled: !context.isPreview,
+            targeted: { targeted = $0 },
+            receive: { things in AIDropRouter.ask(things, instance: instance) }))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("AI 助手")
     }

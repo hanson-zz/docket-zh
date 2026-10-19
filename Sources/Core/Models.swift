@@ -166,11 +166,11 @@ public enum PaperColor: String, Codable, Sendable, CaseIterable {
         }
     }
 
-    /// The two dark papers take light ink; every other swatch is light in
-    /// both appearances and keeps the fixed dark ink.
-    public var isDark: Bool { self == .slate || self == .night }
+    /// 纸是深色的，墨用浅色。按对比度算，不再写死哪几种纸，见 `PaperInk`。
+    public var isDark: Bool { PaperInk.inkIsLight(on: hex) }
 
-    public var inkHex: String { isDark ? "#F4F4F6" : "#1C1C1E" }
+    /// 这张纸上的墨色，保证对比度不低于 4.5:1（WCAG 正文），见 `PaperInk`。
+    public var inkHex: String { PaperInk.ink(on: hex) }
 
     public var title: String {
         switch self {

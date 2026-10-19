@@ -3957,6 +3957,17 @@
         }
       }
     },
+    "上次刷新失败，显示的是之前获取的有效数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last refresh failed. Showing the previous good numbers."
+          }
+        }
+      }
+    },
     "上次喝水" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9017,6 +9028,17 @@
         }
       }
     },
+    "刷新失败，显示的是上次成功获取的价格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh failed. Showing the last prices fetched."
+          }
+        }
+      }
+    },
     "刷新失败，显示的是上次成功获取的价格。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9328,6 +9350,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add 1 %@"
+          }
+        }
+      }
+    },
+    "加一条\n书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add\nbookmark"
+          }
+        }
+      }
+    },
+    "加一条书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a bookmark"
           }
         }
       }
@@ -11270,7 +11314,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GitHub https://github.com"
+            "value" : "YouTube https://www.youtube.com"
           }
         }
       }
@@ -11325,7 +11369,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raises the cup for 3 seconds, cheers at the goal"
+            "value" : "Lifts the cup for 3 s, cheers at the goal"
           }
         }
       }
@@ -12063,6 +12107,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open %@ in Calendar, %@"
+          }
+        }
+      }
+    },
+    "在最后追加一行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds a line at the end"
           }
         }
       }
@@ -17495,6 +17550,17 @@
         }
       }
     },
+    "打开提问面板并带进去" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the ask panel with it"
+          }
+        }
+      }
+    },
     "打开摄像头小窗照一照，点外面或按 Esc 关闭" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18045,6 +18111,28 @@
         }
       }
     },
+    "拖进来的内容已复制，在对话框里粘贴即可。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you dropped is copied. Paste it into the chat box."
+          }
+        }
+      }
+    },
+    "拖链接到这里，或在设置中添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop a link here, or add in Settings"
+          }
+        }
+      }
+    },
     "括号不匹配" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18195,6 +18283,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDD"
+          }
+        }
+      }
+    },
+    "拿去\n问 AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask\nAI"
+          }
+        }
+      }
+    },
+    "拿去问 AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI about it"
           }
         }
       }
@@ -19662,6 +19772,17 @@
         }
       }
     },
+    "文件 %@：" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File %@:"
+          }
+        }
+      }
+    },
     "文件名" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19691,6 +19812,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "File Shelf"
+          }
+        }
+      }
+    },
+    "文件：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File: %@"
           }
         }
       }
@@ -23141,6 +23273,17 @@
         }
       }
     },
+    "松手存进书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop to save it"
+          }
+        }
+      }
+    },
     "松手记一条待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26263,7 +26406,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Done: the red panda cheers and the card crosses it off"
+            "value" : "Done: the red panda cheers, the card is crossed off"
           }
         }
       }
@@ -28094,6 +28237,17 @@
         }
       }
     },
+    "码头的通知在系统设置里被关掉了，开关开着也不会提醒。点按打开系统设置的通知页。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling's notifications are turned off in System Settings, so this switch cannot alert you. Click to open Notifications in System Settings."
+          }
+        }
+      }
+    },
     "码头竹篮-%@ %@.png" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28277,6 +28431,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Offline"
+          }
+        }
+      }
+    },
+    "离线 · %@ 的价" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline · price at %@"
           }
         }
       }
@@ -29234,6 +29399,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple's Dock for apps, a shelf of widgets on another edge."
+          }
+        }
+      }
+    },
+    "系统通知已关闭 · 去开启" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are off · Turn on"
+          }
+        }
+      }
+    },
+    "系统通知已关闭，点按去开启" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are off, click to turn them on"
           }
         }
       }
@@ -32394,6 +32581,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buy (launch price %@)"
+          }
+        }
+      }
+    },
+    "贴到\n便签上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to\nnote"
+          }
+        }
+      }
+    },
+    "贴到便签上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to the note"
           }
         }
       }
