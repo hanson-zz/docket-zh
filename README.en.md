@@ -189,6 +189,10 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 
 ## In development (next version)
 
+- **Updated Chinese and English screenshots**: The paywall shows the $6.90/$9.90/$15.90 tiers; Watchlist, Weather, Sticky Note and related widget images are refreshed, with a new gallery of the nine shared red panda empty states. The shots.yml languages input writes Chinese and English images to docs/images/zh and docs/images/en, reusing one build and bounding steps and frame waits. Not yet verified on a physical Mac.
+
+![Red panda empty states, captured from the shared views](docs/images/en/empty-states.png)
+
 - **Red panda empty states with actions**: Habits, Anniversaries, Alarms, Radio, Podcasts, Bookmarks, Screenshots, Photos and an empty Basket share the existing red panda artwork, one caption and one working action. Buttons open add forms, search, subscription input, screen capture, folder selection or Add Widget. Narrow cards hide the caption and artwork before reducing to a button, without truncation. Not yet verified on a physical Mac.
 
 - **System Now Playing for three audio sources**: Radio, Podcasts and Ambient Sound share one media session and pause the other two when starting. System controls support play, pause, toggle and stop; Radio switches stations, Podcasts navigate chapters or skip back 15 seconds and forward 30 seconds. Titles, show names, available artwork and progress appear in Now Playing. Live radio has no duration; stopping clears metadata and command handlers. Not yet verified on a physical Mac.

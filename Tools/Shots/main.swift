@@ -481,7 +481,7 @@ private func makePanel(_ shot: Shot, on screen: NSScreen) -> NSWindow? {
         // the Dock is for almost everyone.
         edge: .bottom,
         session: UUID(),
-        // 截图要整张面板，不套滚动区域，按内容的自然高度画。
+        // 天气长面板使用真实滚动视口，其余面板按内容自然高度拍摄。
         viewport: shot.instance.kind == .weather ? 600 : nil,
         measuring: shot.instance.kind != .weather)
 
