@@ -163,7 +163,8 @@ jobs:
       - name: Build screenshot tool
         timeout-minutes: 20
         run: |
-          xcodebuild -project Docket.xcodeproj -target Shots -configuration Release build \
+          xcodebuild -project Docket.xcodeproj -target Shots -configuration Release \
+            SWIFT_OPTIMIZATION_LEVEL=-Onone build \
             > "${TMPDIR:-/tmp}/docket-shots-build.log" 2>&1
 
       - name: Capture

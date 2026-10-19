@@ -64,7 +64,7 @@ if [ "${SHOTS_SKIP_BUILD:-0}" != 1 ]; then
   xcodebuild -project "$ROOT/Docket.xcodeproj" \
              -target Shots \
              -configuration Release \
-             build >"$DERIVED.log" 2>&1 \
+             SWIFT_OPTIMIZATION_LEVEL=-Onone build >"$DERIVED.log" 2>&1 \
     || { tail -40 "$DERIVED.log" >&2; fail "build failed; the full log is at $DERIVED.log"; }
 fi
 
