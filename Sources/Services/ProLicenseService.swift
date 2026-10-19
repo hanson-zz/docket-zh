@@ -169,6 +169,8 @@ final class ProLicenseManager {
         guard !started else { return }
         started = true
         refreshState()
+        // 有解锁动画之前就已激活的 Mac 不算第一次，以后解绑再激活也不自动弹。
+        ProUnlockCelebration.markIfActivatedBefore(isActivated: isActivated)
         Task {
             await revalidateIfNeeded()
             // 启动后稍等一会儿再看要不要提醒试用快到期，别和启动时的窗口抢。
@@ -314,6 +316,8 @@ final class ProLicenseManager {
                 ProLicenseKeychain.set(instance, for: .instanceID)
                 ProLicenseKeychain.setDate(Date(), for: .lastValidated)
                 refreshState()
+                // 第一次激活成功时播放解锁庆祝动画（只自动播一次，见 ProUnlockFirstRun）。
+                ProUnlockCelebration.shared.activationSucceeded()
                 return true
             case .wrongProduct(let instance):
                 // 不是码头的许可证：把刚占用的激活名额还回去。

@@ -37456,6 +37456,105 @@
           }
         }
       }
+    },
+    "解锁成功，谢谢你！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlocked, thank you!"
+          }
+        }
+      }
+    },
+    "恭喜码头 Pro 已激活，一次购买，永久使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Docket Pro is active. Pay once, yours forever."
+          }
+        }
+      }
+    },
+    "开启 Pro 之旅 ›" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start your Pro journey ›"
+          }
+        }
+      }
+    },
+    "解锁动画音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock animation sounds"
+          }
+        }
+      }
+    },
+    "重看解锁动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replay unlock animation"
+          }
+        }
+      }
+    },
+    "关于 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About Pro"
+          }
+        }
+      }
+    },
+    "解锁动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock animation"
+          }
+        }
+      }
+    },
+    "第一次激活成功时自动播放一次，之后可以在这里重看。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays once, the first time Pro is activated. Replay it here any time."
+          }
+        }
+      }
+    },
+    "刘海 AI 对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch AI chat"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

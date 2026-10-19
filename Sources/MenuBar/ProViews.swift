@@ -211,6 +211,7 @@ struct ProSettingsPane: View {
     @State private var license = ProLicenseManager.shared
     @AppStorage(Supporter.key) private var supporter = false
     @State private var confirmDeactivate = false
+    @AppStorage(ProUnlockFirstRun.soundKey) private var celebrationSound = true
 
     var body: some View {
         Form {
@@ -290,6 +291,22 @@ struct ProSettingsPane: View {
                 } header: {
                     Text("这台 Mac")
                 }
+            }
+
+            Section {
+                Toggle("解锁动画音效", isOn: $celebrationSound)
+                LabeledContent {
+                    Button("重看解锁动画") { ProUnlockCelebration.shared.replay() }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("解锁动画")
+                        Text("第一次激活成功时自动播放一次，之后可以在这里重看。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("关于 Pro")
             }
 
             Section("Pro 包含") {
