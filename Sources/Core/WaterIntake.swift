@@ -6,7 +6,8 @@ import Foundation
 /// tracker's check-ins: `days` is the log (the widget's contents, so never a
 /// catalog default and never a text field in Settings), and the options
 /// (`goal`, `cupSize`, `remindEvery`, `start`, `end`, `unit`) sit beside it.
-/// The panel also keeps `customFactor` (how much a 自定义 drink counts) and
+/// The panel also keeps `customDrinks` (the drinks the user named, see
+/// CustomDrinks), `earnedCharacters` (see WaterCharacter.recordingEarned) and
 /// the inputs of the personal goal (`weight`, `sex`, `age` and the rest, see
 /// WaterGoal), none of which is a Settings row; `goal` is only the goal set
 /// by hand.
@@ -18,7 +19,9 @@ import Foundation
 /// - `entries` is a comma separated list of drinks, each `HHMM` + a one letter
 ///   drink code + the amount poured in millilitres, with `@NN` (percent) only
 ///   when the hydration factor is not the drink's own, e.g. `0930w250`,
-///   `1415c200`, `1600x300@70`.
+///   `1415c200`, `1600x300@70`. A drink the user named (see CustomDrinks)
+///   adds `#id` after that, e.g. `1600x300@70#k3f9a2`; a plain `x` without
+///   it is the old 自定义 and still reads as one.
 /// - Days older than `detailDays` are folded into `=total`, the effective
 ///   millilitres of that day: the chart, the calendar and the streak only
 ///   need the total, and a hundred and twenty days of single sips would make
@@ -85,12 +88,16 @@ public struct WaterEntry: Equatable, Hashable, Sendable {
     public var amount: Int
     /// The share that counts, 0.1...1.5.
     public var factor: Double
+    /// Which of the user's own drinks this was, for a `.custom` one; nil for
+    /// the built-in drinks and for the old 自定义.
+    public var drinkID: String?
 
-    public init(minute: Int, type: DrinkType, amount: Int, factor: Double? = nil) {
+    public init(minute: Int, type: DrinkType, amount: Int, factor: Double? = nil, drinkID: String? = nil) {
         self.minute = min(1439, max(0, minute))
         self.type = type
         self.amount = max(0, amount)
         self.factor = WaterIntake.clampFactor(factor ?? type.factor)
+        self.drinkID = type == .custom ? drinkID.flatMap(CustomDrinks.validID) : nil
     }
 
     /// Millilitres that count toward the goal.
@@ -102,6 +109,7 @@ public struct WaterEntry: Equatable, Hashable, Sendable {
         var text = String(format: "%02d%02d", minute / 60, minute % 60) + type.rawValue + "\(amount)"
         let percent = Int((factor * 100).rounded())
         if percent != Int((type.factor * 100).rounded()) { text += "@\(percent)" }
+        if let drinkID { text += "#\(drinkID)" }
         return text
     }
 
@@ -112,7 +120,13 @@ public struct WaterEntry: Equatable, Hashable, Sendable {
         guard let hh = Int(String(chars[0..<2])), let mm = Int(String(chars[2..<4])),
               (0...23).contains(hh), (0...59).contains(mm),
               let type = DrinkType(rawValue: String(chars[4])) else { return nil }
-        let rest = String(chars[5...])
+        let tagged = String(chars[5...]).split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
+        var drinkID: String?
+        if tagged.count == 2 {
+            // A broken id loses the name, not the drink: it still counts.
+            drinkID = CustomDrinks.validID(String(tagged[1]))
+        }
+        let rest = String(tagged[0])
         let parts = rest.split(separator: "@", maxSplits: 1, omittingEmptySubsequences: false)
         guard let amount = Int(parts[0]), amount > 0 else { return nil }
         var factor: Double?
@@ -120,7 +134,7 @@ public struct WaterEntry: Equatable, Hashable, Sendable {
             guard let percent = Int(parts[1]) else { return nil }
             factor = Double(percent) / 100
         }
-        self.init(minute: hh * 60 + mm, type: type, amount: amount, factor: factor)
+        self.init(minute: hh * 60 + mm, type: type, amount: amount, factor: factor, drinkID: drinkID)
     }
 }
 
@@ -347,7 +361,7 @@ public enum WaterIntake {
     }
 
     /// Logs a drink at `now`.
-    public static func logging(_ type: DrinkType, amount: Int, factor: Double? = nil,
+    public static func logging(_ type: DrinkType, amount: Int, factor: Double? = nil, drinkID: String? = nil,
                                in days: [WaterDay], goal: Int, now: Date,
                                calendar: Calendar = WaterIntake.calendar) -> [WaterDay] {
         guard amount > 0 else { return days }
@@ -355,7 +369,7 @@ public enum WaterIntake {
         guard day.summary == nil, day.entries.count < maxEntriesPerDay else { return days }
         let parts = calendar.dateComponents([.hour, .minute], from: now)
         let entry = WaterEntry(minute: (parts.hour ?? 0) * 60 + (parts.minute ?? 0), type: type,
-                               amount: min(amount, 5000), factor: factor)
+                               amount: min(amount, 5000), factor: factor, drinkID: drinkID)
         day.entries.append(entry)
         day.entries.sort { $0.minute < $1.minute }
         return replacingToday(day, in: days)
@@ -758,9 +772,26 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
     /// Whether it has a picture per mood.
     public var hasMoods: Bool { self != .redPanda }
 
-    /// Pro 专属: every character but the red panda, unlocked from the
-    /// sponsor window like the supporter clock faces.
-    public var isSupporterOnly: Bool { self != .redPanda }
+    /// Pro 专属: the penguin, the otter and the octopus, unlocked from the
+    /// sponsor window like the supporter clock faces. The shiba and the cat
+    /// are earned by drinking instead (see `daysToEarn`).
+    public var isSupporterOnly: Bool {
+        switch self {
+        case .penguin, .otter, .octopus: true
+        case .redPanda, .shiba, .cat: false
+        }
+    }
+
+    /// Days the goal has to be met, in total and not in a row, before this
+    /// character is the user's to keep on a 喝水 widget. Nil for the free red
+    /// panda and the Pro characters.
+    public var daysToEarn: Int? {
+        switch self {
+        case .shiba: 3
+        case .cat: 7
+        default: nil
+        }
+    }
 
     /// The bundled picture's name for a mood, without the extension.
     public func imageName(_ mood: WaterMood) -> String {
@@ -780,12 +811,125 @@ public enum WaterCharacter: String, CaseIterable, Sendable, Identifiable {
         WaterCharacter(rawValue: config.string("character", default: WaterCharacter.redPanda.rawValue)) ?? .redPanda
     }
 
-    /// What is drawn: a supporter-only character falls back to the red panda
-    /// while it is locked, as a supporter clock face falls back to flip
-    /// cards, so a config copied from another Mac still shows someone.
-    public static func shown(_ config: WidgetConfig, unlocked: Bool) -> WaterCharacter {
+    /// What a 喝水 widget draws: a character that is not available yet (a
+    /// Pro one while Pro is locked, a shiba or cat not earned yet) falls back
+    /// to the red panda, as a supporter clock face falls back to flip cards,
+    /// so a config copied from another Mac still shows someone.
+    public static func shown(_ config: WidgetConfig, unlocked: Bool, now: Date = .now,
+                             calendar: Calendar = WaterIntake.calendar) -> WaterCharacter {
         let chosen = from(config)
-        return chosen.isSupporterOnly && !unlocked ? .redPanda : chosen
+        guard chosen != .redPanda else { return chosen }
+        return access(chosen, config: config, pro: unlocked, now: now, calendar: calendar).isAvailable
+            ? chosen : .redPanda
+    }
+
+    /// What 电子宠物 draws. The pet is Pro as a whole, so its characters keep
+    /// the old rule: everyone but the red panda needs Pro, and nothing is
+    /// earned by drinking there.
+    public static func petShown(_ config: WidgetConfig, unlocked: Bool) -> WaterCharacter {
+        let chosen = from(config)
+        return chosen != .redPanda && !unlocked ? .redPanda : chosen
+    }
+
+    // MARK: Earning a character
+
+    /// The characters a 喝水 widget has earned, kept in its config so they
+    /// stay when the log is trimmed or a day is deleted.
+    public static let earnedKey = "earnedCharacters"
+
+    public static func earned(_ config: WidgetConfig) -> Set<WaterCharacter> {
+        Set(config.strings(earnedKey).compactMap { WaterCharacter(rawValue: $0) }.filter { $0.daysToEarn != nil })
+    }
+
+    /// Days the goal was met, in total: finished days against the goal they
+    /// were frozen at, today against the current goal, as the streak does.
+    public static func metDays(_ days: [WaterDay], goal: Int, now: Date,
+                               calendar: Calendar = WaterIntake.calendar) -> Int {
+        let todayKey = HabitTracker.dayKey(now, calendar: calendar)
+        let finished = days.filter { $0.key < todayKey && $0.isMet }.count
+        let today = WaterIntake.today(days, goal: goal, now: now, calendar: calendar)
+        return finished + (today.isMet ? 1 : 0)
+    }
+
+    public static func metDays(_ config: WidgetConfig, now: Date,
+                               calendar: Calendar = WaterIntake.calendar) -> Int {
+        metDays(WaterIntake.days(config), goal: WaterIntake.goal(config, now: now, calendar: calendar),
+                now: now, calendar: calendar)
+    }
+
+    /// Whether this character can be used on a 喝水 widget, and if not, why.
+    public func access(metDays: Int, earned: Set<WaterCharacter>, pro: Bool) -> WaterCharacterAccess {
+        if self == .redPanda { return .free }
+        if let needed = daysToEarn {
+            if earned.contains(self) || metDays >= needed { return .earned }
+            // Pro opens every character, the ones still to be earned too.
+            return pro ? .pro(unlocked: true) : .locked(daysLeft: needed - max(0, metDays))
+        }
+        return .pro(unlocked: pro)
+    }
+
+    public static func access(_ character: WaterCharacter, config: WidgetConfig, pro: Bool, now: Date = .now,
+                              calendar: Calendar = WaterIntake.calendar) -> WaterCharacterAccess {
+        let kept = earned(config)
+        // Only a character still to be earned needs the log read: the tile
+        // asks on every redraw.
+        guard character.daysToEarn != nil, !kept.contains(character) else {
+            return character.access(metDays: 0, earned: kept, pro: pro)
+        }
+        return character.access(metDays: metDays(config, now: now, calendar: calendar), earned: kept, pro: pro)
+    }
+
+    /// Writes down the characters the log has earned so far and returns the
+    /// ones that are new. Nothing is ever taken off the list: a character
+    /// once earned stays, whatever happens to the log afterwards.
+    @discardableResult
+    public static func recordingEarned(in config: inout WidgetConfig, now: Date = .now,
+                                       calendar: Calendar = WaterIntake.calendar) -> [WaterCharacter] {
+        let count = metDays(config, now: now, calendar: calendar)
+        let had = earned(config)
+        let fresh = allCases.filter { character in
+            guard let needed = character.daysToEarn else { return false }
+            return count >= needed && !had.contains(character)
+        }
+        guard !fresh.isEmpty else { return [] }
+        let all = allCases.filter { had.contains($0) || fresh.contains($0) }
+        config.set(earnedKey, .list(all.map { .string($0.rawValue) }))
+        return fresh
+    }
+
+    /// "再达标 3 天解锁".
+    public static func unlockHint(daysLeft: Int) -> String {
+        tr("再达标 \(max(1, daysLeft)) 天解锁")
+    }
+
+    /// "柴犬解锁啦".
+    public var earnedLine: String { tr("\(title)解锁啦") }
+}
+
+/// How a character can be used on a 喝水 widget.
+public enum WaterCharacterAccess: Equatable, Sendable {
+    /// The red panda, everyone's.
+    case free
+    /// Earned by meeting the goal on enough days; kept for good.
+    case earned
+    /// Still to be earned: the goal has to be met on this many more days.
+    case locked(daysLeft: Int)
+    /// A Pro character (or one still to be earned, opened by Pro), and
+    /// whether Pro is unlocked.
+    case pro(unlocked: Bool)
+
+    /// Days still to go for a character being earned, nil otherwise.
+    public var daysLeft: Int? {
+        if case .locked(let left) = self { return left }
+        return nil
+    }
+
+    public var isAvailable: Bool {
+        switch self {
+        case .free, .earned: true
+        case .locked: false
+        case .pro(let unlocked): unlocked
+        }
     }
 }
 

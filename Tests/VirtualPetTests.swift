@@ -300,7 +300,9 @@ final class VirtualPetTests: XCTestCase {
         // 角色在面板和设置里选，添加面板只有一张电子宠物卡片。
         XCTAssertEqual(entry?.variants.isEmpty, true)
         XCTAssertNil(WidgetCatalog.variantTitle(matching: widget.config, kind: .pet))
-        XCTAssertTrue(WidgetCatalog.isSupporterOnly(["character": .string("shiba")]))
+        // 电子宠物整种是 Pro，柴犬在宠物上照旧标 Pro（喝水的柴犬改为达标解锁）。
+        XCTAssertTrue(ProFeatures.isProChoice(kind: .pet, key: "character", value: "shiba"))
+        XCTAssertTrue(WidgetCatalog.isSupporterOnly(["character": .string("otter")]))
         XCTAssertFalse(WidgetCatalog.isSupporterOnly(["character": .string("panda")]))
 
         widget.config.set(WidgetVisibility.modeKey, .string("conditional"))

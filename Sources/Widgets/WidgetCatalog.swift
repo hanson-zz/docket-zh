@@ -35,7 +35,8 @@ public enum WidgetCatalog {
     /// Pro 专属表盘（原来的赞助者表盘），仍从“支持码头”窗口解锁，清单在 `ProFeatures`。
     public static let supporterClockLayouts: Set<String> = ProFeatures.proClockLayouts
 
-    /// Pro 专属角色 for 喝水: every character but the red panda.
+    /// Pro 专属角色 for 喝水: the penguin, the otter and the octopus. The
+    /// shiba and the cat are earned by meeting the goal instead.
     public static let supporterWaterCharacters: Set<String> =
         Set(WaterCharacter.allCases.filter(\.isSupporterOnly).map(\.rawValue))
 
@@ -443,7 +444,8 @@ public enum WidgetCatalog {
                            "unit": .string("ml"), "character": .string("panda"),
                            WaterParched.key: .bool(true)]),
               // 添加面板只列长相不同的三张：角色、圆环、液态。六只角色在面板或
-              // 设置里选（`character`），柴犬等五只照旧 Pro 专属；原来的六张
+              // 设置里选（`character`），柴犬、橘猫累计达标 3 天、7 天解锁，
+              // 企鹅、水獭、章鱼是 Pro 专属；原来的六张
               // 角色卡片本来就存成 layout = character 加角色，读出来就是“角色”
               // 样式，样子不变（见 WaterPetCards）。
               variants: [(tr("角色"), ["layout": .string(WaterPetCards.characterLayout)]),

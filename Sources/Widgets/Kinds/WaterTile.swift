@@ -284,15 +284,19 @@ enum WaterLog {
     static func change(_ instance: WidgetInstance, _ edit: ([WaterDay], Int) -> [WaterDay]) {
         WidgetWriter.write(instance) { config in
             WaterIntake.store(edit(WaterIntake.days(config), WaterIntake.goal(config)), in: &config)
+            pruneDrinks(&config)
         }
     }
 
-    static func drink(_ type: DrinkType, amount: Int, factor: Double? = nil, in instance: WidgetInstance) {
+    static func drink(_ type: DrinkType, amount: Int, factor: Double? = nil, drinkID: String? = nil,
+                      in instance: WidgetInstance) {
         let now = Date.now
         WidgetWriter.write(instance) { config in
-            let days = WaterIntake.logging(type, amount: amount, factor: factor, in: WaterIntake.days(config),
-                                           goal: WaterIntake.goal(config), now: now)
+            let days = WaterIntake.logging(type, amount: amount, factor: factor, drinkID: drinkID,
+                                           in: WaterIntake.days(config), goal: WaterIntake.goal(config), now: now)
             WaterIntake.store(days, in: &config, now: now)
+            pruneDrinks(&config)
+            noteEarned(&config, now: now)
             // The log keeps minutes; the cup in the character's paws needs the second.
             config.set("loggedAt", .number(now.timeIntervalSince1970))
             // A drink answers a hand-picked reminder; the schedule resumes.
@@ -329,6 +333,33 @@ enum WaterLog {
             let goal = WaterIntake.goal(config, now: now)
             WaterIntake.store(WaterIntake.settingGoal(goal, in: WaterIntake.days(config), now: now),
                               in: &config, now: now)
+            // A lower goal can make today count.
+            noteEarned(&config, now: now)
+        }
+    }
+
+    /// The key the panel reads to say, once, that a character was just
+    /// earned. A line in the panel rather than a notification.
+    static let earnedNoticeKey = "earnedNotice"
+
+    /// Writes down any character the log has just earned and leaves the
+    /// newest for the panel to mention.
+    private static func noteEarned(_ config: inout WidgetConfig, now: Date) {
+        let fresh = WaterCharacter.recordingEarned(in: &config, now: now)
+        if let newest = fresh.last { config.set(earnedNoticeKey, .string(newest.rawValue)) }
+    }
+
+    /// Removed drinks the log no longer names go.
+    private static func pruneDrinks(_ config: inout WidgetConfig) {
+        let drinks = CustomDrinks.all(config)
+        let kept = CustomDrinks.pruned(drinks, days: WaterIntake.days(config))
+        if kept != drinks { CustomDrinks.store(kept, in: &config) }
+    }
+
+    /// Adds, changes or removes one of the user's own drinks.
+    static func editDrinks(_ instance: WidgetInstance, _ edit: ([CustomDrink], [WaterDay]) -> [CustomDrink]) {
+        WidgetWriter.write(instance) { config in
+            CustomDrinks.store(edit(CustomDrinks.all(config), WaterIntake.days(config)), in: &config)
         }
     }
 

@@ -391,11 +391,17 @@ struct WidgetSettingsSections: View {
                             PaywallWindow.shared.show()
                             return
                         }
+                        // 喝水的柴犬、橘猫没达标够天数：不弹付费墙，也不写。
+                        if Self.waterCharacterHint(entry.kind, key: key, value: value, config: instance.config) != nil {
+                            return
+                        }
                         write(instance) { $0.set(key, .string(value)) }
                     })) {
                     ForEach(choices, id: \.value) { choice in
-                        Text(ProFeatures.menuTitle(choice.title,
-                                                   isPro: ProFeatures.isProChoice(kind: entry.kind, key: key, value: choice.value)))
+                        let title = ProFeatures.menuTitle(choice.title,
+                                                          isPro: ProFeatures.isProChoice(kind: entry.kind, key: key, value: choice.value))
+                        let hint = Self.waterCharacterHint(entry.kind, key: key, value: choice.value, config: instance.config)
+                        Text(hint.map { tr("\(title)（\($0)）") } ?? title)
                             .tag(choice.value)
                     }
                 } label: {
@@ -767,6 +773,16 @@ struct WidgetSettingsSections: View {
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
         "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
     ]
+
+    /// “再达标 3 天解锁” for a 喝水 character still to be earned, nil for
+    /// everything else (Pro unlocks it too).
+    static func waterCharacterHint(_ kind: WidgetKind, key: String, value: String,
+                                   config: WidgetConfig) -> String? {
+        guard kind == .water, key == "character", let character = WaterCharacter(rawValue: value),
+              case .locked(let left) = WaterCharacter.access(character, config: config, pro: ProAccess.isUnlocked)
+        else { return nil }
+        return WaterCharacter.unlockHint(daysLeft: left)
+    }
 
     static func stringChoices(_ kind: WidgetKind, _ key: String)
         -> [(title: String, value: String)]? {

@@ -6,9 +6,10 @@ import SwiftUI
 /// 原来那套灰/彩水位效果（水面以下全彩、以上发灰、中间白色波浪水面），
 /// 水位和杯子同步；表情照旧按 `WaterMood`（喝一杯举杯三秒、达标欢呼、
 /// 提醒时段外或三小时没喝打盹），很久没喝渴成骷髅（`WaterParched`）。
-/// 旁边是已喝/目标、还差几杯和八个小杯，下面是饮品、三只杯量按钮（小杯、
-/// 一杯、大杯，一杯跟设置里的一杯容量走）和自定义，再下面是今天的时间轴
-/// 和记录（撤销上一杯、单条删除）。
+/// 旁边是已喝/目标、还差几杯和八个小杯，下面是饮料（内置六种加用户自己
+/// 起名的，见 CustomDrinks）、三只杯量按钮（小杯、一杯、大杯，一杯跟设置里
+/// 的一杯容量走）和自定义量，再下面是今天的时间轴和记录（撤销上一杯、单条
+/// 删除）。
 ///
 /// 统计（连续、本月、7 天平均、柱状、月历和近七天报告）、目标（推荐量、
 /// 明细、个人情况、手动目标）、设置（角色、提醒、复位）照旧。
@@ -19,7 +20,9 @@ struct WaterDetail: View {
     private enum Tab: Hashable { case today, history, target, goal }
 
     @State private var tab: Tab = .today
-    @State private var drink: DrinkType = .water
+    @State private var drink: DrinkPick = .builtIn(.water)
+    /// The drink being added or edited, nil while the editor is closed.
+    @State private var draft: DrinkDraft?
     @State private var customAmount = ""
     @State private var editingCustom = false
     @State private var weightText = ""
@@ -32,6 +35,21 @@ struct WaterDetail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     fileprivate enum Field: Hashable { case amount, weight, age, height }
+
+    /// A built-in drink, or one of the user's own by id.
+    private enum DrinkPick: Hashable {
+        case builtIn(DrinkType)
+        case mine(String)
+    }
+
+    private struct DrinkDraft: Equatable {
+        /// Nil for a new drink.
+        var id: String?
+        var name = ""
+        var factor = 1.0
+        var symbol = CustomDrinks.defaultSymbol
+        var error: String?
+    }
 
     private static let weekdays = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
 
@@ -111,19 +129,21 @@ struct WaterDetail: View {
     private func todayPage(_ today: WaterDay, all: [WaterDay], now: Date, streak: Int) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             hero(today, all: all, now: now, streak: streak)
+            if let notice = earnedNotice { earnedBanner(notice) }
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("加一杯")
+                    Text("饮料")
                         .font(WidgetStyle.label(12))
                         .foregroundStyle(.white.opacity(0.85))
                     Spacer()
-                    Text(tr("\(drink.title)：按 \(Int((factor * 100).rounded()))% 计入"))
+                    Text(tr("\(picked.title)：按 \(Int((picked.factor * 100).rounded()))% 计入"))
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.5))
                         .monospacedDigit()
+                        .lineLimit(1)
                 }
                 drinkChips
-                if drink == .custom { factorRow }
+                if draft != nil { drinkEditor }
                 amounts
             }
             entries(today, all: all, now: now)
@@ -237,56 +257,256 @@ struct WaterDetail: View {
 
     // MARK: Drinks and amounts
 
-    private var drinkChips: some View {
-        HStack(spacing: 4) {
-            ForEach(DrinkType.allCases) { type in
-                let selected = drink == type
-                Button {
-                    drink = type
-                } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: type.symbol)
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(height: 15)
-                        Text(type.title)
-                            .font(.system(size: 9, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 38)
-                    // 选中只是亮一点加一圈白描边，不用大块的蓝。
-                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
-                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .help(type == .custom ? tr("自定义饮品，计入比例可调") : tr("\(type.title)：按 \(Int((type.factor * 100).rounded()))% 计入"))
+    /// The user's own drinks on the chips; none in the library preview.
+    private var myDrinks: [CustomDrink] {
+        context.isPreview ? [] : CustomDrinks.visible(instance.config)
+    }
+
+    /// What the next cup is logged as. A picked drink that has since been
+    /// removed falls back to water.
+    private var picked: (type: DrinkType, title: String, factor: Double, id: String?) {
+        switch drink {
+        case .builtIn(let type):
+            return (type, type.title, type.factor, nil)
+        case .mine(let id):
+            guard let mine = myDrinks.first(where: { $0.id == id }) else {
+                return (.water, DrinkType.water.title, DrinkType.water.factor, nil)
             }
+            return (.custom, mine.name, mine.factor, mine.id)
         }
     }
 
-    private var factor: Double {
-        drink == .custom ? WaterIntake.customFactor(instance.config) : drink.factor
+    /// The built-in drinks, the user's own, then 自定义 to add one. They wrap
+    /// onto a second row rather than squeezing a name into "椰…".
+    private var drinkChips: some View {
+        let current: DrinkPick = picked.id.map { DrinkPick.mine($0) } ?? DrinkPick.builtIn(picked.type)
+        return DrinkChipFlow(spacing: 4) {
+            ForEach(DrinkType.allCases.filter { $0 != .custom }) { type in
+                drinkChip(symbol: type.symbol, title: type.title, selected: current == .builtIn(type)) {
+                    drink = .builtIn(type)
+                }
+                .help(tr("\(type.title)：按 \(Int((type.factor * 100).rounded()))% 计入"))
+            }
+            ForEach(myDrinks) { mine in
+                drinkChip(symbol: mine.symbol, title: mine.name, selected: current == .mine(mine.id)) {
+                    drink = .mine(mine.id)
+                }
+                .help(tr("\(mine.name)：按 \(mine.percent)% 计入"))
+                .contextMenu {
+                    Button("编辑") { openEditor(mine) }
+                    Button("删除", role: .destructive) { removeDrink(mine.id) }
+                }
+            }
+            let full = myDrinks.count >= CustomDrinks.maxCount
+            drinkChip(symbol: "plus", title: tr("自定义"), selected: draft?.id == nil && draft != nil) {
+                guard !context.isPreview else { return }
+                openEditor(nil)
+            }
+            .disabled(full || context.isPreview)
+            .help(full ? tr("最多 \(CustomDrinks.maxCount) 种自定义饮料") : tr("添加自定义饮料"))
+        }
     }
 
-    private var factorRow: some View {
-        let current = WaterIntake.customFactor(instance.config)
-        return Stepper(value: Binding(
-            get: { current },
-            set: { value in
-                guard !context.isPreview else { return }
-                WaterLog.set("customFactor", .number(WaterIntake.clampFactor(value)), in: instance)
-            }), in: 0.1...1.5, step: 0.1) {
-                Text(tr("计入比例 \(Int((current * 100).rounded()))%"))
+    private func drinkChip(symbol: String, title: String, selected: Bool,
+                           action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: symbol)
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(height: 15)
+                Text(title)
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
+            .padding(.horizontal, 6)
+            .frame(minWidth: 40, maxWidth: .infinity)
+            .frame(height: 38)
+            // 选中只是亮一点加一圈白描边，不用大块的蓝。
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: The drink editor
+
+    private func openEditor(_ mine: CustomDrink?) {
+        if let mine {
+            draft = DrinkDraft(id: mine.id, name: mine.name, factor: mine.factor, symbol: mine.symbol)
+        } else {
+            draft = DrinkDraft()
+        }
+    }
+
+    /// Name, share and symbol, inline under the chips: a popover from a
+    /// panel that is not the key window may not take typing.
+    private var drinkEditor: some View {
+        let current = draft ?? DrinkDraft()
+        let tooLong = current.name.count > CustomDrinks.maxNameLength
+        let canSave = CustomDrinks.cleanName(current.name) != nil && !tooLong
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(current.id == nil ? tr("新饮料") : tr("编辑饮料"))
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(0.9))
+                Spacer()
+                Text(verbatim: "\(current.name.count)/\(CustomDrinks.maxNameLength)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(tooLong ? Color(hex: PaletteColor.red.hex) : .white.opacity(0.5))
+                    .monospacedDigit()
+            }
+            // The AI form's NSTextField: it takes the cursor when the editor
+            // opens, and Esc and Return reach it rather than the panel. No
+            // cutting while typing either: pinyin being composed is longer
+            // than the name it becomes.
+            AIFormField(text: Binding(get: { draft?.name ?? "" },
+                                      set: { draft?.name = $0; draft?.error = nil }),
+                        placeholder: tr("名字，比如椰子水"), label: tr("饮料名字"), focusOnAppear: true,
+                        onSubmit: saveDraft, onCancel: { draft = nil })
+                .frame(height: 22)
+            Stepper(value: Binding(get: { draft?.factor ?? 1 },
+                                   set: { draft?.factor = CustomDrinks.clampFactor($0) }),
+                    in: CustomDrinks.factorRange, step: CustomDrinks.factorStep) {
+                Text(tr("计入比例 \(Int((current.factor * 100).rounded()))%"))
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(.white.opacity(0.85))
                     .monospacedDigit()
             }
             .controlSize(.small)
+            HStack(spacing: 4) {
+                ForEach(CustomDrinks.symbols, id: \.self) { symbol in
+                    let selected = current.symbol == symbol
+                    Button {
+                        draft?.symbol = symbol
+                    } label: {
+                        Image(systemName: symbol)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(selected ? Color.white : Color.white.opacity(0.65))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 26)
+                            .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(Color.white.opacity(selected ? 0.18 : 0.06)))
+                            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(tr("图标"))
+                }
+            }
+            if let error = current.error ?? (tooLong ? tr("名字最多 \(CustomDrinks.maxNameLength) 个字") : nil) {
+                Text(error)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color(hex: PaletteColor.red.hex))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 10) {
+                if let id = current.id {
+                    Button("删除", role: .destructive) { removeDrink(id) }
+                        .buttonStyle(.plain)
+                        .font(WidgetStyle.label(12))
+                        .foregroundStyle(Color(hex: PaletteColor.red.hex))
+                }
+                Spacer()
+                Button("取消") { draft = nil }
+                .buttonStyle(.plain)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.7))
+                Button("保存", action: saveDraft)
+                    .buttonStyle(.plain)
+                    .font(WidgetStyle.label(12))
+                    .foregroundStyle(.white.opacity(canSave ? 1 : 0.35))
+                    .disabled(!canSave)
+            }
+        }
+        .padding(10)
+        .glassPane(cornerRadius: 10)
+    }
+
+    private func saveDraft() {
+        guard !context.isPreview, let current = draft else { return }
+        guard current.name.count <= CustomDrinks.maxNameLength else { return }
+        let drinks = CustomDrinks.all(instance.config)
+        let newID = CustomDrinks.newID(among: drinks)
+        let result = current.id.map {
+            CustomDrinks.updating(id: $0, name: current.name, factor: current.factor, symbol: current.symbol, in: drinks)
+        } ?? CustomDrinks.adding(name: current.name, factor: current.factor, symbol: current.symbol,
+                                 id: newID, to: drinks)
+        switch result {
+        case .success(let list):
+            WaterLog.editDrinks(instance) { _, _ in list }
+            drink = .mine(current.id ?? newID)
+            draft = nil
+        case .failure(let error):
+            let message: String
+            switch error {
+            case .emptyName: message = tr("先起个名字")
+            case .duplicateName: message = tr("已经有同名的饮料了")
+            case .tooMany: message = tr("最多 \(CustomDrinks.maxCount) 种自定义饮料")
+            case .notFound: message = tr("这个饮料已经删除了")
+            }
+            draft?.error = message
+        }
+    }
+
+    private func removeDrink(_ id: String) {
+        guard !context.isPreview else { return }
+        WaterLog.editDrinks(instance) { drinks, days in CustomDrinks.removing(id: id, in: drinks, days: days) }
+        if drink == .mine(id) { drink = .builtIn(.water) }
+        if draft?.id == id { draft = nil }
+    }
+
+    // MARK: A character just earned
+
+    /// The character the log has just earned, until the banner is closed.
+    private var earnedNotice: WaterCharacter? {
+        guard !context.isPreview else { return nil }
+        return WaterCharacter(rawValue: instance.config.string(WaterLog.earnedNoticeKey))
+    }
+
+    private func earnedBanner(_ character: WaterCharacter) -> some View {
+        HStack(spacing: 8) {
+            WaterPanda(character: character, mood: .cheer, level: 1, height: 22)
+                .frame(height: 24)
+            Text(character.earnedLine)
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("换上") {
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                    WidgetWriter.write(instance) { config in
+                        config.set("character", .string(character.rawValue))
+                        config.set(WaterLog.earnedNoticeKey, nil)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .font(WidgetStyle.label(11))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(.white.opacity(0.18)))
+            Button {
+                WaterLog.set(WaterLog.earnedNoticeKey, nil, in: instance)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 18, height: 18)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("关闭")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .glassPane(cornerRadius: 10)
     }
 
     private var amounts: some View {
@@ -394,10 +614,9 @@ struct WaterDetail: View {
 
     private func log(_ amount: Int) {
         guard !context.isPreview else { return }
-        let type = drink
-        let share = factor
+        let choice = picked
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.35)) {
-            WaterLog.drink(type, amount: amount, factor: share, in: instance)
+            WaterLog.drink(choice.type, amount: amount, factor: choice.factor, drinkID: choice.id, in: instance)
         }
     }
 
@@ -519,14 +738,14 @@ struct WaterDetail: View {
                         .position(x: x(nowMinute), y: 4)
                 }
                 ForEach(Array(today.entries.enumerated()), id: \.offset) { _, entry in
-                    Image(systemName: entry.type.symbol)
+                    Image(systemName: CustomDrinks.symbol(of: entry, in: namedDrinks))
                         .font(.system(size: 7.5, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(width: 14, height: 14)
                         .background(Circle().fill(entry.type == .water ? WaterStyle.water.opacity(0.85)
                                                   : Color.white.opacity(0.28)))
                         .position(x: x(entry.minute), y: lineY)
-                        .help("\(entry.clock) \(entry.type.title) \(WaterIntake.amount(entry.amount, ounces: ounces))")
+                        .help("\(entry.clock) \(CustomDrinks.title(of: entry, in: namedDrinks)) \(WaterIntake.amount(entry.amount, ounces: ounces))")
                 }
                 ForEach(axis.ticks, id: \.self) { tick in
                     Text(verbatim: WaterCupPage.tickLabel(tick))
@@ -575,20 +794,26 @@ struct WaterDetail: View {
         return minutes % 60 == 0 ? tr("\(minutes / 60) 小时") : tr("\(minutes / 60) 小时 \(minutes % 60) 分钟")
     }
 
+    /// Every drink the user named, removed ones too, for the rows' names.
+    private var namedDrinks: [CustomDrink] { CustomDrinks.all(instance.config) }
+
     private func entryRow(_ entry: WaterEntry, index: Int) -> some View {
-        HStack(spacing: 8) {
+        let name = CustomDrinks.title(of: entry, in: namedDrinks)
+        return HStack(spacing: 8) {
             Text(entry.clock)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.6))
                 .monospacedDigit()
                 .frame(width: 40, alignment: .leading)
-            Image(systemName: entry.type.symbol)
+            Image(systemName: CustomDrinks.symbol(of: entry, in: namedDrinks))
                 .font(.system(size: 11))
                 .foregroundStyle(accent.mix(with: .white, by: 0.35))
                 .frame(width: 16)
-            Text(entry.type.title)
+            Text(name)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .layoutPriority(1)
             Spacer(minLength: 4)
             Text(WaterIntake.amount(entry.amount, ounces: ounces))
                 .font(.system(size: 12, weight: .semibold))
@@ -613,7 +838,7 @@ struct WaterDetail: View {
             .buttonStyle(.plain)
             .disabled(context.isPreview)
             .help("删除这一杯")
-            .accessibilityLabel(tr("删除 \(entry.clock) 的\(entry.type.title)"))
+            .accessibilityLabel(tr("删除 \(entry.clock) 的\(name)"))
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
@@ -911,9 +1136,19 @@ struct WaterDetail: View {
         WaterIntake.calendar.startOfDay(for: .now).addingTimeInterval(TimeInterval(minutes * 60))
     }
 
-    /// Six faces in a row; the chosen one sits on the accent.
+    /// Six faces in a row; the chosen one sits on the accent. A Pro one that
+    /// is locked opens the paywall; a shiba or cat still to be earned only
+    /// says how many more days it takes.
     private var characterPicker: some View {
-        let chosen = WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
+        let pro = ProAccess.isUnlocked || context.isPreview
+        let chosen = WaterCharacter.shown(instance.config, unlocked: pro)
+        let access = Dictionary(uniqueKeysWithValues: WaterCharacter.allCases.map {
+            ($0, WaterCharacter.access($0, config: instance.config, pro: pro))
+        })
+        let waiting: [(WaterCharacter, Int)] = WaterCharacter.allCases.compactMap { character in
+            guard let left = access[character]?.daysLeft else { return nil }
+            return (character, left)
+        }
         return VStack(alignment: .leading, spacing: 6) {
             Text("角色")
                 .font(WidgetStyle.label(12))
@@ -921,10 +1156,14 @@ struct WaterDetail: View {
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { character in
                     let selected = character == chosen
-                    let locked = character.isSupporterOnly && !ProAccess.isUnlocked && !context.isPreview
+                    let state = access[character] ?? .free
+                    let proLocked = state == .pro(unlocked: false)
+                    let earnLocked = state.daysLeft
+                    let locked = proLocked || earnLocked != nil
                     Button {
                         guard !context.isPreview else { return }
-                        if locked { PaywallWindow.shared.show(); return }
+                        if proLocked { PaywallWindow.shared.show(); return }
+                        if earnLocked != nil { return }
                         withAnimation(.snappy(duration: 0.25)) {
                             WaterLog.set("character", .string(character.rawValue), in: instance)
                         }
@@ -935,11 +1174,14 @@ struct WaterDetail: View {
                                 .opacity(locked ? 0.55 : 1)
                                 .overlay(alignment: .topTrailing) {
                                     if locked {
+                                        // Orange is Pro's; a lock that only
+                                        // needs more days is plain white.
                                         Image(systemName: "lock.fill")
                                             .font(.system(size: 8, weight: .bold))
                                             .foregroundStyle(.white)
                                             .padding(2.5)
-                                            .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex)))
+                                            .background(Circle().fill(proLocked ? Color(hex: ShelfColor.redPanda.hex)
+                                                                                : Color.white.opacity(0.3)))
                                     }
                                 }
                             Text(character.title)
@@ -958,9 +1200,18 @@ struct WaterDetail: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(context.isPreview)
-                    .help(locked ? "\(character.title)：\(ProFeatures.help)" : character.title)
-                    .accessibilityLabel(locked ? tr("角色：\(character.title)，Pro 专属") : tr("角色：\(character.title)"))
+                    .help(earnLocked.map { tr("\(character.title)：\(WaterCharacter.unlockHint(daysLeft: $0))") }
+                          ?? (proLocked ? "\(character.title)：\(ProFeatures.help)" : character.title))
+                    .accessibilityLabel(earnLocked.map { tr("角色：\(character.title)，\(WaterCharacter.unlockHint(daysLeft: $0))") }
+                                        ?? (proLocked ? tr("角色：\(character.title)，Pro 专属") : tr("角色：\(character.title)")))
                 }
+            }
+            if !waiting.isEmpty {
+                Text(waiting.map { tr("\($0.0.title)：\(WaterCharacter.unlockHint(daysLeft: $0.1))") }
+                    .joined(separator: tr("；")))
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(10)
@@ -1294,6 +1545,59 @@ extension WaterDetail {
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.6))
                 .frame(width: 28, alignment: .leading)
+        }
+    }
+}
+
+/// Chips left to right at their own width, wrapping onto a new row when the
+/// next would not fit, so a long drink name is never cut short. Each row is
+/// stretched to the full width so the chips still read as one block.
+private struct DrinkChipFlow: Layout {
+    var spacing: CGFloat
+
+    private func rows(_ sizes: [CGSize], width: CGFloat) -> [[Int]] {
+        var rows: [[Int]] = [[]]
+        var used: CGFloat = 0
+        for (index, size) in sizes.enumerated() {
+            let needed = rows[rows.count - 1].isEmpty ? size.width : used + spacing + size.width
+            if needed > width, !rows[rows.count - 1].isEmpty {
+                rows.append([index])
+                used = size.width
+            } else {
+                rows[rows.count - 1].append(index)
+                used = needed
+            }
+        }
+        return rows
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let width = proposal.width ?? sizes.reduce(0) { $0 + $1.width + spacing }
+        let lines = rows(sizes, width: width)
+        let height = lines.reduce(0) { total, line in
+            total + (line.map { sizes[$0].height }.max() ?? 0)
+        } + spacing * CGFloat(max(0, lines.count - 1))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        var y = bounds.minY
+        for line in rows(sizes, width: bounds.width) {
+            let natural = line.reduce(0) { $0 + sizes[$1].width } + spacing * CGFloat(max(0, line.count - 1))
+            // Spare room is shared out so a row fills the width, as the old
+            // equal-width chips did.
+            let extra = line.isEmpty ? 0 : max(0, bounds.width - natural) / CGFloat(line.count)
+            let height = line.map { sizes[$0].height }.max() ?? 0
+            var x = bounds.minX
+            for index in line {
+                let width = sizes[index].width + extra
+                subviews[index].place(at: CGPoint(x: x, y: y), anchor: .topLeading,
+                                      proposal: ProposedViewSize(width: width, height: sizes[index].height))
+                x += width + spacing
+            }
+            y += height + spacing
         }
     }
 }

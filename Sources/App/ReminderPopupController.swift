@@ -433,7 +433,7 @@ enum ReminderPopupAlerts {
         let today = WaterIntake.today(config, now: now)
         return WaterPopupInfo(total: today.total, goal: today.goal, cup: WaterIntake.cupSize(config),
                               ounces: WaterIntake.usesOunces(config),
-                              character: WaterCharacter.shown(config, unlocked: ProAccess.isUnlocked).rawValue,
+                              character: WaterCharacter.shown(config, unlocked: ProAccess.isUnlocked, now: now).rawValue,
                               lastDrink: WaterIntake.lastDrink(WaterIntake.days(config)))
     }
 

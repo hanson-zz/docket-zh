@@ -6,9 +6,9 @@ import Foundation
 ///
 /// 清单按用户定的来：
 /// - 原来的赞助者专属样式：时钟的霓虹、实景、液晶（原简约）表盘和翻页的
-///   “大号带时分秒”卡片（原极简），清单在 `ClockStyles`；喝水和电子宠物
-///   除小熊猫外的角色，网络活动的数字、点状、细线 Wi-Fi，电池的像素电池、
-///   能量粒子、小熊猫抱电池。
+///   “大号带时分秒”卡片（原极简），清单在 `ClockStyles`；企鹅、水獭、章鱼
+///   三个角色（喝水的柴犬、橘猫改为累计达标解锁，电子宠物整种是 Pro），网络
+///   活动的数字、点状、细线 Wi-Fi，电池的像素电池、能量粒子、小熊猫抱电池。
 /// - 整种是 Pro 的小组件，见 `proKinds`。
 /// - 快速开关里的截图识字、二维码、演示模式、只锁键盘、低电量模式。
 /// - 所有小组件的“液态”外观（`layout` 或 `look` 为 liquid）。
@@ -80,7 +80,7 @@ public enum ProFeatures {
     /// 这种小组件整种是不是 Pro。
     public static func isProKind(_ kind: WidgetKind) -> Bool { proKinds.contains(kind) }
 
-    /// 原来的赞助者专属样式（表盘、角色、Wi-Fi、电池外观），和
+    /// 原来的赞助者专属样式（表盘、企鹅水獭章鱼三个角色、Wi-Fi、电池外观），和
     /// `WidgetCatalog.isSupporterOnly` 原来的判断一样，那边现在调这里。
     /// 只有这些受 `Supporter.isUnlocked` 管。
     public static func isSupporterStyle(_ overrides: [String: WidgetConfig.Value]) -> Bool {
@@ -119,6 +119,12 @@ public enum ProFeatures {
             if case .string(let raw) = overrides[noteColorKey] { return isProNoteColor(raw) }
         case .progress:
             if case .string(let layout) = overrides[TimeProgress.layoutKey] { return layout == TimeProgress.quadLayout }
+        case .pet:
+            // 电子宠物整种是 Pro，角色照旧：小熊猫以外都标 Pro。喝水的柴犬和
+            // 橘猫靠达标天数解锁，那是喝水自己的规则，见 WaterCharacter.access。
+            if case .string(let raw) = overrides["character"], let character = WaterCharacter(rawValue: raw) {
+                return character != .redPanda
+            }
         default:
             break
         }

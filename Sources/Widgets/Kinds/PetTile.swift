@@ -19,7 +19,7 @@ struct PetTile: View {
     var context: WidgetContext
 
     private var character: WaterCharacter {
-        WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
+        WaterCharacter.petShown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
     @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0

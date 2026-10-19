@@ -68,7 +68,8 @@ final class WaterPetCardsTests: XCTestCase {
     }
 
     /// 旧版本里从“柴犬”卡片放上去的喝水：存的是 layout = character 加
-    /// character = shiba。读回来配置原样，是“角色”样式、柴犬，仍是 Pro。
+    /// character = shiba。读回来配置原样，是“角色”样式、柴犬。柴犬不再是 Pro，
+    /// 改为累计达标 3 天解锁：没达标够又没 Pro 时照旧画小熊猫。
     func testAPlacedShibaWaterCardKeepsItsLook() throws {
         let old = WidgetInstance(kind: .water, config: WidgetConfig([
             "layout": .string("character"), "character": .string("shiba"),
@@ -78,7 +79,7 @@ final class WaterPetCardsTests: XCTestCase {
         XCTAssertEqual(decoded, old)
         XCTAssertEqual(WaterCharacter.from(decoded.config), .shiba)
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: decoded.config, kind: .water), "角色")
-        XCTAssertTrue(ProFeatures.isPro(decoded), "Pro 角色仍是 Pro")
+        XCTAssertFalse(ProFeatures.isPro(decoded), "柴犬靠喝水解锁，不算 Pro")
         XCTAssertEqual(WaterCharacter.shown(decoded.config, unlocked: false), .redPanda, "没解锁时照旧画小熊猫")
         XCTAssertEqual(WaterCharacter.shown(decoded.config, unlocked: true), .shiba)
     }
@@ -101,13 +102,16 @@ final class WaterPetCardsTests: XCTestCase {
         XCTAssertTrue(ProFeatures.isPro(decoded))
     }
 
-    /// 设置里选角色：小熊猫免费，其余五只是 Pro 选项。
+    /// 设置里选角色：喝水只有企鹅、水獭、章鱼是 Pro 选项（柴犬、橘猫靠达标
+    /// 天数解锁）；电子宠物整种是 Pro，小熊猫以外照旧都标 Pro。
     func testCharacterChoicesKeepTheirProMark() {
         for kind in [WidgetKind.water, .pet] {
             XCTAssertFalse(ProFeatures.isProChoice(kind: kind, key: "character", value: "panda"))
-            for character in WaterCharacter.allCases where character != .redPanda {
-                XCTAssertTrue(ProFeatures.isProChoice(kind: kind, key: "character", value: character.rawValue))
-            }
+        }
+        for character in WaterCharacter.allCases where character != .redPanda {
+            XCTAssertEqual(ProFeatures.isProChoice(kind: .water, key: "character", value: character.rawValue),
+                           character.isSupporterOnly, "\(character)")
+            XCTAssertTrue(ProFeatures.isProChoice(kind: .pet, key: "character", value: character.rawValue))
         }
     }
 }

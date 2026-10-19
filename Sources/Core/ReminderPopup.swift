@@ -95,7 +95,7 @@ public struct WaterPopupInfo: Equatable, Hashable, Sendable {
     /// 设置里的一杯容量（毫升）。
     public var cup: Int
     public var ounces: Bool
-    /// 选的角色（`WaterCharacter` 的 rawValue），锁着的 Pro 角色已经换成小熊猫。
+    /// 选的角色（`WaterCharacter` 的 rawValue），还没解锁的角色（锁着的 Pro 角色、还没达标解锁的柴犬橘猫）已经换成小熊猫。
     public var character: String
     public var lastDrink: Date?
 

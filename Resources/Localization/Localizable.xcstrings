@@ -2135,6 +2135,17 @@
         }
       }
     },
+    "%@解锁啦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ unlocked!"
+          }
+        }
+      }
+    },
     "%@调休 · 上班 · 农历%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2230,6 +2241,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ needs care"
+          }
+        }
+      }
+    },
+    "%@（%@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (%@)"
           }
         }
       }
@@ -7609,6 +7631,17 @@
         }
       }
     },
+    "先起个名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give it a name first"
+          }
+        }
+      }
+    },
     "克" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8243,6 +8276,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Walk through the first-launch guide again: shelf position, widgets by use, permissions. It only adds widgets and never removes existing ones."
+          }
+        }
+      }
+    },
+    "再达标 %@ 天解锁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal days left to unlock: %@"
           }
         }
       }
@@ -9372,17 +9416,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add a bookmark"
-          }
-        }
-      }
-    },
-    "加一杯" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a drink"
           }
         }
       }
@@ -10905,6 +10938,17 @@
         }
       }
     },
+    "名字最多 %@ 个字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Names can be up to %@ characters"
+          }
+        }
+      }
+    },
     "名字最多 %@ 个字。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10923,6 +10967,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name, e.g. Douban"
+          }
+        }
+      }
+    },
+    "名字，比如椰子水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, e.g. Coconut water"
           }
         }
       }
@@ -15307,6 +15362,17 @@
         }
       }
     },
+    "已经有同名的饮料了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A drink with this name already exists"
+          }
+        }
+      }
+    },
     "已经购买或收到兑换码？在这里输入" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18540,6 +18606,17 @@
         }
       }
     },
+    "换上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use"
+          }
+        }
+      }
+    },
     "换下一个分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20212,6 +20289,17 @@
         }
       }
     },
+    "新饮料" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New drink"
+          }
+        }
+      }
+    },
     "方块" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21143,13 +21231,13 @@
         }
       }
     },
-    "时钟的霓虹、实景、液晶表盘和翻页的大号卡片；喝水和电子宠物的柴犬、橘猫、企鹅、水獭、章鱼" : {
+    "时钟的霓虹、实景、液晶表盘和翻页的大号卡片；企鹅、水獭、章鱼三个角色（柴犬、橘猫在喝水里累计达标 3 天、7 天免费解锁）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neon, Photo and LCD clock faces and the large flip cards; Shiba, Tabby, Penguin, Otter and Octopus for Water and the virtual pet"
+            "value" : "Neon, Photo and LCD clock faces and the large flip cards; the Penguin, Otter and Octopus characters (Shiba and Tabby unlock free in Water after 3 and 7 days of meeting the goal)"
           }
         }
       }
@@ -22184,6 +22272,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@"
+          }
+        }
+      }
+    },
+    "最多 %@ 种自定义饮料" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ custom drinks"
           }
         }
       }
@@ -25956,6 +26055,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Custom Service"
+          }
+        }
+      }
+    },
+    "添加自定义饮料" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a custom drink"
           }
         }
       }
@@ -30118,6 +30228,17 @@
         }
       }
     },
+    "编辑饮料" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit drink"
+          }
+        }
+      }
+    },
     "网址" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30836,17 +30957,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Custom colors and the gradient background are Pro. Preset colors are free."
-          }
-        }
-      }
-    },
-    "自定义饮品，计入比例可调" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Custom drink, adjustable ratio"
           }
         }
       }
@@ -31650,6 +31760,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Character: %@"
+          }
+        }
+      }
+    },
+    "角色：%@，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Character: %@, %@"
           }
         }
       }
@@ -34198,6 +34319,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This repo is already on the list"
+          }
+        }
+      }
+    },
+    "这个饮料已经删除了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This drink has been deleted"
           }
         }
       }
@@ -36753,6 +36885,28 @@
         }
       }
     },
+    "饮料" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drinks"
+          }
+        }
+      }
+    },
+    "饮料名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drink name"
+          }
+        }
+      }
+    },
     "饱食" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37266,6 +37420,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : ", current"
+          }
+        }
+      }
+    },
+    "；" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "; "
           }
         }
       }

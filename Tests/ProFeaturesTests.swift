@@ -32,9 +32,10 @@ final class ProFeaturesTests: XCTestCase {
         for layout in ["standard", "analog", "flip", "pixel", "digital", "ring", "words"] {
             XCTAssertFalse(ProFeatures.isSupporterStyle(["layout": .string(layout)]))
         }
-        XCTAssertFalse(ProFeatures.isSupporterStyle(["character": .string(WaterCharacter.redPanda.rawValue)]))
-        for character in WaterCharacter.allCases where character != .redPanda {
-            XCTAssertTrue(ProFeatures.isSupporterStyle(["character": .string(character.rawValue)]))
+        // 角色：只有企鹅、水獭、章鱼是 Pro；柴犬、橘猫改为喝水累计达标解锁。
+        for character in WaterCharacter.allCases {
+            XCTAssertEqual(ProFeatures.isSupporterStyle(["character": .string(character.rawValue)]),
+                           [.penguin, .otter, .octopus].contains(character), "\(character)")
         }
         for style in WifiRingStyle.allCases {
             XCTAssertEqual(ProFeatures.isSupporterStyle(["layout": .string(style.rawValue)]), style.isSupporterOnly)

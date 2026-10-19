@@ -139,15 +139,18 @@ final class WaterMergeTests: XCTestCase {
 
     // MARK: 赞助者专属角色
 
-    func testOnlyTheRedPandaIsFree() {
-        XCTAssertFalse(WaterCharacter.redPanda.isSupporterOnly)
-        for character in [WaterCharacter.shiba, .cat, .penguin, .otter, .octopus] {
+    /// 小熊猫免费，柴犬、橘猫靠达标天数解锁（见 WaterCharacterAccessTests），
+    /// 企鹅、水獭、章鱼是 Pro。
+    func testOnlyThreeCharactersAreSupporterOnly() {
+        for character in [WaterCharacter.redPanda, .shiba, .cat] {
+            XCTAssertFalse(character.isSupporterOnly, "\(character)")
+            XCTAssertFalse(WidgetCatalog.isSupporterOnly(["character": .string(character.rawValue)]))
+        }
+        for character in [WaterCharacter.penguin, .otter, .octopus] {
             XCTAssertTrue(character.isSupporterOnly, "\(character)")
             XCTAssertTrue(WidgetCatalog.isSupporterOnly(["character": .string(character.rawValue)]))
         }
-        XCTAssertEqual(WidgetCatalog.supporterWaterCharacters,
-                       ["shiba", "cat", "penguin", "otter", "octopus"])
-        XCTAssertFalse(WidgetCatalog.isSupporterOnly(["character": .string("panda")]))
+        XCTAssertEqual(WidgetCatalog.supporterWaterCharacters, ["penguin", "otter", "octopus"])
         XCTAssertFalse(WidgetCatalog.isSupporterOnly(["layout": .string("character")]))
         XCTAssertFalse(WidgetCatalog.isSupporterOnly(["layout": .string("ring")]))
     }
@@ -168,6 +171,9 @@ final class WaterMergeTests: XCTestCase {
         XCTAssertEqual(WaterCharacter.shown(shiba, unlocked: true), .shiba)
         XCTAssertEqual(WaterCharacter.shown(WidgetConfig(["character": .string("panda")]), unlocked: false), .redPanda)
         XCTAssertEqual(WaterCharacter.shown(WidgetConfig(), unlocked: false), .redPanda)
+        let otter = WidgetConfig(["character": .string("otter")])
+        XCTAssertEqual(WaterCharacter.shown(otter, unlocked: false), .redPanda)
+        XCTAssertEqual(WaterCharacter.shown(otter, unlocked: true), .otter)
         // The stored choice is kept, so unlocking brings it back.
         XCTAssertEqual(WaterCharacter.from(shiba), .shiba)
     }
