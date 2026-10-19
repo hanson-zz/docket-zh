@@ -18815,13 +18815,24 @@
         }
       }
     },
-    "按钮" : {
+    "点一下加 10%，满了回到 0" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Button"
+            "value" : "Click to add 10%, back to 0 when full"
+          }
+        }
+      }
+    },
+    "点或拖动进度条调节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click or drag the bar to adjust"
           }
         }
       }

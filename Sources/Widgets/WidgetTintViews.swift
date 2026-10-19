@@ -543,7 +543,8 @@ struct WidgetTintPicker: View {
 // MARK: - 实时预览小样
 
 /// 颜色面板里的示意卡：图标底板、数字、进度条和一个按钮，按这张卡片此刻
-/// 的颜色画，点不同的色块立刻跟着变。选了颜色时顶上那一抹光晕和细描边也
+/// 的颜色画，点不同的色块立刻跟着变。按钮和进度条都能动：点「＋10%」加一格
+/// （满了回到 0），在进度条上点或拖直接定百分比，好看清主题色在不同进度下的样子。选了颜色时顶上那一抹光晕和细描边也
 /// 画出来，和扩展栏上的卡片、展开面板用的是同一套规则（`WidgetTint`）。
 /// 固定画成深色玻璃：卡片和面板卡片的默认外观。
 struct TintSampleCard: View {
@@ -551,7 +552,15 @@ struct TintSampleCard: View {
     var config: WidgetConfig
     var unlocked: Bool
 
+    /// 示意进度，0...1，只在这张示意卡里用，不写进配置。
+    @State private var progress: Double = 0.72
+
     private var style: WidgetTintStyle { WidgetTintStyle(kind: kind, config: config, unlocked: unlocked) }
+
+    private func step() {
+        let next = (progress * 10).rounded() / 10 + 0.1
+        progress = next > 1.0001 ? 0 : min(next, 1)
+    }
 
     /// 已经调到在深色卡片上看得清的主色；跟随系统强调色时是 nil。
     private var code: ColorCode? {
@@ -586,25 +595,40 @@ struct TintSampleCard: View {
                             }
                     }
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(verbatim: "72%")
+                    Text(verbatim: "\(Int((progress * 100).rounded()))%")
+                        .contentTransition(.numericText(value: progress))
                         .font(.system(size: 18, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(main)
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.white.opacity(0.12))
-                            Capsule().fill(main).frame(width: geo.size.width * 0.72)
+                            Capsule().fill(main).frame(width: geo.size.width * progress)
                         }
+                        .frame(height: 5)
+                        .frame(maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                            guard geo.size.width > 0 else { return }
+                            progress = min(max(value.location.x / geo.size.width, 0), 1)
+                        })
                     }
-                    .frame(height: 5)
+                    .frame(height: 16)
+                    .help(tr("点或拖动进度条调节"))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Text("按钮")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(ink)
-                    .padding(.horizontal, 12)
-                    .frame(height: 26)
-                    .background(Capsule().fill(main))
+                Button(action: { withAnimation(.easeInOut(duration: 0.25)) { step() } }) {
+                    Text(verbatim: "＋10%")
+                        .font(.system(size: 13, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(ink)
+                        .padding(.horizontal, 12)
+                        .frame(height: 26)
+                        .background(Capsule().fill(main))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(tr("点一下加 10%，满了回到 0"))
             }
             .padding(12)
             .frame(maxWidth: 320)
@@ -624,7 +648,6 @@ struct TintSampleCard: View {
             }
             .environment(\.colorScheme, .dark)
             .animation(.easeInOut(duration: 0.2), value: style)
-            .accessibilityHidden(true)
             Text(style.isChosen
                  ? tr("卡片顶上会加一抹淡淡的主题色，展开面板里的强调元素一起换色。")
                  : tr("默认颜色：卡片和展开面板保持各自原来的样子。"))
