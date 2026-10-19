@@ -733,6 +733,7 @@ private func run() async {
         await shot.prepare()
         guard let window = makePanel(shot, on: screen) else { continue }
         try? await Task.sleep(for: settle + shot.linger)
+        window.makeFirstResponder(nil)
         let carryOn = capture(shot.name, window.frame, shot.source, on: screen)
         window.orderOut(nil)
         guard carryOn else {
@@ -1103,6 +1104,8 @@ private func captureShelf(_ shot: ShelfShot, on screen: NSScreen) async {
 }
 
 let app = NSApplication.shared
+// 和产品的深色玻璃展示保持一致，避免 runner 的浅色外观让白色控制文字消失。
+app.appearance = NSAppearance(named: .darkAqua)
 // No Dock tile and no menu bar for a tool that exists for about a minute.
 app.setActivationPolicy(.accessory)
 /// SHOTS_RENDER=<dir> renders each panel's body offscreen to <dir>/<name>.png
