@@ -136,11 +136,13 @@ esac
 [ "$FRAME_TIMEOUT" -gt 0 ] || fail "SHOTS_FRAME_TIMEOUT must be greater than zero."
 LAST_FRAME="startup"
 while :; do
-  if read -r -t "$FRAME_TIMEOUT" name x y w h source <&4; then
+  # macOS 自带 Bash 的 read -t 对 FIFO 不能可靠限时，使用 select 的绝对期限。
+  if frame=$(python3 "$ROOT/scripts/read-shot-frame.py" "$FRAME_TIMEOUT" <&4); then
+    read -r name x y w h source <<< "$frame"
     LAST_FRAME="$name"
   else
     status=$?
-    if [ "$status" -gt 128 ]; then
+    if [ "$status" = 124 ]; then
       kill -KILL "$SHOTS_PID" 2>/dev/null || true
       fail "no frame for $FRAME_TIMEOUT seconds after $LAST_FRAME; see the last prepare/measure log."
     fi
