@@ -760,7 +760,7 @@ private func run() async {
             continue
         }
         try? await Task.sleep(for: settle + shot.linger)
-        let carryOn = capture(shot.name, window.frame, shot.source, on: screen)
+        let carryOn = capture(shot.name, window.frame, shot.source, on: screen, uniform: !shot.tight)
         window.orderOut(nil)
         guard carryOn else {
             backdrop.orderOut(nil)
@@ -961,6 +961,9 @@ private struct ViewShot {
     /// The window's own shadow. Off for a view that draws its own around a
     /// transparent margin, where the window shadow traces that margin's edge.
     var windowShadow = true
+    /// 收紧留白：不套面板统一的 4:3 画布和四分之一边距，只在窗口外留一圈
+    /// 阴影的边（`shadowPadding`），让窗口占满画面。官网「最近新增」并排的两张图用。
+    var tight = false
 }
 
 /// 拍真实共用空状态，不写入订阅、相册或截图数据。
@@ -1023,7 +1026,7 @@ private func viewShots() -> [ViewShot] {
     [
         ViewShot(name: "empty-states", source: .empty, view: {
             AnyView(EmptyStatesShot())
-        }),
+        }, tight: true),
 
         // The card that slides out under the notch when something comes due,
         // here a 喝水 reminder drawn from sample numbers: a shelf's own log is
@@ -1051,7 +1054,7 @@ private func viewShots() -> [ViewShot] {
         ViewShot(name: "pro-paywall", source: .live, view: {
             AnyView(ProPaywallView(onClose: {})
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
-        }, prepare: { ProLicenseManager.shared.refreshState() }),
+        }, prepare: { ProLicenseManager.shared.refreshState() }, linger: .seconds(1), tight: true),
 
         // The conversation panel that grows out of the notch, opened on a
         // throwaway shelf holding the catalog's own AI assistant card. Every

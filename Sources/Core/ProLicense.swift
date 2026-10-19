@@ -39,6 +39,83 @@ public enum ProLicenseConfig {
     public static let siblingGiftPrefix = "SDG"
 }
 
+// MARK: - 价格档位（付费墙显示用）
+
+/// 付费墙价格卡显示哪一档、还剩几个首批名额。规则和官网 docs/index.html 的价格脚本一致：
+/// `current` 是现在的档位，在 Creem 后台改完价后和官网的 CURRENT 一起手动改；只有第 0 档
+/// 去授权中转的 /earlybird 要首批剩余个数，拿不到就不显示数字；第 0 档时接口说首批已卖完，
+/// 按第 1 档显示。
+public enum ProPriceTiers {
+    /// 现在的档位：0 首批特价，1 首批卖完后，2 正式版。
+    public static let current = 0
+    /// 三档价格，从 `ProLicenseConfig` 来。
+    public static let prices = [ProLicenseConfig.launchPrice, ProLicenseConfig.price, ProLicenseConfig.fullPrice]
+    /// 首批剩余个数的公开接口（server/license-relay/worker.js 的 GET /earlybird）。
+    public static let earlybirdURL = URL(string: "https://dockling-license.tudou-123.workers.dev/earlybird")!
+}
+
+/// /earlybird 返回的首批总数和剩余个数。
+public struct ProEarlybird: Equatable, Sendable {
+    public var total: Int
+    public var remaining: Int
+
+    public init(total: Int, remaining: Int) {
+        self.total = total
+        self.remaining = remaining
+    }
+
+    /// 解析接口正文；数字不合理（总数不大于 0、剩余为负或大于总数、不是整数）时返回 nil。
+    public static func parse(_ data: Data) -> ProEarlybird? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return parse(object)
+    }
+
+    public static func parse(_ object: [String: Any]) -> ProEarlybird? {
+        guard let total = object["total"] as? NSNumber, let remaining = object["remaining"] as? NSNumber else { return nil }
+        let t = total.doubleValue, r = remaining.doubleValue
+        guard t > 0, r >= 0, r <= t, t == t.rounded(), r == r.rounded() else { return nil }
+        return ProEarlybird(total: Int(t), remaining: Int(r))
+    }
+}
+
+/// 付费墙价格卡上的几行字。
+public struct ProPriceDisplay: Equatable, Sendable {
+    /// 价格上方的小字，如“首批特价 · 还剩 12 个”。
+    public var badge: String
+    /// 大号现价。
+    public var price: String
+    /// 旁边划线的下一档价格，没有时为 nil。
+    public var nextPrice: String?
+    /// 剩余进度条（剩余 / 总数），拿不到剩余个数时为 nil。
+    public var remainingFraction: Double?
+    /// 价格下面一行，如“之后 $9.90 · 正式版 $15.90 · 免费更新”。
+    public var tiersLine: String
+
+    public static func make(tier: Int = ProPriceTiers.current, earlybird: ProEarlybird?) -> ProPriceDisplay {
+        let prices = ProPriceTiers.prices
+        var tier = min(max(tier, 0), prices.count - 1)
+        if tier == 0, earlybird?.remaining == 0 { tier = 1 }
+        let full = prices[prices.count - 1]
+        switch tier {
+        case 0:
+            let next = prices[1]
+            let live = earlybird.map { $0.remaining > 0 } ?? false
+            return ProPriceDisplay(
+                badge: live ? tr("首批特价 · 还剩 \(earlybird!.remaining) 个") : tr("首批特价"),
+                price: prices[0],
+                nextPrice: next,
+                remainingFraction: live ? Double(earlybird!.remaining) / Double(earlybird!.total) : nil,
+                tiersLine: tr("之后 \(next) · 正式版 \(full) · 免费更新"))
+        case prices.count - 1:
+            return ProPriceDisplay(badge: tr("正式版"), price: full, nextPrice: nil,
+                                   remainingFraction: nil, tiersLine: tr("一次性付款 · 免费更新"))
+        default:
+            return ProPriceDisplay(badge: tr("首批特价已售完"), price: prices[tier], nextPrice: nil,
+                                   remainingFraction: nil, tiersLine: tr("正式版 \(full) · 免费更新"))
+        }
+    }
+}
+
 // MARK: - 状态
 
 /// 码头 Pro 的四种状态。

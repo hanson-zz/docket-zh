@@ -485,6 +485,17 @@
         }
       }
     },
+    "%@ 个 Pro 小组件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Pro widgets"
+          }
+        }
+      }
+    },
     "%@ 个 · 之后还能拿回来" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1471,6 +1482,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forecast for %@"
+          }
+        }
+      }
+    },
+    "%@ 种会晃的水面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sloshing water looks"
+          }
+        }
+      }
+    },
+    "%@ 种外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ exclusive styles"
           }
         }
       }
@@ -2850,6 +2883,17 @@
         }
       }
     },
+    "AI 刘海、充电上限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI notch, charge limit"
+          }
+        }
+      }
+    },
     "AI 助手" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3235,6 +3279,17 @@
         }
       }
     },
+    "Pro 一次买断，不用订阅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro is a one-time purchase, no subscription"
+          }
+        }
+      }
+    },
     "Pro 专属" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3275,6 +3330,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pro includes"
+          }
+        }
+      }
+    },
+    "Pro 完整清单" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything in Pro"
           }
         }
       }
@@ -3550,6 +3616,17 @@
         }
       }
     },
+    "‹ 返回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‹ Back"
+          }
+        }
+      }
+    },
     "⌘↩ 立即翻译" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3733,6 +3810,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cup size (the + on the card)"
+          }
+        }
+      }
+    },
+    "一次性付款 · 免费更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-time payment · Free updates"
           }
         }
       }
@@ -5196,6 +5284,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Then %@ · Full release %@"
+          }
+        }
+      }
+    },
+    "之后 %@ · 正式版 %@ · 免费更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then %@ · Full release %@ · Free updates"
           }
         }
       }
@@ -7389,6 +7488,17 @@
         }
       }
     },
+    "像素、粒子、小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel, particles, red panda"
+          }
+        }
+      }
+    },
     "像素电池" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7561,6 +7671,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Charged to"
+          }
+        }
+      }
+    },
+    "先免费试用 %@ 天，不用填卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try it free for %@ days, no card needed"
           }
         }
       }
@@ -10069,6 +10190,17 @@
         }
       }
     },
+    "原价 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was %@"
+          }
+        }
+      }
+    },
     "原定 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12474,6 +12606,17 @@
         }
       }
     },
+    "基础功能一直免费" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The basics are always free"
+          }
+        }
+      }
+    },
     "填一个网址，或者选一个 App。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13580,6 +13723,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Photo"
+          }
+        }
+      }
+    },
+    "实际价格以结账页为准" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The final price is shown at checkout"
           }
         }
       }
@@ -15281,6 +15435,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paused · %@"
+          }
+        }
+      }
+    },
+    "已有许可证或兑换码？输入激活 ›" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have a license or gift code? Activate ›"
           }
         }
       }
@@ -23735,6 +23900,17 @@
         }
       }
     },
+    "查看完整清单 ›" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See everything in Pro ›"
+          }
+        }
+      }
+    },
     "查看码头 Pro…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24556,6 +24732,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quit other apps normally (asks first; each app asks about unsaved work)"
+          }
+        }
+      }
+    },
+    "正式版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full release"
+          }
+        }
+      }
+    },
+    "正式版 %@ · 免费更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full release %@ · Free updates"
           }
         }
       }
@@ -30818,6 +31016,17 @@
         }
       }
     },
+    "股票、播客、竹篮等" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stocks, Podcasts, Basket and more"
+          }
+        }
+      }
+    },
     "股票代码" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31078,6 +31287,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Custom color"
+          }
+        }
+      }
+    },
+    "自定义颜色、渐变" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom colors, gradients"
           }
         }
       }
@@ -33010,6 +33230,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buy or Enter Gift Code…"
+          }
+        }
+      }
+    },
+    "购买码头 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy Dockling Pro"
           }
         }
       }
@@ -35324,6 +35555,17 @@
         }
       }
     },
+    "配色和高级样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colors and advanced styles"
+          }
+        }
+      }
+    },
     "配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水和电子宠物的面板或设置里选：柴犬、橘猫、企鹅、水獭、章鱼。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37094,6 +37336,17 @@
         }
       }
     },
+    "首批特价" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch price"
+          }
+        }
+      }
+    },
     "首批特价 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37101,6 +37354,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Launch price %@"
+          }
+        }
+      }
+    },
+    "首批特价 · 还剩 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch price · %@ left"
+          }
+        }
+      }
+    },
+    "首批特价已售完" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch price sold out"
           }
         }
       }

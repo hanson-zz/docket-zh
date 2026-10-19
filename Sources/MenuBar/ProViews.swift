@@ -34,107 +34,375 @@ private struct ProPerk: Identifiable {
 
 // MARK: - 付费墙
 
-/// 码头 Pro 付费墙：功能清单、购买、输入激活码、开始 7 天试用。
+/// 付费墙首屏的六个功能块：标题加一句短说明，数量从 `ProFeatures` 数。
+/// 完整名单在“查看完整清单”里，用的是 `ProPerk.all`。
+private struct ProTile: Identifiable {
+    let id: String
+    let symbol: String
+    let title: String
+    let detail: String
+
+    static var all: [ProTile] {
+        [
+            ProTile(id: "kinds", symbol: "square.grid.2x2.fill",
+                    title: tr("\(ProFeatures.proKinds.count) 个 Pro 小组件"), detail: tr("股票、播客、竹篮等")),
+            ProTile(id: "liquid", symbol: "drop.fill",
+                    title: tr("液态外观"), detail: tr("\(ProFeatures.liquidKinds.count) 种会晃的水面")),
+            ProTile(id: "faces", symbol: "clock.fill",
+                    title: tr("专属表盘和角色"), detail: tr("\(ProFeatures.exclusiveStyleCount) 种外观")),
+            ProTile(id: "looks", symbol: "battery.100percent.bolt",
+                    title: tr("Wi-Fi 和电池外观"), detail: tr("像素、粒子、小熊猫")),
+            ProTile(id: "colors", symbol: "paintpalette.fill",
+                    title: tr("配色和高级样式"), detail: tr("自定义颜色、渐变")),
+            ProTile(id: "tools", symbol: "wand.and.stars",
+                    title: tr("Pro 工具"), detail: tr("AI 刘海、充电上限")),
+        ]
+    }
+}
+
+/// 付费墙的尺寸和字号。字号最小 13pt，法律小字 12pt。
+private enum PaywallMetrics {
+    static let size = NSSize(width: 540, height: 860)
+    static let padding: CGFloat = 26
+    static let pandaHeight: CGFloat = 108
+    static let tileHeight: CGFloat = 84
+    static let gridSpacing: CGFloat = 12
+}
+
+/// 戴皇冠的小熊猫，和解锁动画同一张图（Resources/Unlock/unlock-panda-crown.png）。
+@MainActor
+private enum PaywallArt {
+    private static var crown: NSImage?
+
+    static var crownPanda: Image {
+        if let crown { return Image(nsImage: crown) }
+        guard let url = Bundle.main.url(forResource: ProUnlockPose.crown.rawValue, withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return Image(systemName: "crown.fill")
+        }
+        crown = image
+        return Image(nsImage: image)
+    }
+}
+
+/// 码头 Pro 付费墙：六个功能块、价格卡、购买、7 天试用，许可证和兑换码收在一行链接里；
+/// 完整清单在同一个窗口里切过去，可以返回。
 struct ProPaywallView: View {
     var onClose: () -> Void
     @State private var license = ProLicenseManager.shared
     @AppStorage(Supporter.key) private var supporter = false
+    @State private var showsAll = false
+    @State private var showsKeyField = false
+    @State private var earlybird: ProEarlybird?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(proAccent)
-                Text("码头 Pro")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                ProBadge()
-                Spacer()
-                Button(action: onClose) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.cancelAction)
-                .accessibilityLabel("关闭")
+        ZStack(alignment: .topTrailing) {
+            if showsAll {
+                ProPaywallFullList(back: { withAnimation(.snappy) { showsAll = false } })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                main
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
-
-            Text("码头的基础功能一直免费。Pro 解锁下面这些小组件、外观和工具，一次买断，不用订阅。")
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(alignment: .leading, spacing: 11) {
-                ForEach(ProPerk.all) { perk in
-                    HStack(alignment: .top, spacing: 11) {
-                        Image(systemName: perk.symbol)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(proAccent.opacity(0.85), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(perk.title).fontWeight(.semibold)
-                            Text(perk.detail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 28, height: 28)
+                    .background(.white.opacity(0.14), in: Circle())
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular.tint(proAccent.opacity(0.10)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            ProStatusLine(state: license.state, supporter: supporter)
-
-            HStack(spacing: 10) {
-                if license.canStartTrial && !supporter {
-                    Button {
-                        license.startTrial()
-                    } label: {
-                        Text(tr("开始 \(ProLicenseConfig.trialDays) 天免费试用"))
-                            .frame(minWidth: 150)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(proAccent)
-                }
-                Button {
-                    license.buy()
-                } label: {
-                    Text(tr("购买")).frame(minWidth: 90)
-                }
-                .buttonStyle(.bordered)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(tr("首批特价 \(ProLicenseConfig.launchPrice)"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(proAccent)
-                    Text(tr("之后 \(ProLicenseConfig.price) · 正式版 \(ProLicenseConfig.fullPrice)"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .fixedSize(horizontal: false, vertical: true)
-            }
-            .controlSize(.large)
-
-            if !license.isActivated {
-                ProKeyField()
-            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.cancelAction)
+            .accessibilityLabel("关闭")
+            .padding(.top, 20)
+            .padding(.trailing, 20)
         }
-        .padding(24)
-        .frame(width: 480, height: 700, alignment: .top)
+        .frame(width: PaywallMetrics.size.width, height: PaywallMetrics.size.height, alignment: .top)
         .background {
             ZStack {
                 Rectangle().fill(.regularMaterial)
-                RadialGradient(colors: [proAccent.opacity(0.28), .clear],
-                               center: .topLeading, startRadius: 10, endRadius: 360)
+                // 顶部一抹淡淡的小熊猫橙光晕。
+                RadialGradient(colors: [proAccent.opacity(0.30), proAccent.opacity(0.08), .clear],
+                               center: UnitPoint(x: 0.25, y: 0.0), startRadius: 10, endRadius: 420)
             }
         }
         .environment(\.colorScheme, .dark)
+        .task {
+            // 只有首批档去问剩余个数；拿不到就只写“首批特价”。
+            guard ProPriceTiers.current == 0 else { return }
+            earlybird = await ProEarlybirdFetcher.fetch()
+        }
         .onChange(of: license.state) { _, state in
             // 激活成功就关掉；开始试用也关掉，用户回到刚才想加的东西。
             if state.isUnlocked { onClose() }
         }
+    }
+
+    private var main: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                    .padding(.bottom, 22)
+                tiles
+                Button {
+                    withAnimation(.snappy) { showsAll = true }
+                } label: {
+                    Text(tr("查看完整清单 ›"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(proAccent)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 14)
+                .padding(.bottom, 14)
+
+                ProPriceCard(display: ProPriceDisplay.make(earlybird: earlybird))
+                Text(tr("实际价格以结账页为准"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 6)
+                    .padding(.leading, 4)
+
+                buttons
+                    .padding(.top, 16)
+            }
+            .padding(.horizontal, PaywallMetrics.padding)
+            .padding(.top, 24)
+            .padding(.bottom, 22)
+        }
+        .scrollIndicators(.never)
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 16) {
+            PaywallArt.crownPanda
+                .resizable()
+                .scaledToFit()
+                .frame(height: PaywallMetrics.pandaHeight)
+                .foregroundStyle(proAccent)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("码头 Pro")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .padding(.bottom, 2)
+                Text(tr("基础功能一直免费"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.82))
+                Text(tr("Pro 一次买断，不用订阅"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.82))
+            }
+            Spacer(minLength: 40)
+        }
+    }
+
+    private var tiles: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: PaywallMetrics.gridSpacing), count: 2)
+        return LazyVGrid(columns: columns, spacing: PaywallMetrics.gridSpacing) {
+            ForEach(ProTile.all) { tile in
+                HStack(spacing: 12) {
+                    Image(systemName: tile.symbol)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 46, height: 46)
+                        .background(proAccent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(tile.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                        Text(tile.detail)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 14)
+                .frame(maxWidth: .infinity, minHeight: PaywallMetrics.tileHeight, alignment: .leading)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.09), lineWidth: 1))
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private var canTry: Bool { license.canStartTrial && !supporter }
+
+    private var buttons: some View {
+        VStack(spacing: 10) {
+            Button {
+                license.buy()
+            } label: {
+                Text(tr("购买码头 Pro"))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(proAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if canTry {
+                Button {
+                    license.startTrial()
+                } label: {
+                    Text(tr("先免费试用 \(ProLicenseConfig.trialDays) 天，不用填卡"))
+                        .font(.system(size: 15))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            ProStatusLine(state: license.state, supporter: supporter, fontSize: 13)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 2)
+
+            if !license.isActivated {
+                if showsKeyField {
+                    ProKeyField(inPaywall: true)
+                        .padding(.top, 2)
+                        .transition(.opacity)
+                } else {
+                    Button {
+                        withAnimation(.snappy) { showsKeyField = true }
+                    } label: {
+                        Text(tr("已有许可证或兑换码？输入激活 ›"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.62))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+/// 价格卡：小字档位和剩余个数、大号现价、划线下一档、剩余进度条、三档一行。
+private struct ProPriceCard: View {
+    var display: ProPriceDisplay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .center) {
+                Text(display.badge)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(proAccent)
+                Spacer(minLength: 12)
+                if let fraction = display.remainingFraction {
+                    Capsule()
+                        .fill(.white.opacity(0.14))
+                        .frame(width: 120, height: 8)
+                        .overlay(alignment: .leading) {
+                            Capsule().fill(proAccent).frame(width: max(8, 120 * fraction), height: 8)
+                        }
+                        .accessibilityHidden(true)
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(display.price)
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                if let next = display.nextPrice {
+                    Text(next)
+                        .font(.system(size: 18))
+                        .strikethrough()
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(tr("原价 \(next)"))
+                }
+            }
+            Text(display.tiersLine)
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.82))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(proAccent.opacity(0.16), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(proAccent.opacity(0.55), lineWidth: 1))
+    }
+}
+
+/// 付费墙里的完整清单：按分类列出全部 Pro 内容，字号不低于 13pt，顶部可以返回。
+private struct ProPaywallFullList: View {
+    var back: () -> Void
+
+    private func title(_ perk: ProPerk) -> String {
+        perk.id == "kinds" ? tr("\(ProFeatures.proKinds.count) 个 Pro 小组件") : perk.title
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                Button(action: back) {
+                    Text(tr("‹ 返回"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(proAccent)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.leftArrow, modifiers: .command)
+                Text(tr("Pro 完整清单"))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+            }
+            .padding(.horizontal, PaywallMetrics.padding)
+            .padding(.top, 22)
+            .padding(.trailing, 40)
+            .padding(.bottom, 14)
+
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(ProPerk.all) { perk in
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: perk.symbol)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(proAccent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(title(perk))
+                                    .font(.system(size: 15, weight: .semibold))
+                                Text(perk.detail)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.white.opacity(0.75))
+                                    .lineSpacing(2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    Text(ProLicenseText.priceLine)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, PaywallMetrics.padding)
+                .padding(.bottom, 24)
+            }
+            .scrollIndicators(.automatic)
+        }
+    }
+}
+
+/// 向授权中转要首批剩余个数，3 秒没回或出错返回 nil。
+private enum ProEarlybirdFetcher {
+    static func fetch() async -> ProEarlybird? {
+        var request = URLRequest(url: ProPriceTiers.earlybirdURL)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 3
+        guard let result = try? await URLSession.shared.data(for: request),
+              (result.1 as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return ProEarlybird.parse(result.0)
     }
 }
 
@@ -142,6 +410,8 @@ struct ProPaywallView: View {
 private struct ProStatusLine: View {
     var state: ProLicenseState
     var supporter: Bool
+    /// 付费墙里用 13pt；设置页沿用系统的 callout。
+    var fontSize: CGFloat? = nil
 
     var body: some View {
         let unlocked = ProLicenseGate.isUnlocked(state, supporter: supporter)
@@ -149,20 +419,24 @@ private struct ProStatusLine: View {
             Image(systemName: unlocked ? "checkmark.seal.fill" : "info.circle")
                 .foregroundStyle(unlocked ? proAccent : Color.secondary)
             Text(supporter && !state.isUnlocked ? tr("已按赞助者解锁 Pro，谢谢你的支持") : state.statusText)
-                .font(.callout.weight(.medium))
+                .font(fontSize.map { Font.system(size: $0, weight: .medium) } ?? Font.callout.weight(.medium))
         }
     }
 }
 
 /// 输入许可证或兑换码，加激活按钮和中文错误提示。
 struct ProKeyField: View {
+    /// 付费墙里：链接已经说明了用途，不再重复标题，错误提示用 13pt。
+    var inPaywall = false
     @State private var license = ProLicenseManager.shared
     @State private var key = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("已经购买或收到兑换码？在这里输入")
-                .font(.callout.weight(.medium))
+            if !inPaywall {
+                Text("已经购买或收到兑换码？在这里输入")
+                    .font(.callout.weight(.medium))
+            }
             HStack(spacing: 8) {
                 TextField(ProLicenseText.inputPlaceholder, text: $key)
                     .textFieldStyle(.roundedBorder)
@@ -178,11 +452,12 @@ struct ProKeyField: View {
             }
             if let message = license.errorMessage {
                 Text(message)
-                    .font(.caption)
+                    .font(inPaywall ? Font.system(size: 13) : Font.caption)
                     .foregroundStyle(proAccent)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .controlSize(inPaywall ? .large : .regular)
     }
 
     private func activate() {
@@ -200,7 +475,7 @@ final class PaywallWindow: HostedWindow {
     func show() {
         ProLicenseManager.shared.refreshState()
         present(ProPaywallView(onClose: { [weak self] in self?.close() }),
-                title: tr("码头 Pro"), size: NSSize(width: 480, height: 700), chromeless: true)
+                title: tr("码头 Pro"), size: PaywallMetrics.size, chromeless: true)
     }
 }
 

@@ -257,4 +257,46 @@ final class ProLicenseTests: XCTestCase {
                 "锁着时显示的电池外观都是免费的")
         }
     }
+
+    // MARK: 付费墙价格卡
+
+    func testEarlybirdParseRejectsOddNumbers() {
+        XCTAssertEqual(ProEarlybird.parse(["total": 20, "remaining": 12]), ProEarlybird(total: 20, remaining: 12))
+        XCTAssertNil(ProEarlybird.parse(["total": 0, "remaining": 0]))
+        XCTAssertNil(ProEarlybird.parse(["total": 20, "remaining": 21]))
+        XCTAssertNil(ProEarlybird.parse(["total": 20, "remaining": -1]))
+        XCTAssertNil(ProEarlybird.parse(["total": 20, "remaining": 1.5]))
+        XCTAssertNil(ProEarlybird.parse(["total": 20]))
+        XCTAssertNil(ProEarlybird.parse(Data("oops".utf8)))
+        XCTAssertEqual(ProEarlybird.parse(Data(#"{"total":20,"sold":3,"remaining":17,"soldOut":false}"#.utf8)),
+                       ProEarlybird(total: 20, remaining: 17))
+    }
+
+    func testPriceCardLaunchTier() {
+        let live = ProPriceDisplay.make(tier: 0, earlybird: ProEarlybird(total: 20, remaining: 12))
+        XCTAssertEqual(live.badge, "首批特价 · 还剩 12 个")
+        XCTAssertEqual(live.price, "$6.90")
+        XCTAssertEqual(live.nextPrice, "$9.90")
+        XCTAssertEqual(live.remainingFraction ?? 0, 0.6, accuracy: 0.0001)
+        XCTAssertEqual(live.tiersLine, "之后 $9.90 · 正式版 $15.90 · 免费更新")
+
+        let unknown = ProPriceDisplay.make(tier: 0, earlybird: nil)
+        XCTAssertEqual(unknown.badge, "首批特价")
+        XCTAssertNil(unknown.remainingFraction)
+        XCTAssertEqual(unknown.price, "$6.90")
+    }
+
+    func testPriceCardLaterTiers() {
+        let soldOut = ProPriceDisplay.make(tier: 0, earlybird: ProEarlybird(total: 20, remaining: 0))
+        XCTAssertEqual(soldOut.price, "$9.90")
+        XCTAssertNil(soldOut.nextPrice)
+        XCTAssertNil(soldOut.remainingFraction)
+        XCTAssertEqual(soldOut.tiersLine, "正式版 $15.90 · 免费更新")
+        XCTAssertEqual(ProPriceDisplay.make(tier: 1, earlybird: nil), soldOut)
+
+        let full = ProPriceDisplay.make(tier: 2, earlybird: nil)
+        XCTAssertEqual(full.price, "$15.90")
+        XCTAssertNil(full.nextPrice)
+        XCTAssertEqual(full.tiersLine, "一次性付款 · 免费更新")
+    }
 }

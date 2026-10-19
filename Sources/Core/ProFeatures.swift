@@ -41,6 +41,25 @@ public enum ProFeatures {
         .wallpaper, .radio, .fileShelf, .translate,
     ]
 
+    /// 有液态外观的小组件，共 8 种：电池、系统活动、专注计时、时间进度、喝水、
+    /// Codex 用量、小熊猫的竹篮、摸鱼时钟。付费墙和官网的“8 种液态外观”从这里数，
+    /// 给新的小组件加液态外观时记得加进来。
+    public static let liquidKinds: [WidgetKind] = [
+        .battery, .system, .timer, .progress, .water, .aiUsage, .perfectDay, .slacker,
+    ]
+
+    /// 原来的赞助者专属外观一共几种，付费墙和官网的“19 种专属外观”从这里数：
+    /// 时钟的 Pro 表盘和 Pro 选项值（霓虹、实景、液晶，翻页的大号带时分秒卡片）、
+    /// 企鹅水獭章鱼三个角色、三种 Wi-Fi、三种电池外观、六种扩展栏底板配色。
+    public static var exclusiveStyleCount: Int {
+        let faces = ClockStyles.all.filter(\.isPro).count
+            + ClockStyles.allOptions.reduce(0) { $0 + $1.proValues.count }
+        let characters = WaterCharacter.allCases.filter(\.isSupporterOnly).count
+        let wifi = WifiRingStyle.allCases.filter(\.isSupporterOnly).count
+        let battery = BatteryLook.allCases.filter(\.isSupporterOnly).count
+        return faces + characters + wifi + battery + ShelfColor.allCases.count
+    }
+
     /// 习惯打卡免费能用的习惯个数。第 4 个起和近七天报告是 Pro；已经有更多
     /// 习惯的不删数据，超出的只读并带小锁。
     public static let freeHabitLimit = 3

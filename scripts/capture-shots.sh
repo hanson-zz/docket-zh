@@ -89,7 +89,7 @@ rm -rf "$PRODUCTS"/*.lproj
 # looked up with Bundle.main too, so they go beside the tool the same way, flat,
 # as they sit in the app's Resources. Without them those views draw their
 # fallback glyphs instead of the art.
-for folder in Pet Water Radio Slacker AppIcons; do
+for folder in Pet Water Radio Slacker AppIcons Unlock; do
   [ -d "$ROOT/Resources/$folder" ] && cp -f "$ROOT/Resources/$folder"/*.png "$PRODUCTS/" 2>/dev/null || true
 done
 

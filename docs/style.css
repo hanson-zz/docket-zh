@@ -173,6 +173,12 @@ footer .flinks a{color:var(--mut);margin-right:16px;display:inline-block}
 footer p a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 footer .flinks a{text-decoration:none}
 
+/* 最近新增：两张配图并排，顶端对齐、等宽；窄屏上下堆叠 */
+.new-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;margin:0 0 18px}
+.new-pair figure{margin:0}
+.new-pair img{display:block;width:100%;height:auto}
+.new-pair figcaption{margin-top:10px;font-size:14px;color:var(--mut);text-align:center}
+@media (max-width:720px){.new-pair{grid-template-columns:1fr}}
 @media (max-width:820px){.cats,.strips,.plans{grid-template-columns:1fr}.plan.pro{margin-top:26px;order:-1}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:720px){.nums{grid-template-columns:1fr}.num+.num{border-left:0;border-top:1px solid var(--line)}}
 @media (max-width:560px){

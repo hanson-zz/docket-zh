@@ -365,4 +365,14 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertEqual(ProFeatures.menuTitle("标准", isPro: false), "标准")
         XCTAssertEqual(Set(ProFeatures.Setting.allCases), [.aiNotch, .chargeLimit])
     }
+
+    // MARK: 付费墙上的数量
+
+    func testPaywallCountsComeFromTheLists() {
+        XCTAssertEqual(ProFeatures.liquidKinds.count, 8)
+        XCTAssertEqual(Set(ProFeatures.liquidKinds).count, ProFeatures.liquidKinds.count, "液态清单不重复")
+        // 4 款表盘 + 3 个角色 + 3 种 Wi-Fi + 3 种电池 + 6 种底板配色。
+        XCTAssertEqual(ProFeatures.exclusiveStyleCount, 19)
+        XCTAssertEqual(ProFeatures.proTools.count, 5)
+    }
 }
