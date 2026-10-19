@@ -14207,6 +14207,17 @@
         }
       }
     },
+    "小熊猫陪你从零开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A red panda for every empty widget"
+          }
+        }
+      }
+    },
     "小红书" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24923,6 +24934,17 @@
         }
       }
     },
+    "每个空的小组件都有一句提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each empty widget gives you a hint"
+          }
+        }
+      }
+    },
     "每周额度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26935,6 +26957,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the notch to open the chat, with nothing added beside it. Screens without a notch get a small capsule centered below the menu bar."
+          }
+        }
+      }
+    },
+    "点一下就能开始用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One tap to get started"
           }
         }
       }
@@ -34220,6 +34253,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "还有竹篮、待办、剪贴板等，空着时都有小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The basket, to-dos, clipboard and more get one too"
           }
         }
       }

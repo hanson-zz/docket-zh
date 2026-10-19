@@ -967,27 +967,106 @@ private struct ViewShot {
 }
 
 /// 拍真实共用空状态，不写入订阅、相册或截图数据。
+///
+/// 官网「最近新增」里和付费墙并排，所以画布、圆角、深色玻璃底、顶部光晕和
+/// 头部版式都照付费墙（`ProPaywallView`）来：540×860 的窗口，左上一只大的
+/// 小熊猫，右边大标题和两行副标题，下面两列卡片。卡片里是真实的
+/// `PandaEmptyState` 面板模式，整体放大 `scale` 倍，让最小的提示字也有 13pt 以上。
 @MainActor
 private struct EmptyStatesShot: View {
+    private static let size = CGSize(width: 540, height: 860)
+    private static let padding: CGFloat = 26
+    private static let pandaHeight: CGFloat = 108
+    private static let spacing: CGFloat = 12
+    private static let cardHeight: CGFloat = 194
+    /// 面板模式的提示字是 12pt，放大 1.1 倍后约 13.2pt。
+    private static let scale: CGFloat = 1.1
+    private static let accent = Color(hex: ShelfColor.redPanda.hex)
+
+    /// 九个里挑颜色和姿势差得最远的六个，两两一行。
     private var states: [(PandaEmpty, String)] { [
-        (.habit, tr("添加习惯")), (.anniversary, tr("添加纪念日")), (.alarm, tr("添加闹钟")),
-        (.radio, tr("搜索电台")), (.podcast, tr("添加订阅")), (.bookmarks, tr("添加书签")),
-        (.screenshots, tr("截取屏幕")), (.photos, tr("选择相册")), (.basket, tr("添加小组件")),
+        (.habit, tr("添加习惯")), (.anniversary, tr("添加纪念日")),
+        (.alarm, tr("添加闹钟")), (.podcast, tr("添加订阅")),
+        (.screenshots, tr("截取屏幕")), (.photos, tr("选择相册")),
     ] }
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(210), spacing: 12), count: 3), spacing: 12) {
-            ForEach(states.indices, id: \.self) { index in
-                WidgetSurface {
-                    PandaEmptyState(empty: states[index].0, title: states[index].1, panel: true, action: {})
-                }
-                .frame(width: 210, height: 190)
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.bottom, 22)
+            cards
+            Spacer(minLength: 0)
+            Text(tr("还有竹篮、待办、剪贴板等，空着时都有小熊猫"))
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 4)
+        }
+        .padding(.horizontal, Self.padding)
+        .padding(.top, 24)
+        .padding(.bottom, 22)
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
+        .background {
+            ZStack {
+                Rectangle().fill(.regularMaterial)
+                // 和付费墙同一抹小熊猫橙光晕。
+                RadialGradient(colors: [Self.accent.opacity(0.30), Self.accent.opacity(0.08), .clear],
+                               center: UnitPoint(x: 0.25, y: 0.0), startRadius: 10, endRadius: 420)
             }
         }
-        .padding(16)
-        .frame(width: 686)
-        .background(Color(white: 0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .environment(\.colorScheme, .dark)
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 16) {
+            Group {
+                if let panda = PandaArt.image("pet-panda-cheer") {
+                    Image(nsImage: panda)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                } else {
+                    Image(systemName: "pawprint.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(Self.accent)
+                }
+            }
+            .frame(height: Self.pandaHeight)
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("小熊猫陪你从零开始"))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 2)
+                Text(tr("每个空的小组件都有一句提示"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.82))
+                Text(tr("点一下就能开始用"))
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.82))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var cards: some View {
+        let width = (Self.size.width - Self.padding * 2 - Self.spacing) / 2
+        let columns = Array(repeating: GridItem(.fixed(width), spacing: Self.spacing), count: 2)
+        return LazyVGrid(columns: columns, spacing: Self.spacing) {
+            ForEach(states.indices, id: \.self) { index in
+                PandaEmptyState(empty: states[index].0, title: states[index].1, panel: true, action: {})
+                    .frame(width: width / Self.scale, height: Self.cardHeight / Self.scale)
+                    .scaleEffect(Self.scale)
+                    .frame(width: width, height: Self.cardHeight)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(.white.opacity(0.09), lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+        }
     }
 }
 
@@ -1024,9 +1103,10 @@ private enum ReminderPopupFixture {
 @MainActor
 private func viewShots() -> [ViewShot] {
     [
+        // 和付费墙同一块画布，官网并排时等高等宽。
         ViewShot(name: "empty-states", source: .empty, view: {
             AnyView(EmptyStatesShot())
-        }, tight: true),
+        }, linger: .seconds(1), tight: true),
 
         // The card that slides out under the notch when something comes due,
         // here a 喝水 reminder drawn from sample numbers: a shelf's own log is
