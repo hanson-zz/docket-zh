@@ -22,6 +22,9 @@ final class AmbientPlayer {
     /// What is playing, for the tile's caption.
     private(set) var sounds: [AmbientSound] = []
 
+    @ObservationIgnored private var volume: Double = 60
+    @ObservationIgnored private var startedAt: Date?
+    @ObservationIgnored private var elapsed: Double = 0
     @ObservationIgnored private var engine: AVAudioEngine?
     @ObservationIgnored private let box = SynthBox()
     @ObservationIgnored private var ticker: Timer?
@@ -35,16 +38,18 @@ final class AmbientPlayer {
     /// The widget's stored mix and volume, applied whether or not it plays.
     func apply(sounds: [AmbientSound], volume: Double) {
         self.sounds = sounds
+        self.volume = volume
         let playing = isPlaying
         box.update { synth in
             synth.setVolume(volume / 100)
             if playing { synth.setSounds(sounds) }
         }
         if playing, sounds.isEmpty { stop() }
+        else if playing { publishSession() }
     }
 
     func toggle(sounds: [AmbientSound], volume: Double) {
-        isPlaying ? stop() : play(sounds: sounds, volume: volume)
+        isPlaying ? pause() : play(sounds: sounds, volume: volume)
     }
 
     func play(sounds: [AmbientSound], volume: Double) {
@@ -55,29 +60,62 @@ final class AmbientPlayer {
         if engine == nil || engine?.isRunning == false {
             guard startEngine() else { return }
         }
+        MediaSessionCoordinator.shared.begin(.ambient) { [weak self] command, _ in self?.remote(command) }
+        self.volume = volume
         box.update { synth in
             synth.setVolume(volume / 100)
             synth.setSounds(sounds)
         }
+        startedAt = .now
         isPlaying = true
         if timerMinutes > 0 { stopAt = .now.addingTimeInterval(Double(timerMinutes) * 60) }
         startTicker()
+        publishSession()
     }
 
     /// Fades out over about a second, then lets the engine go so nothing
     /// holds the audio hardware awake while silent.
     func stop() {
+        pause(immediate: true)
+        elapsed = 0
+        MediaSessionCoordinator.shared.end(.ambient)
+    }
+
+    func pause(immediate: Bool = false) {
         guard isPlaying else { return }
+        elapsed = sessionPosition
+        startedAt = nil
         isPlaying = false
         stopAt = nil
         box.update { $0.fadeOut() }
         ticker?.invalidate()
         ticker = nil
+        publishSession()
         stopTask?.cancel()
+        if immediate { tearDown(); return }
         stopTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(1_200))
             guard !Task.isCancelled else { return }
             self?.tearDown()
+        }
+    }
+
+    private var sessionPosition: Double {
+        elapsed + (startedAt.map { Date.now.timeIntervalSince($0) } ?? 0)
+    }
+
+    private func publishSession() {
+        MediaSessionCoordinator.shared.update(.ambient, title: AmbientSound.summary(sounds),
+            subtitle: tr("环境音"), playing: isPlaying, position: sessionPosition)
+    }
+
+    private func remote(_ command: MediaCommand) {
+        guard let action = MediaSessionRules.action(command, source: .ambient, playing: isPlaying) else { return }
+        switch action {
+        case .play: play(sounds: sounds, volume: volume)
+        case .pause: pause()
+        case .stop: stop()
+        case .position, .station: break
         }
     }
 
@@ -118,6 +156,8 @@ final class AmbientPlayer {
 
     private func restartAfterDeviceChange() {
         guard isPlaying else { return }
+        elapsed = sessionPosition
+        startedAt = nil
         let current = sounds
         let volume = box.volume
         isPlaying = false

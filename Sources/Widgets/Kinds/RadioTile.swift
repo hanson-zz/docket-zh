@@ -70,7 +70,7 @@ struct RadioTile: View {
                   tint: playing ? RadioIcon.glow.mix(with: WidgetStyle.primary, by: 0.2) : WidgetStyle.primary,
                   morphs: true,
                   action: context.isPreview || station == nil ? nil : {
-            if let station { player.toggle(station, volume: volume) }
+            if let station { player.toggle(station, volume: volume, stations: stations) }
         })
         .help(playing ? tr("暂停") : tr("收听"))
         .accessibilityLabel(playing ? tr("暂停收音机") : tr("收听 \(station?.name ?? tr("电台"))"))
@@ -104,7 +104,7 @@ enum RadioRemote {
         }
         if play || wasPlaying {
             RadioPlayer.shared.play(stations[target],
-                                    volume: instance.config.double("volume", default: 60))
+                                    volume: instance.config.double("volume", default: 60), stations: stations)
         }
     }
 

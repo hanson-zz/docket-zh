@@ -43,6 +43,8 @@ final class RadioPlayer {
     @ObservationIgnored private var volume: Double = 60
     @ObservationIgnored private let relay = RadioMetadataRelay()
 
+    @ObservationIgnored private var playlist: [RadioStation] = []
+
     private init() {}
 
     // MARK: Controls
@@ -53,11 +55,15 @@ final class RadioPlayer {
         return station.url == candidate.url
     }
 
-    func toggle(_ station: RadioStation, volume: Double) {
-        plays(station) ? pause() : play(station, volume: volume)
+    func toggle(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil) {
+        plays(station) ? pause() : play(station, volume: volume, stations: stations)
     }
 
-    func play(_ station: RadioStation, volume: Double) {
+    func play(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil) {
+        guard RadioDial.streamURL(station.url) != nil else { return }
+        if let stations { playlist = stations }
+        if !playlist.contains(where: { $0.url == station.url }) { playlist = [station] }
+        MediaSessionCoordinator.shared.begin(.radio) { [weak self] command, _ in self?.remote(command) }
         cancelRetry()
         attempt = 0
         if self.station?.url != station.url { nowTitle = nil }
@@ -70,6 +76,7 @@ final class RadioPlayer {
             stopAt = .now.addingTimeInterval(Double(timerMinutes) * 60)
         }
         startTicker()
+        publishSession()
     }
 
     func pause() {
@@ -81,6 +88,34 @@ final class RadioPlayer {
         ticker?.invalidate()
         ticker = nil
         dropItem()
+        publishSession()
+    }
+
+    func stop() {
+        pause()
+        MediaSessionCoordinator.shared.end(.radio)
+    }
+
+    private func remote(_ command: MediaCommand) {
+        guard let action = MediaSessionRules.action(command, source: .radio, playing: isPlaying) else { return }
+        switch action {
+        case .play:
+            if let station { play(station, volume: volume) }
+        case .pause: pause()
+        case .stop: stop()
+        case .station(let delta):
+            guard !playlist.isEmpty else { return }
+            let current = playlist.firstIndex { $0.url == station?.url } ?? 0
+            let next = delta > 0 ? RadioDial.next(current, count: playlist.count) : RadioDial.previous(current, count: playlist.count)
+            play(playlist[next], volume: volume)
+        case .position: break
+        }
+    }
+
+    private func publishSession() {
+        guard let station else { return }
+        MediaSessionCoordinator.shared.update(.radio, title: nowTitle ?? station.name,
+                                               subtitle: station.name, playing: isPlaying)
     }
 
     /// 0...100, applied at once whether or not anything plays.
@@ -223,9 +258,9 @@ final class RadioPlayer {
     // MARK: Now playing
 
     fileprivate func received(title: String?) {
-        guard let station else { return }
+        guard isPlaying, let station else { return }
         let clean = RadioDial.nowPlaying(title, stationName: station.name)
-        if clean != nowTitle { nowTitle = clean }
+        if clean != nowTitle { nowTitle = clean; publishSession() }
     }
 
     // MARK: Sleep timer
@@ -242,7 +277,7 @@ final class RadioPlayer {
 
     private func tick() {
         guard isPlaying, let stopAt else { return }
-        if Date.now >= stopAt { pause() }
+        if Date.now >= stopAt { stop() }
     }
 }
 

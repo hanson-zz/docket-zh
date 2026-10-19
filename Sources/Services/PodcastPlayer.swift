@@ -50,6 +50,7 @@ final class PodcastPlayer {
             problem = tr("这一集没有可播放的音频。")
             return
         }
+        MediaSessionCoordinator.shared.begin(.podcast) { [weak self] command, position in self?.remote(command, position: position) }
         saveProgress()
         teardownItem()
         self.episode = episode
@@ -70,6 +71,7 @@ final class PodcastPlayer {
         isBuffering = true
         isPlaying = true
         player.play()
+        publishSession()
     }
 
     func resume() {
@@ -77,9 +79,11 @@ final class PodcastPlayer {
             if let episode, let showID { play(episode, show: showID) }
             return
         }
+        MediaSessionCoordinator.shared.begin(.podcast) { [weak self] command, position in self?.remote(command, position: position) }
         problem = nil
         isPlaying = true
         player.play()
+        publishSession()
     }
 
     func pause() {
@@ -87,6 +91,7 @@ final class PodcastPlayer {
         isPlaying = false
         isBuffering = false
         saveProgress()
+        publishSession()
     }
 
     /// Lets the episode go entirely, as when its show is unsubscribed.
@@ -97,6 +102,7 @@ final class PodcastPlayer {
         showID = nil
         position = 0
         duration = 0
+        MediaSessionCoordinator.shared.end(.podcast)
     }
 
     func seek(to seconds: Double) {
@@ -105,10 +111,37 @@ final class PodcastPlayer {
         player?.seek(to: CMTime(seconds: target, preferredTimescale: 600),
                      toleranceBefore: .zero, toleranceAfter: .zero)
         saveProgress()
+        publishSession()
     }
 
     func skip(by delta: Double) {
         seek(to: PodcastPlayback.skip(position, by: delta, duration: duration))
+    }
+
+    private func remote(_ command: MediaCommand, position requested: Double?) {
+        let chapters = currentEpisode?.chapters ?? []
+        guard let action = MediaSessionRules.action(command, source: .podcast, playing: isPlaying,
+            position: position, duration: duration, chapters: chapters, requestedPosition: requested) else { return }
+        switch action {
+        case .play: resume()
+        case .pause: pause()
+        case .stop: stop()
+        case .position(let seconds): seek(to: seconds)
+        case .station: break
+        }
+    }
+
+    private var currentEpisode: PodcastEpisode? {
+        guard let episode else { return nil }
+        return PodcastService.shared.library.shows.flatMap(\.episodes).first { $0.id == episode.id } ?? episode
+    }
+
+    private func publishSession() {
+        guard let episode = currentEpisode else { return }
+        let show = PodcastService.shared.library.shows.first { $0.id == showID }
+        MediaSessionCoordinator.shared.update(.podcast, title: episode.title,
+            subtitle: show?.title ?? tr("播客"), playing: isPlaying, duration: duration,
+            position: position, imageURL: episode.imageURL ?? show?.imageURL)
     }
 
     // MARK: Player
@@ -174,6 +207,7 @@ final class PodcastPlayer {
         guard isPlaying else { return }
         position = seconds
         if Date.now.timeIntervalSince(lastSaved) >= 5 { saveProgress() }
+        publishSession()
     }
 
     private func syncStatus() {
@@ -201,6 +235,7 @@ final class PodcastPlayer {
         isBuffering = false
         problem = tr("播放失败，请检查网络后再试。")
         saveProgress()
+        MediaSessionCoordinator.shared.end(.podcast)
     }
 
     private func finished() {
@@ -209,6 +244,7 @@ final class PodcastPlayer {
         isBuffering = false
         position = duration
         PodcastService.shared.markFinished(episode.id, duration: duration)
+        MediaSessionCoordinator.shared.end(.podcast)
     }
 
     private func saveProgress() {
