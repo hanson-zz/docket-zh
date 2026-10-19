@@ -44,6 +44,8 @@ final class RadioPlayer {
     @ObservationIgnored private let relay = RadioMetadataRelay()
 
     @ObservationIgnored private var playlist: [RadioStation] = []
+    /// 开始播放的那个收音机小组件。媒体键换台时写回它的 index，卡片才知道换到了哪一台。
+    @ObservationIgnored private var owner: UUID?
 
     private init() {}
 
@@ -55,12 +57,13 @@ final class RadioPlayer {
         return station.url == candidate.url
     }
 
-    func toggle(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil) {
-        plays(station) ? pause() : play(station, volume: volume, stations: stations)
+    func toggle(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil, owner: UUID? = nil) {
+        plays(station) ? pause() : play(station, volume: volume, stations: stations, owner: owner)
     }
 
-    func play(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil) {
+    func play(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil, owner: UUID? = nil) {
         guard RadioDial.streamURL(station.url) != nil else { return }
+        if let owner { self.owner = owner }
         if let stations { playlist = stations }
         if !playlist.contains(where: { $0.url == station.url }) { playlist = [station] }
         MediaSessionCoordinator.shared.begin(.radio) { [weak self] command, _ in self?.remote(command) }
@@ -96,7 +99,14 @@ final class RadioPlayer {
         MediaSessionCoordinator.shared.end(.radio)
     }
 
+    /// 收藏编辑过后跟上新的列表，媒体键的“下一台”不会播到已删除的电台。
+    func syncPlaylist(_ stations: [RadioStation], owner: UUID) {
+        guard owner == self.owner else { return }
+        playlist = stations
+    }
+
     private func remote(_ command: MediaCommand) {
+        guard ProAccess.isUnlocked else { return }
         guard let action = MediaSessionRules.action(command, source: .radio, playing: isPlaying) else { return }
         switch action {
         case .play:
@@ -104,6 +114,16 @@ final class RadioPlayer {
         case .pause: pause()
         case .stop: stop()
         case .station(let delta):
+            // 优先按小组件当前保存的收藏换台，并把 index 写回去。
+            if let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio {
+                let list = RadioDial.stations(instance.config)
+                guard !list.isEmpty else { return }
+                let current = list.firstIndex { $0.url == station?.url }
+                    ?? RadioDial.index(instance.config, count: list.count)
+                let next = delta > 0 ? RadioDial.next(current, count: list.count) : RadioDial.previous(current, count: list.count)
+                RadioRemote.tune(instance, to: next, play: true)
+                return
+            }
             guard !playlist.isEmpty else { return }
             let current = playlist.firstIndex { $0.url == station?.url } ?? 0
             let next = delta > 0 ? RadioDial.next(current, count: playlist.count) : RadioDial.previous(current, count: playlist.count)

@@ -29,6 +29,11 @@ final class PodcastPlayer {
     @ObservationIgnored private var itemObservation: NSKeyValueObservation?
     @ObservationIgnored private var itemObservers: [NSObjectProtocol] = []
     @ObservationIgnored private var lastSaved = Date.distantPast
+    /// 正在播放的单集（节目库里的最新版本），换集时查一次，不在每次刷新时全量找。
+    @ObservationIgnored private var cachedEpisode: PodcastEpisode?
+    /// 上次告诉系统的播放状态，只有变了才重写“正在播放”。
+    @ObservationIgnored private var publishedPlaying: Bool?
+    @ObservationIgnored private var publishedDuration: Double = 0
 
     private init() {}
 
@@ -54,6 +59,8 @@ final class PodcastPlayer {
         saveProgress()
         teardownItem()
         self.episode = episode
+        cachedEpisode = nil
+        publishedPlaying = nil
         showID = show
         problem = nil
         duration = Double(episode.duration)
@@ -94,11 +101,19 @@ final class PodcastPlayer {
         publishSession()
     }
 
+    /// 暂停并交出系统的“正在播放”会话，单集留着，下次从这里接着播。
+    /// 媒体键的停止、以及 Pro 授权变成锁定时用。
+    func pauseAndEnd() {
+        pause()
+        MediaSessionCoordinator.shared.end(.podcast)
+    }
+
     /// Lets the episode go entirely, as when its show is unsubscribed.
     func stop() {
         pause()
         teardownItem()
         episode = nil
+        cachedEpisode = nil
         showID = nil
         position = 0
         duration = 0
@@ -119,13 +134,15 @@ final class PodcastPlayer {
     }
 
     private func remote(_ command: MediaCommand, position requested: Double?) {
+        guard ProAccess.isUnlocked else { return }
         let chapters = currentEpisode?.chapters ?? []
         guard let action = MediaSessionRules.action(command, source: .podcast, playing: isPlaying,
             position: position, duration: duration, chapters: chapters, requestedPosition: requested) else { return }
         switch action {
         case .play: resume()
         case .pause: pause()
-        case .stop: stop()
+        // 停止按暂停处理：stop() 会把当前单集清掉，卡片就没了“当前单集”。
+        case .stop: pauseAndEnd()
         case .position(let seconds): seek(to: seconds)
         case .station: break
         }
@@ -133,10 +150,16 @@ final class PodcastPlayer {
 
     private var currentEpisode: PodcastEpisode? {
         guard let episode else { return nil }
-        return PodcastService.shared.library.shows.flatMap(\.episodes).first { $0.id == episode.id } ?? episode
+        if let cachedEpisode, cachedEpisode.id == episode.id { return cachedEpisode }
+        let found = PodcastService.shared.library.shows.lazy.flatMap(\.episodes).first { $0.id == episode.id } ?? episode
+        cachedEpisode = found
+        return found
     }
 
+    /// 播放、暂停、跳转、换集时调用。播放中系统按 rate 自己推算进度，不用定时重写。
     private func publishSession() {
+        publishedPlaying = isPlaying
+        publishedDuration = duration
         guard let episode = currentEpisode else { return }
         let show = PodcastService.shared.library.shows.first { $0.id == showID }
         MediaSessionCoordinator.shared.update(.podcast, title: episode.title,
@@ -207,7 +230,8 @@ final class PodcastPlayer {
         guard isPlaying else { return }
         position = seconds
         if Date.now.timeIntervalSince(lastSaved) >= 5 { saveProgress() }
-        publishSession()
+        // 只在状态和上次告诉系统的不一样时（比如刚拿到真实时长）才更新。
+        if publishedPlaying != isPlaying || abs(publishedDuration - duration) >= 1 { publishSession() }
     }
 
     private func syncStatus() {

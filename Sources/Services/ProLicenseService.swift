@@ -222,6 +222,13 @@ final class ProLicenseManager {
         if !ProLicenseGate.canOpenAINotch(unlocked: unlocked), AINotchController.shared.isOpen {
             AINotchController.shared.close()
         }
+        // 收音机、播客、环境音都是 Pro 小组件：锁定后停下并交出系统的“正在播放”会话，
+        // 媒体键和控制中心不能再把它们放起来。
+        if !unlocked {
+            if RadioPlayer.shared.isPlaying || RadioPlayer.shared.station != nil { RadioPlayer.shared.stop() }
+            if PodcastPlayer.shared.episode != nil { PodcastPlayer.shared.pauseAndEnd() }
+            if AmbientPlayer.shared.isPlaying { AmbientPlayer.shared.stop() }
+        }
     }
 
     // MARK: 试用到期提醒

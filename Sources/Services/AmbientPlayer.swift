@@ -115,6 +115,7 @@ final class AmbientPlayer {
     }
 
     private func remote(_ command: MediaCommand) {
+        guard ProAccess.isUnlocked else { return }
         guard let action = MediaSessionRules.action(command, source: .ambient, playing: isPlaying) else { return }
         switch action {
         case .play: play(sounds: sounds, volume: volume)

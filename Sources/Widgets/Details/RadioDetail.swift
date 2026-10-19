@@ -183,7 +183,7 @@ struct RadioDetail: View {
             .disabled(stations.count < 2)
             roundButton(playing ? "pause.fill" : "play.fill", size: 48, label: playing ? tr("暂停") : tr("收听"),
                         filled: true) {
-                if let station { player.toggle(station, volume: volume, stations: stations) }
+                if let station { player.toggle(station, volume: volume, stations: stations, owner: instance.id) }
             }
             .disabled(station == nil)
             roundButton("forward.end.fill", size: 34, label: tr("下一个电台")) {
@@ -594,7 +594,7 @@ struct RadioDetail: View {
             stored = list
             index = target
         }
-        player.play(list[target], volume: volume, stations: list)
+        player.play(list[target], volume: volume, stations: list, owner: instance.id)
     }
 
     private func save(_ change: (inout WidgetConfig) -> Void) {

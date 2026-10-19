@@ -100,6 +100,11 @@ final class MediaSessionCoordinator {
         MPNowPlayingInfoCenter.default().playbackState = .stopped
     }
 
+    /// 系统可能在后台线程取封面，闭包不能继承主 actor 隔离。
+    private nonisolated static func makeArtwork(_ box: MediaArtworkImage, size: CGSize) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: size) { @Sendable _ in box.image }
+    }
+
     private func loadArtwork(_ url: URL) {
         let token = ownership.generation
         artworkTask = Task { [weak self] in
@@ -109,8 +114,7 @@ final class MediaSessionCoordinator {
                   !Task.isCancelled, data.count <= 8_000_000,
                   let image = NSImage(data: data), image.size.width > 0, image.size.height > 0,
                   let self, self.ownership.accepts(token), self.artworkURL == url else { return }
-            let box = MediaArtworkImage(image)
-            let art = MPMediaItemArtwork(boundsSize: image.size) { _ in box.image }
+            let art = Self.makeArtwork(MediaArtworkImage(image), size: image.size)
             self.artwork = art
             var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
             info[MPMediaItemPropertyArtwork] = art

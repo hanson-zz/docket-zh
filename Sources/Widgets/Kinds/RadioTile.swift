@@ -72,7 +72,7 @@ struct RadioTile: View {
                   tint: playing ? RadioIcon.glow.mix(with: WidgetStyle.primary, by: 0.2) : WidgetStyle.primary,
                   morphs: true,
                   action: context.isPreview || station == nil ? nil : {
-            if let station { player.toggle(station, volume: volume, stations: stations) }
+            if let station { player.toggle(station, volume: volume, stations: stations, owner: instance.id) }
         })
         .help(playing ? tr("暂停") : tr("收听"))
         .accessibilityLabel(playing ? tr("暂停收音机") : tr("收听 \(station?.name ?? tr("电台"))"))
@@ -106,20 +106,25 @@ enum RadioRemote {
         }
         if play || wasPlaying {
             RadioPlayer.shared.play(stations[target],
-                                    volume: instance.config.double("volume", default: 60), stations: stations)
+                                    volume: instance.config.double("volume", default: 60), stations: stations,
+                                    owner: instance.id)
         }
     }
 
     /// Rewrites the favourites (and the dial with them) in one save.
     static func edit(_ instance: WidgetInstance,
                      _ change: (_ stations: inout [RadioStation], _ index: inout Int) -> Void) {
+        var saved: [RadioStation] = []
         WidgetWriter.write(instance) { config in
             var stations = RadioDial.stations(config)
             var index = RadioDial.index(config, count: stations.count)
             change(&stations, &index)
             RadioDial.store(stations, in: &config)
             RadioDial.setIndex(RadioDial.clamp(index, count: stations.count), in: &config)
+            saved = stations
         }
+        // 播放器的换台列表跟着收藏走，删掉的电台不会再被媒体键播到。
+        RadioPlayer.shared.syncPlaylist(saved, owner: instance.id)
     }
 }
 
