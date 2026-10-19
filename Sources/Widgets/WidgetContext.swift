@@ -142,6 +142,16 @@ public struct WidgetSurface<Content: View>: View {
         return tint.background
     }
 
+    /// 选了颜色时卡片顶上的一抹主题色和一圈细描边：卡片没有自己的颜色或
+    /// 图片、底板没隐藏时才画，默认颜色时是 0，什么都不加。
+    private var glow: (color: Color, top: Double, edge: Double)? {
+        guard let tint, fill == nil, image == nil, !plateHidden else { return nil }
+        let dark = scheme == .dark
+        let top = tint.glowOpacity(dark: dark), edge = tint.edgeOpacity(dark: dark)
+        guard top > 0 || edge > 0 else { return nil }
+        return (tint.main(dark: dark), top, edge)
+    }
+
     /// 普通或悬停。拖入、禁用、缺权限由各卡片用共用修饰器叠在上面。
     private var state: TileState { TileState.resolve(hovered: hovered) }
 
@@ -199,6 +209,14 @@ public struct WidgetSurface<Content: View>: View {
                         }
                     }
                     .overlay {
+                        // 顶上一抹淡淡的主题色，往下渐隐，深色玻璃不变。
+                        if let glow, glow.top > 0 {
+                            TintGlow(color: glow.color, opacity: glow.top)
+                                .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner,
+                                                            style: .continuous))
+                        }
+                    }
+                    .overlay {
                         if let image {
                             Image(nsImage: image)
                                 .resizable()
@@ -222,7 +240,7 @@ public struct WidgetSurface<Content: View>: View {
                 RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous)
                     .strokeBorder(plateHidden && fill == nil && image == nil
                                       ? Color.clear
-                                      : (hovered ? hoverEdge : cardEdge),
+                                      : (hovered ? hoverEdge : restingEdge),
                                   lineWidth: 1)
             }
             .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous))
@@ -238,6 +256,12 @@ public struct WidgetSurface<Content: View>: View {
             // 打开“减少动态效果”时不放大，只提亮。
             .scaleEffect(state.scale(reduceMotion: reduceMotion))
             .animation(.smooth(duration: TileState.transitionDuration(reduceMotion: reduceMotion)), value: hovered)
+    }
+
+    /// 选了颜色时边缘换成一圈很淡的主题色（不超过 15%），否则照旧。
+    private var restingEdge: Color {
+        guard let glow, glow.edge > 0 else { return cardEdge }
+        return glow.color.opacity(glow.edge)
     }
 
     /// The edge catches the light too, or the card reads as merely paler.

@@ -14,6 +14,8 @@ import SwiftUI
 /// carries the figure behind its percentage, because "73%" of a year is a mood
 /// and "98 days left" is something you can act on.
 struct TimeProgressDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -58,7 +60,7 @@ struct TimeProgressDetail: View {
 
     /// The tile's catalog colour.
     private var accent: Color {
-        Color(hex: WidgetCatalog.accentHex(.progress) ?? PaletteColor.teal.hex)
+        panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(.progress) ?? PaletteColor.teal.hex))
     }
 
     // MARK: Rows
@@ -112,7 +114,8 @@ struct TimeProgressDetail: View {
         // the three the card behind it is answering.
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.white.opacity(span.rawValue == period ? 0.55 : 0), lineWidth: 1)
+                .strokeBorder(panelTint.accent(or: .white.opacity(0.55)).opacity(span.rawValue == period ? 1 : 0),
+                              lineWidth: 1)
         }
         // One row is one fact; read out as four labels it becomes a mouthful.
         .accessibilityElement(children: .combine)
@@ -142,7 +145,7 @@ struct TimeProgressDetail: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(.white.opacity(0.14))
                 Capsule()
-                    .fill(.white.opacity(0.8))
+                    .fill(panelTint.accent(or: .white.opacity(0.8)))
                     .frame(width: geometry.size.width * fraction)
             }
         }

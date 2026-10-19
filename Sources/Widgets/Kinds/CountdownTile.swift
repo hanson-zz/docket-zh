@@ -15,6 +15,12 @@ import SwiftUI
 ///
 /// 结束时刻存在小组件自己的配置里（`deadline`），重启后照样接着数。
 struct CountdownTile: View {
+    /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时原来写死的强调色跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
+    /// 原来的强调色，选过颜色就换成选的。
+    private var accent: Color { theme.chosen(or: Color.timerOrange, dark: scheme == .dark) }
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -77,7 +83,7 @@ struct CountdownTile: View {
             HStack(spacing: 5) {
                 ForEach(Array(presets.enumerated()), id: \.offset) { index, minutes in
                     TimerPill(title: CountdownRun.presetLabel(minutes), size: 12, height: 22,
-                              tint: index == last ? .timerOrange : nil, minWidth: 40,
+                              tint: index == last ? accent : nil, minWidth: 40,
                               action: context.isPreview ? nil : { start(minutes: minutes) })
                         .accessibilityLabel(tr("开始 \(minutes) 分钟倒计时"))
                 }
@@ -117,7 +123,7 @@ struct CountdownTile: View {
     private func ringingCard(_ phase: CountdownRun.Phase) -> some View {
         let shakes = CountdownRun.shakes(phase, reduceMotion: reduceMotion)
         return Button(action: stop) {
-            WidgetSurface(fill: Color.timerOrange.opacity(0.32)) {
+            WidgetSurface(fill: accent.opacity(0.32)) {
                 if context.position.isVertical {
                     VStack(spacing: 3) {
                         Image(systemName: "speaker.wave.2.fill")
@@ -216,7 +222,7 @@ struct CountdownTile: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule().fill(WidgetStyle.primary.opacity(0.12))
-                Capsule().fill(Color.timerOrange)
+                Capsule().fill(accent)
                     .frame(width: max(height, geo.size.width * min(1, max(0, fraction))))
             }
         }

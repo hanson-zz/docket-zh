@@ -11,6 +11,9 @@ import SwiftUI
 /// Reads Spotify and Apple Music directly, and falls back to whatever video is
 /// playing in a scriptable browser tab.
 struct MusicTile: View {
+    /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时原来写死的强调色跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -164,7 +167,8 @@ struct MusicTile: View {
                 TileGlyph(symbol: track.isPlaying ? "pause.fill" : "play.fill", size: side, morphs: true,
                           action: tap)
                     .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-                PlayingBarsView(playing: track.isPlaying, tint: Color(hex: PaletteColor.green.hex),
+                PlayingBarsView(playing: track.isPlaying,
+                                tint: theme.chosen(or: Color(hex: PaletteColor.green.hex), dark: scheme == .dark),
                                 height: vertical ? 12 : 14,
                                 visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
             }

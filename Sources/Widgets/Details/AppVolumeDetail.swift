@@ -7,6 +7,8 @@ import SwiftUI
 /// Moving off it, or muting, needs the system audio recording permission,
 /// and the panel says so in place of failing quietly.
 struct AppVolumeDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -175,6 +177,6 @@ struct AppVolumeDetail: View {
     }
 
     private var accent: Color {
-        WidgetCatalog.accentHex(.appVolume).map { Color(hex: $0) } ?? WidgetStyle.primary
+        panelTint.accent(or: WidgetCatalog.accentHex(.appVolume).map { Color(hex: $0) } ?? WidgetStyle.primary)
     }
 }

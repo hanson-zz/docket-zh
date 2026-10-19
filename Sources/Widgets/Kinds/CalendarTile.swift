@@ -20,6 +20,9 @@ struct CalendarTile: View {
     /// 时间线上指针下面是第几块，没有指着时是 nil。
     @State private var pointed: Int?
     @Environment(\.widgetHovered) private var tileHovered
+    /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时日期块的橙跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
 
     /// 存的旧值 agenda 也当成今日时间线，见 `CalendarDay.layout`。
     private var layout: String { CalendarDay.layout(instance.config) }
@@ -516,7 +519,8 @@ struct CalendarTile: View {
         timedEvents.first { $0.id == id }
     }
 
-    private var accent: Color { Color(hex: "#FF9F45") }
+    /// 日期块的橙：选过颜色就换成选的。
+    private var accent: Color { theme.chosen(or: Color(hex: "#FF9F45"), dark: scheme == .dark) }
     private var joinGreen: Color { Color(hex: "#6FDC9A") }
     private var nowRed: Color { Color(hex: "#FF5A5F") }
 

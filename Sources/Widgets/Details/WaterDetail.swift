@@ -14,6 +14,8 @@ import SwiftUI
 /// 统计（连续、本月、7 天平均、柱状、月历和近七天报告）、目标（推荐量、
 /// 明细、个人情况、手动目标）、设置（角色、提醒、复位）照旧。
 struct WaterDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -53,7 +55,7 @@ struct WaterDetail: View {
 
     private static let weekdays = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
 
-    private var accent: Color { WaterStyle.water }
+    private var accent: Color { panelTint.accent(or: WaterStyle.water) }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
 
     private var days: [WaterDay] {
@@ -106,6 +108,7 @@ struct WaterDetail: View {
                     Text("设置").tag(Tab.goal)
                 }
                 .pickerStyle(.segmented)
+                .tint(panelTint.control)
                 .labelsHidden()
                 .controlSize(.small)
 
@@ -1417,6 +1420,7 @@ extension WaterDetail {
                         ForEach(WaterSex.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    .tint(panelTint.control)
                     .labelsHidden()
                     .fixedSize()
             }
@@ -1429,6 +1433,7 @@ extension WaterDetail {
                         ForEach(WaterActivity.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    .tint(panelTint.control)
                     .labelsHidden()
                     .fixedSize()
             }
@@ -1448,6 +1453,7 @@ extension WaterDetail {
                         ForEach(WaterCondition.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                    .tint(panelTint.control)
                     .labelsHidden()
                     .fixedSize()
                     .disabled(profile.sex == .male || context.isPreview)
@@ -1507,6 +1513,7 @@ extension WaterDetail {
                 }
                 .toggleStyle(.switch)
                 .controlSize(.mini)
+                .tint(panelTint.control)
                 .disabled(context.isPreview)
             Text("今日运动和发烧或腹泻只算今天，明天自动清零。")
                 .font(.system(size: 10))

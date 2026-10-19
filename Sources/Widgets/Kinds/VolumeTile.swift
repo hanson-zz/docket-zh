@@ -8,6 +8,9 @@ import SwiftUI
 /// 弹出全部设备。下面一根总音量，点喇叭静音。每个应用自己的音量归“应用音量”，
 /// 这首歌归“正在播放”，这里都不放。
 struct VolumeTile: View {
+    /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时原来写死的强调色跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -32,7 +35,9 @@ struct VolumeTile: View {
         return current?.name ?? audio.deviceName
     }
 
-    private static let accent = Color(hex: PaletteColor.pink.hex)
+    private static let pink = Color(hex: PaletteColor.pink.hex)
+    /// 选中的输出设备：原来的粉，选过颜色就换成选的。
+    private var accent: Color { theme.chosen(or: Self.pink, dark: scheme == .dark) }
 
     var body: some View {
         WidgetSurface {
@@ -164,10 +169,10 @@ struct VolumeTile: View {
 
     private func deviceGlyph(_ device: OutputDevice, selected: Bool, width: CGFloat, height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: height * 0.36, style: .continuous)
-            .fill(selected ? Self.accent.opacity(0.32) : WidgetStyle.primary.opacity(0.08))
+            .fill(selected ? accent.opacity(0.32) : WidgetStyle.primary.opacity(0.08))
             .overlay {
                 RoundedRectangle(cornerRadius: height * 0.36, style: .continuous)
-                    .strokeBorder(selected ? Self.accent.opacity(0.55) : .clear, lineWidth: 0.75)
+                    .strokeBorder(selected ? accent.opacity(0.55) : .clear, lineWidth: 0.75)
             }
             .overlay {
                 Image(systemName: OutputDevices.symbol(for: device))

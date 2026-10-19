@@ -6,6 +6,11 @@ import SwiftUI
 /// progress bar and 15 second back, 30 second forward, and the chosen
 /// show's episodes with their dates and lengths.
 struct PodcastDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
+
+    /// 播客的强调色：原来的紫，颜色面板里选了颜色就换成选的。
+    private var accent: Color { panelTint.accent(or: PodcastCover.accent) }
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -87,7 +92,7 @@ struct PodcastDetail: View {
                 Button("订阅") { add() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(PodcastCover.accent)
+                    .foregroundStyle(accent)
             }
         }
         .padding(.horizontal, 10)
@@ -174,7 +179,7 @@ struct PodcastDetail: View {
             HStack(spacing: 6) {
                 Text(player.isPlaying ? (player.isBuffering ? tr("正在缓冲") : tr("正在播放")) : tr("已暂停"))
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(PodcastCover.accent)
+                    .foregroundStyle(accent)
                 Text(episode.title)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
@@ -190,7 +195,7 @@ struct PodcastDetail: View {
                        }
                    })
                 .controlSize(.mini)
-                .tint(PodcastCover.accent)
+                .tint(accent)
             HStack {
                 Text(PodcastPlayback.clock(position))
                 Spacer()
@@ -251,7 +256,7 @@ struct PodcastDetail: View {
             HStack(spacing: 6) {
                 Text(PodcastPlayback.clock(chapter.start))
                     .font(.system(size: 9).monospacedDigit())
-                    .foregroundStyle(isCurrent ? PodcastCover.accent : .white.opacity(0.35))
+                    .foregroundStyle(isCurrent ? accent : .white.opacity(0.35))
                 Text(chapter.title)
                     .font(.system(size: isCurrent ? 12 : 10.5, weight: isCurrent ? .semibold : .regular))
                     .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.45))
@@ -422,7 +427,7 @@ struct PodcastDetail: View {
             Image(systemName: current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .playPauseMorph(current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(current ? PodcastCover.accent : .white.opacity(0.75))
+                .foregroundStyle(current ? accent : .white.opacity(0.75))
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     if isNew {
@@ -439,7 +444,7 @@ struct PodcastDetail: View {
                         .filter { !$0.isEmpty }.joined(separator: " · "))
                     if let saved {
                         Text(saved.finished ? tr("已听完") : tr("已听 \(Int(saved.fraction * 100))%"))
-                            .foregroundStyle(PodcastCover.accent.opacity(0.9))
+                            .foregroundStyle(accent.opacity(0.9))
                     }
                 }
                 .font(.system(size: 12))
@@ -480,6 +485,7 @@ struct PodcastDetail: View {
                     .foregroundStyle(.white.opacity(0.75))
             }
             .toggleStyle(.switch)
+            .tint(panelTint.control)
             .controlSize(.mini)
             Spacer()
             Text("每小时检查一次")

@@ -7,6 +7,8 @@ import SwiftUI
 /// The widget keeps one day's count and the time of the last break, nothing
 /// more, so the panel draws no history and no chart.
 struct PostureDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -125,7 +127,7 @@ struct PostureDetail: View {
     }
 
     private var accent: Color {
-        WidgetCatalog.accentHex(.posture).map { Color(hex: $0) } ?? WidgetStyle.primary
+        panelTint.accent(or: WidgetCatalog.accentHex(.posture).map { Color(hex: $0) } ?? WidgetStyle.primary)
     }
 
     private func clock(_ date: Date) -> String {

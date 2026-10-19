@@ -6,6 +6,8 @@ import SwiftUI
 /// 上限和缓冲变灰；已打开的不再生效，电池照常充电，解锁后恢复。卸载助手和
 /// 复制诊断一直能用。
 struct ChargeLimitSection: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var now: Date
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
@@ -41,6 +43,7 @@ struct ChargeLimitSection: View {
                                              service.update { $0.enabled = on }
                                          }))
                     .toggleStyle(.switch)
+                    .tint(panelTint.control)
                     .controlSize(.mini)
                     .labelsHidden()
                     .accessibilityLabel("充电上限")
@@ -58,7 +61,7 @@ struct ChargeLimitSection: View {
                                           set: { v in service.update { $0.limit = Int(v) } }),
                            in: 50...100, step: 5)
                         .controlSize(.mini)
-                        .tint(.white)
+                        .tint(panelTint.accent(or: .white))
                 }
                 HStack(spacing: 6) {
                     Text("低于")

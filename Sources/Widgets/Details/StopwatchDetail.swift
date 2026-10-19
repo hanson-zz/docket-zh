@@ -10,6 +10,11 @@ import SwiftUI
 ///
 /// 计次记在 `laps` 里（`StopwatchLaps`），卡片放最近三圈，这里列全部，最快那圈标绿。
 struct StopwatchDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
+
+    /// 秒表的强调色：原来的橙，颜色面板里选了颜色就换成选的。
+    private var accent: Color { panelTint.accent(or: Self.orange) }
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -31,7 +36,7 @@ struct StopwatchDetail: View {
         // behind the figure: the one thing a stopwatch does is go round.
         return DetailCard {
             ZStack(alignment: .trailing) {
-                MeshBackdrop(color: Self.orange.mix(with: Color(white: 0.2), by: 0.55))
+                MeshBackdrop(color: accent.mix(with: Color(white: 0.2), by: 0.55))
                 SweepDial(fraction: elapsed.truncatingRemainder(dividingBy: 60) / 60,
                           running: running)
                     .frame(width: 230, height: 230)
@@ -49,7 +54,7 @@ struct StopwatchDetail: View {
                             .rollingValue(Int(elapsed))
                         Text(".\(Int(elapsed * 10) % 10)")
                             .font(.system(size: 28, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Self.orange)
+                            .foregroundStyle(accent)
                     }
                     .monospacedDigit()
                     .lineLimit(1)
@@ -64,7 +69,7 @@ struct StopwatchDetail: View {
 
                 HStack(spacing: 10) {
                     ClockPanelButton(title: running ? tr("停止") : tr("开始"),
-                                     fill: Self.orange, action: toggle)
+                                     fill: accent, ink: panelTint.ink(or: .white), action: toggle)
                     if running {
                         ClockPanelButton(title: tr("计次"), fill: nil) {
                             guard !context.isPreview else { return }
@@ -150,6 +155,8 @@ struct StopwatchDetail: View {
 /// A ring of sixty ticks with the current second lit and a trail behind it,
 /// set large and faint behind the figure.
 private struct SweepDial: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var fraction: Double
     var running: Bool
 
@@ -164,7 +171,7 @@ private struct SweepDial: View {
             }
             Circle()
                 .trim(from: 0, to: fraction)
-                .stroke(Color(hex: PaletteColor.orange.hex).opacity(running ? 0.55 : 0.3),
+                .stroke(panelTint.accent(or: Color(hex: PaletteColor.orange.hex)).opacity(running ? 0.55 : 0.3),
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .padding(18)

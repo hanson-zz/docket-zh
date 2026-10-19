@@ -5,6 +5,8 @@ import SwiftUI
 /// 工作时间、背景（颜色或图片）、字体颜色、字体、显示更多、发薪日、每天的
 /// 收入和法定节假日。改动立即写回小组件，卡片跟着变。
 struct SlackerDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -18,7 +20,7 @@ struct SlackerDetail: View {
     private var config: WidgetConfig { instance.config }
     private var settings: SlackerClock.Settings { SlackerClock.Settings(config: config) }
 
-    private var accent: Color { Color(hex: SlackerClock.workHex) }
+    private var accent: Color { panelTint.accent(or: Color(hex: SlackerClock.workHex)) }
 
     var body: some View {
         DetailCard {
@@ -147,6 +149,7 @@ struct SlackerDetail: View {
                     Text("图片").tag(BackgroundTab.image)
                 }
                 .pickerStyle(.segmented)
+                .tint(panelTint.control)
                 .labelsHidden()
                 .fixedSize()
                 Spacer()
@@ -171,6 +174,7 @@ struct SlackerDetail: View {
                     .foregroundStyle(.white.opacity(0.85))
             }
             .toggleStyle(.switch)
+            .tint(panelTint.control)
             .controlSize(.mini)
         }
         .padding(10)
@@ -229,6 +233,7 @@ struct SlackerDetail: View {
                 }
             }
             .pickerStyle(.segmented)
+            .tint(panelTint.control)
             .labelsHidden()
             .fixedSize()
         }
@@ -305,6 +310,7 @@ struct SlackerDetail: View {
                 set: { on in write { $0.set(SlackerClock.holidaysKey, .bool(on)) } }))
                 .labelsHidden()
                 .toggleStyle(.switch)
+                .tint(panelTint.control)
                 .controlSize(.mini)
         }
     }

@@ -6,6 +6,8 @@ import SwiftUI
 /// the address or reads the page again. A field at the top adds a link, and
 /// a 小宇宙 show or episode link offers "加到播客".
 struct BookmarksDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -172,7 +174,7 @@ struct BookmarksDetail: View {
                     addToPodcast(link, key: key)
                 } label: {
                     Label("加到播客", systemImage: "plus.circle.fill")
-                        .foregroundStyle(PodcastCover.accent)
+                        .foregroundStyle(panelTint.accent(or: PodcastCover.accent))
                 }
                 .buttonStyle(.plain)
                 .disabled(context.isPreview)

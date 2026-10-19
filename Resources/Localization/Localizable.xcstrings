@@ -10091,6 +10091,17 @@
         }
       }
     },
+    "卡片顶上会加一抹淡淡的主题色，展开面板里的强调元素一起换色。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A faint wash of the color appears along the top of the card, and the accents in the expanded panel change with it."
+          }
+        }
+      }
+    },
     "卢布" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13712,6 +13723,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sleep timer"
+          }
+        }
+      }
+    },
+    "实时预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live preview"
           }
         }
       }
@@ -18789,6 +18811,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "By change"
+          }
+        }
+      }
+    },
+    "按钮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Button"
           }
         }
       }
@@ -37761,6 +37794,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default color"
+          }
+        }
+      }
+    },
+    "默认颜色：卡片和展开面板保持各自原来的样子。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default color: the card and its expanded panel keep their own look."
           }
         }
       }

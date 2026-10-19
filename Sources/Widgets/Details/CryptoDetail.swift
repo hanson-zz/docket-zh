@@ -4,6 +4,8 @@ import SwiftUI
 /// larger seven-day line with its own change, a switch between 人民币 and 美元, and the credit CoinGecko's
 /// terms ask for wherever its prices are shown.
 struct CryptoDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -60,6 +62,7 @@ struct CryptoDetail: View {
                 Text("USD").tag("usd")
             }
             .pickerStyle(.segmented)
+            .tint(panelTint.control)
             .labelsHidden()
             .fixedSize()
             .disabled(context.isPreview)
@@ -163,6 +166,6 @@ struct CryptoDetail: View {
     }
 
     private var accent: Color {
-        Color(hex: WidgetCatalog.accentHex(.crypto) ?? PaletteColor.yellow.hex)
+        panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(.crypto) ?? PaletteColor.yellow.hex))
     }
 }

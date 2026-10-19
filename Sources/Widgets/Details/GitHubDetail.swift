@@ -6,6 +6,8 @@ import SwiftUI
 /// release and how often that was downloaded. Below, the list of projects
 /// (add, remove, reorder) and the optional token.
 struct GitHubDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -162,7 +164,8 @@ struct GitHubDetail: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 10)
                         .frame(height: 24)
-                        .background(Color.white.opacity(on ? 0.28 : 0.1), in: .capsule)
+                        .background(on ? panelTint.fill(0.45, or: Color.white.opacity(0.28)) : Color.white.opacity(0.1),
+                                    in: .capsule)
                     }
                     .buttonStyle(.plain)
                     .help(slug)
@@ -221,7 +224,8 @@ struct GitHubDetail: View {
             }
         }
         let total = weeks.joined().reduce(0) { $0 + $1.count }
-        let green = Color(hex: "39D353")
+        // GitHub 的绿是这张卡片自己的颜色，颜色面板里选了颜色就跟着换。
+        let green = panelTint.accent(or: Color(hex: "39D353"))
         return HStack(alignment: .center, spacing: 12) {
             ContributionGridView(columns: leveled, color: green, cell: 11, spacing: 3, unit: tr("条"))
             VStack(alignment: .leading, spacing: 4) {

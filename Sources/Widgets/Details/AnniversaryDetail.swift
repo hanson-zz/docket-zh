@@ -9,6 +9,8 @@ import SwiftUI
 /// （`AnniversaryEventPage`），多个卡片开时间线，顶部有“这个月”的小概览；在多个
 /// 卡片里点某一列，直接开那一列的专属页。开哪一页记在 `AnniversaryRoute`。
 struct AnniversaryDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -40,7 +42,7 @@ struct AnniversaryDetail: View {
     }
 
     private var accent: Color {
-        Color(hex: WidgetCatalog.accentHex(.anniversary) ?? PaletteColor.pink.hex)
+        panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(.anniversary) ?? PaletteColor.pink.hex))
     }
 
     private static let todayRed = Color(hex: PaletteColor.red.hex)
@@ -80,7 +82,7 @@ struct AnniversaryDetail: View {
 
     private func eventScreen(_ reading: AnniversaryReading, all: [AnniversaryEvent]) -> some View {
         DetailCard {
-            MeshBackdrop(color: AnniversaryTile.base(reading.event))
+            MeshBackdrop(color: AnniversaryTile.base(reading.event), fixed: true)
         } content: {
             Group {
                 if let draft {
@@ -432,10 +434,12 @@ struct AnniversaryDetail: View {
 
             Toggle("每年重复", isOn: binding(\.yearly))
                 .toggleStyle(.switch)
+                .tint(panelTint.control)
                 .controlSize(.small)
                 .font(WidgetStyle.label(12))
             Toggle("按农历", isOn: binding(\.lunar))
                 .toggleStyle(.switch)
+                .tint(panelTint.control)
                 .controlSize(.small)
                 .font(WidgetStyle.label(12))
             if current.lunar { lunarPickers(current) }
@@ -444,6 +448,7 @@ struct AnniversaryDetail: View {
 
             Toggle("显示在单个卡片上", isOn: binding(\.pinned))
                 .toggleStyle(.switch)
+                .tint(panelTint.control)
                 .controlSize(.small)
                 .font(WidgetStyle.label(12))
 

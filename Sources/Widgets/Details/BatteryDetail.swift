@@ -18,7 +18,7 @@ struct BatteryDetail: View {
         // follow as glass rows.
         let lead = all.first
         DetailCard {
-            MeshBackdrop(color: ground(lead))
+            MeshBackdrop(color: ground(lead), fixed: true)
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 if let lead { hero(lead) }

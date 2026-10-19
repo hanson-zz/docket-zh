@@ -21,7 +21,7 @@ struct ColorPickerDetail: View {
 
     var body: some View {
         DetailCard {
-            MeshBackdrop(color: shown.map(\.swiftUIColor) ?? .gray)
+            MeshBackdrop(color: shown.map(\.swiftUIColor) ?? .gray, fixed: true)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 hero

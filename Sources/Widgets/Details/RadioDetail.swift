@@ -8,6 +8,8 @@ import SwiftUI
 /// The favourites and the tuned channel are written to the widget's config,
 /// so the tile and this panel always show the same station.
 struct RadioDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -48,7 +50,7 @@ struct RadioDetail: View {
         return context.isPreview ? RadioRegion.fallback : RadioRegion.stored(instance.config)
     }
 
-    private var accent: Color { RadioIcon.glow }
+    private var accent: Color { panelTint.accent(or: RadioIcon.glow) }
     private static let needle = Color(hex: "#FF453A")
 
     var body: some View {
@@ -77,6 +79,7 @@ struct RadioDetail: View {
                     Text("搜索电台").tag(Tab.search)
                 }
                 .pickerStyle(.segmented)
+                .tint(panelTint.control)
                 .labelsHidden()
                 .controlSize(.small)
                 switch tab {

@@ -5,6 +5,8 @@ import SwiftUI
 /// The choices are written to the widget's settings, so the tile, the
 /// Widgets tab and this panel always show the same mix.
 struct AmbientDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -171,6 +173,6 @@ struct AmbientDetail: View {
     }
 
     private var accent: Color {
-        WidgetCatalog.accentHex(.ambient).map { Color(hex: $0) } ?? WidgetStyle.primary
+        panelTint.accent(or: WidgetCatalog.accentHex(.ambient).map { Color(hex: $0) } ?? WidgetStyle.primary)
     }
 }

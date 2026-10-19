@@ -7,6 +7,8 @@ import SwiftUI
 /// when the user clicks for it, and offers the calendar filter the widget's
 /// `calendars` option holds.
 struct WeekDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -102,7 +104,7 @@ struct WeekDetail: View {
             HStack(spacing: 6) {
                 Text(WeekAgenda.dayTitle(day))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(day.isToday ? WeekEvents.accent : .white)
+                    .foregroundStyle(day.isToday ? panelTint.accent(or: WeekEvents.accent) : .white)
                 Text(day.date.formatted(.dateTime.month(.defaultDigits).day()))
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))

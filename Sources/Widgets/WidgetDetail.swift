@@ -381,8 +381,15 @@ struct WidgetDetailChrome: View {
     @Environment(\.colorScheme) private var scheme
     @State private var appeared = false
 
+    /// 这张卡片在颜色面板里选的强调色，没选过是 nil（各面板照旧）。
+    private var panelTint: PanelTint? {
+        PanelTint(kind: instance.kind, config: instance.config)
+    }
+
     var body: some View {
         scrolling
+            // 各面板里表示本小组件主题色的地方从这里取，见 `PanelTint`。
+            .environment(\.panelTint, panelTint)
             // Room for the tail on whichever side the shelf is.
             .padding(tailSide, PanelShape.arrowDepth)
             .frame(width: WidgetDetail.width(instance.kind), alignment: .leading)
@@ -511,6 +518,15 @@ struct WidgetDetailChrome: View {
             .overlay {
                 if ground == nil, reduceTransparency || contrast == .increased {
                     Rectangle().fill(scheme == .dark ? Color(white: 0.11) : Color(white: 0.95))
+                }
+            }
+            // 选了颜色时顶上一抹淡淡的主题色（不超过 15%），往下渐隐。不是
+            // 上面说的整面染色：只在顶边，透明度有上限，默认颜色时不画。
+            .overlay {
+                if ground == nil, let panelTint {
+                    // 浅色外观的面板本身亮，颜色更显，收一点。
+                    TintGlow(color: panelTint.color,
+                             opacity: scheme == .dark ? panelTint.glow : panelTint.glow * 0.8)
                 }
             }
             .clipShape(outline)

@@ -6,6 +6,8 @@ import SwiftUI
 /// 「已过 N 天 · 收到 M 片」，日历，底部固定两个按钮：徽章（点开是码头木牌
 /// 徽章和规则）和分享这个月。
 struct PerfectDayDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -289,8 +291,10 @@ struct PerfectDayDetail: View {
                 Button { share(all, month: month) } label: {
                     Text(blocked ?? (monthsBack == 0 ? tr("分享这个月") : tr("分享这个月的竹篮")))
                 }
-                .buttonStyle(BasketBarButtonStyle(fill: blocked == nil ? Color(hex: Self.shareHex) : .white.opacity(0.05),
+                .buttonStyle(BasketBarButtonStyle(fill: blocked == nil ? panelTint.accent(or: Color(hex: Self.shareHex))
+                                                                         : .white.opacity(0.05),
                                                   stroke: .white.opacity(blocked == nil ? 0 : 0.1),
+                                                  ink: blocked == nil ? panelTint.ink(or: .white) : .white,
                                                   dimmed: blocked != nil))
                 .background(ShareAnchor(box: anchor))
                 .disabled(context.isPreview || blocked != nil)
@@ -464,12 +468,14 @@ struct PerfectDayDetail: View {
 private struct BasketBarButtonStyle: ButtonStyle {
     var fill: Color
     var stroke: Color = .clear
+    /// 字色：主题色按钮按亮度选深色或白色（`PanelTint.ink`），其余是白字。
+    var ink: Color = .white
     var dimmed = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(.white.opacity(dimmed ? 0.45 : 1))
+            .foregroundStyle(ink.opacity(dimmed ? 0.45 : 1))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .frame(maxWidth: .infinity, minHeight: 32)

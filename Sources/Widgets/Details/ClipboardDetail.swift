@@ -16,6 +16,8 @@ import SwiftUI
 /// footnote says so. Starred texts are the exception, because keeping them
 /// is the point: they are saved with the widget (see `ClipboardPins`).
 struct ClipboardDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -337,7 +339,7 @@ struct ClipboardDetail: View {
                 .foregroundStyle(.white.opacity(on ? 1 : 0.5))
                 .frame(width: 26, height: 22)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(.white.opacity(on ? 0.2 : 0)))
+                    .fill(on ? panelTint.fill(0.45, or: .white.opacity(0.2)) : .clear))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)

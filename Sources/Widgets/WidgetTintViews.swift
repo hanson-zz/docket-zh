@@ -21,6 +21,8 @@ struct WidgetTintStyle: Equatable, Sendable {
     /// 跟随系统强调色时对比色仍用这种小组件自己的。
     var kindPalette: WidgetTint.Palette
     var background: WidgetTint.Background
+    /// 哪种小组件：卡片光晕按它判断这种卡片能不能选颜色。
+    var kind: WidgetKind
 
     /// 没解锁码头 Pro 时，自定义颜色退回默认、渐变背景退回无背景
     /// （`WidgetTint.shownChoice`、`shownBackground`）。
@@ -29,6 +31,17 @@ struct WidgetTintStyle: Equatable, Sendable {
         palette = WidgetTint.palette(choice, kind: kind)
         kindPalette = WidgetTint.defaultPalette(kind)
         background = WidgetTint.offersBackground(kind) ? WidgetTint.shownBackground(config, unlocked: unlocked) : .plain
+        self.kind = kind
+    }
+
+    /// 卡片顶上主题色光晕的不透明度：默认 0，选了颜色时不超过 15%。
+    func glowOpacity(dark: Bool) -> Double {
+        WidgetTint.cardGlowOpacity(choice, kind: kind, background: background, dark: dark)
+    }
+
+    /// 卡片一圈主题色细描边的不透明度：默认 0。
+    func edgeOpacity(dark: Bool) -> Double {
+        WidgetTint.edgeOpacity(choice, kind: kind, dark: dark)
     }
 
     /// 用户在颜色面板里自己选过（不是默认）。
@@ -70,6 +83,15 @@ struct WidgetTintStyle: Equatable, Sendable {
     }
 }
 
+extension Optional where Wrapped == WidgetTintStyle {
+    /// 卡片上原来写死的统一强调色（闹钟和倒计时的橙、收音机的暖光、音量的
+    /// 粉、日历的橙……）：用户在颜色面板里选过颜色就换成选的，默认照旧。
+    func chosen(or own: Color, dark: Bool) -> Color {
+        guard let style = self, style.isChosen else { return own }
+        return style.main(dark: dark)
+    }
+}
+
 struct WidgetTintKey: EnvironmentKey {
     static let defaultValue: WidgetTintStyle? = nil
 }
@@ -78,6 +100,82 @@ extension EnvironmentValues {
     var widgetTint: WidgetTintStyle? {
         get { self[WidgetTintKey.self] }
         set { self[WidgetTintKey.self] = newValue }
+    }
+}
+
+// MARK: - 面板强调色
+
+/// 展开面板这一刻用的强调色：由 `WidgetDetailChrome` 按小组件自己的配置
+/// 放进环境，各面板（Details）里原来表示“本小组件主题色”的进度环、强调
+/// 数字、主按钮、选中态、开关、图例主色、链接色从这里取。
+///
+/// 没选过颜色时环境里是 nil，各面板写 `panelTint.accent(or: 原来的颜色)`，
+/// 照旧用自己原来的颜色，所以默认外观一点不变。有意思的颜色（红涨绿跌、
+/// 警告、电量、日历原色、天气、封面）不读它。
+struct PanelTint: Equatable, Sendable {
+    /// 强调色本身，已经调到在深色面板卡片上看得清。
+    var color: Color
+    /// 压在强调色上的字（主按钮、选中的分段），按亮度选深色或白色。
+    var ink: Color
+    /// 面板顶上那一抹光晕的不透明度，不超过 `WidgetTint.maxGlowOpacity`。
+    var glow: Double
+
+    /// 默认（没选过颜色）是 nil。没解锁码头 Pro 时自定义颜色退回默认，和卡片一样。
+    init?(kind: WidgetKind, config: WidgetConfig, unlocked: Bool = ProAccess.isUnlocked) {
+        let choice = WidgetTint.shownChoice(config, unlocked: unlocked)
+        switch WidgetTint.panelAccent(choice, kind: kind) {
+        case .own:
+            return nil
+        case .system:
+            color = .accentColor
+            ink = .white
+        case .color(let code):
+            color = Color(code: code)
+            ink = WidgetTint.labelIsDark(on: code) ? .black : .white
+        }
+        glow = WidgetTint.glowOpacity(choice, kind: kind, dark: true)
+    }
+}
+
+struct PanelTintKey: EnvironmentKey {
+    static let defaultValue: PanelTint? = nil
+}
+
+extension EnvironmentValues {
+    var panelTint: PanelTint? {
+        get { self[PanelTintKey.self] }
+        set { self[PanelTintKey.self] = newValue }
+    }
+}
+
+extension Optional where Wrapped == PanelTint {
+    /// 选了颜色用选的，没选用面板自己原来的颜色。
+    func accent(or own: Color) -> Color { self?.color ?? own }
+
+    /// 主按钮上的字：选了颜色按亮度选，没选照旧。
+    func ink(or own: Color) -> Color { self?.ink ?? own }
+
+    /// 选中态的底：选了颜色是一层半透明的强调色，没选照旧用原来的底。
+    func fill(_ opacity: Double, or own: Color) -> Color {
+        self.map { $0.color.opacity(opacity) } ?? own
+    }
+
+    /// 给系统控件（开关、分段、滑块）的 `.tint`：没选是 nil，控件照旧。
+    var control: Color? { self?.color }
+}
+
+/// 顶边一抹淡淡的主题色，往下渐隐。卡片、面板和预览小样共用。
+struct TintGlow: View {
+    var color: Color
+    var opacity: Double
+
+    var body: some View {
+        LinearGradient(stops: [
+            .init(color: color.opacity(min(WidgetTint.maxGlowOpacity, max(0, opacity))), location: 0),
+            .init(color: color.opacity(0), location: WidgetTint.glowReach),
+        ], startPoint: .top, endPoint: .bottom)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -197,6 +295,8 @@ struct WidgetTintPicker: View {
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                // 点色块立刻看到：示意卡跟着这张卡片的配置重画。
+                TintSampleCard(kind: instance.kind, config: instance.config, unlocked: unlocked)
             }
 
             if WidgetTint.offersColor(instance.kind) || WidgetTint.offersBackground(instance.kind) {
@@ -437,6 +537,101 @@ struct WidgetTintPicker: View {
         guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return nil }
         return ColorCode(red: Double(rgb.redComponent), green: Double(rgb.greenComponent),
                          blue: Double(rgb.blueComponent))
+    }
+}
+
+// MARK: - 实时预览小样
+
+/// 颜色面板里的示意卡：图标底板、数字、进度条和一个按钮，按这张卡片此刻
+/// 的颜色画，点不同的色块立刻跟着变。选了颜色时顶上那一抹光晕和细描边也
+/// 画出来，和扩展栏上的卡片、展开面板用的是同一套规则（`WidgetTint`）。
+/// 固定画成深色玻璃：卡片和面板卡片的默认外观。
+struct TintSampleCard: View {
+    var kind: WidgetKind
+    var config: WidgetConfig
+    var unlocked: Bool
+
+    private var style: WidgetTintStyle { WidgetTintStyle(kind: kind, config: config, unlocked: unlocked) }
+
+    /// 已经调到在深色卡片上看得清的主色；跟随系统强调色时是 nil。
+    private var code: ColorCode? {
+        style.palette.map { WidgetTint.readable($0.main, dark: true) }
+    }
+
+    private var main: Color { code.map { Color(code: $0) } ?? .accentColor }
+
+    private var ink: Color {
+        guard let code else { return .white }
+        return WidgetTint.labelIsDark(on: code) ? .black : .white
+    }
+
+    var body: some View {
+        let glow = style.glowOpacity(dark: true)
+        let edge = style.edgeOpacity(dark: true)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("实时预览")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Image(systemName: "paintpalette.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(main)
+                    .frame(width: 38, height: 38)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(main.opacity(0.18))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(main.opacity(0.3), lineWidth: 0.5)
+                            }
+                    }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(verbatim: "72%")
+                        .font(.system(size: 18, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(main)
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Color.white.opacity(0.12))
+                            Capsule().fill(main).frame(width: geo.size.width * 0.72)
+                        }
+                    }
+                    .frame(height: 5)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Text("按钮")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 12)
+                    .frame(height: 26)
+                    .background(Capsule().fill(main))
+            }
+            .padding(12)
+            .frame(maxWidth: 320)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(white: 0.14))
+                    .overlay {
+                        if glow > 0 {
+                            TintGlow(color: main, opacity: glow)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(edge > 0 ? main.opacity(edge) : Color.white.opacity(0.08), lineWidth: 1)
+                    }
+            }
+            .environment(\.colorScheme, .dark)
+            .animation(.easeInOut(duration: 0.2), value: style)
+            .accessibilityHidden(true)
+            Text(style.isChosen
+                 ? tr("卡片顶上会加一抹淡淡的主题色，展开面板里的强调元素一起换色。")
+                 : tr("默认颜色：卡片和展开面板保持各自原来的样子。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 

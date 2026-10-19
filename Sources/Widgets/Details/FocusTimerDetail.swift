@@ -9,6 +9,8 @@ import SwiftUI
 /// is left rather than the deadline, so resuming carries on from the figure on
 /// screen instead of from a moment that has since gone by.
 struct FocusTimerDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -29,7 +31,8 @@ struct FocusTimerDetail: View {
         let state = TimerStateProvider.shared.state
         let total = max(1, state.duration ?? Double(state.minutes * 60))
         let left = remaining(in: state, total: total, now: now)
-        let tint = WidgetStyle.tint(state.color)
+        // 颜色面板里选了颜色就用选的，否则照旧用设置里专注计时的颜色。
+        let tint = panelTint.accent(or: WidgetStyle.tint(state.color))
         // A timer that has never run has nothing to put back.
         let untouched = state.deadline == nil && state.paused == nil && state.duration == nil
 
@@ -57,7 +60,8 @@ struct FocusTimerDetail: View {
                 HStack(spacing: 10) {
                     // White on the timer's colour, lettered in it: the one
                     // solid shape on the card is the one to press.
-                    button(primaryTitle(state, left: left), fill: .white.opacity(0.24), label: .white,
+                    button(primaryTitle(state, left: left), fill: panelTint.accent(or: .white.opacity(0.24)),
+                           label: panelTint.ink(or: .white),
                            action: { togglePrimary() })
                     button(tr("重置"), fill: nil, label: .white,
                            action: { reset() })
@@ -85,7 +89,7 @@ struct FocusTimerDetail: View {
             ZStack(alignment: .leading) {
                 Rectangle().fill(.white.opacity(0.14))
                 Rectangle()
-                    .fill(.white.opacity(0.9))
+                    .fill(panelTint.accent(or: .white.opacity(0.9)))
                     .frame(width: geo.size.width * min(1, max(0, fraction)))
             }
         }

@@ -64,6 +64,8 @@ struct AIAssistantDetail: View {
 // MARK: - Ask
 
 private struct AIAskView: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
     var services: [AIService]
@@ -99,10 +101,10 @@ private struct AIAskView: View {
                     Button(action: submitFromButton) {
                         Text(buttonTitle)
                             .font(.system(size: 12.5, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(panelTint.ink(or: .white))
                             .padding(.horizontal, 12)
                             .frame(height: 28)
-                            .background(Capsule().fill(Color(hex: AIGlyph.dotHex).opacity(canSubmit ? 1 : 0.35)))
+                            .background(Capsule().fill(panelTint.accent(or: Color(hex: AIGlyph.dotHex)).opacity(canSubmit ? 1 : 0.35)))
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSubmit)

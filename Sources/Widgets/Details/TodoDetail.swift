@@ -18,6 +18,8 @@ import SwiftUI
 /// 昨天没做完的会在顶部问一句顺延到今天还是放弃。文字、链接、文件也可以直接
 /// 拖进面板。
 struct TodoDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -239,7 +241,7 @@ struct TodoDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(Color(hex: PaletteColor.orange.hex).opacity(0.6))
+                .foregroundStyle(panelTint.accent(or: Color(hex: PaletteColor.orange.hex)).opacity(0.6))
             Text(item.text)
                 .font(.system(size: 12))
                 .strikethrough()
@@ -319,7 +321,7 @@ struct TodoDetail: View {
             } label: {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 16))
-                    .foregroundStyle(item.done ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.7))
+                    .foregroundStyle(item.done ? panelTint.accent(or: Color(hex: PaletteColor.orange.hex)) : .white.opacity(0.7))
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -606,10 +608,11 @@ struct TodoDetail: View {
                 } label: {
                     Text("顺延到今天")
                         .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(panelTint.ink(or: .white))
                         .frame(maxWidth: .infinity)
                         .frame(height: 26)
-                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.white.opacity(0.16)))
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(panelTint.accent(or: .white.opacity(0.16))))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -698,6 +701,6 @@ struct TodoDetail: View {
     }
 
     private var accent: Color {
-        WidgetCatalog.accentHex(.todo).map { Color(hex: $0) } ?? WidgetStyle.primary
+        panelTint.accent(or: WidgetCatalog.accentHex(.todo).map { Color(hex: $0) } ?? WidgetStyle.primary)
     }
 }

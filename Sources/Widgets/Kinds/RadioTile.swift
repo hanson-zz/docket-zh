@@ -15,6 +15,10 @@ struct RadioTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    /// 颜色面板里选的主题色，选过颜色时播放中的暖光跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
     private var player: RadioPlayer { RadioPlayer.shared }
 
     private var stations: [RadioStation] { RadioDial.stations(instance.config) }
@@ -69,7 +73,8 @@ struct RadioTile: View {
 
     private func playButton(size: CGFloat) -> some View {
         TileGlyph(symbol: playing ? "pause.fill" : "play.fill", size: size,
-                  tint: playing ? RadioIcon.glow.mix(with: WidgetStyle.primary, by: 0.2) : WidgetStyle.primary,
+                  tint: playing ? theme.chosen(or: RadioIcon.glow, dark: scheme == .dark).mix(with: WidgetStyle.primary, by: 0.2)
+                                : WidgetStyle.primary,
                   morphs: true,
                   action: context.isPreview || station == nil ? nil : {
             if let station { player.toggle(station, volume: volume, stations: stations, owner: instance.id) }
@@ -138,20 +143,29 @@ struct RadioIcon: View {
 
     static let glow = Color(hex: "#FF9F2E")
 
+    /// 卡片上读卡片的主题色，面板里读面板的强调色，都没选过就是原来的暖橙。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.panelTint) private var panelTint
+    @Environment(\.colorScheme) private var scheme
+
+    private var shownGlow: Color {
+        panelTint.accent(or: theme.chosen(or: Self.glow, dark: scheme == .dark))
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             art
                 .frame(width: size * 0.9, height: size * 0.9)
                 .clipShape(.rect(cornerRadius: size * 0.22, style: .continuous))
-                .shadow(color: Self.glow.opacity(playing ? 0.75 : 0), radius: playing ? size * 0.16 : 0)
+                .shadow(color: shownGlow.opacity(playing ? 0.75 : 0), radius: playing ? size * 0.16 : 0)
                 .frame(width: size, height: size)
                 .background {
                     RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                        .fill(Self.glow.opacity(playing ? 0.14 : 0))
+                        .fill(shownGlow.opacity(playing ? 0.14 : 0))
                 }
                 .animation(.easeInOut(duration: 0.6), value: playing)
             if playing {
-                RadioBars(active: animated, color: Self.glow, barWidth: max(1.5, size * 0.05),
+                RadioBars(active: animated, color: shownGlow, barWidth: max(1.5, size * 0.05),
                           height: size * 0.26)
                     .padding(size * 0.05)
                     .background(Capsule().fill(.black.opacity(0.45)))
@@ -172,7 +186,7 @@ struct RadioIcon: View {
         } else {
             Image(systemName: "radio.fill")
                 .font(.system(size: size * 0.48, weight: .medium))
-                .foregroundStyle(playing ? Self.glow : WidgetStyle.primary)
+                .foregroundStyle(playing ? shownGlow : WidgetStyle.primary)
         }
     }
 }

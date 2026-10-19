@@ -7,6 +7,8 @@ import SwiftUI
 /// 免费 3 个习惯：没解锁 Pro 时第 4 个起只读（画淡、带小锁，不能打卡、补卡、编辑，
 /// 可以删除），近七天报告换成一行 Pro 提示。
 struct HabitDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -348,6 +350,6 @@ struct HabitDetail: View {
     }
 
     private var accent: Color {
-        Color(hex: WidgetCatalog.accentHex(.habit) ?? PaletteColor.green.hex)
+        panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(.habit) ?? PaletteColor.green.hex))
     }
 }

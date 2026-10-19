@@ -8,6 +8,8 @@ import SwiftUI
 /// 点一个就换成用它搜，框里有字时直接搜；最后一个“添加”可以加内置站或
 /// 自己填网址。右键图标可以移除。这一排存在小组件自己的设置里。
 struct SearchDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -80,7 +82,7 @@ struct SearchDetail: View {
                     siteCell(title: tr("添加"), selected: false) {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color(hex: "#4C9BFF"))
+                            .foregroundStyle(panelTint.accent(or: Color(hex: "#4C9BFF")))
                             .frame(width: 34, height: 34)
                     }
                 }

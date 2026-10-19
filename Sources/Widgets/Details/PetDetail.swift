@@ -6,10 +6,12 @@ import SwiftUI
 /// One page rather than tabs: everything here is glanced at together, and it
 /// is short enough to sit beside its neighbours.
 struct PetDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private var accent: Color { PetStyle.accent }
+    private var accent: Color { panelTint.accent(or: PetStyle.accent) }
 
     private var character: WaterCharacter {
         WaterCharacter.petShown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
@@ -190,6 +192,7 @@ struct PetDetail: View {
             }
         }
         .toggleStyle(.switch)
+        .tint(panelTint.control)
         .controlSize(.small)
         .padding(10)
         .glassPane(cornerRadius: 10)
@@ -213,6 +216,7 @@ struct PetDetail: View {
             }
         }
         .toggleStyle(.switch)
+        .tint(panelTint.control)
         .controlSize(.small)
         .padding(10)
         .glassPane(cornerRadius: 10)

@@ -7,6 +7,8 @@ import SwiftUI
 /// 点“开始”后才动；没开始时是一个安静的小圆，不占动画。
 /// 节奏选择存在本机偏好里，所有环境音卡片共用。
 struct BreathPacerView: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var isPreview: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -93,7 +95,7 @@ struct BreathPacerView: View {
             if let state {
                 Circle()
                     .trim(from: 0, to: state.progress)
-                    .stroke(.white.opacity(0.75), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .stroke(panelTint.accent(or: .white.opacity(0.75)), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             Circle()

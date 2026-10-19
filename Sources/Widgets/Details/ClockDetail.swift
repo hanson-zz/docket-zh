@@ -59,6 +59,8 @@ struct ClockDetail: View {
 /// seconds and the meridiem are stepped down and greyed: they are what the
 /// panel adds, not what it leads with.
 struct ClockPanelTime: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var now: Date
     var zone: TimeZone
     var size: CGFloat
@@ -74,7 +76,7 @@ struct ClockPanelTime: View {
                 .rollingValue(parts.time)
             Text(":\(seconds)")
                 .font(WidgetStyle.value(size * 0.5))
-                .foregroundStyle(WidgetStyle.secondary)
+                .foregroundStyle(panelTint.accent(or: WidgetStyle.secondary))
                 .monospacedDigit()
                 .rollingValue(seconds)
             if let meridiem = parts.meridiem {

@@ -19,6 +19,8 @@ import SwiftUI
 /// - 右上角“＋ 新提醒”。
 /// 小组件筛选了某个列表（config `list`，按标题）时只列那个列表，新提醒也放进去。
 struct RemindersDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -124,7 +126,7 @@ struct RemindersDetail: View {
         // Red once anything is late, the widget's own colour otherwise: the
         // card says whether you are behind before a title is read.
         DetailCard {
-            MeshBackdrop(color: overdue.isEmpty ? Self.fallbackTint : Self.red)
+            MeshBackdrop(color: overdue.isEmpty ? Self.fallbackTint : Self.red, fixed: !overdue.isEmpty)
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 if granted {
@@ -184,7 +186,7 @@ struct RemindersDetail: View {
                 } label: {
                     Text(tr("＋ 新提醒"))
                         .font(WidgetStyle.label(12))
-                        .foregroundStyle(Self.fallbackTint)
+                        .foregroundStyle(panelTint.accent(or: Self.fallbackTint))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -385,6 +387,7 @@ struct RemindersDetail: View {
                 Toggle("", isOn: draft.hasDate)
                     .labelsHidden()
                     .toggleStyle(.switch)
+                    .tint(panelTint.control)
                     .controlSize(.mini)
                 if current.hasDate {
                     DatePicker("", selection: draft.day, displayedComponents: .date)
@@ -397,6 +400,7 @@ struct RemindersDetail: View {
                     Toggle("", isOn: draft.hasTime)
                         .labelsHidden()
                         .toggleStyle(.switch)
+                        .tint(panelTint.control)
                         .controlSize(.mini)
                     if current.hasTime {
                         DatePicker("", selection: draft.time, displayedComponents: .hourAndMinute)

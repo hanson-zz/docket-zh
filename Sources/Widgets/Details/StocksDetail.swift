@@ -10,6 +10,8 @@ import SwiftUI
 ///
 /// 改动立刻写回小组件设置，面板自己也留一份，因为写回的设置不会回到已经打开的面板。
 struct StocksDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -26,7 +28,7 @@ struct StocksDetail: View {
 
     var body: some View {
         DetailCard {
-            MeshBackdrop(color: backdropColour)
+            MeshBackdrop(color: backdropColour, fixed: true)
         } content: {
             if instance.kind == .watchlist {
                 watchlist
@@ -350,6 +352,7 @@ struct StocksDetail: View {
                 }
             }
             .pickerStyle(.segmented)
+            .tint(panelTint.control)
             .labelsHidden()
             .fixedSize()
             .disabled(context.isPreview)
@@ -382,6 +385,7 @@ struct StocksDetail: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .tint(panelTint.control)
                 .labelsHidden()
                 .fixedSize()
                 .disabled(context.isPreview)

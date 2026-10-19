@@ -19,11 +19,22 @@ struct DetailCard<Backdrop: View, Content: View>: View {
     static var bleed: CGFloat { 10 }
     static var corner: CGFloat { 14 }
 
+    /// 颜色面板里选了颜色时，卡片顶上一抹淡淡的主题色（不超过 15%），
+    /// 天空、封面这类有意思的底也加，只在顶边，盖不住它们。
+    @Environment(\.panelTint) private var panelTint
+
     var body: some View {
         content()
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background { backdrop() }
+            .background {
+                ZStack {
+                    backdrop()
+                    if let panelTint {
+                        TintGlow(color: panelTint.color, opacity: panelTint.glow)
+                    }
+                }
+            }
             .environment(\.colorScheme, .dark)
             .clipShape(.rect(cornerRadius: Self.corner, style: .continuous))
             .overlay {
@@ -97,6 +108,15 @@ extension View {
 /// the colour is a hint you notice second.
 struct MeshBackdrop: View {
     var color: Color
+    /// 颜色本身有意思（电量、涨跌、逾期、隔空投送的模式、取的颜色、事件
+    /// 自己的颜色），角上的暖光不跟着颜色面板换。默认跟：选了颜色时角上的
+    /// 暖光换成选的颜色（`PanelTint`）。顶上那一抹光晕由 `DetailCard` 画。
+    var fixed = false
+
+    @Environment(\.panelTint) private var panelTint
+
+    /// 角上那一抹实际用的颜色。
+    private var shown: Color { fixed ? color : panelTint.accent(or: color) }
 
     static let graphite = Color(red: 0.115, green: 0.115, blue: 0.13)
     /// How much of the widget's colour reaches the corner glow.
@@ -116,7 +136,7 @@ struct MeshBackdrop: View {
                 .init(color: base, location: 0.45),
                 .init(color: base.mix(with: .black, by: 0.4), location: 1),
             ], startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [color.opacity(Self.hint), .clear],
+            RadialGradient(colors: [shown.opacity(Self.hint), .clear],
                            center: .topLeading, startRadius: 0, endRadius: 280)
             // A sheen along the top edge, the way light catches the lip of
             // an aluminium case.

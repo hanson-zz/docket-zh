@@ -6,6 +6,11 @@ import SwiftUI
 /// 还有多久，右边一个开关。正在响的那个排在最上面，带“稍后”和“关掉”。
 /// 读写的都是 `AlarmBook`，和卡片同一份配置，旧的单个闹钟第一次改动时写成列表。
 struct AlarmDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
+
+    /// 闹钟的强调色：原来的计时橙，颜色面板里选了颜色就换成选的。
+    private var accent: Color { panelTint.accent(or: Color.timerOrange) }
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -34,7 +39,7 @@ struct AlarmDetail: View {
             ZStack(alignment: .topTrailing) {
                 MeshBackdrop(color: Color(red: 0.16, green: 0.14, blue: 0.42))
                 Circle()
-                    .fill(RadialGradient(colors: [Color.timerOrange.opacity(headline?.enabled == true ? 0.45 : 0), .clear],
+                    .fill(RadialGradient(colors: [accent.opacity(headline?.enabled == true ? 0.45 : 0), .clear],
                                          center: .center, startRadius: 0, endRadius: 110))
                     .frame(width: 220, height: 220)
                     .offset(x: 70, y: -80)
@@ -99,7 +104,7 @@ struct AlarmDetail: View {
                     if headline.enabled {
                         Text(AlarmBook.untilText(at, now: now))
                             .font(WidgetStyle.label(13))
-                            .foregroundStyle(Color.timerOrange)
+                            .foregroundStyle(accent)
                     }
                 }
                 .opacity(headline.enabled ? 1 : 0.55)
@@ -110,7 +115,7 @@ struct AlarmDetail: View {
     private func ringingRow(_ item: AlarmItem) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "alarm.waves.left.and.right.fill")
-                .foregroundStyle(Color.timerOrange)
+                .foregroundStyle(accent)
             Text(tr("\(item.time) \(item.title) 正在响"))
                 .font(WidgetStyle.label(12))
                 .foregroundStyle(.white)
@@ -120,13 +125,13 @@ struct AlarmDetail: View {
                 write { AlarmBook.snooze(item.id, in: &$0, now: .now) }
             }
             .frame(width: 104)
-            ClockPanelButton(title: tr("关掉"), fill: Color.timerOrange) {
+            ClockPanelButton(title: tr("关掉"), fill: accent, ink: panelTint.ink(or: .white)) {
                 write { AlarmBook.dismiss(item.id, in: &$0, now: .now) }
             }
             .frame(width: 64)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.timerOrange.opacity(0.2)))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(accent.opacity(0.2)))
     }
 
     private func row(_ item: AlarmItem, config: WidgetConfig, now: Date) -> some View {
@@ -160,7 +165,7 @@ struct AlarmDetail: View {
                 set: { on in write { AlarmBook.setEnabled(item.id, on, in: &$0) } }))
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .tint(Color.timerOrange)
+                .tint(accent)
                 .labelsHidden()
                 .accessibilityLabel(tr("开关 \(item.time) 的闹钟"))
         }
@@ -180,7 +185,7 @@ struct AlarmDetail: View {
                     .onSubmit { save(item) }
             }
             HStack(spacing: 8) {
-                ClockPanelButton(title: tr("保存"), fill: Color.timerOrange) { save(item) }
+                ClockPanelButton(title: tr("保存"), fill: accent, ink: panelTint.ink(or: .white)) { save(item) }
                 ClockPanelButton(title: tr("取消"), fill: nil) { editing = nil }
                 ClockPanelButton(title: tr("删除"), fill: nil) { delete(item) }
             }

@@ -6,6 +6,8 @@ import SwiftUI
 /// `duration`、`presets`），所以面板和卡片不会说两样。时间到了还没人点停时，
 /// 面板上的主按钮就是“停”。
 struct CountdownDetail: View {
+    /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
+    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -30,7 +32,7 @@ struct CountdownDetail: View {
                         .stroke(.white.opacity(0.12), lineWidth: 5)
                     Circle()
                         .trim(from: 0, to: min(1, max(0, 1 - fraction)))
-                        .stroke(.white.opacity(0.8), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .stroke(panelTint.accent(or: .white.opacity(0.8)), style: StrokeStyle(lineWidth: 5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     VStack(spacing: 2) {
                         Text(isRinging(phase) ? tr("时间到") : docketClockString(left))
@@ -52,7 +54,8 @@ struct CountdownDetail: View {
                 .frame(maxWidth: .infinity)
 
                 HStack(spacing: 10) {
-                    ClockPanelButton(title: primaryTitle(phase), fill: .white.opacity(0.24), ink: .white) {
+                    ClockPanelButton(title: primaryTitle(phase), fill: panelTint.accent(or: .white.opacity(0.24)),
+                                     ink: panelTint.ink(or: .white)) {
                         primary(phase, duration: total)
                     }
                     ClockPanelButton(title: tr("取消"), fill: nil, action: cancel)
@@ -67,7 +70,7 @@ struct CountdownDetail: View {
 
     /// The countdown's catalog colour, the one its tile is drawn in.
     private var accent: Color {
-        Color(hex: WidgetCatalog.accentHex(.countdown) ?? PaletteColor.indigo.hex)
+        panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(.countdown) ?? PaletteColor.indigo.hex))
     }
 
     /// 还剩多少、走过了多少。

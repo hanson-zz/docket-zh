@@ -11,6 +11,12 @@ import SwiftUI
 /// 卡片其余地方的点按留给码头（打开面板，面板里加、删、开关）。闹钟、已处理的
 /// 响铃和稍后再响都在小组件自己的配置里（`AlarmBook`），旧的单个闹钟自动读成一个。
 struct AlarmTile: View {
+    /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时原来写死的强调色跟着换。
+    @Environment(\.widgetTint) private var theme
+    @Environment(\.colorScheme) private var scheme
+
+    /// 原来的强调色，选过颜色就换成选的。
+    private var accent: Color { theme.chosen(or: Color.timerOrange, dark: scheme == .dark) }
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -69,7 +75,7 @@ struct AlarmTile: View {
                     }
                     Text(enabled ? AlarmBook.untilText(at, now: context.now) : tr("已关闭"))
                         .font(.system(size: 10.5, weight: .bold))
-                        .foregroundStyle(enabled ? Color.timerOrange : WidgetStyle.secondary)
+                        .foregroundStyle(enabled ? accent : WidgetStyle.secondary)
                         .lineLimit(1)
                     if let later = AlarmBook.laterLine(config, now: context.now) {
                         Text(later)
@@ -101,7 +107,7 @@ struct AlarmTile: View {
         let badge = TileBadge {
             Image(systemName: enabled ? "alarm.fill" : "alarm.slash.fill")
                 .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(enabled ? Color.timerOrange : WidgetStyle.secondary)
+                .foregroundStyle(enabled ? accent : WidgetStyle.secondary)
         }
         if context.isPreview || headline == nil {
             badge
@@ -120,7 +126,7 @@ struct AlarmTile: View {
         return VStack(spacing: 2) {
             Image(systemName: headline?.enabled == true ? "alarm.fill" : "alarm.slash.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(headline?.enabled == true ? Color.timerOrange : WidgetStyle.secondary)
+                .foregroundStyle(headline?.enabled == true ? accent : WidgetStyle.secondary)
             if let headline {
                 Text(headline.time)
                     .font(WidgetStyle.value(18))
@@ -145,7 +151,7 @@ struct AlarmTile: View {
     // MARK: 正在响
 
     private func ringingCard(_ item: AlarmItem) -> some View {
-        WidgetSurface(fill: Color.timerOrange.opacity(0.3)) {
+        WidgetSurface(fill: accent.opacity(0.3)) {
             if context.position.isVertical {
                 VStack(spacing: 3) {
                     Text(item.time)
@@ -154,7 +160,7 @@ struct AlarmTile: View {
                         .foregroundStyle(WidgetStyle.primary)
                     TimerPill(title: tr("稍后"), size: 9.5, height: 16, minWidth: 48,
                               action: { snooze(item) })
-                    TimerPill(title: tr("关掉"), size: 9.5, height: 16, tint: .timerOrange, minWidth: 48,
+                    TimerPill(title: tr("关掉"), size: 9.5, height: 16, tint: accent, minWidth: 48,
                               action: { dismiss(item) })
                 }
             } else {
@@ -172,12 +178,12 @@ struct AlarmTile: View {
                         Spacer(minLength: 4)
                         Text(tr("正在响"))
                             .font(.system(size: 9.5, weight: .semibold))
-                            .foregroundStyle(Color.timerOrange)
+                            .foregroundStyle(accent)
                     }
                     HStack(spacing: 6) {
                         TimerPill(title: tr("稍后 \(AlarmBook.snoozeMinutes) 分钟"), size: 10.5, height: 20,
                                   minWidth: 92, action: { snooze(item) })
-                        TimerPill(title: tr("关掉"), size: 10.5, height: 20, tint: .timerOrange, minWidth: 92,
+                        TimerPill(title: tr("关掉"), size: 10.5, height: 20, tint: accent, minWidth: 92,
                                   action: { dismiss(item) })
                     }
                 }
