@@ -149,7 +149,7 @@
 - **GitHub**：公开仓库的星标、议题、拉取请求等，默认显示本仓库。在详情中可填入个人访问令牌（可选），
   令牌只保存在钥匙串中，用于提高请求上限并显示未读通知数。
 
-<img src="docs/images/zh/shelf-tools.png" alt="扩展栏：剪贴板、单位换算、表情符号、天气和世界时钟" width="100%">
+<img src="docs/images/zh/shelf-tools.png" alt="扩展栏：剪贴板、算、表情符号、天气和世界时钟" width="100%">
 
 <table>
   <tr>
@@ -158,8 +158,8 @@
       <p align="center"><sub>剪贴板：最近拷贝的内容，点按即可重新拷贝</sub></p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/images/zh/converter.png" alt="单位换算详情面板：1 英里换算成各种长度单位" width="100%">
-      <p align="center"><sub>单位换算：长度、重量、温度</sub></p>
+      <img src="docs/images/zh/calc.png" alt="「算」详情面板：100 美元按今日汇率换算，最近记录里有算式和单位换算" width="100%">
+      <p align="center"><sub>算：汇率、单位换算和计算器合成一个输入框</sub></p>
     </td>
   </tr>
 </table>
@@ -189,21 +189,11 @@
 
 效率工具、桌面与应用，以及新的外观预设。
 
-<img src="docs/images/zh/shelf-utilities.png" alt="扩展栏：计算器、汇率换算、书签、GitHub 和邮件" width="100%">
+<img src="docs/images/zh/shelf-utilities.png" alt="扩展栏：算、书签、GitHub 和邮件" width="100%">
 
 <img src="docs/images/zh/shelf-desktop.png" alt="扩展栏：翻页时钟、壁纸切换、应用切换器、录音和像素时钟" width="100%">
 
 <table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/images/zh/calculator.png" alt="计算器详情面板：算式、结果和键盘" width="100%">
-      <p align="center"><sub>计算器：键盘与直接输入</sub></p>
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/images/zh/currency.png" alt="汇率换算详情面板：美元换人民币及其他常用币种" width="100%">
-      <p align="center"><sub>汇率换算：每日汇率，离线可用</sub></p>
-    </td>
-  </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/images/zh/github.png" alt="GitHub 详情面板：本仓库的星标、复刻、议题和拉取请求" width="100%">
@@ -322,6 +312,64 @@ OpenAI 随时可能改动，到时小组件会提示“接口有变动”。用 
   想恢复可在 设置 > 菜单栏 中打开。
 
 尚未在真机上验证。
+
+### 新分工配图：日历、时钟、股票金银、计时、电池格、算、喝水杯子页、提醒弹出卡片
+
+几类小组件重新分工以后的样子。扩展栏上的小组件和标注“示例数据”的面板用的是小组件库自带的示例数据，
+「算」是拍摄时的真实汇率。
+
+**日历、一周日程、农历与假期、纪念日**：日历看下一个日程，一周日程看七天忙闲，农历管节气和调休，纪念日数日子。
+
+<img src="docs/images/zh/shelf-calendar.png" alt="扩展栏：日历、一周日程、农历与假期、纪念日（示例数据）" width="100%">
+
+**8 款表盘**：标准、模拟表盘、翻页、像素、液晶、中文、霓虹、实景。
+
+<img src="docs/images/zh/shelf-clocks.png" alt="扩展栏：标准、模拟表盘、翻页、像素、液晶、中文、霓虹、实景 8 款时钟（示例数据）" width="100%">
+
+**股票、自选股、加密货币、黄金白银**：股票盯一只，自选股看一列，黄金白银默认按元/克。
+
+<img src="docs/images/zh/shelf-stocks.png" alt="扩展栏：股票、自选股、加密货币和黄金白银（示例数据）" width="100%">
+
+**计时按尺度分工**：倒计时、秒表、闹钟、专注计时。
+
+<img src="docs/images/zh/shelf-timers.png" alt="扩展栏：倒计时、秒表、闹钟和专注计时（示例数据）" width="100%">
+
+**电池格**：电量画成横向电池，圆环只留给圆环仪表。
+
+<img src="docs/images/zh/shelf-battery.png" alt="扩展栏：电池格、经典电池和圆环仪表（示例数据）" width="100%">
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/week.png" alt="一周日程详情面板：七天的日程和忙闲（示例数据）" width="100%">
+      <p align="center"><sub>一周日程：七天的日程和忙闲（示例数据）</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/metals.png" alt="股票详情面板：黄金和白银，按元/克显示（示例数据）" width="100%">
+      <p align="center"><sub>黄金白银：元/克与美元/盎司可切换（示例数据）</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/water.png" alt="喝水详情面板的杯子页：大玻璃杯水位、已喝和目标、八个小杯（示例数据）" width="100%">
+      <p align="center"><sub>喝水杯子页：水位就是今天的进度（示例数据）</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/reminder-popup.png" alt="到点提醒弹出卡片：该喝水啦，八个小杯、加一杯和稍后 15 分钟（示例数据）" width="100%">
+      <p align="center"><sub>提醒弹出卡片：从刘海下方滑出（示例数据）</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/countdown.png" alt="倒计时详情面板：正在倒数的十分钟" width="100%">
+      <p align="center"><sub>倒计时：拍摄时真实在走的十分钟</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/zh/calc.png" alt="「算」详情面板：100 美元按今日汇率换算" width="100%">
+      <p align="center"><sub>算：一个输入框，带币种走汇率、带单位做换算</sub></p>
+    </td>
+  </tr>
+</table>
 
 ### 新功能配图：液态外观、颜色与背景、世界时钟、快速开关新工具、AI 刘海对话、码头 Pro
 

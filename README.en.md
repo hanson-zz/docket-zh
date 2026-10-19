@@ -79,11 +79,11 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 
 **Handy tools**
 
-<img src="docs/images/en/shelf-tools.png" alt="Shelf with Clipboard, Unit Converter, Emoji, Weather and a Tokyo world clock (sample data)" width="100%">
+<img src="docs/images/en/shelf-tools.png" alt="Shelf with Clipboard, Calc, Emoji, Weather and a Tokyo world clock (sample data)" width="100%">
 
 **Shelf looks**: dark glass with monochrome widgets.
 
-<img src="docs/images/en/shelf-styles.png" alt="Dark glass shelf in monochrome: analog clock, weather with wind and sunrise, Tokyo world clock and calculator (sample data)" width="100%">
+<img src="docs/images/en/shelf-styles.png" alt="Dark glass shelf in monochrome: analog clock, weather with wind and sunrise, Tokyo world clock and Calc (sample data)" width="100%">
 
 **Liquid looks** (Dockling Pro): Time Progress, Water, Focus Timer, System Activity and Battery as a glass of water that fills with progress, load or charge.
 
@@ -100,6 +100,26 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 **New quick tools**: Text from Screen, QR Code, Color Picker, Mirror, Presentation Mode and Keyboard Lock, next to the AI Assistant card and Capture.
 
 <img src="docs/images/en/shelf-quick-tools.png" alt="Shelf with Quick Toggles (Text from Screen, QR Code, Color Picker, Mirror, Presentation Mode, Keyboard Lock, Dark Mode, Keep Awake), the AI Assistant card and Capture (sample data)" width="100%">
+
+**Calendar, Week, Lunar and Holidays, Anniversary**: Calendar shows the next event, Week how busy the seven days are, Lunar the solar terms and make-up workdays, Anniversary counts the days.
+
+<img src="docs/images/en/shelf-calendar.png" alt="Shelf with Calendar, Week, Lunar and Holidays and Anniversary (sample data)" width="100%">
+
+**Eight clock faces**: Standard, Analog, Flip, Pixel, LCD, Chinese, Neon and Photo.
+
+<img src="docs/images/en/shelf-clocks.png" alt="Shelf with the eight clock faces: Standard, Analog, Flip, Pixel, LCD, Chinese, Neon and Photo (sample data)" width="100%">
+
+**Stocks, Watchlist, Crypto, gold and silver**: Stocks follows one symbol, Watchlist a list, and gold and silver show per gram in yuan by default.
+
+<img src="docs/images/en/shelf-stocks.png" alt="Shelf with Stocks, Watchlist, Crypto and gold and silver (sample data)" width="100%">
+
+**Timers by scale**: Countdown, Stopwatch, Alarm and Focus Timer.
+
+<img src="docs/images/en/shelf-timers.png" alt="Shelf with Countdown, Stopwatch, Alarm and Focus Timer (sample data)" width="100%">
+
+**Battery cells**: charge drawn as a sideways battery; rings are left to Ring Gauges.
+
+<img src="docs/images/en/shelf-battery.png" alt="Shelf with Battery cells, the classic Battery and Ring Gauges (sample data)" width="100%">
 
 <p align="center">
   <img src="docs/images/en/widget-library.png" alt="Add Widget sheet: category sidebar on the left, Health and Habits on the right, with orange Pro capsules on the liquid look and the extra characters (sample data)" width="100%"><br>
@@ -125,6 +145,39 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
     <td width="50%" valign="top">
       <img src="docs/images/en/pro-paywall.png" alt="Dockling Pro paywall: the Pro feature list, a 7 day free trial, buy and early bird price, and the license key field" width="100%">
       <p align="center"><sub>Dockling Pro: features, trial, purchase and license key</sub></p>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/calc.png" alt="Calc panel: 100 US dollars at today's rate, with a sum and a unit conversion in the recent list" width="100%">
+      <p align="center"><sub>Calc: currency, units and sums in one box</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/reminder-popup.png" alt="Pop-up reminder card: time to drink water, eight small cups, Add a cup and Snooze 15 minutes (sample data)" width="100%">
+      <p align="center"><sub>Pop-up reminder card under the notch (sample data)</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/water.png" alt="Water panel's cup page: a big glass filled to today's progress, drunk and goal, and eight small cups (sample data)" width="100%">
+      <p align="center"><sub>Water: the cup page (sample data)</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/metals.png" alt="Stocks panel following gold and silver, per gram in yuan (sample data)" width="100%">
+      <p align="center"><sub>Gold and silver, per gram or per ounce (sample data)</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/week.png" alt="Week panel: seven days of events and how busy each is (sample data)" width="100%">
+      <p align="center"><sub>Week: seven days at a glance (sample data)</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/en/countdown.png" alt="Countdown panel: ten minutes really counting down at capture time" width="100%">
+      <p align="center"><sub>Countdown: ten real minutes</sub></p>
     </td>
   </tr>
 </table>
