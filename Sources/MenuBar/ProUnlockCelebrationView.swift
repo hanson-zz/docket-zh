@@ -51,7 +51,8 @@ final class ProUnlockCelebration {
         close(animated: false)
         let screen = NSApp.keyWindow?.screen ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen else { return }
-        ProUnlockSoundPlayer.shared.preload()
+        // 关掉音效时不必读 WAV。
+        if ProUnlockSoundPlayer.isEnabled { ProUnlockSoundPlayer.shared.preload() }
 
         let panel = ProUnlockPanel(contentRect: screen.frame, styleMask: [.borderless],
                                    backing: .buffered, defer: false)
@@ -900,8 +901,10 @@ private struct ProUnlockFrontCanvas: View {
                 draw(&context, piece, age: still ? piece.stillAge : t - piece.birth, floor: floor)
             }
             guard !still else { return }
-            for (index, tap) in taps.enumerated() {
-                for piece in ProUnlockConfetti.burst(count: 50, seed: 100 + UInt64(index), birth: tap) {
+            for tap in taps {
+                // 种子跟着点的时刻走，不跟数组下标：只留最近 6 次时前面的被挤掉，
+                // 后面几次的下标会变，用下标做种子会让半空中的彩纸突然换一批。
+                for piece in ProUnlockConfetti.burst(count: 50, seed: 100 &+ UInt64(max(0, tap) * 1000), birth: tap) {
                     draw(&context, piece, age: t - piece.birth, floor: floor)
                 }
             }

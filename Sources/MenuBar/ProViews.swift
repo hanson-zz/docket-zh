@@ -296,7 +296,9 @@ struct ProSettingsPane: View {
             Section {
                 Toggle("解锁动画音效", isOn: $celebrationSound)
                 LabeledContent {
+                    // 没激活时重看会写着“Pro 已激活”，先不让点。
                     Button("重看解锁动画") { ProUnlockCelebration.shared.replay() }
+                        .disabled(!license.isActivated)
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("解锁动画")
