@@ -82,6 +82,11 @@ final class AmbientPlayer {
     }
 
     func pause(immediate: Bool = false) {
+        if immediate {
+            stopTask?.cancel()
+            stopTask = nil
+            if !isPlaying { tearDown() }
+        }
         guard isPlaying else { return }
         elapsed = sessionPosition
         startedAt = nil
