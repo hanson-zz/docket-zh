@@ -5244,6 +5244,17 @@
         }
       }
     },
+    "主题色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme"
+          }
+        }
+      }
+    },
     "久坐" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13859,6 +13870,17 @@
         }
       }
     },
+    "对比度不足 4.5，文字颜色已退回「自动」。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrast is below 4.5:1, so the text color falls back to Auto."
+          }
+        }
+      }
+    },
     "封未读邮件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16542,6 +16564,17 @@
         }
       }
     },
+    "强度 %@ · 文字 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strength %@ · Text %@"
+          }
+        }
+      }
+    },
     "强阵雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18811,6 +18844,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "By change"
+          }
+        }
+      }
+    },
+    "文字颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text color"
+          }
+        }
+      }
+    },
+    "暖白" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm white"
+          }
+        }
+      }
+    },
+    "浓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strong"
+          }
+        }
+      }
+    },
+    "淡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soft"
           }
         }
       }
@@ -28193,6 +28270,17 @@
         }
       }
     },
+    "白" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "White"
+          }
+        }
+      }
+    },
     "白噪音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31496,6 +31584,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tint"
+          }
+        }
+      }
+    },
+    "色调强度" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tint strength"
           }
         }
       }
@@ -35159,6 +35258,17 @@
         }
       }
     },
+    "迷你面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini panel"
+          }
+        }
+      }
+    },
     "退出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35243,6 +35353,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose your favorite photos"
+          }
+        }
+      }
+    },
+    "选一种颜色后，色调强度和文字颜色才会生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a color first. Tint strength and text color apply only then."
           }
         }
       }

@@ -31,7 +31,7 @@ struct DetailCard<Backdrop: View, Content: View>: View {
                 ZStack {
                     backdrop()
                     if let panelTint {
-                        TintGlow(color: panelTint.color, opacity: panelTint.glow)
+                        TintGlow(color: panelTint.color, opacity: panelTint.glow, reach: panelTint.reach)
                     }
                 }
             }

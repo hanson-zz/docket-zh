@@ -144,12 +144,12 @@ public struct WidgetSurface<Content: View>: View {
 
     /// 选了颜色时卡片顶上的一抹主题色和一圈细描边：卡片没有自己的颜色或
     /// 图片、底板没隐藏时才画，默认颜色时是 0，什么都不加。
-    private var glow: (color: Color, top: Double, edge: Double)? {
+    private var glow: (color: Color, top: Double, edge: Double, reach: Double)? {
         guard let tint, fill == nil, image == nil, !plateHidden else { return nil }
         let dark = scheme == .dark
         let top = tint.glowOpacity(dark: dark), edge = tint.edgeOpacity(dark: dark)
         guard top > 0 || edge > 0 else { return nil }
-        return (tint.main(dark: dark), top, edge)
+        return (tint.main(dark: dark), top, edge, tint.glowReach(dark: dark))
     }
 
     /// 普通或悬停。拖入、禁用、缺权限由各卡片用共用修饰器叠在上面。
@@ -211,7 +211,7 @@ public struct WidgetSurface<Content: View>: View {
                     .overlay {
                         // 顶上一抹淡淡的主题色，往下渐隐，深色玻璃不变。
                         if let glow, glow.top > 0 {
-                            TintGlow(color: glow.color, opacity: glow.top)
+                            TintGlow(color: glow.color, opacity: glow.top, reach: glow.reach)
                                 .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner,
                                                             style: .continuous))
                         }

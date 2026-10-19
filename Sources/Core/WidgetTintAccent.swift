@@ -39,22 +39,24 @@ public extension WidgetTint {
     static let glowReach = 0.6
 
     /// 卡片和面板顶上光晕的不透明度。默认是 0（不画）；浅色外观的卡片
-    /// 本身亮，颜色更显，给得少一点。
-    static func glowOpacity(_ choice: Choice, kind: WidgetKind, dark: Bool) -> Double {
-        guard offersColor(kind), choice.isChosen else { return 0 }
-        return min(maxGlowOpacity, dark ? 0.15 : 0.12)
+    /// 本身亮，颜色更显，给得少一点。`strength` 是外观 ▸ 颜色里的色调强度，
+    /// 不传就是「中」，也就是加这项之前的效果（见 `glowLevels`）。
+    static func glowOpacity(_ choice: Choice, kind: WidgetKind, dark: Bool,
+                            strength: Strength = .standard) -> Double {
+        glowLevels(choice, kind: kind, strength: strength, dark: dark).glow
     }
 
     /// 卡片上的光晕：选了渐变背景时背景本身就是主题色，不再叠一层。
     static func cardGlowOpacity(_ choice: Choice, kind: WidgetKind,
-                                background: Background, dark: Bool) -> Double {
-        background == .gradient ? 0 : glowOpacity(choice, kind: kind, dark: dark)
+                                background: Background, dark: Bool,
+                                strength: Strength = .standard) -> Double {
+        background == .gradient ? 0 : glowOpacity(choice, kind: kind, dark: dark, strength: strength)
     }
 
     /// 卡片一圈细描边的不透明度，和光晕一样有上限，默认不画。
-    static func edgeOpacity(_ choice: Choice, kind: WidgetKind, dark: Bool) -> Double {
-        guard offersColor(kind), choice.isChosen else { return 0 }
-        return min(maxGlowOpacity, dark ? 0.14 : 0.12)
+    static func edgeOpacity(_ choice: Choice, kind: WidgetKind, dark: Bool,
+                            strength: Strength = .standard) -> Double {
+        glowLevels(choice, kind: kind, strength: strength, dark: dark).edge
     }
 
     // MARK: 字色

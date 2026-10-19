@@ -526,7 +526,8 @@ struct WidgetDetailChrome: View {
                 if ground == nil, let panelTint {
                     // 浅色外观的面板本身亮，颜色更显，收一点。
                     TintGlow(color: panelTint.color,
-                             opacity: scheme == .dark ? panelTint.glow : panelTint.glow * 0.8)
+                             opacity: scheme == .dark ? panelTint.glow : panelTint.glow * 0.8,
+                             reach: panelTint.reach)
                 }
             }
             .clipShape(outline)

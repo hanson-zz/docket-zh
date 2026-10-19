@@ -23,6 +23,10 @@ struct WidgetTintStyle: Equatable, Sendable {
     var background: WidgetTint.Background
     /// 哪种小组件：卡片光晕按它判断这种卡片能不能选颜色。
     var kind: WidgetKind
+    /// 外观 ▸ 颜色里的色调强度：光晕和细描边有多显眼，默认「中」。
+    var strength: WidgetTint.Strength
+    /// 外观 ▸ 颜色里的文字颜色：压在主题色上的字，默认「自动」。
+    var textInk: WidgetTint.TextInk
 
     /// 没解锁码头 Pro 时，自定义颜色退回默认、渐变背景退回无背景
     /// （`WidgetTint.shownChoice`、`shownBackground`）。
@@ -32,16 +36,23 @@ struct WidgetTintStyle: Equatable, Sendable {
         kindPalette = WidgetTint.defaultPalette(kind)
         background = WidgetTint.offersBackground(kind) ? WidgetTint.shownBackground(config, unlocked: unlocked) : .plain
         self.kind = kind
+        strength = WidgetTint.strength(config)
+        textInk = WidgetTint.textInk(config)
     }
 
-    /// 卡片顶上主题色光晕的不透明度：默认 0，选了颜色时不超过 15%。
+    /// 卡片顶上主题色光晕的不透明度：默认 0，选了颜色时按色调强度给，不超过 15%。
     func glowOpacity(dark: Bool) -> Double {
-        WidgetTint.cardGlowOpacity(choice, kind: kind, background: background, dark: dark)
+        WidgetTint.cardGlowOpacity(choice, kind: kind, background: background, dark: dark, strength: strength)
     }
 
     /// 卡片一圈主题色细描边的不透明度：默认 0。
     func edgeOpacity(dark: Bool) -> Double {
-        WidgetTint.edgeOpacity(choice, kind: kind, dark: dark)
+        WidgetTint.edgeOpacity(choice, kind: kind, dark: dark, strength: strength)
+    }
+
+    /// 光晕往下铺到卡片高度的多少，跟着色调强度。
+    func glowReach(dark: Bool) -> Double {
+        WidgetTint.glowLevels(strength, dark: dark).reach
     }
 
     /// 用户在颜色面板里自己选过（不是默认）。
@@ -119,21 +130,38 @@ struct PanelTint: Equatable, Sendable {
     var ink: Color
     /// 面板顶上那一抹光晕的不透明度，不超过 `WidgetTint.maxGlowOpacity`。
     var glow: Double
+    /// 光晕往下铺到多深，跟着色调强度。
+    var reach: Double
 
     /// 默认（没选过颜色）是 nil。没解锁码头 Pro 时自定义颜色退回默认，和卡片一样。
     init?(kind: WidgetKind, config: WidgetConfig, unlocked: Bool = ProAccess.isUnlocked) {
         let choice = WidgetTint.shownChoice(config, unlocked: unlocked)
+        let textInk = WidgetTint.textInk(config)
         switch WidgetTint.panelAccent(choice, kind: kind) {
         case .own:
             return nil
         case .system:
             color = .accentColor
-            ink = .white
+            // 「自动」照旧白字；手选的字色按此刻系统强调色检查对比度。
+            if textInk != .auto, let code = Self.accentCode() {
+                ink = Color(code: WidgetTint.resolveInk(textInk, accent: code, on: code).color)
+            } else {
+                ink = .white
+            }
         case .color(let code):
             color = Color(code: code)
-            ink = WidgetTint.labelIsDark(on: code) ? .black : .white
+            ink = Color(code: WidgetTint.resolveInk(textInk, accent: code, on: code).color)
         }
-        glow = WidgetTint.glowOpacity(choice, kind: kind, dark: true)
+        let levels = WidgetTint.glowLevels(choice, kind: kind, strength: WidgetTint.strength(config), dark: true)
+        glow = levels.glow
+        reach = levels.reach
+    }
+
+    /// 此刻系统强调色的 sRGB 值，算手选字色的对比度用。
+    private static func accentCode() -> ColorCode? {
+        guard let rgb = NSColor.controlAccentColor.usingColorSpace(.sRGB) else { return nil }
+        return ColorCode(red: Double(rgb.redComponent), green: Double(rgb.greenComponent),
+                         blue: Double(rgb.blueComponent))
     }
 }
 
@@ -168,11 +196,13 @@ extension Optional where Wrapped == PanelTint {
 struct TintGlow: View {
     var color: Color
     var opacity: Double
+    /// 往下铺到多深（0...1），跟着色调强度，默认是原来的深度。
+    var reach: Double = WidgetTint.glowReach
 
     var body: some View {
         LinearGradient(stops: [
             .init(color: color.opacity(min(WidgetTint.maxGlowOpacity, max(0, opacity))), location: 0),
-            .init(color: color.opacity(0), location: WidgetTint.glowReach),
+            .init(color: color.opacity(0), location: min(0.95, max(0.05, reach))),
         ], startPoint: .top, endPoint: .bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -267,6 +297,8 @@ struct WidgetTintPicker: View {
 
     private var choice: WidgetTint.Choice { WidgetTint.choice(instance.config) }
     private var background: WidgetTint.Background { WidgetTint.background(instance.config) }
+    private var strength: WidgetTint.Strength { WidgetTint.strength(instance.config) }
+    private var textInk: WidgetTint.TextInk { WidgetTint.textInk(instance.config) }
 
     /// 让试用到期、激活或解绑时色块的小锁立刻跟着变。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
@@ -295,6 +327,8 @@ struct WidgetTintPicker: View {
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                // 色调强度和文字颜色：只在选了非默认颜色时生效，默认时灰掉。
+                tuning
                 // 点色块立刻看到：示意卡跟着这张卡片的配置重画。
                 TintSampleCard(kind: instance.kind, config: instance.config, unlocked: unlocked)
             }
@@ -341,6 +375,54 @@ struct WidgetTintPicker: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    // MARK: 强度和文字颜色
+
+    /// 两行分段：色调强度（淡 / 中 / 浓）和文字颜色（自动 / 白 / 暖白 / 主题色）。
+    /// 默认颜色时不起作用，整块灰掉并说一句为什么。
+    private var tuning: some View {
+        let active = choice.isChosen
+        return VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("色调强度")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                Picker("色调强度", selection: Binding(
+                    get: { strength },
+                    set: { value in pickStrength(value) })) {
+                    ForEach(WidgetTint.Strength.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 200, alignment: .leading)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("文字颜色")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                Picker("文字颜色", selection: Binding(
+                    get: { textInk },
+                    set: { value in pickInk(value) })) {
+                    ForEach(WidgetTint.TextInk.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 260, alignment: .leading)
+            }
+            if !active {
+                Text("选一种颜色后，色调强度和文字颜色才会生效。")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .disabled(!active)
+        .opacity(active ? 1 : 0.55)
     }
 
     private var caption: String {
@@ -523,6 +605,20 @@ struct WidgetTintPicker: View {
         }
     }
 
+    /// 默认的「中」写回时删掉键，读回来一样是「中」。
+    private func pickStrength(_ value: WidgetTint.Strength) {
+        write { config in
+            config.set(WidgetTint.strengthKey, value.raw.isEmpty ? nil : .string(value.raw))
+        }
+    }
+
+    /// 默认的「自动」写回时删掉键。
+    private func pickInk(_ value: WidgetTint.TextInk) {
+        write { config in
+            config.set(WidgetTint.inkKey, value.raw.isEmpty ? nil : .string(value.raw))
+        }
+    }
+
     private func pickBackground(_ option: WidgetTint.Background) {
         if !ProLicenseGate.canChooseBackground(option, unlocked: unlocked) {
             PaywallWindow.shared.show()
@@ -542,10 +638,12 @@ struct WidgetTintPicker: View {
 
 // MARK: - 实时预览小样
 
-/// 颜色面板里的示意卡：图标底板、数字、进度条和一个按钮，按这张卡片此刻
-/// 的颜色画，点不同的色块立刻跟着变。按钮和进度条都能动：点「＋10%」加一格
-/// （满了回到 0），在进度条上点或拖直接定百分比，好看清主题色在不同进度下的样子。选了颜色时顶上那一抹光晕和细描边也
-/// 画出来，和扩展栏上的卡片、展开面板用的是同一套规则（`WidgetTint`）。
+/// 颜色面板里的示意卡，做成一块能点的迷你面板：图标底板、标题、数字、进度条、
+/// 一组分段和一个主按钮，按这张卡片此刻的颜色、色调强度和文字颜色画，改哪一项
+/// 都立刻跟着变。点「＋10%」加一格（满了回到 0），在进度条上点或拖直接定百分比，
+/// 分段可以切换，好看清主题色在不同进度、选中态下的样子。选了颜色时顶上那一抹
+/// 光晕和细描边按强度画出来，主按钮和选中分段的字按文字颜色画（对比度不够时
+/// 退回「自动」），和扩展栏上的卡片、展开面板用的是同一套规则（`WidgetTint`）。
 /// 固定画成深色玻璃：卡片和面板卡片的默认外观。
 struct TintSampleCard: View {
     var kind: WidgetKind
@@ -554,6 +652,8 @@ struct TintSampleCard: View {
 
     /// 示意进度，0...1，只在这张示意卡里用，不写进配置。
     @State private var progress: Double = 0.72
+    /// 示意分段选中的是第几个，只在示意卡里用。
+    @State private var segment = 1
 
     private var style: WidgetTintStyle { WidgetTintStyle(kind: kind, config: config, unlocked: unlocked) }
 
@@ -569,66 +669,37 @@ struct TintSampleCard: View {
 
     private var main: Color { code.map { Color(code: $0) } ?? .accentColor }
 
-    private var ink: Color {
-        guard let code else { return .white }
-        return WidgetTint.labelIsDark(on: code) ? .black : .white
+    /// 压在主色上的字：和展开面板一样按文字颜色解，默认颜色时照旧按亮度选。
+    private var inkResolution: WidgetTint.InkResolution? {
+        guard let code else { return nil }
+        guard style.isChosen else {
+            return WidgetTint.InkResolution(color: WidgetTint.autoInk(on: code), fellBack: false)
+        }
+        return WidgetTint.resolveInk(style.textInk, accent: code, on: code)
     }
+
+    private var ink: Color {
+        inkResolution.map { Color(code: $0.color) } ?? .white
+    }
+
+    private var segments: [String] { [tr("今天"), tr("本周"), tr("本月")] }
 
     var body: some View {
         let glow = style.glowOpacity(dark: true)
         let edge = style.edgeOpacity(dark: true)
+        let reach = style.glowReach(dark: true)
         VStack(alignment: .leading, spacing: 6) {
             Text("实时预览")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 12) {
-                Image(systemName: "paintpalette.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(main)
-                    .frame(width: 38, height: 38)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(main.opacity(0.18))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .strokeBorder(main.opacity(0.3), lineWidth: 0.5)
-                            }
-                    }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(verbatim: "\(Int((progress * 100).rounded()))%")
-                        .contentTransition(.numericText(value: progress))
-                        .font(.system(size: 18, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(main)
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.12))
-                            Capsule().fill(main).frame(width: geo.size.width * progress)
-                        }
-                        .frame(height: 5)
-                        .frame(maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                        .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                            guard geo.size.width > 0 else { return }
-                            progress = min(max(value.location.x / geo.size.width, 0), 1)
-                        })
-                    }
-                    .frame(height: 16)
-                    .help(tr("点或拖动进度条调节"))
+            VStack(alignment: .leading, spacing: 10) {
+                header
+                bar
+                HStack(spacing: 8) {
+                    segmentRow
+                    Spacer(minLength: 4)
+                    stepButton
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Button(action: { withAnimation(.easeInOut(duration: 0.25)) { step() } }) {
-                    Text(verbatim: "＋10%")
-                        .font(.system(size: 13, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(ink)
-                        .padding(.horizontal, 12)
-                        .frame(height: 26)
-                        .background(Capsule().fill(main))
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .help(tr("点一下加 10%，满了回到 0"))
             }
             .padding(12)
             .frame(maxWidth: 320)
@@ -637,7 +708,7 @@ struct TintSampleCard: View {
                     .fill(Color(white: 0.14))
                     .overlay {
                         if glow > 0 {
-                            TintGlow(color: main, opacity: glow)
+                            TintGlow(color: main, opacity: glow, reach: reach)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
@@ -654,7 +725,105 @@ struct TintSampleCard: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if style.isChosen, inkResolution?.fellBack == true {
+                Text("对比度不足 4.5，文字颜色已退回「自动」。")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "paintpalette.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(main)
+                .frame(width: 34, height: 34)
+                .background {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(main.opacity(0.18))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .strokeBorder(main.opacity(0.3), lineWidth: 0.5)
+                        }
+                }
+            VStack(alignment: .leading, spacing: 1) {
+                Text("迷你面板")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                Text(tr("强度 \(style.strength.title) · 文字 \(style.textInk.title)"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            }
+            Spacer(minLength: 4)
+            Text(verbatim: "\(Int((progress * 100).rounded()))%")
+                .contentTransition(.numericText(value: progress))
+                .font(.system(size: 18, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(main)
+        }
+    }
+
+    private var bar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.12))
+                Capsule().fill(main).frame(width: geo.size.width * progress)
+            }
+            .frame(height: 5)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                guard geo.size.width > 0 else { return }
+                progress = min(max(value.location.x / geo.size.width, 0), 1)
+            })
+        }
+        .frame(height: 16)
+        .help(tr("点或拖动进度条调节"))
+    }
+
+    /// 示意分段：选中的一格是主色底加文字颜色，其余是淡白字。
+    private var segmentRow: some View {
+        HStack(spacing: 2) {
+            ForEach(segments.indices, id: \.self) { index in
+                let selected = index == segment
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) { segment = index }
+                } label: {
+                    Text(segments[index])
+                        .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                        .foregroundStyle(selected ? ink : Color.white.opacity(0.7))
+                        .padding(.horizontal, 9)
+                        .frame(height: 24)
+                        .background {
+                            Capsule().fill(selected ? main : Color.clear)
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .background(Capsule().fill(Color.white.opacity(0.08)))
+    }
+
+    private var stepButton: some View {
+        Button(action: { withAnimation(.easeInOut(duration: 0.25)) { step() } }) {
+            Text(verbatim: "＋10%")
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(ink)
+                .padding(.horizontal, 12)
+                .frame(height: 26)
+                .background(Capsule().fill(main))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(tr("点一下加 10%，满了回到 0"))
     }
 }
 
