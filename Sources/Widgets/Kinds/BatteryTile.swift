@@ -588,7 +588,7 @@ struct BatteryCellShape: View {
 
     private var tint: Color {
         if !liquid, let code = BatteryTheme.classicFill(tone: tone, theme: theme) { return Color(code: code) }
-        switch tone {
+        return switch tone {
         // 液态的水平时是电池绿，实心的一截平时不上色。
         case .normal: liquid ? Color(hex: MetricColor.batteryPresent) : WidgetStyle.primary
         case .low: Color(hex: "#FF9F0A")
