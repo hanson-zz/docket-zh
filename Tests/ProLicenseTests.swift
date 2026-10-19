@@ -274,14 +274,14 @@ final class ProLicenseTests: XCTestCase {
 
     func testPriceCardLaunchTier() {
         let live = ProPriceDisplay.make(tier: 0, earlybird: ProEarlybird(total: 20, remaining: 12))
-        XCTAssertEqual(live.badge, "首批特价 · 还剩 12 个")
+        XCTAssertEqual(live.badge, "首批限量 20 个")
         XCTAssertEqual(live.price, "$6.90")
         XCTAssertEqual(live.nextPrice, "$9.90")
-        XCTAssertEqual(live.remainingFraction ?? 0, 0.6, accuracy: 0.0001)
+        XCTAssertNil(live.remainingFraction)
         XCTAssertEqual(live.tiersLine, "之后 $9.90 · 正式版 $15.90 · 免费更新")
 
         let unknown = ProPriceDisplay.make(tier: 0, earlybird: nil)
-        XCTAssertEqual(unknown.badge, "首批特价")
+        XCTAssertEqual(unknown.badge, "首批限量 20 个")
         XCTAssertNil(unknown.remainingFraction)
         XCTAssertEqual(unknown.price, "$6.90")
     }

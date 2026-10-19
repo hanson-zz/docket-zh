@@ -130,7 +130,7 @@ struct ProPaywallView: View {
         }
         .environment(\.colorScheme, .dark)
         .task {
-            // 只有首批档去问剩余个数；拿不到就只写“首批特价”。
+            // 只有首批档去问卖完没有；价格卡只写“首批限量 N 个”，不公开剩余个数。
             guard ProPriceTiers.current == 0 else { return }
             earlybird = await ProEarlybirdFetcher.fetch()
         }

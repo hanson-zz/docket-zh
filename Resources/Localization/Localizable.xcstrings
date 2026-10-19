@@ -37435,13 +37435,13 @@
         }
       }
     },
-    "首批特价 · 还剩 %@ 个" : {
+    "首批限量 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Launch price · %@ left"
+            "value" : "First %@ licenses only"
           }
         }
       }

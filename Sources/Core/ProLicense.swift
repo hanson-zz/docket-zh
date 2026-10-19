@@ -43,13 +43,15 @@ public enum ProLicenseConfig {
 
 /// 付费墙价格卡显示哪一档、还剩几个首批名额。规则和官网 docs/index.html 的价格脚本一致：
 /// `current` 是现在的档位，在 Creem 后台改完价后和官网的 CURRENT 一起手动改；只有第 0 档
-/// 去授权中转的 /earlybird 要首批剩余个数，拿不到就不显示数字；第 0 档时接口说首批已卖完，
+/// 去授权中转的 /earlybird 问首批卖完没有，价格卡只写「首批限量 N 个」、不公开剩余个数；第 0 档时接口说首批已卖完，
 /// 按第 1 档显示。
 public enum ProPriceTiers {
     /// 现在的档位：0 首批特价，1 首批卖完后，2 正式版。
     public static let current = 0
     /// 三档价格，从 `ProLicenseConfig` 来。
     public static let prices = [ProLicenseConfig.launchPrice, ProLicenseConfig.price, ProLicenseConfig.fullPrice]
+    /// 首批限量个数，接口没回时用它（和官网 TIERS[0].count、Worker 的 EARLYBIRD_TOTAL 一致）。
+    public static let earlybirdTotal = 20
     /// 首批剩余个数的公开接口（server/license-relay/worker.js 的 GET /earlybird）。
     public static let earlybirdURL = URL(string: "https://dockling-license.tudou-123.workers.dev/earlybird")!
 }
@@ -80,7 +82,7 @@ public struct ProEarlybird: Equatable, Sendable {
 
 /// 付费墙价格卡上的几行字。
 public struct ProPriceDisplay: Equatable, Sendable {
-    /// 价格上方的小字，如“首批特价 · 还剩 12 个”。
+    /// 价格上方的小字，如“首批限量 20 个”。
     public var badge: String
     /// 大号现价。
     public var price: String
@@ -99,12 +101,13 @@ public struct ProPriceDisplay: Equatable, Sendable {
         switch tier {
         case 0:
             let next = prices[1]
-            let live = earlybird.map { $0.remaining > 0 } ?? false
+            // 不公开剩余个数（卖得少时显得冷清），只写首批限量几个；接口只用来判断卖完没有。
+            let total = earlybird?.total ?? ProPriceTiers.earlybirdTotal
             return ProPriceDisplay(
-                badge: live ? tr("首批特价 · 还剩 \(earlybird!.remaining) 个") : tr("首批特价"),
+                badge: tr("首批限量 \(total) 个"),
                 price: prices[0],
                 nextPrice: next,
-                remainingFraction: live ? Double(earlybird!.remaining) / Double(earlybird!.total) : nil,
+                remainingFraction: nil,
                 tiersLine: tr("之后 \(next) · 正式版 \(full) · 免费更新"))
         case prices.count - 1:
             return ProPriceDisplay(badge: tr("正式版"), price: full, nextPrice: nil,

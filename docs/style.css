@@ -38,7 +38,8 @@ html[data-lang="zh"] [data-l="en"],html:not([data-lang="zh"]) [data-l="zh"]{disp
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .btn:hover{text-decoration:none;opacity:.9}
 .small{font-size:14px;color:var(--mut)}
-.hero .first-note{font-size:14px;color:var(--mut);margin:-12px 0 6px}
+.hero .first-note{display:flex;width:fit-content;max-width:100%;box-sizing:border-box;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:18px auto 4px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(127,127,127,.06)}
+.hero .first-note .fn-ico{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid currentColor;font:600 11px/14px Georgia,serif;font-style:italic;text-align:center;opacity:.8}
 .hero .small{margin:4px 0 0;font-size:14px}
 .hero .cap{font-size:13px;margin:0}
 
