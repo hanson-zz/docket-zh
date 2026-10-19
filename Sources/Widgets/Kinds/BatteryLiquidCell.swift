@@ -7,6 +7,8 @@ import SwiftUI
 /// - 插上电源时水面晃一波（约 1.2 秒衰减），溅起几颗小水珠落回；拔掉轻晃一下。
 /// - 20% 及以下、没在充电时水变红，水面靠一侧鼓起一个圆滴，慢慢呼吸。
 /// - 水色随电量从红经黄到绿平滑过渡；低电量模式黄、充电绿的优先级照旧。
+///   在「外观 ▸ 颜色」里选了颜色时水换成所选颜色，只有低电量报警时仍是红
+///   （`BatteryTheme.cellWaterColor`）。
 ///
 /// 只在卡片看得见时动：平时 10 帧，晃的那一秒多 30 帧，晃完自己降回去；
 /// 减少动态效果时是一张静止的图，只换颜色。
@@ -21,6 +23,8 @@ struct BatteryLiquidCell: View {
     var unpluggedAt: Date?
     var visible: Bool
     var corner: CGFloat
+    /// 选了颜色时的主题色（已调过可读性），默认是 nil，水照旧按电量上色。
+    var theme: ColorCode?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 晃完时加一，让帧率重新算一遍，降回平时的 10 帧。
@@ -72,11 +76,12 @@ struct BatteryLiquidCell: View {
         let tilt = active.map { BatteryLiquidFX.slosh($0.event, elapsed: $0.elapsed) } ?? 0
 
         // 颜色：晃的那一下从插拔前的颜色过渡到现在的，平时直接是现在的。
-        let target = BatteryLiquidFX.cellWaterColor(level: level, charging: charging, lowPower: lowPower)
+        let target = BatteryTheme.cellWaterColor(level: level, charging: charging, lowPower: lowPower,
+                                                 present: present, theme: theme)
         var rgb = target
         if let active {
-            let before = BatteryLiquidFX.cellWaterColor(level: level, charging: active.event == .unplugged,
-                                                        lowPower: lowPower)
+            let before = BatteryTheme.cellWaterColor(level: level, charging: active.event == .unplugged,
+                                                     lowPower: lowPower, present: present, theme: theme)
             rgb = before.mixed(with: target, BatteryLiquidFX.colorBlend(active.event, elapsed: active.elapsed))
         }
         let tint = color(rgb)

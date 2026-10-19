@@ -5,6 +5,15 @@ extension BatteryRGB {
     var swiftUI: Color { Color(red: red, green: green, blue: blue) }
 }
 
+extension ColorCode {
+    /// 系统强调色（「外观 ▸ 颜色」选了跟随系统时电池用它），读不到是 nil。
+    @MainActor static var systemAccent: ColorCode? {
+        guard let rgb = NSColor.controlAccentColor.usingColorSpace(.sRGB) else { return nil }
+        return ColorCode(red: Double(rgb.redComponent), green: Double(rgb.greenComponent),
+                         blue: Double(rgb.blueComponent))
+    }
+}
+
 /// What one battery gauge draws from.
 struct BatteryGaugeState: Equatable {
     var level: Double
@@ -41,15 +50,19 @@ struct BatteryGauge: View {
     var center: BatteryGaugeCenter = .none
     var inPanel = false
     var isPreview = false
+    /// 「外观 ▸ 颜色」选了颜色时的主题色（已调过可读性），默认 nil 照旧按电量上色。
+    var theme: ColorCode?
 
     init(look: BatteryLook, state: BatteryGaugeState, diameter: CGFloat,
-         center: BatteryGaugeCenter = .none, inPanel: Bool = false, isPreview: Bool = false) {
+         center: BatteryGaugeCenter = .none, inPanel: Bool = false, isPreview: Bool = false,
+         theme: ColorCode? = nil) {
         self.look = look
         self.state = state
         self.diameter = diameter
         self.center = center
         self.inPanel = inPanel
         self.isPreview = isPreview
+        self.theme = theme
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -111,13 +124,11 @@ struct BatteryGauge: View {
     /// The band colours, except that 液态's water (and its ring) runs
     /// smoothly from red through yellow to green with the level
     /// (`BatteryLiquidFX.gaugeWaterColor`); Low Power Mode stays yellow.
+    /// A colour picked in 外观 ▸ 颜色 replaces all of that, except the red
+    /// of a low battery that is not charging (`BatteryTheme.gaugeTint`).
     private var gaugeTint: BatteryColorMap.Tint {
-        var tint = BatteryColorMap.tint(level: state.level, lowPower: state.lowPower, charging: state.charging)
-        if look == .liquid {
-            tint.color = BatteryLiquidFX.gaugeWaterColor(level: state.level, lowPower: state.lowPower)
-            tint.highlight = tint.color.mixed(with: .white, 0.35)
-        }
-        return tint
+        BatteryTheme.gaugeTint(level: state.level, charging: state.charging, lowPower: state.lowPower,
+                               present: state.present, liquid: look == .liquid, theme: theme)
     }
 
     // MARK: Flourishes
@@ -244,6 +255,8 @@ struct BatteryGauge: View {
             bolt(frame, size: diameter * 0.22)
                 .padding(2)
                 .background(Circle().fill(.black.opacity(0.35)))
+                // 选了颜色时闪电的底带一层主题色，和外圈是一套颜色。
+                .background(Circle().fill(frame.tint.color.swiftUI.opacity(theme == nil ? 0 : 0.45)))
                 .offset(x: diameter * 0.06, y: diameter * 0.06)
         }
     }

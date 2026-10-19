@@ -440,7 +440,7 @@ public enum BatteryShelf {
         max(1, config.strings("devices", default: ["mac"]).count)
     }
 
-    /// The single-device 状态 card keeps its own size and swaps to gauges
+    /// The single-device 电量 card keeps its own size and swaps to gauges
     /// when accessories are connected; it gets no extra slots.
     public static func isStatusCard(_ config: WidgetConfig) -> Bool {
         configuredCount(config) == 1 && config.string("layout", default: "status") == "status"

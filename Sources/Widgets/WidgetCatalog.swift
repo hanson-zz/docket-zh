@@ -176,7 +176,8 @@ public enum WidgetCatalog {
                            // before looks existed reads, so it stays 经典;
                            // `make` gives a new widget 液态.
                            BatteryLook.key: .string(BatteryLook.legacyDefault.rawValue)]),
-              variants: [(tr("状态"), ["layout": .string("status")]),
+              variants: [// 原来叫“状态”，用户看不懂，改叫“电量”；存的值仍是 status。
+                         (tr("电量"), ["layout": .string("status")]),
                          // 原来的“百分比圆环”，画成电池形状后改名；存的值仍是 gauge，Pro 照旧。
                          (tr("电池格"), ["layout": .string("gauge")]),
                          (tr("仅图标"), ["layout": .string("icon")])],
@@ -840,7 +841,7 @@ public enum WidgetCatalog {
         case .music:
             return cfg.bool("mini") ? CGSize(width: 64, height: 62) : CGSize(width: 264, height: 132)
         case .battery:
-            // The single-device 状态 card keeps its size: connected
+            // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
             if BatteryShelf.isStatusCard(cfg) {
                 return CGSize(width: 168, height: 132)

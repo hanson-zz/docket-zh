@@ -314,7 +314,7 @@ final class BluetoothBatteryTests: XCTestCase {
         let narrow = WidgetCatalog.naturalSize(WidgetInstance(kind: .battery, config: off))
         XCTAssertGreaterThan(wide.width, narrow.width)
 
-        // The default 状态 card keeps its size either way.
+        // The default 电量 card keeps its size either way.
         let status = WidgetCatalog.make(.battery)!
         XCTAssertTrue(BatteryShelf.isStatusCard(status.config))
         XCTAssertEqual(WidgetCatalog.naturalSize(status).width, 168)

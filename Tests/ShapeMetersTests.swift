@@ -40,7 +40,7 @@ final class ShapeMetersTests: XCTestCase {
 
     func testBatteryGaugeIsNowCalledCellsAndStaysPro() {
         guard let entry = WidgetCatalog.entry(.battery) else { return XCTFail("missing") }
-        XCTAssertEqual(entry.variants.map(\.title), ["状态", "电池格", "仅图标"])
+        XCTAssertEqual(entry.variants.map(\.title), ["电量", "电池格", "仅图标"])
         let cells = entry.variants.first { $0.title == "电池格" }?.overrides
         XCTAssertEqual(cells?["layout"], .string("gauge"))
         XCTAssertTrue(ProFeatures.isProStyle(.battery, cells ?? [:]))

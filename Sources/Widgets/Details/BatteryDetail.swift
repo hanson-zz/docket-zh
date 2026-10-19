@@ -161,7 +161,11 @@ struct BatteryDetail: View {
                 // whether or not the battery is charging.
                 BatteryGauge(look: device.isMac ? look : (look == .panda ? .liquid : look),
                              state: gaugeState(device), diameter: 104,
-                             center: .none, inPanel: true, isPreview: context.isPreview)
+                             center: .none, inPanel: true, isPreview: context.isPreview,
+                             // 面板卡片总是深色，主题色按深色调可读性；默认 nil 照旧。
+                             theme: BatteryTheme.color(WidgetTint.shownChoice(instance.config,
+                                                                              unlocked: ProAccess.isUnlocked),
+                                                       systemAccent: ColorCode.systemAccent, dark: true))
                     .padding(.bottom, 2)
             } else if device.charging {
                 Image(systemName: "bolt.fill")

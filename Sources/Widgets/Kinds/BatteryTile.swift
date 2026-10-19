@@ -12,6 +12,11 @@ struct BatteryTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    /// 「外观 ▸ 颜色」：选了颜色时水、外圈、电量那一截换成所选颜色，默认照旧
+    /// 按电量上色（规则在 `BatteryTheme`）。
+    @Environment(\.widgetTint) private var tintStyle
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         WidgetSurface {
             if context.position.isVertical {
@@ -85,7 +90,7 @@ struct BatteryTile: View {
                 } else {
                     BatteryGauge(look: shown, state: gaugeState(slot), diameter: 40,
                                  center: shown == .panda ? .none : .symbol(slot.symbol),
-                                 isPreview: context.isPreview)
+                                 isPreview: context.isPreview, theme: theme)
                     TileReading(value: percentText(reading), caption: caption(reading))
                         .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
                 }
@@ -94,7 +99,7 @@ struct BatteryTile: View {
         }
     }
 
-    /// 状态样式的电池：约 61 x 29 的横向电池，百分比写在里面，充电时数字前面
+    /// 电量样式的电池：约 61 x 29 的横向电池，百分比写在里面，充电时数字前面
     /// 一道闪电。压在电量那一截上的数字反色（见 `BatteryStatusCell.inkOnFill`），
     /// 低电量时那一截变橙、变红。
     private func statusCell(_ slot: Slot, _ reading: Reading, liquid: Bool) -> some View {
@@ -112,12 +117,12 @@ struct BatteryTile: View {
                                 moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                                 showsBolt: false,
                                 lowPower: state.lowPower, pluggedAt: state.pluggedAt,
-                                unpluggedAt: state.unpluggedAt)
+                                unpluggedAt: state.unpluggedAt, theme: theme)
             .frame(width: width, height: height)
             .overlay(alignment: .topLeading) {
                 ZStack(alignment: .topLeading) {
                     label.foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
-                    switch BatteryStatusCell.inkOnFill(tone: tone, liquid: liquid) {
+                    switch BatteryStatusCell.inkOnFill(tone: tone, liquid: liquid, themed: theme != nil) {
                     case .none:
                         EmptyView()
                     case .white:
@@ -127,6 +132,11 @@ struct BatteryTile: View {
                             }
                     case .inverted:
                         label.foregroundStyle(Color(nsColor: .textBackgroundColor))
+                            .mask(alignment: .leading) {
+                                Rectangle().frame(width: CGFloat(geometry.fillEnd(fill)))
+                            }
+                    case .onTheme:
+                        label.foregroundStyle(themeInk)
                             .mask(alignment: .leading) {
                                 Rectangle().frame(width: CGFloat(geometry.fillEnd(fill)))
                             }
@@ -195,7 +205,7 @@ struct BatteryTile: View {
                     } else {
                         BatteryGauge(look: shown, state: gaugeState(slot), diameter: 42,
                                      center: shown == .panda ? .none : .symbol(slot.symbol),
-                                     isPreview: context.isPreview)
+                                     isPreview: context.isPreview, theme: theme)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -235,7 +245,7 @@ struct BatteryTile: View {
                          liquid: liquid,
                          moving: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                          lowPower: state.lowPower, pluggedAt: state.pluggedAt,
-                         unpluggedAt: state.unpluggedAt)
+                         unpluggedAt: state.unpluggedAt, theme: theme)
     }
 
     /// Low batteries earn a colour. Everything else stays the neutral fill, so
@@ -257,7 +267,7 @@ struct BatteryTile: View {
                 let reading = reading(slot)
                 Image(systemName: slot.symbol)
                     .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(reading.present ? present : WidgetStyle.secondary)
+                    .foregroundStyle(reading.present ? accent(reading) : WidgetStyle.secondary)
                     .frame(width: 44)
                     .overlay(alignment: .topTrailing) {
                         if reading.charging { bolt }
@@ -284,9 +294,9 @@ struct BatteryTile: View {
                         percent(reading, size: single ? 12 : 11)
                     } else if shown == .classic {
                         MetricProgressRing(progress: reading.present ? reading.level : 0,
-                                           tint: present,
+                                           tint: accent(reading),
                                            track: reading.present
-                                               ? present.opacity(0.18)
+                                               ? accent(reading).opacity(0.18)
                                                : Color.primary.opacity(0.10),
                                            diameter: single ? 42 : 34,
                                            lineWidth: single ? 5 : 4) {
@@ -297,7 +307,8 @@ struct BatteryTile: View {
                         }
                     } else {
                         BatteryGauge(look: shown, state: gaugeState(slot), diameter: single ? 42 : 34,
-                                     center: .percent(single ? 14 : 11), isPreview: context.isPreview)
+                                     center: .percent(single ? 14 : 11), isPreview: context.isPreview,
+                                     theme: theme)
                     }
                     Image(systemName: slot.symbol)
                         .font(.system(size: single ? 13 : 11, weight: .regular))
@@ -314,7 +325,7 @@ struct BatteryTile: View {
     private var bolt: some View {
         Image(systemName: "bolt.fill")
             .font(.system(size: 8, weight: .bold))
-            .foregroundStyle(present)
+            .foregroundStyle(theme.map { Color(code: $0) } ?? present)
             .padding(3)
             .background(Circle().fill(.background))
     }
@@ -322,6 +333,25 @@ struct BatteryTile: View {
     // MARK: Data
 
     private var present: Color { Color(hex: MetricColor.batteryPresent) }
+
+    /// 选了颜色时的主题色（深色外观往亮里调、浅色往暗里调，见
+    /// `WidgetTint.readable`），默认是 nil。
+    private var theme: ColorCode? {
+        BatteryTheme.color(tintStyle?.choice ?? .kindDefault, systemAccent: ColorCode.systemAccent,
+                           dark: scheme == .dark)
+    }
+
+    /// 经典外观压在主题色那一截上的数字：按主题色亮度用深色或白色。
+    private var themeInk: Color {
+        guard let theme else { return .white }
+        return WidgetTint.inkIsDark(on: theme) ? .black : .white
+    }
+
+    /// 经典圆环和图标的颜色：默认电池绿，选了颜色是主题色，低电量报警是红。
+    private func accent(_ reading: Reading) -> Color {
+        BatteryTheme.accent(level: reading.level, charging: reading.charging, present: reading.present,
+                            theme: theme)?.swiftUI ?? present
+    }
 
     private var layout: String { instance.config.string("layout", default: "status") }
 
@@ -411,7 +441,7 @@ struct BatteryTile: View {
         let room = BatteryShelf.accessoryRoom(instance.config)
         guard room > 0 else { return result }
         if context.isPreview {
-            // The 状态 style previews as itself; the others show what an
+            // The 电量 style previews as itself; the others show what an
             // accessory slot looks like.
             if layout != "status" || devices.count > 1 {
                 result.append(.accessory(BluetoothBattery(id: "preview.mouse", name: tr("妙控鼠标"),
@@ -544,16 +574,20 @@ struct BatteryCellShape: View {
     var liquid = false
     /// 卡片在屏幕上时水才动。
     var moving = false
-    /// 充电时中间画不画闪电。状态样式把闪电写在电池里的数字前面，这里不画。
+    /// 充电时中间画不画闪电。电量样式把闪电写在电池里的数字前面，这里不画。
     var showsBolt = true
     /// 液态外观才用：低电量模式（水变黄）和 Mac 插拔电源的时刻（水面晃一下）。
     var lowPower = false
     var pluggedAt: Date?
     var unpluggedAt: Date?
+    /// 「外观 ▸ 颜色」选了颜色时的主题色：实心的一截平时换成它，液态的水交给
+    /// `BatteryLiquidCell`。默认 nil，一切照旧。
+    var theme: ColorCode?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var tint: Color {
+        if !liquid, let code = BatteryTheme.classicFill(tone: tone, theme: theme) { return Color(code: code) }
         switch tone {
         // 液态的水平时是电池绿，实心的一截平时不上色。
         case .normal: liquid ? Color(hex: MetricColor.batteryPresent) : WidgetStyle.primary
@@ -567,7 +601,7 @@ struct BatteryCellShape: View {
         GeometryReader { geo in
             let long = vertical ? geo.size.height : geo.size.width
             let short = vertical ? geo.size.width : geo.size.height
-            // 尺寸算法在 Core（`BatteryStatusCell.geometry`），状态样式压在
+            // 尺寸算法在 Core（`BatteryStatusCell.geometry`），电量样式压在
             // 电池上的数字按同一套尺寸反色。
             let g = BatteryStatusCell.geometry(long: Double(long), short: Double(short))
             let nub = CGFloat(g.nub)
@@ -624,7 +658,7 @@ struct BatteryCellShape: View {
             // `BatteryLiquidCell` 里，规则在 `BatteryLiquidFX`。
             BatteryLiquidCell(fill: fill, vertical: vertical, charging: charging, present: tone != .absent,
                               lowPower: lowPower, pluggedAt: pluggedAt, unpluggedAt: unpluggedAt,
-                              visible: moving, corner: corner)
+                              visible: moving, corner: corner, theme: theme)
                 .frame(width: width, height: height)
         } else {
             shape.fill(tint)

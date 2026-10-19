@@ -1,6 +1,6 @@
 import XCTest
 
-/// 电池“状态”样式换成电池形状后的纯逻辑。
+/// 电池“电量”样式（原来叫“状态”）换成电池形状后的纯逻辑。
 final class BatteryStatusCellTests: XCTestCase {
 
     func testClassicAndLiquidDrawTheCellOthersKeepTheirOwn() {
@@ -16,7 +16,7 @@ final class BatteryStatusCellTests: XCTestCase {
         var config = WidgetConfig()
         config.set("layout", .string("status"))
         config.set("devices", .list([.string("mac")]))
-        XCTAssertTrue(BatteryShelf.isStatusCard(config), "存的值不变，旧卡片照样是状态卡片")
+        XCTAssertTrue(BatteryShelf.isStatusCard(config), "存的值不变，旧卡片照样是电量卡片")
     }
 
     func testLabelNeverInventsALevel() {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// 电池单设备“状态”样式的纯逻辑。原来是设备图标外面一圈百分比圆环，
+/// 电池单设备“电量”样式（原来叫“状态”）的纯逻辑。原来是设备图标外面一圈百分比圆环，
 /// 和电池格、液态画成电池以后的样子对不上；现在经典和液态也画一块横向
 /// 电池（电池形外轮廓、正极小凸起、按电量填满），百分比写在电池里，
 /// 充电时数字前面一道闪电，低于 20% 变橙、10% 变红（和电池格一样，见
@@ -10,7 +10,7 @@ import Foundation
 /// 存的值不变：仍是 `layout` 为 status，外观仍读 `BatteryLook`，旧卡片
 /// 读出来直接换成新画法，配置不用改。
 public enum BatteryStatusCell {
-    /// 状态样式用不用电池形状：和电池格同一条规则，经典和液态画电池。
+    /// 电量样式用不用电池形状：和电池格同一条规则，经典和液态画电池。
     public static func drawsCell(look raw: String) -> Bool {
         ShapeMeters.drawsCell(look: raw)
     }
@@ -32,17 +32,20 @@ public enum BatteryStatusCell {
     /// 数字压在电量那一截上用什么颜色：经典外观平时那一截是不上色的前景色
     /// （深色外观白、浅色外观黑），数字要反过来；橙、红和液态的水是彩色，
     /// 数字一律白。没连上时电池是空的，不用反色。
+    /// 经典外观选了颜色（`themed`）时，平时那一截是主题色，数字按主题色的
+    /// 亮度用深色或白色（`onTheme`）。
     public enum Ink: Equatable, Sendable {
         case inverted
         case white
+        case onTheme
         case none
     }
 
-    public static func inkOnFill(tone: ShapeMeters.CellTone, liquid: Bool) -> Ink {
+    public static func inkOnFill(tone: ShapeMeters.CellTone, liquid: Bool, themed: Bool = false) -> Ink {
         switch tone {
         case .absent: .none
         case .low, .critical: .white
-        case .normal: liquid ? .white : .inverted
+        case .normal: liquid ? .white : (themed ? .onTheme : .inverted)
         }
     }
 
