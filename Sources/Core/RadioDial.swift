@@ -15,23 +15,49 @@ public struct RadioStation: Equatable, Hashable, Sendable, Identifiable {
     public var codec: String
     /// In kbps, 0 when unknown.
     public var bitrate: Int
+    /// 备用地址，按顺序排在 `url` 后面：主地址连不上时播放器依次换下一条。
+    public var backups: [String]
+    /// 用户自己加的（贴地址或导入播放列表），收藏里标“自定义”。
+    public var isCustom: Bool
+    /// 上次检查时所有地址都连不上，收藏里标“可能失效”。只是标记，不会自动删。
+    public var mayBeDead: Bool
 
     public init(id: String = RadioStation.newID(), name: String, url: String,
-                codec: String = "", bitrate: Int = 0) {
+                codec: String = "", bitrate: Int = 0, backups: [String] = [],
+                isCustom: Bool = false, mayBeDead: Bool = false) {
         self.id = id
         self.name = name
         self.url = url
         self.codec = codec
         self.bitrate = bitrate
+        self.backups = backups
+        self.isCustom = isCustom
+        self.mayBeDead = mayBeDead
+    }
+
+    /// 主地址在前、备用地址在后，播放和检查都按这个顺序。
+    public var addresses: [String] { [url] + backups }
+
+    /// 两个电台有一条地址相同，就当作同一个电台（检查后主地址可能换成备用那条）。
+    public func matches(_ other: RadioStation) -> Bool {
+        let mine = Set(addresses)
+        return other.addresses.contains { mine.contains($0) }
     }
 
     public static func newID() -> String {
         String(UUID().uuidString.prefix(8)).lowercased()
     }
 
+    /// 旧的五段照旧；有标记或备用地址时再加两段：标记（`custom`、`dead`，逗号分开）
+    /// 和空格分开的备用地址。旧版本读到多出的两段会忽略。
     public var encoded: String {
-        [id, RadioDial.oneLine(name), url, RadioDial.oneLine(codec), String(max(0, bitrate))]
-            .joined(separator: "\t")
+        var parts = [id, RadioDial.oneLine(name), url, RadioDial.oneLine(codec), String(max(0, bitrate))]
+        let flags = [isCustom ? "custom" : nil, mayBeDead ? "dead" : nil].compactMap { $0 }
+        if !flags.isEmpty || !backups.isEmpty {
+            parts.append(flags.joined(separator: ","))
+            parts.append(backups.joined(separator: " "))
+        }
+        return parts.joined(separator: "\t")
     }
 
     /// Tolerant on purpose: a bare stream address written by hand is still a
@@ -42,11 +68,23 @@ public struct RadioStation: Equatable, Hashable, Sendable, Identifiable {
             guard let url = RadioDial.streamURL(parts[2]) else { return nil }
             let id = parts[0].trimmingCharacters(in: .whitespaces)
             let name = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            let flags: Set<String> = parts.count > 5
+                ? Set(parts[5].split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }) : []
+            var backups: [String] = []
+            if parts.count > 6 {
+                for word in parts[6].split(separator: " ") {
+                    guard let backup = RadioDial.streamURL(String(word))?.absoluteString,
+                          backup != url.absoluteString, !backups.contains(backup) else { continue }
+                    backups.append(backup)
+                }
+            }
             self.init(id: id.isEmpty ? fallbackID : id,
                       name: name.isEmpty ? RadioDial.hostName(url) : name,
                       url: url.absoluteString,
                       codec: parts.count > 3 ? parts[3].trimmingCharacters(in: .whitespaces) : "",
-                      bitrate: parts.count > 4 ? max(0, Int(parts[4]) ?? 0) : 0)
+                      bitrate: parts.count > 4 ? max(0, Int(parts[4]) ?? 0) : 0,
+                      backups: Array(backups.prefix(RadioDial.maxBackups)),
+                      isCustom: flags.contains("custom"), mayBeDead: flags.contains("dead"))
         } else {
             guard let url = RadioDial.streamURL(raw) else { return nil }
             self.init(id: fallbackID, name: RadioDial.hostName(url), url: url.absoluteString)
@@ -69,6 +107,8 @@ public enum RadioDial {
     /// A dial, not a directory: past this the favourites stop being a dial.
     public static let maxStations = 60
     public static let maxNameLength = 60
+    /// 一个电台最多记几条备用地址（不算主地址）。
+    public static let maxBackups = 9
 
     /// Stations a new widget starts with. Each one was checked to answer with
     /// real audio (an HLS playlist with MPEG-TS segments, or an MP3 stream)
@@ -152,7 +192,7 @@ public enum RadioDial {
     /// Appends unless that stream is already a favourite.
     public static func adding(_ station: RadioStation, to stations: [RadioStation]) -> [RadioStation] {
         guard stations.count < maxStations,
-              !stations.contains(where: { $0.url == station.url }) else { return stations }
+              !stations.contains(where: { $0.matches(station) }) else { return stations }
         var clean = station
         clean.name = String(oneLine(station.name).prefix(maxNameLength))
         if clean.name.isEmpty, let url = URL(string: station.url) { clean.name = hostName(url) }
@@ -189,7 +229,8 @@ public enum RadioDial {
         let words = String(oneLine(name).prefix(maxNameLength))
         return RadioStation(id: id, name: words.isEmpty ? hostName(address) : words,
                             url: address.absoluteString,
-                            codec: address.absoluteString.lowercased().contains(".m3u8") ? "HLS" : "")
+                            codec: address.absoluteString.lowercased().contains(".m3u8") ? "HLS" : "",
+                            isCustom: true)
     }
 
     public static func hostName(_ url: URL) -> String {

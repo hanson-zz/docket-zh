@@ -7,6 +7,10 @@ import SwiftUI
 ///
 /// The favourites and the tuned channel are written to the widget's config,
 /// so the tile and this panel always show the same station.
+///
+/// 收藏上面一排“添加电台”（贴地址或导入 .m3u / .m3u8 / .pls，见
+/// `RadioAddFlow`）和“检查”（试连收藏，见 `RadioStationCheck`）。有电台所有
+/// 地址都连不上时顶部出一条可关闭的提示，点开列出来，确认后才删。
 struct RadioDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
@@ -16,6 +20,8 @@ struct RadioDetail: View {
     private enum Tab: Hashable { case favourites, search }
 
     private var player: RadioPlayer { RadioPlayer.shared }
+    private var addFlow: RadioAddFlow { RadioAddFlow.shared }
+    private var healthCheck: RadioStationCheck { RadioStationCheck.shared }
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporterUnlocked = false
@@ -43,6 +49,14 @@ struct RadioDetail: View {
     /// 收藏行实际高度，见 `favouriteRowHeight`。
     @State private var classicRowHeight: CGFloat?
     @State private var retroRowHeight: CGFloat?
+    /// 正在改名的收藏和输入框里的字。
+    @State private var renamingID: String?
+    @State private var renameText = ""
+    /// “N 个电台连不上”提示展开着、正在问“确定删除？”。
+    @State private var healthOpen = false
+    @State private var confirmingDelete = false
+    /// 关掉提示时记下的那一批（见 `RadioHealth.dismissToken`）。
+    @State private var dismissedHealth: String?
 
     private var stations: [RadioStation] {
         context.isPreview ? RadioDial.presets : RadioDial.stations(instance.config)
@@ -82,6 +96,12 @@ struct RadioDetail: View {
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             content(now: tick.date)
         }
+        .onAppear {
+            guard !context.isPreview else { return }
+            dismissedHealth = RadioStationCheck.dismissed(instance.id)
+            // 每天最多自动检查一次，在后台跑，不挡操作。
+            healthCheck.checkIfDue(instance)
+        }
     }
 
     private func content(now: Date) -> some View {
@@ -89,6 +109,7 @@ struct RadioDetail: View {
             MeshBackdrop(color: accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
+                if showsHealthBanner { healthBanner }
                 if retro {
                     retroTop
                 } else {
@@ -433,6 +454,17 @@ struct RadioDetail: View {
     // MARK: Favourites
 
     private var favourites: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !context.isPreview, addFlow.draft(instance.id).open {
+                addForm
+            } else {
+                favouritesToolbar
+            }
+            favouriteList
+        }
+    }
+
+    private var favouriteList: some View {
         Group {
             if stations.isEmpty {
                 PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) { tab = .search }
@@ -442,12 +474,17 @@ struct RadioDetail: View {
                 ScrollView {
                     VStack(spacing: RadioFavouriteList.rowSpacing) {
                         ForEach(Array(stations.enumerated()), id: \.element.id) { offset, item in
-                            favouriteRow(item, offset: offset)
-                                .onGeometryChange(for: CGFloat.self) { proxy in
-                                    proxy.size.height
-                                } action: { height in
-                                    noteRowHeight(height)
-                                }
+                            if renamingID == item.id {
+                                renameRow(item)
+                            } else {
+                                favouriteRow(item, offset: offset)
+                                    .onGeometryChange(for: CGFloat.self) { proxy in
+                                        proxy.size.height
+                                    } action: { height in
+                                        noteRowHeight(height)
+                                    }
+                                    .contextMenu { rowMenu(item, offset: offset) }
+                            }
                         }
                     }
                 }
@@ -496,6 +533,7 @@ struct RadioDetail: View {
                         .font(.system(size: 15, weight: tuned ? .semibold : .medium))
                         .foregroundStyle(.white.opacity(tuned ? 1 : 0.88))
                         .lineLimit(1)
+                    stationTags(item)
                     Spacer(minLength: 0)
                     Text(verbatim: RadioDial.fmText(offset, count: stations.count))
                         .font(.system(size: 13, weight: .medium).monospacedDigit())
@@ -506,18 +544,8 @@ struct RadioDetail: View {
             .buttonStyle(.plain)
             .help(tr("收听 \(item.name)"))
 
-            Button {
-                guard !context.isPreview else { return }
-                remove(item, at: offset)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .frame(width: 24, height: 24)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
+            if item.isCustom { renameButton(item) }
+            removeButton(item, offset: offset)
         }
         .padding(.leading, 12)
         .padding(.trailing, 4)
@@ -552,10 +580,13 @@ struct RadioDetail: View {
                             .font(.system(size: 13, weight: tuned ? .semibold : .regular))
                             .foregroundStyle(.white.opacity(0.95))
                             .lineLimit(1)
-                        Text(item.detail)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.62))
-                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            stationTags(item)
+                            Text(item.detail)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.62))
+                                .lineLimit(1)
+                        }
                     }
                     Spacer(minLength: 0)
                     if tuned, playing {
@@ -567,18 +598,8 @@ struct RadioDetail: View {
             .buttonStyle(.plain)
             .help(tr("收听 \(item.name)"))
 
-            Button {
-                guard !context.isPreview else { return }
-                remove(item, at: offset)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .frame(width: 24, height: 24)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
+            if item.isCustom { renameButton(item) }
+            removeButton(item, offset: offset)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
@@ -597,9 +618,358 @@ struct RadioDetail: View {
         }
     }
 
+    // MARK: Custom stations
+
+    /// “自定义”“可能失效”小标签。
+    @ViewBuilder
+    private func stationTags(_ item: RadioStation) -> some View {
+        if item.isCustom { tag(tr("自定义"), warn: false) }
+        if item.mayBeDead { tag(tr("可能失效"), warn: true) }
+    }
+
+    private func tag(_ text: String, warn: Bool) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(warn ? accentText : .white.opacity(0.75))
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 5)
+            .frame(height: 18)
+            .background(Capsule().fill(warn ? accent.opacity(0.16) : .white.opacity(0.1)))
+    }
+
+    private func renameButton(_ item: RadioStation) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            startRename(item)
+        } label: {
+            Image(systemName: "pencil")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 24, height: 24)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(tr("改名"))
+        .accessibilityLabel(tr("给 \(item.name) 改名"))
+    }
+
+    private func removeButton(_ item: RadioStation, offset: Int) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            remove(item, at: offset)
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 24, height: 24)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
+    }
+
+    @ViewBuilder
+    private func rowMenu(_ item: RadioStation, offset: Int) -> some View {
+        if !context.isPreview {
+            Button(tr("改名")) { startRename(item) }
+            Button(tr("从收藏中移除"), role: .destructive) { remove(item, at: offset) }
+        }
+    }
+
+    private func startRename(_ item: RadioStation) {
+        renameText = item.name
+        renamingID = item.id
+    }
+
+    private func commitRename(_ item: RadioStation) {
+        let name = RadioPlaylist.cleanName(renameText)
+        renamingID = nil
+        guard !name.isEmpty, name != item.name else { return }
+        RadioRemote.edit(instance) { list, _ in
+            if let at = list.firstIndex(where: { $0.id == item.id }) { list[at].name = name }
+        }
+    }
+
+    /// 改名那一行：和收藏行一样高，回车或“完成”保存，Esc 或“取消”放弃。
+    private func renameRow(_ item: RadioStation) -> some View {
+        HStack(spacing: 6) {
+            TextField("", text: $renameText, prompt: Text(verbatim: item.name))
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .glassPane(cornerRadius: 8)
+                .onSubmit { commitRename(item) }
+                .onExitCommand { renamingID = nil }
+            toolChip(tr("完成"), filled: true) { commitRename(item) }
+            toolChip(tr("取消")) { renamingID = nil }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: favouriteRowHeight)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.05)))
+    }
+
+    /// 收藏上面一排：“添加电台”和“检查”。
+    private var favouritesToolbar: some View {
+        let checking = healthCheck.isRunning(instance.id)
+        return HStack(spacing: 6) {
+            toolChip(tr("添加电台"), symbol: "plus") { addFlow.open(instance.id) }
+            Spacer(minLength: 0)
+            if checking {
+                ProgressView().controlSize(.mini)
+                Text(verbatim: tr("正在检查…"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.65))
+            } else {
+                if !context.isPreview, healthCheck.reports[instance.id] == 0 {
+                    Text(verbatim: tr("都连得上"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                toolChip(tr("检查"), symbol: "antenna.radiowaves.left.and.right") {
+                    dismissedHealth = nil
+                    RadioStationCheck.clearDismissed(instance.id)
+                    healthCheck.check(instance)
+                }
+                .help(tr("逐个试连收藏的电台，找出连不上的"))
+                .disabled(stations.isEmpty)
+            }
+        }
+    }
+
+    private var addressBinding: Binding<String> {
+        Binding(get: { addFlow.draft(instance.id).address },
+                set: { value in addFlow.update(instance.id) { $0.address = value } })
+    }
+
+    private var nameBinding: Binding<String> {
+        Binding(get: { addFlow.draft(instance.id).name },
+                set: { value in addFlow.update(instance.id) { $0.name = value } })
+    }
+
+    /// 添加电台：地址、名称、导入文件；试连的结果和“仍然保存”在下面。
+    private var addForm: some View {
+        let draft = addFlow.draft(instance.id)
+        let busy: Bool = {
+            if case .working = draft.status { return true }
+            return false
+        }()
+        let canAdd = !busy && !draft.address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: tr("添加电台"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
+            formField(addressBinding, prompt: tr("直播地址：http(s) 音频流或 .m3u8"))
+            formField(nameBinding, prompt: tr("名称（可选）"))
+            addStatus(draft)
+            HStack(spacing: 6) {
+                toolChip(tr("导入文件…"), symbol: "doc.badge.plus") { addFlow.importFile(instance.id) }
+                    .help(tr("导入 .m3u、.m3u8 或 .pls 播放列表"))
+                    .disabled(busy)
+                    .opacity(busy ? 0.45 : 1)
+                Spacer(minLength: 0)
+                toolChip(tr("取消")) { addFlow.close(instance.id) }
+                toolChip(tr("添加"), filled: true) { addFlow.submit(instance.id) }
+                    .disabled(!canAdd)
+                    .opacity(canAdd ? 1 : 0.45)
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.05)))
+    }
+
+    private func formField(_ text: Binding<String>, prompt: String) -> some View {
+        TextField("", text: text, prompt: Text(verbatim: prompt))
+            .textFieldStyle(.plain)
+            .font(.system(size: 13))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .glassPane(cornerRadius: 8)
+            .onSubmit { addFlow.submit(instance.id) }
+    }
+
+    @ViewBuilder
+    private func addStatus(_ draft: RadioAddFlow.Draft) -> some View {
+        switch draft.status {
+        case .idle:
+            note(tr("也可以导入 .m3u、.m3u8、.pls 播放列表。同名的地址并成一个电台，主地址连不上时按顺序换备用。"))
+        case .working(let text):
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.mini)
+                Text(verbatim: text)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        case .message(let text):
+            note(text)
+        case .failed(let text):
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verbatim: text)
+                    .font(.system(size: 13))
+                    .foregroundStyle(accentText)
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) { saveAnywayChips(draft) }
+                    VStack(alignment: .leading, spacing: 6) { saveAnywayChips(draft) }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func saveAnywayChips(_ draft: RadioAddFlow.Draft) -> some View {
+        if !draft.working.isEmpty {
+            toolChip(tr("只保存连得上的 \(draft.working.count) 个")) {
+                addFlow.saveAnyway(instance.id, onlyWorking: true)
+            }
+        }
+        toolChip(tr("仍然保存")) { addFlow.saveAnyway(instance.id, onlyWorking: false) }
+    }
+
+    /// 小胶囊按钮；实心的用强调色底、深色字。
+    private func toolChip(_ title: String, symbol: String? = nil, filled: Bool = false,
+                          action: @escaping () -> Void) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            action()
+        } label: {
+            HStack(spacing: 4) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                }
+                Text(verbatim: title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .foregroundStyle(filled ? segmentInk : .white.opacity(0.85))
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Capsule().fill(filled ? accent : .white.opacity(0.1)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Health banner
+
+    private var deadStations: [RadioStation] {
+        context.isPreview ? [] : RadioHealth.dead(stations)
+    }
+
+    private var showsHealthBanner: Bool {
+        RadioHealth.bannerVisible(dead: deadStations, dismissed: dismissedHealth)
+    }
+
+    /// “N 个电台连不上”：点开列出来；“保留”或叉号关掉，确认后才删除。
+    private var healthBanner: some View {
+        let dead = deadStations
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+                        healthOpen.toggle()
+                        confirmingDelete = false
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(accentText)
+                        Text(verbatim: tr("\(dead.count) 个电台连不上"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.92))
+                            .lineLimit(1)
+                        Image(systemName: healthOpen ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.6))
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(healthOpen ? tr("收起") : tr("查看连不上的电台"))
+
+                Button {
+                    dismissHealth(dead)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .frame(width: 24, height: 24)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tr("关闭提示"))
+            }
+            if healthOpen {
+                Text(verbatim: tr("每条地址都试过，都连不上。可能只是暂时离线，确认后才会删除。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.65))
+                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(dead) { item in
+                        HStack(spacing: 6) {
+                            Text(item.name)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            tag(tr("可能失效"), warn: true)
+                        }
+                    }
+                }
+                HStack(spacing: 6) {
+                    if confirmingDelete {
+                        Text(verbatim: tr("确定删除？"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.85))
+                        Spacer(minLength: 0)
+                        toolChip(tr("取消")) { confirmingDelete = false }
+                        toolChip(tr("删除 \(dead.count) 个"), filled: true) { removeDead(dead) }
+                    } else {
+                        toolChip(tr("保留")) { dismissHealth(dead) }
+                        Spacer(minLength: 0)
+                        toolChip(tr("删除这些电台")) { confirmingDelete = true }
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.07)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
+    }
+
+    private func dismissHealth(_ dead: [RadioStation]) {
+        RadioStationCheck.dismiss(instance.id, dead: dead)
+        dismissedHealth = RadioHealth.dismissToken(dead)
+        healthOpen = false
+        confirmingDelete = false
+    }
+
+    /// 用户确认后删掉连不上的电台；正在播的是其中一台就先停。
+    private func removeDead(_ dead: [RadioStation]) {
+        let ids = Set(dead.map(\.id))
+        if let station, ids.contains(station.id), player.plays(station) { player.pause() }
+        withAnimation(.snappy(duration: 0.3)) {
+            RadioRemote.edit(instance) { list, current in
+                let before = list
+                list = RadioHealth.removing(ids, from: before)
+                current = RadioHealth.index(afterRemoving: ids, from: before, current: current)
+            }
+        }
+        healthOpen = false
+        confirmingDelete = false
+    }
+
     // MARK: Search
 
-    private var typedURL: URL? { RadioDial.streamURL(query) }
+    /// 搜索框里贴的是地址（包括不支持的协议，交给添加流程说明），不是电台名。
+    private var typedAddress: Bool { RadioAddress(query) != .invalid }
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -613,7 +983,7 @@ struct RadioDetail: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .foregroundStyle(.white)
-                    .onSubmit { typedURL == nil ? run() : addCustom() }
+                    .onSubmit { typedAddress ? addCustom() : run() }
                     .disabled(context.isPreview)
                 if searching { ProgressView().controlSize(.mini) }
                 if !query.isEmpty, !context.isPreview {
@@ -634,7 +1004,7 @@ struct RadioDetail: View {
             .frame(height: 32)
             .glassPane(cornerRadius: 10)
 
-            if typedURL != nil {
+            if typedAddress {
                 customRow
             } else {
                 regionRow
@@ -723,7 +1093,7 @@ struct RadioDetail: View {
     }
 
     private func resultRow(_ result: RadioStation) -> some View {
-        let saved = stations.contains { $0.url == result.url }
+        let saved = stations.contains { $0.matches(result) }
         return HStack(spacing: 8) {
             Button {
                 guard !context.isPreview else { return }
@@ -796,7 +1166,7 @@ struct RadioDetail: View {
     /// searches names inside the region. A newer request wins over one still
     /// on its way.
     private func run(in chosen: RadioRegion? = nil) {
-        guard !context.isPreview, typedURL == nil else { return }
+        guard !context.isPreview, !typedAddress else { return }
         let request = RadioDirectory.Query(name: trimmedQuery, region: chosen ?? region)
         requestID += 1
         let id = requestID
@@ -813,9 +1183,18 @@ struct RadioDetail: View {
         }
     }
 
+    /// 搜索框里贴的地址交给“添加电台”：试连、标“自定义”，结果在收藏页上方显示。
     private func addCustom() {
-        guard !context.isPreview, let custom = RadioDial.custom(name: customName, url: query) else { return }
-        addAndListen(custom)
+        guard !context.isPreview, typedAddress else { return }
+        let id = instance.id
+        let address = query
+        let name = customName
+        addFlow.update(id) { draft in
+            draft.open = true
+            draft.address = address
+            draft.name = name
+        }
+        addFlow.submit(id)
         query = ""
         customName = ""
         tab = .favourites
@@ -826,7 +1205,7 @@ struct RadioDetail: View {
     private func addAndListen(_ station: RadioStation) {
         let current = stations
         let list = RadioDial.adding(station, to: current)
-        guard let target = list.firstIndex(where: { $0.url == station.url }) else { return }
+        guard let target = list.firstIndex(where: { $0.matches(station) }) else { return }
         RadioRemote.edit(instance) { stored, index in
             stored = list
             index = target

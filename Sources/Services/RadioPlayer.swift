@@ -13,6 +13,10 @@ import Observation
 /// (2, 4, 8, 16, then every 30 seconds) for as long as the listener has not
 /// pressed pause. A pause, or the sleep timer, lets the connection go, so a
 /// live station resumes live rather than from a stale buffer.
+///
+/// 有备用地址的电台先按顺序换备用地址，一轮都失败才按上面的间隔退避
+/// （`RadioFailover`）。定时关闭最后 30 秒线性渐弱（`RadioFade`），渐弱中
+/// 手动调音量、换台或暂停就取消渐弱并关掉这次定时。
 @MainActor @Observable
 final class RadioPlayer {
     static let shared = RadioPlayer()
@@ -32,13 +36,22 @@ final class RadioPlayer {
     private(set) var stopAt: Date?
     /// The sleep timer's length in minutes, 0 when off.
     private(set) var timerMinutes = 0
+    /// 定时关闭最后 30 秒正在渐弱。
+    private(set) var isFading = false
 
     @ObservationIgnored private var player: AVPlayer?
     @ObservationIgnored private var statusObservation: NSKeyValueObservation?
     @ObservationIgnored private var itemObservation: NSKeyValueObservation?
     @ObservationIgnored private var itemObservers: [NSObjectProtocol] = []
     @ObservationIgnored private var retryTask: Task<Void, Never>?
-    @ObservationIgnored private var attempt = 0
+    /// 整轮地址都失败了几次，连上就归零。
+    @ObservationIgnored private var round = 0
+    /// 正在连电台的第几条地址（0 是主地址）。
+    @ObservationIgnored private var addressIndex = 0
+    /// 下次重连要换到的地址，重连真的发生时才生效。
+    @ObservationIgnored private var nextAddress = 0
+    /// 渐弱系数，1 是不渐弱。
+    @ObservationIgnored private var fadeMultiplier = 1.0
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var volume: Double = 60
     @ObservationIgnored private let relay = RadioMetadataRelay()
@@ -54,7 +67,8 @@ final class RadioPlayer {
     /// Whether this station is the one coming out of the speaker.
     func plays(_ candidate: RadioStation?) -> Bool {
         guard isPlaying, let candidate, let station else { return false }
-        return station.url == candidate.url
+        // 检查收藏后主地址可能换成了备用那条，有一条地址相同就是同一台。
+        return station.matches(candidate)
     }
 
     func toggle(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil, owner: UUID? = nil) {
@@ -63,13 +77,17 @@ final class RadioPlayer {
 
     func play(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil, owner: UUID? = nil) {
         guard RadioDial.streamURL(station.url) != nil else { return }
+        // 渐弱中换台是手动操作，取消渐弱。
+        cancelFade()
         if let owner { self.owner = owner }
         if let stations { playlist = stations }
-        if !playlist.contains(where: { $0.url == station.url }) { playlist = [station] }
+        if !playlist.contains(where: { $0.matches(station) }) { playlist = [station] }
         MediaSessionCoordinator.shared.begin(.radio) { [weak self] command, _ in self?.remote(command) }
         cancelRetry()
-        attempt = 0
-        if self.station?.url != station.url { nowTitle = nil }
+        round = 0
+        addressIndex = 0
+        nextAddress = 0
+        if !(self.station?.matches(station) ?? false) { nowTitle = nil }
         self.station = station
         self.volume = volume
         problem = nil
@@ -91,6 +109,8 @@ final class RadioPlayer {
         ticker?.invalidate()
         ticker = nil
         dropItem()
+        // 先断开再恢复音量，渐弱到 0 的那一刻不会冒出一下原音量。
+        endFade()
         publishSession()
     }
 
@@ -118,14 +138,14 @@ final class RadioPlayer {
             if let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio {
                 let list = RadioDial.stations(instance.config)
                 guard !list.isEmpty else { return }
-                let current = list.firstIndex { $0.url == station?.url }
+                let current = list.firstIndex { item in station.map(item.matches) ?? false }
                     ?? RadioDial.index(instance.config, count: list.count)
                 let next = delta > 0 ? RadioDial.next(current, count: list.count) : RadioDial.previous(current, count: list.count)
                 RadioRemote.tune(instance, to: next, play: true)
                 return
             }
             guard !playlist.isEmpty else { return }
-            let current = playlist.firstIndex { $0.url == station?.url } ?? 0
+            let current = playlist.firstIndex { item in station.map(item.matches) ?? false } ?? 0
             let next = delta > 0 ? RadioDial.next(current, count: playlist.count) : RadioDial.previous(current, count: playlist.count)
             play(playlist[next], volume: volume)
         case .position: break
@@ -138,27 +158,33 @@ final class RadioPlayer {
                                                subtitle: station.name, playing: isPlaying)
     }
 
-    /// 0...100, applied at once whether or not anything plays.
+    /// 0...100, applied at once whether or not anything plays. 只有用户拖音量
+    /// 才会调到这里，渐弱中调就取消渐弱。
     func setVolume(_ volume: Double) {
+        cancelFade()
         self.volume = volume
-        player?.volume = Self.gain(volume)
+        player?.volume = Self.gain(volume, fade: fadeMultiplier)
     }
 
     /// 0 turns the timer off. Counting starts now when playing, or at the
     /// next play otherwise.
     func setTimer(minutes: Int) {
+        endFade()
         timerMinutes = max(0, minutes)
         stopAt = (isPlaying && timerMinutes > 0) ? .now.addingTimeInterval(Double(timerMinutes) * 60) : nil
     }
 
-    private static func gain(_ volume: Double) -> Float {
-        Float(min(100, max(0, volume)) / 100)
+    private static func gain(_ volume: Double, fade: Double = 1) -> Float {
+        Float(RadioFade.gain(volume: volume, multiplier: fade))
     }
 
     // MARK: Connection
 
     private func connect() {
-        guard let station, let url = URL(string: station.url) else { return }
+        guard let station else { return }
+        let addresses = station.addresses
+        addressIndex = RadioDial.clamp(addressIndex, count: addresses.count)
+        guard let url = URL(string: addresses[addressIndex]) else { return }
         dropItem()
         let asset = AVURLAsset(url: url, options: [AVURLAssetHTTPUserAgentKey: RadioBrowser.userAgent])
         let item = AVPlayerItem(asset: asset)
@@ -167,7 +193,7 @@ final class RadioPlayer {
         item.add(output)
 
         let player = self.player ?? makePlayer()
-        player.volume = Self.gain(volume)
+        player.volume = Self.gain(volume, fade: fadeMultiplier)
         player.replaceCurrentItem(with: item)
         isBuffering = true
         watch(item)
@@ -228,7 +254,7 @@ final class RadioPlayer {
         case .playing:
             isBuffering = false
             problem = nil
-            attempt = 0
+            round = 0
             cancelRetry()
         case .waitingToPlayAtSpecifiedRate:
             isBuffering = true
@@ -247,13 +273,20 @@ final class RadioPlayer {
     // MARK: Retry
 
     private func streamDropped() {
-        guard isPlaying, retryTask == nil else { return }
+        guard isPlaying, retryTask == nil, let station else { return }
         isBuffering = true
-        let wait = RadioRetry.delay(attempt: attempt)
-        attempt += 1
+        // 有备用地址先按顺序换，一轮都不行再按 RadioRetry 的间隔从主地址重来。
+        let step = RadioFailover.after(failed: addressIndex, count: station.addresses.count, round: round)
+        round = step.round
+        nextAddress = step.address
+        let wait = step.wait
         // The first couple of hiccups are routine on a live stream; say so
         // only once it keeps failing.
-        if attempt >= 3 { problem = tr("连接不上电台，\(Int(wait)) 秒后重试") }
+        if step.showsProblem {
+            problem = step.address == 0
+                ? tr("连接不上电台，\(Int(wait)) 秒后重试")
+                : tr("连接不上电台，正在换备用地址")
+        }
         retryTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(wait))
             guard !Task.isCancelled else { return }
@@ -267,6 +300,7 @@ final class RadioPlayer {
         // A stall that cleared on its own needs nothing.
         if let player, player.timeControlStatus == .playing,
            player.currentItem?.status == .readyToPlay { return }
+        addressIndex = nextAddress
         connect()
     }
 
@@ -285,19 +319,46 @@ final class RadioPlayer {
 
     // MARK: Sleep timer
 
+    /// 每 0.25 秒看一次，渐弱才够平滑。只在播放时走。
     private func startTicker() {
         guard ticker == nil else { return }
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
-        timer.tolerance = 0.3
+        timer.tolerance = 0.05
         RunLoop.main.add(timer, forMode: .common)
         ticker = timer
     }
 
     private func tick() {
-        guard isPlaying, let stopAt else { return }
-        if Date.now >= stopAt { stop() }
+        guard isPlaying else { return }
+        switch RadioFade.phase(now: .now, stopAt: stopAt) {
+        case .due:
+            // 渐弱到 0 后暂停；endFade（在 pause 里）把音量恢复原值，下次播放音量正常。
+            stop()
+        case .fading(let multiplier):
+            isFading = true
+            fadeMultiplier = multiplier
+            player?.volume = Self.gain(volume, fade: multiplier)
+        case .full, .off:
+            if isFading { endFade() }
+        }
+    }
+
+    /// 渐弱结束，播放音量回到面板上的音量。
+    private func endFade() {
+        isFading = false
+        fadeMultiplier = 1
+        player?.volume = Self.gain(volume)
+    }
+
+    /// 渐弱中用户手动调音量、换台：取消渐弱，也关掉这次定时（还剩不到 30 秒，
+    /// 接着照常播放）。不在渐弱中什么都不做。
+    private func cancelFade() {
+        guard isFading else { return }
+        endFade()
+        stopAt = nil
+        timerMinutes = 0
     }
 }
 

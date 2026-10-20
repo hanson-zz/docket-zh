@@ -749,6 +749,28 @@
         }
       }
     },
+    "%@ 个电台连不上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stations that can't connect: %@"
+          }
+        }
+      }
+    },
+    "%@ 个电台里有 %@ 个试连不上。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Of %@ stations, %@ didn't answer the test."
+          }
+        }
+      }
+    },
     "%@ 个网址 · 用默认浏览器打开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5002,6 +5024,17 @@
         }
       }
     },
+    "不支持 %@ 地址：只能播 http(s) 音频流和 HLS（.m3u8）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ addresses aren't supported. Only http(s) audio streams and HLS (.m3u8) can play."
+          }
+        }
+      }
+    },
     "不放大" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5889,6 +5922,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Month 9"
+          }
+        }
+      }
+    },
+    "也可以导入 .m3u、.m3u8、.pls 播放列表。同名的地址并成一个电台，主地址连不上时按顺序换备用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also import an .m3u, .m3u8 or .pls playlist. Entries with the same name become one station, and backups are tried in order when the main address fails."
           }
         }
       }
@@ -7015,6 +7059,17 @@
         }
       }
     },
+    "仍然保存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save anyway"
+          }
+        }
+      }
+    },
     "从今天 %@月%@日 算" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7099,6 +7154,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Take this off the shelf"
+          }
+        }
+      }
+    },
+    "从收藏中移除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from favorites"
           }
         }
       }
@@ -8045,6 +8111,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep Awake"
+          }
+        }
+      }
+    },
+    "保留" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep"
           }
         }
       }
@@ -9160,6 +9237,17 @@
         }
       }
     },
+    "关闭提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss"
+          }
+        }
+      }
+    },
     "关闭显示器并锁定" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10007,6 +10095,17 @@
         }
       }
     },
+    "删除 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %@"
+          }
+        }
+      }
+    },
     "删除 %@ 的%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10080,6 +10179,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove this city"
+          }
+        }
+      }
+    },
+    "删除这些电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete these stations"
           }
         }
       }
@@ -11763,6 +11873,17 @@
         }
       }
     },
+    "取不到这个播放列表，请检查地址。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load this playlist. Check the address."
+          }
+        }
+      }
+    },
     "取快递" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12012,6 +12133,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just Apple's Dock, with saved layouts."
+          }
+        }
+      }
+    },
+    "只保存连得上的 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save only the %@ that work"
           }
         }
       }
@@ -12287,6 +12419,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "free of %@"
+          }
+        }
+      }
+    },
+    "可能失效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "May be down"
           }
         }
       }
@@ -15839,6 +15982,39 @@
         }
       }
     },
+    "导入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        }
+      }
+    },
+    "导入 .m3u、.m3u8 或 .pls 播放列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import an .m3u, .m3u8 or .pls playlist"
+          }
+        }
+      }
+    },
+    "导入文件…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import File…"
+          }
+        }
+      }
+    },
     "封未读邮件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17606,6 +17782,17 @@
         }
       }
     },
+    "已添加 %@ 个电台，跳过 %@ 条不支持的地址。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stations added: %@. Unsupported addresses skipped: %@."
+          }
+        }
+      }
+    },
     "已用" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17646,6 +17833,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Been"
+          }
+        }
+      }
+    },
+    "已经在收藏里了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in your favorites."
           }
         }
       }
@@ -21499,6 +21697,39 @@
         }
       }
     },
+    "播放列表里只有不支持的地址（RTMP、RTSP、MMS 这类）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The playlist only has unsupported addresses (RTMP, RTSP, MMS and the like)."
+          }
+        }
+      }
+    },
+    "播放列表里没有找到 http(s) 直播地址。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No http(s) stream addresses found in the playlist."
+          }
+        }
+      }
+    },
+    "收藏最多 %@ 个电台，先删掉一些再添加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites hold up to %@ stations. Remove some before adding more."
+          }
+        }
+      }
+    },
     "收起输出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21506,6 +21737,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide output"
+          }
+        }
+      }
+    },
+    "改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
           }
         }
       }
@@ -21961,6 +22203,17 @@
         }
       }
     },
+    "查看连不上的电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show stations that can't connect"
+          }
+        }
+      }
+    },
     "柬埔寨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21983,6 +22236,17 @@
         }
       }
     },
+    "检查" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check"
+          }
+        }
+      }
+    },
     "歌单里后面没有歌了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21990,6 +22254,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing after this in the playlist"
+          }
+        }
+      }
+    },
+    "正在检查…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking…"
+          }
+        }
+      }
+    },
+    "正在试连 %@ 个电台…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testing %@ stations…"
+          }
+        }
+      }
+    },
+    "正在试连…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testing…"
+          }
+        }
+      }
+    },
+    "正在读取播放列表…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading playlist…"
           }
         }
       }
@@ -22067,6 +22375,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every year on %@/%@"
+          }
+        }
+      }
+    },
+    "每条地址都试过，都连不上。可能只是暂时离线，确认后才会删除。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every address was tried and none connected. They may just be offline for now; nothing is deleted until you confirm."
           }
         }
       }
@@ -22353,6 +22672,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add City"
+          }
+        }
+      }
+    },
+    "添加电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Station"
           }
         }
       }
@@ -32120,6 +32450,17 @@
         }
       }
     },
+    "直播地址：http(s) 音频流或 .m3u8" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream address: http(s) audio or .m3u8"
+          }
+        }
+      }
+    },
     "相册" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32787,6 +33128,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dockling: Keep Awake"
+          }
+        }
+      }
+    },
+    "确定删除？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete them?"
           }
         }
       }
@@ -34404,6 +34756,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Result out of range"
+          }
+        }
+      }
+    },
+    "给 %@ 改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename %@"
           }
         }
       }
@@ -37062,6 +37425,17 @@
         }
       }
     },
+    "试连没有收到声音：地址可能有误，或者电台暂时离线。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No audio came back. The address may be wrong, or the station may be offline for now."
+          }
+        }
+      }
+    },
     "该喝水了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37168,6 +37542,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PICK ONE BELOW"
+          }
+        }
+      }
+    },
+    "请填 http:// 或 https:// 开头的直播地址。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a stream address starting with http:// or https://."
           }
         }
       }
@@ -37300,6 +37685,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a license key or gift code."
+          }
+        }
+      }
+    },
+    "读不了这个文件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read this file."
           }
         }
       }
@@ -39339,6 +39735,17 @@
         }
       }
     },
+    "这是 HLS 流本身的清单，不是电台列表，请粘贴它的网址。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is an HLS stream manifest, not a station list. Paste its web address instead."
+          }
+        }
+      }
+    },
     "这是拾掇的兑换码，不能用于码头。码头的兑换码以 DKG 开头。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39522,6 +39929,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Can't connect to the station, retrying in %@ s"
+          }
+        }
+      }
+    },
+    "连接不上电台，正在换备用地址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach the station, trying a backup address"
           }
         }
       }
@@ -39812,6 +40230,17 @@
         }
       }
     },
+    "选择 .m3u、.m3u8 或 .pls 播放列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an .m3u, .m3u8 or .pls playlist"
+          }
+        }
+      }
+    },
     "选择一个码头布局备份文件。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39973,6 +40402,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear"
+          }
+        }
+      }
+    },
+    "逐个试连收藏的电台，找出连不上的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test each favorite station to find the ones that can't connect"
           }
         }
       }
@@ -40182,6 +40622,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dublin"
+          }
+        }
+      }
+    },
+    "都连得上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All connect"
           }
         }
       }
