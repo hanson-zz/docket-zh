@@ -38910,6 +38910,17 @@
         }
       }
     },
+    "账户都关掉了，在「设置」里打开要看的账户。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All accounts are off. Turn on the ones you want in Settings."
+          }
+        }
+      }
+    },
     "货架" : {
       "extractionState" : "manual",
       "localizations" : {

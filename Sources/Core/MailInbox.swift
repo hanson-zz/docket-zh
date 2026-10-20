@@ -128,6 +128,11 @@ public enum MailInbox {
         return filter
     }
 
+    /// 读到了账户，但在设置里全关掉了：面板提示去打开，而不是说「读完了」。
+    public static func allAccountsHidden(_ accounts: [MailAccount], hidden: Set<String>) -> Bool {
+        !accounts.isEmpty && shownAccounts(accounts, hidden: hidden).isEmpty
+    }
+
     /// 顶部要不要出账户筛选胶囊：看得到的账户有两个以上才有意义。
     public static func showsFilterChips(_ accounts: [MailAccount], hidden: Set<String>) -> Bool {
         shownAccounts(accounts, hidden: hidden).count >= 2

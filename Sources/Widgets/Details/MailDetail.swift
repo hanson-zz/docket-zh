@@ -196,7 +196,13 @@ struct MailDetail: View {
         if MailInbox.showsFilterChips(snapshot.accounts, hidden: hidden) {
             filterRow
         }
-        if visible.isEmpty {
+        if MailInbox.allAccountsHidden(snapshot.accounts, hidden: hidden) {
+            Text(tr("账户都关掉了，在「设置」里打开要看的账户。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 6)
+        } else if visible.isEmpty {
             allRead
         } else {
             VStack(spacing: 6) {

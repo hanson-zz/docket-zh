@@ -129,6 +129,13 @@ final class MailInboxTests: XCTestCase {
         XCTAssertNil(MailInbox.effectiveFilter("", accounts: s.accounts, hidden: [], unlocked: true))
     }
 
+    func testAllAccountsHidden() {
+        let s = sample()
+        XCTAssertTrue(MailInbox.allAccountsHidden(s.accounts, hidden: ["工作", "个人", "旧邮箱"]))
+        XCTAssertFalse(MailInbox.allAccountsHidden(s.accounts, hidden: ["工作"]))
+        XCTAssertFalse(MailInbox.allAccountsHidden([], hidden: ["工作"]))
+    }
+
     func testFilterChipsNeedTwoAccounts() {
         let s = sample()
         XCTAssertTrue(MailInbox.showsFilterChips(s.accounts, hidden: ["旧邮箱"]))

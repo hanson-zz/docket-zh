@@ -85,7 +85,12 @@ final class MailService {
         defer { listInFlight = false }
         if snapshot == nil { listState = .loading }
         let source = MailInbox.fetchScript(perAccount: MailInbox.perAccount, summary: summary)
-        let result = await withTimeout(seconds: 20) { await MailBridge.execute(source) }
+        var result = await withTimeout(seconds: 20) { await MailBridge.execute(source) }
+        if result == nil, summary {
+            // 读正文太慢（没下载的信要现取）：这次先不要摘要，列表照样出来。
+            let quick = MailInbox.fetchScript(perAccount: MailInbox.perAccount, summary: false)
+            result = await withTimeout(seconds: 20) { await MailBridge.execute(quick) }
+        }
         switch result {
         case .some(.text(let text)):
             snapshot = MailInbox.parse(text, now: .now)
