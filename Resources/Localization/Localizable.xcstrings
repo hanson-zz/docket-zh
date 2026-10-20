@@ -2366,6 +2366,17 @@
         }
       }
     },
+    "%@没开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ isn't open"
+          }
+        }
+      }
+    },
     "%@生病了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13651,6 +13662,17 @@
         }
       }
     },
+    "固定的 %@ 没在播" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned %@ isn't playing"
+          }
+        }
+      }
+    },
     "国内" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20549,6 +20571,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open URL"
+          }
+        }
+      }
+    },
+    "打开它就能在这里控制" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open it to control it here"
           }
         }
       }

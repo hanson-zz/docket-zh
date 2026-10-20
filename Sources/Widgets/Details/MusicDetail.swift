@@ -52,13 +52,30 @@ struct MusicDetail: View {
             ?? ArtworkTint(hue: 0, saturation: 0)
     }
 
+    /// 和卡片同一个「当前显示来源」（服务的 `display`，Core `MusicDisplay.pick`）。
     fileprivate var playing: Playing? {
         guard !context.isPreview else { return nil }
-        let native = MusicService.shared.nowPlaying.map(Playing.init(native:))
-        let browser = browserPlaying
-        if native?.isPlaying == true { return native }
-        if browser?.isPlaying == true { return browser }
-        return native ?? browser
+        switch MusicService.shared.display {
+        case .native(let source): return MusicService.shared.track(for: source).map(Playing.init(native:))
+        case .browser: return browserPlaying
+        case .none: return nil
+        }
+    }
+
+    /// 给 Core 判断用的开着的播放器和浏览器标签页。
+    private var corePlayers: [MusicSourceSwitch.Player] {
+        context.isPreview ? [] : MusicService.shared.switchPlayers
+    }
+
+    private var coreBrowser: MusicCardChoice.Browser? {
+        browserPlaying.map { MusicCardChoice.Browser(hasTrack: true, isPlaying: $0.isPlaying) }
+    }
+
+    /// 固定着、有来源在放、显示的却不是固定的：「固定的 X 没在播」。
+    private var pinIdle: MusicSource? {
+        guard !context.isPreview else { return nil }
+        return MusicDisplay.pinIdle(pinned: pinnedSource, shown: MusicService.shared.display,
+                                    players: corePlayers, browser: coreBrowser)
     }
 
     private var browserPlaying: Playing? {
@@ -114,10 +131,12 @@ struct MusicDetail: View {
 
     // MARK: 来源
 
-    /// 正在看的来源：在播放的那个，没有就是服务挑的（可能没开）。
+    /// 正在看的来源：卡片和面板共用的显示来源，没有就是服务停着的（可能没开）。
     private var shownSource: MusicSource? {
         if let source = playing?.source { return source }
-        return MusicService.shared.current ?? sources.first(where: { MusicService.isInstalled($0) })
+        if context.isPreview { return sources.first }
+        return MusicService.shared.display.source ?? MusicService.shared.current
+            ?? sources.first(where: { MusicService.isInstalled($0) })
     }
 
     private func accent(_ source: MusicSource?) -> Color {
@@ -156,7 +175,9 @@ struct MusicDetail: View {
         let image = track?.icon ?? track.flatMap { icon(for: $0.sourceBundleID) }
             ?? source.flatMap { icon(for: $0.bundleID) }
         let bundleID = track?.sourceBundleID ?? source?.bundleID
-        return HStack(spacing: 0) {
+        let idlePin = pinIdle
+        return VStack(alignment: .leading, spacing: 0) {
+        HStack(spacing: 0) {
             Button {
                 withAnimation(.snappy(duration: 0.2)) { page = page == .sources ? .player : .sources }
             } label: {
@@ -181,7 +202,7 @@ struct MusicDetail: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(tr("切换来源"))
-            if let pinned = pinnedSource, source == pinned, track?.isBrowser != true {
+            if let pinned = pinnedSource, idlePin == nil, source == pinned, track?.isBrowser != true {
                 Text("已固定")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.75))
@@ -210,6 +231,24 @@ struct MusicDetail: View {
                 .help(tr("在 App 中打开"))
                 .accessibilityLabel(tr("在 App 中打开"))
             }
+        }
+        if let idlePin {
+            // 固定的来源没在播（没开或暂停），显示的是正在播的那个：一行提示加取消固定。
+            HStack(spacing: 8) {
+                Text(tr("固定的 \(idlePin.displayName) 没在播"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 8)
+                Button(tr("取消固定")) { unpin() }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#45D483"))
+                    .fixedSize()
+            }
+            .padding(.top, 8)
+        }
         }
     }
 
@@ -1011,10 +1050,11 @@ struct MusicDetail: View {
         let target = shownSource
         let pinned = pinnedSource != nil
         let players = context.isPreview ? [] : MusicService.shared.players
-        // 固定着时只列别的正在播的（「其他正在播的」），否则列别的有曲目的。
-        let otherSources = MusicPin.others(players: players.map {
-            MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true)
-        }, shown: target, pinned: pinned)
+        // 固定的 App 没开：大标题「X 没开」。
+        let closed = context.isPreview ? nil
+            : MusicDisplay.pinnedClosed(pinned: pinnedSource, shown: MusicService.shared.display, players: corePlayers)
+        // 都没在播：列别的有曲目的（「其他开着的」）。
+        let otherSources = MusicPin.others(players: corePlayers, shown: target)
         let others = players.filter { otherSources.contains($0.source) }
         let setup = browserSetupHint
         return VStack(spacing: 0) {
@@ -1027,11 +1067,11 @@ struct MusicDetail: View {
                     .padding(.top, 14)
                     .accessibilityHidden(true)
             }
-            Text(setup == nil ? tr("没在播放") : tr("有标签页正在播放码头无法读取的媒体"))
+            Text(idleTitle(setup: setup, closed: closed))
                 .font(.system(size: 19, weight: .bold))
                 .multilineTextAlignment(.center)
                 .padding(.top, 12)
-            Text(setup ?? idleLine(target))
+            Text(setup ?? (closed != nil ? tr("打开它就能在这里控制") : idleLine(target)))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white.opacity(0.62))
                 .multilineTextAlignment(.center)
@@ -1054,8 +1094,8 @@ struct MusicDetail: View {
                 .padding(.top, 18)
             }
             if pinned {
-                // 固定着：标题改「其他正在播的」，右边「取消固定」回到谁开始播放就切到谁。
-                section(tr("其他正在播的"), right: tr("取消固定"), rightTint: Color(hex: "#45D483")) { unpin() }
+                // 固定着：「其他开着的」右边「取消固定」回到谁开始播放就切到谁。
+                section(tr("其他开着的"), right: tr("取消固定"), rightTint: Color(hex: "#45D483")) { unpin() }
                 if others.isEmpty {
                     note(tr("别的播放器也没在播"))
                 } else {
@@ -1075,6 +1115,12 @@ struct MusicDetail: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func idleTitle(setup: String?, closed: MusicSource?) -> String {
+        if setup != nil { return tr("有标签页正在播放码头无法读取的媒体") }
+        if let closed { return tr("\(closed.displayName)没开") }
+        return tr("没在播放")
     }
 
     private func idleLine(_ target: MusicSource?) -> String {
@@ -1101,18 +1147,21 @@ struct MusicDetail: View {
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
-            playButton(track?.isPlaying == true, size: 30) {
-                if autoSwitch {
-                    MusicService.shared.playPause(player.source)
-                } else {
-                    choose(player.source)
-                    MusicService.shared.playPause()
-                }
-            }
+            // 点播放：只把显示切到它并播放，不改固定。
+            playButton(false, size: 30) { playOther(player.source) }
         }
         .padding(10)
+        .contentShape(Rectangle())
+        .onTapGesture { playOther(player.source) }
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+    }
+
+    /// 「其他开着的」里点一行：卡片和面板都切到它并播放，固定不动。
+    private func playOther(_ source: MusicSource) {
+        guard !context.isPreview else { return }
+        MusicService.shared.showAndPlay(source)
+        withAnimation(.snappy(duration: 0.2)) { page = .player }
     }
 
     // MARK: 权限

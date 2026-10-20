@@ -16,9 +16,6 @@ struct MusicTile: View {
     @Environment(\.colorScheme) private var scheme
     var instance: WidgetInstance
     var context: WidgetContext
-    /// 卡片上一次显示的，两个来源同时在放时不来回跳（Core `MusicCardChoice`）。
-    @State private var lastPick: MusicCardChoice.Pick?
-
     private var config: WidgetConfig { instance.config }
     private var isMini: Bool { config.bool("mini") }
 
@@ -65,15 +62,17 @@ struct MusicTile: View {
 
     /// Whichever source has something to show.
     ///
-    /// 卡片只管「现在在放什么」：任一播放器（含允许的浏览器标签页）在放就显示那首，
-    /// 面板固定在哪个来源不影响卡片。挑法在 Core `MusicCardChoice.pick`：播放器在放时
-    /// 浏览器让位，都没在放时停在刚才那首。
+    /// 卡片和面板共用一个「当前显示来源」（服务里的 `display`，Core `MusicDisplay.pick`
+    /// 挑的）：有来源在放时两边显示同一首，面板里手点来源卡片也跟着换。
     private var pick: MusicCardChoice.Pick {
         guard !context.isPreview else { return .none }
-        let service = MusicService.shared
-        let browser = browserTrack.map { MusicCardChoice.Browser(hasTrack: true, isPlaying: $0.isPlaying) }
-        return MusicCardChoice.pick(players: service.switchPlayers, current: service.current,
-                                    browser: browser, last: lastPick)
+        return MusicService.shared.display
+    }
+
+    /// 浏览器标签页播放状态变了，叫服务马上重挑，不等下一次轮询。
+    private var browserState: MusicCardChoice.Browser? {
+        guard !context.isPreview, browsersEnabled, let track = BrowserMedia.shared.track else { return nil }
+        return MusicCardChoice.Browser(hasTrack: true, isPlaying: track.isPlaying)
     }
 
     private var browserTrack: Playing? {
@@ -92,7 +91,7 @@ struct MusicTile: View {
         case .browser:
             return browserTrack
         case .none:
-            return MusicService.shared.nowPlaying.map(Playing.init(native:)) ?? browserTrack
+            return nil
         }
     }
 
@@ -136,10 +135,8 @@ struct MusicTile: View {
         .onChange(of: browsersEnabled) { _, new in
             if !context.isPreview { BrowserMedia.shared.enabled = new }
         }
-        .onChange(of: pick, initial: true) { _, new in
-            guard !context.isPreview else { return }
-            lastPick = new
-            MusicService.shared.setCardSource(new.source)
+        .onChange(of: browserState) { _, _ in
+            if !context.isPreview { MusicService.shared.reconcile() }
         }
     }
 
@@ -373,7 +370,7 @@ struct MusicTile: View {
         }
     }
 
-    /// 卡片按钮控制卡片上这首的来源，不是面板固定的那个。
+    /// 卡片按钮控制卡片上这首的来源（和面板显示的是同一个）。
     private func skipBy(_ track: Playing, _ seconds: Double) {
         guard let source = track.source else { return }
         MusicService.shared.skip(on: source, by: seconds)

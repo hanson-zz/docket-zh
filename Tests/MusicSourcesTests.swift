@@ -2,7 +2,6 @@ import XCTest
 
 /// 「正在播放」面板改版：来源、切换规则、音量走哪一路、接下来、刚才听过。
 final class MusicSourcesTests: XCTestCase {
-    private typealias P = MusicSourceSwitch.Player
 
     // MARK: 来源
 
@@ -46,75 +45,6 @@ final class MusicSourcesTests: XCTestCase {
         XCTAssertNil(MusicSourceSwitch.pinned(WidgetConfig()))
         XCTAssertFalse(WidgetCatalog.applies(MusicSourceSwitch.pinnedKey, to: WidgetConfig(), kind: .music),
                        "固定来源在面板里选，设置页不列")
-    }
-
-    // MARK: 切换规则
-
-    func testWhoeverStartsPlayingWins() {
-        let players = [P(source: .netease, hasTrack: true, isPlaying: true),
-                       P(source: .spotify, hasTrack: true, isPlaying: true)]
-        let chosen = MusicSourceSwitch.choose(players: players,
-                                              wasPlaying: [.netease: true, .spotify: false],
-                                              current: .netease, autoSwitch: true, pinned: nil)
-        XCTAssertEqual(chosen, .spotify, "Spotify 刚开始放，切过去")
-    }
-
-    func testAPausedChoiceIsNotStolenByOneAlreadyPlaying() {
-        // 用户在面板里选了暂停着的 Spotify，网易云一直在放：不切走。
-        let players = [P(source: .netease, hasTrack: true, isPlaying: true),
-                       P(source: .spotify, hasTrack: true, isPlaying: false)]
-        let chosen = MusicSourceSwitch.choose(players: players,
-                                              wasPlaying: [.netease: true, .spotify: false],
-                                              current: .spotify, autoSwitch: true, pinned: nil)
-        XCTAssertEqual(chosen, .spotify)
-    }
-
-    func testCurrentAmongStartersStays() {
-        let players = [P(source: .appleMusic, hasTrack: true, isPlaying: true),
-                       P(source: .spotify, hasTrack: true, isPlaying: true)]
-        let chosen = MusicSourceSwitch.choose(players: players, wasPlaying: [:],
-                                              current: .spotify, autoSwitch: true, pinned: nil)
-        XCTAssertEqual(chosen, .spotify)
-    }
-
-    func testFirstLookPicksThePlayingOne() {
-        let players = [P(source: .appleMusic, hasTrack: true, isPlaying: false),
-                       P(source: .qqmusic, hasTrack: true, isPlaying: true)]
-        XCTAssertEqual(MusicSourceSwitch.choose(players: players, wasPlaying: [:], current: nil,
-                                                autoSwitch: true, pinned: nil), .qqmusic)
-    }
-
-    func testFallsBackWhenCurrentCloses() {
-        let players = [P(source: .netease, hasTrack: false, isPlaying: false),
-                       P(source: .appleMusic, hasTrack: true, isPlaying: false)]
-        XCTAssertEqual(MusicSourceSwitch.choose(players: players,
-                                                wasPlaying: [.spotify: false, .appleMusic: false],
-                                                current: .spotify, autoSwitch: true, pinned: nil),
-                       .appleMusic, "Spotify 关了：退到有曲目的那个")
-        XCTAssertEqual(MusicSourceSwitch.choose(players: [P(source: .netease, hasTrack: false, isPlaying: false)],
-                                                wasPlaying: [:], current: nil, autoSwitch: true, pinned: nil),
-                       .netease, "都没曲目：第一个开着的")
-        XCTAssertNil(MusicSourceSwitch.choose(players: [], wasPlaying: [:], current: nil,
-                                              autoSwitch: true, pinned: nil))
-    }
-
-    func testPinnedSourceHoldsWhenSwitchingIsOff() {
-        let players = [P(source: .netease, hasTrack: true, isPlaying: true),
-                       P(source: .spotify, hasTrack: true, isPlaying: false)]
-        XCTAssertEqual(MusicSourceSwitch.choose(players: players, wasPlaying: [.netease: false],
-                                                current: .spotify, autoSwitch: false, pinned: .spotify),
-                       .spotify, "网易云开始放也不切")
-        XCTAssertEqual(MusicSourceSwitch.choose(players: players, wasPlaying: [:],
-                                                current: .netease, autoSwitch: false, pinned: .qqmusic),
-                       .qqmusic, "固定的来源没开也还是它，面板显示打开它")
-    }
-
-    func testNoPinYetKeepsCurrentWhenOff() {
-        let players = [P(source: .netease, hasTrack: true, isPlaying: false),
-                       P(source: .spotify, hasTrack: true, isPlaying: true)]
-        XCTAssertEqual(MusicSourceSwitch.choose(players: players, wasPlaying: [.spotify: false],
-                                                current: .netease, autoSwitch: false, pinned: nil),
-                       .netease)
     }
 
     // MARK: 循环

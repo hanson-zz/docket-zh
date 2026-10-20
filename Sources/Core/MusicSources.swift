@@ -97,51 +97,12 @@ public enum MusicSourceSwitch {
     public static func pinned(_ config: WidgetConfig) -> MusicSource? {
         MusicSource(rawValue: config.string(pinnedKey))
     }
-
-    /// 该显示哪个来源。
-    ///
-    /// - `players`：开着的播放器，按偏好顺序。
-    /// - `wasPlaying`：上一次读到时各来源是否在放，用来认出「刚开始播放」。
-    /// - `current`：上一次显示的（或用户刚在面板里点的）。
-    ///
-    /// 自动切换开着：有来源从没在放变成在放，就切到它（当前的也在其中时不动）；
-    /// 否则留在当前来源，哪怕它暂停了、别的早就在放，这样用户手选的来源不会被
-    /// 一直在放的那个抢走；当前来源关掉或读不到了才退到第一个在放的、第一个有
-    /// 曲目的、第一个开着的。
-    ///
-    /// 自动切换关着：固定在 `pinned`，它没开也照样是它（面板显示「打开 X」和
-    /// 其他开着的）；还没选过时停在当前来源，不会因为谁开始播放而换。
-    public static func choose(players: [Player], wasPlaying: [MusicSource: Bool],
-                              current: MusicSource?, autoSwitch: Bool,
-                              pinned: MusicSource?) -> MusicSource? {
-        if !autoSwitch {
-            if let pinned { return pinned }
-            if let current, players.contains(where: { $0.source == current }) { return current }
-            return fallback(players)
-        }
-        let starters = players.filter { $0.isPlaying && wasPlaying[$0.source] != true }
-        if !starters.isEmpty {
-            if let current, starters.contains(where: { $0.source == current }) { return current }
-            return starters[0].source
-        }
-        if let current, let player = players.first(where: { $0.source == current }), player.hasTrack {
-            return current
-        }
-        return fallback(players)
-    }
-
-    private static func fallback(_ players: [Player]) -> MusicSource? {
-        players.first(where: \.isPlaying)?.source
-            ?? players.first(where: \.hasTrack)?.source
-            ?? players.first?.source
-    }
 }
 
-/// 卡片显示哪一首。
+/// 卡片和面板共用的「当前显示来源」的样子，和「正在播放时显示」。
 ///
-/// 卡片只回答「现在在放什么」：任一播放器（包括允许的浏览器标签页）在放就显示它，
-/// 和面板固定在哪个来源无关（固定只管面板打开时停在哪）。全都没在放时，卡片在
-/// 「正在播放时显示」下照旧隐藏（`anyPlaying`），始终显示时停在刚才那首。
+/// 挑哪个在 `MusicDisplay.pick`：卡片和面板显示同一个来源。全都没在放时，卡片在
+/// 「正在播放时显示」下照旧隐藏（`anyPlaying`）。
 public enum MusicCardChoice {
     public enum Pick: Equatable, Sendable {
         case native(MusicSource)
@@ -165,42 +126,123 @@ public enum MusicCardChoice {
         }
     }
 
-    /// - `players`：开着的播放器，按偏好顺序。
-    /// - `current`：面板正在看的来源（可能是固定的、暂停的）。
-    /// - `last`：卡片上一次显示的，两个同时在放时不来回跳。
-    ///
-    /// 在放的优先：上次显示的还在放就不换，其次面板的来源，再按偏好顺序；播放器
-    /// 在放时浏览器让位（和原来一样）。都没在放：上次显示的还有曲目就留着，否则
-    /// 面板的来源、第一个有曲目的播放器、浏览器。
-    public static func pick(players: [MusicSourceSwitch.Player], current: MusicSource?,
-                            browser: Browser?, last: Pick?) -> Pick {
-        let playing = players.filter(\.isPlaying)
-        if let source = last?.source, playing.contains(where: { $0.source == source }) { return .native(source) }
-        if let current, playing.contains(where: { $0.source == current }) { return .native(current) }
-        if let first = playing.first { return .native(first.source) }
-        if browser?.isPlaying == true { return .browser }
-
-        switch last {
-        case .native(let source) where players.contains(where: { $0.source == source && $0.hasTrack }):
-            return .native(source)
-        case .browser where browser?.hasTrack == true:
-            return .browser
-        default:
-            break
-        }
-        if let current, players.contains(where: { $0.source == current && $0.hasTrack }) { return .native(current) }
-        if let first = players.first(where: \.hasTrack) { return .native(first.source) }
-        if browser?.hasTrack == true { return .browser }
-        return .none
-    }
-
     /// 「正在播放时显示」：任一播放器或允许的浏览器标签页在放。
     public static func anyPlaying(players: [MusicSourceSwitch.Player], browser: Browser?) -> Bool {
         players.contains(where: \.isPlaying) || browser?.isPlaying == true
     }
 }
 
-/// 面板固定来源的样子：「已固定」小标、「其他正在播的」和「取消固定」。
+/// 「当前显示来源」：卡片和面板都调这一个函数，两边永远显示同一首。
+///
+/// 有任何来源在放时：
+/// - 固定的来源在放，就是它（用户在面板里手点了别的，点的那个先留着，直到固定的
+///   重新开始放或别的来源开始放）。
+/// - 固定的来源没在放（没开或暂停）、或者没固定：用户手点的来源还开着就留着；
+///   没固定（谁开始播放就切到谁）时刚开始放的来源顶上；否则正在显示的还在放就不换
+///   （不来回跳），再按偏好顺序第一个在放的播放器，播放器都没在放才轮到浏览器。
+///
+/// 都没在放时：用户手点的来源还开着就留着；固定着就是固定的来源（没开也是它，面板
+/// 显示「X 没开」）；否则正在显示的还有曲目就留着，再第一个有曲目的播放器、浏览器、
+/// 第一个开着的播放器。
+///
+/// 「手点」（`manual`）：面板来源列表里点的、「其他开着的」里点播放的、对显示中的来源按了播放键的。
+/// 有别的来源开始放、或这个来源关了，就不再算手点（`keepsManual`）。
+public enum MusicDisplay {
+    public typealias Pick = MusicCardChoice.Pick
+    public typealias Player = MusicSourceSwitch.Player
+    public typealias Browser = MusicCardChoice.Browser
+
+    /// - `players`：开着的播放器，按偏好顺序。
+    /// - `browser`：允许的浏览器标签页（不允许或没有时 nil）。
+    /// - `wasPlaying` / `browserWasPlaying`：上一次读到时是否在放，认「刚开始播放」。
+    /// - `current`：正在显示的。
+    /// - `manual`：`current` 是用户手点的。
+    /// - `pinned`：固定的来源（`MusicPin.pinned`，自动切换开着时是 nil）。
+    /// - `autoSwitch`：谁开始播放就切到谁。
+    public static func pick(players: [Player], browser: Browser?,
+                            wasPlaying: [MusicSource: Bool], browserWasPlaying: Bool,
+                            current: Pick?, manual: Bool,
+                            pinned: MusicSource?, autoSwitch: Bool) -> Pick {
+        let pin = autoSwitch ? nil : pinned
+        let playingNative = players.filter(\.isPlaying)
+        let browserPlaying = browser?.isPlaying == true
+        let starters = playingNative.filter { wasPlaying[$0.source] != true }.map(\.source)
+        let browserStarted = browserPlaying && !browserWasPlaying
+        let held = manual && keepsManual(players: players, browser: browser, wasPlaying: wasPlaying,
+                                         browserWasPlaying: browserWasPlaying, current: current)
+
+        guard !playingNative.isEmpty || browserPlaying else {
+            if held, let current { return current }
+            if let pin { return .native(pin) }
+            switch current {
+            case .native(let source) where players.contains(where: { $0.source == source && $0.hasTrack }):
+                return .native(source)
+            case .browser where browser?.hasTrack == true:
+                return .browser
+            default:
+                break
+            }
+            if let first = players.first(where: \.hasTrack) { return .native(first.source) }
+            if browser?.hasTrack == true { return .browser }
+            if let first = players.first { return .native(first.source) }
+            return .none
+        }
+
+        if let pin, playingNative.contains(where: { $0.source == pin }) {
+            if held, let current, !starters.contains(pin) { return current }
+            return .native(pin)
+        }
+        if held, let current { return current }
+        if autoSwitch {
+            if let source = current?.source, starters.contains(source) { return .native(source) }
+            if let first = starters.first { return .native(first) }
+            if browserStarted, playingNative.isEmpty { return .browser }
+        }
+        switch current {
+        case .native(let source) where playingNative.contains(where: { $0.source == source }):
+            return .native(source)
+        case .browser where browserPlaying && playingNative.isEmpty:
+            return .browser
+        default:
+            break
+        }
+        if let first = playingNative.first { return .native(first.source) }
+        return .browser
+    }
+
+    /// 手点的来源还算不算数：还开着（浏览器还有标签页），并且没有别的来源刚开始放。
+    public static func keepsManual(players: [Player], browser: Browser?,
+                                   wasPlaying: [MusicSource: Bool], browserWasPlaying: Bool,
+                                   current: Pick?) -> Bool {
+        let otherStarted = players.contains {
+            $0.isPlaying && wasPlaying[$0.source] != true && current?.source != $0.source
+        } || (browser?.isPlaying == true && !browserWasPlaying && current != .browser)
+        guard !otherStarted else { return false }
+        switch current {
+        case .native(let source): return players.contains(where: { $0.source == source })
+        case .browser: return browser != nil
+        case .none, nil: return false
+        }
+    }
+
+    /// 来源胶囊旁的提示：固定着、有来源在放、显示的却不是固定的那个，返回固定的来源
+    /// （面板写「固定的 X 没在播」+「取消固定」）。
+    public static func pinIdle(pinned: MusicSource?, shown: Pick,
+                               players: [Player], browser: Browser?) -> MusicSource? {
+        guard let pinned, shown != .native(pinned),
+              MusicCardChoice.anyPlaying(players: players, browser: browser) else { return nil }
+        return pinned
+    }
+
+    /// 显示的是固定的来源，但它没开：面板大标题「X 没开」。
+    public static func pinnedClosed(pinned: MusicSource?, shown: Pick, players: [Player]) -> MusicSource? {
+        guard let pinned, shown == .native(pinned),
+              !players.contains(where: { $0.source == pinned }) else { return nil }
+        return pinned
+    }
+}
+
+/// 面板固定来源的样子：「已固定」小标、「其他开着的」和「取消固定」。
 public enum MusicPin {
     /// 固定着的来源：关了自动切换并且选过来源。
     public static func pinned(_ config: WidgetConfig) -> MusicSource? {
@@ -213,10 +255,10 @@ public enum MusicPin {
         config.set(MusicSourceSwitch.pinnedKey, nil)
     }
 
-    /// 没在播放时下面列哪些播放器：固定着时只列别的正在播的，否则列别的有曲目的。
-    public static func others(players: [MusicSourceSwitch.Player], shown: MusicSource?,
-                              pinned: Bool) -> [MusicSource] {
-        players.filter { $0.source != shown && (pinned ? $0.isPlaying : $0.hasTrack) }.map(\.source)
+    /// 没在播放时下面「其他开着的」列哪些播放器：别的有曲目的（固定着也一样，有来源
+    /// 在放时卡片和面板已经显示它了，不会落到这里）。
+    public static func others(players: [MusicSourceSwitch.Player], shown: MusicSource?) -> [MusicSource] {
+        players.filter { $0.source != shown && $0.hasTrack }.map(\.source)
     }
 }
 

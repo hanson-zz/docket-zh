@@ -91,8 +91,16 @@ public final class MusicService {
     /// 开着的播放器，按偏好顺序，给面板的来源列表和「其他开着的」。
     public private(set) var players: [Player] = []
 
-    /// 正在显示、按钮控制的来源。可能没开（自动切换关着、固定的来源没开）。
+    /// 正在显示、按钮控制的播放器来源。可能没开（固定的来源没开）。显示的是浏览器
+    /// 标签页时停在上一个播放器。
     public private(set) var current: MusicSource?
+
+    /// 卡片和面板共用的「当前显示来源」（Core `MusicDisplay.pick` 挑的）：两边都读它，
+    /// 永远显示同一首。
+    public private(set) var display: MusicCardChoice.Pick = .none
+    /// `display` 是用户手点的（面板来源列表、「其他开着的」里点播放、对它按了播放键）。
+    @ObservationIgnored private var manual = false
+    @ObservationIgnored private var browserWasPlaying = false
 
     /// Sources to consult, in the order the config prefers them.
     public var enabled: [MusicSource] = MusicSource.allCases
@@ -101,15 +109,6 @@ public final class MusicService {
     public private(set) var autoSwitch = true
     /// 自动切换关着时固定用的来源。
     public private(set) var pinned: MusicSource?
-
-    /// 卡片正在显示的播放器（Core `MusicCardChoice` 挑的，卡片告诉服务）。不是面板的
-    /// 来源时，服务另外给它取封面。
-    public private(set) var cardSource: MusicSource?
-    /// 卡片来源的封面，只在它不是面板来源时用。
-    @ObservationIgnored private var cardArtworkKey: String?
-    private var cardArtwork: (key: String, image: NSImage?, tint: ArtworkTint?)?
-    /// 上次读到的各来源封面怎么取，卡片换来源时用。
-    @ObservationIgnored private var artworkRefs: [MusicSource: Bridge.ArtworkRef] = [:]
 
     /// Spotify「刚才听过」，只存在本机。
     public private(set) var recent = MusicRecent.decode(UserDefaults.standard.data(forKey: MusicRecent.defaultsKey))
@@ -195,6 +194,7 @@ public final class MusicService {
         if pinned != pin || autoSwitch != auto {
             pinned = pin
             autoSwitch = auto
+            manual = false
             reselect()
         }
     }
@@ -270,25 +270,65 @@ public final class MusicService {
         }
         recordRecent(next)
         players = next
-        artworkRefs = Dictionary(result.players.compactMap { reading in reading.artworkRef.map { (reading.source, $0) } },
-                                 uniquingKeysWith: { a, _ in a })
 
-        let chosen = MusicSourceSwitch.choose(
-            players: next.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) },
-            wasPlaying: wasPlaying, current: current, autoSwitch: autoSwitch, pinned: pinned)
-        wasPlaying = Dictionary(next.map { ($0.source, $0.track?.isPlaying == true) }, uniquingKeysWith: { a, _ in a })
-        if current != chosen { current = chosen; asked = nil }
+        let chosen = decide()
+        if current != chosen { current = chosen; asked = nil; artworkKey = nil }
 
         let ref = result.players.first(where: { $0.source == chosen })?.artworkRef
         await show(next.first(where: { $0.source == chosen })?.track, artworkRef: ref)
         refreshUpNext()
-        refreshCardArtwork()
+    }
+
+    // MARK: 当前显示来源
+
+    /// 允许的浏览器标签页此刻的样子。
+    private var browserState: MusicCardChoice.Browser? {
+        guard BrowserMedia.shared.enabled, let track = BrowserMedia.shared.track else { return nil }
+        return MusicCardChoice.Browser(hasTrack: true, isPlaying: track.isPlaying)
+    }
+
+    private func corePlayers(_ list: [Player]) -> [MusicSourceSwitch.Player] {
+        list.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) }
+    }
+
+    /// 按 Core `MusicDisplay.pick` 定下 `display`，记下这次的播放状态，返回该给按钮
+    /// 控制的播放器来源（显示浏览器时沿用上一个）。
+    private func decide() -> MusicSource? {
+        let list = corePlayers(players)
+        let browser = browserState
+        let pick = MusicDisplay.pick(players: list, browser: browser, wasPlaying: wasPlaying,
+                                     browserWasPlaying: browserWasPlaying, current: display,
+                                     manual: manual, pinned: pinned, autoSwitch: autoSwitch)
+        if manual {
+            manual = pick == display && MusicDisplay.keepsManual(
+                players: list, browser: browser, wasPlaying: wasPlaying,
+                browserWasPlaying: browserWasPlaying, current: display)
+        }
+        wasPlaying = Dictionary(list.map { ($0.source, $0.isPlaying) }, uniquingKeysWith: { a, _ in a })
+        browserWasPlaying = browser?.isPlaying == true
+        if display != pick { display = pick }
+        switch pick {
+        case .native(let source): return source
+        case .browser: return current
+        case .none: return nil
+        }
+    }
+
+    /// 浏览器标签页开始或停止播放：卡片看到变化时叫一下，不等下一次轮询。
+    public func reconcile() {
+        let chosen = decide()
+        guard chosen != current else { return }
+        current = chosen
+        asked = nil
+        artworkKey = nil
+        nowPlaying = players.first(where: { $0.source == chosen })?.track
+        lastProbe = .distantPast
+        refresh()
     }
 
     // MARK: 卡片
 
-    /// 给 Core 挑来源用的样子。面板来源用 `nowPlaying` 的播放状态（刚点过暂停时
-    /// 它先变）。
+    /// 给 Core 用的样子。显示中的来源用 `nowPlaying` 的播放状态（刚点过暂停时它先变）。
     public var switchPlayers: [MusicSourceSwitch.Player] {
         players.map { player in
             let track = player.source == current ? (nowPlaying ?? player.track) : player.track
@@ -297,44 +337,15 @@ public final class MusicService {
         }
     }
 
-    /// 卡片换了来源（Core 挑的）。不是面板来源时去取它的封面。
-    public func setCardSource(_ source: MusicSource?) {
-        guard cardSource != source else { return }
-        cardSource = source
-        refreshCardArtwork()
-    }
-
-    /// 某个来源此刻的曲目：面板来源就是 `nowPlaying`，别的来源用列表里的读数加卡片
-    /// 自己取的封面。
+    /// 某个来源此刻的曲目：显示中的来源就是 `nowPlaying`，别的来源用列表里的读数。
     public func track(for source: MusicSource) -> NowPlaying? {
         if source == current { return nowPlaying }
-        guard var track = players.first(where: { $0.source == source })?.track else { return nil }
-        if let art = cardArtwork, art.key == track.trackKey {
-            track.artwork = art.image
-            track.tint = art.tint
-        }
-        return track
-    }
-
-    private func refreshCardArtwork() {
-        guard let source = cardSource, source != current,
-              let track = players.first(where: { $0.source == source })?.track else { return }
-        let key = track.trackKey
-        guard key != cardArtworkKey else { return }
-        cardArtworkKey = key
-        let ref = artworkRefs[source]
-        Task {
-            let found = await withTimeout(seconds: 5) { await Bridge.artwork(for: ref) }
-            guard self.cardArtworkKey == key else { return }
-            self.cardArtwork = (key, found?.image, found?.tint)
-        }
+        return players.first(where: { $0.source == source })?.track
     }
 
     /// 来源变了（用户在面板里点、固定来源改了）就用已有的读数立即换上，不等下一次轮询。
     private func reselect() {
-        let chosen = MusicSourceSwitch.choose(
-            players: players.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) },
-            wasPlaying: wasPlaying, current: current, autoSwitch: autoSwitch, pinned: pinned)
+        let chosen = decide()
         guard chosen != current else { return }
         current = chosen
         asked = nil
@@ -445,9 +456,11 @@ public final class MusicService {
 
     // MARK: Choosing a source
 
-    /// 用户在面板里点了一个来源：先显示它。自动切换开着时，下次有别的来源开始播放
-    /// 还会切走；关着时由面板把它写成固定来源。
+    /// 用户在面板里点了一个来源：卡片和面板都显示它（算手点，别的来源开始播放或它
+    /// 关了才换走）。自动切换关着时由面板把它写成固定来源。
     public func select(_ source: MusicSource) {
+        manual = true
+        if display != .native(source) { display = .native(source) }
         guard current != source else { return }
         current = source
         asked = nil
@@ -485,6 +498,14 @@ public final class MusicService {
     /// 列表里别的来源的播放键：切过去再播放/暂停。
     public func playPause(_ source: MusicSource) {
         select(source)
+        command("playpause")
+    }
+
+    /// 「其他开着的」里点播放：只把显示切到这个来源并让它放，不改固定；已经在放就
+    /// 只切显示。
+    public func showAndPlay(_ source: MusicSource) {
+        select(source)
+        guard players.first(where: { $0.source == source })?.track?.isPlaying != true else { return }
         command("playpause")
     }
 
@@ -571,6 +592,8 @@ public final class MusicService {
 
     private func command(_ body: String) {
         guard let source = nowPlaying?.source ?? current, canControl(source) else { return }
+        // 对显示中的来源按了键：留在它上面，暂停后不被固定的来源顶掉。
+        if display == .native(source) { manual = true }
         if body == "playpause" {
             optimistically { $0.isPlaying.toggle() }
             asked = nowPlaying?.isPlaying
