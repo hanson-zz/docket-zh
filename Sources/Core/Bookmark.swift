@@ -76,8 +76,15 @@ public struct Bookmark: Equatable, Sendable {
         return Int(hash % UInt32(count))
     }
 
-    /// 卡片上最多显示几个，拖入加书签也到这里为止。
-    public static let dropLimit = 8
+    /// 卡片上最多显示几个，多的只在面板里。
+    public static let tileLimit = 8
+
+    /// 一张书签卡最多存几个：面板里粘贴、拖到卡片或面板上加的都到这里为止。
+    /// 面板改成四列网格之后不再只放 8 个（原来拖入到卡片放满 8 个就停）。
+    public static let maxCount = 48
+
+    /// 拖入加书签到这里为止，和面板里粘贴添加一样。
+    public static let dropLimit = maxCount
 
     /// 拖到书签卡上的一段文字或链接：整段就是一个网址时才算。
     public static func dropped(_ text: String) -> URL? {
@@ -97,7 +104,7 @@ public struct Bookmark: Equatable, Sendable {
     }
 
     /// 比较两个地址是不是同一个：不分大小写，结尾的斜杠不算。
-    static func normalisedKey(_ url: URL) -> String {
+    public static func normalisedKey(_ url: URL) -> String {
         var text = url.absoluteString.lowercased()
         while text.hasSuffix("/") { text.removeLast() }
         return text
@@ -111,13 +118,13 @@ public struct Bookmark: Equatable, Sendable {
     /// The tile's width for this many links: a 30pt disc each, 6pt apart,
     /// inside the card's inset. Never narrower than a short label needs.
     public static func tileWidth(count: Int) -> Double {
-        let shown = min(max(count, 1), 8)
+        let shown = min(max(count, 1), tileLimit)
         return max(100, Double(shown * 30 + (shown - 1) * 6) + 28)
     }
 
     /// The column's height: two discs a row.
     public static func columnHeight(count: Int) -> Double {
-        let rows = (min(max(count, 1), 8) + 1) / 2
+        let rows = (min(max(count, 1), tileLimit) + 1) / 2
         return max(62, Double(rows * 34) + 16)
     }
 }

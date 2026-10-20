@@ -1,208 +1,972 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// Every link with the title and summary its page gave, or its address when
-/// the page could not be read. A click opens it; a secondary click copies
-/// the address or reads the page again. A field at the top adds a link, and
-/// a 小宇宙 show or episode link offers "加到播客".
+/// 书签面板：四列网格图标加标题，面板里直接加、改、删、排。
+///
+/// 两个状态：
+/// - 浏览：顶部分组标签（Pro）、“粘贴网址，回车添加”，网格里点一个用默认
+///   浏览器打开；右键拷贝网址、刷新预览、小宇宙链接“加到播客”。最下面一个
+///   虚线框提示把链接拖到卡片上就能加入，拖到面板上也一样。
+/// - 编辑：右上“编辑”进入。点名字改名，拖左边把手排序，红色减号滑出“删除”
+///   再点才删；点一行选中后在底部“移到分组”（Pro）。
+///
+/// 粘贴的网址先读网页标题和图标（`LinkPreviewFetcher`，和卡片上自动读的是
+/// 同一套），读到后出一张预览，点“添加”才加进去。
+///
+/// 列表照旧存在 `links`（见 `Bookmark`、`BookmarkList`），分组存在 `groups`
+/// （见 `BookmarkGroups`）。没解锁 Pro 时只显示“全部”，分组照旧存着。
 struct BookmarksDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
-    @FocusState private var addingFocused: Bool
-    @State private var newLink = ""
-    @State private var refreshing: Set<String> = []
-    @State private var podcastStatus: [String: String] = [:]
-    @State private var addingPodcast: Set<String> = []
+    private enum Mode { case browse, edit }
+    private enum Field: Hashable { case add, rename, group }
 
-    private var links: [Bookmark] { Bookmark.list(instance.config.strings("links")) }
-    private var previews: [String: LinkPreview] { LinkPreview.stored(instance.config) }
+    /// 粘贴进来、正在读或读好了标题和图标、还没点“添加”的那条。
+    private struct Pending: Equatable {
+        var text: String
+        var url: URL
+        var preview: LinkPreview?
+        var loading: Bool
+    }
+
+    @State private var mode: Mode = .browse
+    /// 选中的分组标签，nil 是“全部”。
+    @State private var tab: String?
+    @State private var newLink = ""
+    @State private var pending: Pending?
+    /// 添加框下面的一行提示（认不出网址、重复、放满）。
+    @State private var notice: String?
+    /// 每写一次加一，面板跟着重读存着的配置。
+    @State private var revision = 0
+    @State private var refreshing: Set<String> = []
+    @State private var podcastStatus: String?
+    @State private var addingPodcast: Set<String> = []
+    /// 正在改名的那一行（网址）和输入的名字。
+    @State private var renaming: String?
+    @State private var renameText = ""
+    /// 点了红色减号、正露出“删除”的那一行。
+    @State private var pendingDelete: String?
+    /// 正在拖的那一行和它的位移。
+    @State private var dragging: String?
+    @State private var dragOffset: CGFloat = 0
+    /// 编辑态选中、准备移到分组的那一行。
+    @State private var selected: String?
+    /// 正在输入新分组的名字；nil 是没在新建。
+    @State private var newGroup: String?
+    /// 拖着链接停在面板上。
+    @State private var targeted = false
+    @FocusState private var focus: Field?
+
+    private static let accentHex = "#FF9F43"
+    private static let inkHex = "#2A1500"
+    private var accent: Color { panelTint.accent(or: Color(hex: Self.accentHex)) }
+    private var accentInk: Color { panelTint.ink(or: Color(hex: Self.inkHex)) }
+    private static let red = Color(red: 1, green: 0.42, blue: 0.35)
+
+    private static let rowHeight: CGFloat = 52
+    private static let deleteWidth: CGFloat = 64
+    private static let cellHeight: CGFloat = 84
+
+    // MARK: 读
+
+    /// 写过之后面板拿到的仍可能是打开时的那份，读最新存着的。
+    private var current: WidgetInstance {
+        _ = revision
+        return WidgetWriter.current(instance.id) ?? instance
+    }
+    private var entries: [String] { current.config.strings("links") }
+    private var links: [Bookmark] { Bookmark.list(entries) }
+    private var previews: [String: LinkPreview] { LinkPreview.stored(current.config) }
+    private var groups: [BookmarkGroup] { BookmarkGroups.groups(current.config) }
+    private var unlocked: Bool { ProAccess.isUnlocked || context.isPreview }
+    private var shownTab: String? { BookmarkGroups.selectedTab(tab, groups: groups, unlocked: unlocked) }
+    private var visible: [Bookmark] {
+        BookmarkGroups.visible(links, tab: tab, groups: groups, unlocked: unlocked)
+    }
 
     var body: some View {
         DetailCard {
             MeshBackdrop(color: WidgetStyle.tint(.orange))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .center) {
-                    PanelHeader(symbol: "bookmark", title: tr("书签"), subtitle: tr("\(links.count) 个网址 · 用默认浏览器打开"))
-                    if !links.isEmpty, !context.isPreview {
-                        Button {
-                            refresh(links)
-                        } label: {
-                            if refreshing.isEmpty {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
-                            } else {
-                                ProgressView().controlSize(.mini)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!refreshing.isEmpty)
-                        .help("刷新全部预览")
-                        .accessibilityLabel("刷新全部预览")
-                    }
+                header
+                switch mode {
+                case .browse: browse
+                case .edit: edit
                 }
-                addField
-                if links.isEmpty {
-                    PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) {
-                        WidgetDetailWindow.shared.focusField { addingFocused = true }
-                    }
-                        .frame(height: 120)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 4) {
-                            ForEach(Array(links.enumerated()), id: \.offset) { _, link in row(link) }
-                        }
-                    }
-                    .scrollIndicators(.never)
-                    .frame(height: min(280, CGFloat(links.count) * 60))
+            }
+            // 改名框失去焦点（点了别处）也算改好了。
+            .onChange(of: focus) { old, new in
+                if old == .rename, new != .rename { commitRename() }
+            }
+        }
+        // 拖链接到面板上：和卡片同一个虚线框，松手加在最后，标题由链接预览取。
+        .dropTargetOutline(targeted, corner: DetailCard<EmptyView, EmptyView>.corner, prompt: .bookmark)
+        .onDrop(of: [.url, .plainText], delegate: ContentDropDelegate(
+            types: [.url, .plainText],
+            enabled: !context.isPreview,
+            targeted: { targeted = $0 },
+            receive: { things in
+                withAnimation(.snappy(duration: 0.3)) {
+                    BookmarkDrop.add(things, to: current)
+                    revision += 1
                 }
-                Text("在 设置 ▸ 小组件 中编辑网址：每项可写成“标题 网址”，用逗号分隔。添加后会自动读取网页的标题和摘要。")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .fixedSize(horizontal: false, vertical: true)
+            }))
+        .task(id: pendingFetch) {
+            let urls = pendingFetch
+            guard !urls.isEmpty else { return }
+            let fetched = await LinkPreviewFetcher.fetch(urls)
+            guard !Task.isCancelled, !fetched.isEmpty else { return }
+            BookmarkPreviews.save(fetched, in: current)
+            revision += 1
+        }
+    }
+
+    /// 还没读过标题和图标的网页，面板打开时补读（卡片上也会读，同一时间不重复）。
+    private var pendingFetch: [URL] {
+        guard !context.isPreview else { return [] }
+        let stored = previews
+        var seen = Set<String>()
+        return links.map(\.url).filter { url in
+            seen.insert(url.absoluteString).inserted
+                && LinkPreview.needsFetch(url, stored: stored[url.absoluteString], now: context.now)
+        }
+    }
+
+    // MARK: 头部
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(mode == .browse ? tr("书签") : tr("编辑书签"))
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.97))
+                Text(mode == .browse ? tr("\(links.count) 个网址 · 点开用默认浏览器") : tr("拖动排序 · 点名字改名"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+            if !context.isPreview {
+                if mode == .browse, !links.isEmpty { refreshButton }
+                modeButton
             }
         }
     }
 
-    // MARK: Adding
+    private var refreshButton: some View {
+        Button {
+            refresh(links)
+        } label: {
+            Group {
+                if refreshing.isEmpty {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
+                } else {
+                    ProgressView().controlSize(.mini)
+                }
+            }
+            .frame(width: 28, height: 28)
+            .glassPane(cornerRadius: 14)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(!refreshing.isEmpty)
+        .help(tr("刷新全部预览"))
+        .accessibilityLabel(tr("刷新全部预览"))
+    }
+
+    @ViewBuilder
+    private var modeButton: some View {
+        if mode == .browse {
+            Button { switchTo(.edit) } label: {
+                Text(tr("编辑"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .padding(.horizontal, 13)
+                    .frame(height: 28)
+                    .background(Capsule().fill(.white.opacity(0.12)))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("改名、删除、调整顺序"))
+        } else {
+            Button { switchTo(.browse) } label: {
+                Text(tr("完成"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accentInk)
+                    .padding(.horizontal, 15)
+                    .frame(height: 28)
+                    .background(Capsule().fill(accent))
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func switchTo(_ next: Mode) {
+        commitRename()
+        withAnimation(.snappy(duration: 0.25)) {
+            mode = next
+            pendingDelete = nil
+            dragging = nil
+            dragOffset = 0
+            selected = nil
+            newGroup = nil
+        }
+    }
+
+    // MARK: 浏览
+
+    @ViewBuilder
+    private var browse: some View {
+        tabsRow
+        addField
+        pendingCard
+        if links.isEmpty {
+            PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) {
+                WidgetDetailWindow.shared.focusField { focus = .add }
+            }
+            .frame(height: 120)
+        } else if visible.isEmpty {
+            Text(tr("这个分组还没有书签。点“编辑”，选中书签后移到分组。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 8)
+        } else {
+            grid
+        }
+        if let podcastStatus {
+            Text(podcastStatus)
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+                .lineLimit(2)
+        }
+        if !context.isPreview { dropHint }
+    }
+
+    // MARK: 分组标签
+
+    private var tabsRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                if newGroup != nil, mode == .browse {
+                    newGroupField
+                } else {
+                    tabChip(nil, title: tr("全部"))
+                    ForEach(BookmarkGroups.tabs(groups, unlocked: unlocked), id: \.self) { name in
+                        tabChip(name, title: name)
+                            .contextMenu {
+                                Button(tr("删除分组"), role: .destructive) { deleteGroup(name) }
+                            }
+                    }
+                    if !context.isPreview {
+                        Button { startNewGroup() } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .frame(width: 30, height: 30)
+                                .background(Circle().fill(.white.opacity(0.08)))
+                                .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(tr("新建分组"))
+                        .accessibilityLabel(tr("新建分组"))
+                    }
+                    ProBadge()
+                }
+            }
+            .padding(.vertical, 1)
+        }
+        .scrollIndicators(.never)
+    }
+
+    private func tabChip(_ name: String?, title: String) -> some View {
+        let on = shownTab == name
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { tab = name }
+        } label: {
+            Text(verbatim: title)
+                .font(.system(size: 13, weight: on ? .bold : .semibold))
+                .foregroundStyle(on ? accentInk : .white.opacity(0.86))
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
+                .background(Capsule().fill(on ? accent : .white.opacity(0.08)))
+                .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private var newGroupField: some View {
+        HStack(spacing: 6) {
+            TextField("", text: Binding(get: { newGroup ?? "" }, set: { newGroup = $0 }),
+                      prompt: Text(tr("分组名，回车新建")))
+                .focused($focus, equals: .group)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundStyle(.white)
+                .onSubmit { createGroup() }
+                .padding(.horizontal, 12)
+                .frame(width: 180, height: 30)
+                .background(Capsule().fill(.white.opacity(0.1)))
+                .overlay(Capsule().strokeBorder(accent.opacity(0.9), lineWidth: 1.2))
+            Button(tr("取消")) { withAnimation(.snappy(duration: 0.2)) { newGroup = nil } }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+    }
+
+    /// “＋”：没解锁弹付费墙，解锁后输入分组名。
+    private func startNewGroup() {
+        guard ProLicenseGate.canUseBookmarkGroups(unlocked: unlocked) else {
+            PaywallWindow.shared.show()
+            return
+        }
+        WidgetDetailWindow.shared.focusField { focus = .group }
+        withAnimation(.snappy(duration: 0.2)) { newGroup = "" }
+    }
+
+    private func createGroup() {
+        let raw = newGroup ?? ""
+        guard ProLicenseGate.canUseBookmarkGroups(unlocked: unlocked),
+              let name = BookmarkGroups.cleanName(raw),
+              var next = BookmarkGroups.adding(raw, to: groups) else {
+            NSSound.beep()
+            return
+        }
+        // 编辑态选中了一行时，新建的分组顺手把它放进去。
+        if mode == .edit, let selected, let url = URL(string: selected) {
+            next = BookmarkGroups.moving(url, to: name, in: next)
+        }
+        write { BookmarkGroups.write(next, into: &$0) }
+        withAnimation(.snappy(duration: 0.2)) {
+            newGroup = nil
+            if mode == .browse { tab = name }
+        }
+    }
+
+    private func deleteGroup(_ name: String) {
+        guard ProLicenseGate.canUseBookmarkGroups(unlocked: unlocked) else { return }
+        let next = BookmarkGroups.removing(name, from: groups)
+        write { BookmarkGroups.write(next, into: &$0) }
+        if tab == name { tab = nil }
+    }
+
+    // MARK: 添加
 
     private var addField: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "plus")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
-            TextField("", text: $newLink, prompt: Text("粘贴网址，回车添加"))
-                .focused($addingFocused)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .foregroundStyle(.white)
-                .onSubmit { add() }
-                .disabled(context.isPreview)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                TextField("", text: $newLink, prompt: Text(tr("粘贴网址，回车添加")))
+                    .focused($focus, equals: .add)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: newLink.isEmpty ? .regular : .medium))
+                    .foregroundStyle(.white)
+                    .onSubmit { readLink() }
+                    .onChange(of: newLink) { notice = nil }
+                    .disabled(context.isPreview)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 40)
+            .background {
+                RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(focus == .add ? 0.1 : 0.08))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(focus == .add ? accent.opacity(0.9) : .white.opacity(0.14),
+                                  lineWidth: focus == .add ? 1.2 : 0.6)
+            }
+            if let notice {
+                Text(notice)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Self.red)
+            }
         }
-        .padding(.horizontal, 10)
-        .frame(height: 30)
-        .glassPane(cornerRadius: 10)
     }
 
-    private func add() {
+    /// 回车：认出网址后先读标题和图标，出一张预览等“添加”。
+    private func readLink() {
+        guard !context.isPreview else { return }
         let text = newLink.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !context.isPreview, let link = Bookmark(parsing: text) else { return }
-        newLink = ""
-        guard !links.contains(where: { $0.url == link.url }) else { return }
-        // Commas separate entries in Settings, so none may survive inside one.
-        let entry = text.replacingOccurrences(of: ",", with: " ").replacingOccurrences(of: "，", with: " ")
-        WidgetWriter.write(instance) { config in
-            config.set("links", .list((config.strings("links") + [entry]).map { .string($0) }))
+        guard !text.isEmpty else { return }
+        // 预览已经出来了，再按一次回车就是“添加”。
+        if let pending, pending.text == text {
+            if !pending.loading { commitPending() }
+            return
+        }
+        switch BookmarkList.adding(text, to: entries) {
+        case .invalid:
+            notice = tr("认不出网址，试试 example.com 或 https://…")
+        case .duplicate:
+            notice = tr("已经在书签里了")
+        case .full:
+            notice = tr("最多 \(Bookmark.maxCount) 个书签，先删掉几个")
+        case .added:
+            guard let link = Bookmark(parsing: text) else { return }
+            let web = LinkPreview.needsFetch(link.url, stored: nil)
+            notice = nil
+            withAnimation(.snappy(duration: 0.2)) {
+                pending = Pending(text: text, url: link.url, preview: nil, loading: web)
+            }
+            guard web else { return }
+            Task {
+                let fetched = await LinkPreviewFetcher.fetch([link.url]).first
+                guard pending?.url == link.url else { return }
+                pending?.preview = fetched ?? LinkPreview.failure(link.url)
+                pending?.loading = false
+            }
         }
     }
 
-    // MARK: Rows
+    @ViewBuilder
+    private var pendingCard: some View {
+        if let pending {
+            let link = Bookmark(parsing: pending.text) ?? Bookmark(title: Bookmark.shortHost(pending.url), url: pending.url)
+            let title = link.displayTitle(pending.preview)
+            HStack(spacing: 10) {
+                BookmarkSquare(link: Bookmark(title: title, url: pending.url),
+                               icon: pending.preview?.failed == false ? pending.preview?.icon : nil, size: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(pendingStatus(pending))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+                .lineLimit(1)
+                Spacer(minLength: 4)
+                if pending.loading { ProgressView().controlSize(.small) }
+                Button { commitPending() } label: {
+                    Text(tr("添加"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(accentInk)
+                        .padding(.horizontal, 16)
+                        .frame(height: 30)
+                        .background(Capsule().fill(accent))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { self.pending = nil }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 22, height: 30)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .help(tr("取消"))
+                .accessibilityLabel(tr("取消"))
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 56)
+            .glassPane(cornerRadius: 12)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+    }
 
-    private func row(_ link: Bookmark) -> some View {
+    private func pendingStatus(_ pending: Pending) -> String {
+        if pending.loading { return tr("正在读取标题和图标…") }
+        guard let preview = pending.preview else { return Bookmark.shortHost(pending.url) }
+        if preview.failed || !preview.hasContent { return tr("没读到标题，先用网址") }
+        return preview.icon == nil ? tr("已读到标题") : tr("已读到标题和图标")
+    }
+
+    /// 点“添加”：加在最后，读到的预览一起存；在某个分组下加的也放进那个分组。
+    private func commitPending() {
+        guard let pending, !context.isPreview else { return }
+        let latest = entries
+        guard case .added(let next) = BookmarkList.adding(pending.text, to: latest) else {
+            notice = tr("已经在书签里了")
+            self.pending = nil
+            return
+        }
+        let into = shownTab
+        let groupsNow = groups
+        write { config in
+            config.set("links", .list(next.map { .string($0) }))
+            if let preview = pending.preview { LinkPreview.store([preview], in: &config) }
+            if let into {
+                BookmarkGroups.write(BookmarkGroups.moving(pending.url, to: into, in: groupsNow), into: &config)
+            }
+        }
+        withAnimation(.snappy(duration: 0.2)) {
+            self.pending = nil
+            newLink = ""
+        }
+    }
+
+    // MARK: 网格
+
+    private var grid: some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 4)
+        let rows = (visible.count + 3) / 4
+        let cells = LazyVGrid(columns: columns, spacing: 0) {
+            ForEach(visible, id: \.url) { link in cell(link) }
+        }
+        return Group {
+            if rows > 4 {
+                ScrollView { cells }
+                    .scrollIndicators(.never)
+                    .frame(height: Self.cellHeight * 4)
+            } else {
+                cells
+            }
+        }
+    }
+
+    private func cell(_ link: Bookmark) -> some View {
         let key = link.url.absoluteString
         let preview = previews[key]
         let title = link.displayTitle(preview)
         let summary = preview?.hasContent == true ? preview?.summary : nil
-        return HStack(alignment: .top, spacing: 10) {
-            BookmarkIcon(link: Bookmark(title: title, url: link.url),
-                         icon: preview?.failed == false ? preview?.icon : nil)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                if let summary, !summary.isEmpty {
-                    Text(summary)
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Text(summary == nil ? key : Bookmark.shortHost(link.url))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.5))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                if let xyz = link.xiaoyuzhou { podcastButton(xyz, key: key) }
-            }
-            Spacer(minLength: 0)
-            if refreshing.contains(key) {
-                ProgressView().controlSize(.mini)
-            } else {
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .glassPane(cornerRadius: 9)
-        .contentShape(.rect(cornerRadius: 9))
-        .onTapGesture {
+        return Button {
             guard !context.isPreview else { return }
             NSWorkspace.shared.open(link.url)
-        }
-        .contextMenu {
-            Button("打开") { NSWorkspace.shared.open(link.url) }
-            Button("拷贝网址") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(key, forType: .string)
+        } label: {
+            VStack(spacing: 7) {
+                ZStack(alignment: .topTrailing) {
+                    BookmarkSquare(link: Bookmark(title: title, url: link.url),
+                                   icon: preview?.failed == false ? preview?.icon : nil, size: 48)
+                    if refreshing.contains(key) {
+                        ProgressView().controlSize(.mini).offset(x: 6, y: -6)
+                    }
+                }
+                Text(verbatim: title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
-            if LinkPreview.needsFetch(link.url, stored: nil) {
-                Button("刷新预览") { refresh([link]) }
-            }
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.cellHeight, alignment: .top)
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
         .help([title, summary, key].compactMap { $0 }.joined(separator: "\n"))
+        .accessibilityLabel(tr("打开 \(title)"))
+        .contextMenu { menu(link) }
     }
 
-    /// "加到播客" under a 小宇宙 link: subscribes the 播客 widgets to its show.
     @ViewBuilder
-    private func podcastButton(_ link: XiaoyuzhouLink, key: String) -> some View {
-        HStack(spacing: 6) {
-            if PodcastService.shared.isSubscribed(link) {
-                Label("已在播客中", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.white.opacity(0.6))
-            } else if addingPodcast.contains(key) {
-                ProgressView().controlSize(.mini)
-                Text("正在加到播客…").foregroundStyle(.white.opacity(0.6))
+    private func menu(_ link: Bookmark) -> some View {
+        let key = link.url.absoluteString
+        Button(tr("打开")) { NSWorkspace.shared.open(link.url) }
+        Button(tr("拷贝网址")) {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(key, forType: .string)
+        }
+        if LinkPreview.needsFetch(link.url, stored: nil) {
+            Button(tr("刷新预览")) { refresh([link]) }
+        }
+        if let xyz = link.xiaoyuzhou {
+            if PodcastService.shared.isSubscribed(xyz) {
+                Button(tr("已在播客中")) {}.disabled(true)
             } else {
-                Button {
-                    addToPodcast(link, key: key)
-                } label: {
-                    Label("加到播客", systemImage: "plus.circle.fill")
-                        .foregroundStyle(panelTint.accent(or: PodcastCover.accent))
-                }
-                .buttonStyle(.plain)
-                .disabled(context.isPreview)
-            }
-            if let status = podcastStatus[key] {
-                Text(status).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
+                Button(tr("加到播客")) { addToPodcast(xyz, key: key) }
+                    .disabled(context.isPreview || addingPodcast.contains(key))
             }
         }
-        .font(.system(size: 10, weight: .semibold))
-        .padding(.top, 2)
+        if unlocked, !groups.isEmpty, !context.isPreview {
+            Menu(tr("移到分组")) { moveMenu(link.url) }
+        }
     }
+
+    @ViewBuilder
+    private func moveMenu(_ url: URL) -> some View {
+        let now = BookmarkGroups.group(of: url, in: groups)
+        ForEach(groups.map(\.name), id: \.self) { name in
+            Button(name) { move(url, to: name) }.disabled(name == now)
+        }
+        if now != nil {
+            Divider()
+            Button(tr("移出分组")) { move(url, to: nil) }
+        }
+    }
+
+    /// 虚线框：拖到卡片（或这个面板）上就能加入。
+    private var dropHint: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "arrow.down")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tr("把链接拖到卡片上就能加入"))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(tr("浏览器地址栏、聊天里的链接都行"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.03))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(accent.opacity(0.6), style: StrokeStyle(lineWidth: 1.2, dash: [5, 4]))
+        }
+    }
+
+    // MARK: 编辑
+
+    @ViewBuilder
+    private var edit: some View {
+        addField
+        pendingCard
+        Text(tr("\(shownTab ?? tr("全部")) · \(visible.count) 个"))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.62))
+            .padding(.top, 2)
+        if visible.isEmpty {
+            Text(tr("这里还没有书签"))
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+        } else {
+            editList
+        }
+        moveBar
+    }
+
+    private var editList: some View {
+        let list = visible
+        let from = dragging.flatMap { id in list.firstIndex { $0.url.absoluteString == id } }
+        let target = from.map {
+            WorldClockList.dropIndex(from: $0, translation: dragOffset, rowHeight: Self.rowHeight, count: list.count)
+        }
+        let rows = VStack(spacing: 0) {
+            ForEach(Array(list.enumerated()), id: \.element.url) { index, link in
+                editRow(link, index: index, list: list)
+                    .offset(y: rowShift(index, from: from, target: target))
+                    .zIndex(link.url.absoluteString == dragging ? 1 : 0)
+            }
+        }
+        return Group {
+            if list.count > 7 {
+                ScrollView { rows }
+                    .scrollIndicators(.never)
+                    .frame(height: Self.rowHeight * 7)
+            } else {
+                rows
+            }
+        }
+    }
+
+    /// 拖动时：被拖的那行跟着手走，经过的行让开一格。
+    private func rowShift(_ index: Int, from: Int?, target: Int?) -> CGFloat {
+        guard let from, let target else { return 0 }
+        if index == from { return dragOffset }
+        if from < target, (from + 1...target).contains(index) { return -Self.rowHeight }
+        if target < from, (target..<from).contains(index) { return Self.rowHeight }
+        return 0
+    }
+
+    private func editRow(_ link: Bookmark, index: Int, list: [Bookmark]) -> some View {
+        let key = link.url.absoluteString
+        let preview = previews[key]
+        let title = link.displayTitle(preview)
+        let lifted = dragging == key
+        let revealing = pendingDelete == key
+        let chosen = selected == key
+        let group = unlocked ? BookmarkGroups.group(of: link.url, in: groups) : nil
+        return ZStack(alignment: .trailing) {
+            if revealing {
+                Button { delete(link) } label: {
+                    Text(tr("删除"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: Self.deleteWidth, height: Self.rowHeight - 4)
+                        .background(Color(red: 0.85, green: 0.18, blue: 0.13))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .transition(.move(edge: .trailing))
+            }
+            HStack(spacing: 10) {
+                handle(link, index: index, list: list, lifted: lifted)
+                BookmarkSquare(link: Bookmark(title: title, url: link.url),
+                               icon: preview?.failed == false ? preview?.icon : nil, size: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    if renaming == key {
+                        TextField("", text: $renameText, prompt: Text(verbatim: title))
+                            .focused($focus, equals: .rename)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .onSubmit { commitRename() }
+                            .padding(.horizontal, 6)
+                            .frame(height: 24)
+                            .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(0.12)))
+                            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(accent.opacity(0.9), lineWidth: 1.2))
+                    } else {
+                        Text(verbatim: title)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .contentShape(.rect)
+                            .onTapGesture { startRename(link, title: title) }
+                            .help(tr("点名字改名"))
+                    }
+                    Text(verbatim: [Bookmark.shortHost(link.url), group].compactMap { $0 }.joined(separator: " · "))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+                .lineLimit(1)
+                Spacer(minLength: 4)
+                if !revealing {
+                    Button {
+                        withAnimation(.snappy(duration: 0.22)) { pendingDelete = key }
+                    } label: {
+                        ZStack {
+                            Circle().fill(Self.red.opacity(0.18))
+                            Capsule().fill(Self.red).frame(width: 10, height: 2)
+                        }
+                        .frame(width: 22, height: 22)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .help(tr("删除这个书签"))
+                    .accessibilityLabel(tr("删除 \(title)"))
+                }
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, revealing ? 8 : 10)
+            .frame(height: Self.rowHeight - 4)
+            .offset(x: revealing ? -Self.deleteWidth : 0)
+            .contentShape(.rect)
+            .onTapGesture {
+                withAnimation(.snappy(duration: 0.2)) {
+                    if pendingDelete != nil {
+                        pendingDelete = nil
+                    } else {
+                        selected = chosen ? nil : key
+                    }
+                }
+            }
+        }
+        .frame(height: Self.rowHeight - 4)
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .background { rowBackground(lifted: lifted) }
+        .overlay { rowBorder(lifted: lifted, chosen: chosen) }
+        .offset(x: lifted ? 8 : 0)
+        .frame(height: Self.rowHeight)
+        .contextMenu { menu(link) }
+    }
+
+    private func rowBackground(lifted: Bool) -> some View {
+        let fill: Color = lifted ? Color(red: 0.23, green: 0.23, blue: 0.25) : Color.white.opacity(0.06)
+        let shadow: Color = Color.black.opacity(lifted ? 0.35 : 0)
+        return RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(fill)
+            .shadow(color: shadow, radius: 6, y: 4)
+    }
+
+    private func rowBorder(lifted: Bool, chosen: Bool) -> some View {
+        let marked = lifted || chosen
+        let colour: Color = marked ? accent.opacity(lifted ? 0.7 : 0.9) : Color.white.opacity(0.1)
+        return RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(colour, lineWidth: marked ? 1 : 0.6)
+    }
+
+    /// 左边把手：按住拖动排序，松手时落到最近的一格。
+    private func handle(_ link: Bookmark, index: Int, list: [Bookmark], lifted: Bool) -> some View {
+        let key = link.url.absoluteString
+        let urls = list.map(\.url)
+        return Image(systemName: "line.3.horizontal")
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.white.opacity(lifted ? 0.85 : 0.5))
+            .frame(width: 24, height: Self.rowHeight - 4)
+            .contentShape(.rect)
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { value in
+                        if dragging != key {
+                            commitRename()
+                            dragging = key
+                            pendingDelete = nil
+                        }
+                        dragOffset = value.translation.height
+                    }
+                    .onEnded { value in
+                        let to = WorldClockList.dropIndex(from: index, translation: value.translation.height,
+                                                          rowHeight: Self.rowHeight, count: list.count)
+                        saveLinks(BookmarkList.moving(from: index, to: to, visible: urls, in: entries))
+                        withAnimation(.snappy(duration: 0.2)) {
+                            dragging = nil
+                            dragOffset = 0
+                        }
+                    }
+            )
+            .help(tr("拖动调整顺序"))
+            .accessibilityLabel(tr("调整\(link.title)的顺序"))
+            .accessibilityAction(named: tr("上移")) {
+                saveLinks(BookmarkList.moving(from: index, to: index - 1, visible: urls, in: entries))
+            }
+            .accessibilityAction(named: tr("下移")) {
+                saveLinks(BookmarkList.moving(from: index, to: index + 1, visible: urls, in: entries))
+            }
+    }
+
+    // MARK: 移到分组（Pro）
+
+    private var moveBar: some View {
+        let chosenURL = selected.flatMap { URL(string: $0) }
+        let now = chosenURL.flatMap { BookmarkGroups.group(of: $0, in: groups) }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(tr("移到分组"))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                Spacer(minLength: 0)
+                ProBadge()
+            }
+            if newGroup != nil, mode == .edit {
+                newGroupField
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        if unlocked {
+                            ForEach(groups.map(\.name).filter { $0 != now }, id: \.self) { name in
+                                movePill(name, enabled: chosenURL != nil) {
+                                    if let chosenURL { move(chosenURL, to: name) }
+                                }
+                            }
+                            if now != nil {
+                                movePill(tr("移出分组"), enabled: true) {
+                                    if let chosenURL { move(chosenURL, to: nil) }
+                                }
+                            }
+                        }
+                        movePill(tr("新建"), enabled: true) { startNewGroup() }
+                    }
+                }
+                .scrollIndicators(.never)
+            }
+            if unlocked, chosenURL == nil, newGroup == nil {
+                Text(tr("先点一行选中书签"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.52))
+            }
+        }
+        .padding(12)
+        .glassPane(cornerRadius: 12)
+    }
+
+    private func movePill(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(verbatim: title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(enabled ? 0.92 : 0.4))
+                .lineLimit(1)
+                .padding(.horizontal, 13)
+                .frame(height: 28)
+                .background(Capsule().fill(.white.opacity(0.12)))
+                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    private func move(_ url: URL, to name: String?) {
+        guard ProLicenseGate.canUseBookmarkGroups(unlocked: unlocked) else {
+            PaywallWindow.shared.show()
+            return
+        }
+        let next = BookmarkGroups.moving(url, to: name, in: groups)
+        write { BookmarkGroups.write(next, into: &$0) }
+    }
+
+    // MARK: 改名、删除
+
+    private func startRename(_ link: Bookmark, title: String) {
+        guard !context.isPreview else { return }
+        commitRename()
+        renameText = title
+        renaming = link.url.absoluteString
+        pendingDelete = nil
+        WidgetDetailWindow.shared.focusField { focus = .rename }
+    }
+
+    private func commitRename() {
+        guard let key = renaming, let url = URL(string: key) else { return }
+        renaming = nil
+        let next = BookmarkList.renaming(url, to: renameText, in: entries)
+        if next != entries { saveLinks(next) }
+    }
+
+    private func delete(_ link: Bookmark) {
+        withAnimation(.snappy(duration: 0.22)) {
+            saveLinks(BookmarkList.removing(link.url, from: entries))
+            pendingDelete = nil
+            if selected == link.url.absoluteString { selected = nil }
+        }
+    }
+
+    // MARK: 写回
+
+    private func write(_ change: (inout WidgetConfig) -> Void) {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(current, change)
+        revision += 1
+    }
+
+    /// 写回书签列表，顺手清掉已经删掉的书签的预览；解锁时也清掉分组里的旧网址
+    /// （没解锁时分组一个字不动）。
+    private func saveLinks(_ next: [String]) {
+        let prune = unlocked
+        let groupsNow = groups
+        write { config in
+            config.set("links", .list(next.map { .string($0) }))
+            LinkPreview.store([], in: &config)
+            if prune, !groupsNow.isEmpty {
+                BookmarkGroups.write(BookmarkGroups.pruned(groupsNow, links: Bookmark.list(next)), into: &config)
+            }
+        }
+    }
+
+    // MARK: 播客
 
     private func addToPodcast(_ link: XiaoyuzhouLink, key: String) {
         addingPodcast.insert(key)
-        podcastStatus[key] = nil
+        podcastStatus = tr("正在加到播客…")
         Task {
             let result = await PodcastService.shared.add(link)
             addingPodcast.remove(key)
             switch result {
             case .success(let show):
-                podcastStatus[key] = tr("已加入「\(show.title)」")
+                podcastStatus = tr("已加入「\(show.title)」")
             case .failure(let failure):
-                podcastStatus[key] = failure.message
+                podcastStatus = failure.message
             }
         }
     }
 
-    // MARK: Refresh
+    // MARK: 刷新
 
     private func refresh(_ chosen: [Bookmark]) {
         let urls = chosen.map(\.url).filter { LinkPreview.needsFetch($0, stored: nil) }
@@ -212,17 +976,26 @@ struct BookmarksDetail: View {
             let fetched = await LinkPreviewFetcher.fetch(urls)
             for url in urls { refreshing.remove(url.absoluteString) }
             // A refresh that failed keeps what was read before.
-            let stored = LinkPreview.stored(instance.config)
+            let stored = LinkPreview.stored(current.config)
             let kept = fetched.filter { !$0.failed || stored[$0.url]?.hasContent != true }
-            if !kept.isEmpty { BookmarkPreviews.save(kept, in: instance) }
+            if !kept.isEmpty {
+                BookmarkPreviews.save(kept, in: current)
+                revision += 1
+            }
         }
     }
 }
 
-/// A link's icon from its page when there is one, its letter otherwise.
-private struct BookmarkIcon: View {
+/// 网格里的网站图标：读到网页图标时放在白色圆角方块上，没有时是首字加按
+/// 域名取的颜色。
+struct BookmarkSquare: View {
     var link: Bookmark
     var icon: String?
+    var size: CGFloat
+
+    private static let palette: [PaletteColor] = [.blue, .orange, .green, .pink, .purple, .teal, .red, .indigo]
+
+    private var radius: CGFloat { size * 0.27 }
 
     var body: some View {
         Group {
@@ -230,17 +1003,29 @@ private struct BookmarkIcon: View {
                 AsyncImage(url: url) { phase in
                     if let image = phase.image {
                         image.resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-                            .padding(4)
-                            .background(Circle().fill(.white.opacity(0.9)))
-                            .clipShape(Circle())
+                            .padding(size * 0.18)
+                            .frame(width: size, height: size)
+                            .background(RoundedRectangle(cornerRadius: radius, style: .continuous)
+                                .fill(.white.opacity(0.92)))
                     } else {
-                        BookmarkBadge(link: link, size: 28)
+                        letter
                     }
                 }
             } else {
-                BookmarkBadge(link: link, size: 28)
+                letter
             }
         }
-        .frame(width: 28, height: 28)
+        .frame(width: size, height: size)
+        .clipShape(.rect(cornerRadius: radius, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private var letter: some View {
+        let colour = WidgetStyle.tint(Self.palette[link.paletteIndex(count: Self.palette.count)])
+        return Text(link.initial)
+            .font(.system(size: size * 0.5, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(colour.gradient))
     }
 }

@@ -19,6 +19,7 @@ import Foundation
 ///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
 ///   三款复古皮肤（`skin` 为 wood、transistor、deck；半圆表盘的经典免费）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
+/// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
 ///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。

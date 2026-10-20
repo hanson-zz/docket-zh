@@ -15538,13 +15538,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格、喝水小熊猫角色、收音机复古皮肤；习惯打卡第 4 个起和近七天报告" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格、喝水小熊猫角色、收音机复古皮肤；习惯打卡第 4 个起和近七天报告；书签分组文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style, the Time Progress grid, the red panda Water character and the retro Radio skins; a fourth habit and beyond, and the 7-day habit report"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style, the Time Progress grid, the red panda Water character and the retro Radio skins; a fourth habit and beyond, and the 7-day habit report; bookmark group folders"
           }
         }
       }
@@ -42260,6 +42260,281 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ %@%% gone, %@"
+          }
+        }
+      }
+    },
+    "编辑书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Bookmarks"
+          }
+        }
+      }
+    },
+    "%@ 个网址 · 点开用默认浏览器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ links · open in your default browser"
+          }
+        }
+      }
+    },
+    "拖动排序 · 点名字改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to reorder · click a name to rename"
+          }
+        }
+      }
+    },
+    "改名、删除、调整顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename, delete and reorder"
+          }
+        }
+      }
+    },
+    "这个分组还没有书签。点“编辑”，选中书签后移到分组。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No bookmarks in this group yet. Click Edit, select a bookmark and move it to the group."
+          }
+        }
+      }
+    },
+    "删除分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Group"
+          }
+        }
+      }
+    },
+    "新建分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Group"
+          }
+        }
+      }
+    },
+    "分组名，回车新建" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group name, press Return"
+          }
+        }
+      }
+    },
+    "认不出网址，试试 example.com 或 https://…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That is not a URL. Try example.com or https://…"
+          }
+        }
+      }
+    },
+    "已经在书签里了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in your bookmarks"
+          }
+        }
+      }
+    },
+    "最多 %@ 个书签，先删掉几个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ bookmarks. Delete a few first"
+          }
+        }
+      }
+    },
+    "正在读取标题和图标…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading the title and icon…"
+          }
+        }
+      }
+    },
+    "没读到标题，先用网址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No title found, using the URL for now"
+          }
+        }
+      }
+    },
+    "已读到标题" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title found"
+          }
+        }
+      }
+    },
+    "已读到标题和图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title and icon found"
+          }
+        }
+      }
+    },
+    "移到分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Group"
+          }
+        }
+      }
+    },
+    "移出分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Group"
+          }
+        }
+      }
+    },
+    "把链接拖到卡片上就能加入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag a link onto the card to add it"
+          }
+        }
+      }
+    },
+    "浏览器地址栏、聊天里的链接都行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the address bar or a chat, either works"
+          }
+        }
+      }
+    },
+    "%@ · %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "这里还没有书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No bookmarks here yet"
+          }
+        }
+      }
+    },
+    "点名字改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the name to rename"
+          }
+        }
+      }
+    },
+    "删除这个书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this bookmark"
+          }
+        }
+      }
+    },
+    "新建" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        }
+      }
+    },
+    "先点一行选中书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a row to select a bookmark first"
           }
         }
       }

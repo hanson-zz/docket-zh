@@ -16,7 +16,7 @@ struct BookmarksTile: View {
     var context: WidgetContext
 
     private var links: [Bookmark] {
-        Array(Bookmark.list(instance.config.strings("links")).prefix(8))
+        Array(Bookmark.list(instance.config.strings("links")).prefix(Bookmark.tileLimit))
     }
 
     private var previews: [String: LinkPreview] { LinkPreview.stored(instance.config) }

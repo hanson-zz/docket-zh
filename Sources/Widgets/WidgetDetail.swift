@@ -610,7 +610,7 @@ enum WidgetDetail {
         case .downloads, .fileShelf, .clipboard, .search: 320
         case .wallpaper: 340
         case .appSwitcher: 320
-        case .bookmarks: 300
+        case .bookmarks: 320
         case .recorder: 320
         // 「算」：输入框、结果、最近记录，和原来汇率换算的面板一样宽。
         case .calculator: 320
