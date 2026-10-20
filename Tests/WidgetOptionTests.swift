@@ -281,6 +281,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "stock.metalUnit", "stock.rotate", "watchlist.metalUnit", "watchlist.symbols",
         // 四格没有周期可选；旧的单个闹钟才有时间和名称；倒计时的预设在面板里改。
         "progress.period", "alarm.time", "alarm.name", "countdown.presets",
+        // 世界时钟的城市名跟着城市列表走，设置里只改列表。
+        "world.city",
     ]
 
     func testStockOptionsFollowTheList() {

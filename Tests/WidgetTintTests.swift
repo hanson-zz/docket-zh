@@ -211,15 +211,18 @@ final class WorldCitiesTests: XCTestCase {
     }
 
     func testSystemZonesAreSearchable() {
-        let zones = ["Asia/Kathmandu", "Asia/Tokyo", "America/Argentina/Buenos_Aires"]
-        let found = WorldCities.search("kathmandu", systemZones: zones)
-        XCTAssertEqual(found.map(\.zone), ["Asia/Kathmandu"])
-        XCTAssertEqual(found.first?.name, "Kathmandu")
-        // 内置表已有的时区不重复列一遍。
-        XCTAssertEqual(WorldCities.search("tokyo", systemZones: zones).filter { $0.zone == "Asia/Tokyo" }.count, 1)
+        // 加德满都已进内置表，系统时区兜底换一个表里没有的（廷布）。
+        let zones = ["Asia/Thimphu", "Asia/Tokyo", "America/Argentina/Buenos_Aires"]
+        let found = WorldCities.search("thimphu", systemZones: zones)
+        XCTAssertEqual(found.map(\.zone), ["Asia/Thimphu"])
+        XCTAssertEqual(found.first?.name, "Thimphu")
+        XCTAssertEqual(WorldCities.search("kathmandu", systemZones: ["Asia/Kathmandu"]).first?.name, "加德满都")
+        // 内置表已有的时区不重复列一遍系统时区。
+        XCTAssertTrue(WorldCities.search("tokyo", systemZones: zones).filter { $0.zone == "Asia/Tokyo" }
+            .allSatisfy(\.isBuiltIn))
         XCTAssertEqual(WorldCities.displayName(zone: "America/Argentina/Buenos_Aires"), "Buenos Aires")
         // 真的系统时区也能搜到。
-        XCTAssertTrue(WorldCities.search("Kathmandu").contains { $0.zone == "Asia/Kathmandu" })
+        XCTAssertTrue(WorldCities.search("Thimphu").contains { $0.zone == "Asia/Thimphu" })
         XCTAssertTrue(WorldCities.search("").allSatisfy { TimeZone(identifier: $0.zone) != nil })
     }
 }
