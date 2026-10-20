@@ -105,7 +105,7 @@ final class WidgetOptionTests: XCTestCase {
             .habit: ["showStreak"],
             .week: ["allDay", "calendars"],
             .crypto: ["coins", "currency", "colors", "chart"],
-            .radio: ["volume"],
+            .radio: ["skin", "volume"],
             .anniversary: ["showRing"],
             .water: ["cupSize", "remindEvery", "start", "end", "unit", "character", "dryUp"],
             .clipboard: ["pasteOnClick"],
@@ -283,6 +283,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "progress.period", "alarm.time", "alarm.name", "countdown.presets",
         // 世界时钟的城市名跟着城市列表走，设置里只改列表。
         "world.city",
+        // 收音机的皮肤在“样式”里选，设置里不单列。
+        "radio.skin",
     ]
 
     func testStockOptionsFollowTheList() {
