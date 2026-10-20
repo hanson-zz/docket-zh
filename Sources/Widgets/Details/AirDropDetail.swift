@@ -351,7 +351,7 @@ struct AirDropDetail: View {
         var tint: Color {
             switch self {
             case .off: Color.secondary.opacity(0.5)
-            case .contacts: AirDropDetail.blue
+            case .contacts: Color(hex: "#0A7CFF")
             case .everyone: Color(hex: "#FF9F0A")
             }
         }
