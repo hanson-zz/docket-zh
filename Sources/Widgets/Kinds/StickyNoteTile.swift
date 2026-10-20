@@ -88,10 +88,10 @@ struct StickyNoteTile: View {
         } else {
             // 字号放大、最多只缩到 0.9 倍：原来 14pt 缩到 0.75 倍，58pt 高的卡上
             // 只剩 10pt 出头，手札体笔画又细，看不清。宁可少一行、尾巴省略。
-            let font = StickyNoteFont.of(instance.config)
-            let size = StickyNoteSize.of(instance.config)
+            let noteFont = StickyNoteFont.of(instance.config)
+            let noteSize = StickyNoteSize.of(instance.config)
             Text(verbatim: StickyChecklist.display(text))
-                .font(StickyFont.font(font, size: CGFloat(StickyNoteType.card(font, size, column: column))))
+                .font(StickyFont.font(noteFont, size: CGFloat(StickyNoteType.card(noteFont, noteSize, column: column))))
                 .foregroundStyle(ink)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(-1)

@@ -32,9 +32,9 @@ struct StickyNoteDetail: View {
 
     private var stored: String { pile.front.text }
 
-    private var font: StickyNoteFont { StickyNoteFont.of(instance.config) }
-    private var size: StickyNoteSize { StickyNoteSize.of(instance.config) }
-    private var pointSize: CGFloat { CGFloat(StickyNoteType.panel(font, size)) }
+    private var noteFont: StickyNoteFont { StickyNoteFont.of(instance.config) }
+    private var noteSize: StickyNoteSize { StickyNoteSize.of(instance.config) }
+    private var pointSize: CGFloat { CGFloat(StickyNoteType.panel(noteFont, noteSize)) }
 
     /// 有清单项、又没在写字时，纸上画成能点的框。
     private var showsChecklist: Bool { !writing && StickyChecklist.hasItems(draft) }
@@ -81,7 +81,7 @@ struct StickyNoteDetail: View {
         TextField("", text: $draft, axis: .vertical)
             .textFieldStyle(.plain)
             .focused($writing)
-            .font(StickyFont.font(font, size: pointSize))
+            .font(StickyFont.font(noteFont, size: pointSize))
             .foregroundStyle(ink)
             .lineSpacing(4)
             .onSubmit {
@@ -138,7 +138,7 @@ struct StickyNoteDetail: View {
                 switch row {
                 case .text(let words):
                     Text(verbatim: words.isEmpty ? " " : words)
-                        .font(StickyFont.font(font, size: pointSize))
+                        .font(StickyFont.font(noteFont, size: pointSize))
                         .foregroundStyle(ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(.rect)
@@ -152,7 +152,7 @@ struct StickyNoteDetail: View {
                         .disabled(context.isPreview)
                         .accessibilityLabel(done ? tr("已完成：\(words)") : tr("未完成：\(words)"))
                         Text(verbatim: words.isEmpty ? " " : words)
-                            .font(StickyFont.font(font, size: pointSize))
+                            .font(StickyFont.font(noteFont, size: pointSize))
                             .foregroundStyle(ink.opacity(done ? 0.5 : 0.92))
                             .strikethrough(done, color: ink.opacity(0.5))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -203,12 +203,12 @@ struct StickyNoteDetail: View {
     private var styleRows: some View {
         VStack(spacing: 8) {
             styleRow(tr("字体")) {
-                DetailSegmented(pages: StickyNoteFont.allCases, title: \.title, selected: font) { choice in
+                DetailSegmented(pages: StickyNoteFont.allCases, title: \.title, selected: noteFont) { choice in
                     setStyle(StickyNoteFont.key, choice.rawValue)
                 }
             }
             styleRow(tr("字号")) {
-                DetailSegmented(pages: StickyNoteSize.allCases, title: \.title, selected: size) { choice in
+                DetailSegmented(pages: StickyNoteSize.allCases, title: \.title, selected: noteSize) { choice in
                     setStyle(StickyNoteSize.key, choice.rawValue)
                 }
             }
