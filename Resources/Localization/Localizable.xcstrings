@@ -826,6 +826,17 @@
         }
       }
     },
+    "%@ 个项目 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ items · %@"
+          }
+        }
+      }
+    },
     "%@ 个项目 · 该倒垃圾了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1416,6 +1427,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ yr ago"
+          }
+        }
+      }
+    },
+    "%@ 张 · 存在「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ shots · in \"%@\""
           }
         }
       }
@@ -9270,6 +9292,17 @@
         }
       }
     },
+    "全不选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select None"
+          }
+        }
+      }
+    },
     "全勤" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9332,6 +9365,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Worldwide"
+          }
+        }
+      }
+    },
+    "全选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
           }
         }
       }
@@ -9948,6 +9992,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click again to delete"
+          }
+        }
+      }
+    },
+    "再点一次取消这个下载" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to cancel this download"
           }
         }
       }
@@ -11675,6 +11730,17 @@
         }
       }
     },
+    "加箭头、框、马赛克或文字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add arrows, boxes, pixelation or text"
+          }
+        }
+      }
+    },
     "加纳" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12368,6 +12434,50 @@
         }
       }
     },
+    "压缩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compress"
+          }
+        }
+      }
+    },
+    "压缩中…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compressing…"
+          }
+        }
+      }
+    },
+    "压缩包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archives"
+          }
+        }
+      }
+    },
+    "压缩没成功" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't compress"
+          }
+        }
+      }
+    },
     "厘米" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12694,6 +12804,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Undo today's check-in for %@"
+          }
+        }
+      }
+    },
+    "取消下载" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Download"
           }
         }
       }
@@ -13402,6 +13523,28 @@
         }
       }
     },
+    "名字不能为空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The name can't be empty"
+          }
+        }
+      }
+    },
+    "名字不能以「.」开头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A name can't start with \".\""
+          }
+        }
+      }
+    },
     "名字加内容，内容里可以用 {文本}" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13409,6 +13552,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A name and content; the content can use {文本}"
+          }
+        }
+      }
+    },
+    "名字太长了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The name is too long"
           }
         }
       }
@@ -13431,6 +13585,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Names can be up to %@ characters."
+          }
+        }
+      }
+    },
+    "名字里不能有「/」或「:」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A name can't contain \"/\" or \":\""
           }
         }
       }
@@ -15931,6 +16096,17 @@
         }
       }
     },
+    "多选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        }
+      }
+    },
     "夜" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16499,6 +16675,17 @@
         }
       }
     },
+    "存为新图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save as New"
+          }
+        }
+      }
+    },
     "存储到桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16528,6 +16715,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storage"
+          }
+        }
+      }
+    },
+    "存图没成功（可能没有权限）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save (maybe no permission)"
           }
         }
       }
@@ -16572,6 +16770,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "It's %@. Go take care of it."
+          }
+        }
+      }
+    },
+    "它们已经在「%@」里了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They're already in \"%@\""
           }
         }
       }
@@ -16660,6 +16869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Install Helper"
+          }
+        }
+      }
+    },
+    "安装包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installers"
           }
         }
       }
@@ -18354,6 +18574,17 @@
         }
       }
     },
+    "已压缩为「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compressed to \"%@\""
+          }
+        }
+      }
+    },
     "已听 %@%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18515,6 +18746,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copied. Paste it in %@."
+          }
+        }
+      }
+    },
+    "已存为「%@」，原图没动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved as \"%@\". The original is untouched."
           }
         }
       }
@@ -18691,6 +18933,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Result copied"
+          }
+        }
+      }
+    },
+    "已拷贝，可以直接粘贴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied. Ready to paste."
           }
         }
       }
@@ -18889,6 +19142,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Memory used"
+          }
+        }
+      }
+    },
+    "已移到「%@」%@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %2$@ to \"%1$@\""
+          }
+        }
+      }
+    },
+    "已移到废纸篓 %@ 个，在废纸篓里能找回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %@ to the Trash. You can get them back from there."
           }
         }
       }
@@ -19175,6 +19450,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chosen"
+          }
+        }
+      }
+    },
+    "已选 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Selected"
           }
         }
       }
@@ -20348,6 +20634,17 @@
         }
       }
     },
+    "归档" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archive"
+          }
+        }
+      }
+    },
     "当前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20542,6 +20839,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Record"
+          }
+        }
+      }
+    },
+    "录屏不能标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screen recordings can't be marked up"
           }
         }
       }
@@ -21565,6 +21873,17 @@
         }
       }
     },
+    "截屏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot"
+          }
+        }
+      }
+    },
     "截的图会出现在这里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22368,6 +22687,17 @@
         }
       }
     },
+    "把选中的文件移到哪个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder for the selected files"
+          }
+        }
+      }
+    },
     "把问题复制到剪贴板，再打开 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22507,6 +22837,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drop text"
+          }
+        }
+      }
+    },
+    "拖出去就能用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag out to use"
           }
         }
       }
@@ -22683,6 +23024,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy File"
+          }
+        }
+      }
+    },
+    "拷贝没成功" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't copy"
           }
         }
       }
@@ -23171,6 +23523,17 @@
         }
       }
     },
+    "搜索文件名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search file names"
+          }
+        }
+      }
+    },
     "搜索结果 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23189,6 +23552,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Results · %@"
+          }
+        }
+      }
+    },
+    "搜索：按文件名或日期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by name or date"
           }
         }
       }
@@ -23442,6 +23816,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "文档" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
           }
         }
       }
@@ -24040,6 +24425,28 @@
         }
       }
     },
+    "标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markup"
+          }
+        }
+      }
+    },
+    "标注画布" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markup canvas"
+          }
+        }
+      }
+    },
     "格鲁吉亚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24062,6 +24469,17 @@
         }
       }
     },
+    "框" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Box"
+          }
+        }
+      }
+    },
     "检查" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24080,6 +24498,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing after this in the playlist"
+          }
+        }
+      }
+    },
+    "正在取消…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelling…"
           }
         }
       }
@@ -24410,6 +24839,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No unread mail. Take a break."
+          }
+        }
+      }
+    },
+    "没有符合的截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching screenshots"
+          }
+        }
+      }
+    },
+    "没有符合的文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching files"
           }
         }
       }
@@ -33484,6 +33935,17 @@
         }
       }
     },
+    "点行勾选 · 双击名字改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to select · Double-click to rename"
+          }
+        }
+      }
+    },
     "点选一个窗口截图，存到截图文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34393,6 +34855,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Male"
+          }
+        }
+      }
+    },
+    "画完直接拷贝，原图不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy when done. The original stays untouched."
           }
         }
       }
@@ -35717,6 +36190,17 @@
         }
       }
     },
+    "移到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to"
+          }
+        }
+      }
+    },
     "移到\n废纸篓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35728,6 +36212,28 @@
         }
       }
     },
+    "移到…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to…"
+          }
+        }
+      }
+    },
+    "移到「%@」%@ 个，%@ 个没移成（可能没有权限）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %2$@ to \"%1$@\"; %3$@ couldn't be moved (maybe no permission)"
+          }
+        }
+      }
+    },
     "移到废纸篓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35735,6 +36241,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Trash"
+          }
+        }
+      }
+    },
+    "移到废纸篓 %@ 个，%@ 个没删掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved %@ to the Trash; %@ couldn't be deleted"
           }
         }
       }
@@ -36494,6 +37011,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manage My Dock"
+          }
+        }
+      }
+    },
+    "箭头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrow"
           }
         }
       }
@@ -37286,6 +37814,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep holding…"
+          }
+        }
+      }
+    },
+    "继续标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Editing"
           }
         }
       }
@@ -41088,6 +41627,17 @@
         }
       }
     },
+    "输入文字，回车" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type, then Return"
+          }
+        }
+      }
+    },
     "输入算式、单位或币种" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41583,6 +42133,28 @@
         }
       }
     },
+    "还剩 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr left"
+          }
+        }
+      }
+    },
+    "还剩不到 1 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less than a minute left"
+          }
+        }
+      }
+    },
     "还在回答，先停止或等它答完。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41799,6 +42371,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No focus yet"
+          }
+        }
+      }
+    },
+    "还没拷贝或保存，放弃这次标注？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not copied or saved yet. Discard this markup?"
           }
         }
       }
@@ -42111,6 +42694,17 @@
         }
       }
     },
+    "还要很久" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A long while left"
+          }
+        }
+      }
+    },
     "这一年%@只有 29 天，按廿九过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42206,6 +42800,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This habit and all its check-ins will be deleted. This can't be undone."
+          }
+        }
+      }
+    },
+    "这个名字已经有了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That name is already taken"
           }
         }
       }
@@ -42437,6 +43042,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This Mac has no built-in display with readable brightness."
+          }
+        }
+      }
+    },
+    "这张图读不出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read this image"
           }
         }
       }
@@ -45736,6 +46352,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Malé"
+          }
+        }
+      }
+    },
+    "马赛克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixelate"
           }
         }
       }

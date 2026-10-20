@@ -36,6 +36,12 @@ final class FolderFeed {
     private(set) var error: String?
     /// 读不了是因为系统没给权限（文件与文件夹），面板据此给出“打开隐私设置”。
     private(set) var accessDenied = false
+    /// 文件夹第一层一共几项、文件加起来多大（面板标题下的「86 个项目 · 2.4 GB」）。
+    /// 文件夹本身的大小不算进去。截图是截图的张数和大小。
+    private(set) var totalCount = 0
+    private(set) var totalBytes: Int64 = 0
+    /// 每个正在下载的文件第一次被看到的时间和进度，用来推「还剩几分钟」。
+    @ObservationIgnored private var firstSeen: [URL: (at: Date, fraction: Double?)] = [:]
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var inFlight = false
@@ -126,13 +132,51 @@ final class FolderFeed {
                 accessDenied = false
                 if listed.files != files { files = listed.files }
                 if listed.downloading != downloading { downloading = listed.downloading }
+                if listed.totalCount != totalCount { totalCount = listed.totalCount }
+                if listed.totalBytes != totalBytes { totalBytes = listed.totalBytes }
+                noteDownloads(listed.downloading)
             case .failure(let message):
                 error = message.text
                 accessDenied = message.denied
                 files = []
                 downloading = []
+                totalCount = 0
+                totalBytes = 0
+                firstSeen = [:]
             }
         }
+    }
+
+    /// 记下新出现的下载第一次的进度；下完或取消了的忘掉。
+    private func noteDownloads(_ active: [ActiveDownload]) {
+        let now = Date.now
+        var next: [URL: (at: Date, fraction: Double?)] = [:]
+        for download in active {
+            if let seen = firstSeen[download.id], seen.fraction != nil || download.fraction == nil {
+                next[download.id] = seen
+            } else {
+                next[download.id] = (now, download.fraction)
+            }
+        }
+        firstSeen = next
+    }
+
+    /// 「64% · 还剩 1 分钟」；推不出来时只有百分比。
+    func progressLine(_ download: ActiveDownload, now: Date = .now) -> String {
+        let seen = firstSeen[download.id]
+        let left = seen.flatMap {
+            DownloadETA.remaining(firstAt: $0.at, firstFraction: $0.fraction, now: now, fraction: download.fraction)
+        }
+        return DownloadETA.line(fraction: download.fraction, remaining: left)
+    }
+
+    /// 批量移走、删掉、改名以后先把旧的从列表里拿掉，不等下一次轮询。
+    func forget(_ urls: Set<URL>) {
+        guard !urls.isEmpty else { return }
+        files.removeAll { urls.contains($0.url) }
+        downloading.removeAll { urls.contains($0.id) }
+        urls.forEach { Thumbnails.shared.forget($0) }
+        refresh(force: true)
     }
 
     /// Moves a file to the Trash and drops it from the listing at once.
@@ -163,6 +207,8 @@ final class FolderFeed {
     struct Listing: Sendable {
         var files: [ListedFile]
         var downloading: [ActiveDownload] = []
+        var totalCount = 0
+        var totalBytes: Int64 = 0
     }
 
     nonisolated private static let queue = DispatchQueue(label: "com.docket-zh.folderfeed", qos: .utility)
@@ -215,8 +261,11 @@ final class FolderFeed {
             let downloading = ListedFile.newestFirst(active, limit: 6).map {
                 ActiveDownload(file: $0, fraction: DownloadProgress.read($0.url))
             }
-            return .success(Listing(files: ListedFile.newestFirst(listed, limit: source == .screenshots ? 60 : 50),
-                                    downloading: downloading))
+            // 面板里能搜索、筛选，所以列得比卡片上多：下载 400 个，截图 240 张。
+            let bytes = listed.reduce(Int64(0)) { $0 + max(0, $1.size ?? 0) }
+            return .success(Listing(files: ListedFile.newestFirst(listed, limit: source == .screenshots ? 240 : 400),
+                                    downloading: downloading,
+                                    totalCount: listed.count, totalBytes: bytes))
         }
     }
 

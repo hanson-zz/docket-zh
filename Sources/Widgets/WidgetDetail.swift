@@ -615,7 +615,9 @@ enum WidgetDetail {
         case .weather: 320
         // 正在播放改版：和第一批面板一样 320。
         case .music: 320
-        case .photos, .screenshots: 340
+        case .photos: 340
+        // 最近截图改版：搜索、筛选、多选和标注，和下载一样 320。
+        case .screenshots: 320
         case .downloads, .fileShelf, .clipboard, .search: 320
         case .wallpaper: 340
         case .appSwitcher: 320
