@@ -600,17 +600,8 @@ public enum WidgetCatalog {
     public static func configurableKeys(_ kind: WidgetKind) -> [String] {
         guard let entry = entry(kind) else { return [] }
         // 按字母排；时钟的子选项恰好是大小在粗细前、卡片在翻法前。
-        let keys = entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
-        // 列在 `keyOrder` 里的种类按那里的先后，没列到的排在后面（仍按字母）。
-        guard let order = keyOrder[kind] else { return keys }
-        return keys.sorted { (order.firstIndex(of: $0) ?? order.count) < (order.firstIndex(of: $1) ?? order.count) }
+        return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
     }
-
-    /// 字母顺序读起来不顺的几种：久坐提醒的离开检测（away 开头）排到最后，
-    /// 跟在提醒时段、通知和目标后面。
-    private static let keyOrder: [WidgetKind: [String]] = [
-        .posture: ["duration", "start", "end", "notify", "goal", PostureAway.enabledKey, PostureAway.afterKey],
-    ]
 
     /// Whether an option means anything given the rest of the configuration.
     ///
