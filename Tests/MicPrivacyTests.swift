@@ -110,6 +110,11 @@ final class MicPrivacyTests: XCTestCase {
                        [at(20, 0), at(18, 0), at(15, 0)])
     }
 
+    func testHistoryIsAProFeature() {
+        XCTAssertTrue(ProLicenseGate.micHistoryActive(unlocked: true))
+        XCTAssertFalse(ProLicenseGate.micHistoryActive(unlocked: false))
+    }
+
     func testPruneDropsOlderThanThirtyDaysButKeepsOpenOnes() {
         let old = MicUsageSession(app: "a", name: "A", source: .microphone,
                                   start: at(1, 9).addingTimeInterval(-40 * 86_400),
