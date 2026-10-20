@@ -826,6 +826,17 @@
         }
       }
     },
+    "%@ 分钟后响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings in %@ min"
+          }
+        }
+      }
+    },
     "%@ 分钟时叫你" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1101,6 +1112,17 @@
         }
       }
     },
+    "%@ 小时 %@ 分钟后响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings in %@ hr %@ min"
+          }
+        }
+      }
+    },
     "%@ 小时前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1108,6 +1130,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hr ago"
+          }
+        }
+      }
+    },
+    "%@ 小时后响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings in %@ hr"
           }
         }
       }
@@ -1636,6 +1669,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ and %@ more"
+          }
+        }
+      }
+    },
+    "%@ 结束 · 共 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ends %@ · %@ total"
           }
         }
       }
@@ -2586,6 +2630,28 @@
         }
       }
     },
+    "+%@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%@ min"
+          }
+        }
+      }
+    },
+    "+%@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%@ hr"
+          }
+        }
+      }
+    },
     "+%@ 毫升" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2593,6 +2659,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%@ ml"
+          }
+        }
+      }
+    },
+    "+1 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+1 min"
           }
         }
       }
@@ -4628,6 +4705,17 @@
         }
       }
     },
+    "不到 1 分钟后响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings in under a minute"
+          }
+        }
+      }
+    },
     "不响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5717,6 +5805,39 @@
         }
       }
     },
+    "仅 %@月%@日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only on %@/%@"
+          }
+        }
+      }
+    },
+    "仅一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once"
+          }
+        }
+      }
+    },
+    "仅今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today only"
+          }
+        }
+      }
+    },
     "仅图标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5757,6 +5878,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Numbers only"
+          }
+        }
+      }
+    },
+    "仅明天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow only"
           }
         }
       }
@@ -6131,6 +6263,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing scheduled today."
+          }
+        }
+      }
+    },
+    "今天没有要响的了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing left today"
           }
         }
       }
@@ -9695,6 +9838,17 @@
         }
       }
     },
+    "加一个只响一次的闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a one-time alarm"
+          }
+        }
+      }
+    },
     "加一条\n书签" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10153,6 +10307,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unit, like cups, pages, km; empty means \"times\""
+          }
+        }
+      }
+    },
+    "单圈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Split"
           }
         }
       }
@@ -11594,6 +11759,17 @@
         }
       }
     },
+    "周末" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekends"
+          }
+        }
+      }
+    },
     "周末快乐" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12276,6 +12452,17 @@
         }
       }
     },
+    "圈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lap"
+          }
+        }
+      }
+    },
     "土耳其" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12415,6 +12602,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ask in Notch"
+          }
+        }
+      }
+    },
+    "在卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the card"
           }
         }
       }
@@ -13038,6 +13236,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy result %@ %@"
+          }
+        }
+      }
+    },
+    "复制计次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy laps"
           }
         }
       }
@@ -15252,6 +15461,17 @@
         }
       }
     },
+    "已响过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already rang"
+          }
+        }
+      }
+    },
     "已在播客中" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15897,6 +16117,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Goal met"
+          }
+        }
+      }
+    },
+    "已过 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min ago"
           }
         }
       }
@@ -16615,6 +16846,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start"
+          }
+        }
+      }
+    },
+    "开始 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start %@"
           }
         }
       }
@@ -17367,6 +17609,17 @@
         }
       }
     },
+    "快速开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick start"
+          }
+        }
+      }
+    },
     "快速待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17491,6 +17744,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "总结"
+          }
+        }
+      }
+    },
+    "总计 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total %@"
           }
         }
       }
@@ -19068,6 +19332,17 @@
         }
       }
     },
+    "新闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New alarm"
+          }
+        }
+      }
+    },
     "日出 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19145,6 +19420,28 @@
         }
       }
     },
+    "最快" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fastest"
+          }
+        }
+      }
+    },
+    "最慢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slowest"
+          }
+        }
+      }
+    },
     "最长 %@ 分" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19185,6 +19482,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daily stand-up goal"
+          }
+        }
+      }
+    },
+    "比上圈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diff"
           }
         }
       }
@@ -27511,6 +27819,17 @@
         }
       }
     },
+    "点按修改时间、名字和重复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to change the time, name and repeat"
+          }
+        }
+      }
+    },
     "点按修改时间和名字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30030,6 +30349,17 @@
         }
       }
     },
+    "第 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preset %@"
+          }
+        }
+      }
+    },
     "第 %@ 个周年" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30620,6 +30950,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Purple"
+          }
+        }
+      }
+    },
+    "累计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        }
+      }
+    },
+    "累计 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total %@"
           }
         }
       }
@@ -32860,6 +33212,17 @@
         }
       }
     },
+    "计次 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laps %@"
+          }
+        }
+      }
+    },
     "计算" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33670,6 +34033,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Makeup workdays show on the card %@ days ahead, with one more reminder the evening before."
+          }
+        }
+      }
+    },
+    "调整卡片预设" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit card presets"
           }
         }
       }
@@ -34737,6 +35111,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "还有 %@ 个要响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ still to ring"
           }
         }
       }

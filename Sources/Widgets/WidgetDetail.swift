@@ -596,6 +596,8 @@ enum WidgetDetail {
         // 农历和本周两张小卡，320 才排得下三列城市。
         case .clock: 320
         case .battery: 330
+        // 倒计时四列快速开始、秒表四列计次表、闹钟的今天时间轴和重复日。
+        case .countdown, .stopwatch, .alarm: 320
         case .notes: 300
         case .system, .network: 340
         // Wide enough for the whole hourly series as a strip; the tile fits

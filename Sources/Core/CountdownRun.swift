@@ -110,6 +110,72 @@ public enum CountdownRun {
         return m == 0 ? tr("\(h) 小时") : tr("\(h) 小时 \(m) 分")
     }
 
+    // MARK: 面板
+
+    /// 面板“快速开始”里放几个时长。
+    public static let quickCount = 8
+    /// 常用时长（分钟），按先后补进快速开始：卡片上的三个预设之外从这里补。
+    public static let commonMinutes = [1, 15, 25, 30, 60, 45, 20, 90, 120, 3, 5, 10]
+
+    /// 面板“快速开始”的八个时长，从短到长：卡片上的三个预设一定在里面，
+    /// 其余从常用时长里按先后补齐。
+    public static func quickMinutes(_ config: WidgetConfig) -> [Int] {
+        var picked = presets(config)
+        for minutes in commonMinutes where picked.count < quickCount && !picked.contains(minutes) {
+            picked.append(minutes)
+        }
+        return picked.sorted()
+    }
+
+    /// 自定义时长的档位：10 分钟以内一分钟一档，60 分钟以内五分钟一档，再往上十五分钟一档，最长 240。
+    public static let customLadder: [Int] = Array(1...10) + Array(stride(from: 15, through: 60, by: 5))
+        + Array(stride(from: 75, through: 240, by: 15))
+
+    /// 自定义时长加减一档；不在档位上的先落到最近的一档。
+    public static func stepping(_ minutes: Int, up: Bool) -> Int {
+        if up { return customLadder.first { $0 > minutes } ?? presetRange.upperBound }
+        return customLadder.last { $0 < minutes } ?? presetRange.lowerBound
+    }
+
+    /// 加时间（“+1 分钟”）：跑着的往后推结束时刻，暂停的加剩下的，
+    /// 已经到点的从现在起再计这么久；时长一起加，进度条不会倒退一截。
+    /// 没开始时不动。
+    public static func adding(_ seconds: TimeInterval, to config: inout WidgetConfig, now: Date) {
+        guard seconds > 0 else { return }
+        switch phase(config, now: now) {
+        case .idle:
+            return
+        case .running(let left, _):
+            config.set("duration", .number(duration(config) + seconds))
+            config.set("deadline", .number(now.timeIntervalSince1970 + left + seconds))
+        case .paused(let left, _):
+            config.set("duration", .number(duration(config) + seconds))
+            config.set("paused", .number(left + seconds))
+        case .ringing:
+            config.set("duration", .number(seconds))
+            config.set("paused", nil)
+            config.set("deadline", .number(now.timeIntervalSince1970 + seconds))
+        }
+    }
+
+    /// 面板头上的状态：“进行中”“已暂停”“时间到”，没开始时是 nil。
+    public static func stateText(_ phase: Phase) -> String? {
+        switch phase {
+        case .idle: nil
+        case .running: tr("进行中")
+        case .paused: tr("已暂停")
+        case .ringing: tr("时间到")
+        }
+    }
+
+    /// 环里的大数字：一小时以内“02:47”，以上“1:02:47”。往上取整，
+    /// 免得刚开始那一秒就少了一秒。
+    public static func remainingText(_ left: TimeInterval) -> String {
+        let total = Int(max(0, left).rounded(.up))
+        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%02d:%02d", m, s)
+    }
+
     /// 预设按钮上的字：“3 分”“90 分”。
     public static func presetLabel(_ minutes: Int) -> String {
         tr("\(minutes) 分")

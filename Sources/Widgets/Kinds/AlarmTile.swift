@@ -56,7 +56,7 @@ struct AlarmTile: View {
 
     private var row: some View {
         let headline = AlarmBook.headline(config, now: context.now)
-        let enabled = headline?.enabled ?? false
+        let enabled = live(headline)
         return HStack(spacing: 10) {
             switchBadge(headline)
             if let headline {
@@ -103,7 +103,7 @@ struct AlarmTile: View {
     /// 铃铛方底：开着是橙色铃铛，关着是灰的划掉的铃铛，点它开关卡片上那一个。
     @ViewBuilder
     private func switchBadge(_ headline: AlarmItem?) -> some View {
-        let enabled = headline?.enabled ?? false
+        let enabled = live(headline)
         let badge = TileBadge {
             Image(systemName: enabled ? "alarm.fill" : "alarm.slash.fill")
                 .font(.system(size: 16, weight: .regular))
@@ -124,9 +124,9 @@ struct AlarmTile: View {
     private var column: some View {
         let headline = AlarmBook.headline(config, now: context.now)
         return VStack(spacing: 2) {
-            Image(systemName: headline?.enabled == true ? "alarm.fill" : "alarm.slash.fill")
+            Image(systemName: live(headline) ? "alarm.fill" : "alarm.slash.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(headline?.enabled == true ? accent : WidgetStyle.secondary)
+                .foregroundStyle(live(headline) ? accent : WidgetStyle.secondary)
             if let headline {
                 Text(headline.time)
                     .font(WidgetStyle.value(18))
@@ -145,7 +145,7 @@ struct AlarmTile: View {
                     .foregroundStyle(WidgetStyle.secondary)
             }
         }
-        .opacity(headline?.enabled == false ? 0.55 : 1)
+        .opacity(headline != nil && !live(headline) ? 0.55 : 1)
     }
 
     // MARK: 正在响
@@ -195,9 +195,16 @@ struct AlarmTile: View {
 
     // MARK: 动作
 
+    /// 开着、而且后面还会响（响过的一次性闹钟算关着）。
+    private func live(_ item: AlarmItem?) -> Bool {
+        guard let item else { return false }
+        return AlarmBook.isLive(item, config: config, now: context.now)
+    }
+
     private func toggle(_ item: AlarmItem) {
         guard !context.isPreview else { return }
-        write { AlarmBook.setEnabled(item.id, !item.enabled, in: &$0) }
+        let on = !live(item)
+        write { AlarmBook.setEnabled(item.id, on, in: &$0, now: .now) }
     }
 
     private func snooze(_ item: AlarmItem) {

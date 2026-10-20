@@ -56,7 +56,73 @@ public enum StopwatchLaps {
         }
     }
 
+    /// 最慢那圈的下标；不到两圈时没有。并列时取先跑出来的那圈。
+    public static func slowestIndex(_ laps: [TimeInterval]) -> Int? {
+        guard laps.count >= 2 else { return nil }
+        var worst = 0
+        for (index, lap) in laps.enumerated() where lap > laps[worst] { worst = index }
+        return worst == fastestIndex(laps) ? nil : worst
+    }
+
+    /// 面板计次表的一行。
+    public struct Row: Equatable, Sendable {
+        public var number: Int
+        public var seconds: TimeInterval
+        /// 比上一圈多（正）或少（负）多少秒，第一圈没有。
+        public var delta: TimeInterval?
+        /// 到这一圈为止的累计。
+        public var total: TimeInterval
+        public var fastest: Bool
+        public var slowest: Bool
+    }
+
+    /// 全部计次，新的在上，带比上圈和累计。
+    public static func rows(_ laps: [TimeInterval]) -> [Row] {
+        let fastest = fastestIndex(laps)
+        let slowest = slowestIndex(laps)
+        var total: TimeInterval = 0
+        var result: [Row] = []
+        for (index, lap) in laps.enumerated() {
+            total += lap
+            result.append(Row(number: index + 1, seconds: lap,
+                              delta: index == 0 ? nil : lap - laps[index - 1],
+                              total: total, fastest: index == fastest, slowest: index == slowest))
+        }
+        return result.reversed()
+    }
+
+    /// 正在跑的这一圈：总时长减去已计的各圈。
+    public static func currentLap(_ laps: [TimeInterval], elapsed: TimeInterval) -> TimeInterval {
+        max(0, elapsed - laps.reduce(0, +))
+    }
+
     // MARK: 文字
+
+    /// 比上圈：“+0.42”“-1.45”，到百分位。
+    public static func deltaText(_ delta: TimeInterval) -> String {
+        let hundredths = Int((abs(delta) * 100 + 1e-6).rounded())
+        let sign = delta < 0 && hundredths > 0 ? "-" : "+"
+        let seconds = hundredths / 100
+        if seconds >= 60 {
+            return sign + lapText(Double(hundredths) / 100)
+        }
+        return sign + String(format: "%d.%02d", seconds, hundredths % 100)
+    }
+
+    /// 复制出去的整张计次表，从第一圈往下，最后一行是总时长：
+    /// “第 1 圈  0:38.40  累计 0:38.40”。
+    public static func report(_ laps: [TimeInterval], elapsed: TimeInterval) -> String {
+        var lines = rows(laps).reversed().map { row in
+            var line = tr("第 \(row.number) 圈") + "  " + lapText(row.seconds)
+            if let delta = row.delta { line += "  " + deltaText(delta) }
+            line += "  " + tr("累计 \(lapText(row.total))")
+            if row.fastest { line += "  " + tr("最快") }
+            if row.slowest { line += "  " + tr("最慢") }
+            return line
+        }
+        lines.append(tr("总计 \(lapText(elapsed))"))
+        return lines.joined(separator: "\n")
+    }
 
     /// 大数字：“01:23”，过了一小时是“1:01:23”。
     public static func main(_ elapsed: TimeInterval) -> String {
