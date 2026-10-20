@@ -180,7 +180,7 @@ struct EmojiDetail: View {
     // MARK: 搜索框
 
     private var searchField: some View {
-        let hint = editing ? self.hint : nil
+        let suggestion = editing ? hint : nil
         let active = searchFocused || !query.isEmpty
         return HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
@@ -200,8 +200,8 @@ struct EmojiDetail: View {
                     // 搜完回到列表时，刚才用过的才排进最近用过。
                     if new.isEmpty { shownRecent = prefs.recent }
                 }
-            if let hint {
-                Text(tr("也能搜 \(hint)"))
+            if let suggestion {
+                Text(tr("也能搜 \(suggestion)"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.62))
                     .lineLimit(1)
