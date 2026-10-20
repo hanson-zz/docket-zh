@@ -12,12 +12,21 @@ struct ColorPickerTile: View {
 
     /// 只为了在别处（快速开关、面板）取到新颜色时重画。
     @AppStorage(ColorHistory.defaultsKey) private var stored = ""
+    @AppStorage(ColorPalette.defaultsKey) private var palette = ""
+    @AppStorage(ColorHistory.legacyRetiredKey) private var retired = false
     @State private var copied: String?
 
+    /// 卡片上那排色块：设了「显示我的色板」且色板里有颜色时是色板，否则是最近。
     private var recent: [ColorCode] {
         if context.isPreview { return ColorPicking.samples }
-        return ColorPicking.recent(instance, stored: stored)
+        if instance.config.bool(ColorPalette.showKey) {
+            let saved = ColorPalette.colors(palette)
+            if !saved.isEmpty { return saved }
+        }
+        return ColorPicking.recent(instance, stored: stored, retired: retired)
     }
+
+    private var style: ColorCopyStyle { ColorPicking.style(instance) }
 
     var body: some View {
         let column = context.position.isVertical
@@ -25,7 +34,7 @@ struct ColorPickerTile: View {
             if column {
                 VStack(spacing: 6) {
                     grid(cell: 18)
-                    Text(recent.first?.hex ?? tr("取色"))
+                    Text(recent.first.map { style.hexStyle.apply($0.hex) } ?? tr("取色"))
                         .font(.system(size: 10, weight: .semibold).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -35,6 +44,9 @@ struct ColorPickerTile: View {
                 row
             }
         }
+        // 快速开关里的取色按钮没有卡片配置可读，按这张卡片设的格式拷贝。
+        .onAppear { if !context.isPreview { style.save() } }
+        .onChange(of: style) { _, next in if !context.isPreview { next.save() } }
     }
 
     // MARK: 横排：一排色板
@@ -52,7 +64,7 @@ struct ColorPickerTile: View {
             }
             HStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(recent.first?.hex ?? tr("还没有取色"))
+                    Text(recent.first.map { style.hexStyle.apply($0.hex) } ?? tr("还没有取色"))
                         .font(.system(size: 12, weight: .bold).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -95,8 +107,9 @@ struct ColorPickerTile: View {
                         ring: Bool = false) -> some View {
         Button {
             guard !context.isPreview, let color else { return }
-            ColorSampling.copy(color.hex)
-            copied = color.hex
+            let text = style.text(color)
+            ColorSampling.copy(text)
+            copied = style.format == .hex ? text : style.format.title
         } label: {
             RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .fill(color.map(\.swiftUIColor) ?? WidgetStyle.primary.opacity(0.07))
@@ -132,28 +145,65 @@ struct ColorPickerTile: View {
 }
 
 /// 取色器卡片、面板和快速开关共用的取色历史（`ColorHistory`），加上每张卡片配置
-/// 里以前存的旧颜色（`recent`，只读不写）。
+/// 里以前存的旧颜色（`recent`，只读不写；删过或清空过一次后不再读）；收藏的
+/// 「我的色板」（`ColorPalette`）也是共享的一份。
 @MainActor
 enum ColorPicking {
     static let samples: [ColorCode] = ["#FF453A", "#FFD60A", "#30D158", "#BF5AF2", "#FF9F0A", "#64D2FF"]
         .compactMap { ColorCode(hex: $0) }
 
-    static func recent(_ instance: WidgetInstance, stored: String = ColorHistory.stored()) -> [ColorCode] {
-        ColorHistory.merged(shared: ColorHistory.decode(stored),
-                            legacy: instance.config.strings(ColorHistory.legacyKey))
+    static var legacyRetired: Bool { UserDefaults.standard.bool(forKey: ColorHistory.legacyRetiredKey) }
+
+    static func recent(_ instance: WidgetInstance, stored: String = ColorHistory.stored(),
+                       retired: Bool? = nil) -> [ColorCode] {
+        ColorHistory.shown(shared: stored, legacy: instance.config.strings(ColorHistory.legacyKey),
+                           retired: retired ?? legacyRetired)
     }
 
-    /// Opens the loupe; the colour picked is copied and remembered.
+    /// 这张卡片设的拷贝格式。
+    static func style(_ instance: WidgetInstance) -> ColorCopyStyle {
+        ColorCopyStyle(instance.config)
+    }
+
+    /// Opens the loupe; the colour picked is copied in the card's format and remembered.
     static func pick(into instance: WidgetInstance) {
+        let copyStyle = ColorCopyStyle(instance.config)
+        copyStyle.save()
         ColorSampling.sample { code in
-            ColorSampling.copy(code.hex)
+            ColorSampling.copy(copyStyle.text(code))
             remember(code, in: instance)
         }
     }
 
     /// 记进共享历史；这张卡片以前的旧颜色一起并进去。
     static func remember(_ code: ColorCode, in instance: WidgetInstance) {
-        ColorHistory.record(code, legacy: instance.config.strings(ColorHistory.legacyKey))
+        ColorHistory.record(code, legacy: legacy(instance))
+    }
+
+    private static func legacy(_ instance: WidgetInstance) -> [String] {
+        legacyRetired ? [] : instance.config.strings(ColorHistory.legacyKey)
+    }
+
+    /// 从最近里删一个。旧颜色先并进共享历史，再记下旧颜色已退休，删掉的不会冒回来。
+    static func forget(_ code: ColorCode, in instance: WidgetInstance) {
+        let defaults = UserDefaults.standard
+        defaults.set(ColorHistory.removing(code, from: ColorHistory.stored(in: defaults),
+                                           legacy: legacy(instance)),
+                     forKey: ColorHistory.defaultsKey)
+        defaults.set(true, forKey: ColorHistory.legacyRetiredKey)
+    }
+
+    /// 清空最近。我的色板不动。
+    static func clearRecent() {
+        let defaults = UserDefaults.standard
+        defaults.set("", forKey: ColorHistory.defaultsKey)
+        defaults.set(true, forKey: ColorHistory.legacyRetiredKey)
+    }
+
+    static func togglePalette(_ code: ColorCode) {
+        let defaults = UserDefaults.standard
+        defaults.set(ColorPalette.toggling(code, in: defaults.string(forKey: ColorPalette.defaultsKey) ?? ""),
+                     forKey: ColorPalette.defaultsKey)
     }
 }
 

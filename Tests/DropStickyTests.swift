@@ -63,7 +63,7 @@ final class DropStickyTests: XCTestCase {
         XCTAssertEqual(StickyStack.pile(WidgetConfig()).front.color, "yellow", "没有颜色时是柠檬黄")
     }
 
-    func testStackUpToThreeAndFlip() {
+    func testStackThreeAndFlip() {
         var pile = StickyStack.pile(WidgetConfig(["text": .string("一"), "color": .string("yellow")]))
         pile = pile.adding(color: StickyStack.nextColor(after: pile)).writing("二")
         XCTAssertEqual(pile.count, 2)
@@ -71,8 +71,7 @@ final class DropStickyTests: XCTestCase {
         XCTAssertEqual(pile.marker, "2/2")
         pile = pile.adding(color: StickyStack.nextColor(after: pile)).writing("三")
         XCTAssertEqual(pile.marker, "3/3")
-        XCTAssertFalse(pile.canAdd)
-        XCTAssertEqual(pile.adding(color: "pink"), pile, "最多 3 张")
+        XCTAssertTrue(pile.canAdd, "上限提到 10 张")
 
         let flipped = pile.flipped()
         XCTAssertEqual(flipped.front.text, "一")
@@ -125,15 +124,15 @@ final class DropStickyTests: XCTestCase {
                                                    .list([.string("blue"), .string("d")])]),
                                    "page": .number(9)])
         let pile = StickyStack.pile(config)
-        XCTAssertEqual(pile.count, 3)
-        XCTAssertEqual(pile.page, 2)
+        XCTAssertEqual(pile.count, 4, "坏的一项跳过，其余三张接在后面")
+        XCTAssertEqual(pile.page, 3)
         XCTAssertEqual(pile.front.text, "a")
     }
 
     func testNotesAreNoLongerListedByColor() {
         guard let entry = WidgetCatalog.entry(.notes) else { return XCTFail("no entry") }
         XCTAssertTrue(entry.variants.isEmpty, "颜色在面板和设置里选，不占添加面板")
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.notes), ["color", "text"])
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.notes), ["color", "font", "fontSize", "text"])
     }
 
     func testFlippingBackAndForthWraps() {

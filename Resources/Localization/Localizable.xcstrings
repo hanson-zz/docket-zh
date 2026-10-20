@@ -3191,6 +3191,17 @@
         }
       }
     },
+    "2 位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 places"
+          }
+        }
+      }
+    },
     "2 分钟前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3341,6 +3352,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30/50 min"
+          }
+        }
+      }
+    },
+    "4 位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4 places"
           }
         }
       }
@@ -3770,6 +3792,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GitHub, Codex usage"
+          }
+        }
+      }
+    },
+    "HEX 写法" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HEX style"
           }
         }
       }
@@ -5229,6 +5262,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Downloads is empty"
+          }
+        }
+      }
+    },
+    "不会被挤掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never pushed out"
           }
         }
       }
@@ -7594,6 +7638,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose an app from the Applications folder"
+          }
+        }
+      }
+    },
+    "从我的色板移出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from My Palette"
           }
         }
       }
@@ -12071,6 +12126,17 @@
         }
       }
     },
+    "千分位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thousands separator"
+          }
+        }
+      }
+    },
     "千杯不醉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12386,6 +12452,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "First %@ on the card"
+          }
+        }
+      }
+    },
+    "卡片显示我的色板（空着时显示最近）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show My Palette on the card (recent colors when it is empty)"
           }
         }
       }
@@ -12863,6 +12940,17 @@
         }
       }
     },
+    "取到的颜色会出现在这里，右键可收藏或删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Picked colors show up here. Right-click to save or delete one."
+          }
+        }
+      }
+    },
     "取快递" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13079,6 +13167,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick"
+          }
+        }
+      }
+    },
+    "取色后拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy after picking"
           }
         }
       }
@@ -16217,6 +16316,17 @@
         }
       }
     },
+    "大" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large"
+          }
+        }
+      }
+    },
     "大 (weather)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16748,6 +16858,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "字号" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text size"
           }
         }
       }
@@ -17503,6 +17624,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utilities"
+          }
+        }
+      }
+    },
+    "小数位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decimals"
           }
         }
       }
@@ -18944,6 +19076,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Completed \"%@\""
+          }
+        }
+      }
+    },
+    "已完成：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done: %@"
           }
         }
       }
@@ -22027,6 +22170,28 @@
         }
       }
     },
+    "我的色板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Palette"
+          }
+        }
+      }
+    },
+    "我的色板里的颜色不受影响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colors in My Palette are kept."
+          }
+        }
+      }
+    },
     "我起身活动了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22276,6 +22441,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change all displays"
+          }
+        }
+      }
+    },
+    "手写" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handwriting"
           }
         }
       }
@@ -22881,6 +23057,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Make %@ the default"
+          }
+        }
+      }
+    },
+    "把上面这个颜色收藏到色板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save the color above to the palette"
           }
         }
       }
@@ -24172,6 +24359,28 @@
         }
       }
     },
+    "收藏到我的色板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to My Palette"
+          }
+        }
+      }
+    },
+    "收藏到色板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Palette"
+          }
+        }
+      }
+    },
     "收藏回到默认的 9 个，肤色回到黄色；最近用过不动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24982,6 +25191,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not checked"
+          }
+        }
+      }
+    },
+    "未完成：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not done: %@"
           }
         }
       }
@@ -25972,6 +26192,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear Recents"
+          }
+        }
+      }
+    },
+    "清空最近的颜色？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear recent colors?"
           }
         }
       }
@@ -39860,6 +40091,17 @@
         }
       }
     },
+    "色板满了（最多 %@ 个）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palette is full (up to %@)"
+          }
+        }
+      }
+    },
     "色调" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40362,6 +40604,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sailing"
+          }
+        }
+      }
+    },
+    "行首打 [ ] 变成可勾的清单" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a line with [ ] to make a checklist item"
           }
         }
       }

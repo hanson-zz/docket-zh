@@ -20,7 +20,8 @@ public struct StickySheet: Equatable, Sendable {
 
 /// 便签 = 一张长期贴着的纸，可以叠几张，每张一种颜色。
 ///
-/// 不能勾选，也不会自动清空，一直贴着直到自己撕掉。
+/// 不会自动清空，一直贴着直到自己撕掉。行首写 `[ ]` 的行是可勾的清单项
+/// （见 `StickyChecklist`），别的行照旧是字。
 ///
 /// 存法和旧版兼容：`text` 和 `color` 仍是最上面那张（设置里的“便签内容”
 /// 和“颜色”改的就是它，换颜色只改这一张），其余几张按翻页顺序放在 `stack`
@@ -32,8 +33,8 @@ public enum StickyStack {
     public static let colorKey = ProFeatures.noteColorKey
     public static let stackKey = "stack"
     public static let pageKey = "page"
-    /// 最多叠几张。
-    public static let limit = 3
+    /// 最多叠几张。原来 3 张，2026-10-20 提到 10 张（叠放翻页不变）。
+    public static let limit = 10
 
     /// 按顺序的几张纸，和最上面那张的下标（从 0 起）。
     public struct Pile: Equatable, Sendable {

@@ -5,10 +5,11 @@ import UniformTypeIdentifiers
 /// 便签：一张长期贴着的纸（160×100，始终展开；底栏上实际 58pt 高）。
 ///
 /// 纸感卡片：小圆角、顶上一条半透明胶带、右下角卷起，手写字。可以叠几张
-/// （最多 3 张，见 `StickyStack`），每张一种颜色，后面的露出纸边；右下角的
+/// （最多 10 张，见 `StickyStack`），每张一种颜色，后面的露出纸边；右下角的
 /// “1/3”点一下翻到下一张；指针停在便签上用滚轮或触控板滚动也能前后翻（往下
 /// 是下一张，往上是上一张，一下手势翻一张）。减少动态效果时直接换，不做动画。
-/// 不能勾选，也不会自动清空，一直贴着直到自己撕掉。
+/// 不会自动清空，一直贴着直到自己撕掉。字体字号按面板里选的；清单项在卡片上
+/// 只画成 ☐ / ☑，勾在面板里点。
 ///
 /// The words are only shown here; they are written in the note's detail panel,
 /// on paper the size of something you write on rather than glance at. A field
@@ -87,8 +88,10 @@ struct StickyNoteTile: View {
         } else {
             // 字号放大、最多只缩到 0.9 倍：原来 14pt 缩到 0.75 倍，58pt 高的卡上
             // 只剩 10pt 出头，手札体笔画又细，看不清。宁可少一行、尾巴省略。
-            Text(text)
-                .font(StickyFont.hand(size: column ? StickyFont.columnSize : StickyFont.cardSize))
+            let font = StickyNoteFont.of(instance.config)
+            let size = StickyNoteSize.of(instance.config)
+            Text(verbatim: StickyChecklist.display(text))
+                .font(StickyFont.font(font, size: CGFloat(StickyNoteType.card(font, size, column: column))))
                 .foregroundStyle(ink)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(-1)
@@ -230,6 +233,16 @@ enum StickyFont {
 
     @MainActor private static var resolved: String?? = nil
 
+    /// 按便签设置的字体：手写、普通（系统字体）、等宽。
+    @MainActor
+    static func font(_ kind: StickyNoteFont, size: CGFloat) -> Font {
+        switch kind {
+        case .hand: hand(size: size)
+        case .regular: .system(size: size, weight: .medium)
+        case .mono: .system(size: size, weight: .medium, design: .monospaced)
+        }
+    }
+
     @MainActor
     static func hand(size: CGFloat) -> Font {
         if resolved == nil {
@@ -271,6 +284,11 @@ enum StickyLog {
     }
 
     static func tearOff(_ instance: WidgetInstance) { change(instance) { $0.removingFront() } }
+
+    /// 字体、字号：整张便签一起改，不动纸和字。
+    static func style(_ key: String, _ value: String, in instance: WidgetInstance) {
+        WidgetWriter.write(latest(instance)) { config in config.set(key, .string(value)) }
+    }
 }
 
 /// 便签上的滚轮和触控板翻页。

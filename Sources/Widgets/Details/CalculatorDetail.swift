@@ -41,6 +41,7 @@ struct CalculatorDetail: View {
                 field
                 result(reading)
                 actions(reading)
+                numberStyle
                 recent
                 footer(reading)
             }
@@ -198,6 +199,49 @@ struct CalculatorDetail: View {
             }
             .disabled(current.isEmpty || (!isPinned && !isSuccess(reading)))
             .help(tr("固定后卡片一直显示这一条，汇率会跟着更新"))
+        }
+    }
+
+    // MARK: 小数位和千分位
+
+    /// 小数位（自动 / 2 位 / 4 位）和千分位开关，卡片跟着一起变；设置页里也有。
+    private var numberStyle: some View {
+        let style = preferences.number
+        return VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Text(tr("小数位"))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 56, alignment: .leading)
+                DetailSegmented(pages: CalcNumberStyle.Decimals.allCases, title: \.title,
+                                selected: style.decimals) { choice in
+                    guard !context.isPreview else { return }
+                    WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) {
+                        $0.set(CalcNumberStyle.decimalsKey, .string(choice.rawValue))
+                    }
+                }
+            }
+            HStack(spacing: 10) {
+                Text(tr("千分位"))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.white.opacity(0.85))
+                Spacer(minLength: 0)
+                Toggle("", isOn: Binding(
+                    get: { style.grouping ?? CalcNumberStyle.defaultGrouping },
+                    set: { on in
+                        guard !context.isPreview else { return }
+                        WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) {
+                            $0.set(CalcNumberStyle.groupingKey, .bool(on))
+                        }
+                    }))
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
+                    .accessibilityLabel(tr("千分位"))
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .glassPane(cornerRadius: 9)
         }
     }
 

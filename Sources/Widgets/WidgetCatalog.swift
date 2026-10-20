@@ -148,7 +148,10 @@ public enum WidgetCatalog {
               supportsCompact: true, selfContained: true),
 
         Entry(kind: .notes, name: tr("便签"), category: .todo,
-              defaults: c(["text": .string(""), "color": .string("yellow")]),
+              defaults: c(["text": .string(""), "color": .string("yellow"),
+                           // 字体和字号整张便签一种，面板里也能改（StickyNoteFont / StickyNoteSize）。
+                           StickyNoteFont.key: .string(StickyNoteFont.fallback.rawValue),
+                           StickyNoteSize.key: .string(StickyNoteSize.fallback.rawValue)]),
               // 纸色不再当样式列出来：添加面板只放一张便签，颜色在面板和设置里选
               // （免费五种，其余 Pro）。原来按颜色放好的那张本来就把 color 写进了
               // 配置，读出来就是这张纸的颜色，样子不变。
@@ -319,8 +322,13 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Recent colours live under `recent`, not a default, for the same
-        // reason as the file shelf's paths.
-        Entry(kind: .colorPicker, name: tr("取色器"), category: .tools, defaults: c([:]),
+        // reason as the file shelf's paths. 最近颜色和「我的色板」是共享的
+        // （ColorHistory / ColorPalette）；这里只有取色后拷贝的格式、HEX 写法、
+        // 卡片显示色板还是最近。
+        Entry(kind: .colorPicker, name: tr("取色器"), category: .tools,
+              defaults: c([ColorCopyFormat.key: .string(ColorCopyFormat.fallback.rawValue),
+                           ColorHexStyle.key: .string(ColorHexStyle.fallback.rawValue),
+                           ColorPalette.showKey: .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         Entry(kind: .capture, name: tr("截图工具"), category: .tools, defaults: c([:]),
@@ -398,7 +406,10 @@ public enum WidgetCatalog {
         // 汇率换算读配置时自动变成它，见 SmartCalc.migratingConverter / migratingCurrency。
         Entry(kind: .calculator, name: tr("算"), category: .tools,
               defaults: c([SmartCalc.currencyFromKey: .string(SmartCalc.defaultCurrencyFrom),
-                           SmartCalc.currencyToKey: .string(SmartCalc.defaultCurrencyTo)]),
+                           SmartCalc.currencyToKey: .string(SmartCalc.defaultCurrencyTo),
+                           // 结果的小数位和千分位，卡片和面板一起用（CalcNumberStyle）。
+                           CalcNumberStyle.decimalsKey: .string(CalcNumberStyle.defaultDecimals.rawValue),
+                           CalcNumberStyle.groupingKey: .bool(CalcNumberStyle.defaultGrouping)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Apple's on-device Translation: free, no key, nothing leaves the Mac.

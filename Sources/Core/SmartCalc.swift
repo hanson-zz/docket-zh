@@ -55,7 +55,8 @@ public enum SmartCalc {
         /// 单位换算的类别（长度、重量、温度）。
         public var category: UnitCategory?
 
-        /// 点击复制时放进剪贴板的：纯数字，不带千分位，方便粘到别处再算。
+        /// 点击复制时放进剪贴板的：小数位和显示的一样（卡片设了 2 位就拷 2 位），
+        /// 但不带千分位，粘到表格或别处再算不会被逗号断开。
         public var copyText: String { text.replacingOccurrences(of: ",", with: "") }
 
         /// 汇率的单价：`1 USD = 7.12429 CNY`，最多六位有效数字。不是汇率时为 nil。
@@ -104,14 +105,18 @@ public enum SmartCalc {
         /// 旧的单位换算卡片留下的一对单位：输入其中一个时换成另一个。
         public var unitFrom: ConversionUnit?
         public var unitTo: ConversionUnit?
+        /// 结果的小数位和千分位。
+        public var number: CalcNumberStyle
 
         public init(currencyFrom: String = SmartCalc.defaultCurrencyFrom,
                     currencyTo: String = SmartCalc.defaultCurrencyTo,
-                    unitFrom: ConversionUnit? = nil, unitTo: ConversionUnit? = nil) {
+                    unitFrom: ConversionUnit? = nil, unitTo: ConversionUnit? = nil,
+                    number: CalcNumberStyle = CalcNumberStyle()) {
             self.currencyFrom = currencyFrom.uppercased()
             self.currencyTo = currencyTo.uppercased()
             self.unitFrom = unitFrom
             self.unitTo = unitTo
+            self.number = number
         }
 
         public init(_ config: WidgetConfig) {
@@ -120,7 +125,8 @@ public enum SmartCalc {
             self.init(currencyFrom: from.isEmpty ? SmartCalc.defaultCurrencyFrom : from,
                       currencyTo: to.isEmpty ? SmartCalc.defaultCurrencyTo : to,
                       unitFrom: ConversionUnit(rawValue: config.string(SmartCalc.unitFromKey)),
-                      unitTo: ConversionUnit(rawValue: config.string(SmartCalc.unitToKey)))
+                      unitTo: ConversionUnit(rawValue: config.string(SmartCalc.unitToKey)),
+                      number: CalcNumberStyle(config))
         }
 
         /// 只写了源币种时的目标。
@@ -239,7 +245,8 @@ public enum SmartCalc {
         case .math(let expression):
             switch Calculator.evaluate(expression) {
             case .success(let value):
-                return .success(Outcome(kind: .math, value: value, text: Calculator.format(value),
+                return .success(Outcome(kind: .math, value: value,
+                                        text: preferences.number.text(value, auto: Calculator.format(value)),
                                         unit: "", source: "", sourceUnit: "", rate: nil, category: nil))
             case .failure(let failure):
                 return .failure(.math(failure))
@@ -249,7 +256,8 @@ public enum SmartCalc {
             guard let result = UnitConverter.convert(value, from: from, to: target) else {
                 return .failure(.mismatch)
             }
-            return .success(Outcome(kind: .unit, value: result, text: UnitConverter.format(result),
+            return .success(Outcome(kind: .unit, value: result,
+                                    text: preferences.number.text(result, auto: UnitConverter.format(result)),
                                     unit: target.symbol,
                                     source: "\(UnitConverter.format(value)) \(from.symbol)",
                                     sourceUnit: from.symbol, rate: nil, category: from.category))
@@ -261,7 +269,8 @@ public enum SmartCalc {
                 return .failure(.noRate(missing))
             }
             return .success(Outcome(kind: .currency, value: result,
-                                    text: CurrencyNames.format(result, code: target), unit: target,
+                                    text: preferences.number.text(result, auto: CurrencyNames.format(result, code: target)),
+                                    unit: target,
                                     source: "\(CurrencyNames.format(amount, code: from)) \(from)",
                                     sourceUnit: from, rate: rates.rate(from: from, to: target), category: nil))
         }

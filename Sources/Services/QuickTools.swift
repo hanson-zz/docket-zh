@@ -196,14 +196,17 @@ enum TextCapture {
 // MARK: - 取色器
 
 /// 快速开关里的取色按钮：一键取色并拷贝。取到的颜色记进取色器卡片的同一个历史
-/// （`ColorHistory`），放了取色器卡片的话卡片上马上能看到。
+/// （`ColorHistory`），放了取色器卡片的话卡片上马上能看到。拷贝格式按取色器卡片
+/// 设的（卡片显示时同步到 `ColorCopyStyle.defaultsKey`），没放卡片就是大写 HEX。
 @MainActor
 enum ColorPickerTool {
     static func start() {
+        let style = ColorCopyStyle.saved()
         ColorSampling.sample { code in
-            QuickTool.copy(code.hex)
+            QuickTool.copy(style.text(code))
             ColorHistory.record(code)
-            QuickHint.show(code.copiedHint, symbol: "circle.fill",
+            let hint = style == ColorCopyStyle() ? code.copiedHint : tr("已拷贝 \(style.text(code))")
+            QuickHint.show(hint, symbol: "circle.fill",
                            tint: Color(.sRGB, red: code.red, green: code.green, blue: code.blue))
         }
     }
