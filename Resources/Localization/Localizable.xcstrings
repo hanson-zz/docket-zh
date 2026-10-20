@@ -46745,6 +46745,17 @@
         }
       }
     },
+    "频道" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Channel"
+          }
+        }
+      }
+    },
     "频道 %@ / %@" : {
       "extractionState" : "manual",
       "localizations" : {
