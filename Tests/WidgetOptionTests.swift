@@ -292,6 +292,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "world.city",
         // 收音机的皮肤在“样式”里选，设置里不单列。
         "radio.skin",
+        // 麦克风的静音快捷键在面板里录，设置里不给文字框。
+        "microphone.muteKey",
     ]
 
     func testStockOptionsFollowTheList() {
