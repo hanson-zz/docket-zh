@@ -247,6 +247,10 @@ struct PhotoFrameDetail: View {
     private func upcomingCell(id: String, item: PhotoAlbum.Item?, excluded: Bool,
                               album: PhotoAlbum, order: [String]) -> some View {
         let hover = hovered == id
+        let name: String = item?.fileURL?.lastPathComponent ?? tr("那年今天")
+        let tip: String = excluded ? tr("点一下撤销排除") : name
+        let spoken: String = excluded ? tr("已排除") : name
+        let actionName: String = excluded ? tr("撤销") : tr("排除")
         return AlbumThumb(item: item, pixels: 200)
             .aspectRatio(4 / 3, contentMode: .fit)
             .frame(maxWidth: .infinity)
@@ -288,11 +292,11 @@ struct PhotoFrameDetail: View {
                     open(item)
                 }
             }
-            .onDrag { item.map(dragProvider) ?? NSItemProvider() }
-            .help(excluded ? tr("点一下撤销排除") : (item?.fileURL?.lastPathComponent ?? tr("那年今天")))
+            .onDrag { dragProvider(item) }
+            .help(tip)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(excluded ? tr("已排除") : (item?.fileURL?.lastPathComponent ?? tr("那年今天")))
-            .accessibilityAction(named: Text(verbatim: excluded ? tr("撤销") : tr("排除"))) {
+            .accessibilityLabel(spoken)
+            .accessibilityAction(named: Text(verbatim: actionName)) {
                 if excluded { undoExclude(id) } else { exclude(id, album: album, order: order) }
             }
     }
@@ -494,10 +498,7 @@ struct PhotoFrameDetail: View {
         AlbumSection(label: tr("已排除 \(ids.count) 张"),
                      right: ids.isEmpty ? nil : tr("全部恢复"),
                      rightColor: accent,
-                     rightAction: ids.isEmpty ? nil : {
-                         writeKeepingCurrent { PhotoRotation.restoreAll(in: &$0) }
-                         justExcluded = []
-                     })
+                     rightAction: ids.isEmpty ? nil : restoreAll)
             .padding(.top, 6)
         if ids.isEmpty {
             Text(verbatim: tr("浏览时悬停在照片上点“排除”，就不再轮到它"))
@@ -521,8 +522,19 @@ struct PhotoFrameDetail: View {
         }
     }
 
+    private func restoreAll() {
+        writeKeepingCurrent { PhotoRotation.restoreAll(in: &$0) }
+        justExcluded = []
+    }
+
     private func excludedCell(_ id: String, item: PhotoAlbum.Item?) -> some View {
-        AlbumThumb(item: item, pixels: 160)
+        let tip: String
+        if let item {
+            tip = item.fileURL?.lastPathComponent ?? tr("那年今天")
+        } else {
+            tip = tr("找不到这张了")
+        }
+        return AlbumThumb(item: item, pixels: 160)
             .frame(height: 44)
             .frame(maxWidth: .infinity)
             .overlay { Color.black.opacity(0.55) }
@@ -544,7 +556,7 @@ struct PhotoFrameDetail: View {
                 .help(tr("恢复这张"))
                 .accessibilityLabel(tr("恢复这张"))
             }
-            .help(item?.fileURL?.lastPathComponent ?? (item == nil ? tr("找不到这张了") : tr("那年今天")))
+            .help(tip)
     }
 
     private func setInterval(_ seconds: Double, album: PhotoAlbum) {
@@ -574,8 +586,8 @@ struct PhotoFrameDetail: View {
         }
     }
 
-    private func dragProvider(_ item: PhotoAlbum.Item) -> NSItemProvider {
-        guard let url = item.fileURL else { return NSItemProvider() }
+    private func dragProvider(_ item: PhotoAlbum.Item?) -> NSItemProvider {
+        guard let url = item?.fileURL else { return NSItemProvider() }
         return FileActions.dragProvider(url)
     }
 
