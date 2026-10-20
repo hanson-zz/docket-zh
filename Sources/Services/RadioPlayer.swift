@@ -105,8 +105,8 @@ final class RadioPlayer {
         playlist = stations
     }
 
+    /// 收音机 2026-10-20 起整种免费，媒体键和控制中心不再看 Pro。
     private func remote(_ command: MediaCommand) {
-        guard ProAccess.isUnlocked else { return }
         guard let action = MediaSessionRules.action(command, source: .radio, playing: isPlaying) else { return }
         switch action {
         case .play:

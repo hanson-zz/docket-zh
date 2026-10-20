@@ -506,9 +506,12 @@ public enum WidgetCatalog {
 
         // Internet radio through one shared AVPlayer; favourites live under
         // `stations` like the to-do list's items, see RadioDial and RadioPlayer.
+        // 整种免费；皮肤存在 `skin` 下：经典（半圆表盘，免费，默认）和三款复古
+        // 皮肤（Pro，见 RadioSkin）。没存 skin 的旧卡片按经典读。
         Entry(kind: .radio, name: tr("收音机"), category: .media,
-              defaults: c(["volume": .number(60)]),
-              variants: [], supportsCompact: false, selfContained: true),
+              defaults: c(["volume": .number(60), RadioSkin.key: .string(RadioSkin.fallback.rawValue)]),
+              variants: RadioSkin.allCases.map { (title: $0.title, overrides: [RadioSkin.key: WidgetConfig.Value.string($0.rawValue)]) },
+              supportsCompact: false, selfContained: true),
 
         // 小宇宙 shows by their public pages, played in 码头; the subscriptions
         // are shared by every 播客 widget and kept by PodcastService, which
@@ -690,6 +693,9 @@ public enum WidgetCatalog {
             AlarmBook.isLegacy(config)
         // 三个预设在面板里改。
         case (.countdown, CountdownRun.presetsKey):
+            false
+        // 收音机的皮肤在“样式”里选，不再单列一项。
+        case (.radio, RadioSkin.key):
             false
         // 渴成骷髅只画在角色上；圆环和液态没有角色。
         case (.water, WaterParched.key):

@@ -16,7 +16,8 @@ import Foundation
 ///   红黄绿渐变（见 `BatteryLiquidFX`），都只属于液态外观，不另算一项 Pro。
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
 ///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
-///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）。喝水卡片
+///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
+///   三款复古皮肤（`skin` 为 wood、transistor、deck；半圆表盘的经典免费）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
 ///   `ProLicenseGate` 里的习惯部分。
@@ -31,16 +32,17 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 18 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// 整种都是 Pro 的小组件，共 17 种：摸鱼时钟、环境音、播客、废纸篓、
     /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
-    /// 应用音量、录音、股票、自选股、加密货币行情、壁纸切换、收音机、文件暂存、
-    /// 翻译。时间进度和习惯打卡 2026-10-19 起改为免费：时间进度的液态和四格、
-    /// 习惯打卡第 4 个起和报告仍是 Pro。
+    /// 应用音量、录音、股票、自选股、加密货币行情、壁纸切换、文件暂存、翻译。
+    /// 时间进度和习惯打卡 2026-10-19 起改为免费：时间进度的液态和四格、
+    /// 习惯打卡第 4 个起和报告仍是 Pro。收音机 2026-10-20 起改为免费，经典的
+    /// 半圆表盘免费，三款复古皮肤是 Pro（见 `RadioSkin`）。
     public static let proKinds: Set<WidgetKind> = [
         .slacker, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
         .appVolume, .recorder, .stock, .watchlist, .crypto,
-        .wallpaper, .radio, .fileShelf, .translate,
+        .wallpaper, .fileShelf, .translate,
     ]
 
     /// 有液态外观的小组件，共 8 种：电池、系统活动、专注计时、时间进度、喝水、
@@ -142,6 +144,9 @@ public enum ProFeatures {
             if case .string(let raw) = overrides[noteColorKey] { return isProNoteColor(raw) }
         case .progress:
             if case .string(let layout) = overrides[TimeProgress.layoutKey] { return layout == TimeProgress.quadLayout }
+        case .radio:
+            // 收音机整种免费，三款复古皮肤是 Pro，经典免费。
+            if case .string(let raw) = overrides[RadioSkin.key] { return RadioSkin(stored: raw).isPro }
         case .water:
             // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。
             if case .string(let layout) = overrides[WaterLayout.key] { return layout == WaterLayout.character.rawValue }

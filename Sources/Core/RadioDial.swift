@@ -220,6 +220,155 @@ public enum RadioDial {
     }
 }
 
+// MARK: - Dial frequencies
+
+/// 网络电台没有真实频率。复古皮肤的刻度窗、段码屏和收藏列表上的“FM 98.0”
+/// 是按收藏顺序给每台排的位置：88 到 108 MHz 均匀分成收藏个数份，每台落在
+/// 自己那一份的正中，取到 0.1 MHz。指针跟着频道走，换台就是换位置。
+extension RadioDial {
+    public static let lowMHz = 88.0
+    public static let highMHz = 108.0
+    /// 数码卡座的琴键个数，对应前 5 个收藏。
+    public static let presetKeys = 5
+
+    /// 第 `index` 个收藏（从 0 数）在刻度上的频率。列表为空时是刻度正中。
+    public static func frequency(_ index: Int, count: Int) -> Double {
+        guard count > 0 else { return (lowMHz + highMHz) / 2 }
+        let slot = Double(clamp(index, count: count))
+        let raw = lowMHz + (highMHz - lowMHz) * (slot + 0.5) / Double(count)
+        return (raw * 10).rounded() / 10
+    }
+
+    /// 全部收藏的频率，按收藏顺序。
+    public static func frequencies(count: Int) -> [Double] {
+        (0..<max(0, count)).map { frequency($0, count: count) }
+    }
+
+    /// 频率在刻度上的位置，88 MHz 为 0，108 MHz 为 1，超出的夹到两头。
+    public static func dialFraction(_ mhz: Double) -> Double {
+        min(max((mhz - lowMHz) / (highMHz - lowMHz), 0), 1)
+    }
+
+    /// 刻度上离这个位置（0 到 1）最近的收藏，点或拖刻度窗时换到它。
+    public static func nearestStation(toFraction fraction: Double, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        let target = lowMHz + (highMHz - lowMHz) * min(max(fraction, 0), 1)
+        var best = 0
+        var gap = Double.infinity
+        for (index, mhz) in frequencies(count: count).enumerated() where abs(mhz - target) < gap {
+            gap = abs(mhz - target)
+            best = index
+        }
+        return best
+    }
+
+    /// “98.0”“101.7”。
+    public static func frequencyText(_ mhz: Double) -> String {
+        String(format: "%.1f", mhz)
+    }
+
+    /// 列表和卡片上的“FM 98.0”。
+    public static func fmText(_ index: Int, count: Int) -> String {
+        "FM " + frequencyText(frequency(index, count: count))
+    }
+
+    /// 段码屏上的字：固定四位数字加小数点，不够三位整数时前面补空格
+    /// （空格那一位只亮暗影），“ 98.0”“101.7”。
+    public static func segmentText(_ mhz: Double) -> String {
+        let text = frequencyText(mhz)
+        return text.count < 5 ? String(repeating: " ", count: 5 - text.count) + text : text
+    }
+
+    /// 琴键 `key`（从 0 数）对应的收藏，没有那么多收藏时是 nil。
+    public static func presetStation(key: Int, count: Int) -> Int? {
+        guard key >= 0, key < presetKeys, key < count else { return nil }
+        return key
+    }
+
+    /// 现在按下的那颗琴键：调到前 5 个收藏时是它，其余时候没有键按下。
+    public static func pressedKey(index: Int, count: Int) -> Int? {
+        guard count > 0 else { return nil }
+        let tuned = clamp(index, count: count)
+        return tuned < presetKeys ? tuned : nil
+    }
+
+    /// 段码屏右下角：前 5 个是“P3”，再往后是频道号“CH 12”。
+    public static func presetLabel(index: Int, count: Int) -> String {
+        guard count > 0 else { return "P-" }
+        if let key = pressedKey(index: index, count: count) { return "P\(key + 1)" }
+        return "CH " + channelText(index)
+    }
+
+    /// “频道 03 / 05”。
+    public static func channelOfTotal(_ index: Int, count: Int) -> String {
+        tr("频道 \(channelText(index)) / \(channelText(max(0, count - 1)))")
+    }
+}
+
+// MARK: - Skins
+
+/// 收音机的四种皮肤，存在 `skin` 键下。半圆表盘的经典样式免费，也是默认；
+/// 三款复古皮肤是 Pro 样式（见 `ProFeatures.isKindProStyle`）。旧卡片没存这个
+/// 键，按经典读；没解锁时复古皮肤画回经典，不盖锁，配置不改写（见
+/// `ProLicenseGate.radioSkin`）。
+public enum RadioSkin: String, CaseIterable, Sendable {
+    /// 半圆刻度盘加红指针，原来的样子。
+    case classic
+    /// 木壳电子管：胡桃木纹、米色布纹喇叭网、琥珀指针。
+    case wood
+    /// 晶体管便携：深色皮革、镀铬边、竖向刻度窗和红指针。
+    case transistor
+    /// 数码卡座：拉丝金属、绿色段码屏、双 VU 表、1 到 5 琴键。
+    case deck
+
+    public static let key = "skin"
+    public static let fallback: RadioSkin = .classic
+
+    public var title: String {
+        switch self {
+        case .classic: tr("经典")
+        case .wood: tr("木壳电子管")
+        case .transistor: tr("晶体管便携")
+        case .deck: tr("数码卡座")
+        }
+    }
+
+    /// 三款复古皮肤是 Pro，经典免费。
+    public var isPro: Bool { self != .classic }
+
+    /// 存的值读回来，认不出或没存时是经典。
+    public init(stored raw: String) {
+        self = RadioSkin(rawValue: raw.trimmingCharacters(in: .whitespaces)) ?? Self.fallback
+    }
+
+    public static func stored(_ config: WidgetConfig) -> RadioSkin {
+        RadioSkin(stored: config.string(key, default: fallback.rawValue))
+    }
+}
+
+/// 数码卡座 VU 表的假动画：不读真实电平，播放时按时间算一个起伏的读数，
+/// 左右声道错开。0 是表针最左，1 是最右（红区从 0.75 起）。
+public enum RadioVU {
+    /// 打开“减少动态效果”或预览时表针停在这里。
+    public static let still: [Double] = [0.52, 0.6]
+    /// 红区起点。
+    public static let redFrom = 0.75
+
+    public static func level(time: Double, channel: Int) -> Double {
+        let phase = channel == 0 ? 0.0 : 1.3
+        let slow = sin(time * 1.7 + phase)
+        let fast = sin(time * 5.3 + phase * 2.1)
+        let flutter = sin(time * 11.9 + phase * 0.7)
+        let value = 0.5 + 0.22 * slow + 0.12 * fast + 0.06 * flutter
+        return min(max(value, 0.08), 0.95)
+    }
+
+    /// 表针角度（度），0 时 -46°，1 时 +46°，和刻度一致。
+    public static func angle(_ level: Double) -> Double {
+        -46 + 92 * min(max(level, 0), 1)
+    }
+}
+
 // MARK: - Search region
 
 /// Which part of the directory "搜索电台" looks in. Chinese-language

@@ -17,6 +17,9 @@ struct RadioDetail: View {
 
     private var player: RadioPlayer { RadioPlayer.shared }
 
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
+
     @State private var tab: Tab = .favourites
     @State private var query = ""
     @State private var customName = ""
@@ -50,7 +53,15 @@ struct RadioDetail: View {
         return context.isPreview ? RadioRegion.fallback : RadioRegion.stored(instance.config)
     }
 
-    private var accent: Color { panelTint.accent(or: RadioIcon.glow) }
+    /// 实际画的皮肤：三款复古皮肤是 Pro，没解锁时画回经典（预览照常画）。
+    private var skin: RadioSkin {
+        ProLicenseGate.radioSkin(config: instance.config,
+                                 unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
+    }
+    private var retro: Bool { skin != .classic }
+
+    /// 复古皮肤用自己的琥珀、红、VFD 绿；经典照旧跟颜色面板走。
+    private var accent: Color { retro ? skin.accent : panelTint.accent(or: RadioIcon.glow) }
     private static let needle = Color(hex: "#FF453A")
 
     var body: some View {
@@ -64,22 +75,26 @@ struct RadioDetail: View {
             MeshBackdrop(color: accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                header
-                readout
-                RadioArcDial(count: stations.count, index: index, accent: accent, needle: Self.needle) { target in
-                    guard !context.isPreview else { return }
-                    RadioRemote.tune(instance, to: target)
+                if retro {
+                    retroTop
+                } else {
+                    header
+                    readout
+                    RadioArcDial(count: stations.count, index: index, accent: accent, needle: Self.needle) { target in
+                        guard !context.isPreview else { return }
+                        RadioRemote.tune(instance, to: target)
+                    }
+                    .frame(height: 92)
+                    transport
+                    volumeRow
                 }
-                .frame(height: 92)
-                transport
-                volumeRow
                 timerRow(now: now)
                 Picker("", selection: $tab) {
                     Text(tr("我的收藏 \(stations.count)")).tag(Tab.favourites)
                     Text("搜索电台").tag(Tab.search)
                 }
                 .pickerStyle(.segmented)
-                .tint(panelTint.control)
+                .tint(retro ? Optional(accent) : panelTint.control)
                 .labelsHidden()
                 .controlSize(.small)
                 switch tab {
@@ -97,6 +112,76 @@ struct RadioDetail: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    // MARK: Retro skins
+
+    /// 复古皮肤的上半部分：头一行、机身、大字台名、走带键、音量。
+    @ViewBuilder private var retroTop: some View {
+        retroHeader
+        RadioRetroFace(skin: skin, count: stations.count, index: index, playing: playing, volume: volume,
+                       stationName: station?.name ?? tr("还没有电台"), animated: !context.isPreview,
+                       onTune: { target in
+                           guard !context.isPreview else { return }
+                           RadioRemote.tune(instance, to: target)
+                       },
+                       onNext: {
+                           guard !context.isPreview, stations.count > 1 else { return }
+                           RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
+                       })
+        .frame(maxWidth: .infinity, alignment: .center)
+        RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
+                          detailColor: player.problem != nil && playing && !context.isPreview
+                              ? accent : .white.opacity(0.6))
+        RadioRetroTransport(skin: skin, playing: playing, canPlay: station != nil, canStep: stations.count > 1,
+                            onPrevious: {
+                                guard !context.isPreview else { return }
+                                RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
+                            },
+                            onToggle: {
+                                guard !context.isPreview, let station else { return }
+                                player.toggle(station, volume: volume, stations: stations, owner: instance.id)
+                            },
+                            onNext: {
+                                guard !context.isPreview else { return }
+                                RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
+                            })
+        RadioRetroVolume(skin: skin, value: volume, enabled: !context.isPreview,
+                         onChange: { value in
+                             dragging = value
+                             player.setVolume(value)
+                         },
+                         onEnd: {
+                             if let value = dragging {
+                                 save { $0.set("volume", .number(value.rounded())) }
+                                 dragging = nil
+                             }
+                         })
+    }
+
+    private var retroHeader: some View {
+        HStack(spacing: 6) {
+            Text("网络电台")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
+            Spacer()
+            Circle()
+                .fill(playing ? accent : .white.opacity(0.35))
+                .frame(width: 6.4, height: 6.4)
+            Text(statusText)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(playing ? 0.88 : 0.55))
+        }
+    }
+
+    /// “MP3 · 64 kbps · 频道 03 / 05”；播放中有问题或有节目名时换成那一句。
+    private var retroSubline: String {
+        guard let station else { return tr("在“搜索电台”里找一个，或粘贴串流地址") }
+        if !context.isPreview, playing {
+            if let problem = player.problem { return problem }
+            if let title = player.nowTitle { return tr("正在播放：\(title)") }
+        }
+        return "\(station.detail) · \(RadioDial.channelOfTotal(index, count: stations.count))"
     }
 
     // MARK: Readout
@@ -304,7 +389,69 @@ struct RadioDetail: View {
         }
     }
 
+    @ViewBuilder
     private func favouriteRow(_ item: RadioStation, offset: Int) -> some View {
+        if retro { retroFavouriteRow(item, offset: offset) } else { classicFavouriteRow(item, offset: offset) }
+    }
+
+    /// 复古皮肤的收藏行：编号、台名、右边按收藏顺序排的“FM 98.0”；当前那一行
+    /// 淡淡一层强调色，左边一道竖条。
+    private func retroFavouriteRow(_ item: RadioStation, offset: Int) -> some View {
+        let tuned = offset == index
+        return HStack(spacing: 8) {
+            Button {
+                guard !context.isPreview else { return }
+                RadioRemote.tune(instance, to: offset, play: true)
+            } label: {
+                HStack(spacing: 10) {
+                    Text(verbatim: RadioDial.channelText(offset))
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.white.opacity(tuned ? 0.9 : 0.55))
+                        .frame(width: 22, alignment: .leading)
+                    Text(item.name)
+                        .font(.system(size: 15, weight: tuned ? .semibold : .medium))
+                        .foregroundStyle(.white.opacity(tuned ? 1 : 0.88))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(verbatim: RadioDial.fmText(offset, count: stations.count))
+                        .font(.system(size: 13, weight: .medium).monospacedDigit())
+                        .foregroundStyle(tuned ? accent : .white.opacity(0.62))
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("收听 \(item.name)"))
+
+            Button {
+                guard !context.isPreview else { return }
+                remove(item, at: offset)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .frame(width: 20, height: 20)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 6)
+        .frame(height: 34)
+        .background {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(tuned ? accent.opacity(0.15) : .white.opacity(0.04))
+                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(accent.opacity(tuned ? 0.45 : 0), lineWidth: 0.6))
+        }
+        .overlay(alignment: .leading) {
+            if tuned {
+                Capsule().fill(accent).frame(width: 3, height: 16).padding(.leading, 6)
+            }
+        }
+    }
+
+    private func classicFavouriteRow(_ item: RadioStation, offset: Int) -> some View {
         let tuned = offset == index
         return HStack(spacing: 8) {
             Button {

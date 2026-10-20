@@ -13,6 +13,8 @@ import Foundation
 /// - 喝水整种免费，角色和液态是 Pro，没解锁时都画成圆环，不盖遮罩；配置照旧
 ///   存着角色或液态，解锁或试用时自动回来。例外：卡片选的是累计达标解锁的
 ///   柴犬或橘猫时，角色样式照常显示，也不标 Pro。
+/// - 收音机整种免费，三款复古皮肤（木壳电子管、晶体管便携、数码卡座）是 Pro，
+///   没解锁时画回经典的半圆表盘，不盖遮罩；配置照旧存着皮肤，解锁或试用时自动回来。
 /// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
 ///   超过 3 个的不删数据，超出的只读带小锁；近七天报告是 Pro。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
@@ -124,6 +126,14 @@ public enum ProLicenseGate {
         guard !unlocked, layout.isPro else { return layout }
         if layout == .character, earnedCharacter { return .character }
         return .ring
+    }
+
+    /// 收音机实际画哪种皮肤：没解锁时三款复古皮肤都画回经典。没存 `skin` 的
+    /// 旧卡片就是经典。
+    public static func radioSkin(config: WidgetConfig, unlocked: Bool) -> RadioSkin {
+        let skin = RadioSkin.stored(config)
+        guard !unlocked, skin.isPro else { return skin }
+        return .classic
     }
 
     // MARK: 习惯打卡

@@ -18,8 +18,15 @@ struct RadioTile: View {
     /// 颜色面板里选的主题色，选过颜色时播放中的暖光跟着换。
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
+    // 和喝水一样读 @AppStorage：购买或试用到期时皮肤马上换，不用等下次重绘。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
 
     private var player: RadioPlayer { RadioPlayer.shared }
+
+    private var unlocked: Bool { licenseUnlocked || supporterUnlocked || context.isPreview }
+    /// 实际画的皮肤：三款复古皮肤是 Pro，没解锁时画回经典，不盖锁，配置不改写。
+    private var skin: RadioSkin { ProLicenseGate.radioSkin(config: instance.config, unlocked: unlocked) }
 
     private var stations: [RadioStation] { RadioDial.stations(instance.config) }
     private var index: Int { RadioDial.index(instance.config, count: stations.count) }
@@ -41,6 +48,8 @@ struct RadioTile: View {
         WidgetSurface {
             if station == nil {
                 PandaEmptyTile(empty: .radio, title: tr("搜索电台"), instance: instance, context: context)
+            } else if skin != .classic {
+                retro
             } else if context.position.isVertical {
                 VStack(spacing: 4) {
                     RadioIcon(size: 34, playing: playing, animated: !context.isPreview)
@@ -69,6 +78,74 @@ struct RadioTile: View {
         .onChange(of: volume) { _, now in
             if !context.isPreview, player.plays(station) { player.setVolume(now) }
         }
+    }
+
+    // MARK: 复古皮肤
+
+    /// 横排照设计稿：左边迷你机身，中间台名和 FM 数字（卡座写状态），右边实心
+    /// 播放键和下一台。竖排把机身缩小放在上面。
+    @ViewBuilder private var retro: some View {
+        if context.position.isVertical {
+            VStack(spacing: 4) {
+                RadioRetroTileArt(skin: skin, count: stations.count, index: index, playing: playing,
+                                  height: skin == .deck ? 30 : 34)
+                Text(station?.name ?? tr("收音机"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                HStack(spacing: 2) {
+                    retroPlayButton(size: 18)
+                    nextButton(size: 8)
+                }
+            }
+        } else {
+            HStack(spacing: 9) {
+                RadioRetroTileArt(skin: skin, count: stations.count, index: index, playing: playing,
+                                  height: skin == .deck ? 40 : 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(station?.name ?? tr("收音机"))
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(WidgetStyle.primary)
+                    Text(retroCaption)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                Spacer(minLength: 0)
+                HStack(spacing: 2) {
+                    retroPlayButton(size: 26)
+                    nextButton(size: 9)
+                }
+            }
+        }
+    }
+
+    /// 木壳和晶体管写“FM 98.0”，卡座的段码屏已经有频率，写状态；暂停、
+    /// 连接中这些状态三款都照写。
+    private var retroCaption: String {
+        if skin == .deck { return caption }
+        let fm = RadioDial.fmText(index, count: stations.count)
+        if context.isPreview { return fm }
+        guard playing, player.problem == nil, !player.isBuffering else { return caption }
+        return fm
+    }
+
+    private func retroPlayButton(size: CGFloat) -> some View {
+        Button {
+            guard !context.isPreview, let station else { return }
+            player.toggle(station, volume: volume, stations: stations, owner: instance.id)
+        } label: {
+            RadioRetroTilePlay(skin: skin, playing: playing, size: size)
+                .contentShape(skin == .deck ? AnyShape(RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+                                            : AnyShape(Circle()))
+        }
+        .buttonStyle(RadioRetroPress())
+        .allowsHitTesting(!context.isPreview)
+        .help(playing ? tr("暂停") : tr("收听"))
+        .accessibilityLabel(playing ? tr("暂停收音机") : tr("收听 \(station?.name ?? tr("电台"))"))
     }
 
     private func playButton(size: CGFloat) -> some View {

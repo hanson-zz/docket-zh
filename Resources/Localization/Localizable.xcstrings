@@ -15538,13 +15538,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格、喝水小熊猫角色；习惯打卡第 4 个起和近七天报告" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格、喝水小熊猫角色、收音机复古皮肤；习惯打卡第 4 个起和近七天报告" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style, the Time Progress grid and the red panda Water character; a fourth habit and beyond, and the 7-day habit report"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style, the Time Progress grid, the red panda Water character and the retro Radio skins; a fourth habit and beyond, and the 7-day habit report"
           }
         }
       }
@@ -20707,6 +20707,17 @@
         }
       }
     },
+    "数码卡座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digital Tuner Deck"
+          }
+        }
+      }
+    },
     "文字颜色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20905,6 +20916,17 @@
         }
       }
     },
+    "晶体管便携" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transistor Portable"
+          }
+        }
+      }
+    },
     "智利" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21000,6 +21022,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "North Korea"
+          }
+        }
+      }
+    },
+    "木壳电子管" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wooden Tube Set"
           }
         }
       }
@@ -21176,6 +21209,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hamburg"
+          }
+        }
+      }
+    },
+    "没有这个预设" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No station on this preset"
           }
         }
       }
@@ -21363,6 +21407,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click a row to add it to the end of the list"
+          }
+        }
+      }
+    },
+    "点刻度换台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the dial to change stations"
           }
         }
       }
@@ -32230,6 +32285,17 @@
         }
       }
     },
+    "立体声 · 数码调谐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stereo · Digital Tuning"
+          }
+        }
+      }
+    },
     "立即重启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36266,6 +36332,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Makeup workdays show on the card %@ days ahead, with one more reminder the evening before."
+          }
+        }
+      }
+    },
+    "调台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuning"
           }
         }
       }
@@ -40772,6 +40849,17 @@
         }
       }
     },
+    "预设 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preset %@"
+          }
+        }
+      }
+    },
     "预设时长" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40779,6 +40867,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Preset durations"
+          }
+        }
+      }
+    },
+    "频道 %@ / %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Channel %@ / %@"
           }
         }
       }

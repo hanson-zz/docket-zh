@@ -219,6 +219,8 @@ public enum ProUnlockStyle: String, CaseIterable, Sendable {
     case progressQuad
     /// 习惯打卡第 4 个起和近七天报告。
     case moreHabits
+    /// 收音机的三款复古皮肤（木壳电子管、晶体管便携、数码卡座）。
+    case radioSkins
 }
 
 /// 卡片上的胶囊标签：最有卖点的 5 个功能，第 6 个是“+N”。

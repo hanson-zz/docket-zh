@@ -9,16 +9,16 @@ final class ProFeaturesTests: XCTestCase {
             .slacker, .ambient, .podcast, .trash,
             .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
             .appVolume, .recorder, .stock, .watchlist, .crypto,
-            .wallpaper, .radio, .fileShelf, .translate,
+            .wallpaper, .fileShelf, .translate,
         ])
-        XCTAssertEqual(ProFeatures.proKinds.count, 18)
+        XCTAssertEqual(ProFeatures.proKinds.count, 17)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))
         }
         for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar,
                      .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume,
-                     .progress, .habit] {
+                     .progress, .habit, .radio] {
             XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind) 不是整种 Pro")
             XCTAssertFalse(ProFeatures.isPro(kind, overrides: [:]))
         }
@@ -93,7 +93,7 @@ final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsAddedInThisRoundAreLocked() {
         for kind in [WidgetKind.appVolume, .recorder, .stock, .watchlist, .crypto,
-                     .wallpaper, .radio, .fileShelf, .translate] {
+                     .wallpaper, .fileShelf, .translate] {
             XCTAssertTrue(ProFeatures.isProKind(kind), "\(kind)")
             XCTAssertFalse(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: false), "\(kind)")
             XCTAssertTrue(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: true), "\(kind)")
@@ -106,8 +106,8 @@ final class ProFeaturesTests: XCTestCase {
     func testFreeAndProCountsOfTheLibrary() {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
-        XCTAssertEqual(pro.count, 18)
-        XCTAssertEqual(kinds.count - pro.count, 40, "官网和 README 写的免费小组件数量")
+        XCTAssertEqual(pro.count, 17)
+        XCTAssertEqual(kinds.count - pro.count, 41, "官网和 README 写的免费小组件数量")
     }
 
     func testWeatherCitiesIsPro() {
@@ -163,6 +163,10 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertTrue(proStyles.contains("progress:四格"))
         XCTAssertTrue(proStyles.contains("water:角色"))
         XCTAssertFalse(proStyles.contains("water:圆环"))
+        for title in ["木壳电子管", "晶体管便携", "数码卡座"] {
+            XCTAssertTrue(proStyles.contains("radio:\(title)"), title)
+        }
+        XCTAssertFalse(proStyles.contains("radio:经典"))
         // 便签的纸色不再列成样式，改在面板和设置里选；十五种里免费五种，其余十种是 Pro 选项。
         XCTAssertTrue(proStyles.filter { $0.hasPrefix("notes:") }.isEmpty)
         XCTAssertEqual(PaperColor.picker.filter {
