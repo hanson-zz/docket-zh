@@ -816,8 +816,15 @@ struct SystemActivityDetail: View {
     // MARK: 示例数据（小组件库的预览）
 
     private static func sampleReadout(_ metric: SystemMetricKind) -> Readout {
-        let wave: (Double, Double, Double) -> [Double] = { base, amp, phase in
-            (0..<30).map { i in base + amp * sin(Double(i) / 3 + phase) + amp * 0.4 * sin(Double(i) * 1.7) }
+        func wave(_ base: Double, _ amp: Double, _ phase: Double) -> [Double] {
+            var values: [Double] = []
+            for i in 0..<30 {
+                let t = Double(i)
+                let slow: Double = sin(t / 3 + phase)
+                let fast: Double = sin(t * 1.7)
+                values.append(base + amp * slow + amp * 0.4 * fast)
+            }
+            return values
         }
         switch metric {
         case .cpu: return Readout(value: "23", unit: "%", series: wave(0.25, 0.08, 0), minimumSpan: 0.08)
@@ -833,11 +840,15 @@ struct SystemActivityDetail: View {
         for step in 0..<96 {
             let minute = end - (95 - step) * 15
             let t = Double(step)
-            let spike = 0.7 * exp(-pow((t - 56) / 2.2, 2))
-            let cpu = min(max(0.22 + 0.06 * sin(t / 2.3) + spike, 0.02), 0.98)
-            history.record(SystemMinuteSample(minute: minute, cpu: cpu, memory: 0.66 + 0.03 * sin(t / 5),
-                                              network: 400_000 + 300_000 * max(sin(t / 3), 0),
-                                              diskFree: 212e9 - t * 1e8))
+            let offset: Double = (t - 56) / 2.2
+            let spike: Double = 0.7 * exp(-(offset * offset))
+            let base: Double = 0.22 + 0.06 * sin(t / 2.3)
+            let cpu = min(max(base + spike, 0.02), 0.98)
+            let memory: Double = 0.66 + 0.03 * sin(t / 5)
+            let network: Double = 400_000 + 300_000 * max(sin(t / 3), 0)
+            let disk: Double = 212e9 - t * 1e8
+            history.record(SystemMinuteSample(minute: minute, cpu: cpu, memory: memory,
+                                              network: network, diskFree: disk))
         }
         return history
     }
