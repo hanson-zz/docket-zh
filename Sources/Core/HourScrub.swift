@@ -32,6 +32,15 @@ public enum HourScrub {
         return values[low] + (values[high] - values[low]) * fraction
     }
 
+    /// 逐小时那一排打开时停在哪一列：第一个还没过完的小时（开始时刻加一小时
+    /// 晚于现在）。预报是上次刷新时取的，过了一阵前几列可能已经过去，
+    /// 就跳过它们；全都过去了停在最后一列，没有数据时是 0。`starts` 是每列的
+    /// 开始时刻（秒），按时间先后排。
+    public static func nowIndex(starts: [Double], now: Double, hour: Double = 3600) -> Int {
+        guard !starts.isEmpty else { return 0 }
+        return starts.firstIndex { $0 + hour > now } ?? starts.count - 1
+    }
+
     /// 暮光的宽度：日落后到全黑、全黑到日出前各这么久。
     public static let twilight: TimeInterval = 50 * 60
 

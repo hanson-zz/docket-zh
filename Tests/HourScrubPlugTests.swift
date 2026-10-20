@@ -6,6 +6,20 @@ final class HourScrubPlugTests: XCTestCase {
 
     // MARK: 拖动位置
 
+    func testNowIndexSkipsHoursThatAlreadyEnded() {
+        let starts: [Double] = [3600, 7200, 10800]
+        // 刚刷新：第一列是下一个整点。
+        XCTAssertEqual(HourScrub.nowIndex(starts: starts, now: 3000), 0)
+        // 第一列这一小时正在进行，仍停在它。
+        XCTAssertEqual(HourScrub.nowIndex(starts: starts, now: 5000), 0)
+        // 第一列刚好过完，跳到第二列。
+        XCTAssertEqual(HourScrub.nowIndex(starts: starts, now: 7200), 1)
+        XCTAssertEqual(HourScrub.nowIndex(starts: starts, now: 11000), 2)
+        // 全都过去了停在最后一列，没有数据是 0。
+        XCTAssertEqual(HourScrub.nowIndex(starts: starts, now: 99_999), 2)
+        XCTAssertEqual(HourScrub.nowIndex(starts: [], now: 0), 0)
+    }
+
     func testColumnCentresMapToWholeIndices() {
         // 8 列，每列 30 宽：第 0 列中心 15，第 7 列中心 225。
         XCTAssertEqual(HourScrub.position(x: 15, width: 240, count: 8), 0, accuracy: 1e-9)

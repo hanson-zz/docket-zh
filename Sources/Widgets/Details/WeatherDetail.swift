@@ -5,7 +5,7 @@ import SwiftUI
 /// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；当前温度大字、
 ///   天气和今天最高最低；2 小时降水条和一句“约 40 分钟后有雨，持续半小时”；
 ///   生活指数三格（穿衣、紫外线、空气质量）；风、湿度、日出、日落；接下来
-///   6 小时（按住左右拖，大字和天色跟着那一小时走）；未来 7 天。
+///   12 小时（横向滚动，打开时停在现在；按住左右拖，大字和天色跟着那一小时走）；未来 7 天。
 /// - 城市：搜索添加（内置城市表，表里没有的走天气自己的地图查找）、拖把手排序、
 ///   左滑或右键删除，下面是面板显示开关（降水提示、生活指数、°F）。
 ///
@@ -26,8 +26,6 @@ struct WeatherDetail: View {
     @State private var page = 0
     /// 拖动逐小时预报时手指所在的位置（小数下标），松手回到 nil，也就是“现在”。
     @State private var scrub: Double?
-    /// 逐小时那一排的宽度，用来把手指的横坐标换成第几个小时。
-    @State private var stripWidth: CGFloat = 0
 
     // 城市编辑
     @State private var query = ""
@@ -52,7 +50,9 @@ struct WeatherDetail: View {
     private static let rowHeight: CGFloat = 52
     private static let rowSpacing: CGFloat = 6
     private static let deleteWidth: CGFloat = 76
-    private static let hourCount = 6
+    private static let hourCount = 12
+    /// 逐小时一列的宽度：面板里看得到 6 列多一点，露出的半列提示后面还能滑。
+    private static let hourColumn: CGFloat = 46
     private static let dayCount = 7
 
     private var unlocked: Bool { licenseUnlocked || supporter || context.isPreview }
@@ -433,20 +433,25 @@ struct WeatherDetail: View {
     /// 穿衣按温度总能写；紫外线和空气质量没取到的那一格不画。
     private func indices(_ weather: WeatherNow) -> some View {
         let uv = nowcast?.uvIndex(now: context.now)
-        return HStack(spacing: 8) {
+        return HStack(alignment: .top, spacing: 6) {
             indexCell(tr("穿衣"), value: WeatherIndex.clothing(celsius: weather.temperatureC), detail: "")
             if let uv {
                 indexCell(tr("紫外线"), value: WeatherIndex.uvLevel(uv), detail: WeatherIndex.uvDetail(uv))
             }
             if let aqi {
-                indexCell(tr("空气质量"), value: WeatherIndex.aqiLevel(aqi), detail: "\(aqi)",
+                // 数值是美国 AQI 刻度，标签直接写明，免得和国内的指数混着看。
+                indexCell(tr("AQI（美标）"), value: WeatherIndex.aqiLevel(aqi), detail: "\(aqi)",
                           warm: WeatherIndex.aqiIsPolluted(aqi))
+                    .accessibilityLabel(tr("空气质量") + " " + WeatherIndex.aqiLevel(aqi) + " · "
+                                        + tr("AQI（美标）") + " \(aqi)")
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func indexCell(_ label: String, value: String, detail: String, warm: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            // 标签和小字固定 13pt 不缩；只有档位大字放不下时才缩一点。
             Text(label)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.62))
@@ -454,20 +459,21 @@ struct WeatherDetail: View {
                 Text(value)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(warm ? Color(hex: "#FFB35C") : .white)
+                    .minimumScaleFactor(0.82)
                 Spacer(minLength: 0)
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.62))
                         .monospacedDigit()
+                        .fixedSize()
                 }
             }
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.75)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .glassPane()
         .accessibilityElement(children: .combine)
     }
@@ -524,53 +530,86 @@ struct WeatherDetail: View {
 
     // MARK: Hours
 
-    /// 接下来 6 小时：钟点、温度折线、降水。
+    /// 接下来 12 小时：钟点、天气图标、温度折线、降水，一列一小时，横向滚动。
     ///
+    /// 打开时停在现在这一小时；双指横扫（或 Shift 加滚轮）看后面的小时。
     /// 按住在这一排上左右拖，就像拨时间轴：手指下的那一小时亮起来，
-    /// 上面的大数字、天气和天空都换成那个时刻，松手回到现在。
+    /// 上面的大数字、天气和天空都换成那个时刻，拖到边上会跟着滚，松手回到现在。
     private var hourly: some View {
         let shown = hours
-        return VStack(spacing: 4) {
-            HStack(spacing: 0) {
-                ForEach(shown, id: \.date) { hour in
-                    Text(hourShort(hour.date))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            temperatureLine(shown)
-                .frame(height: 60)
-            HStack(spacing: 0) {
-                ForEach(shown, id: \.date) { hour in
-                    let rain = rainText(hour)
-                    Text(rain.text)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(rain.wet ? Self.accent : .white.opacity(0.62))
-                        .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
-        .padding(.vertical, 4)
-        .background(alignment: .leading) { scrubMarker }
-        .contentShape(.rect)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stripWidth = $0 }
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { drag in
-                    guard shown.count > 1 else { return }
-                    scrub = HourScrub.position(x: drag.location.x, width: stripWidth, count: shown.count)
-                }
-                .onEnded { _ in
-                    withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8)) {
-                        scrub = nil
+        let column = Self.hourColumn
+        let width = column * CGFloat(shown.count)
+        let now = context.now
+        let nowIndex = HourScrub.nowIndex(starts: shown.map(\.date.timeIntervalSinceReferenceDate),
+                                          now: now.timeIntervalSinceReferenceDate)
+        return ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                VStack(spacing: 4) {
+                    HStack(spacing: 0) {
+                        ForEach(shown.indices, id: \.self) { index in
+                            let hour = shown[index]
+                            let current = index == nowIndex && hour.date <= now
+                            Text(current ? tr("现在") : hourShort(hour.date))
+                                .font(.system(size: 13, weight: current ? .semibold : .medium))
+                                .foregroundStyle(current ? .white : .white.opacity(0.62))
+                                .frame(width: column)
+                                .id(index)
+                        }
+                    }
+                    HStack(spacing: 0) {
+                        ForEach(shown.indices, id: \.self) { index in
+                            Image(systemName: shown[index].symbolName)
+                                .symbolRenderingMode(.multicolor)
+                                .font(.system(size: 16))
+                                .frame(width: column, height: 22)
+                        }
+                    }
+                    temperatureLine(shown)
+                        .frame(width: width, height: 56)
+                    HStack(spacing: 0) {
+                        ForEach(shown.indices, id: \.self) { index in
+                            let rain = rainText(shown[index])
+                            Text(rain.text)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(rain.wet ? Self.accent : .white.opacity(0.62))
+                                .frame(width: column)
+                        }
                     }
                 }
-        )
+                .lineLimit(1)
+                .padding(.vertical, 4)
+                .frame(width: width)
+                .background(alignment: .leading) { scrubMarker(column: column) }
+                .contentShape(.rect)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { drag in
+                            guard shown.count > 1 else { return }
+                            scrub = HourScrub.position(x: drag.location.x, width: width, count: shown.count)
+                        }
+                        .onEnded { _ in
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8)) {
+                                scrub = nil
+                            }
+                        }
+                )
+            }
+            .scrollIndicators(.never)
+            .onAppear { proxy.scrollTo(nowIndex, anchor: .leading) }
+            .onChange(of: selected) { proxy.scrollTo(nowIndex, anchor: .leading) }
+            .onChange(of: scrubIndex) { _, index in
+                // 拖到看得见的边上时，把手指下那一小时滚进来。
+                guard let index else { return }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(index) }
+            }
+        }
         .accessibilityElement(children: .combine)
-        .accessibilityHint(tr("左右拖动查看每小时的天气"))
+        .accessibilityHint(tr("左右拖动查看每小时的天气，双指横扫看后面的小时"))
+    }
+
+    private var scrubIndex: Int? {
+        guard let scrub, !hours.isEmpty else { return nil }
+        return HourScrub.index(position: scrub, count: hours.count)
     }
 
     /// 温度折线：点上面写温度。
@@ -616,9 +655,8 @@ struct WeatherDetail: View {
     }
 
     /// 跟着手指滑动的亮块，落在两小时之间时也跟着停在中间。
-    @ViewBuilder private var scrubMarker: some View {
-        if let scrub, hours.count > 1, stripWidth > 0 {
-            let column = stripWidth / CGFloat(hours.count)
+    @ViewBuilder private func scrubMarker(column: CGFloat) -> some View {
+        if let scrub, hours.count > 1 {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(.white.opacity(0.14))
                 .overlay {
@@ -1343,10 +1381,11 @@ struct WeatherDetail: View {
                                            windSpeed: 4.2, windFrom: 45, humidity: 62)
 
     private static func sampleHours(from date: Date) -> [WeatherHour] {
-        let temperatures: [Double] = [18, 19, 19, 17, 16, 16]
+        let temperatures: [Double] = [18, 19, 19, 17, 16, 16, 15, 14, 14, 13, 13, 12]
         let symbols = ["cloud.sun.fill", "sun.max.fill", "cloud.sun.fill", "cloud.rain.fill",
-                       "cloud.fill", "cloud.fill"]
-        let rain: [Double] = [0, 0, 0, 0.6, 0.2, 0]
+                       "cloud.fill", "cloud.fill", "cloud.moon.fill", "moon.stars.fill",
+                       "moon.stars.fill", "moon.fill", "cloud.moon.fill", "moon.fill"]
+        let rain: [Double] = [0, 0, 0, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0]
         return temperatures.indices.map { index in
             WeatherHour(date: date.addingTimeInterval(Double(index + 1) * 3600),
                         temperatureC: temperatures[index],

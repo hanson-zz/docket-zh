@@ -16649,6 +16649,17 @@
         }
       }
     },
+    "左右拖动查看每小时的天气，双指横扫看后面的小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag sideways to see hourly weather; swipe with two fingers for later hours"
+          }
+        }
+      }
+    },
     "左右拖调音量，按住图标静音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43910,6 +43921,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Air quality"
+          }
+        }
+      }
+    },
+    "AQI（美标）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AQI (US)"
           }
         }
       }
