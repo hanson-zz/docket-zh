@@ -331,7 +331,12 @@ public enum WidgetCatalog {
                            ColorPalette.showKey: .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        Entry(kind: .capture, name: tr("截图工具"), category: .tools, defaults: c([:]),
+        // 截完后、延时、格式、卡片上的按钮；面板里也能改，见 CaptureSettings。
+        Entry(kind: .capture, name: tr("截图工具"), category: .tools,
+              defaults: c([CaptureAfter.key: .string(CaptureAfter.fallback.rawValue),
+                           CaptureButtons.key: .list(CaptureButtons.defaults.map { .string($0.rawValue) }),
+                           CaptureDelay.key: .string("\(CaptureDelay.fallback)"),
+                           CaptureFormat.key: .string(CaptureFormat.fallback.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 收藏在 emoji（设置页能写逗号列表）；最近用过、默认肤色、单个另选的肤色
@@ -814,8 +819,7 @@ public enum WidgetCatalog {
             .app(bundleID: "com.apple.finder")
         case .colorPicker:
             .app(bundleID: "com.apple.DigitalColorMeter")
-        // The card around the four buttons opens the system's own
-        // Screenshot app, where the timer and region recording are.
+        // 有面板，这只是退路：系统自己的“截屏”App。
         case .capture:
             .app(bundleID: "com.apple.screenshot.launcher")
         case .volume:

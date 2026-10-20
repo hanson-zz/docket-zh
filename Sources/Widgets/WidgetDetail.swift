@@ -588,7 +588,7 @@ enum WidgetDetail {
         switch kind {
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .volume, .toggles, .gauges:
+        case .volume, .toggles, .gauges:
             false
         default:
             true
@@ -640,6 +640,8 @@ enum WidgetDetail {
         case .ambient: 320
         case .lunar: 320
         case .trash: 320
+        // 截图工具：四个大按钮、截完后 / 格式 / 延时和最近 3 张，和其他面板一样 320。
+        case .capture: 320
         case .habit: 340
         case .week: 320
         // 加密货币：币种行、到价提醒和编辑币种，和第二批面板一样 320。

@@ -458,7 +458,8 @@ struct WidgetSettingsSections: View {
                         choices: choices.map { ReorderableChecklist.Choice(value: $0.value, title: $0.title,
                                                      isPro: ProFeatures.isProListChoice(key: key, value: $0.value)) },
                         saved: instance.config.strings(key, default: Self.strings(fallback)),
-                        limit: key == SlackerClock.itemsKey ? SlackerClock.maxItems : nil,
+                        limit: key == SlackerClock.itemsKey ? SlackerClock.maxItems
+                            : (key == CaptureButtons.key ? CaptureButtons.limit : nil),
                         canEnable: { value in
                             guard ProLicenseGate.canEnableListChoice(key: key, value: value,
                                                                      unlocked: ProAccess.isUnlocked) else {
@@ -637,6 +638,9 @@ struct WidgetSettingsSections: View {
     /// is the photo frame's seconds between pictures but GitHub's minutes
     /// between checks.
     private static let kindLabels: [String: String] = [
+        "capture.after": tr("截完后"),
+        "capture.delay": tr("延时"),
+        "capture.format": tr("格式"),
         "github.interval": tr("检查间隔"),
         "github.notify": tr("有新议题、拉取请求或评论时通知"),
         "github.repos": tr("关注的项目（最多 \(GitHubWatch.maxRepos) 个）"),
@@ -705,6 +709,7 @@ struct WidgetSettingsSections: View {
         "rings": tr("要显示的圆环"),
         "sounds": tr("要混合的声音"),
         "actions": tr("要显示的开关"),
+        "buttons": tr("卡片上的按钮（最多 4 个）"),
         "workdays": tr("工作日"),
         "more": tr("显示更多（卡片下方的小格）"),
     ]
@@ -789,6 +794,7 @@ struct WidgetSettingsSections: View {
                   ("CPU", "cpu"), (tr("内存"), "memory")],
         "sounds": AmbientSound.allCases.map { ($0.title, $0.rawValue) },
         "actions": QuickToggle.allCases.map { ($0.title, $0.rawValue) },
+        "buttons": CaptureAction.allCases.map { ($0.title, $0.rawValue) },
         "workdays": SlackerClock.weekdayChoices,
         "more": SlackerClock.Item.allCases.map { ($0.title, $0.rawValue) },
     ]
@@ -824,6 +830,9 @@ struct WidgetSettingsSections: View {
         "notes.fontSize": StickyNoteSize.allCases.map { ($0.title, $0.rawValue) },
         "lunar.workAlertLead": LunarCard.leadChoices.map { (tr("\($0) 天"), "\($0)") },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
+        "capture.after": CaptureAfter.allCases.map { ($0.title, $0.rawValue) },
+        "capture.format": CaptureFormat.allCases.map { ($0.title, $0.rawValue) },
+        "capture.delay": CaptureDelay.choices.map { (CaptureDelay.title($0), "\($0)") },
         "mail.limit": MailInbox.limitChoices.map { (tr("\($0) 封"), "\($0)") },
         "crypto.currency": [(tr("人民币 CNY"), "cny"), (tr("美元 USD"), "usd")],
         "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },

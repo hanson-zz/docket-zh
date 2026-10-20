@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// 截图工具：只管“动作”。截区域、截窗口、识字、录屏四个按钮，每个下面两个字。
-/// 截出来的东西去“最近截图”看，识字的结果直接拷贝。
+/// 截图工具：只管“动作”。默认截区域、截窗口、识字、录区域四个按钮，每个下面两三个字；
+/// 放哪几个、什么顺序在面板或设置里改（`CaptureButtons`，最多 4 个）。截完怎么处理、
+/// 格式、延时按这张卡片的设置（`CaptureOptions`）。截出来的东西去“最近截图”看，
+/// 识字的结果直接拷贝。
 ///
 /// 识字和快速开关里的“截图识字”是同一个 Pro 工具、同一套实现：没解锁时画暗一些、
 /// 右下角带小锁，点按弹付费墙，和快速开关一样。录屏时录屏按钮变红、下面写计时，
-/// 再点一次停止。卡片空白处照旧打开系统的“截屏”App（有定时和选区录制）。
+/// 再点一次停止。卡片空白处打开面板（大按钮、设置和最近 3 张截图）。
 struct CaptureTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -18,15 +20,21 @@ struct CaptureTile: View {
 
     var body: some View {
         let column = context.position.isVertical
+        let actions = CaptureButtons.from(instance.config)
         return WidgetSurface {
             if column {
                 VStack(spacing: 8) {
-                    HStack(spacing: 8) { button(.region, label: false); button(.window, label: false) }
-                    HStack(spacing: 8) { button(.text, label: false); button(.record, label: false) }
+                    ForEach(Array(stride(from: 0, to: actions.count, by: 2)), id: \.self) { start in
+                        HStack(spacing: 8) {
+                            ForEach(actions[start..<min(start + 2, actions.count)]) { action in
+                                button(action, label: false)
+                            }
+                        }
+                    }
                 }
             } else {
                 HStack(spacing: 0) {
-                    ForEach(CaptureAction.allCases) { action in
+                    ForEach(actions) { action in
                         button(action, label: true)
                             .frame(maxWidth: .infinity)
                     }
@@ -42,7 +50,7 @@ struct CaptureTile: View {
     }
 
     private func isLive(_ action: CaptureAction) -> Bool {
-        action == .record && !context.isPreview && recording.isRecording
+        action.isRecording && !context.isPreview && recording.isRecording
     }
 
     private func tint(_ action: CaptureAction) -> Color {
@@ -57,9 +65,14 @@ struct CaptureTile: View {
         let live = isLive(action)
         VStack(spacing: 3) {
             TileGlyph(symbol: live ? "stop.fill" : action.symbol, size: 11, tint: tint(action),
-                      morphs: action == .record,
+                      morphs: action.isRecording,
                       action: context.isPreview ? nil : {
-                          if locked { PaywallWindow.shared.show() } else { ScreenCapture.perform(action) }
+                          if locked {
+                              PaywallWindow.shared.show()
+                          } else {
+                              ScreenCapture.perform(action, options: CaptureOptions(config: instance.config),
+                                                    widget: instance.id)
+                          }
                       })
                 .overlay(alignment: .bottomTrailing) {
                     if locked { lockBadge }

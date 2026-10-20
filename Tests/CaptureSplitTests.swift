@@ -6,16 +6,18 @@ import XCTest
 final class CaptureSplitTests: XCTestCase {
     // MARK: 截图工具
 
-    func testFourActionsInOrder() {
-        XCTAssertEqual(CaptureAction.allCases, [.region, .window, .text, .record])
-        XCTAssertEqual(CaptureAction.allCases.map(\.title), ["截区域", "截窗口", "识字", "录屏"])
-        XCTAssertEqual(Set(CaptureAction.allCases.map(\.symbol)).count, 4)
+    func testActionsInOrder() {
+        XCTAssertEqual(CaptureAction.allCases, [.region, .window, .text, .record, .recordRegion])
+        XCTAssertEqual(CaptureAction.allCases.map(\.title), ["截区域", "截窗口", "识字", "录屏", "录区域"])
+        XCTAssertEqual(Set(CaptureAction.allCases.map(\.symbol)).count, 5)
+        XCTAssertEqual(CaptureAction.allCases.filter(\.isRecording), [.record, .recordRegion])
     }
 
     func testTextIsTheQuickToggleProTool() {
         XCTAssertEqual(CaptureAction.text.quickToggle, .textCapture)
         XCTAssertNil(CaptureAction.region.quickToggle)
         XCTAssertNil(CaptureAction.record.quickToggle)
+        XCTAssertNil(CaptureAction.recordRegion.quickToggle)
     }
 
     func testFileNamesAreRecognisedAsCaptures() {

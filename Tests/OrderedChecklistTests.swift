@@ -68,6 +68,6 @@ final class OrderedChecklistTests: XCTestCase {
                        [.lock, .darkMode])
         XCTAssertEqual(SystemCardMetrics.shown(WidgetConfig(["metrics": .list([.string("disk"), .string("cpu")])])),
                        ["disk", "cpu"])
-        XCTAssertEqual(OrderedChecklist.keys, ["metrics", "rings", "actions", "sounds", "more"])
+        XCTAssertEqual(OrderedChecklist.keys, ["metrics", "rings", "actions", "sounds", "more", "buttons"])
     }
 }

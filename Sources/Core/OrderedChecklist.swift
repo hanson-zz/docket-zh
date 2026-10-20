@@ -12,9 +12,10 @@ import Foundation
 /// - 至少留一项：取消最后一项不写（返回 nil），卡片不会变成空的。
 /// - 有上限的列表（`limit`）勾满了再勾不写。
 public enum OrderedChecklist {
-    /// 用这个控件的设置键：系统活动指标、圆环仪表、快速开关、环境音的声音、摸鱼时钟显示项。
+    /// 用这个控件的设置键：系统活动指标、圆环仪表、快速开关、环境音的声音、摸鱼时钟显示项、
+    /// 截图工具卡片上的按钮。
     /// 电池的设备和摸鱼时钟的工作日不在里面：前者卡片按固定位置画，后者是星期几，排序没有意义。
-    public static let keys: Set<String> = ["metrics", "rings", "actions", "sounds", "more"]
+    public static let keys: Set<String> = ["metrics", "rings", "actions", "sounds", "more", "buttons"]
 
     public struct Row: Equatable, Sendable {
         public var value: String

@@ -7,9 +7,10 @@ import Foundation
 
 // MARK: - 截图工具的四个动作
 
-/// 截图工具卡片上的四个按钮，从左到右。
+/// 截图工具能放上卡片的动作。卡片上放哪几个、什么顺序由 `CaptureButtons` 决定
+/// （最多 4 个，默认截区域、截窗口、识字、录区域）。
 public enum CaptureAction: String, CaseIterable, Sendable, Identifiable {
-    case region, window, text, record
+    case region, window, text, record, recordRegion
 
     public var id: String { rawValue }
 
@@ -20,16 +21,18 @@ public enum CaptureAction: String, CaseIterable, Sendable, Identifiable {
         case .window: tr("截窗口")
         case .text: tr("识字")
         case .record: tr("录屏")
+        case .recordRegion: tr("录区域")
         }
     }
 
     /// 悬停提示，说点一下会发生什么。
     public var help: String {
         switch self {
-        case .region: tr("框选一块区域截图，存到截图文件夹")
-        case .window: tr("点选一个窗口截图，存到截图文件夹")
+        case .region: tr("框选一块区域截图")
+        case .window: tr("点选一个窗口截图")
         case .text: tr("框选一块区域，识别其中的文字并拷贝")
         case .record: tr("录制整个屏幕，再点一次停止，存到截图文件夹")
+        case .recordRegion: tr("框选一块区域录屏（单击录整个屏幕），再点一次停止")
         }
     }
 
@@ -39,8 +42,12 @@ public enum CaptureAction: String, CaseIterable, Sendable, Identifiable {
         case .window: "macwindow"
         case .text: "text.viewfinder"
         case .record: "record.circle"
+        case .recordRegion: "rectangle.dashed.badge.record"
         }
     }
+
+    /// 录屏的两个动作：录着时按钮都变成停止。
+    public var isRecording: Bool { self == .record || self == .recordRegion }
 
     /// 识字和快速开关里的“截图识字”是同一个 Pro 工具，锁跟着它走。
     public var quickToggle: QuickToggle? {
@@ -51,8 +58,9 @@ public enum CaptureAction: String, CaseIterable, Sendable, Identifiable {
 /// 截图和录屏的文件名，和 macOS 自己起的一样，最近截图才认得出来
 /// （见 `ScreenshotNaming.prefixes`）。
 public enum CaptureFileName {
-    public static func screenshot(at date: Date, timeZone: TimeZone = .current) -> String {
-        "截屏\(stamp(date, timeZone: timeZone)).png"
+    public static func screenshot(at date: Date, timeZone: TimeZone = .current,
+                                  format: CaptureFormat = .png) -> String {
+        "截屏\(stamp(date, timeZone: timeZone)).\(format.fileExtension)"
     }
 
     public static func recording(at date: Date, timeZone: TimeZone = .current) -> String {

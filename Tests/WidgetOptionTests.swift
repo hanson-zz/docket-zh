@@ -106,6 +106,7 @@ final class WidgetOptionTests: XCTestCase {
             .ambient: ["sounds", "volume"],
             .lunar: ["showAlmanac", "showTerm", "workAlert", "workAlertLead"],
             .trash: ["flies", "threshold"],
+            .capture: ["after", "buttons", "delay", "format"],
             .habit: ["showStreak"],
             .week: ["allDay", "calendars"],
             .crypto: ["coins", "currency", "colors", "chart"],

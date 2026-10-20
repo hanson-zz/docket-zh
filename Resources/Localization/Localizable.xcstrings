@@ -1860,6 +1860,17 @@
         }
       }
     },
+    "%@ 秒后截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturing in %@ s"
+          }
+        }
+      }
+    },
     "%@ 秒后换下一张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4122,6 +4133,17 @@
         }
       }
     },
+    "macOS 要求“完全磁盘访问权限”才能读取废纸篓的大小和最近扔的东西。打开设置后把“码头”加入列表并打开开关。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS requires Full Disk Access to read the Trash's size and recently deleted items. Open Settings, add Dockling to the list and turn it on."
+          }
+        }
+      }
+    },
     "yyyy年M月d日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4261,6 +4283,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : ". Works offline for up to %@ days and checks again once online."
+          }
+        }
+      }
+    },
+    "「%@」原来的文件夹已经不在了（%@），点「显示」手动拖出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The original folder of \"%@\" no longer exists (%@). Click Show and drag it out manually."
+          }
+        }
+      }
+    },
+    "「%@」已经不在废纸篓里了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" is no longer in the Trash"
           }
         }
       }
@@ -5365,6 +5409,17 @@
         }
       }
     },
+    "不延时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Delay"
+          }
+        }
+      }
+    },
     "不提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5449,6 +5504,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Don't Use This App"
+          }
+        }
+      }
+    },
+    "不知道「%@」原来在哪，点「显示」在访达里手动拖出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling doesn't know where \"%@\" came from. Click Show and drag it out in Finder."
+          }
+        }
+      }
+    },
+    "不知道原来在哪，点了会说明" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original location unknown; click for details"
           }
         }
       }
@@ -9523,6 +9600,17 @@
         }
       }
     },
+    "全部 ›" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All ›"
+          }
+        }
+      }
+    },
     "全部城市" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12412,6 +12500,39 @@
         }
       }
     },
+    "卡片上最多放 %@ 个，先去掉一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card holds up to %@. Remove one first."
+          }
+        }
+      }
+    },
+    "卡片上的按钮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buttons on the Card"
+          }
+        }
+      }
+    },
+    "卡片上的按钮（最多 4 个）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buttons on the card (up to 4)"
+          }
+        }
+      }
+    },
     "卡片上的顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12672,6 +12793,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Was %@"
+          }
+        }
+      }
+    },
+    "原位置已经有同名的「%@」，没有覆盖" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An item named \"%@\" is already in the original location, so nothing was replaced."
           }
         }
       }
@@ -13332,6 +13464,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just Open %@"
+          }
+        }
+      }
+    },
+    "只拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Only"
           }
         }
       }
@@ -16939,6 +17082,28 @@
         }
       }
     },
+    "存文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save File"
+          }
+        }
+      }
+    },
+    "存文件 + 拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save + Copy"
+          }
+        }
+      }
+    },
     "孟买" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17100,6 +17265,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Installers"
+          }
+        }
+      }
+    },
+    "安装包.dmg" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installer.dmg"
           }
         }
       }
@@ -19377,6 +19553,17 @@
         }
       }
     },
+    "已放回「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put back \"%@\""
+          }
+        }
+      }
+    },
     "已是默认" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19384,6 +19571,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already default"
+          }
+        }
+      }
+    },
+    "已显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown"
           }
         }
       }
@@ -20579,6 +20777,17 @@
         }
       }
     },
+    "延时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delay"
+          }
+        }
+      }
+    },
     "建日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21191,6 +21400,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "System Audio Recording"
+          }
+        }
+      }
+    },
+    "录区域" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Area"
           }
         }
       }
@@ -22302,6 +22522,28 @@
         }
       }
     },
+    "截图已存好，也拷贝了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot saved and copied"
+          }
+        }
+      }
+    },
+    "截图已拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot copied"
+          }
+        }
+      }
+    },
     "截图识字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22309,6 +22551,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text from Screen"
+          }
+        }
+      }
+    },
+    "截完后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After Capture"
+          }
+        }
+      }
+    },
+    "截完：%@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After capture: %@ · %@"
           }
         }
       }
@@ -22720,6 +22984,17 @@
         }
       }
     },
+    "打开标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Markup"
+          }
+        }
+      }
+    },
     "打开系统设置" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23116,6 +23391,17 @@
         }
       }
     },
+    "把文件拖到卡片上即可移到废纸篓。苍蝇的灵感来自 BananaBin。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files onto the card to move them to the Trash. The flies are inspired by BananaBin."
+          }
+        }
+      }
+    },
     "把文件拖到卡片上即可移到废纸篓，可以从废纸篓放回原处。苍蝇的灵感来自 BananaBin。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23420,6 +23706,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to reorder. Turning a switch off hides the widget from the shelf and keeps its settings, so you can turn it back on any time. Apps, folders and groups stay where they are."
+          }
+        }
+      }
+    },
+    "拖动框选要录的区域，单击录整个屏幕，Esc 取消" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to select the area to record, click to record the whole screen. Esc to cancel."
+          }
+        }
+      }
+    },
+    "拖动框选要截的区域，Esc 取消" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to select the area to capture. Esc to cancel."
           }
         }
       }
@@ -24524,6 +24832,39 @@
         }
       }
     },
+    "放回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put Back"
+          }
+        }
+      }
+    },
+    "放回「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put back to \"%@\""
+          }
+        }
+      }
+    },
+    "放回原处" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put Back"
+          }
+        }
+      }
+    },
     "放过的歌会记在这里，点一下重放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24718,6 +25059,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sunset %@"
+          }
+        }
+      }
+    },
+    "旧稿.key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Old Draft.key"
           }
         }
       }
@@ -25008,6 +25360,17 @@
         }
       }
     },
+    "最多放 %@ 个，箭头调整左右顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@. Use the arrows to change the order."
+          }
+        }
+      }
+    },
     "最多添加 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25070,6 +25433,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last 7 days %@"
+          }
+        }
+      }
+    },
+    "最近扔的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Deleted"
           }
         }
       }
@@ -25206,6 +25580,17 @@
         }
       }
     },
+    "未显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
     "未知发件人" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25338,6 +25723,17 @@
         }
       }
     },
+    "格式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format"
+          }
+        }
+      }
+    },
     "格鲁吉亚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25367,6 +25763,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Box"
+          }
+        }
+      }
+    },
+    "框选一块区域录屏（单击录整个屏幕），再点一次停止" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to record an area (click to record the whole screen); click again to stop"
+          }
+        }
+      }
+    },
+    "框选一块区域截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to capture an area"
           }
         }
       }
@@ -25833,6 +26251,17 @@
         }
       }
     },
+    "没有权限把「%@」放回原处，点「显示」在访达里放回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No permission to put \"%@\" back. Click Show and use Put Back in Finder."
+          }
+        }
+      }
+    },
     "没有照片图库的权限" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25928,6 +26357,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't delete the event. Try again later."
+          }
+        }
+      }
+    },
+    "没能放回「%@」：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't put back \"%@\": %@"
           }
         }
       }
@@ -34837,6 +35277,17 @@
         }
       }
     },
+    "点按进入标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to mark up"
+          }
+        }
+      }
+    },
     "点数字复制结果" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34892,6 +35343,17 @@
         }
       }
     },
+    "点缩略图直接进标注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a thumbnail to mark it up"
+          }
+        }
+      }
+    },
     "点色块拷贝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34910,6 +35372,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to select · Double-click to rename"
+          }
+        }
+      }
+    },
+    "点选一个窗口截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a window to capture it"
           }
         }
       }
@@ -40069,6 +40542,17 @@
         }
       }
     },
+    "至少留一个按钮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep at least one button"
+          }
+        }
+      }
+    },
     "舒缓 4-6" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41924,6 +42408,17 @@
         }
       }
     },
+    "读不到截图文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't read the screenshots folder"
+          }
+        }
+      }
+    },
     "读不到输出设备" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43768,6 +44263,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No screenshots yet. Press ⇧⌘3, ⇧⌘4 or ⇧⌘5 to capture the screen."
+          }
+        }
+      }
+    },
+    "还没有截图，截一张就会出现在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No screenshots yet. Take one and it shows up here."
           }
         }
       }

@@ -18,6 +18,9 @@ final class TrashMonitor {
     private(set) var items = 0
     private(set) var needsAccess = false
     private(set) var loaded = false
+    /// 最近扔进来的几个（最新的在前，最多 `TrashedItem.shownLimit` 个），带访达
+    /// 记下的原位置，面板的「最近扔的」用。
+    private(set) var recent: [TrashedItem] = []
     /// When the Trash first went over each threshold anything shows flies
     /// for (the widget's and the shelf Trash icon's), kept across launches
     /// so the hourly flies survive a restart.
@@ -97,6 +100,7 @@ final class TrashMonitor {
         var stamp: (Date?, Int)?
         var items: Int?
         var bytes: Int64?
+        var recent: [TrashedItem]?
     }
 
     nonisolated private static func measure(_ url: URL, previous: (Date?, Int)?, full: Bool) -> TrashReading {
@@ -109,6 +113,7 @@ final class TrashMonitor {
         let stamp = (modified, visible.count)
         let changed = previous.map { $0.0 != stamp.0 || $0.1 != stamp.1 } ?? true
         guard full || changed else { return TrashReading(stamp: stamp, items: visible.count) }
+        let recent = listRecent(url, names: visible)
 
         var total: Int64 = 0
         let keys: [URLResourceKey] = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isRegularFileKey]
@@ -118,21 +123,48 @@ final class TrashMonitor {
                 total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
             }
         }
-        return TrashReading(stamp: stamp, items: visible.count, bytes: total)
+        return TrashReading(stamp: stamp, items: visible.count, bytes: total, recent: recent)
+    }
+
+    /// 按加入废纸篓的时间排出最近几个，并从 .DS_Store 读出访达记下的原位置。
+    nonisolated private static func listRecent(_ url: URL, names: [String]) -> [TrashedItem] {
+        let keys: Set<URLResourceKey> = [.addedToDirectoryDateKey, .contentModificationDateKey,
+                                         .isDirectoryKey, .isPackageKey]
+        let all = names.filter(TrashedItem.isListed).map { name -> TrashedItem in
+            let values = try? url.appendingPathComponent(name).resourceValues(forKeys: keys)
+            let date = values?.addedToDirectoryDate ?? values?.contentModificationDate ?? .distantPast
+            let folder = values?.isDirectory == true && values?.isPackage != true
+            return TrashedItem(trashName: name, date: date, isDirectory: folder)
+        }
+        var recent = TrashedItem.recent(all)
+        guard !recent.isEmpty else { return [] }
+        let store = (try? Data(contentsOf: url.appendingPathComponent(".DS_Store"))) ?? Data()
+        let origins = TrashPutBack.origins(DSStore.records(store))
+        for index in recent.indices {
+            recent[index].origin = origins[recent[index].trashName]
+        }
+        return recent
     }
 
     private func apply(_ result: TrashReading) {
         counting = false
         loaded = true
         needsAccess = result.denied
-        guard !result.denied else { return }
+        guard !result.denied else {
+            if !recent.isEmpty { recent = [] }
+            return
+        }
         lastStamp = result.stamp
         if let items = result.items { self.items = items }
+        if let recent = result.recent, recent != self.recent { self.recent = recent }
         if let bytes = result.bytes {
             self.bytes = bytes
             lastFullCount = .now
         }
-        if items == 0 { bytes = 0 }
+        if items == 0 {
+            bytes = 0
+            if !recent.isEmpty { recent = [] }
+        }
         updateOverSince()
     }
 
@@ -161,6 +193,53 @@ final class TrashMonitor {
 
     func open() {
         NSWorkspace.shared.open(Self.trashURL)
+    }
+
+    /// 废纸篓里这一项的位置。
+    func location(of item: TrashedItem) -> URL {
+        Self.trashURL.appendingPathComponent(item.trashName)
+    }
+
+    /// 在访达里选中它（访达的「放回原处」和手动拖出来都从这里开始）。
+    func reveal(_ item: TrashedItem) {
+        NSWorkspace.shared.activateFileViewerSelecting([location(of: item)])
+    }
+
+    /// 放回访达记下的原位置。成功返回 nil，否则返回给用户看的一句话：不知道原位置、
+    /// 原文件夹不在了、原位置有同名的、没有权限、或者这一项已经不在废纸篓里了。
+    func putBack(_ item: TrashedItem) -> String? {
+        let manager = FileManager.default
+        let source = location(of: item)
+        guard manager.fileExists(atPath: source.path) else {
+            check(force: true)
+            return tr("「\(item.displayName)」已经不在废纸篓里了")
+        }
+        var isFolder: ObjCBool = false
+        let folderExists = item.origin.map { manager.fileExists(atPath: $0.folder, isDirectory: &isFolder) } ?? false
+        let targetExists = item.origin.map { manager.fileExists(atPath: $0.path) } ?? false
+        let plan = TrashPutBack.plan(origin: item.origin, folderExists: folderExists && isFolder.boolValue,
+                                     targetExists: targetExists)
+        guard case .move(let path) = plan else {
+            return TrashPutBack.message(plan, item: item.displayName)
+        }
+        do {
+            try manager.moveItem(at: source, to: URL(fileURLWithPath: path))
+        } catch {
+            check(force: true)
+            if Self.isPermissionError(error) { return TrashPutBack.deniedMessage(item: item.displayName) }
+            return tr("没能放回「\(item.displayName)」：\(error.localizedDescription)")
+        }
+        recent.removeAll { $0.id == item.id }
+        check(force: true)
+        return nil
+    }
+
+    nonisolated private static func isPermissionError(_ error: Error) -> Bool {
+        let ns = error as NSError
+        if ns.domain == NSCocoaErrorDomain,
+           [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(ns.code) { return true }
+        let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError) ?? ns
+        return underlying.domain == NSPOSIXErrorDomain && [Int(EPERM), Int(EACCES)].contains(underlying.code)
     }
 
     /// Asks first, then has Finder empty it, which is the one public way to

@@ -89,6 +89,8 @@ struct WidgetDetailBody: View {
             LunarDetail(instance: instance, context: context)
         case .trash:
             TrashDetail(instance: instance, context: context)
+        case .capture:
+            CaptureDetail(instance: instance, context: context)
         case .habit:
             HabitDetail(instance: instance, context: context)
         case .week:
