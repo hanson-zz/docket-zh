@@ -380,8 +380,11 @@ public enum WidgetCatalog {
               defaults: c(["folder": .string(""), "allScreens": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // What Command-Tab lists: the regular apps that are open.
-        Entry(kind: .appSwitcher, name: tr("应用切换器"), category: .appsAndFolders, defaults: c([:]),
+        // What Command-Tab lists: the regular apps that are open. 固定的 App
+        // （`pinned`，没开也在）和隐藏的 App（`hidden`）在面板「编辑」里管，不列在设置里；
+        // `sort` 是「正在运行」的排序（见 AppSwitcherList）。
+        Entry(kind: .appSwitcher, name: tr("应用切换器"), category: .appsAndFolders,
+              defaults: c([AppSwitcherList.sortKey: .string(AppSwitcherList.Sort.recent.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Each link is "标题 网址" or just the address; see Bookmark.

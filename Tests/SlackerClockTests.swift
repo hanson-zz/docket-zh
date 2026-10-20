@@ -42,22 +42,115 @@ final class SlackerClockTests: XCTestCase {
         XCTAssertTrue(s.followsHolidays)
     }
 
-    func testTheEndHasToBeAfterTheStart() {
+    func testAnEndBeforeTheStartIsANightShift() {
         var config = WidgetConfig()
         config.set("start", .string("18:00"))
         config.set("end", .string("09:00"))
         let s = SlackerClock.Settings(config: config)
-        XCTAssertEqual(s.start, 9 * 60, "不合格的时间段退回 09:00 到 18:00")
-        XCTAssertEqual(s.end, 18 * 60)
-        XCTAssertFalse(SlackerClock.isValidWindow(start: 600, end: 600))
-        XCTAssertFalse(SlackerClock.isValidWindow(start: 22 * 60, end: 2 * 60), "不支持跨午夜")
+        XCTAssertEqual(s.start, 18 * 60, "下班早于上班是夜班，不再退回默认")
+        XCTAssertEqual(s.end, 9 * 60)
+        XCTAssertTrue(s.isOvernight)
+        XCTAssertEqual(s.workSeconds, 15 * 3600)
+        XCTAssertFalse(SlackerClock.isValidWindow(start: 600, end: 600), "开始和结束一样不合格")
+        XCTAssertFalse(SlackerClock.isValidWindow(start: 0, end: 1440), "00:00 到 24:00 等于开始和结束一样")
+        XCTAssertFalse(SlackerClock.isValidWindow(start: 1440, end: 600))
+        XCTAssertFalse(SlackerClock.isValidWindow(start: 600, end: -1))
+        XCTAssertTrue(SlackerClock.isValidWindow(start: 22 * 60, end: 2 * 60), "夜班合格")
+        XCTAssertTrue(SlackerClock.isValidWindow(start: 22 * 60, end: 0), "00:00 下班也是夜班")
         XCTAssertTrue(SlackerClock.isValidWindow(start: 8 * 60 + 30, end: 17 * 60 + 30))
+
+        config.set("start", .string("10:00"))
+        config.set("end", .string("10:00"))
+        let same = SlackerClock.Settings(config: config)
+        XCTAssertEqual([same.start, same.end], [9 * 60, 18 * 60], "开始和结束一样时退回 09:00 到 18:00")
+        XCTAssertFalse(same.isOvernight)
 
         config.set("start", .string("8:30"))
         config.set("end", .string("17:30"))
         let ok = SlackerClock.Settings(config: config)
         XCTAssertEqual(ok.start, 8 * 60 + 30)
         XCTAssertEqual(ok.end, 17 * 60 + 30)
+        XCTAssertFalse(ok.isOvernight)
+    }
+
+    // MARK: Night shift
+
+    /// 22:00 至次日 06:00，周一到周五，不跟法定节假日（2026-10-14 是周三）。
+    private let night = SlackerClock.Settings(start: 22 * 60, end: 6 * 60, followsHolidays: false)
+
+    private func phase(_ date: Date, _ settings: SlackerClock.Settings) -> SlackerClock.Phase {
+        SlackerClock.phase(now: date, settings: settings, calendar: calendar, known: known)
+    }
+
+    func testNightShiftCountsDownAcrossMidnight() {
+        XCTAssertEqual(phase(at(2026, 10, 14, 23), night), .working(secondsLeft: 7 * 3600), "周三晚上上班")
+        XCTAssertEqual(phase(at(2026, 10, 14, 22), night), .working(secondsLeft: 8 * 3600))
+        XCTAssertEqual(phase(at(2026, 10, 15, 3), night), .working(secondsLeft: 3 * 3600), "周四凌晨还在上周三那一班")
+        XCTAssertEqual(phase(at(2026, 10, 15, 5, 59, 59), night), .working(secondsLeft: 1))
+        XCTAssertEqual(phase(at(2026, 10, 15, 6), night), .afterWork(secondsSince: 0), "06:00 下班")
+        XCTAssertEqual(phase(at(2026, 10, 15, 7), night), .afterWork(secondsSince: 3600))
+        XCTAssertEqual(phase(at(2026, 10, 15, 12), night), .beforeWork(secondsLeft: 10 * 3600), "白天等今晚上班")
+        XCTAssertEqual(SlackerClock.title(phase(at(2026, 10, 15, 21), night)), "距离上班 01:00")
+        XCTAssertEqual(SlackerClock.title(phase(at(2026, 10, 15, 3), night)), "距离下班 03:00:00")
+    }
+
+    func testNightShiftOnTheWeekend() {
+        // 周五晚上那一班到周六 06:00 才下班。
+        XCTAssertEqual(phase(at(2026, 10, 17, 3), night), .working(secondsLeft: 3 * 3600))
+        XCTAssertEqual(phase(at(2026, 10, 17, 7), night), .afterWork(secondsSince: 3600))
+        XCTAssertEqual(phase(at(2026, 10, 17, 12), night), .dayOff(greeting: "周末快乐"))
+        XCTAssertEqual(phase(at(2026, 10, 17, 23), night), .dayOff(greeting: "周末快乐"), "周六晚上不上班")
+        XCTAssertEqual(phase(at(2026, 10, 18, 3), night), .dayOff(greeting: "周末快乐"))
+        // 周一凌晨：周日没上班，等周一晚上。
+        XCTAssertEqual(phase(at(2026, 10, 19, 3), night), .beforeWork(secondsLeft: 19 * 3600))
+        XCTAssertEqual(phase(at(2026, 10, 19, 22, 30), night), .working(secondsLeft: 7 * 3600 + 1800))
+    }
+
+    func testNightShiftEndingAtMidnight() {
+        let late = SlackerClock.Settings(start: 22 * 60, end: 0, followsHolidays: false)
+        XCTAssertTrue(late.isOvernight)
+        XCTAssertEqual(late.workSeconds, 2 * 3600)
+        XCTAssertEqual(phase(at(2026, 10, 14, 23, 30), late), .working(secondsLeft: 1800))
+        XCTAssertEqual(phase(at(2026, 10, 15, 0, 30), late), .afterWork(secondsSince: 1800))
+        XCTAssertEqual(SlackerClock.hoursLine(late), "夜班：22:00 至次日 00:00")
+    }
+
+    func testNightShiftProgressAndMoney() {
+        let p = phase(at(2026, 10, 15, 3), night)
+        let progress = SlackerClock.progress(p, settings: night)
+        XCTAssertEqual(progress?.done, 5 * 3600)
+        XCTAssertEqual(progress?.left, 3 * 3600)
+        XCTAssertEqual(progress?.fraction ?? 0, 0.625, accuracy: 1e-9)
+        XCTAssertEqual(SlackerClock.earnedToday(phase: p, settings: night), 62.5, accuracy: 1e-9)
+        XCTAssertEqual(SlackerClock.waterLevel(p, settings: night), 0.625, accuracy: 1e-9)
+        XCTAssertNil(SlackerClock.progress(phase(at(2026, 10, 15, 12), night), settings: night))
+        XCTAssertEqual(SlackerClock.progressLine(done: 4 * 3600 + 24 * 60, left: 3 * 3600 + 36 * 60),
+                       "已上 4 小时 24 分 · 还有 3 小时 36 分")
+    }
+
+    func testNightShiftCountsTowardTheDayItStarted() {
+        // 10 月 1 日是周四。周四凌晨 3 点：周三那一班还没下，算到 13 日共 9 班。
+        XCTAssertEqual(SlackerClock.workdaysPassedThisMonth(now: at(2026, 10, 15, 3), settings: night,
+                                                            calendar: calendar, known: known), 9)
+        XCTAssertEqual(SlackerClock.workdaysPassedThisMonth(now: at(2026, 10, 15, 7), settings: night,
+                                                            calendar: calendar, known: known), 10)
+        XCTAssertEqual(SlackerClock.workdaysPassedThisMonth(now: at(2026, 10, 15, 23), settings: night,
+                                                            calendar: calendar, known: known), 10,
+                       "今晚这一班明天下班才算")
+        XCTAssertEqual(SlackerClock.workdaysPassedThisMonth(now: at(2026, 10, 1, 7), settings: night,
+                                                            calendar: calendar, known: known), 0,
+                       "9 月 30 日那一班算 9 月")
+    }
+
+    func testHoursLineAndDurations() {
+        XCTAssertEqual(SlackerClock.hoursLine(night), "夜班：22:00 至次日 06:00")
+        XCTAssertEqual(SlackerClock.hoursLine(standard), "工作时间：09:00 至 18:00")
+        XCTAssertEqual(SlackerClock.duration(seconds: 30), "不到 1 分")
+        XCTAssertEqual(SlackerClock.duration(seconds: 600), "10 分")
+        XCTAssertEqual(SlackerClock.duration(seconds: 3600), "1 小时")
+        XCTAssertEqual(SlackerClock.duration(seconds: 7 * 3600 + 24 * 60 + 59), "7 小时 24 分")
+        XCTAssertEqual(SlackerClock.progress(phase(at(2026, 10, 14, 13), standard), settings: standard)?.done,
+                       4 * 3600, "白班进度照旧")
     }
 
     func testItemsAreOrderedDedupedAndCapped() {

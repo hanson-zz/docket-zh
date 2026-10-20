@@ -9,7 +9,11 @@ import Foundation
 /// 规则（也写在 README 里）：
 /// - 工作日 = 设置里勾选的星期几；打开“按法定节假日”时，法定放假日不上班，
 ///   调休上班日要上班（安排来自 `HolidaySchedule`，和“农历与假期”同一份）。
-/// - 工作时间是 [开始, 结束)，结束必须晚于开始，否则按 09:00 到 18:00。
+/// - 工作时间是 [开始, 结束)。结束早于开始是夜班：下班在第二天（22:00 至次日 06:00），
+///   这一班算在上班那天，那天是不是工作日决定这一班上不上；开始和结束一样或读不出来时
+///   按 09:00 到 18:00。
+/// - 夜班的早上（还没到下班）在上昨天那一班；下班后 2 小时内“下班啦”，再往后今天要上班就
+///   等上班，不上班就是今天的休息日标题。
 /// - 上班前 2 小时内显示“距离上班 HH:MM”，更早显示“还没上班”；
 ///   下班后 2 小时内显示“下班啦”，之后显示“休息时间”。
 /// - 非工作日：周六周日“周末快乐”，其他星期几“休息日快乐”，
@@ -171,19 +175,68 @@ public enum SlackerClock {
                       currencySymbol: config.string(SlackerClock.currencyKey, default: "¥"))
         }
 
-        /// 一天上班多少秒。
-        public var workSeconds: Double { Double(end - start) * 60 }
+        /// 下班早于上班：夜班，下班在第二天。
+        public var isOvernight: Bool { SlackerClock.isOvernight(start: start, end: end) }
+
+        /// 一班上多少秒（夜班跨过午夜也算对）。
+        public var workSeconds: Double { Double(SlackerClock.shiftMinutes(start: start, end: end)) * 60 }
     }
 
-    /// 结束必须晚于开始；不合格（含跨午夜）时退回 09:00 到 18:00。
+    /// 合格的时间段原样返回（结束早于开始是夜班）；开始和结束一样、超出范围时退回 09:00 到 18:00。
     public static func window(start: Int, end: Int) -> (start: Int, end: Int) {
-        let valid = (0..<1440).contains(start) && (1...1440).contains(end) && end > start
-        return valid ? (start, end) : (defaultStart, defaultEnd)
+        isValidWindow(start: start, end: end) ? (start, end) : (defaultStart, defaultEnd)
     }
 
-    /// 结束时间是否晚于开始，面板用来拦住不合格的输入。
+    /// 时间段是否合格：开始在 00:00 到 23:59，结束在 00:00 到 24:00，两者不一样。
+    /// 结束早于开始是夜班（下班在第二天），也算合格。
     public static func isValidWindow(start: Int, end: Int) -> Bool {
-        (0..<1440).contains(start) && (1...1440).contains(end) && end > start
+        guard (0..<1440).contains(start), (0...1440).contains(end) else { return false }
+        return end % 1440 != start
+    }
+
+    /// 结束早于开始（含 00:00 下班）：下班在第二天。
+    public static func isOvernight(start: Int, end: Int) -> Bool {
+        end < start
+    }
+
+    /// 一班多少分钟。
+    public static func shiftMinutes(start: Int, end: Int) -> Int {
+        end > start ? end - start : end + 1440 - start
+    }
+
+    /// 面板上的一行：“夜班：22:00 至次日 06:00”，白班“工作时间：09:00 至 18:00”。
+    public static func hoursLine(_ settings: Settings) -> String {
+        let from = hhmm(settings.start), to = hhmm(settings.end)
+        return settings.isOvernight ? tr("夜班：\(from) 至次日 \(to)") : tr("工作时间：\(from) 至 \(to)")
+    }
+
+    /// 540 -> "09:00"，1440 -> "24:00"。
+    public static func hhmm(_ minutes: Int) -> String {
+        let m = max(0, min(minutes, 1440))
+        return String(format: "%02d:%02d", m / 60, m % 60)
+    }
+
+    /// 上班中的进度：已上多少秒、还有多少秒、比例 0...1；不在上班时 nil。
+    public static func progress(_ phase: Phase, settings: Settings) -> (done: Int, left: Int, fraction: Double)? {
+        guard case .working(let left) = phase else { return nil }
+        let total = Int(settings.workSeconds)
+        guard total > 0 else { return nil }
+        let l = min(max(left, 0), total)
+        return (total - l, l, Double(total - l) / Double(total))
+    }
+
+    /// “4 小时 24 分”，不到 1 小时“24 分”，不到 1 分钟“不到 1 分”。
+    public static func duration(seconds: Int) -> String {
+        let minutes = max(0, seconds) / 60
+        if minutes == 0 { return tr("不到 1 分") }
+        let h = minutes / 60, m = minutes % 60
+        if h == 0 { return tr("\(m) 分") }
+        return m == 0 ? tr("\(h) 小时") : tr("\(h) 小时 \(m) 分")
+    }
+
+    /// 面板进度条下的一行：“已上 4 小时 24 分 · 还有 3 小时 36 分”。
+    public static func progressLine(done: Int, left: Int) -> String {
+        tr("已上 \(duration(seconds: done)) · 还有 \(duration(seconds: left))")
     }
 
     /// 认得的小格按固定顺序排好，去重，最多 4 个。
@@ -268,6 +321,9 @@ public enum SlackerClock {
 
     public static func phase(now: Date, settings: Settings, calendar: Calendar = SlackerClock.calendar,
                              known: [Int: [HolidayDay]] = HolidaySchedule.bundled) -> Phase {
+        if settings.isOvernight {
+            return overnightPhase(now: now, settings: settings, calendar: calendar, known: known)
+        }
         guard isWorkday(now, settings: settings, calendar: calendar, known: known) else {
             return .dayOff(greeting: greeting(now, settings: settings, calendar: calendar, known: known))
         }
@@ -277,6 +333,32 @@ public enum SlackerClock {
         if second < start { return .beforeWork(secondsLeft: start - second) }
         if second < end { return .working(secondsLeft: end - second) }
         return .afterWork(secondsSince: second - end)
+    }
+
+    /// 夜班：这一班算在上班那天。今天上不上看今天，凌晨到下班之间看昨天那一班。
+    static func overnightPhase(now: Date, settings: Settings, calendar: Calendar,
+                               known: [Int: [HolidayDay]]) -> Phase {
+        let midnight = calendar.startOfDay(for: now)
+        let second = Int(now.timeIntervalSince(midnight).rounded(.down))
+        let start = settings.start * 60, end = settings.end * 60, day = 86_400
+        let today = isWorkday(now, settings: settings, calendar: calendar, known: known)
+        let yesterdayDate = calendar.date(byAdding: .day, value: -1, to: midnight) ?? midnight.addingTimeInterval(-86_400)
+        let yesterday = isWorkday(yesterdayDate, settings: settings, calendar: calendar, known: known)
+        func off() -> Phase { .dayOff(greeting: greeting(now, settings: settings, calendar: calendar, known: known)) }
+        // 凌晨：还在上昨天那一班。
+        if second < end {
+            if yesterday { return .working(secondsLeft: end - second) }
+            return today ? .beforeWork(secondsLeft: start - second) : off()
+        }
+        // 晚上：今天这一班已经开始。
+        if second >= start, today {
+            return .working(secondsLeft: day - second + end)
+        }
+        // 白天（或今天不上班的晚上）：昨天那一班下了，今天的还没开始。
+        let since = second - end
+        if yesterday, since < justOffSeconds { return .afterWork(secondsSince: since) }
+        if today { return .beforeWork(secondsLeft: start - second) }
+        return off()
     }
 
     /// 标题。
@@ -451,8 +533,9 @@ public enum SlackerClock {
         }
     }
 
-    /// 本月已赚：日收入 x 本月 1 号到今天（含）已经过去的工作日数。
+    /// 本月已赚：日收入 x 本月 1 号到今天（含）已经下了班的班数。
     /// 今天是工作日时只有下班后才算进去，周末和节假日今天本来就不算。
+    /// 夜班算在上班那天：昨天那一班要到今天下班才算，今天这一班明天才算。
     public static func earnedThisMonth(now: Date, settings: Settings, calendar: Calendar = SlackerClock.calendar,
                                        known: [Int: [HolidayDay]] = HolidaySchedule.bundled) -> Double {
         Double(workdaysPassedThisMonth(now: now, settings: settings, calendar: calendar, known: known)) * settings.income
@@ -461,14 +544,18 @@ public enum SlackerClock {
     public static func workdaysPassedThisMonth(now: Date, settings: Settings, calendar: Calendar = SlackerClock.calendar,
                                                known: [Int: [HolidayDay]] = HolidaySchedule.bundled) -> Int {
         let today = calendar.startOfDay(for: now)
+        let second = Int(now.timeIntervalSince(today).rounded(.down))
+        let offDuty = second >= settings.end * 60
+        // 最后一个可能已经下班的班是哪天上的：白班是今天，夜班是昨天。
+        let lastShift = settings.isOvernight ? (calendar.date(byAdding: .day, value: -1, to: today) ?? today) : today
         var day = firstOfMonth(today, calendar: calendar)
         var count = 0
-        while day < today {
-            if isWorkday(day, settings: settings, calendar: calendar, known: known) { count += 1 }
+        while day <= lastShift {
+            if day < lastShift || offDuty,
+               isWorkday(day, settings: settings, calendar: calendar, known: known) { count += 1 }
             guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
             day = next
         }
-        if case .afterWork = phase(now: now, settings: settings, calendar: calendar, known: known) { count += 1 }
         return count
     }
 

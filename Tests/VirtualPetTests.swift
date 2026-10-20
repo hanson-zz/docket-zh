@@ -15,6 +15,21 @@ final class VirtualPetTests: XCTestCase {
 
     // MARK: Time passing
 
+    func testANameFallsBackToTheCharacter() {
+        var config = WidgetConfig()
+        XCTAssertEqual(VirtualPet.name(config, fallback: "小熊猫"), "小熊猫", "没起名用角色名")
+        config.set(VirtualPet.nameKey, .string("  团子 "))
+        XCTAssertEqual(VirtualPet.name(config, fallback: "小熊猫"), "团子")
+        config.set(VirtualPet.nameKey, .string("   "))
+        XCTAssertEqual(VirtualPet.name(config, fallback: "柴犬"), "柴犬", "空名回到默认")
+        config.set(VirtualPet.nameKey, .string("一二三四五六七八九十"))
+        XCTAssertEqual(VirtualPet.name(config, fallback: "小熊猫"), "一二三四五六七八", "最多 8 个字")
+        XCTAssertEqual(VirtualPet.cleanName("团\n子"), "团 子", "换行换成空格")
+        XCTAssertEqual(VirtualPet.cleanName("🐼🐼🐼🐼🐼🐼🐼🐼🐼").count, 8, "表情按一个字算")
+        XCTAssertEqual(VirtualPet.cleanName("一二三四五六七 八"), "一二三四五六七", "截断后不留尾巴空格")
+        XCTAssertEqual(PetAlert(date: .now, sick: true, line: "").message(name: "团子").title, "团子生病了")
+    }
+
     func testNeedsRunDownByTheHour() {
         let start = at(2026, 10, 14, 8)
         let pet = PetState(food: 80, mood: 80, energy: 80, clean: 80, at: start)

@@ -686,6 +686,24 @@ public enum VirtualPet {
         config.bool(dryKey) && missedDays >= dryDays
     }
 
+    /// 自己起的名字：面板里点名字改，卡片、悬停和通知都用它。没起或只写了空格时用角色名
+    /// （小熊猫、柴犬…）。只在面板里改，不列在设置里。
+    public static let nameKey = "name"
+    public static let maxNameLength = 8
+
+    /// 去掉首尾空白，换行换成空格，最多 8 个字（按看到的字数，表情算一个）。
+    public static func cleanName(_ raw: String) -> String {
+        let flat = raw.components(separatedBy: .newlines).joined(separator: " ")
+        let trimmed = flat.trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(trimmed.prefix(maxNameLength)).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// 卡片和通知上的名字：起过名就用名字，没起或清空了回到角色名 `fallback`。
+    public static func name(_ config: WidgetConfig, fallback: String) -> String {
+        let name = cleanName(config.string(nameKey))
+        return name.isEmpty ? fallback : name
+    }
+
     /// A believable pet for the library and the screenshots.
     public static func sample(now: Date, calendar: Calendar = HabitTracker.calendar) -> PetState {
         let cared = Set((0..<6).compactMap { calendar.date(byAdding: .day, value: -$0, to: now) }

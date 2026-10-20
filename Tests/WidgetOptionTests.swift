@@ -119,6 +119,7 @@ final class WidgetOptionTests: XCTestCase {
             .perfectDay: ["look"],
             .podcast: ["notify"],
             .toggles: ["actions", "keepAwakeFor", "showNames"],
+            .appSwitcher: ["sort"],
             // 时钟的子选项来自样式注册表，各由 ClockStyles.face 读（见 ClockStyleTests）。
             .clock: Set(["seconds"] + ClockStyles.optionKeys),
             .aiAssistant: [],

@@ -25,6 +25,9 @@ public final class AppCatalog {
     /// `running` there costs hundreds of string compares a frame. Observed,
     /// not ignored, so a launch or quit still invalidates the tiles.
     public private(set) var runningIDs: Set<String> = []
+    /// 最近切到的 App（bundle id），最新的在前，应用切换器「最近使用」排序用。
+    /// 只记在内存里：码头重启后从当时的前台 App 记起，其余按打开先后。
+    public private(set) var recentIDs: [String] = []
 
     @ObservationIgnored private var iconCache: [String: NSImage] = [:]
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
@@ -51,6 +54,7 @@ public final class AppCatalog {
                            isActive: $0.isActive)
             }
         runningIDs = Set(running.map(\.id))
+        recentIDs = AppSwitcherList.noteActive(running.first(where: \.isActive)?.id, recent: recentIDs)
     }
 
     public func isRunning(bundleID: String) -> Bool {

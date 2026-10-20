@@ -44,7 +44,7 @@ struct SlackerDetail: View {
                     .padding(.bottom, 4)
                 }
                 .scrollIndicators(.never)
-                .frame(height: 360)
+                .frame(height: 330)
             }
             .disabled(context.isPreview)
         }
@@ -56,8 +56,39 @@ struct SlackerDetail: View {
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             let now = context.isPreview ? SlackerSamples.now : tick.date
             let reading = SlackerClock.reading(now: now, settings: settings, known: HolidayService.shared.known)
-            let look = SlackerLook(config: config, art: reading.art)
-            SlackerFace(reading: reading, look: look, metrics: .panel)
+            VStack(alignment: .leading, spacing: 8) {
+                face(reading)
+                if let progress = SlackerClock.progress(reading.phase, settings: settings) {
+                    progressRow(progress)
+                }
+            }
+        }
+    }
+
+    /// 上班中：一条进度和“已上 4 小时 24 分 · 还有 3 小时 36 分”，夜班跨过午夜也对。
+    private func progressRow(_ progress: (done: Int, left: Int, fraction: Double)) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.15))
+                    Capsule().fill(accent)
+                        .frame(width: max(6, proxy.size.width * progress.fraction))
+                }
+            }
+            .frame(height: 8)
+            Text(SlackerClock.progressLine(done: progress.done, left: progress.left))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .monospacedDigit()
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func face(_ reading: SlackerClock.Reading) -> some View {
+        let look = SlackerLook(config: config, art: reading.art)
+        return SlackerFace(reading: reading, look: look, metrics: .panel)
                 .padding(.leading, 14)
                 .padding(.trailing, 8)
                 .frame(maxWidth: .infinity)
@@ -87,7 +118,6 @@ struct SlackerDetail: View {
                 .environment(\.colorScheme, .light)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(SlackerLook.spoken(reading))
-        }
     }
 
     // MARK: Rows
@@ -128,9 +158,16 @@ struct SlackerDetail: View {
                 }
             }
             if timeWarning {
-                Text("下班时间要晚于上班时间，暂不支持跨午夜。")
-                    .font(.system(size: 10))
+                Text("上班和下班不能是同一时间。")
+                    .font(.system(size: 13))
                     .foregroundStyle(Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.35))
+                    .padding(.horizontal, 10)
+            } else if s.isOvernight {
+                // 下班早于上班按第二天算。
+                Text(SlackerClock.hoursLine(s))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
                     .padding(.horizontal, 10)
             }
         }
@@ -420,7 +457,7 @@ struct SlackerDetail: View {
         write { $0.set(SlackerClock.workdaysKey, .list(list)) }
     }
 
-    /// 只写合格的时间段；不合格时提示，卡片照旧。
+    /// 只写合格的时间段（下班早于上班是夜班，也合格）；开始和结束一样时提示，卡片照旧。
     private func setHours(start: Int, end: Int) {
         guard SlackerClock.isValidWindow(start: start, end: end) else {
             timeWarning = true

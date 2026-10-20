@@ -13,6 +13,14 @@ struct PetDetail: View {
 
     private var accent: Color { panelTint.accent(or: PetStyle.accent) }
 
+    /// 改名：点名字变成输入框，回车或点别处存下，Esc 放弃。
+    @State private var editingName = false
+    @State private var nameDraft = ""
+    @FocusState private var nameFocused: Bool
+
+    /// 自己起的名字，没起时是角色名。
+    private var petName: String { VirtualPet.name(instance.config, fallback: character.title) }
+
     private var character: WaterCharacter {
         WaterCharacter.petShown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
@@ -62,9 +70,7 @@ struct PetDetail: View {
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
-                Text(character.title)
-                    .font(.system(size: 26, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                nameView
                 Text(VirtualPet.statusLine(state, now: now, dried: dried, melted: melted))
                     .font(WidgetStyle.label(12))
                     .foregroundStyle(look == .sick || look == .hungry || look == .dried || look == .melted
@@ -86,6 +92,71 @@ struct PetDetail: View {
                 .monospacedDigit()
                 .help(tr("连续照顾 \(streak) 天"))
         }
+    }
+
+    // MARK: Name
+
+    @ViewBuilder
+    private var nameView: some View {
+        if editingName {
+            VStack(alignment: .leading, spacing: 3) {
+                TextField("", text: $nameDraft, prompt: Text(character.title))
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .focused($nameFocused)
+                    .onSubmit { commitName() }
+                    .onExitCommand { editingName = false }
+                    .padding(.horizontal, 8)
+                    .frame(width: 130, height: 32)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.1)))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(accent, lineWidth: 1.2)
+                    }
+                    .onChange(of: nameFocused) { _, focused in
+                        if !focused, editingName { commitName() }
+                    }
+                Text(tr("最多 \(VirtualPet.maxNameLength) 个字"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(nameDraft.trimmingCharacters(in: .whitespacesAndNewlines).count
+                                     > VirtualPet.maxNameLength
+                                     ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
+                                     : .white.opacity(0.6))
+            }
+        } else {
+            Button {
+                guard !context.isPreview else { return }
+                nameDraft = instance.config.string(VirtualPet.nameKey).isEmpty ? "" : petName
+                editingName = true
+                nameFocused = true
+            } label: {
+                HStack(spacing: 5) {
+                    Text(verbatim: petName)
+                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                    if !context.isPreview {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("点名字改名，最多 \(VirtualPet.maxNameLength) 个字"))
+            .accessibilityLabel(tr("名字：\(petName)，点按改名"))
+        }
+    }
+
+    /// 存下名字：去掉空白、最多 8 个字；清空或和角色名一样时去掉，回到角色名。
+    private func commitName() {
+        editingName = false
+        guard !context.isPreview else { return }
+        let name = VirtualPet.cleanName(nameDraft)
+        let value: WidgetConfig.Value? = name.isEmpty || name == character.title ? nil : .string(name)
+        guard instance.config.values[VirtualPet.nameKey] != value else { return }
+        WidgetWriter.write(instance) { $0.set(VirtualPet.nameKey, value) }
     }
 
     // MARK: Needs

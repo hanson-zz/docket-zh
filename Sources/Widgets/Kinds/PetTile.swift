@@ -22,6 +22,9 @@ struct PetTile: View {
         WaterCharacter.petShown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
     }
 
+    /// 自己起的名字，没起时是角色名（见 `VirtualPet.name`）。
+    private var petName: String { VirtualPet.name(instance.config, fallback: character.title) }
+
     @AppStorage(VirtualPet.missedDaysDefault) private var missedDays = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -53,7 +56,7 @@ struct PetTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(tr("电子宠物\(character.title)，\(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))"))
+        .accessibilityLabel(tr("电子宠物\(petName)，\(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))"))
         .onAppear { collectTreats() }
         .onChange(of: context.now) { _, _ in collectTreats() }
         // Rescheduled when the stored state changes (something was done for
@@ -62,18 +65,18 @@ struct PetTile: View {
     }
 
     private var alertKey: String {
-        "\(instance.config.double("at"))|\(instance.config.bool("notify"))|\(character.rawValue)"
+        "\(instance.config.double("at"))|\(instance.config.bool("notify"))|\(character.rawValue)|\(petName)"
     }
 
     private func scheduleAlert() {
         guard !context.isPreview else { return }
         guard instance.config.bool("notify") else {
-            PetNotifier.shared.update(instance, alert: nil, name: character.title)
+            PetNotifier.shared.update(instance, alert: nil, name: petName)
             return
         }
         let now = Date.now
         let alert = VirtualPet.nextAlert(VirtualPet.state(instance.config, now: now), after: now)
-        PetNotifier.shared.update(instance, alert: alert, name: character.title)
+        PetNotifier.shared.update(instance, alert: alert, name: petName)
     }
 
     private func wide(_ s: PetState, look: PetLook) -> some View {
@@ -81,8 +84,9 @@ struct PetTile: View {
         return HStack(spacing: 6) {
             PetFigure(character: character, look: look, height: 54,
                       effect: VirtualPet.effect(s, now: context.now))
+                .help(petName)
             VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: "\(character.title) · \(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
+                Text(verbatim: "\(petName) · \(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(PetStyle.headline(look: look, health: s.health))
                     .lineLimit(1)
@@ -108,6 +112,7 @@ struct PetTile: View {
         return VStack(spacing: 4) {
             PetFigure(character: character, look: look, height: 40,
                       effect: VirtualPet.effect(s, now: context.now))
+                .help(petName)
             Text(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))
                 .font(WidgetStyle.caption(9))
                 .foregroundStyle(PetStyle.tint(look: look, health: s.health))
@@ -557,6 +562,8 @@ enum PetStyle {
 final class PetNotifier {
     static let shared = PetNotifier()
     private var scheduled: [UUID: Date] = [:]
+    /// 排下那条通知时用的名字：改名后同一时刻的通知要换成新名字重排。
+    private var scheduledNames: [UUID: String] = [:]
     private var asked = false
     private let presenter = BannerPresenter()
 
@@ -565,13 +572,16 @@ final class PetNotifier {
     func update(_ instance: WidgetInstance, alert: PetAlert?, name: String) {
         let id = Self.identifier(instance.id)
         guard let alert, alert.date > .now else {
+            scheduledNames[instance.id] = nil
             if scheduled.removeValue(forKey: instance.id) != nil {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
             }
             return
         }
-        if let existing = scheduled[instance.id], abs(existing.timeIntervalSince(alert.date)) < 1 { return }
+        if let existing = scheduled[instance.id], abs(existing.timeIntervalSince(alert.date)) < 1,
+           scheduledNames[instance.id] == name { return }
         scheduled[instance.id] = alert.date
+        scheduledNames[instance.id] = name
         let message = alert.message(name: name)
         let date = alert.date
         Task { await schedule(id: id, at: date, title: message.title, body: message.body) }

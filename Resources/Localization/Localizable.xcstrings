@@ -34,6 +34,17 @@
         }
       }
     },
+    " · 管理" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · Manage"
+          }
+        }
+      }
+    },
     " 分" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -789,6 +800,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ pomodoros · No. %@ in progress"
+          }
+        }
+      }
+    },
+    "%@ 个窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ windows"
           }
         }
       }
@@ -2806,6 +2828,17 @@
         }
       }
     },
+    "%@（已最小化）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (minimized)"
+          }
+        }
+      }
+    },
     "%@（当前）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2835,6 +2868,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ (in use)"
+          }
+        }
+      }
+    },
+    "%@（没开，点了启动）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (not open, click to open)"
           }
         }
       }
@@ -2945,6 +2989,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@. Counted on this lunar date each year; leap months count as regular months, and months without a 30th use the 29th."
+          }
+        }
+      }
+    },
+    "%@，没开，点按启动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, not open, click to open"
           }
         }
       }
@@ -4914,6 +4969,17 @@
         }
       }
     },
+    "上班和下班不能是同一时间。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start and end can't be the same time."
+          }
+        }
+      }
+    },
     "上班时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5244,6 +5310,17 @@
         }
       }
     },
+    "下班时间（早于上班时间算第二天）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End time (earlier than the start means the next day)"
+          }
+        }
+      }
+    },
     "下班时间（要晚于上班时间）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5409,6 +5486,17 @@
         }
       }
     },
+    "不到 1 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "under 1 min"
+          }
+        }
+      }
+    },
     "不到 1 分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5460,6 +5548,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Off"
+          }
+        }
+      }
+    },
+    "不在切换器显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide from Switcher"
           }
         }
       }
@@ -7726,6 +7825,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save anyway"
+          }
+        }
+      }
+    },
+    "从「应用程序」里选一个 App 固定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick an app from Applications to pin"
           }
         }
       }
@@ -11052,6 +11162,17 @@
         }
       }
     },
+    "列出窗口需要辅助功能权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listing windows needs Accessibility"
+          }
+        }
+      }
+    },
     "列表" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14227,6 +14348,17 @@
         }
       }
     },
+    "名字：%@，点按改名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name: %@, click to rename"
+          }
+        }
+      }
+    },
     "名称" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15191,6 +15323,57 @@
         }
       }
     },
+    "固定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin"
+          }
+        }
+      }
+    },
+    "固定 %@ 个 · 运行中 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pinned · %@ running"
+          }
+        }
+      }
+    },
+    "固定 (section)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定"
+          }
+        }
+      }
+    },
     "固定到卡片" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15209,6 +15392,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The card keeps showing this line, with the rate kept up to date"
+          }
+        }
+      }
+    },
+    "固定在前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned first"
           }
         }
       }
@@ -16675,6 +16869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Night Owl"
+          }
+        }
+      }
+    },
+    "夜班：%@ 至次日 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night shift: %@ to %@ the next day"
           }
         }
       }
@@ -18882,6 +19087,17 @@
         }
       }
     },
+    "展开 %@ 的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show windows of %@"
+          }
+        }
+      }
+    },
     "展开 AI 对话" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18937,6 +19153,17 @@
         }
       }
     },
+    "展开窗口列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show window list"
+          }
+        }
+      }
+    },
     "展开输出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18988,6 +19215,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Work hours"
+          }
+        }
+      }
+    },
+    "工作时间：%@ 至 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work hours: %@ to %@"
           }
         }
       }
@@ -19076,6 +19314,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One short is a %@ (%@), "
+          }
+        }
+      }
+    },
+    "已上 %@ · 还有 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ done · %@ to go"
           }
         }
       }
@@ -20264,6 +20513,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hidden"
+          }
+        }
+      }
+    },
+    "已隐藏 %@ 个（%@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hidden (%@)"
           }
         }
       }
@@ -21730,6 +21990,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recorder"
+          }
+        }
+      }
+    },
+    "往前挪" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move up"
+          }
+        }
+      }
+    },
+    "往后挪" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move down"
           }
         }
       }
@@ -24634,6 +24916,17 @@
         }
       }
     },
+    "排序（固定和隐藏的 App 在面板「编辑」里改）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort (pin and hide apps with Edit in the panel)"
+          }
+        }
+      }
+    },
     "排除" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25074,6 +25367,28 @@
         }
       }
     },
+    "收起 %@ 的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse windows of %@"
+          }
+        }
+      }
+    },
+    "收起窗口列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse window list"
+          }
+        }
+      }
+    },
     "收起输出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25334,6 +25649,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New alarm"
+          }
+        }
+      }
+    },
+    "无标题窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled window"
           }
         }
       }
@@ -25657,6 +25983,17 @@
         }
       }
     },
+    "最多 %@ 个字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ characters"
+          }
+        }
+      }
+    },
     "最多 %@ 个文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25686,6 +26023,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to 12 cities, at least 1"
+          }
+        }
+      }
+    },
+    "最多固定 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ pinned apps"
           }
         }
       }
@@ -25774,6 +26122,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last 7 days %@"
+          }
+        }
+      }
+    },
+    "最近使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently used"
           }
         }
       }
@@ -26284,6 +26643,17 @@
         }
       }
     },
+    "正在运行 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running · %@"
+          }
+        }
+      }
+    },
     "正在运行…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26291,6 +26661,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Running…"
+          }
+        }
+      }
+    },
+    "正在运行的应用都隐藏了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All running apps hidden"
+          }
+        }
+      }
+    },
+    "正在运行的应用都隐藏了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All running apps are hidden."
           }
         }
       }
@@ -26559,6 +26951,17 @@
         }
       }
     },
+    "没开也在，点了启动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown even when closed, click to open"
+          }
+        }
+      }
+    },
     "没找到「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26599,6 +27002,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No player is open"
+          }
+        }
+      }
+    },
+    "没有打开的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No open windows"
           }
         }
       }
@@ -26933,6 +27347,17 @@
         }
       }
     },
+    "添加 App…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add App…"
+          }
+        }
+      }
+    },
     "添加城市" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27215,6 +27640,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the corner button to restore a picture"
+          }
+        }
+      }
+    },
+    "点名字改名，最多 %@ 个字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the name to rename, up to %@ characters"
           }
         }
       }
@@ -44707,6 +45143,17 @@
         }
       }
     },
+    "还没有固定的 App。在下面点图钉，或添加一个没开的 App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pinned apps yet. Click a pin below, or add an app that isn't open."
+          }
+        }
+      }
+    },
     "还没有填这个服务的密钥，到“设置 ▸ AI”里填写。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45825,6 +46272,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose an AI app"
+          }
+        }
+      }
+    },
+    "选一个 App 固定到应用切换器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an app to pin to the App Switcher"
           }
         }
       }
