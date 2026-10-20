@@ -252,7 +252,7 @@ final class SlackerClockTests: XCTestCase {
 
     func testOnlyChosenCellsAreShown() {
         let s = SlackerClock.Settings(items: [.earned, .payday])
-        XCTAssertEqual(reading(at(2026, 10, 14, 10), s).cells.map(\.item), [.payday, .earned])
+        XCTAssertEqual(reading(at(2026, 10, 14, 10), s).cells.map(\.item), [.earned, .payday], "按设置里拖好的先后")
         XCTAssertTrue(reading(at(2026, 10, 14, 10), SlackerClock.Settings(items: [])).cells.isEmpty)
     }
 
