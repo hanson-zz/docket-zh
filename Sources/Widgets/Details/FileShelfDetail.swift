@@ -217,7 +217,7 @@ struct FileShelfDetail: View {
                 FileActions.open(file.url)
             }
         }
-        .modifier(DragOut(url: entry.missing ? nil : entry.url))
+        .modifier(ShelfDragOut(url: entry.missing ? nil : entry.url))
         .contextMenu { menu(entry) }
         .help(entry.missing ? tr("原文件被移走或删掉了，可以移出暂存") : entry.item.path)
         .accessibilityElement(children: .combine)
@@ -461,7 +461,7 @@ struct FileShelfDetail: View {
 }
 
 /// 还在的文件能拖出去；找不到的不给拖。
-private struct DragOut: ViewModifier {
+private struct ShelfDragOut: ViewModifier {
     var url: URL?
 
     func body(content: Content) -> some View {
