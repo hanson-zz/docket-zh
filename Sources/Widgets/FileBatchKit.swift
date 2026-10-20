@@ -36,7 +36,6 @@ struct FilePanelHeader: View {
                     .truncationMode(.middle)
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
             if let button {
                 Button(action: action) {

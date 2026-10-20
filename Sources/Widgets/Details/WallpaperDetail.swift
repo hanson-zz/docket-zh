@@ -212,7 +212,6 @@ struct WallpaperDetail: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
         }
         .padding(.top, 4)
     }

@@ -726,7 +726,6 @@ struct RecorderDetail: View {
             }
             .monospacedDigit()
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
         }
         .padding(.horizontal, 10)
         .padding(.top, 6)
@@ -935,7 +934,6 @@ struct RecorderDetail: View {
             HStack(spacing: 4) {
                 Text(title)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
                 if pro { ProBadge() }
             }
             .font(.system(size: 13, weight: solid ? .bold : .semibold))

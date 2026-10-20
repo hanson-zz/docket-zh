@@ -194,7 +194,6 @@ struct ScreenshotMarkupView: View {
                         Text(verbatim: item.title)
                             .font(.system(size: 13, weight: on ? .bold : .semibold))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(on ? palette.ink : .white)
                     .frame(maxWidth: .infinity)

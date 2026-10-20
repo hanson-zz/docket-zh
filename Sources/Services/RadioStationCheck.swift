@@ -65,6 +65,8 @@ final class RadioStationCheck {
     private(set) var running: Set<UUID> = []
     /// 上次检查完有几个电台连不上（这次打开 App 以来），面板据此说“都连得上”。
     private(set) var reports: [UUID: Int] = [:]
+    /// 上次检查一个也连不上（多半没联网）的小组件，面板据此说“可能没联网”。
+    private(set) var offline: Set<UUID> = []
 
     private init() {}
 
@@ -103,9 +105,17 @@ final class RadioStationCheck {
         let id = instance.id
         running.insert(id)
         reports[id] = nil
+        offline.remove(id)
         Task {
             let results = await Self.probeAll(addresses)
             running.remove(id)
+            // 一条都连不上多半是没联网：不标失效，也不算今天检查过，下次打开面板再查。
+            let tested = RadioDial.stations(WidgetWriter.current(id)?.config ?? instance.config)
+            if RadioHealth.looksOffline(results, stations: tested) {
+                offline.insert(id)
+                UserDefaults.standard.removeObject(forKey: Self.lastKey(id))
+                return
+            }
             // 检查期间收藏可能改过，按最新的收藏套结果，没测到的电台原样保留。
             guard let current = WidgetWriter.current(id), current.kind == .radio else { return }
             let before = RadioDial.stations(current.config)

@@ -248,6 +248,15 @@ public enum RadioHealth {
         }
     }
 
+    /// 测了两个以上电台、一条地址都连不上，多半是这台 Mac 没联网，不是电台全坏了：
+    /// 这次结果不算，不标“可能失效”，也不算今天已经检查过。只测了一个电台时分不
+    /// 出来（它自己的主地址和备用都坏了也是这样），照常算。
+    public static func looksOffline(_ results: [String: Bool], stations: [RadioStation]) -> Bool {
+        guard !results.values.contains(true) else { return false }
+        let tested = stations.filter { station in station.addresses.contains { results[$0] != nil } }
+        return tested.count >= 2
+    }
+
     /// 标着“可能失效”的电台。
     public static func dead(_ stations: [RadioStation]) -> [RadioStation] {
         stations.filter(\.mayBeDead)

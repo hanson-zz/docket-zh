@@ -184,7 +184,7 @@ private struct PorcelainDial: View {
             @unknown default: break
             }
         }
-        .help(model.canStep ? tr("拖动刻度换台") : "")
+        .help(model.canStep ? tr("拖动圆盘换台") : "")
     }
 
     /// 拖动圆盘：按手指绕圆心转过的角度转盘，两头最多多转 18°，松手吸附到最近的台。
@@ -536,7 +536,6 @@ struct RadioSkinPorcelainCard: RadioSkinCardFace {
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(colors.text)
-                .minimumScaleFactor(0.85)
             Circle()
                 .fill(model.playing ? colors.accent : colors.text.opacity(0.35))
                 .frame(width: 4.4, height: 4.4)

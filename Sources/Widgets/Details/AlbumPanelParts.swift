@@ -29,7 +29,6 @@ struct AlbumHeader<Trailing: View>: View {
                 }
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
             trailing()
         }
@@ -81,7 +80,7 @@ struct AlbumControlButton: View {
                 Text(verbatim: title)
                     .font(.system(size: 14, weight: prominent ? .bold : .semibold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(13.0 / 14.0)
             }
             .foregroundStyle(prominent ? ink : .white.opacity(0.94))
             .frame(maxWidth: .infinity)
@@ -148,7 +147,6 @@ struct AlbumSegmented: View {
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
                         .foregroundStyle(on ? ink : .white.opacity(0.82))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                         .background(Capsule().fill(on ? accent : .clear))

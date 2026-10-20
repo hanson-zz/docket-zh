@@ -117,7 +117,6 @@ struct FocusTimerDetail: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.62))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
             }
             Spacer(minLength: 6)
             trailing()
@@ -538,7 +537,6 @@ struct FocusTimerDetail: View {
                         .font(.system(size: 13, weight: chosen ? .bold : .semibold))
                         .foregroundStyle(chosen ? ink : Color.white.opacity(0.88))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
                         .background {

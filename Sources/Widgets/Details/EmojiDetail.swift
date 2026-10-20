@@ -130,7 +130,6 @@ struct EmojiDetail: View {
                     .foregroundStyle(.white.opacity(0.62))
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
             Spacer(minLength: 0)
             if !context.isPreview {
                 if editing {
@@ -313,7 +312,7 @@ struct EmojiDetail: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.94))
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(13.0 / 14.0)
             Spacer(minLength: 8)
             HStack(spacing: 10) {
                 ForEach(0..<EmojiTone.count, id: \.self) { tone in
@@ -376,7 +375,6 @@ struct EmojiDetail: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.72))
                 .lineLimit(2)
-                .minimumScaleFactor(0.85)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -437,7 +435,6 @@ struct EmojiDetail: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
                 .background(Capsule().fill(.white.opacity(0.12)))

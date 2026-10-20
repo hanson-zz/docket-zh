@@ -127,7 +127,6 @@ struct CryptoDetail: View {
                     .monospacedDigit()
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
             Spacer(minLength: 0)
             if !context.isPreview {
                 if editing {
@@ -218,7 +217,7 @@ struct CryptoDetail: View {
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                        .minimumScaleFactor(13.0 / 15.0)
                     if watched {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 11, weight: .semibold))
@@ -241,13 +240,12 @@ struct CryptoDetail: View {
                     .font(.system(size: 15, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(13.0 / 15.0)
                     .rollingValue(quote?.price)
                 Text(CryptoWatch.chipText(quote?.change24h))
                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                     .foregroundStyle(tone == .neutral ? Color.white.opacity(0.7) : ink(tone))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
                     .frame(minWidth: 54, minHeight: 20)
                     .padding(.horizontal, 4)
                     .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -301,7 +299,6 @@ struct CryptoDetail: View {
                         .foregroundStyle(.white.opacity(0.62))
                 }
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
                 Spacer(minLength: 4)
                 ProCrown()
             }
@@ -320,7 +317,6 @@ struct CryptoDetail: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
             Link(CryptoMarket.attribution, destination: CryptoMarket.attributionURL)
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.5))
@@ -844,7 +840,6 @@ struct CryptoDetail: View {
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
                         .foregroundStyle(on ? accentInk : Color.white.opacity(0.82))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                         .background(Capsule().fill(on ? accent : Color.clear))

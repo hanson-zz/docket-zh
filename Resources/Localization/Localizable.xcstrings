@@ -4221,6 +4221,17 @@
         }
       }
     },
+    "一个电台也连不上，多半是没联网，没有标记失效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No station connected, most likely because you are offline, so none were marked as dead"
+          }
+        }
+      }
+    },
     "一个自然月每天都收到竹叶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13310,6 +13321,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The network may be down, or GitHub may be unreachable right now."
+          }
+        }
+      }
+    },
+    "可能没联网" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You may be offline"
           }
         }
       }
@@ -22914,6 +22936,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to reorder"
+          }
+        }
+      }
+    },
+    "拖动圆盘换台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn the dial to change station"
           }
         }
       }

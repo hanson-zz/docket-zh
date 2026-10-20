@@ -230,6 +230,20 @@ final class RadioCustomTests: XCTestCase {
         XCTAssertEqual(RadioHealth.applying(["https://other": false], to: [fresh]), [fresh])
     }
 
+    func testNothingConnectingAcrossStationsLooksOffline() {
+        let a = RadioStation(id: "a", name: "A", url: "https://a/1", backups: ["https://a/2"])
+        let b = RadioStation(id: "b", name: "B", url: "https://b/1")
+        // 两个电台一条都连不上：多半没联网，这次不算。
+        XCTAssertTrue(RadioHealth.looksOffline(["https://a/1": false, "https://a/2": false, "https://b/1": false],
+                                               stations: [a, b]))
+        // 有一条连得上就是真的结果。
+        XCTAssertFalse(RadioHealth.looksOffline(["https://a/1": false, "https://a/2": false, "https://b/1": true],
+                                                stations: [a, b]))
+        // 只测了一个电台（主地址加备用都坏了）分不出来，照常标失效。
+        XCTAssertFalse(RadioHealth.looksOffline(["https://a/1": false, "https://a/2": false], stations: [a, b]))
+        XCTAssertFalse(RadioHealth.looksOffline([:], stations: [a, b]))
+    }
+
     func testBannerAndDismissal() {
         let a = RadioStation(id: "a", name: "A", url: "https://a/1", mayBeDead: true)
         let b = RadioStation(id: "b", name: "B", url: "https://b/1", mayBeDead: true)

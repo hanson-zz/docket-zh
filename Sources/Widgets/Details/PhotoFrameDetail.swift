@@ -128,7 +128,6 @@ struct PhotoFrameDetail: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
         } else {
             emptyContent(album: album)
         }

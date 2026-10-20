@@ -83,7 +83,6 @@ struct MicrophoneDetail: View {
                     .foregroundStyle(.white.opacity(0.62))
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
             Spacer(minLength: 0)
             if !preview { headerButton }
         }
@@ -215,7 +214,6 @@ struct MicrophoneDetail: View {
                         .foregroundStyle(.white.opacity(0.62))
                 }
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
                 Spacer(minLength: 0)
             }
             .padding(12)
@@ -324,7 +322,6 @@ struct MicrophoneDetail: View {
                     Text(verbatim: muteCaption)
                         .font(.system(size: 13, weight: muted ? .semibold : .medium))
                         .foregroundStyle(muted ? redInk.opacity(0.85) : .white.opacity(0.62))
-                        .minimumScaleFactor(0.85)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 0)
@@ -512,7 +509,6 @@ struct MicrophoneDetail: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.62))
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
         }
     }
@@ -551,7 +547,7 @@ struct MicrophoneDetail: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.94))
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                .minimumScaleFactor(13.0 / 14.0)
             Spacer(minLength: 6)
             Toggle("", isOn: Binding(get: { on }, set: { value in
                 guard !preview else { return }
@@ -751,7 +747,6 @@ struct MicrophoneDetail: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
                 Spacer(minLength: 0)
             }
             .contentShape(.rect)

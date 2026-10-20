@@ -491,7 +491,6 @@ struct LunarDetail: View {
                 .font(.system(size: 13, weight: cell.subIsSpecial || tint != nil ? .semibold : .regular))
                 .foregroundStyle(subColor)
                 .lineLimit(1)
-                .minimumScaleFactor(0.95)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
@@ -596,7 +595,6 @@ struct LunarDetail: View {
                     .foregroundStyle(.white.opacity(0.62))
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.9)
             Spacer(minLength: 0)
             Button { close() } label: {
                 Text(tr("取消"))

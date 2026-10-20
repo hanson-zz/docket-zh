@@ -108,7 +108,6 @@ struct MailDetail: View {
                     .monospacedDigit()
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
             if !context.isPreview { modeButton }
         }
@@ -408,7 +407,6 @@ struct MailDetail: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(targets.isEmpty ? 0.4 : 0.95))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
                     .background(Capsule().fill(.white.opacity(confirmAll ? 0.2 : 0.12)))
@@ -427,7 +425,6 @@ struct MailDetail: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(accentInk)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
                 .background(Capsule().fill(accent))
@@ -483,7 +480,6 @@ struct MailDetail: View {
                     .foregroundStyle(.white.opacity(0.62))
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
             Button { mail.openAutomationSettings() } label: {
                 Text(tr("去允许"))
@@ -657,7 +653,6 @@ struct MailDetail: View {
                 }
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 6)
             MailSwitch(on: on, accent: accent) {
                 guard !context.isPreview else { return }

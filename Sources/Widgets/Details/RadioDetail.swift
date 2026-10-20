@@ -881,6 +881,12 @@ struct RadioDetail: View {
                     Text(verbatim: tr("都连得上"))
                         .font(.system(size: 13))
                         .foregroundStyle(fg.opacity(0.6))
+                } else if !context.isPreview, healthCheck.offline.contains(instance.id) {
+                    Text(verbatim: tr("可能没联网"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(fg.opacity(0.6))
+                        .lineLimit(1)
+                        .help(tr("一个电台也连不上，多半是没联网，没有标记失效"))
                 }
                 toolChip(tr("检查"), symbol: "antenna.radiowaves.left.and.right") {
                     dismissedHealth = nil
