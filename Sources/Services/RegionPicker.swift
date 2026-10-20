@@ -29,10 +29,13 @@ enum RegionPicker {
     }
 
     fileprivate static func finish(_ result: RegionPick?) {
-        window?.orderOut(nil)
-        window = nil
+        // 先取走等着的结果再收窗口：收窗口会触发 resignKey 再进来一次，
+        // 那一次拿不到 continuation，不会把框好的区域顶成「取消」。
         let continuation = self.continuation
         self.continuation = nil
+        let window = self.window
+        self.window = nil
+        window?.orderOut(nil)
         continuation?.resume(returning: result)
     }
 

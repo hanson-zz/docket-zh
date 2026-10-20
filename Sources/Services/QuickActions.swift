@@ -544,7 +544,7 @@ private struct CleanModeView: View {
                     .controlSize(.large)
                     .padding(.top, 6)
                 Text("5 分钟后自动退出")
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.25))
             }
         }
