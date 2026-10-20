@@ -188,8 +188,9 @@ public enum SlackerClock {
 
     /// 认得的小格按固定顺序排好，去重，最多 4 个。
     public static func items(_ raw: [String]) -> [Item] {
-        let chosen = Set(raw.compactMap(Item.init(rawValue:)))
-        return Array(Item.allCases.filter { chosen.contains($0) }.prefix(maxItems))
+        // 按设置里拖好的先后（`OrderedChecklist`），不再固定按目录顺序。
+        let ordered = OrderedChecklist.ordered(raw, all: Item.allCases.map(\.rawValue))
+        return Array(ordered.compactMap(Item.init(rawValue:)).prefix(maxItems))
     }
 
     // MARK: Calendar

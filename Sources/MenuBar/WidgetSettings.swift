@@ -447,31 +447,51 @@ struct WidgetSettingsSections: View {
                 // not say what it selects: four switches reading CPU,
                 // Memory, Disk, Battery could as easily be turning the
                 // readings off as choosing which to show.
-                Text(Self.groupLabel(key))
+                Text(OrderedChecklist.keys.contains(key)
+                     ? tr("\(Self.groupLabel(key))（拖动排序，卡片跟着变）") : Self.groupLabel(key))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                // Which of a fixed set: one toggle each.
-                ForEach(choices, id: \.value) { choice in
-                    Toggle(isOn: Binding(
-                        get: { instance.config.strings(key, default: Self.strings(fallback))
-                                .contains(choice.value) },
-                        set: { on in
-                            // 快速开关的 Pro 工具没解锁时勾不上，弹付费墙；取消勾选不拦。
-                            if on, !ProLicenseGate.canEnableListChoice(key: key, value: choice.value,
-                                                                       unlocked: ProAccess.isUnlocked) {
+                if OrderedChecklist.keys.contains(key) {
+                    // 卡片上的先后就是这里的先后：拖柄拖动排序，勾选决定显示哪些
+                    // （见 `ReorderableChecklist`）。快速开关的 Pro 工具没解锁时勾不上，弹付费墙。
+                    ReorderableChecklist(
+                        choices: choices.map { ReorderableChecklist.Choice(value: $0.value, title: $0.title,
+                                                     isPro: ProFeatures.isProListChoice(key: key, value: $0.value)) },
+                        saved: instance.config.strings(key, default: Self.strings(fallback)),
+                        limit: key == SlackerClock.itemsKey ? SlackerClock.maxItems : nil,
+                        canEnable: { value in
+                            guard ProLicenseGate.canEnableListChoice(key: key, value: value,
+                                                                     unlocked: ProAccess.isUnlocked) else {
                                 PaywallWindow.shared.show()
-                                return
+                                return false
                             }
-                            var list = instance.config.strings(key, default: Self.strings(fallback))
-                            if on { if !list.contains(choice.value) { list.append(choice.value) } }
-                            else { list.removeAll { $0 == choice.value } }
-                            // Never leave it with nothing to show.
-                            guard !list.isEmpty else { return }
-                            write(instance) { $0.set(key, .list(list.map { .string($0) })) }
-                        })) {
-                        // 快速开关里的 Pro 工具旁固定显示 Pro 标识。
-                        ProLabel(title: choice.title,
-                                 isPro: ProFeatures.isProListChoice(key: key, value: choice.value))
+                            return true
+                        },
+                        write: { list in write(instance) { $0.set(key, .list(list.map { .string($0) })) } })
+                } else {
+                    // Which of a fixed set: one toggle each.
+                    ForEach(choices, id: \.value) { choice in
+                        Toggle(isOn: Binding(
+                            get: { instance.config.strings(key, default: Self.strings(fallback))
+                                    .contains(choice.value) },
+                            set: { on in
+                                // 快速开关的 Pro 工具没解锁时勾不上，弹付费墙；取消勾选不拦。
+                                if on, !ProLicenseGate.canEnableListChoice(key: key, value: choice.value,
+                                                                           unlocked: ProAccess.isUnlocked) {
+                                    PaywallWindow.shared.show()
+                                    return
+                                }
+                                var list = instance.config.strings(key, default: Self.strings(fallback))
+                                if on { if !list.contains(choice.value) { list.append(choice.value) } }
+                                else { list.removeAll { $0 == choice.value } }
+                                // Never leave it with nothing to show.
+                                guard !list.isEmpty else { return }
+                                write(instance) { $0.set(key, .list(list.map { .string($0) })) }
+                            })) {
+                            // 快速开关里的 Pro 工具旁固定显示 Pro 标识。
+                            ProLabel(title: choice.title,
+                                     isPro: ProFeatures.isProListChoice(key: key, value: choice.value))
+                        }
                     }
                 }
             } else {

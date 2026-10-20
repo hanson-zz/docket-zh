@@ -128,7 +128,7 @@ final class AmbientSynthTests: XCTestCase {
     }
 
     func testParseAndSummary() {
-        XCTAssertEqual(AmbientSound.parse(["waves", "nope", "rain"]), [.rain, .waves])
+        XCTAssertEqual(AmbientSound.parse(["waves", "nope", "rain", "waves"]), [.waves, .rain])
         XCTAssertEqual(AmbientSound.summary([.rain, .waves]), "雨声 + 海浪")
         XCTAssertEqual(AmbientSound.summary([.rain, .waves, .fire]), "雨声 等 3 种")
         XCTAssertEqual(AmbientSound.summary([]), "未选择声音")

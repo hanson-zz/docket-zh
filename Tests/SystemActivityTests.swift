@@ -302,6 +302,8 @@ final class SystemActivityTests: XCTestCase {
         XCTAssertEqual(SystemCardMetrics.toggling("cpu", in: ["disk", "cpu"]), ["disk"])
         XCTAssertEqual(SystemCardMetrics.toggling("disk", in: ["disk"]), ["disk"])
         XCTAssertEqual(SystemCardMetrics.toggling("nope", in: ["cpu"]), ["cpu"])
+        XCTAssertEqual(SystemCardMetrics.toggling("cpu", in: ["disk", "memory"]), ["disk", "memory", "cpu"],
+                       "拖好的顺序不被打乱，新勾的接在最后")
         var config = WidgetConfig()
         config.set("metrics", .list([.string("bogus")]))
         XCTAssertEqual(SystemCardMetrics.shown(config), ["cpu", "memory"])

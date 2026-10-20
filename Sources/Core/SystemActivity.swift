@@ -705,26 +705,21 @@ public struct SystemAlertTracker: Sendable {
 /// 卡片上显示的读数存在 `metrics` 键里，和设置窗口的多选是同一个键。
 public enum SystemCardMetrics {
     public static let key = "metrics"
-    /// 面板编辑态能勾的，按这个顺序存。电池是原来就有的选项，留着。
+    /// 面板编辑态能勾的，没勾的按这个顺序列。电池是原来就有的选项，留着。
     public static let all = ["cpu", "memory", "network", "disk", "battery"]
     public static let fallback = ["cpu", "memory"]
 
     public static func shown(_ config: WidgetConfig) -> [String] {
-        let list = config.strings(key, default: fallback).filter { all.contains($0) }
+        let list = OrderedChecklist.ordered(config.strings(key, default: fallback), all: all)
         return list.isEmpty ? fallback : list
     }
 
-    /// 勾上或去掉一项，至少留一项，按 `all` 的顺序排。
+    /// 勾上或去掉一项，至少留一项。保留设置里拖好的先后，新勾的接在最后
+    /// （以前按 `all` 的顺序重排，会把拖好的顺序打乱）。
     public static func toggling(_ metric: String, in current: [String]) -> [String] {
-        guard all.contains(metric) else { return current }
-        var set = Set(current.filter { all.contains($0) })
-        if set.contains(metric) {
-            guard set.count > 1 else { return all.filter { set.contains($0) } }
-            set.remove(metric)
-        } else {
-            set.insert(metric)
-        }
-        return all.filter { set.contains($0) }
+        let on = OrderedChecklist.ordered(current, all: all).contains(metric)
+        return OrderedChecklist.toggle(saved: current, all: all, value: metric, on: !on)
+            ?? OrderedChecklist.ordered(current, all: all)
     }
 
     /// 网络在卡片上没有百分比，条形、竖条和液态按对数折成 0...1：

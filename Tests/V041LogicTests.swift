@@ -261,7 +261,7 @@ final class GaugeReadingTests: XCTestCase {
     func testRingsAreOrderedAndNeverEmpty() {
         XCTAssertEqual(GaugeReading.rings(WidgetConfig()), ["storage", "battery"])
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery"), .string("storage")])])),
-                       ["storage", "battery"])
+                       ["battery", "storage"])
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("battery")])])), ["battery"])
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("cpu")])])), ["cpu"])
         XCTAssertEqual(GaugeReading.rings(WidgetConfig(["rings": .list([.string("network")])])), ["storage", "battery"])

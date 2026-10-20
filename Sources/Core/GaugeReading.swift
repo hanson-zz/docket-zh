@@ -35,10 +35,11 @@ public enum GaugeReading {
     /// 没选过时的默认，也是旧卡片没存 `rings` 时读到的：存储和电池。
     public static let defaultRings = ["storage", "battery"]
 
-    /// Which rings a gauge widget shows, in a fixed order, never none.
+    /// Which rings a gauge widget shows, never none. 按设置里拖好的先后
+    /// （`OrderedChecklist`）；以前固定按存储、电池、CPU、内存排，存着的旧列表
+    /// 本来就是勾选先后，读出来顺序可能和以前不同。
     public static func rings(_ config: WidgetConfig) -> [String] {
-        let chosen = config.strings("rings", default: defaultRings).filter(allRings.contains)
-        let ordered = allRings.filter(chosen.contains)
+        let ordered = OrderedChecklist.ordered(config.strings("rings", default: defaultRings), all: allRings)
         return ordered.isEmpty ? defaultRings : ordered
     }
 

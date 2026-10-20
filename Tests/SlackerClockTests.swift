@@ -61,7 +61,7 @@ final class SlackerClockTests: XCTestCase {
     }
 
     func testItemsAreOrderedDedupedAndCapped() {
-        XCTAssertEqual(SlackerClock.items(["earned", "payday", "bogus", "payday"]), [.payday, .earned])
+        XCTAssertEqual(SlackerClock.items(["earned", "payday", "bogus", "payday"]), [.earned, .payday])
         XCTAssertEqual(SlackerClock.items([]), [])
         XCTAssertEqual(SlackerClock.items(["holiday", "friday", "earned", "payday"]).count, SlackerClock.maxItems)
     }

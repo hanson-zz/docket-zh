@@ -2762,6 +2762,17 @@
         }
       }
     },
+    "%@（拖动排序，卡片跟着变）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (drag to reorder; the card follows)"
+          }
+        }
+      }
+    },
     "%@（正在使用）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11851,6 +11862,17 @@
         }
       }
     },
+    "勾上后才能排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check it to reorder"
+          }
+        }
+      }
+    },
     "勾选加入 · 拖动排序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18585,6 +18607,17 @@
         }
       }
     },
+    "已勾选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checked"
+          }
+        }
+      }
+    },
     "已压缩为「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22973,6 +23006,17 @@
         }
       }
     },
+    "拖动中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dragging"
+          }
+        }
+      }
+    },
     "拖动刻度换台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24729,6 +24773,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not added"
+          }
+        }
+      }
+    },
+    "未勾选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not checked"
           }
         }
       }
@@ -36758,6 +36813,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moved %@ to the Trash; %@ couldn't be deleted"
+          }
+        }
+      }
+    },
+    "移到最前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Top"
           }
         }
       }

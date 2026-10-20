@@ -34,10 +34,10 @@ public enum AmbientSound: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// The stored list, in catalog order, unknown names dropped.
+    /// The stored list, in saved order, unknown names and repeats dropped.
     public static func parse(_ names: [String]) -> [AmbientSound] {
-        let wanted = Set(names)
-        return allCases.filter { wanted.contains($0.rawValue) }
+        // 按存的先后（设置里能拖动排序），卡片上画第一种的图标。
+        OrderedChecklist.ordered(names, all: allCases.map(\.rawValue)).compactMap(AmbientSound.init(rawValue:))
     }
 
     /// "雨声 + 海浪", or the first two and a count when there are more.

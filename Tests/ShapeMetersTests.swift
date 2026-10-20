@@ -86,7 +86,7 @@ final class ShapeMetersTests: XCTestCase {
     func testGaugesCanMixInCPUAndMemory() {
         XCTAssertEqual(GaugeReading.allRings, ["storage", "battery", "cpu", "memory"])
         let mixed = WidgetConfig(["rings": .list([.string("memory"), .string("storage"), .string("cpu")])])
-        XCTAssertEqual(GaugeReading.rings(mixed), ["storage", "cpu", "memory"])
+        XCTAssertEqual(GaugeReading.rings(mixed), ["memory", "storage", "cpu"], "按存的先后，设置里能拖动排序")
         let all = WidgetInstance(kind: .gauges, config: WidgetConfig(["rings": .list(GaugeReading.allRings.map { .string($0) })]))
         XCTAssertEqual(WidgetCatalog.naturalSize(all).width, GaugeReading.tileWidth(rings: 4))
         // 旧卡片没存 rings 时仍是存储和电池两个。
