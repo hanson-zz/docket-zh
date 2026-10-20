@@ -221,7 +221,7 @@ public enum MusicDisplay {
         switch current {
         case .native(let source): return players.contains(where: { $0.source == source })
         case .browser: return browser != nil
-        case .none, nil: return false
+        case .some(.none), nil: return false
         }
     }
 
