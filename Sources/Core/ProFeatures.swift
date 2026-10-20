@@ -24,6 +24,8 @@ import Foundation
 ///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
 /// - AI 刘海对话的设置和电池面板里的充电上限。
+/// - 系统活动面板里的超阈值提醒（规则存在卡片的 `alertRules`），见
+///   `ProLicenseGate.systemAlertsActive`。
 public enum ProFeatures {
 
     /// 胶囊上的字。

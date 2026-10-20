@@ -69,10 +69,10 @@ struct SystemActivityTile: View {
                 VStack(spacing: 3) {
                     // The shelf's value and caption styles, so these figures
                     // sit level with every other tile's reading.
-                    percent(value(metric), size: 19)
+                    reading(metric, size: 19)
                     HStack(spacing: 5) {
                         Circle()
-                            .fill(metric.color)
+                            .fill(tint(metric))
                             .frame(width: 6, height: 6)
                         Text(metric.label)
                             .font(.system(size: 12))
@@ -106,7 +106,7 @@ struct SystemActivityTile: View {
                     segmentMeter(metric, width: 7)
                         .frame(height: 40)
                     VStack(alignment: .leading, spacing: 1) {
-                        percent(value(metric), size: 18)
+                        reading(metric, size: 18)
                         Text(metric.label)
                             .font(WidgetStyle.note)
                             .foregroundStyle(WidgetStyle.secondary)
@@ -132,7 +132,7 @@ struct SystemActivityTile: View {
             VStack(spacing: gap) {
                 ForEach((0..<count).reversed(), id: \.self) { index in
                     RoundedRectangle(cornerRadius: min(2, cell / 2), style: .continuous)
-                        .fill(index < lit ? metric.color : Color.primary.opacity(0.13))
+                        .fill(index < lit ? tint(metric) : Color.primary.opacity(0.13))
                         .frame(width: width, height: cell)
                 }
             }
@@ -153,12 +153,12 @@ struct SystemActivityTile: View {
                     GeometryReader { geo in
                         let width = geo.size.width * min(max(value(metric), 0), 1)
                         ZStack(alignment: .leading) {
-                            Capsule().fill(metric.color.opacity(0.18))
-                            Capsule().fill(metric.color).frame(width: width)
+                            Capsule().fill(tint(metric).opacity(0.18))
+                            Capsule().fill(tint(metric)).frame(width: width)
                         }
                     }
                     .frame(height: 6)
-                    percent(value(metric), size: 11)
+                    reading(metric, size: 11)
                         .frame(width: 34, alignment: .trailing)
                 }
             }
@@ -173,12 +173,14 @@ struct SystemActivityTile: View {
         let load = value(metric)
         // 颜色面板里选过颜色时水杯用选的颜色，过了 85% 照旧变红。
         let chosen = theme?.isChosen == true ? theme?.main(dark: scheme == .dark) : nil
-        let tint = LiquidMotion.isHot(load) ? Color.red : (chosen ?? metric.color)
+        // 超阈值提醒正在响时也变红。
+        let alerting = tint(metric) != metric.color
+        let cupTint = LiquidMotion.isHot(load) || alerting ? Color.red : (chosen ?? metric.color)
         return ZStack {
-            LiquidWater(level: load, tint: tint, shape: .circle,
+            LiquidWater(level: load, tint: cupTint, shape: .circle,
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                         speed: LiquidMotion.busySpeed(load))
-            percent(load, size: size)
+            reading(metric, size: size)
                 .minimumScaleFactor(0.6)
                 .shadow(color: .black.opacity(0.35), radius: 1, y: 0.5)
                 .padding(.horizontal, 3)
@@ -232,10 +234,10 @@ struct SystemActivityTile: View {
                             .frame(maxHeight: .infinity, alignment: .bottom)
                     }
                     VStack(spacing: 0) {
-                        percent(value(metric), size: 18)
+                        reading(metric, size: 18)
                         Text(metric.short)
                             .font(WidgetStyle.label(9))
-                            .foregroundStyle(metric.color)
+                            .foregroundStyle(tint(metric))
                     }
                     .padding(.top, 2)
                 }
@@ -255,7 +257,7 @@ struct SystemActivityTile: View {
                     segmentMeter(metric, width: 6)
                         .frame(height: 38)
                     VStack(alignment: .leading, spacing: 0) {
-                        percent(value(metric), size: 14)
+                        reading(metric, size: 14)
                         Text(metric.short)
                             .font(WidgetStyle.label(9))
                             .foregroundStyle(WidgetStyle.secondary)
@@ -281,7 +283,7 @@ struct SystemActivityTile: View {
                             .font(WidgetStyle.label(10))
                             .foregroundStyle(WidgetStyle.secondary)
                         Spacer(minLength: 0)
-                        percent(value(metric), size: 12)
+                        reading(metric, size: 12)
                     }
                     bar(metric).frame(height: 6)
                 }
@@ -318,9 +320,9 @@ struct SystemActivityTile: View {
             let peak = mid + span * 0.9
             ZStack {
                 Sparkline(values: series, peak: peak, floor: floor, closed: true)
-                    .fill(metric.color.opacity(0.14))
+                    .fill(tint(metric).opacity(0.14))
                 Sparkline(values: series, peak: peak, floor: floor)
-                    .stroke(metric.color.opacity(0.65),
+                    .stroke(tint(metric).opacity(0.65),
                             style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
             }
         }
@@ -329,8 +331,8 @@ struct SystemActivityTile: View {
     private func bar(_ metric: Metric) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(metric.color.opacity(0.18))
-                Capsule().fill(metric.color.opacity(0.7))
+                Capsule().fill(tint(metric).opacity(0.18))
+                Capsule().fill(tint(metric).opacity(0.7))
                     .frame(width: geo.size.width * min(max(value(metric), 0), 1))
             }
         }
@@ -352,6 +354,8 @@ struct SystemActivityTile: View {
         case .cpu: return live.cpu
         case .memory: return live.memory
         case .disk: return live.disk
+        // 网络没有百分比，按对数折成 0...1 给条形、竖条和液态用；数字样式写速率。
+        case .network: return SystemCardMetrics.networkFraction(NetworkMetrics.shared.download)
         // The Mac's own battery: the other devices belong to the battery
         // widget, which is the one that can show more than one of them.
         case .battery:
@@ -361,7 +365,31 @@ struct SystemActivityTile: View {
 
     /// Most recent last; empty until the sampler has two readings.
     private func history(_ metric: Metric) -> [Double] {
-        context.isPreview ? metric.sampleHistory : SystemMetrics.shared.history(for: metric.rawValue)
+        if context.isPreview { return metric.sampleHistory }
+        if metric == .network { return NetworkMetrics.shared.downloadHistory }
+        return SystemMetrics.shared.history(for: metric.rawValue)
+    }
+
+    /// 读数的颜色。超阈值提醒（Pro）正在响的读数变红，没解锁时不会出现。
+    private func tint(_ metric: Metric) -> Color {
+        if !context.isPreview, let kind = metric.alertKind, SystemAlerts.shared.firing.contains(kind) {
+            return Color(hex: SystemActivityStyle.alertRed)
+        }
+        return metric.color
+    }
+
+    /// 百分比，网络写速率（“2.4M”）。
+    @ViewBuilder
+    private func reading(_ metric: Metric, size: CGFloat) -> some View {
+        if metric == .network {
+            let text = context.isPreview ? "2.4M" : SystemReadout.shortRate(NetworkMetrics.shared.download)
+            Text(verbatim: text)
+                .font(.system(size: size, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(WidgetStyle.primary)
+        } else {
+            percent(value(metric), size: size)
+        }
     }
 
     @ViewBuilder
@@ -380,41 +408,40 @@ struct SystemActivityTile: View {
     }
 
     private enum Metric: String {
-        case cpu, memory, disk, battery
+        case cpu, memory, network, disk, battery
 
         var label: String {
             switch self {
             case .cpu: "CPU"
             case .memory: tr("内存")
+            case .network: tr("网络")
             case .disk: tr("磁盘")
             case .battery: tr("电池")
             }
         }
 
         /// The column has 56pt of usable width, so the long label is out.
-        var short: String {
-            switch self {
-            case .cpu: "CPU"
-            case .memory: tr("内存")
-            case .disk: tr("磁盘")
-            case .battery: tr("电池")
-            }
-        }
+        var short: String { label }
 
         var color: Color {
             switch self {
             case .cpu: Color(hex: MetricColor.cpu)
             case .memory: Color(hex: MetricColor.memory)
+            case .network: Color(hex: MetricColor.netDownload)
             case .disk: Color(hex: MetricColor.storage)
             case .battery: Color(hex: MetricColor.batteryPresent)
             }
         }
+
+        /// 超阈值提醒对应的读数，电池没有。
+        var alertKind: SystemMetricKind? { SystemMetricKind(rawValue: rawValue) }
 
         /// The library has no sampler behind it, so preview tiles show these.
         var sample: Double {
             switch self {
             case .cpu: 0.24
             case .memory: 0.63
+            case .network: 0.42
             case .disk: 0.41
             case .battery: 0.78
             }
@@ -424,7 +451,7 @@ struct SystemActivityTile: View {
         var sampleHistory: [Double] {
             // Neither has a meaningful minute-by-minute history.
             guard self != .disk, self != .battery else { return [] }
-            let phase = self == .cpu ? 0.0 : 1.7
+            let phase = self == .cpu ? 0.0 : (self == .network ? 3.1 : 1.7)
             return (0..<40).map { i in
                 let t = Double(i) / 4 + phase
                 return min(max(sample + 0.2 * sin(t) + 0.09 * sin(t * 2.3), 0), 1)

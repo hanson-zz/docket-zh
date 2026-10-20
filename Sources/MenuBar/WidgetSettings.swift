@@ -739,7 +739,7 @@ struct WidgetSettingsSections: View {
 
     /// The fixed sets behind the list-valued options.
     static let choices: [String: [(title: String, value: String)]] = [
-        "metrics": [("CPU", "cpu"), (tr("内存"), "memory"),
+        "metrics": [("CPU", "cpu"), (tr("内存"), "memory"), (tr("网络"), "network"),
                     (tr("磁盘"), "disk"), (tr("电池"), "battery")],
         "devices": [(tr("这台 Mac"), "mac"), ("AirPods", "pods"),
                     (tr("AirPods 充电盒"), "case"), (tr("键盘"), "keyboard")],

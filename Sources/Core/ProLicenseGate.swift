@@ -28,6 +28,8 @@ import Foundation
 ///   键盘、低电量模式）还能点一下关掉，免得到期后关不回去。
 /// - AI 刘海对话：点刘海入口、按快捷键、设置里打开开关都弹付费墙，不展开对话。
 ///   AI 卡片跳转到网页或 App 照旧免费。
+/// - 系统活动的超阈值提醒：规则照样列出，开关和“添加规则”弹付费墙；不判断、
+///   不发通知、卡片不变红，规则不改写，解锁后恢复。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -226,6 +228,12 @@ public enum ProLicenseGate {
     public static func canEnableListChoice(key: String, value: String, unlocked: Bool) -> Bool {
         unlocked || !ProFeatures.isProListChoice(key: key, value: value)
     }
+
+    // MARK: 系统活动的超阈值提醒
+
+    /// 系统活动的超阈值提醒在不在判断：没解锁时不提醒、卡片不变红，规则照旧
+    /// 存着，解锁或试用后自动恢复。面板里规则照样列出，开关和“添加规则”弹付费墙。
+    public static func systemAlertsActive(unlocked: Bool) -> Bool { unlocked }
 
     // MARK: AI 刘海对话和充电上限
 

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -52,6 +53,67 @@ final class SystemMetrics {
         memoryHistory.append(memory)
         if cpuHistory.count > Self.historyLength { cpuHistory.removeFirst() }
         if memoryHistory.count > Self.historyLength { memoryHistory.removeFirst() }
+        recordMinute()
+    }
+
+    // MARK: - 24 小时
+
+    /// 最近 24 小时，每分钟一条（见 `SystemActivityHistory`）。搭在每秒一次的
+    /// 采样上攒平均值，不另开定时器；每 10 分钟写一次盘，退出前再写一次。
+    private(set) var dayHistory = SystemActivityHistory()
+    @ObservationIgnored private var accumulator = SystemMinuteAccumulator()
+    @ObservationIgnored private var historyLoaded = false
+    @ObservationIgnored private var unsavedMinutes = 0
+    @ObservationIgnored private var terminateObserver: NSObjectProtocol?
+
+    /// 开机时刻（kern.boottime），算“已运行多久”用；合盖休眠的时间也算在内。
+    static let bootTime: Date? = {
+        var boot = timeval()
+        var size = MemoryLayout<timeval>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_BOOTTIME]
+        guard sysctl(&mib, 2, &boot, &size, nil, 0) == 0, boot.tv_sec > 0 else { return nil }
+        return Date(timeIntervalSince1970: Double(boot.tv_sec) + Double(boot.tv_usec) / 1_000_000)
+    }()
+
+    private func recordMinute() {
+        let download = NetworkMetrics.shared.download
+        guard let sample = accumulator.add(cpu: cpu, memory: memory, network: download,
+                                           diskFree: Double(diskFree), at: .now) else { return }
+        var next = dayHistory
+        guard next.record(sample) else { return }
+        dayHistory = next
+        unsavedMinutes += 1
+        if unsavedMinutes >= 10 { saveHistory() }
+    }
+
+    private static var historyURL: URL {
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.docket-zh.app"
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appending(path: bundleID, directoryHint: .isDirectory)
+            .appending(path: "system-history.json")
+    }
+
+    private func loadHistory() {
+        guard !historyLoaded else { return }
+        historyLoaded = true
+        if let data = try? Data(contentsOf: Self.historyURL),
+           let decoded = try? JSONDecoder().decode(SystemActivityHistory.self, from: data) {
+            dayHistory = decoded
+        }
+        terminateObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.saveHistory() }
+        }
+    }
+
+    private func saveHistory() {
+        unsavedMinutes = 0
+        let url = Self.historyURL
+        guard let data = try? JSONEncoder().encode(dayHistory) else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                 withIntermediateDirectories: true)
+        try? data.write(to: url, options: .atomic)
     }
 
     @ObservationIgnored private var timer: Timer?
@@ -64,6 +126,7 @@ final class SystemMetrics {
 
     func start() {
         guard timer == nil else { return }
+        loadHistory()
         sample()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             // Scheduled on the main run loop, so this is already the main actor.
@@ -93,6 +156,9 @@ final class SystemMetrics {
         }
         diskCountdown -= 1
         record()
+        SystemAlerts.shared.check(SystemAlertReading(cpu: cpu, memory: memory,
+                                                     network: NetworkMetrics.shared.download,
+                                                     diskFree: diskTotal > 0 ? Double(diskFree) : nil))
     }
 
     // MARK: - CPU

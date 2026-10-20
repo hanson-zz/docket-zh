@@ -44144,6 +44144,556 @@
           }
         }
       }
+    },
+    "网络" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network"
+          }
+        }
+      }
+    },
+    "已运行 %@ 天 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@ d %@ h"
+          }
+        }
+      }
+    },
+    "已运行 %@ 小时 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@ h %@ min"
+          }
+        }
+      }
+    },
+    "已运行 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@ min"
+          }
+        }
+      }
+    },
+    "峰值 %@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak %@ at %@"
+          }
+        }
+      }
+    },
+    "最少可用 %@ GB · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Least free %@ GB at %@"
+          }
+        }
+      }
+    },
+    "按 CPU" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By CPU"
+          }
+        }
+      }
+    },
+    "按内存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Memory"
+          }
+        }
+      }
+    },
+    "磁盘可用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disk free"
+          }
+        }
+      }
+    },
+    "%@ %@ %@ 持续 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ %@ for %@ min"
+          }
+        }
+      }
+    },
+    "磁盘可用空间不到 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less than %@ free on disk"
+          }
+        }
+      }
+    },
+    "CPU 占用已持续 %@ 分钟超过 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU above %2$@ for %1$@ min"
+          }
+        }
+      }
+    },
+    "内存占用已持续 %@ 分钟超过 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory above %2$@ for %1$@ min"
+          }
+        }
+      }
+    },
+    "网络下行已持续 %@ 分钟超过 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download above %2$@ for %1$@ min"
+          }
+        }
+      }
+    },
+    "现在只剩 %@，可以清理一下大文件或废纸篓。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only %@ left. Try clearing out large files or the Trash."
+          }
+        }
+      }
+    },
+    "现在是 %@，可以打开系统活动看看占用最高的 App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It is at %@ now. Open System Activity to see which apps use the most."
+          }
+        }
+      }
+    },
+    "提醒与管理" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerts & Settings"
+          }
+        }
+      }
+    },
+    "超阈值提醒和卡片上显示的读数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threshold alerts and the readings on the card"
+          }
+        }
+      }
+    },
+    "CPU、内存、网络、磁盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU, memory, network, disk"
+          }
+        }
+      }
+    },
+    "超阈值提醒 · 卡片读数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threshold alerts · Card readings"
+          }
+        }
+      }
+    },
+    "%@ 下行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ down"
+          }
+        }
+      }
+    },
+    "GB 可用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GB free"
+          }
+        }
+      }
+    },
+    "每分钟记一次，记满 24 小时就是完整的一天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded every minute; a full day after 24 hours"
+          }
+        }
+      }
+    },
+    "24 小时前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24 h ago"
+          }
+        }
+      }
+    },
+    "12 小时前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 h ago"
+          }
+        }
+      }
+    },
+    "最近 24 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 24 hours"
+          }
+        }
+      }
+    },
+    "占用最高" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top usage"
+          }
+        }
+      }
+    },
+    "正在读取进程…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading processes…"
+          }
+        }
+      }
+    },
+    "退出 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit %@"
+          }
+        }
+      }
+    },
+    "不是普通 App，不能在这里退出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not a regular app, so it cannot be quit here"
+          }
+        }
+      }
+    },
+    "退出「%@」？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit \"%@\"?"
+          }
+        }
+      }
+    },
+    "CPU %@ · 内存 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU %@ · Memory %@"
+          }
+        }
+      }
+    },
+    "没保存的内容可能会丢失" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsaved work may be lost"
+          }
+        }
+      }
+    },
+    "「%@」没有退出，它可能已经关了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" did not quit. It may already be closed."
+          }
+        }
+      }
+    },
+    "超阈值提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threshold alerts"
+          }
+        }
+      }
+    },
+    "＋ 添加规则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Add Rule"
+          }
+        }
+      }
+    },
+    "超阈值提醒是码头 Pro 功能。解锁后按下面的规则发系统通知，卡片上的读数变红。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threshold alerts are a Dockling Pro feature. Once unlocked, these rules send a notification and turn the reading red on the card."
+          }
+        }
+      }
+    },
+    "还没有规则，点“添加规则”加一条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rules yet. Click Add Rule to create one."
+          }
+        }
+      }
+    },
+    "卡片上显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show on card"
+          }
+        }
+      }
+    },
+    "展开编辑这条规则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand to edit this rule"
+          }
+        }
+      }
+    },
+    "指标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metric"
+          }
+        }
+      }
+    },
+    "超过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above"
+          }
+        }
+      }
+    },
+    "持续" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For"
+          }
+        }
+      }
+    },
+    "到了发系统通知，卡片读数变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends a notification and turns the card reading red"
+          }
+        }
+      }
+    },
+    "MB/s 下行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MB/s down"
+          }
+        }
+      }
+    },
+    "视频剪辑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video Editor"
+          }
+        }
+      }
+    },
+    "浏览器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser"
+          }
+        }
+      }
+    },
+    "设计工具" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design Tool"
+          }
+        }
+      }
+    },
+    "代码编辑器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code Editor"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

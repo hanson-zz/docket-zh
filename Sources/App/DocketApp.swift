@@ -153,6 +153,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return nil
         }
 
+        // 系统活动的超阈值提醒读第一个系统活动小组件的规则，在哪个布局都算。
+        SystemAlerts.shared.rules = { [state] in
+            func system(in items: [DockItem]) -> WidgetInstance? {
+                for item in items {
+                    switch item {
+                    case .widget(let widget) where widget.kind == .system: return widget
+                    case .group(let group): if let found = system(in: group.items) { return found }
+                    default: continue
+                    }
+                }
+                return nil
+            }
+            for profile in state.state.profiles {
+                if let widget = system(in: profile.items) { return SystemAlertRules.rules(widget.config) }
+            }
+            return nil
+        }
+
         // 灵动提示: off unless switched on in Settings ▸ 通用.
         IslandController.shared.apply(state.state.island)
         state.onIslandChanged = { island in IslandController.shared.apply(island) }
