@@ -243,6 +243,51 @@ final class ProLicenseTests: XCTestCase {
         XCTAssertFalse(ProLicenseGate.needsLockOverlay(plain, unlocked: false))
     }
 
+    /// 柴犬、橘猫累计达标解锁后，免费用户的角色样式照常显示，不标 Pro；
+    /// 没达标解锁、或选小熊猫和 Pro 角色时仍退回圆环，液态照旧是 Pro。
+    func testEarnedWaterCharacterKeepsTheCharacterLayout() {
+        func card(_ character: WaterCharacter, earned: [WaterCharacter] = [], layout: WaterLayout = .character) -> WidgetConfig {
+            WidgetConfig([WaterLayout.key: .string(layout.rawValue),
+                          "character": .string(character.rawValue),
+                          WaterCharacter.earnedKey: .list(earned.map { .string($0.rawValue) })])
+        }
+        func shown(_ config: WidgetConfig, unlocked: Bool = false) -> WaterLayout {
+            ProLicenseGate.waterLayout(config: config, unlocked: unlocked,
+                                       earnedCharacter: ProFeatures.waterCharacterEarned(config))
+        }
+        // 免费 + 柴犬已解锁：角色。
+        let shiba = card(.shiba, earned: [.shiba])
+        XCTAssertTrue(ProFeatures.waterCharacterEarned(shiba))
+        XCTAssertEqual(shown(shiba), .character)
+        XCTAssertEqual(shown(card(.cat, earned: [.shiba, .cat])), .character)
+        // 免费 + 柴犬未解锁：圆环。
+        let lockedShiba = card(.shiba)
+        XCTAssertFalse(ProFeatures.waterCharacterEarned(lockedShiba))
+        XCTAssertEqual(shown(lockedShiba), .ring)
+        XCTAssertEqual(shown(card(.cat, earned: [.shiba])), .ring, "解锁的是柴犬，选的是橘猫")
+        // 免费 + 小熊猫或 Pro 角色：圆环，解锁了柴犬也一样。
+        XCTAssertEqual(shown(card(.redPanda, earned: [.shiba, .cat])), .ring)
+        XCTAssertEqual(shown(card(.otter, earned: [.shiba, .cat])), .ring)
+        // 液态照旧是 Pro。
+        XCTAssertEqual(shown(card(.shiba, earned: [.shiba], layout: .liquid)), .ring)
+        XCTAssertEqual(shown(card(.shiba, earned: [.shiba], layout: .liquid), unlocked: true), .liquid)
+        // 不传达标状态时和原来一样。
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: shiba, unlocked: false), .ring)
+        // Pro 标识和能不能选跟着一致。
+        let character = [WaterLayout.key: WidgetConfig.Value.string(WaterLayout.character.rawValue)]
+        XCTAssertFalse(ProFeatures.isProStyle(.water, character, config: shiba))
+        XCTAssertTrue(ProLicenseGate.canChoose(.water, character, config: shiba, unlocked: false))
+        XCTAssertFalse(ProFeatures.isPro(WidgetInstance(kind: .water, config: shiba)))
+        for config in [lockedShiba, card(.redPanda, earned: [.shiba]), card(.otter, earned: [.shiba])] {
+            XCTAssertTrue(ProFeatures.isProStyle(.water, character, config: config))
+            XCTAssertFalse(ProLicenseGate.canChoose(.water, character, config: config, unlocked: false))
+            XCTAssertTrue(ProFeatures.isPro(WidgetInstance(kind: .water, config: config)))
+        }
+        let liquid = [WaterLayout.key: WidgetConfig.Value.string(WaterLayout.liquid.rawValue)]
+        XCTAssertTrue(ProFeatures.isProStyle(.water, liquid, config: shiba))
+        XCTAssertTrue(ProFeatures.isPro(WidgetInstance(kind: .water, config: card(.shiba, earned: [.shiba], layout: .liquid))))
+    }
+
     /// 喝水的角色和液态没解锁时退回圆环，不盖遮罩；老赞助者、试用中照常显示。
     func testWaterFallsBackToTheRing() {
         let character = WidgetConfig(["layout": .string("character"), "character": .string("otter")])

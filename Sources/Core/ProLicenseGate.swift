@@ -11,7 +11,8 @@ import Foundation
 /// - 天气的多城市和电池格没有同样大小的免费样式可退，盖小锁遮罩。
 /// - 时间进度整种免费，液态和四格是 Pro，没解锁时退回圆环显示，不盖遮罩。
 /// - 喝水整种免费，角色和液态是 Pro，没解锁时都画成圆环，不盖遮罩；配置照旧
-///   存着角色或液态，解锁或试用时自动回来。
+///   存着角色或液态，解锁或试用时自动回来。例外：卡片选的是累计达标解锁的
+///   柴犬或橘猫时，角色样式照常显示，也不标 Pro。
 /// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
 ///   超过 3 个的不删数据，超出的只读带小锁；近七天报告是 Pro。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
@@ -47,6 +48,13 @@ public enum ProLicenseGate {
     /// 同上，带上种类：天气的多城市、电池格、便签的 Pro 纸色也算。
     public static func canChoose(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value], unlocked: Bool) -> Bool {
         unlocked || !ProFeatures.isProStyle(kind, overrides)
+    }
+
+    /// 同上，再带上卡片现在的配置：喝水选的是已经达标解锁的柴犬或橘猫时，
+    /// 角色样式免费能选。
+    public static func canChoose(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value],
+                                 config: WidgetConfig, unlocked: Bool) -> Bool {
+        unlocked || !ProFeatures.isProStyle(kind, overrides, config: config)
     }
 
     /// 颜色与背景里能不能选这个颜色（自定义颜色是 Pro）。
@@ -105,8 +113,16 @@ public enum ProLicenseGate {
     /// 喝水卡片实际画哪种样式：没解锁时角色和液态都退回圆环。老卡片没存
     /// `layout` 时按角色读，所以没解锁时同样画圆环。
     public static func waterLayout(config: WidgetConfig, unlocked: Bool) -> WaterLayout {
+        waterLayout(config: config, unlocked: unlocked, earnedCharacter: false)
+    }
+
+    /// 同上，`earnedCharacter` 为卡片选的是已经累计达标解锁的柴犬或橘猫（见
+    /// `ProFeatures.waterCharacterEarned`）：这时没解锁 Pro 也照常画角色样式。
+    /// 选小熊猫或 Pro 角色、或还没达标解锁时仍退回圆环；液态照旧是 Pro。
+    public static func waterLayout(config: WidgetConfig, unlocked: Bool, earnedCharacter: Bool) -> WaterLayout {
         let layout = WaterLayout.stored(config)
         guard !unlocked, layout.isPro else { return layout }
+        if layout == .character, earnedCharacter { return .character }
         return .ring
     }
 

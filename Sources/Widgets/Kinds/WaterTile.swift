@@ -13,7 +13,8 @@ import SwiftUI
 ///   几颗水珠，满了顶上一道高光。没有角色。
 ///
 /// 没解锁时角色和液态都画成圆环、不盖锁，配置照旧存着，解锁或试用时自动
-/// 回来（见 `ProLicenseGate.waterLayout`）。三种样式一样大。
+/// 回来（见 `ProLicenseGate.waterLayout`）。选的是累计达标解锁的柴犬或橘猫
+/// 时角色样式照常画。三种样式一样大。
 ///
 /// Like the other reminder tiles, the "+" is the only control: it logs one
 /// cup of water (`cupSize`), and the card's own click opens the panel, where
@@ -40,7 +41,11 @@ struct WaterTile: View {
     private var unlocked: Bool { licenseUnlocked || supporterUnlocked || context.isPreview }
 
     /// 实际画的样式：角色和液态是 Pro，没解锁时退回圆环（预览照常画）。
-    private var layout: WaterLayout { ProLicenseGate.waterLayout(config: instance.config, unlocked: unlocked) }
+    /// 选的是累计达标解锁的柴犬或橘猫时，没解锁也照常画角色。
+    private var layout: WaterLayout {
+        let earned = !unlocked && ProFeatures.waterCharacterEarned(instance.config, now: context.now)
+        return ProLicenseGate.waterLayout(config: instance.config, unlocked: unlocked, earnedCharacter: earned)
+    }
     /// 很久没喝或进度很低时角色渴成骷髅（见 `WaterParched`），喝一杯就复活。
     private var parched: Bool {
         !context.isPreview && WaterParched.isParched(instance.config, now: context.now)

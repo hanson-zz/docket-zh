@@ -250,12 +250,13 @@ struct WidgetSettingsSections: View {
     /// could neither tell them apart nor show the right one.
     private func stylePicker(_ entry: WidgetCatalog.Entry, _ instance: WidgetInstance) -> some View {
         let currentIsPro = entry.variants.first { $0.title == selectedVariant(entry, instance) }
-            .map { ProFeatures.isProStyle(entry.kind, $0.overrides) } ?? false
+            .map { ProFeatures.isProStyle(entry.kind, $0.overrides, config: instance.config) } ?? false
         return Picker(selection: Binding(
             get: { selectedVariant(entry, instance) },
             set: { title in
                 guard let variant = entry.variants.first(where: { $0.title == title }) else { return }
-                if !ProLicenseGate.canChoose(entry.kind, variant.overrides, unlocked: ProAccess.isUnlocked) {
+                if !ProLicenseGate.canChoose(entry.kind, variant.overrides, config: instance.config,
+                                             unlocked: ProAccess.isUnlocked) {
                     PaywallWindow.shared.show()
                     return
                 }
@@ -267,7 +268,10 @@ struct WidgetSettingsSections: View {
                 // 选中的是 Pro 样式时，“样式”旁边固定显示 Pro 标识。
                 ForEach(entry.variants.indices, id: \.self) { index in
                     let variant = entry.variants[index]
-                    Text(ProFeatures.menuTitle(variant.title, isPro: ProFeatures.isProStyle(entry.kind, variant.overrides)))
+                    // 喝水选的是已达标解锁的柴犬或橘猫时，“角色”不标 Pro。
+                    Text(ProFeatures.menuTitle(variant.title,
+                                               isPro: ProFeatures.isProStyle(entry.kind, variant.overrides,
+                                                                             config: instance.config)))
                         .tag(variant.title)
                 }
             } label: {

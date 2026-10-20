@@ -16,7 +16,8 @@ import Foundation
 ///   红黄绿渐变（见 `BatteryLiquidFX`），都只属于液态外观，不另算一项 Pro。
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
 ///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
-///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）。
+///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）。喝水卡片
+///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
 ///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
@@ -156,6 +157,33 @@ public enum ProFeatures {
         return false
     }
 
+    /// 喝水卡片选的角色是柴犬或橘猫，且已经累计达标解锁（不算 Pro 打开的）。
+    /// 这时角色样式对免费用户也能用：卡片照常画角色，样式不标 Pro。
+    public static func waterCharacterEarned(_ config: WidgetConfig, now: Date = .now,
+                                            calendar: Calendar = WaterIntake.calendar) -> Bool {
+        let character = WaterCharacter.from(config)
+        guard character.daysToEarn != nil else { return false }
+        return WaterCharacter.access(character, config: config, pro: false, now: now, calendar: calendar) == .earned
+    }
+
+    /// 带上卡片现在的配置判断一组样式覆盖是不是 Pro。和 `isProStyle(_:_:)` 一样，
+    /// 只多一条：喝水换成角色样式、而卡片（加上这组覆盖后）选的是已经达标
+    /// 解锁的柴犬或橘猫时，角色样式不算 Pro。
+    public static func isProStyle(_ kind: WidgetKind, _ overrides: [String: WidgetConfig.Value],
+                                  config: WidgetConfig, now: Date = .now) -> Bool {
+        if kind == .water, case .string(let layout) = overrides[WaterLayout.key],
+           layout == WaterLayout.character.rawValue {
+            var merged = config
+            for (key, value) in overrides { merged.set(key, value) }
+            if waterCharacterEarned(merged, now: now) {
+                var rest = overrides
+                rest.removeValue(forKey: WaterLayout.key)
+                return isProStyle(kind, rest)
+            }
+        }
+        return isProStyle(kind, overrides)
+    }
+
     /// 便签的这个纸色是不是 Pro。认不出的值按默认的柠檬黄读，所以是免费的。
     public static func isProNoteColor(_ raw: String) -> Bool {
         guard let color = PaperColor(rawValue: raw) else { return false }
@@ -179,7 +207,8 @@ public enum ProFeatures {
         if instance.kind == .water, values[WaterLayout.key] == nil {
             values[WaterLayout.key] = .string(WaterLayout.legacyDefault.rawValue)
         }
-        return isPro(instance.kind, overrides: values)
+        // 喝水选的是已经达标解锁的柴犬或橘猫时，角色样式不标 Pro。
+        return isProKind(instance.kind) || isProStyle(instance.kind, values, config: instance.config)
     }
 
     /// 设置里某个单选项的一个值是不是 Pro（如外观选“液态”、喝水选柴犬）。
