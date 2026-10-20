@@ -27,35 +27,39 @@ struct TimeProgressDetail: View {
         // 一分钟一跳：「还剩 13 小时 36 分」要准到分钟。不能用 `context.now`，
         // 面板打开时只赋值一次，开着的时候会一直停在那一刻。
         TimelineView(.periodic(from: .now, by: 60)) { tick in
-            let model = TimeProgressPanelModel(now: tick.date, period: period, layout: layout,
-                                               known: known, anniversaries: anniversaries)
-            DetailCard {
-                MeshBackdrop(color: colors.accent)
-            } content: {
-                content(model)
-            }
+            panel(tick.date)
         }
         .environment(\.widgetTint, tintStyle)
         .environment(\.timeProgressColors, colors)
         .onAppear { if !context.isPreview { HolidayService.shared.refresh() } }
     }
 
+    private func panel(_ now: Date) -> some View {
+        let model = TimeProgressPanelModel(now: now, period: period, layout: layout,
+                                           known: known, anniversaries: anniversaries)
+        let accent: Color = colors.accent
+        return DetailCard {
+            MeshBackdrop(color: accent)
+        } content: {
+            layoutBody(model)
+        }
+    }
+
     @ViewBuilder
-    private func content(_ model: TimeProgressPanelModel) -> some View {
-        let parts = TimeProgressParts(model: model, pick: context.isPreview ? nil : pick)
-        VStack(alignment: .leading, spacing: 0) {
-            switch layout {
-            case TimeProgress.quadLayout:
-                quadPanel(model, parts)
-            case "percentage":
-                percentagePanel(model, parts)
-            case LiquidMotion.layout:
-                liquidPanel(model, parts)
-            case "ring":
-                ringPanel(model, parts)
-            default:
-                barsPanel(model, parts)
-            }
+    private func layoutBody(_ model: TimeProgressPanelModel) -> some View {
+        let writer: (@MainActor (TimeProgress.Period) -> Void)? = context.isPreview ? nil : { span in pick(span) }
+        let parts = TimeProgressParts(model: model, pick: writer)
+        switch layout {
+        case TimeProgress.quadLayout:
+            quadPanel(model, parts)
+        case "percentage":
+            percentagePanel(model, parts)
+        case LiquidMotion.layout:
+            liquidPanel(model, parts)
+        case "ring":
+            ringPanel(model, parts)
+        default:
+            barsPanel(model, parts)
         }
     }
 

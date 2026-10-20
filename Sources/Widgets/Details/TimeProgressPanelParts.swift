@@ -8,7 +8,7 @@ import SwiftUI
 struct TimeProgressParts {
     let model: TimeProgressPanelModel
     /// 写卡片的 period 键；预览里是 nil，分段和周期都只是字，不响应点按。
-    let pick: ((TimeProgress.Period) -> Void)?
+    let pick: (@MainActor (TimeProgress.Period) -> Void)?
 
     private static let periods: [TimeProgress.Period] = [.day, .week, .month, .year]
 
@@ -423,7 +423,7 @@ struct TimeProgressColorsReader<Content: View>: View {
 /// 日、周、月、年分段控件。写的是卡片的 period 键。
 struct TimeProgressSegmented: View {
     var selected: TimeProgress.Period
-    var pick: ((TimeProgress.Period) -> Void)?
+    var pick: (@MainActor (TimeProgress.Period) -> Void)?
 
     var body: some View {
         HStack(spacing: 0) {
