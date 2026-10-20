@@ -5,7 +5,8 @@ import SwiftUI
 ///
 /// 不再是又一个会填满的圆环（那是专注计时的样子），三种样子：
 /// - 坐着：小熊猫打盹，“已坐 48 分钟”“60 分钟时叫你”，下面六格，每格是间隔的六分之一。
-/// - 到点：卡片变粉，小熊猫伸懒腰，“伸个懒腰吧”，点“起来了”记一次。
+/// - 到点：小熊猫伸懒腰，“该起来走走了”“已坐 43 分钟”，点实心粉色的“起来了”记一次。
+///   卡片照常是压暗的深色玻璃（浅色壁纸上也看得清），粉色只在小熊猫身后铺一层渐隐淡底。
 /// - 开着专注计时（并且打开了“休息时提醒起身”）：小熊猫趴着不打扰，起身交给专注的
 ///   休息环节，这时不发通知，两个都放也只提醒一次（`SitFocus`）。
 ///
@@ -54,8 +55,12 @@ struct PostureTile: View {
     }
 
     var body: some View {
-        WidgetSurface(fill: due ? Color.timerPink.opacity(0.22) : nil) {
-            if context.position.isVertical { column } else { row }
+        // 不再用粉色顶替卡片的深色底：那样浅色壁纸上整张卡发白，白字对比度只有 1.9。
+        WidgetSurface {
+            ZStack {
+                if due { pinkWash }
+                if context.position.isVertical { column } else { row }
+            }
         }
         .onAppear { PostureNotifier.shared.update(instance, next: nextReminder) }
         .onChange(of: nextReminder) { _, next in PostureNotifier.shared.update(instance, next: next) }
@@ -71,24 +76,41 @@ struct PostureTile: View {
         return "pet-panda-rest"
     }
 
+    /// 小熊猫身后一层粉色淡底，往外渐隐。横排从左边铺到四成，竖排从上往下。
+    private var pinkWash: some View {
+        let vertical = context.position.isVertical
+        return LinearGradient(stops: [.init(color: Color.timerPink.opacity(0.30), location: 0),
+                                      .init(color: Color.timerPink.opacity(0), location: vertical ? 0.75 : 0.42)],
+                              startPoint: vertical ? .top : .leading,
+                              endPoint: vertical ? .bottom : .trailing)
+            .padding(.horizontal, -WidgetStyle.inset)
+            .padding(.vertical, -20)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
     // MARK: 横排（168 × 58）
 
     private var row: some View {
         HStack(spacing: 8) {
             TimerPanda(name: pandaName, fallback: "figure.stand", height: 48)
                 .frame(width: 38)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: due ? 1 : 2) {
                 if due {
-                    Text(tr("伸个懒腰吧"))
-                        .font(.system(size: 14, weight: .heavy))
+                    // 卡片只有 58pt 高，三行已塞满：标题 15pt，副标题和按钮 11pt。
+                    Text(tr("该起来走走了"))
+                        .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Text(tr("坐了 \(max(1, Int(sat / 60))) 分钟 · 今天第 \(breaksToday + 1) 次"))
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(WidgetStyle.primary.opacity(0.75))
+                        .minimumScaleFactor(0.75)
+                    Text(SitFocus.satText(max(60, sat)))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(WidgetStyle.primary.opacity(0.8))
+                        .monospacedDigit()
                         .lineLimit(1)
-                    TimerPill(title: tr("起来了"), size: 10, height: 18, tint: .timerPink,
+                        .minimumScaleFactor(0.8)
+                    TimerPill(title: tr("起来了"), size: 11, height: 18, tint: .timerPink,
+                              solidInk: .timerPinkInk,
                               action: context.isPreview ? nil : { logBreak() })
                 } else if yields {
                     Text(tr("专注中"))
@@ -145,9 +167,16 @@ struct PostureTile: View {
 
     private var column: some View {
         VStack(spacing: 2) {
-            TimerPanda(name: pandaName, fallback: "figure.stand", height: 40)
+            TimerPanda(name: pandaName, fallback: "figure.stand", height: due ? 34 : 40)
             if due {
-                TimerPill(title: tr("起来了"), size: 9.5, height: 16, tint: .timerPink,
+                Text(tr("\(max(1, Int(sat / 60))) 分钟"))
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                TimerPill(title: tr("起来了"), size: 11, height: 18, tint: .timerPink, minWidth: 56,
+                          solidInk: .timerPinkInk,
                           action: context.isPreview ? nil : { logBreak() })
             } else {
                 Text(yields ? tr("专注中") : (active ? tr("\(Int(sat / 60)) 分钟") : "--"))
@@ -166,15 +195,23 @@ struct PostureTile: View {
 }
 
 /// The one write both the tile and the panel make.
+///
+/// 除了原来的上次起身和今天次数，还记今天每次起身的时刻（`breaks`）和最近 7 天
+/// 每天的次数（`history`），面板的时间轴和柱状图从这里画，见 `PostureTrack`。
 @MainActor
 enum PostureLog {
     static func logBreak(_ instance: WidgetInstance, now: Date = .now) {
-        let tally = PostureTally.logging(storedDay: instance.config.string("breakDay"),
-                                         count: instance.config.int("breakCount"), now: now)
+        let config = instance.config
+        let tally = PostureTally.logging(storedDay: config.string("breakDay"),
+                                         count: config.int("breakCount"), now: now)
+        let breaks = PostureTrack.breaksAfterLogging(config, now: now)
+        let history = PostureTrack.historyAfterLogging(config, todayCount: tally.count, now: now)
         WidgetWriter.write(instance) { config in
             config.set("lastBreak", .number(now.timeIntervalSince1970))
             config.set("breakDay", .string(tally.day))
             config.set("breakCount", .number(Double(tally.count)))
+            config.set(PostureTrack.breaksKey, .list(breaks))
+            config.set(PostureTrack.historyKey, .list(history))
         }
     }
 }

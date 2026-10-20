@@ -406,11 +406,12 @@ public enum WidgetCatalog {
               defaults: c(["rings": .list(GaugeReading.defaultRings.map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // A ring that fills between breaks, with active hours, a
-        // notification and a count of today's breaks.
+        // 小熊猫陪坐，到点叫你起身；提醒时段、通知、每天起身目标（`goal`，
+        // 见 PostureTrack），面板里画今天的时间轴和近 7 天。
         Entry(kind: .posture, name: tr("久坐提醒"), category: .health,
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
-                           "end": .string("18:00"), "notify": .bool(true)]),
+                           "end": .string("18:00"), "notify": .bool(true),
+                           "goal": .number(Double(PostureTrack.defaultGoal))]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A list of its own under `items`, never the system's Reminders.

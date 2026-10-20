@@ -96,7 +96,7 @@ final class WidgetOptionTests: XCTestCase {
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],
             .gauges: ["rings"],
-            .posture: ["duration", "start", "end", "notify"],
+            .posture: ["duration", "start", "end", "notify", "goal"],
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras", "look"],
             .todo: ["showDone"],
             .ambient: ["sounds", "volume"],

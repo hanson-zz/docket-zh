@@ -366,9 +366,9 @@ struct WidgetSettingsSections: View {
             Stepper(value: Binding(
                 get: { instance.config.double(key, default: fallback) },
                 set: { value in write(instance) { $0.set(key, .number(value)) } }),
-                in: Self.range(key), step: Self.step(key)) {
+                in: Self.range(key, kind: entry.kind), step: Self.step(key, kind: entry.kind)) {
                     LabeledContent(Self.label(key, kind: entry.kind)) {
-                        Text(Self.format(key, instance.config.double(key, default: fallback)))
+                        Text(Self.format(key, instance.config.double(key, default: fallback), kind: entry.kind))
                     }
                 }
 
@@ -604,6 +604,7 @@ struct WidgetSettingsSections: View {
         "github.notify": tr("有新议题、拉取请求或评论时通知"),
         "github.repos": tr("关注的项目（最多 \(GitHubWatch.maxRepos) 个）"),
         "podcast.notify": tr("有新单集时通知"),
+        "posture.goal": tr("每天起身目标"),
         // 「算」只写了一种币种时：是「默认换成」那种就换成常用币种，否则换成「默认换成」。
         "calculator.currencyFrom": tr("常用币种（输入本币时换成它）"),
         "calculator.currencyTo": tr("默认换成（只写一种币种时）"),
@@ -676,7 +677,11 @@ struct WidgetSettingsSections: View {
         }
     }
 
-    static func range(_ key: String) -> ClosedRange<Double> {
+    static func range(_ key: String, kind: WidgetKind? = nil) -> ClosedRange<Double> {
+        // 久坐提醒的 goal 是每天起身几次，不是喝水的毫升。
+        if kind == .posture, key == PostureTrack.goalKey {
+            return Double(PostureTrack.goalRange.lowerBound)...Double(PostureTrack.goalRange.upperBound)
+        }
         switch key {
         case "duration": 60...14_400
         case "skip": 5...60
@@ -691,7 +696,8 @@ struct WidgetSettingsSections: View {
         }
     }
 
-    static func step(_ key: String) -> Double {
+    static func step(_ key: String, kind: WidgetKind? = nil) -> Double {
+        if kind == .posture, key == PostureTrack.goalKey { return 1 }
         switch key {
         case "duration": 300
         case "goal": 100
@@ -702,7 +708,8 @@ struct WidgetSettingsSections: View {
         }
     }
 
-    static func format(_ key: String, _ value: Double) -> String {
+    static func format(_ key: String, _ value: Double, kind: WidgetKind? = nil) -> String {
+        if kind == .posture, key == PostureTrack.goalKey { return tr("每天 \(Int(value)) 次") }
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "goal" || key == "cupSize" { return tr("\(Int(value)) 毫升") }
         if key == "payday" { return tr("每月 \(Int(value)) 日") }

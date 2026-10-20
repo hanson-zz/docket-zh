@@ -13,6 +13,9 @@ struct TimerPill: View {
     /// 高亮的那个（上次用的预设、关掉）用主题色。
     var tint: Color?
     var minWidth: CGFloat = 0
+    /// 给了就是实心按钮：`tint` 铺满底，字用这个颜色（久坐提醒的「起来了」，
+    /// 粉底深字）。没给时照旧淡底彩字。
+    var solidInk: Color? = nil
     var action: (() -> Void)?
 
     var body: some View {
@@ -27,15 +30,17 @@ struct TimerPill: View {
 
     private var label: some View {
         Text(title)
-            .font(.system(size: size, weight: .semibold))
-            .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(WidgetStyle.primary.opacity(0.88)))
+            .font(.system(size: size, weight: solidInk == nil ? .semibold : .bold))
+            .foregroundStyle(solidInk.map { AnyShapeStyle($0) }
+                             ?? tint.map { AnyShapeStyle($0) }
+                             ?? AnyShapeStyle(WidgetStyle.primary.opacity(0.88)))
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .padding(.horizontal, 8)
             .frame(minWidth: minWidth)
             .frame(height: height)
             .background {
-                Capsule().fill(tint.map { $0.opacity(0.26) } ?? WidgetStyle.primary.opacity(0.1))
+                Capsule().fill(tint.map { $0.opacity(solidInk == nil ? 0.26 : 1) } ?? WidgetStyle.primary.opacity(0.1))
             }
     }
 }
@@ -102,4 +107,6 @@ extension Color {
     static let timerGreen = Color(hex: "#4CD787")
     static let timerTomato = Color(hex: "#FF6B5A")
     static let timerPink = Color(hex: "#FF7BA9")
+    /// 实心粉按钮上的深字（久坐提醒的「起来了」「我起身活动了」），对比度约 6.9。
+    static let timerPinkInk = Color(hex: "#3A0D1F")
 }

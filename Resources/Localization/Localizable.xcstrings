@@ -5871,6 +5871,17 @@
         }
       }
     },
+    "今天坐了 %@ 段" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sitting stretches today"
+          }
+        }
+      }
+    },
     "今天已喝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6098,6 +6109,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Earned today"
+          }
+        }
+      }
+    },
+    "今天起身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stand-ups today"
           }
         }
       }
@@ -6780,6 +6802,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time to stretch"
+          }
+        }
+      }
+    },
+    "伸个懒腰吧，已坐 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to stretch. Sitting %@ min"
           }
         }
       }
@@ -9145,6 +9178,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Price alerts (AAPL>237 rises to, AAPL<220 falls to)"
+          }
+        }
+      }
+    },
+    "到点了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time's up"
+          }
+        }
+      }
+    },
+    "到点了 · 超时 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time's up · %@ over"
           }
         }
       }
@@ -16051,6 +16106,17 @@
         }
       }
     },
+    "平均每次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avg sit"
+          }
+        }
+      }
+    },
     "平均订单金额" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18866,6 +18932,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Warm white"
+          }
+        }
+      }
+    },
+    "最长 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longest %@ min"
+          }
+        }
+      }
+    },
+    "最长连坐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longest sit"
+          }
+        }
+      }
+    },
+    "每天 %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a day"
+          }
+        }
+      }
+    },
+    "每天起身目标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily stand-up goal"
           }
         }
       }
@@ -27698,6 +27808,17 @@
         }
       }
     },
+    "现在 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now %@"
+          }
+        }
+      }
+    },
     "现在不想设置就点“跳过”。以后想再看，在“设置 ▸ 通用”里重新打开这份引导。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28435,6 +28556,17 @@
         }
       }
     },
+    "目标 %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal %@"
+          }
+        }
+      }
+    },
     "目标币种" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28585,6 +28717,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Got It"
+          }
+        }
+      }
+    },
+    "短" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short"
           }
         }
       }
@@ -32981,6 +33124,17 @@
         }
       }
     },
+    "该起来走走了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to get up"
+          }
+        }
+      }
+    },
     "该起身了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34066,6 +34220,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last 5 weeks"
+          }
+        }
+      }
+    },
+    "近 7 天起身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stand-ups, last 7 days"
           }
         }
       }
@@ -36167,6 +36332,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mirror"
+          }
+        }
+      }
+    },
+    "长" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long"
           }
         }
       }
