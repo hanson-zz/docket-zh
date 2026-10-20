@@ -24,6 +24,7 @@ final class QuickTogglesGaugesPanelTests: XCTestCase {
         XCTAssertEqual(KeepAwakeTimer.remaining(until: now.addingTimeInterval(-5), now: now), "剩 1 分")
         XCTAssertEqual(KeepAwakeTimer.remaining(until: now.addingTimeInterval(3600), now: now), "剩 1 小时")
         XCTAssertEqual(KeepAwakeTimer.remaining(until: now.addingTimeInterval(65 * 60), now: now), "剩 1 小时 5 分")
+        XCTAssertEqual(KeepAwakeTimer.remaining(until: now.addingTimeInterval(105 * 60), now: now, minutesOnly: true), "剩 105 分")
         XCTAssertEqual(KeepAwakeTimer.title(30), "30 分钟")
         XCTAssertEqual(KeepAwakeTimer.title(0), "一直")
     }
@@ -43,6 +44,16 @@ final class QuickTogglesGaugesPanelTests: XCTestCase {
         let plain = WidgetCatalog.naturalSize(named).width
         named.config.set(QuickToggle.showNamesKey, .bool(true))
         XCTAssertGreaterThan(WidgetCatalog.naturalSize(named).width, plain)
+    }
+
+    func testPanelTitlesFitThreeColumns() {
+        for toggle in QuickToggle.allCases {
+            XCTAssertLessThanOrEqual(toggle.panelTitle.count, 5, "\(toggle)")
+            XCTAssertLessThanOrEqual(toggle.caption(on: true).count, 5, "\(toggle)")
+            XCTAssertLessThanOrEqual(toggle.caption(on: false).count, 5, "\(toggle)")
+        }
+        XCTAssertEqual(QuickToggle.cleanScreen.panelTitle, "清洁")
+        XCTAssertEqual(QuickToggle.emptyTrash.panelTitle, "清空废纸篓")
     }
 
     func testEveryButtonHasAPanelCaption() {

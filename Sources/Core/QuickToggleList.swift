@@ -169,6 +169,12 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// 面板大按钮上的名字：五个字以内用全名，更长的（清洁屏幕和键盘、重启程序坞和访达）
+    /// 用短名字，三列的按钮里 13pt 放得下，不缩小字。
+    public var panelTitle: String {
+        title.count <= 5 ? title : shortTitle
+    }
+
     /// 面板大按钮名字下面那行：有开关的写开或关（保持唤醒另算，见 `KeepAwakeTimer`），
     /// 一次性的动作写点了会怎样。
     public func caption(on: Bool) -> String {
@@ -219,10 +225,11 @@ public enum KeepAwakeTimer {
 
     /// 面板和卡片悬停写的剩余时间：“剩 42 分”“剩 1 小时 5 分”，不到一分钟算一分钟；
     /// 没有到点时刻是“一直开着”。
-    public static func remaining(until deadline: Date?, now: Date) -> String {
+    /// `minutesOnly` 时只按分钟写（“剩 105 分”），面板三列的按钮里放得下。
+    public static func remaining(until deadline: Date?, now: Date, minutesOnly: Bool = false) -> String {
         guard let deadline else { return tr("一直开着") }
         let minutes = max(1, Int((deadline.timeIntervalSince(now) / 60).rounded(.up)))
-        if minutes < 60 { return tr("剩 \(minutes) 分") }
+        if minutes < 60 || minutesOnly { return tr("剩 \(minutes) 分") }
         let rest = minutes % 60
         return rest == 0 ? tr("剩 \(minutes / 60) 小时") : tr("剩 \(minutes / 60) 小时 \(rest) 分")
     }

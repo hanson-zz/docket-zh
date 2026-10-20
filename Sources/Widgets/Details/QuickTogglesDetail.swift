@@ -115,7 +115,7 @@ struct QuickTogglesDetail: View {
         let on = !context.isPreview && toggle.hasState && actions.isOn(toggle)
         let locked = !ProLicenseGate.canUseTool(toggle, isOn: on, unlocked: unlocked)
         let state = locked ? ProFeatures.label
-            : (toggle == .keepAwake && on ? KeepAwakeTimer.remaining(until: actions.keepAwakeUntil, now: now)
+            : (toggle == .keepAwake && on ? KeepAwakeTimer.remaining(until: actions.keepAwakeUntil, now: now, minutesOnly: true)
                : toggle.caption(on: on))
         return Button {
             guard !context.isPreview else { return }
@@ -138,17 +138,18 @@ struct QuickTogglesDetail: View {
                     if ProFeatures.isProTool(toggle.rawValue) { ProBadge() }
                 }
                 Spacer(minLength: 6)
-                Text(verbatim: toggle.title)
+                Text(verbatim: toggle.panelTitle)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(locked ? 0.6 : 1))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    // 中文在 13pt 下放得下（见 `panelTitle`），英文名字长时才缩一点。
+                    .minimumScaleFactor(0.85)
                 Text(verbatim: state)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(on ? accent : .white.opacity(0.62))
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.85)
             }
             .padding(10)
             .frame(maxWidth: .infinity, minHeight: 82, maxHeight: 82, alignment: .topLeading)
@@ -159,7 +160,7 @@ struct QuickTogglesDetail: View {
             .contentShape(.rect(cornerRadius: 14))
         }
         .buttonStyle(.plain)
-        .help(locked ? tr("\(toggle.title)：码头 Pro 专属，点一下解锁") : toggle.help)
+        .help(locked ? tr("\(toggle.title)：码头 Pro 专属，点一下解锁") : tr("\(toggle.title)：\(toggle.help)"))
         .accessibilityLabel(toggle.title)
         .accessibilityValue(state)
     }
