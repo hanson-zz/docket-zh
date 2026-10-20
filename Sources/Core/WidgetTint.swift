@@ -9,8 +9,9 @@ import Foundation
 ///
 /// - `tint`：空或 `default` 是默认；`system` 跟随系统强调色；预设的名字
 ///   （`pink`、`blue`……）；或者自定义的 `#RRGGBB`。认不出的当默认。
-/// - `tintBackground`：卡片背景，`none`（默认）、`dark`、`frosted`、
-///   `gradient`、`dots`、`lines`，全部用 SwiftUI 画，不用位图。
+/// - `tintBackground`：卡片背景，`none`（默认）、`dark`、`gradient`，
+///   用 SwiftUI 画，不用位图。以前存过的 `frosted`、`dots`、`lines`
+///   已去掉，读回来按 `none` 处理（见 `background(_:)`）。
 ///
 /// 只染原来是单色（白、灰、统一强调色）的部分：进度、圆环、图标方底、数字
 /// 强调。封面、照片、天气图标这些本身有颜色的内容不动。
@@ -152,7 +153,7 @@ public enum WidgetTint {
         return false
     }
 
-    /// 渐变背景是码头 Pro；无、深色、磨砂、网点、线条免费。
+    /// 渐变背景是码头 Pro；无、深色免费。
     public static func isProBackground(_ background: Background) -> Bool {
         background == .gradient
     }
@@ -314,7 +315,7 @@ public enum WidgetTint {
     public enum Background: String, CaseIterable, Sendable, Identifiable {
         /// 无背景。原始值写 `none`，叫 plain 是为了不和 Optional 的 none 混。
         case plain = "none"
-        case dark, frosted, gradient, dots, lines
+        case dark, gradient
 
         public var id: String { rawValue }
 
@@ -322,10 +323,7 @@ public enum WidgetTint {
             switch self {
             case .plain: tr("无")
             case .dark: tr("深色")
-            case .frosted: tr("磨砂")
             case .gradient: tr("渐变")
-            case .dots: tr("网点")
-            case .lines: tr("线条")
             }
         }
 
@@ -333,6 +331,7 @@ public enum WidgetTint {
         public var forcesDarkInk: Bool { self == .dark || self == .gradient }
     }
 
+    /// 读不出的值（包括已去掉的 `frosted`、`dots`、`lines`）一律当无背景。
     public static func background(_ config: WidgetConfig) -> Background {
         Background(rawValue: config.string(backgroundKey)) ?? .plain
     }

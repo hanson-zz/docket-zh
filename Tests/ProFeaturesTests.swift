@@ -279,9 +279,9 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertEqual(WidgetTint.shownChoice(config, unlocked: true), .custom(ColorCode(hex: "#123456")!))
         XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: false), .plain)
         XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: true), .gradient)
-        let preset = WidgetConfig([WidgetTint.key: .string("blue"), WidgetTint.backgroundKey: .string("dots")])
+        let preset = WidgetConfig([WidgetTint.key: .string("blue"), WidgetTint.backgroundKey: .string("dark")])
         XCTAssertEqual(WidgetTint.shownChoice(preset, unlocked: false), .preset(.blue))
-        XCTAssertEqual(WidgetTint.shownBackground(preset, unlocked: false), .dots)
+        XCTAssertEqual(WidgetTint.shownBackground(preset, unlocked: false), .dark)
     }
 
     func testRenamedCardsKeepTheirLayouts() {

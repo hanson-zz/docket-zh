@@ -26,17 +26,17 @@ final class WidgetAppearanceTests: XCTestCase {
         XCTAssertTrue(WidgetAppearance.isCustomized(config, kind: .battery))
         XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "粉")
 
-        config.set(WidgetTint.backgroundKey, .string("dots"))
-        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "粉 · 网点背景")
+        config.set(WidgetTint.backgroundKey, .string("dark"))
+        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "粉 · 深色背景")
 
         config.set(WidgetTint.key, .string("system"))
-        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "跟随系统 · 网点背景")
+        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "跟随系统 · 深色背景")
 
         config.set(WidgetTint.key, .string("#123456"))
-        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "自定义颜色 · 网点背景")
+        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "自定义颜色 · 深色背景")
 
         config.set(WidgetTint.key, nil)
-        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "网点背景")
+        XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "深色背景")
     }
 
     func testBackgroundIgnoredWhereTheKindHasNone() {

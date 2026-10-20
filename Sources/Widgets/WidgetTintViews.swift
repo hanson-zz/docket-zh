@@ -211,14 +211,12 @@ struct TintGlow: View {
 
 // MARK: - 背景
 
-/// 卡片背景，全部用 SwiftUI 画。深色玻璃风格不变：颜色只是一层淡淡的
-/// 纹理或压暗的渐变，不发光。
+/// 卡片背景，用 SwiftUI 画：无、压暗一层的深色、压暗的主题色渐变。
+/// 扩展栏卡片和颜色面板的实时预览卡共用。深色玻璃风格不变，不发光。
 struct TintBackgroundView: View {
     var background: WidgetTint.Background
     var style: WidgetTintStyle?
     var dark: Bool
-
-    private var main: Color { style?.main(dark: dark) ?? WidgetStyle.primary }
 
     var body: some View {
         switch background {
@@ -226,40 +224,8 @@ struct TintBackgroundView: View {
             Color.clear
         case .dark:
             Color.black.opacity(0.55)
-        case .frosted:
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .overlay(Color.white.opacity(dark ? 0.04 : 0.12))
         case .gradient:
             gradient
-        case .dots:
-            Canvas { context, size in
-                let step = 6.0
-                var y = step / 2
-                var row = 0
-                while y < size.height {
-                    var x = step / 2 + (row.isMultiple(of: 2) ? 0 : step / 2)
-                    while x < size.width {
-                        context.fill(Path(ellipseIn: CGRect(x: x - 0.9, y: y - 0.9, width: 1.8, height: 1.8)),
-                                     with: .color(main.opacity(0.32)))
-                        x += step
-                    }
-                    y += step
-                    row += 1
-                }
-            }
-        case .lines:
-            Canvas { context, size in
-                var path = Path()
-                let step = 7.0
-                var offset = -size.height
-                while offset < size.width {
-                    path.move(to: CGPoint(x: offset, y: size.height))
-                    path.addLine(to: CGPoint(x: offset + size.height, y: 0))
-                    offset += step
-                }
-                context.stroke(path, with: .color(main.opacity(0.2)), lineWidth: 0.8)
-            }
         }
     }
 
@@ -643,7 +609,8 @@ struct WidgetTintPicker: View {
 /// 都立刻跟着变。点「＋10%」加一格（满了回到 0），在进度条上点或拖直接定百分比，
 /// 分段可以切换，好看清主题色在不同进度、选中态下的样子。选了颜色时顶上那一抹
 /// 光晕和细描边按强度画出来，主按钮和选中分段的字按文字颜色画（对比度不够时
-/// 退回「自动」），和扩展栏上的卡片、展开面板用的是同一套规则（`WidgetTint`）。
+/// 退回「自动」），选了背景（深色、渐变）时底板上画出同样的背景，和扩展栏上的
+/// 卡片、展开面板用的是同一套规则（`WidgetTint`）。没解锁时渐变退回无背景。
 /// 固定画成深色玻璃：卡片和面板卡片的默认外观。
 struct TintSampleCard: View {
     var kind: WidgetKind
@@ -706,6 +673,13 @@ struct TintSampleCard: View {
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color(white: 0.14))
+                    .overlay {
+                        // 选了背景时和扩展栏卡片一样画在底板上、光晕下面。
+                        if style.background != .plain {
+                            TintBackgroundView(background: style.background, style: style, dark: true)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
                     .overlay {
                         if glow > 0 {
                             TintGlow(color: main, opacity: glow, reach: reach)

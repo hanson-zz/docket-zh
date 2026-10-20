@@ -122,7 +122,30 @@ final class WidgetTintTests: XCTestCase {
         XCTAssertFalse(WidgetTint.offersBackground(.slacker), "摸鱼时钟有自己的背景")
         XCTAssertTrue(WidgetTint.offersBackground(.progress))
         XCTAssertTrue(WidgetTint.Background.dark.forcesDarkInk)
-        XCTAssertFalse(WidgetTint.Background.dots.forcesDarkInk)
+        XCTAssertTrue(WidgetTint.Background.gradient.forcesDarkInk)
+        XCTAssertFalse(WidgetTint.Background.plain.forcesDarkInk)
+    }
+
+    // MARK: 背景精简
+
+    func testBackgroundsAreNoneDarkGradient() {
+        XCTAssertEqual(WidgetTint.Background.allCases, [.plain, .dark, .gradient])
+        XCTAssertEqual(WidgetTint.Background.allCases.map(\.title), ["无", "深色", "渐变"])
+        XCTAssertEqual(WidgetTint.Background.allCases.map(\.rawValue), ["none", "dark", "gradient"])
+    }
+
+    func testRemovedBackgroundsReadAsPlain() {
+        for raw in ["frosted", "dots", "lines", "", "unknown"] {
+            let config = WidgetConfig([WidgetTint.backgroundKey: .string(raw)])
+            XCTAssertEqual(WidgetTint.background(config), .plain, raw)
+            XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: true), .plain, raw)
+            XCTAssertEqual(WidgetTint.shownBackground(config, unlocked: false), .plain, raw)
+            XCTAssertFalse(WidgetAppearance.isCustomized(config, kind: .battery), raw)
+            XCTAssertEqual(WidgetAppearance.summary(config, kind: .battery), "默认", raw)
+        }
+        XCTAssertEqual(WidgetTint.background(WidgetConfig()), .plain)
+        XCTAssertEqual(WidgetTint.background(WidgetConfig([WidgetTint.backgroundKey: .string("dark")])), .dark)
+        XCTAssertEqual(WidgetTint.background(WidgetConfig([WidgetTint.backgroundKey: .string("gradient")])), .gradient)
     }
 
     // MARK: 对比度

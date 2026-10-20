@@ -879,13 +879,13 @@ private func shelves() -> [ShelfShot] {
                             widget(.system, ["layout": .string(LiquidMotion.layout)]),
                             widget(.battery, [BatteryLook.key: .string(BatteryLook.liquid.rawValue)])],
                   sample: true),
-        // 颜色与背景：几种预设主色，加渐变、磨砂、网点、线条和深色卡片背景。
+        // 颜色与背景：几种预设主色，加渐变和深色卡片背景（背景只有无、深色、渐变三种）。
         ShelfShot(name: "shelf-colors",
                   widgets: [widget(.countdown, tinted(.pink, .gradient)),
-                            widget(.water, tinted(.mint, .frosted)),
-                            widget(.todo, tinted(.purple, .dots)),
+                            widget(.water, tinted(.mint, .dark)),
+                            widget(.todo, tinted(.purple, .plain)),
                             widget(.progress, tinted(.orange, .gradient, ["layout": .string("ring")])),
-                            widget(.habit, tinted(.sky, .lines)),
+                            widget(.habit, tinted(.sky, .plain)),
                             widget(.calendar, tinted(.blue, .dark))],
                   sample: true),
         // 世界时钟：本机时钟加四座城市，时间是拍摄这一刻的真实时间。

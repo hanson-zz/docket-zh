@@ -38038,17 +38038,6 @@
         }
       }
     },
-    "线条" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lines"
-          }
-        }
-      }
-    },
     "细线" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38507,17 +38496,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "NetEase Cloud Music"
-          }
-        }
-      }
-    },
-    "网点" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dots"
           }
         }
       }

@@ -128,7 +128,7 @@ final class WidgetTintAccentTests: XCTestCase {
         XCTAssertEqual(WidgetTint.cardGlowOpacity(.preset(.blue), kind: .countdown,
                                                   background: .gradient, dark: true), 0)
         XCTAssertGreaterThan(WidgetTint.cardGlowOpacity(.preset(.blue), kind: .countdown,
-                                                        background: .dots, dark: true), 0)
+                                                        background: .dark, dark: true), 0)
         XCTAssertGreaterThan(WidgetTint.cardGlowOpacity(.preset(.blue), kind: .countdown,
                                                         background: .plain, dark: true), 0)
     }
