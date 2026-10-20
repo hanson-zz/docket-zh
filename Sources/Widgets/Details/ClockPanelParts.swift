@@ -436,21 +436,41 @@ struct ClockPanelCities: View {
         }
     }
 
+    /// 正在换的那一格，弹出共用的城市选择器（带搜索，别的格已有的城市打勾）。
+    @State private var picking: Int?
+
+    /// 三格对应的城市，给选择器判断“已添加”。
+    private var chosen: [WorldCity] {
+        model.cities.map { WorldCity(storage: "\($0.zone)|\($0.name)") ?? WorldCity(name: $0.name, zone: $0.zone) }
+    }
+
     @ViewBuilder
     private func cell(_ slot: Int, _ city: ClockPanelData.CityTime) -> some View {
         let content = cards ? AnyView(card(city)) : AnyView(column(city))
         if editable {
-            Menu {
-                ForEach(WorldCities.all) { choice in
-                    Button(choice.name) { onPick(slot, choice) }
-                }
+            Button {
+                // 选择器里要打字：先让面板成为 key。
+                WidgetDetailWindow.shared.focusField {}
+                picking = slot
             } label: {
                 content.contentShape(.rect)
             }
-            .menuStyle(.button)
             .buttonStyle(.plain)
-            .menuIndicator(.hidden)
             .help(tr("点按换一座城市"))
+            .popover(isPresented: Binding(get: { picking == slot },
+                                          set: { if !$0 { picking = nil } }),
+                     arrowEdge: .bottom) {
+                let list = chosen
+                WorldCityPicker(added: list.enumerated().filter { $0.offset != slot }.map(\.element),
+                                mode: .replace,
+                                current: slot < list.count ? list[slot] : nil,
+                                listHeight: 260) { picked in
+                    onPick(slot, picked)
+                    picking = nil
+                }
+                .padding(14)
+                .frame(width: 320)
+            }
         } else {
             content
         }

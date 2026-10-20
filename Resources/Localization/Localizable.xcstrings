@@ -4045,6 +4045,17 @@
         }
       }
     },
+    "万象" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vientiane"
+          }
+        }
+      }
+    },
     "三" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4188,6 +4199,17 @@
         }
       }
     },
+    "上午" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morning"
+          }
+        }
+      }
+    },
     "上次 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4294,6 +4316,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move %@ up"
+          }
+        }
+      }
+    },
+    "上行此处 · 下行%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top: here · Bottom: %@"
           }
         }
       }
@@ -4448,6 +4481,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next month"
+          }
+        }
+      }
+    },
+    "下午" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon"
           }
         }
       }
@@ -4859,6 +4903,17 @@
         }
       }
     },
+    "与%@相同" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as %@"
+          }
+        }
+      }
+    },
     "与小李一对一沟通" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5200,6 +5255,17 @@
         }
       }
     },
+    "中午" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midday"
+          }
+        }
+      }
+    },
     "中国" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5262,6 +5328,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chinese"
+          }
+        }
+      }
+    },
+    "中文、英文、拼音、国家、时区标识都能搜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by name, pinyin, country or time zone ID"
           }
         }
       }
@@ -5361,6 +5438,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Denver"
+          }
+        }
+      }
+    },
+    "丹麦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denmark"
           }
         }
       }
@@ -5486,6 +5574,17 @@
         }
       }
     },
+    "乌克兰" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukraine"
+          }
+        }
+      }
+    },
     "乌克兰语" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5493,6 +5592,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ukrainian"
+          }
+        }
+      }
+    },
+    "乌兰巴托" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ulaanbaatar"
+          }
+        }
+      }
+    },
+    "乌兹别克斯坦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzbekistan"
+          }
+        }
+      }
+    },
+    "乌拉圭" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruguay"
           }
         }
       }
@@ -5662,6 +5794,39 @@
         }
       }
     },
+    "亚特兰大" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atlanta"
+          }
+        }
+      }
+    },
+    "亚的斯亚贝巴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Addis Ababa"
+          }
+        }
+      }
+    },
+    "亚美尼亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Armenia"
+          }
+        }
+      }
+    },
     "亚马逊" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5746,6 +5911,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JD"
+          }
+        }
+      }
+    },
+    "京都" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kyoto"
           }
         }
       }
@@ -6850,6 +7026,28 @@
         }
       }
     },
+    "以色列" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Israel"
+          }
+        }
+      }
+    },
+    "仰光" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yangon"
+          }
+        }
+      }
+    },
     "任务完成时通知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6894,6 +7092,28 @@
         }
       }
     },
+    "伊拉克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iraq"
+          }
+        }
+      }
+    },
+    "伊斯兰堡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Islamabad"
+          }
+        }
+      }
+    },
     "伊斯坦布尔" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6901,6 +7121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Istanbul"
+          }
+        }
+      }
+    },
+    "伊朗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iran"
           }
         }
       }
@@ -6978,6 +7209,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Break time"
+          }
+        }
+      }
+    },
+    "休斯敦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houston"
           }
         }
       }
@@ -7411,6 +7653,17 @@
         }
       }
     },
+    "保加利亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bulgaria"
+          }
+        }
+      }
+    },
     "保存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7748,6 +8001,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gym"
+          }
+        }
+      }
+    },
+    "傍晚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening"
           }
         }
       }
@@ -8214,6 +8478,17 @@
         }
       }
     },
+    "全部城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Cities"
+          }
+        }
+      }
+    },
     "全部复原" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8489,6 +8764,17 @@
         }
       }
     },
+    "关岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guam"
+          }
+        }
+      }
+    },
     "关掉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8628,6 +8914,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Content can be up to %@ characters."
+          }
+        }
+      }
+    },
+    "内罗毕" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nairobi"
           }
         }
       }
@@ -8830,6 +9127,28 @@
         }
       }
     },
+    "冰岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iceland"
+          }
+        }
+      }
+    },
+    "冲绳" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okinawa"
+          }
+        }
+      }
+    },
     "冻毛毛雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8896,6 +9215,17 @@
         }
       }
     },
+    "凌晨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Late night"
+          }
+        }
+      }
+    },
     "减" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8925,6 +9255,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Within minutes"
+          }
+        }
+      }
+    },
+    "凤凰城" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phoenix"
           }
         }
       }
@@ -9336,6 +9677,17 @@
         }
       }
     },
+    "删除这个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove this city"
+          }
+        }
+      }
+    },
     "删除这条提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9365,6 +9717,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Riyadh"
+          }
+        }
+      }
+    },
+    "利马" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lima"
           }
         }
       }
@@ -10025,6 +10388,28 @@
         }
       }
     },
+    "加德满都" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kathmandu"
+          }
+        }
+      }
+    },
+    "加拉加斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caracas"
+          }
+        }
+      }
+    },
     "加拿大" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10054,6 +10439,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Star to keep it after quitting"
+          }
+        }
+      }
+    },
+    "加纳" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghana"
           }
         }
       }
@@ -10157,6 +10553,17 @@
         }
       }
     },
+    "匈牙利" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hungary"
+          }
+        }
+      }
+    },
     "北" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10252,6 +10659,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fahrenheit"
+          }
+        }
+      }
+    },
+    "华沙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warsaw"
           }
         }
       }
@@ -10355,6 +10773,17 @@
         }
       }
     },
+    "南京" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nanjing"
+          }
+        }
+      }
+    },
     "南非" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10373,6 +10802,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Broadcom"
+          }
+        }
+      }
+    },
+    "卡塔尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qatar"
+          }
+        }
+      }
+    },
+    "卡尔加里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calgary"
+          }
+        }
+      }
+    },
+    "卡拉奇" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karachi"
           }
         }
       }
@@ -10432,6 +10894,17 @@
         }
       }
     },
+    "卡萨布兰卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casablanca"
+          }
+        }
+      }
+    },
     "卢布" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10439,6 +10912,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Russian ruble"
+          }
+        }
+      }
+    },
+    "卢森堡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Luxembourg"
           }
         }
       }
@@ -10505,6 +10989,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Uninstall Helper"
+          }
+        }
+      }
+    },
+    "厄瓜多尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ecuador"
           }
         }
       }
@@ -10582,6 +11077,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Original"
+          }
+        }
+      }
+    },
+    "厦门" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiamen"
           }
         }
       }
@@ -10956,6 +11462,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Color Picker"
+          }
+        }
+      }
+    },
+    "古巴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuba"
           }
         }
       }
@@ -11374,6 +11891,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Take medicine"
+          }
+        }
+      }
+    },
+    "吉达" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeddah"
           }
         }
       }
@@ -11847,6 +12375,50 @@
         }
       }
     },
+    "哈利法克斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halifax"
+          }
+        }
+      }
+    },
+    "哈尔滨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harbin"
+          }
+        }
+      }
+    },
+    "哈瓦那" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Havana"
+          }
+        }
+      }
+    },
+    "哈萨克斯坦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kazakhstan"
+          }
+        }
+      }
+    },
     "响铃时出声" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11891,6 +12463,28 @@
         }
       }
     },
+    "哥伦比亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colombia"
+          }
+        }
+      }
+    },
+    "哥本哈根" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copenhagen"
+          }
+        }
+      }
+    },
     "哺乳" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11898,6 +12492,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nursing"
+          }
+        }
+      }
+    },
+    "喀布尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kabul"
           }
         }
       }
@@ -12485,6 +13090,17 @@
         }
       }
     },
+    "圣何塞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "San Jose"
+          }
+        }
+      }
+    },
     "圣保罗" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12492,6 +13108,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "São Paulo"
+          }
+        }
+      }
+    },
+    "圣地亚哥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Santiago"
+          }
+        }
+      }
+    },
+    "圣彼得堡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saint Petersburg"
+          }
+        }
+      }
+    },
+    "圣约翰斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "St. John's"
+          }
+        }
+      }
+    },
+    "圣胡安" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "San Juan"
           }
         }
       }
@@ -12903,6 +13563,17 @@
         }
       }
     },
+    "坎昆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancún"
+          }
+        }
+      }
+    },
     "坐了 %@ 分钟 · 今天第 %@ 次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12925,6 +13596,17 @@
         }
       }
     },
+    "坦桑尼亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzania"
+          }
+        }
+      }
+    },
     "垃圾多了招来苍蝇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12943,6 +13625,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Egypt"
+          }
+        }
+      }
+    },
+    "埃塞俄比亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ethiopia"
+          }
+        }
+      }
+    },
+    "埃里温" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerevan"
           }
         }
       }
@@ -12980,6 +13684,17 @@
         }
       }
     },
+    "基多" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quito"
+          }
+        }
+      }
+    },
     "基数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13002,6 +13717,61 @@
         }
       }
     },
+    "基辅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kyiv"
+          }
+        }
+      }
+    },
+    "堪培拉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canberra"
+          }
+        }
+      }
+    },
+    "塔什干" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tashkent"
+          }
+        }
+      }
+    },
+    "塞内加尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senegal"
+          }
+        }
+      }
+    },
+    "塞尔维亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serbia"
+          }
+        }
+      }
+    },
     "填一个网址，或者选一个 App。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13020,6 +13790,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter an OpenAI-compatible endpoint (/chat/completions is appended) and a model name. The key is stored only in this Mac's Keychain."
+          }
+        }
+      }
+    },
+    "增删城市、调整顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add, remove and reorder cities"
           }
         }
       }
@@ -13390,6 +14171,17 @@
         }
       }
     },
+    "多哈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doha"
+          }
+        }
+      }
+    },
     "多城市" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13540,6 +14332,17 @@
         }
       }
     },
+    "大阪" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osaka"
+          }
+        }
+      }
+    },
     "大阵雪" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13683,6 +14486,17 @@
         }
       }
     },
+    "天津" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tianjin"
+          }
+        }
+      }
+    },
     "天空蓝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13745,6 +14559,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Auckland"
+          }
+        }
+      }
+    },
+    "奥地利" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Austria"
+          }
+        }
+      }
+    },
+    "奥斯汀" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Austin"
           }
         }
       }
@@ -13833,6 +14669,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Always show"
+          }
+        }
+      }
+    },
+    "委内瑞拉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venezuela"
+          }
+        }
+      }
+    },
+    "威尼斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venice"
           }
         }
       }
@@ -13936,6 +14794,17 @@
         }
       }
     },
+    "孟加拉国" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bangladesh"
+          }
+        }
+      }
+    },
     "季度复盘" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13958,6 +14827,17 @@
         }
       }
     },
+    "安克雷奇" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anchorage"
+          }
+        }
+      }
+    },
     "安全连接失败，检查接口地址或网络代理。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13965,6 +14845,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Secure connection failed. Check the endpoint or proxy."
+          }
+        }
+      }
+    },
+    "安卡拉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ankara"
+          }
+        }
+      }
+    },
+    "安曼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amman"
           }
         }
       }
@@ -15043,6 +15945,39 @@
         }
       }
     },
+    "尼斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nice"
+          }
+        }
+      }
+    },
+    "尼日利亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nigeria"
+          }
+        }
+      }
+    },
+    "尼泊尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepal"
+          }
+        }
+      }
+    },
     "尾巴都蔫了，喝杯水让我们一起满血复活。还差 %@。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15182,6 +16117,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expand completed"
+          }
+        }
+      }
+    },
+    "展开或收起未来 12 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show or hide the next 12 hours"
           }
         }
       }
@@ -15901,6 +16847,17 @@
         }
       }
     },
+    "已有 12 个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 cities added"
+          }
+        }
+      }
+    },
     "已有许可证或兑换码？输入激活 ›" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16231,6 +17188,83 @@
         }
       }
     },
+    "巴厘岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bali"
+          }
+        }
+      }
+    },
+    "巴基斯坦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakistan"
+          }
+        }
+      }
+    },
+    "巴塞罗那" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barcelona"
+          }
+        }
+      }
+    },
+    "巴库" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baku"
+          }
+        }
+      }
+    },
+    "巴拿马" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panama"
+          }
+        }
+      }
+    },
+    "巴拿马城" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panama City"
+          }
+        }
+      }
+    },
+    "巴格达" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baghdad"
+          }
+        }
+      }
+    },
     "巴西" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16238,6 +17272,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Brazil"
+          }
+        }
+      }
+    },
+    "巴西利亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brasília"
           }
         }
       }
@@ -16264,6 +17309,17 @@
         }
       }
     },
+    "布加勒斯特" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bucharest"
+          }
+        }
+      }
+    },
     "布宜诺斯艾利斯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16282,6 +17338,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Layouts"
+          }
+        }
+      }
+    },
+    "布拉格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prague"
+          }
+        }
+      }
+    },
+    "布达佩斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Budapest"
+          }
+        }
+      }
+    },
+    "布里斯班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brisbane"
+          }
+        }
+      }
+    },
+    "布鲁塞尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brussels"
+          }
+        }
+      }
+    },
+    "希腊" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greece"
+          }
+        }
+      }
+    },
+    "帕皮提" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Papeete"
           }
         }
       }
@@ -16377,6 +17499,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "常用"
+          }
+        }
+      }
+    },
+    "常用城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popular Cities"
           }
         }
       }
@@ -16487,6 +17620,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Average order value"
+          }
+        }
+      }
+    },
+    "平壤" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pyongyang"
           }
         }
       }
@@ -16692,6 +17836,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The app volume widget's audio tap follows its approach."
+          }
+        }
+      }
+    },
+    "底特律" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detroit"
           }
         }
       }
@@ -16967,6 +18122,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kelvin"
+          }
+        }
+      }
+    },
+    "开普敦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cape Town"
           }
         }
       }
@@ -17385,6 +18551,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "German"
+          }
+        }
+      }
+    },
+    "德黑兰" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tehran"
           }
         }
       }
@@ -17880,6 +19057,17 @@
         }
       }
     },
+    "惠灵顿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wellington"
+          }
+        }
+      }
+    },
     "想直接在这里对话：到“设置 ▸ AI”把它改成网页或 API。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17935,6 +19123,17 @@
         }
       }
     },
+    "慕尼黑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Munich"
+          }
+        }
+      }
+    },
     "成交量" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17964,6 +19163,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adult (%@)"
+          }
+        }
+      }
+    },
+    "成都" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chengdu"
           }
         }
       }
@@ -18892,6 +20102,39 @@
         }
       }
     },
+    "拉各斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagos"
+          }
+        }
+      }
+    },
+    "拉斯维加斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Vegas"
+          }
+        }
+      }
+    },
+    "拉萨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lhasa"
+          }
+        }
+      }
+    },
     "拖入" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18925,6 +20168,17 @@
         }
       }
     },
+    "拖动把手调整顺序，卡片显示前 3 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the handles to reorder. The card shows the first 3"
+          }
+        }
+      }
+    },
     "拖动排序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18943,6 +20197,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to reorder. Turning a switch off hides the widget from the shelf and keeps its settings, so you can turn it back on any time. Apps, folders and groups stay where they are."
+          }
+        }
+      }
+    },
+    "拖动调整顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to reorder"
           }
         }
       }
@@ -19321,6 +20586,50 @@
         }
       }
     },
+    "挪威" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Norway"
+          }
+        }
+      }
+    },
+    "捷克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czechia"
+          }
+        }
+      }
+    },
+    "搜索结果 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results · %@"
+          }
+        }
+      }
+    },
+    "摩洛哥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morocco"
+          }
+        }
+      }
+    },
     "文字颜色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19332,6 +20641,50 @@
         }
       }
     },
+    "斐济" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fiji"
+          }
+        }
+      }
+    },
+    "斯里兰卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sri Lanka"
+          }
+        }
+      }
+    },
+    "新奥尔良" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Orleans"
+          }
+        }
+      }
+    },
+    "新西伯利亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novosibirsk"
+          }
+        }
+      }
+    },
     "新闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19339,6 +20692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New alarm"
+          }
+        }
+      }
+    },
+    "日内瓦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geneva"
           }
         }
       }
@@ -19376,6 +20740,28 @@
         }
       }
     },
+    "昆明" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunming"
+          }
+        }
+      }
+    },
+    "明斯克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minsk"
+          }
+        }
+      }
+    },
     "昨天 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19409,6 +20795,39 @@
         }
       }
     },
+    "晚上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
+          }
+        }
+      }
+    },
+    "普吉岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phuket"
+          }
+        }
+      }
+    },
+    "智利" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chile"
+          }
+        }
+      }
+    },
     "暖白" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19416,6 +20835,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Warm white"
+          }
+        }
+      }
+    },
+    "曼彻斯特" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manchester"
+          }
+        }
+      }
+    },
+    "最多 12 个城市，至少留 1 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 12 cities, at least 1"
           }
         }
       }
@@ -19464,6 +20905,94 @@
         }
       }
     },
+    "朝鲜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "North Korea"
+          }
+        }
+      }
+    },
+    "本地" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "local time"
+          }
+        }
+      }
+    },
+    "札幌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sapporo"
+          }
+        }
+      }
+    },
+    "杭州" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hangzhou"
+          }
+        }
+      }
+    },
+    "柬埔寨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambodia"
+          }
+        }
+      }
+    },
+    "格鲁吉亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Georgia"
+          }
+        }
+      }
+    },
+    "此处 %@ %@ · %@ 个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here: %@ %@ · %@ cities"
+          }
+        }
+      }
+    },
+    "武汉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wuhan"
+          }
+        }
+      }
+    },
     "每天 %@ 次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19486,6 +21015,28 @@
         }
       }
     },
+    "比%@早 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ ahead of %1$@"
+          }
+        }
+      }
+    },
+    "比%@晚 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@ behind %1$@"
+          }
+        }
+      }
+    },
     "比上圈" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19493,6 +21044,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Diff"
+          }
+        }
+      }
+    },
+    "比利时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belgium"
+          }
+        }
+      }
+    },
+    "毛里求斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mauritius"
+          }
+        }
+      }
+    },
+    "汉堡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hamburg"
+          }
+        }
+      }
+    },
+    "河内" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hanoi"
+          }
+        }
+      }
+    },
+    "法属波利尼西亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "French Polynesia"
+          }
+        }
+      }
+    },
+    "波兰" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poland"
+          }
+        }
+      }
+    },
+    "波哥大" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bogotá"
+          }
+        }
+      }
+    },
+    "波多黎各" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puerto Rico"
           }
         }
       }
@@ -19519,6 +21158,61 @@
         }
       }
     },
+    "深圳" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shenzhen"
+          }
+        }
+      }
+    },
+    "添加城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add City"
+          }
+        }
+      }
+    },
+    "清晨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Early morning"
+          }
+        }
+      }
+    },
+    "清迈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiang Mai"
+          }
+        }
+      }
+    },
+    "渥太华" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ottawa"
+          }
+        }
+      }
+    },
     "渴了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19537,6 +21231,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to add 10%, back to 0 when full"
+          }
+        }
+      }
+    },
+    "点一行加到列表最后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a row to add it to the end of the list"
+          }
+        }
+      }
+    },
+    "点城市卡展开或收起未来 12 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a city to show or hide the next 12 hours"
           }
         }
       }
@@ -28171,6 +29887,17 @@
         }
       }
     },
+    "爱丁堡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edinburgh"
+          }
+        }
+      }
+    },
     "爱尔兰" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28200,6 +29927,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kraft"
+          }
+        }
+      }
+    },
+    "特拉维夫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tel Aviv"
           }
         }
       }
@@ -28431,6 +30169,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Work"
+          }
+        }
+      }
+    },
+    "班加罗尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bengaluru"
           }
         }
       }
@@ -28952,6 +30701,17 @@
         }
       }
     },
+    "白俄罗斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belarus"
+          }
+        }
+      }
+    },
     "白噪音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29047,6 +30807,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ounces"
+          }
+        }
+      }
+    },
+    "盐湖城" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salt Lake City"
           }
         }
       }
@@ -29854,6 +31625,17 @@
         }
       }
     },
+    "福冈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fukuoka"
+          }
+        }
+      }
+    },
     "离第 %@ 个周年还有 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29909,6 +31691,39 @@
         }
       }
     },
+    "科伦坡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colombo"
+          }
+        }
+      }
+    },
+    "科威特" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuwait"
+          }
+        }
+      }
+    },
+    "科威特城" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuwait City"
+          }
+        }
+      }
+    },
     "科技=NVDA TSLA, A股=600519.SS" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29949,6 +31764,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stopwatch"
+          }
+        }
+      }
+    },
+    "秘鲁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peru"
           }
         }
       }
@@ -30228,6 +32054,17 @@
         }
       }
     },
+    "突尼斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tunis"
+          }
+        }
+      }
+    },
     "立即重启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30349,6 +32186,17 @@
         }
       }
     },
+    "符拉迪沃斯托克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vladivostok"
+          }
+        }
+      }
+    },
     "第 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30466,6 +32314,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "First Full Basket"
+          }
+        }
+      }
+    },
+    "第比利斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tbilisi"
           }
         }
       }
@@ -30664,6 +32523,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Meters"
+          }
+        }
+      }
+    },
+    "米兰" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Milan"
           }
         }
       }
@@ -30910,6 +32780,17 @@
         }
       }
     },
+    "索非亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sofia"
+          }
+        }
+      }
+    },
     "紧凑" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31060,6 +32941,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Full in about %@"
+          }
+        }
+      }
+    },
+    "约旦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jordan"
           }
         }
       }
@@ -31350,6 +33242,17 @@
         }
       }
     },
+    "维也纳" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vienna"
+          }
+        }
+      }
+    },
     "维基百科" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31394,6 +33297,17 @@
         }
       }
     },
+    "缅甸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Myanmar"
+          }
+        }
+      }
+    },
     "编辑" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31423,6 +33337,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Habit"
+          }
+        }
+      }
+    },
+    "编辑城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Cities"
           }
         }
       }
@@ -31669,6 +33594,17 @@
         }
       }
     },
+    "罗马尼亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romania"
+          }
+        }
+      }
+    },
     "置于窗口之后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31863,6 +33799,17 @@
         }
       }
     },
+    "老挝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laos"
+          }
+        }
+      }
+    },
     "老赞助者请联系作者领取码头 Pro 兑换码，在 设置 ▸ 码头 Pro 输入即可解锁。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31892,6 +33839,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Headset"
+          }
+        }
+      }
+    },
+    "耶路撒冷" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jerusalem"
           }
         }
       }
@@ -31958,6 +33916,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbols (rotates when there are several)"
+          }
+        }
+      }
+    },
+    "肯尼亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kenya"
           }
         }
       }
@@ -32281,6 +34250,17 @@
         }
       }
     },
+    "至少留 1 个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep at least 1 city"
+          }
+        }
+      }
+    },
     "舒缓 4-6" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32380,6 +34360,17 @@
         }
       }
     },
+    "芬兰" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finland"
+          }
+        }
+      }
+    },
     "苍蝇出现的大小" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32398,6 +34389,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flies off"
+          }
+        }
+      }
+    },
+    "苏州" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suzhou"
+          }
+        }
+      }
+    },
+    "苏瓦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suva"
           }
         }
       }
@@ -32589,6 +34602,17 @@
         }
       }
     },
+    "葡萄牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portugal"
+          }
+        }
+      }
+    },
     "葡萄牙语" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32607,6 +34631,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Grape"
+          }
+        }
+      }
+    },
+    "蒙古" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mongolia"
+          }
+        }
+      }
+    },
+    "蒙得维的亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montevideo"
+          }
+        }
+      }
+    },
+    "蒙特利尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montreal"
           }
         }
       }
@@ -32827,6 +34884,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SW"
+          }
+        }
+      }
+    },
+    "西安" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xi'an"
           }
         }
       }
@@ -34037,6 +36105,17 @@
         }
       }
     },
+    "调整%@的顺序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reorder %@"
+          }
+        }
+      }
+    },
     "调整卡片预设" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34132,6 +36211,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "For Doubao, create an endpoint in the Volcano Ark console and put its ID (starts with ep-) in \"Model\". The key is stored only in this Mac's Keychain."
+          }
+        }
+      }
+    },
+    "贝尔格莱德" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belgrade"
+          }
+        }
+      }
+    },
+    "贝鲁特" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beirut"
           }
         }
       }
@@ -34235,6 +36336,17 @@
         }
       }
     },
+    "费城" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Philadelphia"
+          }
+        }
+      }
+    },
     "赞助" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34242,6 +36354,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sponsor"
+          }
+        }
+      }
+    },
+    "赫尔辛基" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helsinki"
           }
         }
       }
@@ -34708,6 +36831,50 @@
         }
       }
     },
+    "达卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dhaka"
+          }
+        }
+      }
+    },
+    "达喀尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dakar"
+          }
+        }
+      }
+    },
+    "达尔文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darwin"
+          }
+        }
+      }
+    },
+    "达拉斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dallas"
+          }
+        }
+      }
+    },
     "达标一项，小熊猫就能收到铜竹叶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34781,6 +36948,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Days on goal"
+          }
+        }
+      }
+    },
+    "达累斯萨拉姆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dar es Salaam"
+          }
+        }
+      }
+    },
+    "迈阿密" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miami"
           }
         }
       }
@@ -36600,6 +38789,17 @@
         }
       }
     },
+    "里斯本" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lisbon"
+          }
+        }
+      }
+    },
     "里程碑" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36607,6 +38807,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Milestones"
+          }
+        }
+      }
+    },
+    "里约热内卢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rio de Janeiro"
           }
         }
       }
@@ -36662,6 +38873,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename Group…"
+          }
+        }
+      }
+    },
+    "重庆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chongqing"
           }
         }
       }
@@ -36842,6 +39064,17 @@
         }
       }
     },
+    "金边" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phnom Penh"
+          }
+        }
+      }
+    },
     "金额" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36849,6 +39082,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Amount"
+          }
+        }
+      }
+    },
+    "釜山" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busan"
           }
         }
       }
@@ -37190,6 +39434,17 @@
         }
       }
     },
+    "阴影为当地 6 至 18 点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shaded: 6 am to 6 pm there"
+          }
+        }
+      }
+    },
     "阵雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37223,6 +39478,17 @@
         }
       }
     },
+    "阿克拉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accra"
+          }
+        }
+      }
+    },
     "阿喵收音机 meowRadio" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37230,6 +39496,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "meowRadio"
+          }
+        }
+      }
+    },
+    "阿塞拜疆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Azerbaijan"
           }
         }
       }
@@ -37245,6 +39522,61 @@
         }
       }
     },
+    "阿富汗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afghanistan"
+          }
+        }
+      }
+    },
+    "阿尔及利亚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algeria"
+          }
+        }
+      }
+    },
+    "阿尔及尔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algiers"
+          }
+        }
+      }
+    },
+    "阿布扎比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abu Dhabi"
+          }
+        }
+      }
+    },
+    "阿德莱德" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adelaide"
+          }
+        }
+      }
+    },
     "阿拉伯语" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37252,6 +39584,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arabic"
+          }
+        }
+      }
+    },
+    "阿拉木图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almaty"
+          }
+        }
+      }
+    },
+    "阿斯塔纳" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Astana"
+          }
+        }
+      }
+    },
+    "阿曼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oman"
           }
         }
       }
@@ -37582,6 +39947,17 @@
         }
       }
     },
+    "雅典" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Athens"
+          }
+        }
+      }
+    },
     "雅加达" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37644,6 +40020,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snow grains"
+          }
+        }
+      }
+    },
+    "雷克雅未克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reykjavik"
           }
         }
       }
@@ -37842,6 +40229,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cyan"
+          }
+        }
+      }
+    },
+    "青岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qingdao"
           }
         }
       }
@@ -38480,6 +40878,17 @@
         }
       }
     },
+    "马尔代夫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maldives"
+          }
+        }
+      }
+    },
     "马尼拉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38502,6 +40911,17 @@
         }
       }
     },
+    "马斯喀特" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muscat"
+          }
+        }
+      }
+    },
     "马来西亚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38520,6 +40940,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Malaysian ringgit"
+          }
+        }
+      }
+    },
+    "马累" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Malé"
           }
         }
       }
@@ -38564,6 +40995,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "High altitude"
+          }
+        }
+      }
+    },
+    "高雄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaohsiung"
           }
         }
       }
@@ -38674,6 +41116,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gold and silver unit"
+          }
+        }
+      }
+    },
+    "黎巴嫩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lebanon"
           }
         }
       }
@@ -38872,6 +41325,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ New Reminder"
+          }
+        }
+      }
+    },
+    "＋ 添加城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Add City"
           }
         }
       }

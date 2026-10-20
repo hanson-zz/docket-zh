@@ -317,23 +317,32 @@ struct WidgetSettingsSections: View {
         .help(tr("黄金、白银用国际期货价，默认按美元兑人民币汇率换算成元/克。"))
     }
 
-    /// 世界时钟的“选择城市”：按钮上是现在的城市和时区，点开是城市列表。
+    /// 世界时钟的城市：按钮上是列表里的城市，点开是共用的城市选择器。
+    /// 点一个城市加到最后，再点已打勾的移出（至少留 1 个，最多 12 个）；
+    /// 排序在面板的“编辑”里拖。
     private func worldCityControl(_ instance: WidgetInstance) -> some View {
-        let zone = instance.config.string("zone", default: "Europe/London")
-        let city = instance.config.string("city", default: tr("伦敦"))
+        let cities = WorldClockList.cities(instance.config)
         return LabeledContent("城市与时区") {
             Button {
                 cityPickerFor = instance.id
             } label: {
-                Text("\(city) · \(zone)")
+                Text(verbatim: cities.count == 1
+                     ? "\(cities[0].name) · \(cities[0].zone)"
+                     : cities.map(\.name).joined(separator: tr("、")))
                     .lineLimit(1)
             }
             .popover(isPresented: Binding(
                 get: { cityPickerFor == instance.id },
                 set: { if !$0 { cityPickerFor = nil } })) {
-                WorldCityPicker(zone: zone, city: city) { picked in
-                    write(instance) { WorldCityPicker.apply(picked, to: &$0) }
-                    cityPickerFor = nil
+                WorldCityPicker(added: cities, mode: .toggle, listHeight: 240) { picked in
+                    let current = WorldClockList.cities(instance.config)
+                    let next: [WorldCity]
+                    if let index = current.firstIndex(where: { $0.id == picked.id }) {
+                        next = WorldClockList.removing(at: index, from: current)
+                    } else {
+                        next = WorldClockList.adding(picked, to: current)
+                    }
+                    write(instance) { WorldClockList.write(next, to: &$0) }
                 }
                 .padding(12)
                 .frame(width: 320)

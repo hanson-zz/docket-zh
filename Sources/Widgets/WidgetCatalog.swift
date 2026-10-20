@@ -645,6 +645,10 @@ public enum WidgetCatalog {
             StockBoard.rotation(config).contains { PreciousMetal(symbol: $0) != nil }
         case (.stock, "rotate"):
             StockBoard.rotation(config).count > 1
+        // 世界时钟的城市名跟着城市列表走（设置里“城市与时区”那一项改列表，
+        // 第一项同步回 city），不再单独给一个文字框。
+        case (.world, "city"):
+            false
         // The multi-city card shows its own list of places and no other;
         // every other layout reads the one city and never the list.
         case (.weather, "cities"):
@@ -1004,7 +1008,9 @@ public enum WidgetCatalog {
     public static func verticalHeight(_ instance: WidgetInstance) -> Double {
         let cfg = instance.config
         switch instance.kind {
-        case .clock, .world: return 76
+        case .clock: return 76
+        // 世界时钟多个城市时上下排，最多三个，每个一行。
+        case .world: return WorldClockList.verticalHeight(cfg)
         case .stopwatch, .countdown: return 62
         case .timer: return 92
         case .alarm: return 76

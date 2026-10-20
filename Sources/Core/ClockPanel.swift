@@ -36,17 +36,18 @@ public enum ClockPanelData {
 
     /// 没选过时：伦敦、纽约、东京。
     public static var defaultCities: [WorldCity] {
-        [WorldCity(name: tr("伦敦"), zone: "Europe/London"),
-         WorldCity(name: tr("纽约"), zone: "America/New_York"),
-         WorldCity(name: tr("东京"), zone: "Asia/Tokyo")]
+        [WorldCities.city(id: "london") ?? WorldCity(name: tr("伦敦"), zone: "Europe/London"),
+         WorldCities.city(id: "newyork") ?? WorldCity(name: tr("纽约"), zone: "America/New_York"),
+         WorldCities.city(id: "tokyo") ?? WorldCity(name: tr("东京"), zone: "Asia/Tokyo")]
     }
 
     /// 面板上的三座城市。存的值认不出（时区不存在、格式不对）的那一格用默认。
+    /// 编码和世界时钟的 `cities` 是同一套（`WorldCity.storageKey` / `init(storage:)`）。
     public static func cities(_ config: WidgetConfig) -> [WorldCity] {
         let stored = config.strings(citiesKey)
         let fallback = defaultCities
         return (0..<cityCount).map { slot in
-            guard slot < stored.count, let city = decode(stored[slot]) else { return fallback[slot] }
+            guard slot < stored.count, let city = WorldCity(storage: stored[slot]) else { return fallback[slot] }
             return city
         }
     }
@@ -56,16 +57,7 @@ public enum ClockPanelData {
         guard (0..<cityCount).contains(slot) else { return }
         var list = cities(config)
         list[slot] = city
-        config.set(citiesKey, .list(list.map { .string(encode($0)) }))
-    }
-
-    static func encode(_ city: WorldCity) -> String { "\(city.zone)|\(city.name)" }
-
-    static func decode(_ raw: String) -> WorldCity? {
-        let parts = raw.split(separator: "|", maxSplits: 1).map(String.init)
-        guard let zone = parts.first, TimeZone(identifier: zone) != nil else { return nil }
-        let name = parts.count > 1 && !parts[1].isEmpty ? parts[1] : WorldCities.displayName(zone: zone)
-        return WorldCity(name: name, zone: zone)
+        config.set(citiesKey, .list(list.map { .string($0.storageKey) }))
     }
 
     // MARK: 今天进度
