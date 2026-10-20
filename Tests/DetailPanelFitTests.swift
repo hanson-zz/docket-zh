@@ -1,7 +1,7 @@
 import XCTest
 
-/// 小组件详情面板的尺寸和位置：高度随内容，上限是所在屏幕的可用区域，
-/// 位置整个夹在屏幕里。
+/// 小组件详情面板的尺寸和位置：高度随内容，上限是统一上限（560pt、屏幕
+/// 可见高度的 60%，取小的）和所在屏幕的可用区域，位置整个夹在屏幕里。
 ///
 /// AppKit 屏幕坐标，y 向上。主屏 1512x982，菜单栏 37pt，可用区域
 /// (0, 0, 1512, 945)；第二块 1920x1080 在它右边，菜单栏 25pt。
@@ -33,19 +33,76 @@ final class DetailPanelFitTests: XCTestCase {
 
     func testTallPanelIsCappedAboveTheShelfAndScrolls() {
         // 原来：高 1200 的面板被往下推到 y = -263，顶上和底下都出屏幕。
+        // 后来只按屏幕限高，占到 855pt，屏幕的九成；现在统一上限 560pt。
         let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 700, y: 80),
                                      natural: CGSize(width: 340, height: 1200),
                                      visible: mainVisible)
         XCTAssertEqual(p.frame.minY, 82)
-        XCTAssertEqual(p.frame.height, 945 - 8 - 82)
+        XCTAssertEqual(p.frame.height, 560)
         XCTAssertTrue(p.overflows)
         assertInside(p.frame, mainVisible)
     }
 
+    func testExemptPanelStillUsesTheRoomAboveTheShelf() {
+        let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 700, y: 80),
+                                     natural: CGSize(width: 340, height: 1200),
+                                     visible: mainVisible, capped: false)
+        XCTAssertEqual(p.frame.minY, 82)
+        XCTAssertEqual(p.frame.height, 945 - 8 - 82)
+        XCTAssertTrue(p.overflows)
+    }
+
+    func testPanelUnderTheCapIsNotTouched() {
+        let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 700, y: 80),
+                                     natural: CGSize(width: 320, height: 540),
+                                     visible: mainVisible)
+        XCTAssertEqual(p.frame.height, 540)
+        XCTAssertFalse(p.overflows)
+    }
+
+    // MARK: 统一上限
+
+    func testCapIsTheSmallerOfTheFixedHeightAndTheScreenShare() {
+        // 945 的六成是 567，比 560 大，取 560。
+        XCTAssertEqual(DetailPanelFit.cap(visible: mainVisible), 560)
+        XCTAssertEqual(DetailPanelFit.cap(visible: otherVisible), 560)
+        // 矮屏：800 的六成 480。
+        XCTAssertEqual(DetailPanelFit.cap(visible: CGRect(x: 0, y: 0, width: 1280, height: 800)), 480)
+        // 再矮也不低于 minimumHeight。
+        XCTAssertEqual(DetailPanelFit.cap(visible: CGRect(x: 0, y: 0, width: 800, height: 200)),
+                       DetailPanelFit.minimumHeight)
+    }
+
+    func testShortScreenCapsAtSixtyPercent() {
+        let visible = CGRect(x: 0, y: 0, width: 1280, height: 775)
+        let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 600, y: 70),
+                                     natural: CGSize(width: 320, height: 900), visible: visible)
+        XCTAssertEqual(p.frame.height, 465)
+        XCTAssertTrue(p.overflows)
+        assertInside(p.frame, visible)
+    }
+
+    func testTinyScreenNeverGoesPastTheScreenItself() {
+        // 可见高度 150：统一上限不低于 160，但屏幕减边距只有 134，取屏幕的。
+        let visible = CGRect(x: 0, y: 0, width: 800, height: 150)
+        XCTAssertEqual(DetailPanelFit.heightLimit(edge: .left, anchor: CGPoint(x: 10, y: 75),
+                                                  visible: visible), 134)
+    }
+
+    func testOnlyThePlannerAndTheAssistantAreExempt() {
+        XCTAssertTrue(DetailPanelFit.isCapExempt(.calendar))
+        XCTAssertTrue(DetailPanelFit.isCapExempt(.week))
+        XCTAssertTrue(DetailPanelFit.isCapExempt(.aiAssistant))
+        for kind in [WidgetKind.weather, .water, .posture, .timer, .radio, .lunar, .system, .habit] {
+            XCTAssertFalse(DetailPanelFit.isCapExempt(kind), "\(kind)")
+        }
+    }
+
     func testNoRoomAboveTheTileFallsBackToTheWholeScreen() {
         let anchor = CGPoint(x: 700, y: 850)
-        XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible),
-                       945 - 16)
+        XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible,
+                                                  capped: false), 945 - 16)
+        XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible), 560)
         let p = DetailPanelFit.place(edge: .bottom, anchor: anchor,
                                      natural: CGSize(width: 300, height: 500),
                                      visible: mainVisible)
@@ -68,7 +125,7 @@ final class DetailPanelFitTests: XCTestCase {
                                      natural: CGSize(width: 320, height: 1200),
                                      visible: mainVisible)
         XCTAssertEqual(p.frame.maxY, 900 - 2)
-        XCTAssertEqual(p.frame.minY, 8)
+        XCTAssertEqual(p.frame.minY, 898 - 560)
         XCTAssertTrue(p.overflows)
     }
 
@@ -83,11 +140,11 @@ final class DetailPanelFitTests: XCTestCase {
         XCTAssertFalse(p.overflows)
     }
 
-    func testSideShelfPanelTallerThanTheScreenUsesTheWholeHeight() {
+    func testSideShelfPanelTallerThanTheScreenIsCapped() {
         let p = DetailPanelFit.place(edge: .right, anchor: CGPoint(x: 1450, y: 500),
                                      natural: CGSize(width: 340, height: 2000),
                                      visible: mainVisible)
-        XCTAssertEqual(p.frame.height, 945 - 16)
+        XCTAssertEqual(p.frame.height, 560)
         XCTAssertEqual(p.frame.maxX, 1450 - 2)
         XCTAssertTrue(p.overflows)
         assertInside(p.frame, mainVisible)

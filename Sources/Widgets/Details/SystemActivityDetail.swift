@@ -7,8 +7,9 @@ import SwiftUI
 ///   读数，各带一条小曲线（CPU、内存、网络是最近 60 秒，磁盘是最近一小时）。
 ///   下面是最近 24 小时的曲线，可切四个指标，标出峰值和时间（磁盘标可用最少
 ///   的那一刻）；数据是 SystemMetrics 每分钟记一条、存在 Application Support 的
-///   24 小时环形缓冲。再下面是占用最高的 5 个进程，按 CPU 或内存排，普通 App
-///   每行有“退出”，点了先在列表上方弹一张红色确认卡，确认后礼貌地退出（不强制）。
+///   24 小时环形缓冲。占用最高的 5 个进程和曲线分两页（顶部分段，记住切到的
+///   那页），按 CPU 或内存排，普通 App 每行有“退出”，点了先在列表上方弹一张
+///   红色确认卡，确认后礼貌地退出（不强制）。
 /// - 提醒与管理：超阈值提醒的规则（码头 Pro）：指标、阈值滑杆、持续几分钟、
 ///   开关、添加和删除；到点发系统通知，卡片上那个读数变红。没解锁时规则照样
 ///   列出，改动弹付费墙，不判断也不提醒。最下面勾选卡片上显示哪几项（`metrics`）。
@@ -27,6 +28,20 @@ struct SystemActivityDetail: View {
     @State private var expandedRule: String?
     /// 拖滑杆时先不写配置，松手再写。
     @State private var draggingThreshold: Double?
+    /// 浏览态记住的分页，见 `BrowsePage`。
+    @AppStorage(DetailPanelSections.pageKey(.system)) private var storedPage = ""
+
+    /// 浏览态四格读数下面的分页。
+    private enum BrowsePage: String, CaseIterable {
+        case day, processes
+
+        var title: String {
+            switch self {
+            case .day: tr("24 小时")
+            case .processes: tr("占用最高")
+            }
+        }
+    }
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -129,10 +144,18 @@ struct SystemActivityDetail: View {
     // MARK: 浏览
 
     private var browse: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let page = DetailPanelSections.page(stored: storedPage, available: BrowsePage.allCases) ?? .day
+        return VStack(alignment: .leading, spacing: 12) {
             readingsGrid
-            dayChart
-            processes
+            // 面板统一限高后，四格读数下面分两页：最近 24 小时曲线和占用最高的进程。
+            // 切到的那页记住。
+            DetailSegmented(pages: BrowsePage.allCases, title: { $0.title }, selected: page) { picked in
+                storedPage = picked.rawValue
+            }
+            switch page {
+            case .day: dayChart
+            case .processes: processes
+            }
         }
         .onAppear { if !context.isPreview { ProcessMonitor.shared.begin() } }
         .onDisappear { if !context.isPreview { ProcessMonitor.shared.end() } }

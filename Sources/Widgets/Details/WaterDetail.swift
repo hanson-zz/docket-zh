@@ -117,7 +117,9 @@ struct WaterDetail: View {
                 case .history:
                     history(all, goal: goal, now: now, streak: streak)
                     // 近七天报告原来挂在每个标签底下，现在归到统计里。
-                    WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now)
+                    // 面板统一限高后默认收起，只留一行和每日平均，点开看柱状图。
+                    WaterWeeklyReport(days: all, goal: goal, ounces: ounces, accent: accent, now: now,
+                                      foldKey: DetailPanelSections.foldKey(.water, "weekly"))
                 case .target: target(result)
                 case .goal: goalSettings()
                 }
@@ -679,28 +681,42 @@ struct WaterDetail: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 2)
             } else {
-                VStack(spacing: 4) {
-                    ForEach(rows, id: \.offset) { index, entry in
-                        entryRow(entry, index: index)
-                    }
-                }
-                if WaterCupPage.canExpand(count: count) {
-                    Button {
-                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { showsAllEntries.toggle() }
-                    } label: {
-                        Label(showsAllEntries ? tr("收起") : tr("展开全部 \(count) 条"),
-                              systemImage: showsAllEntries ? "chevron.up" : "chevron.down")
-                            .font(WidgetStyle.label(11))
-                            .foregroundStyle(.white.opacity(0.7))
-                            .frame(maxWidth: .infinity)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
+                // 一杯一行的记录是次要内容：面板统一限高后默认收起，时间轴上
+                // 每一杯照样看得到；展开状态记住。
+                DetailFold(key: DetailPanelSections.foldKey(.water, "entries")) {
+                    Text(tr("每一杯的记录"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                } content: {
+                    entryRows(rows, count: count)
                 }
             }
         }
         .padding(10)
         .glassPane(cornerRadius: 12)
+    }
+
+    /// 今天的记录，最新的在上；多了先露几条，点“展开全部”。
+    @ViewBuilder
+    private func entryRows(_ rows: [(offset: Int, element: WaterEntry)], count: Int) -> some View {
+        VStack(spacing: 4) {
+            ForEach(rows, id: \.offset) { index, entry in
+                entryRow(entry, index: index)
+            }
+        }
+        if WaterCupPage.canExpand(count: count) {
+            Button {
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { showsAllEntries.toggle() }
+            } label: {
+                Label(showsAllEntries ? tr("收起") : tr("展开全部 \(count) 条"),
+                      systemImage: showsAllEntries ? "chevron.up" : "chevron.down")
+                    .font(WidgetStyle.label(11))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     /// 提醒时段的一根横轴：每一杯一个小图标，现在一道竖线，今天还有的下次

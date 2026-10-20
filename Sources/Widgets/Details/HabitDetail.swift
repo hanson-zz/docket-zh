@@ -37,15 +37,18 @@ struct HabitDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(done: done, total: all.count)
+                // 面板统一限高（约 560pt）后从 420 降到 340，多了在列表里滚。
                 ScrollView {
                     list(all)
                 }
-                .frame(maxHeight: 420)
+                .frame(maxHeight: 340)
                 .scrollIndicators(.never)
 
                 if !all.isEmpty {
                     if ProLicenseGate.canSeeHabitReport(unlocked: unlocked) {
-                        HabitWeeklyReport(habits: all, accent: accent, now: context.now)
+                        // 默认收起，只留一行和 7 天完成次数，展开状态记住。
+                        HabitWeeklyReport(habits: all, accent: accent, now: context.now,
+                                          foldKey: DetailPanelSections.foldKey(.habit, "weekly"))
                     } else {
                         lockedReport
                     }

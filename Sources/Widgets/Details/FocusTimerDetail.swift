@@ -2,7 +2,8 @@ import SwiftUI
 
 /// 专注计时面板，深色玻璃。浏览态：顶上写这一轮要做的事，中间大进度环（剩余、
 /// 第几轮小点、共几分钟），暂停和重置，环境音一行（声音、音量、换），下面是今天的
-/// 时间轴（每个完整的番茄一段，正在做的淡一点，白线是现在）。点“设置”在面板里
+/// 时间轴（每个完整的番茄一段，正在做的淡一点，白线是现在）和近七天统计，这两样
+/// 收在“今天”一段里，默认收起，标题行写今天专注了多久。点“设置”在面板里
 /// 直接调专注、短休息、长休息、几轮一组，点最近的任务名沿用，选开始专注时放的
 /// 环境音、音量，休息时声音停不停、提不提醒起身。
 ///
@@ -101,7 +102,6 @@ struct FocusTimerDetail: View {
             }
             ambientRow(state)
             today(state, now: now)
-            history(now: now)
         }
     }
 
@@ -307,7 +307,9 @@ struct FocusTimerDetail: View {
         let minutes: Int = context.isPreview
             ? Int(done.reduce(0) { $0 + $1.duration } / 60)
             : FocusLog.minutes(FocusLogStore.shared.lines)[HabitTracker.dayKey(now)] ?? 0
-        return VStack(alignment: .leading, spacing: 10) {
+        // 面板统一限高后，今天的时间轴和近七天统计收进一段，默认收起：标题行
+        // 总在，写着今天专注了多久；展开状态记住。
+        return DetailFold(key: DetailPanelSections.foldKey(.timer, "today")) {
             HStack {
                 Text(tr("今天"))
                     .font(.system(size: 13, weight: .semibold))
@@ -318,11 +320,16 @@ struct FocusTimerDetail: View {
                     .foregroundStyle(minutes > 0 ? accent : Color.white.opacity(0.62))
                     .monospacedDigit()
             }
-            FocusDayTimeline(segments: segments, now: now, accent: accent)
-            Text(FocusDay.footer(done: done.count, live: live != nil))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.72))
-                .lineLimit(1)
+        } content: {
+            VStack(alignment: .leading, spacing: 10) {
+                FocusDayTimeline(segments: segments, now: now, accent: accent)
+                Text(FocusDay.footer(done: done.count, live: live != nil))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .lineLimit(1)
+                history(now: now)
+                    .padding(.top, 4)
+            }
         }
     }
 

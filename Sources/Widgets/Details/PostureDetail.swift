@@ -2,7 +2,8 @@ import Foundation
 import SwiftUI
 
 /// 久坐提醒的面板：头图说现在该不该起身，三格是今天的起身、最长连坐和平均每次
-/// 坐多久，下面是今天的时间轴和近 7 天的柱状图，再是提醒时段、间隔和一个大按钮。
+/// 坐多久，下面是今天的时间轴和近 7 天的柱状图（默认收起），再是提醒时段、间隔
+/// 和一个大按钮。
 ///
 /// 深色玻璃，粉色只做头图里小熊猫身后的淡底、时间轴的坐着段、今天的柱子和按钮。
 /// 数据都在小组件自己的配置里（`breaks`、`history`、`goal`），算法见 `PostureTrack`。
@@ -410,8 +411,10 @@ struct PostureDetail: View {
 
     // MARK: 近 7 天
 
+    /// 面板统一限高后，近 7 天的柱状图默认收起（标题一行和目标总在），点开看；
+    /// 展开状态记住。
     private func weekChart(_ m: Model) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        DetailFold(key: DetailPanelSections.foldKey(.posture, "week")) {
             HStack {
                 Text(tr("近 7 天起身"))
                     .font(.system(size: 15, weight: .heavy))
@@ -421,6 +424,7 @@ struct PostureDetail: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.62))
             }
+        } content: {
             GeometryReader { geo in
                 bars(m, width: geo.size.width)
             }

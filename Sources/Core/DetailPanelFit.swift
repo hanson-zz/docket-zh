@@ -8,6 +8,11 @@ import Foundation
 /// 减去边距（横排扩展栏再只算扩展栏开口那一侧的空间），超出时由面板容器
 /// 改成可滚动，位置整个夹在屏幕里。
 ///
+/// 只按屏幕算时，内容多的面板能占到屏幕的三分之二，所以再加一道统一的
+/// 上限（`cap(visible:)`）：含尾巴最高 560pt，且不超过屏幕可见高度的 60%，
+/// 取小的那个，但不低于 `minimumHeight`。日历规划和 AI 对话豁免，见
+/// `isCapExempt(_:)`。
+///
 /// 坐标是 AppKit 的屏幕坐标，y 向上。不依赖 AppKit，方便测试。
 public enum DetailPanelFit {
     /// 面板离屏幕边缘至少留这么多。
@@ -17,6 +22,29 @@ public enum DetailPanelFit {
     /// 扩展栏开口那一侧剩下的空间比这还小时（小组件贴着屏幕另一头），
     /// 改用整块屏幕的高度，让面板盖到扩展栏上，而不是挤成一条缝。
     public static let minimumHeight: CGFloat = 160
+    /// 面板（含尾巴）统一最高这么高。
+    public static let maximumHeight: CGFloat = 560
+    /// 面板最多占所在屏幕可见高度的这么多。
+    public static let screenShare: CGFloat = 0.6
+
+    /// 统一上限：`maximumHeight` 和屏幕可见高度的 `screenShare` 取小的，
+    /// 但不低于 `minimumHeight`（矮屏上也留得下一屏可用的内容）。
+    public static func cap(visible: CGRect) -> CGFloat {
+        max(minimumHeight, min(maximumHeight, (visible.height * screenShare).rounded(.down)))
+    }
+
+    /// 不受统一上限约束、仍按屏幕算的小组件：
+    ///
+    /// - 日历、本周（日历规划）：月历格加上当天的时间轴，时间轴本身就在面板里
+    ///   滚动，外层再限高就成了滚动里套滚动，排日程时拖不动、看不全一天。
+    /// - AI 助手：对话区下面是输入框和附件条，限高后输入框会被挤到滚动区底下，
+    ///   要先滚到底才能打字。
+    public static func isCapExempt(_ kind: WidgetKind) -> Bool {
+        switch kind {
+        case .calendar, .week, .aiAssistant: true
+        default: false
+        }
+    }
 
     public struct Placement: Equatable, Sendable {
         /// 面板窗口的 frame，屏幕坐标。
@@ -61,9 +89,18 @@ public enum DetailPanelFit {
         }
     }
 
-    /// 面板最高能有多高（含尾巴）。
+    /// 面板最高能有多高（含尾巴）。`capped` 为 true 时再受统一上限约束，
+    /// 豁免的小组件传 false。
     public static func heightLimit(edge: DockPosition, anchor: CGPoint, visible: CGRect,
+                                   capped: Bool = true,
                                    gap: CGFloat = gap, margin: CGFloat = margin) -> CGFloat {
+        let screen = screenLimit(edge: edge, anchor: anchor, visible: visible, gap: gap, margin: margin)
+        return capped ? min(screen, cap(visible: visible)) : screen
+    }
+
+    /// 只按屏幕算的上限：所在屏幕的可用高度减边距，横排扩展栏只算开口那一侧。
+    private static func screenLimit(edge: DockPosition, anchor: CGPoint, visible: CGRect,
+                                    gap: CGFloat, margin: CGFloat) -> CGFloat {
         let whole = max(0, visible.height - 2 * margin)
         let room: CGFloat
         switch edge {
@@ -80,9 +117,9 @@ public enum DetailPanelFit {
     /// 宽度不改：每种小组件的面板宽度是定的，最宽 400pt，任何屏幕都放得下；
     /// 放不下时也只把位置夹住，从左边对齐。
     public static func place(edge: DockPosition, anchor: CGPoint, natural: CGSize,
-                             visible: CGRect, gap: CGFloat = gap,
+                             visible: CGRect, capped: Bool = true, gap: CGFloat = gap,
                              margin: CGFloat = margin) -> Placement {
-        let limit = heightLimit(edge: edge, anchor: anchor, visible: visible,
+        let limit = heightLimit(edge: edge, anchor: anchor, visible: visible, capped: capped,
                                 gap: gap, margin: margin)
         let height = min(natural.height.rounded(.up), limit)
         let size = CGSize(width: natural.width.rounded(.up), height: max(0, height))

@@ -3,9 +3,10 @@ import SwiftUI
 /// 天气面板，320pt 宽、深色玻璃。两个状态：
 ///
 /// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；当前温度大字、
-///   天气和今天最高最低；2 小时降水条和一句“约 40 分钟后有雨，持续半小时”；
-///   生活指数三格（穿衣、紫外线、空气质量）；风、湿度、日出、日落；接下来
-///   12 小时（横向滚动，打开时停在现在；按住左右拖，大字和天色跟着那一小时走）；未来 7 天。
+///   天气和今天最高最低；下面分页（顶部分段，记住切到的那页）：今天是 2 小时
+///   降水条和一句“约 40 分钟后有雨，持续半小时”，和风、湿度、日出、日落；指数是
+///   生活指数三格（穿衣、紫外线、空气质量，可关）；逐小时是接下来 12 小时（横向
+///   滚动，打开时停在现在；按住左右拖，大字和天色跟着那一小时走）；7 天是未来 7 天。
 /// - 城市：搜索添加（内置城市表，表里没有的走天气自己的地图查找）、拖把手排序、
 ///   左滑或右键删除，下面是面板显示开关（降水提示、生活指数、°F）。
 ///
@@ -26,6 +27,8 @@ struct WeatherDetail: View {
     @State private var page = 0
     /// 拖动逐小时预报时手指所在的位置（小数下标），松手回到 nil，也就是“现在”。
     @State private var scrub: Double?
+    /// 浏览态记住的分页（今天、指数、逐小时、7 天），见 `BrowsePage`。
+    @AppStorage(DetailPanelSections.pageKey(.weather)) private var storedPage = ""
 
     // 城市编辑
     @State private var query = ""
@@ -220,30 +223,66 @@ struct WeatherDetail: View {
             .contentShape(.rect)
             .gesture(citySwipe)
 
-            if !city.isEmpty, let weather = shownWeather {
+            if !city.isEmpty, shownWeather != nil {
                 if isPrimary, offlineNow {
                     ReconnectStateView(title: tr("离线"), detail: tr("这次没连上天气服务，显示的是上次的数据"),
                                        loading: WeatherService.shared.fetching, style: .compact,
                                        retry: retryWeather)
                 }
-                if showRain { rainCard }
-                if showIndices { indices(weather) }
-                stats(weather)
-                if !hours.isEmpty {
-                    divider
-                    hourly
-                }
             }
-            if !days.isEmpty {
-                divider
-                dayList
+            // 面板统一限高后，大字下面分页：今天（降水、风和湿度、日出日落）、
+            // 生活指数、逐小时、7 天。切到的那页记住。拖逐小时时上面的大字照旧跟着走。
+            let pages = browsePages
+            if let page = shownPage(pages) {
+                if pages.count > 1 {
+                    DetailSegmented(pages: pages, title: { $0.title }, selected: page) { picked in
+                        storedPage = picked.rawValue
+                    }
+                }
+                switch page {
+                case .today:
+                    if let weather = shownWeather {
+                        if showRain { rainCard }
+                        stats(weather)
+                    }
+                case .indices:
+                    if let weather = shownWeather { indices(weather) }
+                case .hours: hourly
+                case .days: dayList
+                }
             }
             attribution
         }
     }
 
-    private var divider: some View {
-        Rectangle().fill(.white.opacity(0.12)).frame(height: 0.5)
+    /// 浏览态大字下面的分页。
+    private enum BrowsePage: String, CaseIterable {
+        case today, indices, hours, days
+
+        var title: String {
+            switch self {
+            case .today: tr("今天")
+            case .indices: tr("指数")
+            case .hours: tr("逐小时")
+            case .days: tr("7 天")
+            }
+        }
+    }
+
+    /// 有数据的那几页：没定位到城市或没读到天气时只剩 7 天（也可能一页都没有）。
+    private var browsePages: [BrowsePage] {
+        var pages: [BrowsePage] = []
+        if !city.isEmpty, shownWeather != nil {
+            pages.append(.today)
+            if showIndices { pages.append(.indices) }
+            if !hours.isEmpty { pages.append(.hours) }
+        }
+        if !days.isEmpty { pages.append(.days) }
+        return pages
+    }
+
+    private func shownPage(_ pages: [BrowsePage]) -> BrowsePage? {
+        DetailPanelSections.page(stored: storedPage, available: pages)
     }
 
     // MARK: Header

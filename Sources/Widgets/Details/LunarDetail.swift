@@ -2,9 +2,10 @@ import SwiftUI
 
 /// 点开农历与假期，两个状态：
 ///
-/// - 浏览：今天的公历和农历；宜忌（建除十二值日，可关）；生日与纪念日，按农历每年
-///   换算成公历，近的在前，写还有几天；近期节日节气（节气、传统节日、法定假日、
-///   调休上班），带日期和倒数；本月月历收在最下面，点开看休、班和节气。
+/// - 浏览：今天的公历和农历，下面分页（顶部分段，记住切到的那页）：近期节日节气
+///   （节气、传统节日、法定假日、调休上班），带日期和倒数；生日与纪念日，按农历
+///   每年换算成公历，近的在前，写还有几天；宜忌（建除十二值日，可关，关掉就没有
+///   这一页）；本月月历，看休、班和节气。
 /// - 添加 / 编辑：名字、种类、闰月、农历月日两个滚轮，下面马上算出今年和明年落在
 ///   哪天（小月没有三十按廿九、没有那个闰月按普通月，都写出来）；提前几天、几点提醒；
 ///   卡片上显示宜忌、节气、调休补班三个开关。
@@ -29,8 +30,9 @@ struct LunarDetail: View {
 
     @State private var draft: Draft?
     @State private var confirmDelete = false
-    @State private var showMonth = false
     @State private var showAllEvents = false
+    /// 浏览态记住的分页，见 `BrowsePage`。
+    @AppStorage(DetailPanelSections.pageKey(.lunar)) private var storedPage = ""
     @FocusState private var nameFocused: Bool
 
     @Environment(\.panelTint) private var panelTint
@@ -41,8 +43,9 @@ struct LunarDetail: View {
     static let coralInk = Color(hex: "#330D04")
     private static let green = Color(hex: "#5BD98A")
     private static let warn = Color(hex: "#FFB86B")
-    /// 浏览时生日列表先露这么多条，多的点「展开」。
-    private static let visibleEvents = 5
+    /// 浏览时生日列表先露这么多条，多的点「展开」。面板统一限高后从 5 条改成
+    /// 3 条，让“纪念日”这一页默认不用滚动。
+    private static let visibleEvents = 3
 
     private var holidays: HolidayService { HolidayService.shared }
     /// 写过之后面板拿到的仍可能是打开时的那份，读最新存着的。
@@ -75,14 +78,45 @@ struct LunarDetail: View {
         let data = LunarPanelCache.read(now: now, config: config, events: events, known: holidays.known,
                                         breaks: { holidays.breaks(now: now) })
         browseHeader(now, events: events)
-        if showAlmanac { almanac(now) }
-        birthdays(data.rows)
-        agenda(data.agenda)
-        month(now)
+        // 面板统一限高后，日期下面分页：近期节日节气、生日与纪念日、宜忌（可关）、
+        // 本月月历。切到的那页记住。
+        let pages = browsePages
+        if let page = DetailPanelSections.page(stored: storedPage, available: pages) {
+            DetailSegmented(pages: pages, title: { $0.title }, selected: page) { picked in
+                storedPage = picked.rawValue
+            }
+            switch page {
+            case .agenda:
+                agenda(data.agenda)
+                if workAlert { workAlertNote }
+            case .events: birthdays(data.rows)
+            case .almanac: almanac(now)
+            case .month: monthGrid(now)
+            }
+        }
         Text(HolidayService.attribution)
             .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.5))
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 浏览态日期下面的分页。
+    private enum BrowsePage: String, CaseIterable {
+        case agenda, events, almanac, month
+
+        var title: String {
+            switch self {
+            case .agenda: tr("近期")
+            case .events: tr("纪念日")
+            case .almanac: tr("宜忌")
+            case .month: tr("月历")
+            }
+        }
+    }
+
+    /// 关掉宜忌时没有那一页。
+    private var browsePages: [BrowsePage] {
+        BrowsePage.allCases.filter { $0 != .almanac || showAlmanac }
     }
 
     /// 小组件库里没记生日时放效果图上那三条做样子。
@@ -385,41 +419,14 @@ struct LunarDetail: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: 本月月历（收起）
+    // MARK: 本月月历
 
-    private func month(_ now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                withAnimation(.snappy(duration: 0.25)) { showMonth.toggle() }
-            } label: {
-                HStack {
-                    Text(tr("本月月历"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
-                    Text(tr("休、班和节气"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.45))
-                    Spacer(minLength: 4)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
-                        .rotationEffect(.degrees(showMonth ? 180 : 0))
-                }
-                .lineLimit(1)
-                .frame(minHeight: 24)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            if showMonth {
-                monthGrid(now)
-                if workAlert {
-                    Text(tr("调休补班会提前 \(LunarCard.leadDays(config)) 天出现在卡片上，前一天晚上再提醒一次。"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
+    /// 调休补班怎么提醒，写在“近期”那一页下面。
+    private var workAlertNote: some View {
+        Text(tr("调休补班会提前 \(LunarCard.leadDays(config)) 天出现在卡片上，前一天晚上再提醒一次。"))
+            .font(.system(size: 13))
+            .foregroundStyle(.white.opacity(0.55))
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func monthGrid(_ now: Date) -> some View {

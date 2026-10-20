@@ -8,6 +8,9 @@ import SwiftUI
 /// The favourites and the tuned channel are written to the widget's config,
 /// so the tile and this panel always show the same station.
 ///
+/// 下半截“我的收藏”“搜索电台”“定时关闭”三页用一条分段切换，默认都收起，
+/// 面板打开时只有上面的主视觉；再点一下打开的那页就收起，打开哪页记住。
+///
 /// 收藏上面一排“添加电台”（贴地址或导入 .m3u / .m3u8 / .pls，见
 /// `RadioAddFlow`）和“检查”（试连收藏，见 `RadioStationCheck`）。有电台所有
 /// 地址都连不上时顶部出一条可关闭的提示，点开列出来，确认后才删。
@@ -17,7 +20,9 @@ struct RadioDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private enum Tab: Hashable { case favourites, search }
+    /// 下半截的三页。面板统一限高后可以全部收起：再点一下打开的那页就收起，
+    /// 打开哪页（或都收起）记住，见 `DetailPanelSections.openPage`。
+    private enum Tab: String, CaseIterable { case favourites, search, timer }
 
     private var player: RadioPlayer { RadioPlayer.shared }
     private var addFlow: RadioAddFlow { RadioAddFlow.shared }
@@ -28,7 +33,9 @@ struct RadioDetail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var tabSlot
 
-    @State private var tab: Tab = .favourites
+    @AppStorage(DetailPanelSections.pageKey(.radio)) private var storedTab = ""
+    /// 打开着的那页，nil 是都收起（默认）。
+    private var tab: Tab? { DetailPanelSections.openPage(stored: storedTab, available: Tab.allCases) }
     @State private var query = ""
     @State private var customName = ""
     @State private var results: [RadioStation] = []
@@ -147,11 +154,12 @@ struct RadioDetail: View {
                     transport
                     volumeRow
                 }
-                timerRow(now: now)
-                tabSwitch
+                tabSwitch(now: now)
                 switch tab {
-                case .favourites: favourites
-                case .search: search
+                case .favourites?: favourites
+                case .search?: search
+                case .timer?: timerRow(now: now)
+                case nil: EmptyView()
                 }
                 Link(destination: RadioBrowser.homepage) {
                     HStack(spacing: 3) {
@@ -210,11 +218,13 @@ struct RadioDetail: View {
 
     // MARK: Tabs
 
-    /// 收藏/搜索切换：胶囊分段，选中那段实心强调色、深色字，13pt。
-    private var tabSwitch: some View {
+    /// 收藏/搜索/定时关闭切换：胶囊分段，选中那段实心强调色、深色字，13pt。
+    /// 一段都没选时下半截收起；定时关闭在走时那一段写剩下的时间。
+    private func tabSwitch(now: Date) -> some View {
         HStack(spacing: 2) {
             tabSegment(.favourites, title: tr("我的收藏 \(stations.count)"))
             tabSegment(.search, title: tr("搜索电台"))
+            tabSegment(.timer, title: timerTitle(now: now))
         }
         .padding(2)
         .background(Capsule().fill(fg.opacity(0.08)))
@@ -224,8 +234,9 @@ struct RadioDetail: View {
     private func tabSegment(_ value: Tab, title: String) -> some View {
         let on = tab == value
         return Button {
-            guard tab != value else { return }
-            withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { tab = value }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) {
+                storedTab = DetailPanelSections.toggled(value, open: tab)
+            }
         } label: {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
@@ -242,6 +253,15 @@ struct RadioDetail: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
+        .help(on ? tr("再点一下收起") : "")
+    }
+
+    /// 定时关闭那一段的字：在走时写剩下的时间，收起时也看得到。
+    private func timerTitle(now: Date) -> String {
+        if let end = player.stopAt, player.isPlaying, !context.isPreview {
+            return tr("定时 \(RadioSleep.remaining(until: end, now: now))")
+        }
+        return tr("定时关闭")
     }
 
     /// 一排小胶囊：一行放得下就一行等宽，放不下就按 `columns` 列折行，字不缩。
@@ -533,7 +553,9 @@ struct RadioDetail: View {
     private var favouriteList: some View {
         Group {
             if stations.isEmpty {
-                PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) { tab = .search }
+                PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) {
+                    storedTab = Tab.search.rawValue
+                }
             } else {
                 // 高度按行数自适应：最多露 5 行，超过才滚动，少于 5 行不留空白。
                 // 行高量出来的（经典、复古皮肤不同），没量到时先用估计值。
@@ -1357,7 +1379,7 @@ struct RadioDetail: View {
         addFlow.submit(id)
         query = ""
         customName = ""
-        tab = .favourites
+        storedTab = Tab.favourites.rawValue
     }
 
     /// Adds the station unless it is already a favourite, tunes the dial to

@@ -14,6 +14,10 @@ import SwiftUI
 ///
 /// 字都不小于 13pt：大数字下的说明、小块、日期和星期、目标线说明都是 13pt，
 /// 说明放不下时换到第二行；目标线的说明不再贴在虚线上，挪到柱子下面单独一行。
+///
+/// 给了 `foldKey` 时这块可以折叠：默认收起，只留「近七天」一行和第一个大数字，
+/// 点一下展开，展开状态按 `foldKey` 记住（见 `DetailPanelSections`）。面板统一
+/// 限高后，喝水和习惯打卡靠它把默认打开的高度压在上限内。
 struct WeeklyReportStat: Hashable {
     var value: String
     var unit: String = ""
@@ -31,6 +35,8 @@ struct WeeklyReportSection<Accessory: View>: View {
     var goalLabel: String?
     /// One bar's figure, for its tooltip.
     var valueText: (WeeklyReportDay) -> String
+    /// 记展开状态的 UserDefaults 键；nil 时不折叠，总是整块显示。
+    var foldKey: String? = nil
     @ViewBuilder var accessory: () -> Accessory
 
     private let chartHeight: CGFloat = 84
@@ -38,37 +44,94 @@ struct WeeklyReportSection<Accessory: View>: View {
     private let barSpacing: CGFloat = 4
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("近七天")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                Spacer(minLength: 4)
-                accessory()
+        if let foldKey {
+            StoredFlag(key: foldKey) { expanded in
+                section(expanded: expanded)
             }
-            HStack(alignment: .top, spacing: 0) {
-                ForEach(Array(headline.enumerated()), id: \.offset) { index, stat in
-                    if index > 0 {
-                        Rectangle().fill(.white.opacity(0.18)).frame(width: 0.5, height: 40)
-                            .padding(.horizontal, 10)
-                    }
-                    big(stat)
+        } else {
+            section(expanded: nil)
+        }
+    }
+
+    /// `expanded` 为 nil 时不折叠。
+    private func section(expanded: Binding<Bool>?) -> some View {
+        let open = expanded?.wrappedValue ?? true
+        return VStack(alignment: .leading, spacing: 10) {
+            if let expanded {
+                foldHeader(expanded)
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("近七天")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Spacer(minLength: 4)
+                    accessory()
                 }
             }
-            if !chips.isEmpty {
-                HStack(alignment: .top, spacing: 8) {
-                    ForEach(chips, id: \.self) { chip($0) }
-                }
-                // 两块一样高：一块说明换了行，另一块跟着拉高。
-                .fixedSize(horizontal: false, vertical: true)
-            }
-            chart
-            if let goalLabel, report.goalFraction != nil {
-                goalLegend(goalLabel)
+            if open {
+                details
             }
         }
         .padding(10)
         .glassPane(cornerRadius: 12)
+    }
+
+    /// 折叠时的标题行：收起时右边写第一个大数字，展开时换成原来的附加控件。
+    private func foldHeader(_ expanded: Binding<Bool>) -> some View {
+        HStack(alignment: .center, spacing: 6) {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) { expanded.wrappedValue.toggle() }
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("近七天")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    if !expanded.wrappedValue, let first = headline.first {
+                        Spacer(minLength: 4)
+                        Text(verbatim: "\(first.label) \(first.value)\(first.unit)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.62))
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.62))
+                        .rotationEffect(.degrees(expanded.wrappedValue ? 180 : 0))
+                }
+                .frame(minHeight: 20)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded.wrappedValue ? tr("已展开") : tr("已收起"))
+            if expanded.wrappedValue {
+                Spacer(minLength: 4)
+                accessory()
+            }
+        }
+    }
+
+    @ViewBuilder private var details: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(Array(headline.enumerated()), id: \.offset) { index, stat in
+                if index > 0 {
+                    Rectangle().fill(.white.opacity(0.18)).frame(width: 0.5, height: 40)
+                        .padding(.horizontal, 10)
+                }
+                big(stat)
+            }
+        }
+        if !chips.isEmpty {
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(chips, id: \.self) { chip($0) }
+            }
+            // 两块一样高：一块说明换了行，另一块跟着拉高。
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        chart
+        if let goalLabel, report.goalFraction != nil {
+            goalLegend(goalLabel)
+        }
     }
 
     private func big(_ stat: WeeklyReportStat) -> some View {
@@ -209,10 +272,24 @@ private struct GoalRule: Shape {
 
 extension WeeklyReportSection where Accessory == EmptyView {
     init(report: WeeklyReport, accent: Color, headline: [WeeklyReportStat], chips: [WeeklyReportStat] = [],
-         goalLabel: String?, valueText: @escaping (WeeklyReportDay) -> String) {
+         goalLabel: String?, valueText: @escaping (WeeklyReportDay) -> String, foldKey: String? = nil) {
         self.init(report: report, accent: accent, headline: headline, chips: chips, goalLabel: goalLabel,
-                  valueText: valueText, accessory: { EmptyView() })
+                  valueText: valueText, foldKey: foldKey, accessory: { EmptyView() })
     }
+}
+
+/// 一个记在 UserDefaults 里的开关，交给里面的内容读写。给 `@AppStorage`
+/// 一个运行时才知道的键用。
+private struct StoredFlag<Content: View>: View {
+    @AppStorage private var on: Bool
+    private let content: (Binding<Bool>) -> Content
+
+    init(key: String, @ViewBuilder content: @escaping (Binding<Bool>) -> Content) {
+        _on = AppStorage(wrappedValue: false, key)
+        self.content = content
+    }
+
+    var body: some View { content($on) }
 }
 
 // MARK: - 喝水
@@ -223,6 +300,7 @@ struct WaterWeeklyReport: View {
     var ounces: Bool
     var accent: Color
     var now: Date
+    var foldKey: String? = nil
 
     var body: some View {
         let report = WeeklyReport.water(days, goal: goal, today: now)
@@ -241,7 +319,8 @@ struct WaterWeeklyReport: View {
                 WeeklyReportStat(value: "\(report.metDays)", unit: tr(" 天"), label: tr("达标天数")),
             ],
             goalLabel: tr("目标 \(WaterIntake.amount(goal, ounces: ounces))"),
-            valueText: { WaterIntake.amount(Int($0.value), ounces: ounces) })
+            valueText: { WaterIntake.amount(Int($0.value), ounces: ounces) },
+            foldKey: foldKey)
     }
 
     /// Litres past a litre, so a week's total stays short.
@@ -384,6 +463,7 @@ struct HabitWeeklyReport: View {
     var habits: [Habit]
     var accent: Color
     var now: Date
+    var foldKey: String? = nil
 
     var body: some View {
         let report = WeeklyReport.habits(habits, today: now)
@@ -397,6 +477,7 @@ struct HabitWeeklyReport: View {
                 WeeklyReportStat(value: "\(Int(report.average.rounded()))", unit: "%", label: tr("平均完成率")),
             ],
             goalLabel: tr("全勤"),
-            valueText: { tr("完成 \(Int($0.value.rounded()))%") })
+            valueText: { tr("完成 \(Int($0.value.rounded()))%") },
+            foldKey: foldKey)
     }
 }

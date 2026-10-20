@@ -193,7 +193,8 @@ final class WidgetDetailWindow {
                        anchor: CGPoint, natural: CGSize) {
         guard let panel, let visible = visibleFrame(for: anchor) else { return }
         let placement = DetailPanelFit.place(edge: edge, anchor: anchor, natural: natural,
-                                             visible: visible)
+                                             visible: visible,
+                                             capped: !DetailPanelFit.isCapExempt(instance.kind))
         let frame = placement.frame
         let viewport = DetailPanelFit.viewportHeight(panelHeight: frame.height, edge: edge,
                                                      tailDepth: PanelShape.arrowDepth)
@@ -302,8 +303,9 @@ final class WidgetDetailWindow {
         // Almost touching the tile: the panel's own padding already includes
         // the tail's depth, so this is the gap between the tail's tip and the
         // tile, not between the tile and the body. Below the tile on a top
-        // shelf, above it on a bottom one. 高度不超过所在屏幕的可用区域，
-        // 超出的部分在面板里滚动；见 DetailPanelFit。
+        // shelf, above it on a bottom one. 高度不超过统一上限（约 560pt、
+        // 屏幕的六成）和所在屏幕的可用区域，超出的部分在面板里滚动；见
+        // DetailPanelFit。
         place(instance, context: context, edge: edge, anchor: anchor, natural: size)
 
         panel.alphaValue = 1
