@@ -24,6 +24,8 @@ final class HolidayService {
         for (year, days) in Self.readCache() where days.count > 0 {
             known[year] = days
         }
+        // 法定工作日闹钟在 Core 里查同一份安排。
+        AlarmHolidays.update(known)
     }
 
     /// The breaks of this year and the next, official where announced.
@@ -45,6 +47,7 @@ final class HolidayService {
                 guard let days = await Self.fetch(year: wanted) else { continue }
                 known[wanted] = days
             }
+            AlarmHolidays.update(known)
             Self.writeCache(known.filter { HolidaySchedule.bundled[$0.key] == nil })
         }
     }

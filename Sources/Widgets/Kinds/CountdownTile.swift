@@ -14,6 +14,10 @@ import SwiftUI
 /// 是“停”，这时候要的就是随手一点就安静。
 ///
 /// 结束时刻存在小组件自己的配置里（`deadline`），重启后照样接着数。
+///
+/// 一张卡片可以同时跑几个计时器，还可以有几个日期倒计时（都在面板里加）。卡片只
+/// 显示最近的一个（`CountdownList.focus`）：在响的、最快到点的、暂停的；计时器
+/// 都没开始时头上写最近的那个日期还有几天，下面仍是三个预设。
 struct CountdownTile: View {
     /// 颜色面板里选的主题色（`WidgetTintStyle`），选过颜色时原来写死的强调色跟着换。
     @Environment(\.widgetTint) private var theme
@@ -29,14 +33,33 @@ struct CountdownTile: View {
     /// 设置里的“数字外观”选了折叠翻页。
     private var folding: Bool { FoldFlip.countdownLook(instance.config) == .fold }
 
-    private var phase: CountdownRun.Phase {
+    private var focus: CountdownList.Focus {
         if context.isPreview { return .idle }
-        return CountdownRun.phase(instance.config, now: context.now)
+        return CountdownList.focus(instance.config, now: context.now)
     }
 
-    private var title: String {
-        let name = instance.config.string("name")
-        return name.isEmpty ? tr("倒计时") : name
+    /// 卡片现在显示的计时器：最近的那个；都没开始时是第一个（三个预设开始的就是它）。
+    private var timer: CountdownTimer {
+        if case .timer(let timer) = focus { return timer }
+        return CountdownList.main(instance.config)
+    }
+
+    private var phase: CountdownRun.Phase {
+        if context.isPreview { return .idle }
+        return CountdownList.phase(timer, now: context.now)
+    }
+
+    private var title: String { timer.title }
+
+    /// 都没开始时最近的那个日期倒计时。
+    private var nearestDate: (date: CountdownDate, days: Int)? {
+        if case .date(let date, let days) = focus { return (date, days) }
+        return nil
+    }
+
+    /// 除了显示的这个，还有几个计时器在跑或暂停。
+    private var othersActive: Int {
+        context.isPreview ? 0 : max(0, CountdownList.activeCount(instance.config, now: context.now) - 1)
     }
 
     var body: some View {
@@ -68,17 +91,37 @@ struct CountdownTile: View {
         let presets = CountdownRun.presets(instance.config)
         let last = CountdownRun.lastPresetIndex(instance.config)
         return VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 4) {
-                Text(title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                Text(tr("上次 \(CountdownRun.lengthText(CountdownRun.duration(instance.config)))"))
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(WidgetStyle.secondary.opacity(0.8))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            if let nearest = nearestDate {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(accent)
+                    Text(nearest.date.title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(CountdownList.daysText(nearest.days))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(WidgetStyle.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .accessibilityElement(children: .combine)
+            } else {
+                HStack(spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(tr("上次 \(CountdownRun.lengthText(CountdownRun.duration(instance.config)))"))
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(WidgetStyle.secondary.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
             }
             HStack(spacing: 5) {
                 ForEach(Array(presets.enumerated()), id: \.offset) { index, minutes in
@@ -98,8 +141,7 @@ struct CountdownTile: View {
             HStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 0) {
                     reading(left, size: 21, maxWidth: 96)
-                    Text(paused ? tr("已暂停 · \(title)") : CountdownRun.runningCaption(
-                        name: instance.config.string("name"), duration: CountdownRun.duration(instance.config)))
+                    Text(runningCaption(paused: paused))
                         .font(.system(size: 10))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
@@ -141,7 +183,7 @@ struct CountdownTile: View {
                             Text(tr("时间到"))
                                 .font(.system(size: 18, weight: .heavy))
                                 .foregroundStyle(WidgetStyle.primary)
-                            Text(tr("\(title) \(CountdownRun.lengthText(CountdownRun.duration(instance.config)))"))
+                            Text(tr("\(title) \(CountdownRun.lengthText(timer.duration))"))
                                 .font(.system(size: 10))
                                 .foregroundStyle(WidgetStyle.primary.opacity(0.75))
                                 .lineLimit(1)
@@ -171,14 +213,22 @@ struct CountdownTile: View {
         VStack(spacing: 2) {
             switch phase {
             case .idle, .ringing:
-                Text(title)
+                Text(nearestDate?.date.title ?? title)
                     .font(WidgetStyle.caption(9))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                // 竖排放不下三个，只放前两个。
+                if let nearest = nearestDate {
+                    Text(CountdownList.daysShort(nearest.days))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(WidgetStyle.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                // 竖排放不下三个，只放前两个；有日期倒计时时只放一个。
                 VStack(spacing: 3) {
-                    ForEach(CountdownRun.presets(instance.config).prefix(2), id: \.self) { minutes in
+                    ForEach(CountdownRun.presets(instance.config).prefix(nearestDate == nil ? 2 : 1), id: \.self) { minutes in
                         TimerPill(title: CountdownRun.presetLabel(minutes), size: 10, height: 17, minWidth: 44,
                                   action: context.isPreview ? nil : { start(minutes: minutes) })
                     }
@@ -232,48 +282,40 @@ struct CountdownTile: View {
 
     // MARK: 动作
 
-    /// 点预设：记下这次的时长（下次高亮它），马上开始。
-    private func start(minutes: Int) {
+    /// 跑着时的说明：“泡面 · 共 3 分钟”，暂停时“已暂停 · 泡面”；还有别的计时器在跑时
+    /// 后面加“另 2 个”。
+    private func runningCaption(paused: Bool) -> String {
+        let base = paused ? tr("已暂停 · \(title)") : CountdownRun.runningCaption(name: timer.name, duration: timer.duration)
+        return othersActive > 0 ? tr("\(base) · 另 \(othersActive) 个") : base
+    }
+
+    /// 改卡片上显示的那个计时器。
+    private func change(_ id: String, _ transform: @escaping (CountdownTimer) -> CountdownTimer) {
         guard !context.isPreview else { return }
-        let length = Double(minutes * 60)
         withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("duration", .number(length))
-                config.set("paused", nil)
-                config.set("deadline", .number(Date.now.timeIntervalSince1970 + length))
+            WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) { config in
+                CountdownList.update(id, in: &config) { $0 = transform($0) }
             }
         }
+    }
+
+    /// 点预设：第一个计时器记下这次的时长（下次高亮它），马上开始。
+    private func start(minutes: Int) {
+        let length = Double(minutes * 60)
+        change(CountdownList.mainID) { CountdownList.starting($0, duration: length, now: .now) }
     }
 
     /// 暂停存下还剩多少，继续时从屏幕上的数接着数。
     private func pause() {
-        guard !context.isPreview, case .running(let left, _) = phase else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("paused", .number(left))
-                config.set("deadline", nil)
-            }
-        }
+        change(timer.id) { CountdownList.pausing($0, now: .now) }
     }
 
     private func resume() {
-        guard !context.isPreview, case .paused(let left, _) = phase else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("paused", nil)
-                config.set("deadline", .number(Date.now.timeIntervalSince1970 + left))
-            }
-        }
+        change(timer.id) { CountdownList.resuming($0, now: .now) }
     }
 
     private func cancel() {
-        guard !context.isPreview else { return }
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set("paused", nil)
-                config.set("deadline", nil)
-            }
-        }
+        change(timer.id) { CountdownList.stopping($0) }
     }
 
     /// 时间到后点一下：回到没开始，三个预设回来。

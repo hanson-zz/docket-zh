@@ -102,20 +102,25 @@ final class TimedAlertDriver {
     private func countdown(_ widget: WidgetInstance, after old: Date, now: Date,
                            upcoming: inout [Date], ringing: inout Bool) {
         let config = widget.config
+        let sound = config.bool(CountdownRun.soundKey, default: true)
         if let next = TimedAlertWake.countdownNext(config, now: now) { upcoming.append(next) }
-        if let due = TimedAlertScan.countdownRang(config, after: old, upTo: now),
-           ReminderPopupCenter.shared.shows(.countdown) {
-            let name = config.string("name")
-            let alert = ReminderAlert(kind: .countdown, itemID: widget.id.uuidString, widgetID: widget.id,
-                                      title: ReminderPopupText.countdownTitle(name: name), due: due,
-                                      timer: TimerPopupInfo(duration: CountdownRun.duration(config),
-                                                            sound: config.bool(CountdownRun.soundKey, default: true)))
-            ReminderPopupCenter.shared.post([alert], now: now)
-        }
-        if let chime = TimedAlertScan.countdownChime(config, now: now) {
-            ringing = true
-            ring("c:\(widget.id):\(chime.key)", bucket: chime.bucket, kind: .countdown,
-                 sound: config.bool(CountdownRun.soundKey, default: true))
+        // 同时跑的几个计时器各自到点、各弹一张、各响各的。第一个的 itemID 还是
+        // 小组件的 id（和原来一样），其余的带上计时器的 id，放在 alarmID 里交给弹出页。
+        for timer in CountdownList.timers(config) {
+            if let due = TimedAlertScan.countdownRang(timer, after: old, upTo: now),
+               ReminderPopupCenter.shared.shows(.countdown) {
+                let itemID = timer.isMain ? widget.id.uuidString : "\(widget.id.uuidString)#\(timer.id)"
+                let alert = ReminderAlert(kind: .countdown, itemID: itemID, widgetID: widget.id,
+                                          title: ReminderPopupText.countdownTitle(name: timer.name), due: due,
+                                          timer: TimerPopupInfo(duration: timer.duration,
+                                                                alarmID: timer.isMain ? "" : timer.id,
+                                                                sound: sound))
+                ReminderPopupCenter.shared.post([alert], now: now)
+            }
+            if let chime = TimedAlertScan.countdownChime(timer, now: now) {
+                ringing = true
+                ring("c:\(widget.id):\(chime.key)", bucket: chime.bucket, kind: .countdown, sound: sound)
+            }
         }
     }
 
@@ -124,6 +129,10 @@ final class TimedAlertDriver {
     private func alarm(_ widget: WidgetInstance, after old: Date, now: Date,
                        upcoming: inout [Date], ringing: inout Bool) {
         let config = widget.config
+        // 有法定工作日闹钟时把放假安排取齐（今年和明年，六小时最多试一次）。
+        if AlarmBook.items(config).contains(where: { $0.enabled && $0.repeats.isLegalWorkdays }) {
+            HolidayService.shared.refresh(now: now)
+        }
         if let next = AlarmBook.upcoming(config, now: now).first?.at { upcoming.append(next) }
         if let rang = TimedAlertScan.alarmRang(config, after: old, upTo: now),
            ReminderPopupCenter.shared.shows(.alarm) {
@@ -162,7 +171,8 @@ final class TimedAlertDriver {
             }
             let still: Bool
             if alert.kind == .countdown {
-                still = TimedAlertScan.countdownStillRinging(widget.config, due: alert.due, now: now)
+                still = TimedAlertScan.countdownStillRinging(widget.config, timerID: alert.timer?.alarmID ?? "",
+                                                             due: alert.due, now: now)
             } else {
                 still = TimedAlertScan.alarmStillRinging(widget.config, id: alert.timer?.alarmID ?? "",
                                                          since: alert.due, now: now)

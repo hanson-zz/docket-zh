@@ -6,6 +6,10 @@ public enum AlarmRepeat: Hashable, Sendable {
     case weekdays(Set<Int>)
     /// 只在这一天响一次，`yyyyMMdd`。
     case once(String)
+    /// 法定工作日：周一到周五响，法定节假日不响，调休上班的周末照响。放假和调休
+    /// 只来自 `HolidaySchedule`（和农历、时间进度、摸鱼时钟同一份）；那一年的安排
+    /// 还没有时退回普通的周一到周五。
+    case legalWorkdays
 
     public static let daily = AlarmRepeat.weekdays(Set(1...7))
     public static let workdays = AlarmRepeat.weekdays([1, 2, 3, 4, 5])
@@ -13,8 +17,11 @@ public enum AlarmRepeat: Hashable, Sendable {
 
     /// 一周里哪几天（只响一次的是空的）。
     public var days: Set<Int> {
-        if case .weekdays(let days) = self { return days.isEmpty ? Set(1...7) : days }
-        return []
+        switch self {
+        case .weekdays(let days): days.isEmpty ? Set(1...7) : days
+        case .legalWorkdays: [1, 2, 3, 4, 5]
+        case .once: []
+        }
     }
 
     public var isOnce: Bool {
@@ -24,15 +31,25 @@ public enum AlarmRepeat: Hashable, Sendable {
 
     public var isDaily: Bool { days.count == 7 }
 
-    /// 存进 `repeats` 的写法：“12345”或“once:20261020”。
+    public var isLegalWorkdays: Bool { self == .legalWorkdays }
+
+    /// 存进 `repeats` 的写法：“12345”、“once:20261020”或“legal”（法定工作日）。
+    /// 旧版本读到“legal”时里面没有数字，退回每天，不会读坏。
     var code: String {
         switch self {
         case .weekdays: days.sorted().map { String($0) }.joined()
         case .once(let day): "once:\(day)"
+        case .legalWorkdays: AlarmRepeat.legalCode
         }
     }
 
+    static let legalCode = "legal"
+
     init(code: String) {
+        if code == AlarmRepeat.legalCode {
+            self = .legalWorkdays
+            return
+        }
         if code.hasPrefix("once:") {
             let day = String(code.dropFirst(5))
             if day.count == 8, day.allSatisfy(\.isNumber) {
@@ -53,8 +70,9 @@ public enum AlarmRepeat: Hashable, Sendable {
 /// - `alarms`：每个闹钟一行 `id|HH:mm|1|名字`（1 开、0 关）。名字放最后，里面有“|”也不会读错。
 /// - `handled`：今天已经处理过（关掉或稍后）的响铃，`id@yyyyMMdd`，只留今天的。
 /// - `snoozes`：稍后再响的，`id|epoch`。
-/// - `repeats`：不是每天响的闹钟，`id|12345`（周一是 1，周日是 7）或 `id|once:yyyyMMdd`
-///   （只响一次）。没写的就是每天，旧配置没有这个键，照样每天响。
+/// - `repeats`：不是每天响的闹钟，`id|12345`（周一是 1，周日是 7）、`id|once:yyyyMMdd`
+///   （只响一次）或 `id|legal`（法定工作日，跳过节假日、调休照响）。没写的就是每天，
+///   旧配置没有这个键，照样每天响；旧的“12345”仍是普通工作日。
 ///
 /// 旧卡片只有一个闹钟，存在 `time`、`name`、`enabled` 三个键里。没有 `alarms`
 /// 这个键时按旧键读成一个闹钟；第一次在新面板或卡片上改动时写成列表，旧键不再读。
@@ -158,13 +176,16 @@ public enum AlarmBook {
     /// 下一次响的时刻：每天的是今天的这个时刻，过了就是明天的；只在某几天响的
     /// 往后找到第一个对的日子；只响一次的就是那一天，已经过了也返回那一刻
     /// （用 `isLive` 判断它还会不会响）。
-    public static func nextOccurrence(_ item: AlarmItem, after now: Date, calendar: Calendar = .current) -> Date {
+    public static func nextOccurrence(_ item: AlarmItem, after now: Date, calendar: Calendar = .current,
+                                      holidays: [Int: [HolidayDay]] = AlarmHolidays.current) -> Date {
         if case .once(let key) = item.repeats {
             return onceDate(key, minutes: item.minutes, calendar: calendar) ?? at(item.minutes, on: now, calendar: calendar)
         }
-        for offset in 0...7 {
+        // 法定工作日要跨过春节、国庆这样连放八九天的假，多往后找一些。
+        let horizon = item.repeats.isLegalWorkdays ? 40 : 7
+        for offset in 0...horizon {
             guard let day = calendar.date(byAdding: .day, value: offset, to: now) else { continue }
-            guard rings(item.repeats, on: day, calendar: calendar) else { continue }
+            guard rings(item.repeats, on: day, calendar: calendar, holidays: holidays) else { continue }
             let candidate = at(item.minutes, on: day, calendar: calendar)
             if candidate > now { return candidate }
         }
@@ -208,11 +229,29 @@ public enum AlarmBook {
         }
     }
 
-    /// 这条规则在这一天响不响。
-    public static func rings(_ rule: AlarmRepeat, on day: Date, calendar: Calendar = .current) -> Bool {
+    /// 这条规则在这一天响不响。法定工作日查 `holidays`（默认是内置的加上联网取到的年份）。
+    public static func rings(_ rule: AlarmRepeat, on day: Date, calendar: Calendar = .current,
+                             holidays: [Int: [HolidayDay]] = AlarmHolidays.current) -> Bool {
         switch rule {
         case .weekdays: rule.days.contains(isoWeekday(day, calendar: calendar))
         case .once(let key): key == dayKey(day, calendar: calendar)
+        case .legalWorkdays: isLegalWorkday(day, calendar: calendar, holidays: holidays)
+        }
+    }
+
+    /// 这一天要不要上班：法定节假日不上，调休上班日上，其余周一到周五上。日期按
+    /// `calendar` 里的年月日认，再拿去 `HolidaySchedule` 查；那一年没有安排时
+    /// `HolidaySchedule.kind` 自己退回普通的周一到周五。
+    public static func isLegalWorkday(_ day: Date, calendar: Calendar = .current,
+                                      holidays: [Int: [HolidayDay]] = AlarmHolidays.current) -> Bool {
+        let parts = calendar.dateComponents([.year, .month, .day], from: day)
+        guard let noon = ChineseCalendar.gregorian.date(from: DateComponents(
+            year: parts.year, month: parts.month, day: parts.day, hour: 12)) else {
+            return isoWeekday(day, calendar: calendar) <= 5
+        }
+        switch HolidaySchedule.kind(of: noon, known: holidays) {
+        case .workday, .makeupWorkday: return true
+        case .holiday, .weekend: return false
         }
     }
 
@@ -368,6 +407,8 @@ public enum AlarmBook {
             if days == [1, 2, 3, 4, 5] { return tr("工作日") }
             if days == [6, 7] { return tr("周末") }
             return days.sorted().map { weekdayName($0) }.joined(separator: tr("、"))
+        case .legalWorkdays:
+            return tr("法定工作日")
         }
     }
 
@@ -470,5 +511,28 @@ public enum AlarmBook {
             snoozes[id].map { "\(id)|\(Int($0.timeIntervalSince1970))" }
         }
         config.set(snoozesKey, .list(lines.map { .string($0) }))
+    }
+}
+
+/// 法定工作日闹钟查的放假安排：内置的一年，加上应用联网取到的年份
+/// （`HolidayService` 取到后写进来）。测试和预览不写，就是内置的。
+public enum AlarmHolidays {
+    private final class Box: @unchecked Sendable {
+        let lock = NSLock()
+        var value: [Int: [HolidayDay]] = HolidaySchedule.bundled
+    }
+
+    private static let box = Box()
+
+    public static var current: [Int: [HolidayDay]] {
+        box.lock.lock()
+        defer { box.lock.unlock() }
+        return box.value
+    }
+
+    public static func update(_ known: [Int: [HolidayDay]]) {
+        box.lock.lock()
+        box.value = known
+        box.lock.unlock()
     }
 }

@@ -7,6 +7,10 @@ import SwiftUI
 /// 状态全部来自 `CountdownRun`，和卡片读同样的键（`deadline`、`paused`、
 /// `duration`、`presets`），所以面板和卡片不会说两样。时间到了还没人点停时，
 /// 环里换成小熊猫和“时间到”，主按钮是“停”。卡片上的三个预设在“调整卡片预设”里改。
+///
+/// 再往下两组（`CountdownList`）：“同时计时”是同时在跑的其余计时器，各自有名字和
+/// 时长，列表里写剩余，能暂停、继续、删掉，加一个就马上开始；“日期倒计时”写到某一天
+/// 还有几天（生日、发布日），可以每年重复。卡片只显示最近的一个。
 struct CountdownDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
@@ -16,6 +20,17 @@ struct CountdownDetail: View {
     /// 自定义时长（分钟）；没动过时跟着上次的时长。
     @State private var custom: Int?
     @State private var editingPresets = false
+
+    // 加计时器
+    @State private var addingTimer = false
+    @State private var timerName = ""
+    @State private var timerMinutes = CountdownList.newTimerMinutes
+
+    // 加日期倒计时
+    @State private var addingDate = false
+    @State private var dateName = ""
+    @State private var dateDay = Date()
+    @State private var dateYearly = true
 
     var body: some View {
         // 面板的 context 只在打开那一刻取一次，靠这个每秒刷新。
@@ -45,6 +60,8 @@ struct CountdownDetail: View {
                     quickStart(config, total: total)
                     customRow(total: total)
                 }
+                timersSection(config, now: now)
+                datesSection(config, now: now)
             }
         }
     }
@@ -281,6 +298,274 @@ struct CountdownDetail: View {
         }
     }
 
+    // MARK: 同时计时
+
+    private func sectionHeader(_ title: String, canAdd: Bool, adding: Bool, add: @escaping () -> Void) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+            Spacer(minLength: 6)
+            if !adding {
+                Button(action: add) {
+                    Label(tr("添加"), systemImage: "plus")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(canAdd ? accent : .white.opacity(0.3))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(!canAdd || context.isPreview)
+            }
+        }
+    }
+
+    private func timersSection(_ config: WidgetConfig, now: Date) -> some View {
+        let extras = context.isPreview ? [] : CountdownList.extras(config)
+        return VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(tr("同时计时"), canAdd: CountdownList.canAddTimer(config), adding: addingTimer) {
+                timerName = ""
+                timerMinutes = CountdownList.newTimerMinutes
+                withAnimation(.snappy(duration: 0.25)) { addingTimer = true }
+            }
+            if addingTimer { timerEditor }
+            if extras.isEmpty && !addingTimer {
+                Text(tr("泡面、晾衣服、等会议可以一起计，各计各的。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(extras) { timer in
+                timerRow(timer, now: now)
+            }
+        }
+    }
+
+    private var timerEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField(tr("名字，比如泡面"), text: $timerName)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .onSubmit(addTimer)
+            HStack(spacing: 8) {
+                roundStep("minus", enabled: timerMinutes > CountdownRun.presetRange.lowerBound) {
+                    timerMinutes = CountdownRun.stepping(timerMinutes, up: false)
+                }
+                Text(CountdownRun.lengthText(Double(timerMinutes * 60)))
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .frame(width: 96)
+                    .contentTransition(.numericText())
+                roundStep("plus", enabled: timerMinutes < CountdownRun.presetRange.upperBound) {
+                    timerMinutes = CountdownRun.stepping(timerMinutes, up: true)
+                }
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: 8) {
+                ClockPanelButton(title: tr("开始"), fill: accent, ink: ink, action: addTimer)
+                ClockPanelButton(title: tr("取消"), fill: nil) {
+                    withAnimation(.snappy(duration: 0.25)) { addingTimer = false }
+                }
+            }
+        }
+        .padding(12)
+        .glassPane()
+    }
+
+    /// 一行：名字和状态，右边剩余的大数字、开始暂停（到点时是“停”）和删除，底下细进度条。
+    private func timerRow(_ timer: CountdownTimer, now: Date) -> some View {
+        let phase = CountdownList.phase(timer, now: now)
+        let (left, fraction) = Self.reading(phase, total: timer.duration)
+        let ringing = isRinging(phase)
+        return VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(timer.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                        .lineLimit(1)
+                    Text(rowStatus(phase, left: left, total: timer.duration, now: now))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(ringing ? accent : .white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+                }
+                Spacer(minLength: 4)
+                Text(ringing ? tr("时间到") : CountdownRun.remainingText(left))
+                    .font(.system(size: ringing ? 17 : 22, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.white.opacity(phase == .idle ? 0.5 : 1))
+                    .rollingValue(Int(left.rounded(.up)))
+                    .lineLimit(1)
+                if ringing {
+                    ClockPanelButton(title: tr("停"), fill: accent, ink: ink, height: 30) { stopTimer(timer.id) }
+                        .frame(width: 48)
+                } else {
+                    rowGlyph(Self.isRunning(phase) ? "pause.fill" : "play.fill",
+                             label: rowToggleLabel(phase)) { toggleTimer(timer.id) }
+                }
+                rowGlyph("xmark", label: tr("删除 \(timer.title)")) { removeTimer(timer.id) }
+            }
+            if phase != .idle {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(.white.opacity(0.10))
+                        Capsule().fill(accent)
+                            .frame(width: max(3, geo.size.width * (ringing ? 1 : min(1, max(0, fraction)))))
+                    }
+                }
+                .frame(height: 3)
+                .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .glassPane()
+    }
+
+    private func rowGlyph(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white.opacity(0.9))
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(.white.opacity(0.12)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .accessibilityLabel(label)
+    }
+
+    private func rowStatus(_ phase: CountdownRun.Phase, left: TimeInterval, total: TimeInterval, now: Date) -> String {
+        switch phase {
+        case .running:
+            let ends = now.addingTimeInterval(left).formatted(.dateTime.hour().minute())
+            return tr("\(ends) 结束")
+        case .paused: return tr("已暂停")
+        case .idle: return tr("共 \(CountdownRun.lengthText(total))")
+        case .ringing(let since):
+            let minutes = Int(since / 60)
+            return minutes > 0 ? tr("已过 \(minutes) 分钟") : tr("共 \(CountdownRun.lengthText(total))")
+        }
+    }
+
+    private static func isRunning(_ phase: CountdownRun.Phase) -> Bool {
+        if case .running = phase { return true }
+        return false
+    }
+
+    private func rowToggleLabel(_ phase: CountdownRun.Phase) -> String {
+        switch phase {
+        case .running: tr("暂停倒计时")
+        case .paused: tr("继续倒计时")
+        default: tr("开始")
+        }
+    }
+
+    // MARK: 日期倒计时
+
+    private func datesSection(_ config: WidgetConfig, now: Date) -> some View {
+        let dates = context.isPreview ? [] : CountdownList.dates(config, now: now)
+        return VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(tr("日期倒计时"), canAdd: CountdownList.canAddDate(config), adding: addingDate) {
+                dateName = ""
+                dateDay = Calendar.current.date(byAdding: .day, value: 30, to: .now) ?? .now
+                dateYearly = true
+                withAnimation(.snappy(duration: 0.25)) { addingDate = true }
+            }
+            if addingDate { dateEditor }
+            if dates.isEmpty && !addingDate {
+                HStack(spacing: 10) {
+                    if let image = PandaArt.image("pet-panda-idle") {
+                        Image(nsImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 36, height: 36)
+                            .accessibilityHidden(true)
+                    }
+                    Text(tr("生日、纪念日、发布日，算到那天还有几天。"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            ForEach(dates) { item in
+                dateRow(item, now: now)
+            }
+        }
+    }
+
+    private var dateEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField(tr("名字，比如生日"), text: $dateName)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+                .onSubmit(addDate)
+            HStack(spacing: 8) {
+                DatePicker("", selection: $dateDay, displayedComponents: .date)
+                    .labelsHidden()
+                    .datePickerStyle(.stepperField)
+                    .font(.system(size: 13))
+                Spacer(minLength: 4)
+                Toggle(isOn: $dateYearly) {
+                    Text(tr("每年重复"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(accent)
+            }
+            HStack(spacing: 8) {
+                ClockPanelButton(title: tr("保存"), fill: accent, ink: ink, action: addDate)
+                ClockPanelButton(title: tr("取消"), fill: nil) {
+                    withAnimation(.snappy(duration: 0.25)) { addingDate = false }
+                }
+            }
+        }
+        .padding(12)
+        .glassPane()
+    }
+
+    /// 一行：名字和日期，右边还有几天；就是今天时小熊猫来庆祝。
+    private func dateRow(_ item: CountdownDate, now: Date) -> some View {
+        let days = CountdownList.daysLeft(item, now: now)
+        return HStack(spacing: 10) {
+            if days == 0, let image = PandaArt.image("pet-panda-cheer") {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 32, height: 32)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(days < 0 ? 0.5 : 0.95))
+                    .lineLimit(1)
+                Text(CountdownList.dateText(item))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Text(CountdownList.daysText(days))
+                .font(.system(size: days > 1 ? 17 : 15, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(days == 0 ? accent : .white.opacity(days < 0 ? 0.45 : 1))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            rowGlyph("xmark", label: tr("删除 \(item.title)")) { removeDate(item.id) }
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 54)
+        .glassPane()
+    }
+
     private func roundStep(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -376,6 +661,51 @@ struct CountdownDetail: View {
             config.set("paused", nil)
             config.set("deadline", nil)
         }
+    }
+
+    private func addTimer() {
+        guard !context.isPreview else { return }
+        let name = timerName
+        let length = Double(timerMinutes * 60)
+        write { _ = CountdownList.adding(name: name, duration: length, to: &$0, now: .now) }
+        addingTimer = false
+    }
+
+    /// 没开始的开始，跑着的暂停，暂停的继续。
+    private func toggleTimer(_ id: String) {
+        guard !context.isPreview else { return }
+        write { config in
+            CountdownList.update(id, in: &config) { timer in
+                let now = Date.now
+                switch CountdownList.phase(timer, now: now) {
+                case .idle, .ringing: timer = CountdownList.starting(timer, duration: timer.duration, now: now)
+                case .running: timer = CountdownList.pausing(timer, now: now)
+                case .paused: timer = CountdownList.resuming(timer, now: now)
+                }
+            }
+        }
+    }
+
+    private func stopTimer(_ id: String) {
+        guard !context.isPreview else { return }
+        write { CountdownList.update(id, in: &$0) { $0 = CountdownList.stopping($0) } }
+    }
+
+    private func removeTimer(_ id: String) {
+        guard !context.isPreview else { return }
+        write { CountdownList.remove(id, in: &$0) }
+    }
+
+    private func addDate() {
+        guard !context.isPreview else { return }
+        let (name, day, yearly) = (dateName, dateDay, dateYearly)
+        write { _ = CountdownList.addingDate(name: name, on: day, yearly: yearly, to: &$0) }
+        addingDate = false
+    }
+
+    private func removeDate(_ id: String) {
+        guard !context.isPreview else { return }
+        write { CountdownList.removeDate(id, in: &$0) }
     }
 
     private func setPreset(_ index: Int, to minutes: Int) {

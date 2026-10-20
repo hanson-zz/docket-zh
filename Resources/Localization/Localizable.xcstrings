@@ -353,6 +353,17 @@
         }
       }
     },
+    "%@ · 另 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ more"
+          }
+        }
+      }
+    },
     "%@ · 就是今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1669,6 +1680,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ and %@ more"
+          }
+        }
+      }
+    },
+    "%@ 结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ends %@"
           }
         }
       }
@@ -11939,6 +11961,17 @@
         }
       }
     },
+    "同时计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More timers"
+          }
+        }
+      }
+    },
     "同此处" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12012,6 +12045,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name, e.g. Coconut water"
+          }
+        }
+      }
+    },
+    "名字，比如泡面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, e.g. Noodles"
+          }
+        }
+      }
+    },
+    "名字，比如生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, e.g. Birthday"
           }
         }
       }
@@ -17100,6 +17155,17 @@
         }
       }
     },
+    "已过 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days ago"
+          }
+        }
+      }
+    },
     "已过 %@ 天 · 收到 %@ 片竹叶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20729,6 +20795,17 @@
         }
       }
     },
+    "日期倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date countdowns"
+          }
+        }
+      }
+    },
     "日程" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21026,6 +21103,17 @@
         }
       }
     },
+    "每年 %@月%@日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every year on %@/%@"
+          }
+        }
+      }
+    },
     "比%@早 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21103,6 +21191,17 @@
         }
       }
     },
+    "法定工作日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official workdays"
+          }
+        }
+      }
+    },
     "法属波利尼西亚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21110,6 +21209,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "French Polynesia"
+          }
+        }
+      }
+    },
+    "泡面、晾衣服、等会议可以一起计，各计各的。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time noodles, laundry and a meeting at once, each on its own."
           }
         }
       }
@@ -30250,6 +30360,17 @@
         }
       }
     },
+    "生日、纪念日、发布日，算到那天还有几天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birthdays, anniversaries, launch days: see how many days are left."
+          }
+        }
+      }
+    },
     "生日、纪念日，到了提醒你" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36717,6 +36838,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skip Tour"
+          }
+        }
+      }
+    },
+    "跳过法定节假日，调休上班照响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skips public holidays, rings on make-up workdays"
           }
         }
       }

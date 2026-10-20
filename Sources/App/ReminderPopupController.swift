@@ -116,7 +116,8 @@ final class ReminderPopupCenter {
         case .again:
             if let id = primary.widgetID, let instance = WidgetWriter.current(id) {
                 WidgetWriter.write(instance) {
-                    TimedAlertScan.restartingCountdown(&$0, duration: primary.timer?.duration ?? 0, now: now)
+                    TimedAlertScan.restartingCountdown(&$0, duration: primary.timer?.duration ?? 0, now: now,
+                                                       timerID: primary.timer?.alarmID ?? "")
                 }
             }
             queue.resolve(primary.id)
@@ -175,7 +176,9 @@ final class ReminderPopupCenter {
         if let id = alert.widgetID, let instance = WidgetWriter.current(id) {
             switch alert.kind {
             case .countdown:
-                WidgetWriter.write(instance) { TimedAlertScan.stoppingCountdown(&$0) }
+                WidgetWriter.write(instance) {
+                    TimedAlertScan.stoppingCountdown(&$0, timerID: alert.timer?.alarmID ?? "")
+                }
             case .alarm:
                 if let alarmID = alert.timer?.alarmID {
                     WidgetWriter.write(instance) { config in

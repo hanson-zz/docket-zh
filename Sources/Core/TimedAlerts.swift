@@ -62,15 +62,23 @@ public enum TimedAlertScan {
     /// 倒计时在 (`after`, `now`] 里到点时是它的结束时刻。两次检查隔得太久（合盖
     /// 睡眠）不算，和提醒音效一样不补弹。
     public static func countdownRang(_ config: WidgetConfig, after: Date, upTo now: Date) -> Date? {
-        guard fresh(after: after, now: now), config["paused"] == nil, config["deadline"] != nil else { return nil }
-        let deadline = Date(timeIntervalSince1970: config.double("deadline"))
+        countdownRang(CountdownList.main(config), after: after, upTo: now)
+    }
+
+    /// 某一个计时器在 (`after`, `now`] 里到点时是它的结束时刻。
+    public static func countdownRang(_ timer: CountdownTimer, after: Date, upTo now: Date) -> Date? {
+        guard fresh(after: after, now: now), timer.paused == nil, let end = timer.deadline else { return nil }
+        let deadline = Date(timeIntervalSince1970: end)
         return deadline > after && deadline <= now ? deadline : nil
     }
 
     /// 倒计时还停在“时间到”、而且还是 `due` 那一次（没人点停、没再开一轮）。
-    public static func countdownStillRinging(_ config: WidgetConfig, due: Date, now: Date) -> Bool {
-        guard case .ringing = CountdownRun.phase(config, now: now) else { return false }
-        return abs(config.double("deadline") - due.timeIntervalSince1970) < 1
+    /// `timerID` 空的是第一个计时器。
+    public static func countdownStillRinging(_ config: WidgetConfig, timerID: String = "", due: Date,
+                                             now: Date) -> Bool {
+        guard let timer = CountdownList.timer(timerID, in: config),
+              case .ringing = CountdownList.phase(timer, now: now), let deadline = timer.deadline else { return false }
+        return abs(deadline - due.timeIntervalSince1970) < 1
     }
 
     /// 闹钟在 (`after`, `now`] 里开始响（到点或稍后再响到了）时是它和开始的时刻。
@@ -97,9 +105,15 @@ public enum TimedAlertScan {
 
     /// 倒计时到点后第几声（每 4 秒一声，30 秒后不再响），没在响时为 nil。
     public static func countdownChime(_ config: WidgetConfig, now: Date) -> (key: String, bucket: Int)? {
-        guard case .ringing(let since) = CountdownRun.phase(config, now: now),
+        countdownChime(CountdownList.main(config), now: now)
+    }
+
+    /// 某一个计时器到点后第几声；键里带着计时器的 id，几个同时响也各响各的。
+    public static func countdownChime(_ timer: CountdownTimer, now: Date) -> (key: String, bucket: Int)? {
+        guard case .ringing(let since) = CountdownList.phase(timer, now: now),
               let bucket = CountdownRun.chimeBucket(since: since) else { return nil }
-        return ("\(Int(config.double("deadline")))", bucket)
+        let deadline = Int(timer.deadline ?? 0)
+        return (timer.isMain ? "\(deadline)" : "\(timer.id):\(deadline)", bucket)
     }
 
     /// 闹钟响铃后第几声（每 4 秒一声，两分钟后不再出声），没在响时为 nil。
@@ -111,17 +125,15 @@ public enum TimedAlertScan {
     }
 
     /// 倒计时「再来一次」：同样的时长从现在重新计。
-    public static func restartingCountdown(_ config: inout WidgetConfig, duration: TimeInterval, now: Date) {
-        let length = duration > 0 ? duration : CountdownRun.duration(config)
-        config.set("duration", .number(length))
-        config.set("paused", nil)
-        config.set("deadline", .number(now.timeIntervalSince1970 + length))
+    /// `timerID` 空的是第一个计时器。
+    public static func restartingCountdown(_ config: inout WidgetConfig, duration: TimeInterval, now: Date,
+                                           timerID: String = "") {
+        CountdownList.update(timerID, in: &config) { $0 = CountdownList.starting($0, duration: duration, now: now) }
     }
 
     /// 倒计时「关闭」：回到没开始，三个预设回来（和点卡片停一样）。
-    public static func stoppingCountdown(_ config: inout WidgetConfig) {
-        config.set("paused", nil)
-        config.set("deadline", nil)
+    public static func stoppingCountdown(_ config: inout WidgetConfig, timerID: String = "") {
+        CountdownList.update(timerID, in: &config) { $0 = CountdownList.stopping($0) }
     }
 
     static func fresh(after: Date, now: Date) -> Bool {
@@ -152,9 +164,12 @@ public enum TimedAlertWake {
     }
 
     /// 倒计时下一个到点的时刻：正在跑时是结束时刻，暂停、没开始、已经到点都没有。
+    /// 有几个计时器同时在跑时是最早的那个。
     public static func countdownNext(_ config: WidgetConfig, now: Date) -> Date? {
-        guard case .running = CountdownRun.phase(config, now: now) else { return nil }
-        return Date(timeIntervalSince1970: config.double("deadline"))
+        CountdownList.timers(config).compactMap { timer -> Date? in
+            guard case .running = CountdownList.phase(timer, now: now), let end = timer.deadline else { return nil }
+            return Date(timeIntervalSince1970: end)
+        }.min()
     }
 }
 

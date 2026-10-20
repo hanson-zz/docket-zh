@@ -156,7 +156,7 @@ public struct TodoPopupInfo: Equatable, Hashable, Sendable {
 public struct TimerPopupInfo: Equatable, Hashable, Sendable {
     /// 倒计时这一轮的时长（秒），「再来一次」照这个再计。闹钟为 0。
     public var duration: TimeInterval
-    /// 闹钟在小组件里的 id；倒计时为空。
+    /// 闹钟在小组件里的 id；倒计时是同时跑的其余计时器的 id，第一个计时器为空。
     public var alarmID: String
     /// 闹钟定的时刻“14:30”；倒计时为空。
     public var clock: String

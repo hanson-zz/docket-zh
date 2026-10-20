@@ -10,6 +10,8 @@ import Foundation
 /// - `paused`：暂停时还剩的秒数；有它就是暂停，`deadline` 同时清掉。
 /// - `presets`：卡片上的三个预设，分钟，面板里能改。没设时是 3、5、10。
 /// - `sound`：到点响不响提示音。
+///
+/// 这四个键是第一个计时器；同时跑的其余计时器和日期倒计时在 `CountdownList`。
 public enum CountdownRun {
     public static let presetsKey = "presets"
     public static let soundKey = "sound"
@@ -39,18 +41,9 @@ public enum CountdownRun {
         max(0, config.double("duration", default: 300))
     }
 
+    /// 第一个计时器（原来的那个）现在的样子。多个计时器见 `CountdownList`。
     public static func phase(_ config: WidgetConfig, now: Date) -> Phase {
-        let total = max(1, duration(config))
-        if config["paused"] != nil {
-            let left = max(0, min(config.double("paused"), total))
-            return .paused(left: left, fraction: 1 - left / total)
-        }
-        guard config["deadline"] != nil else { return .idle }
-        let deadline = config.double("deadline")
-        let left = deadline - now.timeIntervalSince1970
-        if left <= 0 { return .ringing(since: -left) }
-        let clamped = min(left, total)
-        return .running(left: clamped, fraction: min(1, max(0, 1 - clamped / total)))
+        CountdownList.phase(CountdownList.main(config), now: now)
     }
 
     /// 卡片上的三个预设，分钟。存的可以是 "5" 或 "5 分钟"，读开头的数字；

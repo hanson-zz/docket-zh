@@ -5,7 +5,8 @@ import SwiftUI
 /// 24 小时时间轴，快速加一次性闹钟的几颗按钮，再往下是全部闹钟。
 ///
 /// 每行大号时间、名字、重复日（七个小圆点和“工作日”这类说明），右边开关；
-/// 点一行展开编辑：时间、名字、哪几天响或只响一次，删除也在这里。
+/// 点一行展开编辑：时间、名字、哪几天响或只响一次，删除也在这里。重复还可以选
+/// “法定工作日”：法定节假日不响、调休上班的周末照响，放假安排和农历、时间进度同一份。
 /// 正在响的那个排在最上面，带“稍后”和“关掉”。读写的都是 `AlarmBook`，
 /// 和卡片同一份配置，旧的单个闹钟第一次改动时写成列表。
 struct AlarmDetail: View {
@@ -24,6 +25,8 @@ struct AlarmDetail: View {
     @State private var draftTime = Date()
     @State private var draftDays: Set<Int> = Set(1...7)
     @State private var draftOnce = false
+    /// 法定工作日：跳过法定节假日，调休上班照响。
+    @State private var draftLegal = false
 
     /// 快速加：从现在起多少分钟后响一次。
     private static let quickMinutes = [15, 30, 60]
@@ -328,9 +331,28 @@ struct AlarmDetail: View {
 
             HStack(spacing: 6) {
                 ruleChip(tr("每天"), selected: !draftOnce && draftDays.count == 7) { setRule(Set(1...7)) }
-                ruleChip(tr("工作日"), selected: !draftOnce && draftDays == [1, 2, 3, 4, 5]) { setRule([1, 2, 3, 4, 5]) }
+                ruleChip(tr("工作日"), selected: !draftOnce && !draftLegal && draftDays == [1, 2, 3, 4, 5]) {
+                    setRule([1, 2, 3, 4, 5])
+                }
                 ruleChip(tr("周末"), selected: !draftOnce && draftDays == [6, 7]) { setRule([6, 7]) }
-                ruleChip(tr("仅一次"), selected: draftOnce) { draftOnce = true }
+                ruleChip(tr("仅一次"), selected: draftOnce) {
+                    draftOnce = true
+                    draftLegal = false
+                }
+            }
+
+            HStack(spacing: 8) {
+                ruleChip(tr("法定工作日"), selected: !draftOnce && draftLegal) {
+                    draftOnce = false
+                    draftLegal = true
+                    draftDays = [1, 2, 3, 4, 5]
+                }
+                .frame(width: 104)
+                Text(tr("跳过法定节假日，调休上班照响"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(draftLegal && !draftOnce ? 0.8 : 0.5))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack(spacing: 8) {
@@ -370,12 +392,14 @@ struct AlarmDetail: View {
         draftName = item.name
         draftTime = AlarmBook.at(item.minutes, on: .now, calendar: .current)
         draftOnce = item.repeats.isOnce
+        draftLegal = item.repeats.isLegalWorkdays
         draftDays = item.repeats.isOnce ? Set(1...7) : item.repeats.days
         editing = item.id
     }
 
     /// 点一天：选上或去掉；至少留一天。从“仅一次”点过来时只选这一天。
     private func toggleDay(_ day: Int) {
+        draftLegal = false
         if draftOnce {
             draftOnce = false
             draftDays = [day]
@@ -390,6 +414,7 @@ struct AlarmDetail: View {
 
     private func setRule(_ days: Set<Int>) {
         draftOnce = false
+        draftLegal = false
         draftDays = days
     }
 
@@ -397,7 +422,8 @@ struct AlarmDetail: View {
         let parts = Calendar.current.dateComponents([.hour, .minute], from: draftTime)
         let minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
         let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let rule: AlarmRepeat = draftOnce ? AlarmBook.onceDay(for: minutes, now: .now) : .weekdays(draftDays)
+        let rule: AlarmRepeat = draftOnce ? AlarmBook.onceDay(for: minutes, now: .now)
+            : draftLegal ? .legalWorkdays : .weekdays(draftDays)
         write { config in
             var list = AlarmBook.items(config)
             guard let index = list.firstIndex(where: { $0.id == item.id }) else { return }
