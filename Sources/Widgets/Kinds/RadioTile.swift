@@ -53,11 +53,7 @@ struct RadioTile: View {
             } else if context.position.isVertical {
                 VStack(spacing: 4) {
                     RadioIcon(size: 34, playing: playing, animated: !context.isPreview)
-                    Text(station?.name ?? tr("收音机"))
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    columnName
                     HStack(spacing: 2) {
                         playButton(size: 9)
                         nextButton(size: 8)
@@ -88,15 +84,12 @@ struct RadioTile: View {
         if context.position.isVertical {
             VStack(spacing: 4) {
                 RadioRetroTileArt(skin: skin, count: stations.count, index: index, playing: playing,
-                                  height: skin == .deck ? 30 : 34)
-                Text(station?.name ?? tr("收音机"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                                  height: skin == .deck ? 28 : 32)
+                columnName
+                // 两个键都给足 24pt 点击区。
                 HStack(spacing: 2) {
-                    retroPlayButton(size: 18)
-                    nextButton(size: 8)
+                    retroPlayButton(size: 24)
+                    nextButton(size: 12)
                 }
             }
         } else {
@@ -107,20 +100,32 @@ struct RadioTile: View {
                     Text(station?.name ?? tr("收音机"))
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(WidgetStyle.primary)
+                        .minimumScaleFactor(13.0 / 15.0)
                     Text(retroCaption)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(WidgetStyle.secondary)
                         .monospacedDigit()
                 }
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
                 Spacer(minLength: 0)
+                // 下一台的圆盘 24pt，和播放键一起都够 24pt 点击区。
                 HStack(spacing: 2) {
                     retroPlayButton(size: 26)
-                    nextButton(size: 9)
+                    nextButton(size: 12)
                 }
             }
         }
+    }
+
+    /// 侧边竖排卡片只放电台名：13pt 起，最多两行，放不下截断，不再缩字。
+    private var columnName: some View {
+        Text(station?.name ?? tr("收音机"))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(WidgetStyle.primary)
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+            .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// 木壳和晶体管写“FM 98.0”，卡座的段码屏已经有频率，写状态；暂停、

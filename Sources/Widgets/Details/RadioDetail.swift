@@ -19,6 +19,8 @@ struct RadioDetail: View {
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporterUnlocked = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var tabSlot
 
     @State private var tab: Tab = .favourites
     @State private var query = ""
@@ -62,6 +64,10 @@ struct RadioDetail: View {
 
     /// 复古皮肤用自己的琥珀、红、VFD 绿；经典照旧跟颜色面板走。
     private var accent: Color { retro ? skin.accent : panelTint.accent(or: RadioIcon.glow) }
+    /// 压在深色底上的小字用的强调色：晶体管的红换浅一档，保证 4.5:1。
+    private var accentText: Color { retro ? skin.textAccent : accent }
+    /// 收藏/搜索切换选中那一段：复古皮肤是皮肤强调色，经典跟主题色；字深色。
+    private var segmentInk: Color { retro ? skin.ink : panelTint.ink(or: RadioRetroInk.inkMetal) }
     private static let needle = Color(hex: "#FF453A")
 
     var body: some View {
@@ -89,14 +95,7 @@ struct RadioDetail: View {
                     volumeRow
                 }
                 timerRow(now: now)
-                Picker("", selection: $tab) {
-                    Text(tr("我的收藏 \(stations.count)")).tag(Tab.favourites)
-                    Text("搜索电台").tag(Tab.search)
-                }
-                .pickerStyle(.segmented)
-                .tint(retro ? Optional(accent) : panelTint.control)
-                .labelsHidden()
-                .controlSize(.small)
+                tabSwitch
                 switch tab {
                 case .favourites: favourites
                 case .search: search
@@ -106,10 +105,59 @@ struct RadioDetail: View {
                         Text(RadioBrowser.attribution)
                         Image(systemName: "arrow.up.right")
                     }
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.62))
                 }
                 .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: Tabs
+
+    /// 收藏/搜索切换：胶囊分段，选中那段实心强调色、深色字，13pt。
+    private var tabSwitch: some View {
+        HStack(spacing: 2) {
+            tabSegment(.favourites, title: tr("我的收藏 \(stations.count)"))
+            tabSegment(.search, title: tr("搜索电台"))
+        }
+        .padding(2)
+        .background(Capsule().fill(.white.opacity(0.08)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
+    }
+
+    private func tabSegment(_ value: Tab, title: String) -> some View {
+        let on = tab == value
+        return Button {
+            guard tab != value else { return }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { tab = value }
+        } label: {
+            Text(verbatim: title)
+                .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+                .foregroundStyle(on ? segmentInk : .white.opacity(0.72))
+                .frame(maxWidth: .infinity)
+                .frame(height: 28)
+                .background {
+                    if on {
+                        Capsule().fill(accent).matchedGeometryEffect(id: "tab", in: tabSlot)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// 一排小胶囊：一行放得下就一行等宽，放不下就按 `columns` 列折行，字不缩。
+    private func chipRow<Item: Hashable, Chip: View>(_ items: [Item], columns: Int,
+                                                     @ViewBuilder chip: @escaping (Item) -> Chip) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 5) {
+                ForEach(items, id: \.self) { chip($0) }
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: columns), spacing: 5) {
+                ForEach(items, id: \.self) { chip($0) }
             }
         }
     }
@@ -132,7 +180,7 @@ struct RadioDetail: View {
         .frame(maxWidth: .infinity, alignment: .center)
         RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
                           detailColor: player.problem != nil && playing && !context.isPreview
-                              ? accent : .white.opacity(0.6))
+                              ? accentText : .white.opacity(0.6))
         RadioRetroTransport(skin: skin, playing: playing, canPlay: station != nil, canStep: stations.count > 1,
                             onPrevious: {
                                 guard !context.isPreview else { return }
@@ -335,18 +383,16 @@ struct RadioDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("定时关闭")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.65))
                 Spacer()
                 if let end = player.stopAt, player.isPlaying, !context.isPreview {
                     Text(tr("\(RadioSleep.remaining(until: end, now: now)) 后停止"))
-                        .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(accent)
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(accentText)
                 }
             }
-            HStack(spacing: 5) {
-                ForEach(RadioSleep.choices, id: \.self) { minutes in timerChip(minutes) }
-            }
+            chipRow(RadioSleep.choices, columns: 3) { minutes in timerChip(minutes) }
         }
     }
 
@@ -357,16 +403,18 @@ struct RadioDetail: View {
             player.setTimer(minutes: minutes)
         } label: {
             Text(RadioSleep.title(minutes))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(on ? .white : .white.opacity(0.65))
+                .fixedSize()
+                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
-                .frame(height: 24)
+                .frame(height: 28)
                 .background(Capsule().fill(on ? accent.opacity(0.4) : .white.opacity(0.08)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     // MARK: Favourites
@@ -406,7 +454,7 @@ struct RadioDetail: View {
                 HStack(spacing: 10) {
                     Text(verbatim: RadioDial.channelText(offset))
                         .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.white.opacity(tuned ? 0.9 : 0.55))
+                        .foregroundStyle(.white.opacity(tuned ? 0.9 : 0.62))
                         .frame(width: 22, alignment: .leading)
                     Text(item.name)
                         .font(.system(size: 15, weight: tuned ? .semibold : .medium))
@@ -415,7 +463,7 @@ struct RadioDetail: View {
                     Spacer(minLength: 0)
                     Text(verbatim: RadioDial.fmText(offset, count: stations.count))
                         .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        .foregroundStyle(tuned ? accent : .white.opacity(0.62))
+                        .foregroundStyle(tuned ? accentText : .white.opacity(0.65))
                 }
                 .contentShape(.rect)
             }
@@ -428,15 +476,15 @@ struct RadioDetail: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .frame(width: 20, height: 20)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(width: 24, height: 24)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
         }
         .padding(.leading, 12)
-        .padding(.trailing, 6)
+        .padding(.trailing, 4)
         .frame(height: 34)
         .background {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -523,8 +571,8 @@ struct RadioDetail: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.65))
                 TextField("", text: $query, prompt: Text("电台名称，或粘贴 http(s) 串流地址"))
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
@@ -537,8 +585,10 @@ struct RadioDetail: View {
                         query = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .frame(width: 24, height: 24)
+                            .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("清空搜索")
@@ -554,8 +604,8 @@ struct RadioDetail: View {
                 regionRow
                 HStack(spacing: 6) {
                     Text(listTitle)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.65))
                         .lineLimit(1)
                     Spacer()
                     if !trimmedQuery.isEmpty { chip(tr("搜索")) { run() } }
@@ -595,9 +645,7 @@ struct RadioDetail: View {
     }
 
     private var regionRow: some View {
-        HStack(spacing: 4) {
-            ForEach(RadioRegion.allCases) { option in regionChip(option) }
-        }
+        chipRow(RadioRegion.allCases, columns: 3) { option in regionChip(option) }
     }
 
     private func regionChip(_ option: RadioRegion) -> some View {
@@ -609,12 +657,13 @@ struct RadioDetail: View {
             run(in: option)
         } label: {
             Text(option.title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(on ? .white : .white.opacity(0.65))
+                .fixedSize()
+                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
-                .frame(height: 24)
+                .frame(height: 28)
                 .background(Capsule().fill(on ? accent.opacity(0.4) : .white.opacity(0.08)))
                 .contentShape(Capsule())
         }
@@ -627,10 +676,10 @@ struct RadioDetail: View {
         HStack(spacing: 6) {
             TextField("", text: $customName, prompt: Text("名称（可选）"))
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
-                .frame(height: 26)
+                .frame(height: 28)
                 .glassPane(cornerRadius: 8)
                 .onSubmit(addCustom)
             chip(tr("添加自定义地址"), action: addCustom)
@@ -650,8 +699,8 @@ struct RadioDetail: View {
                         .foregroundStyle(.white.opacity(0.95))
                         .lineLimit(1)
                     Text(result.detail)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.62))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -668,8 +717,8 @@ struct RadioDetail: View {
             } label: {
                 Image(systemName: saved ? "checkmark" : "plus")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(saved ? accent : .white.opacity(0.75))
-                    .frame(width: 22, height: 22)
+                    .foregroundStyle(saved ? accentText : .white.opacity(0.75))
+                    .frame(width: 24, height: 24)
                     .background(Circle().fill(.white.opacity(saved ? 0 : 0.1)))
                     .contentShape(Circle())
             }
@@ -687,10 +736,12 @@ struct RadioDetail: View {
             action()
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, 10)
-                .frame(height: 24)
+                .frame(height: 28)
                 .background(Capsule().fill(.white.opacity(0.1)))
                 .contentShape(Capsule())
         }
@@ -699,8 +750,8 @@ struct RadioDetail: View {
 
     private func note(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12))
-            .foregroundStyle(.white.opacity(0.6))
+            .font(.system(size: 13))
+            .foregroundStyle(.white.opacity(0.65))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
     }

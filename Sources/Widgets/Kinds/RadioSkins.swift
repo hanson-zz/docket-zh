@@ -16,6 +16,9 @@ enum RadioRetroInk {
     static let amber = Color(hex: "#FFA53A")
     static let amberDeep = Color(hex: "#E07A10")
     static let red = Color(hex: "#FF5A48")
+    /// 红色压在深色面板上做小字时浅一档（#FF5A48 在当前行的淡红底上只有约 3.6:1，
+    /// 这个约 4.7:1 起）。
+    static let redText = Color(hex: "#FF8577")
     static let vfd = Color(hex: "#7CF5A4")
     static let led = Color(hex: "#2FBF6A")
     static let inkWood = Color(hex: "#2A1606")
@@ -43,6 +46,15 @@ extension RadioSkin {
         case .wood: RadioRetroInk.amber
         case .transistor: RadioRetroInk.red
         case .deck: RadioRetroInk.vfd
+        }
+    }
+
+    /// 深色面板上小字（13pt 上下）用的强调色，对背景至少 4.5:1。琥珀和 VFD 绿
+    /// 本身够亮，红换成浅一档的 `redText`。
+    var textAccent: Color {
+        switch self {
+        case .transistor: RadioRetroInk.redText
+        default: accent
         }
     }
 
@@ -522,12 +534,13 @@ struct RadioTransistorFace: View {
                 .accessibilityLabel(tr("调谐刻度"))
                 .accessibilityValue(RadioDial.fmText(index, count: count))
 
+            // 拨轮只露出 22pt 高，点击区上下各让出 3pt，凑够 28pt。
             Button(action: onNext) {
-                Rectangle().fill(Color.clear).frame(width: Self.wheel.width, height: Self.wheel.height)
+                Rectangle().fill(Color.clear).frame(width: Self.wheel.width, height: Self.wheel.height + 6)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .offset(x: Self.wheel.minX, y: t + Self.wheel.minY)
+            .offset(x: Self.wheel.minX, y: t + Self.wheel.minY - 3)
             .disabled(count < 2)
             .help(tr("下一个电台"))
             .accessibilityLabel(tr("下一个电台"))
@@ -1009,7 +1022,7 @@ struct RadioRetroVolume: View {
                     }
                     .onEnded { _ in if enabled { onEnd() } })
             }
-            .frame(height: 22)
+            .frame(height: 28)
             .accessibilityElement()
             .accessibilityLabel(tr("音量"))
             .accessibilityValue("\(Int(value.rounded()))%")
