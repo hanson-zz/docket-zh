@@ -640,7 +640,8 @@ enum WidgetDetail {
         case .trash: 320
         case .habit: 340
         case .week: 320
-        case .crypto: 340
+        // 加密货币：币种行、到价提醒和编辑币种，和第二批面板一样 320。
+        case .crypto: 320
         // 分时图、提醒列表；自选股每行有代码、迷你走势、现价和色块。
         case .stock, .watchlist: 360
         case .appVolume: 320

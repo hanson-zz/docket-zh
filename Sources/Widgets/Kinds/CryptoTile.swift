@@ -8,6 +8,9 @@ import SwiftUI
 /// last good prices and fades them when a refresh fails. Rises and falls are
 /// red and green the Chinese way round unless the widget's 涨跌颜色 says
 /// otherwise. The card has no controls; its click opens the panel.
+///
+/// 到价提醒（Pro）也在这里判断：每次取到新价，开着的提醒到了就发通知、
+/// 自动关掉，并把这个币在卡片上染成金色，直到打开面板（见 `CryptoWatch`）。
 struct CryptoTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -25,6 +28,31 @@ struct CryptoTile: View {
 
     private var stale: Bool { !context.isPreview && CryptoService.shared.isStale(currency) }
 
+    private var alertsOn: Bool {
+        !context.isPreview && ProLicenseGate.canUseCryptoAlerts(unlocked: ProAccess.isUnlocked)
+    }
+
+    /// 开着的提醒（没解锁时是空的：不判断、不取价、不变色）。
+    private var liveAlerts: [CryptoAlert] {
+        guard alertsOn else { return [] }
+        return CryptoWatch.alerts(instance.config, coins: ids).filter(\.on)
+    }
+
+    /// 到过价、还没打开面板看的币，卡片上染成金色。
+    private var hits: Set<String> {
+        alertsOn ? Set(CryptoWatch.hits(instance.config)) : []
+    }
+
+    /// 提醒要用的价每更新一次就变：用到的每种计价的取价时间，加上提醒本身。
+    private var alertKey: String {
+        let alerts = liveAlerts
+        guard !alerts.isEmpty else { return "" }
+        let stamps = CryptoWatch.currencies(alerts).sorted().map { cur in
+            "\(cur)=\(CryptoService.shared.updated(cur)?.timeIntervalSince1970 ?? 0)"
+        }
+        return (alerts.map(\.text) + stamps).joined(separator: ",")
+    }
+
     private var offlineLine: some View {
         OfflineQuoteText(fetched: CryptoService.shared.updated(currency), now: context.now)
     }
@@ -38,10 +66,16 @@ struct CryptoTile: View {
             .opacity(stale ? OfflineQuote.staleOpacity : 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: "\(currency):\(ids.joined(separator: ","))") {
+        .task(id: "\(currency):\(ids.joined(separator: ",")):\(liveAlerts.map(\.text).joined(separator: ","))") {
             guard !context.isPreview else { return }
             CryptoService.shared.track(ids, currency: currency)
+            // 提醒设在另一种计价下的，那种计价也去取价。
+            let alerts = liveAlerts
+            for cur in CryptoWatch.currencies(alerts) where cur != currency {
+                CryptoService.shared.track(alerts.filter { $0.currency == cur }.map(\.coin), currency: cur)
+            }
         }
+        .task(id: alertKey) { checkAlerts() }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("加密货币行情")
     }
@@ -103,7 +137,46 @@ struct CryptoTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background { hitGlow(id) }
             }
+        }
+    }
+
+    /// 到价的币：一圈淡金色，打开面板就消失。
+    @ViewBuilder
+    private func hitGlow(_ id: String) -> some View {
+        if hits.contains(id) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color(hex: "#F5C451").opacity(0.18))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color(hex: "#F5C451").opacity(0.7), lineWidth: 1)
+                }
+                .padding(.horizontal, -3)
+                .padding(.vertical, -2)
+                .accessibilityLabel(tr("已到提醒价"))
+        }
+    }
+
+    /// 开着的提醒到价了：发通知、关掉这条、卡片上标出这个币。断网时的旧价不算。
+    private func checkAlerts() {
+        let alerts = liveAlerts
+        guard !alerts.isEmpty else { return }
+        let due = CryptoWatch.due(alerts) { coin, cur in
+            guard !CryptoService.shared.isStale(cur) else { return nil }
+            return CryptoService.shared.quote(coin, currency: cur)?.price
+        }
+        guard !due.isEmpty else { return }
+        for alert in due {
+            let quote = CryptoService.shared.quote(alert.coin, currency: alert.currency)
+            let name = CryptoWatch.displayName(id: alert.coin, fallback: quote?.name)
+            CryptoAlertNotifier.shared.post(alert, name: name, price: quote?.price ?? alert.price, widget: instance.id)
+        }
+        let saved = WidgetWriter.current(instance.id) ?? instance
+        WidgetWriter.write(saved) { config in
+            let all = CryptoWatch.alerts(config)
+            CryptoWatch.writeAlerts(CryptoWatch.firing(due, in: all), into: &config)
+            CryptoWatch.addingHits(due.map(\.coin), to: &config)
         }
     }
 
@@ -155,6 +228,7 @@ struct CryptoTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background { hitGlow(id) }
             }
             if stale { offlineLine }
         }

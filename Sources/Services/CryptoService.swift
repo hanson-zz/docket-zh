@@ -38,6 +38,22 @@ final class CryptoService {
 
     func isStale(_ currency: String) -> Bool { failed.contains(currency) }
 
+    /// 面板搜索时见过的币的名字和代码，刚加进来、行情还没到时先显示它们。
+    /// 只在内存里，行情到了就用行情里的。
+    @ObservationIgnored private(set) var seen: [String: CryptoSearchHit] = [:]
+
+    func remember(_ hits: [CryptoSearchHit]) {
+        for hit in hits { seen[hit.id] = hit }
+    }
+
+    /// 面板“编辑币种”的搜索：CoinGecko `/search`，失败是 nil（只显示本地的常见币）。
+    func search(_ query: String) async -> [CryptoSearchHit]? {
+        guard CryptoWatch.wantsRemoteSearch(query), let url = CryptoWatch.searchURL(query) else { return [] }
+        let hits = await Self.fetchSearch(url)
+        if let hits { remember(hits) }
+        return hits
+    }
+
     /// 面板里点“重新连接”：不等五分钟的节流，马上再取一次。
     func retryNow() {
         lastAttempt = [:]
@@ -106,6 +122,21 @@ final class CryptoService {
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
             else { return nil }
             return CryptoMarket.parse(data)
+        } catch {
+            return nil
+        }
+    }
+
+    nonisolated private static func fetchSearch(_ url: URL) async -> [CryptoSearchHit]? {
+        var request = URLRequest(url: url, timeoutInterval: 10)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Docket (macOS dock widget; https://github.com/hanson-zz/docket-zh)",
+                         forHTTPHeaderField: "User-Agent")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
+            else { return nil }
+            return CryptoWatch.parseSearch(data)
         } catch {
             return nil
         }

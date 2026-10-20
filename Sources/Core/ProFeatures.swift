@@ -30,10 +30,11 @@ import Foundation
 ///   `ProLicenseGate.systemAlertsActive`。
 /// - 麦克风面板的使用记录保留 30 天（免费只看今天），见
 ///   `ProLicenseGate.micHistoryActive`。
-
 /// - 壁纸的自动换：按早中晚的时刻、跟日出日落、到点从收藏随机（设置存在卡片的
 ///   `autoChange` 这一组，见 `WallpaperSchedule`），见
 ///   `ProLicenseGate.wallpaperAutoChangeActive`。壁纸本身 2026-10-20 起免费。
+/// - 加密货币面板的到价提醒（高于、低于，存在卡片的 `alerts`），见
+///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -43,10 +44,12 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 15 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// 整种都是 Pro 的小组件，共 14 种：摸鱼时钟、环境音、播客、废纸篓、
     /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
-    /// 应用音量、股票、自选股、加密货币行情、文件暂存、翻译。
+    /// 应用音量、股票、自选股、文件暂存、翻译。
     /// 壁纸切换 2026-10-20 起改为免费，按时间自动换是 Pro。
+    /// 加密货币行情 2026-10-20 起改为免费，到价提醒是 Pro（见
+    /// `ProLicenseGate.canUseCryptoAlerts`）。
     /// 时间进度和习惯打卡 2026-10-19 起改为免费：时间进度的液态和四格、
     /// 习惯打卡第 4 个起和报告仍是 Pro。收音机 2026-10-20 起改为免费，经典的
     /// 半圆表盘免费，三款复古皮肤和五款新外观是 Pro（见 `RadioSkin`）。录音
@@ -55,7 +58,7 @@ public enum ProFeatures {
     public static let proKinds: Set<WidgetKind> = [
         .slacker, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
-        .appVolume, .stock, .watchlist, .crypto,
+        .appVolume, .stock, .watchlist,
         .fileShelf, .translate,
     ]
 

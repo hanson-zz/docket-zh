@@ -870,6 +870,17 @@
         }
       }
     },
+    "%@ 了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ reached"
+          }
+        }
+      }
+    },
     "%@ 今天 %@，点一下加 1" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2201,6 +2212,17 @@
         }
       }
     },
+    "%@低于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ below %@"
+          }
+        }
+      }
+    },
     "%@假期第 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2795,6 +2817,17 @@
         }
       }
     },
+    "%@高于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ above %@"
+          }
+        }
+      }
+    },
     "%@（%@）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3264,6 +3297,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2024.10.18 · Hangzhou"
+          }
+        }
+      }
+    },
+    "24 小时涨跌 · 线是最近 7 天 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24-hour change · Line is the last 7 days · %@"
           }
         }
       }
@@ -6707,6 +6751,17 @@
         }
       }
     },
+    "人民币 ¥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CNY ¥"
+          }
+        }
+      }
+    },
     "人民币计价" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8232,6 +8287,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Below"
+          }
+        }
+      }
+    },
+    "低于时提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert when below"
           }
         }
       }
@@ -11140,6 +11206,17 @@
         }
       }
     },
+    "到了发通知，卡片变色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifies you and highlights the card"
+          }
+        }
+      }
+    },
     "到价提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11147,6 +11224,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PRICE ALERTS"
+          }
+        }
+      }
+    },
+    "到价提醒是码头 Pro 专属。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price alerts are part of Dockling Pro. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
+    "到价提醒是码头 Pro 专属，没解锁时只显示不提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price alerts are part of Dockling Pro. Without Pro they are shown but never fire."
           }
         }
       }
@@ -11763,6 +11862,17 @@
         }
       }
     },
+    "加到我的币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to my coins"
+          }
+        }
+      }
+    },
     "加到播客" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11792,6 +11902,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wide"
+          }
+        }
+      }
+    },
+    "加密货币" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crypto"
           }
         }
       }
@@ -13156,6 +13277,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "另有 %@ 条 · 到了发通知，卡片变色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more · Notifies you and highlights the card"
           }
         }
       }
@@ -19542,6 +19674,17 @@
         }
       }
     },
+    "已设到价提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price alert set"
+          }
+        }
+      }
+    },
     "已超时 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21536,6 +21679,17 @@
         }
       }
     },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts"
+          }
+        }
+      }
+    },
     "快速开始" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21979,6 +22133,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "I've sponsored: unlock colors, faces and characters"
+          }
+        }
+      }
+    },
+    "我的币种 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My coins %@"
           }
         }
       }
@@ -23776,6 +23941,17 @@
         }
       }
     },
+    "提醒一次后自动关掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turns off after alerting once"
+          }
+        }
+      }
+    },
     "插到了光标处" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23831,6 +24007,17 @@
         }
       }
     },
+    "搜索失败，稍后再试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search failed. Try again later."
+          }
+        }
+      }
+    },
     "搜索快捷指令" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23849,6 +24036,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search file names"
+          }
+        }
+      }
+    },
+    "搜索添加 · 拖动排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search to add · Drag to reorder"
+          }
+        }
+      }
+    },
+    "搜索添加币种、调整顺序、设到价提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add coins, reorder them and set price alerts"
           }
         }
       }
@@ -23882,6 +24091,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search by name or date"
+          }
+        }
+      }
+    },
+    "搜索：比特币、BTC、sol" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search: Bitcoin, BTC, sol"
           }
         }
       }
@@ -24590,6 +24810,17 @@
         }
       }
     },
+    "最多 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@"
+          }
+        }
+      }
+    },
     "最多 %@ 个文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24597,6 +24828,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@ folders"
+          }
+        }
+      }
+    },
+    "最多 %@ 个，先删掉一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@. Remove one first."
           }
         }
       }
@@ -24663,6 +24905,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Slowest"
+          }
+        }
+      }
+    },
+    "最近 7 天 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 days %@"
           }
         }
       }
@@ -24975,6 +25228,17 @@
         }
       }
     },
+    "正在搜索…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching…"
+          }
+        }
+      }
+    },
     "正在检查…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25070,6 +25334,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wuhan"
+          }
+        }
+      }
+    },
+    "每 5 分钟最多刷新一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refreshes at most every 5 minutes"
           }
         }
       }
@@ -25246,6 +25521,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not playing"
+          }
+        }
+      }
+    },
+    "没找到「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing found for \"%@\""
           }
         }
       }
@@ -25708,6 +25994,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LED Matrix"
+          }
+        }
+      }
+    },
+    "点「编辑」里币种旁的铃铛设高于、低于" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Edit, tap the bell next to a coin to set above or below"
           }
         }
       }
@@ -34749,6 +35046,17 @@
         }
       }
     },
+    "现价 %@。这条提醒已自动关掉，可以在面板里再打开。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now %@. This alert has turned itself off; you can turn it back on in the panel."
+          }
+        }
+      }
+    },
     "现价 %@，已涨到你设的提醒价。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34767,6 +35075,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Now %@, down to the price you set."
+          }
+        }
+      }
+    },
+    "现价已经低于这个价，下次刷新就会提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price is already below this, so it will alert on the next refresh"
+          }
+        }
+      }
+    },
+    "现价已经高于这个价，下次刷新就会提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price is already above this, so it will alert on the next refresh"
           }
         }
       }
@@ -38588,6 +38918,17 @@
         }
       }
     },
+    "编辑币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Coins"
+          }
+        }
+      }
+    },
     "编辑布局…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38874,6 +39215,17 @@
         }
       }
     },
+    "美元 $" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "USD $"
+          }
+        }
+      }
+    },
     "美元 USD" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39108,6 +39460,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contact"
+          }
+        }
+      }
+    },
+    "联网搜索失败，只列出常见币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online search failed, showing common coins only"
           }
         }
       }
@@ -39537,6 +39900,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep at least 1 city"
+          }
+        }
+      }
+    },
+    "至少留一个币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep at least one coin"
           }
         }
       }
@@ -40897,6 +41271,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Set Default"
+          }
+        }
+      }
+    },
+    "设到价提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a price alert"
           }
         }
       }
@@ -47133,6 +47518,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "High"
+          }
+        }
+      }
+    },
+    "高于" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above"
+          }
+        }
+      }
+    },
+    "高于或低于你设的价时发通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get notified when a price goes above or below your target"
+          }
+        }
+      }
+    },
+    "高于时提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert when above"
           }
         }
       }

@@ -40,6 +40,9 @@ import Foundation
 /// - 壁纸整种免费，按早中晚自动换、跟日出日落、到点从收藏随机是 Pro：没解锁时
 ///   面板照样列出这些设置并带 Pro 标，开关弹付费墙；已经打开的不换壁纸，设置
 ///   不改写，解锁或试用时自动恢复。
+/// - 加密货币整种免费，到价提醒是 Pro：没解锁时提醒照样列出，带 Pro 标，打开开关、
+///   改价弹付费墙；不判断、不发通知、卡片不变色、不标铃铛，提醒不改写，解锁或
+///   试用时自动回来，见 `canUseCryptoAlerts`。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -209,6 +212,10 @@ public enum ProLicenseGate {
 
     /// 书签面板能不能用分组（顶部分组标签、新建分组、移到分组）。
     public static func canUseBookmarkGroups(unlocked: Bool) -> Bool { unlocked }
+
+    /// 加密货币的到价提醒能不能用：判断、发通知、卡片变色、铃铛标记，以及在面板里
+    /// 改提醒。没解锁时提醒照旧存着，只显示不生效。
+    public static func canUseCryptoAlerts(unlocked: Bool) -> Bool { unlocked }
 
     /// 邮件面板顶部能不能按账户筛选（Pro）。没解锁时按「全部」显示，筛选照旧存着。
     public static func canFilterMailAccounts(unlocked: Bool) -> Bool { unlocked }
