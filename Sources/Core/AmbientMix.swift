@@ -35,7 +35,8 @@ public enum AmbientLevels {
             .map { $0.trimmingCharacters(in: .whitespaces) }
         guard parts.count == 2, let sound = AmbientSound(rawValue: parts[0].lowercased()),
               let value = Double(parts[1]), value.isFinite else { return nil }
-        return (sound, clamp(Int(value.rounded())))
+        // 先夹到 0...100 再转整数：写成 1e300 这种大数时 Int() 会直接崩。
+        return (sound, clamp(Int(min(100, max(0, value)).rounded())))
     }
 
     /// 写回设置用：按声音的固定顺序，等于默认的不写。

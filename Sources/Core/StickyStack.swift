@@ -135,7 +135,10 @@ public enum StickyStack {
         let cyclic = Array(([front] + rest).prefix(limit))
         let n = cyclic.count
         var page = 0
-        if case .number(let stored) = config[pageKey] { page = Int(stored) - 1 }
+        // 先夹到范围里再转整数：配置里写坏成很大的数时 Int() 会直接崩。
+        if case .number(let stored) = config[pageKey], stored.isFinite {
+            page = Int(min(max(stored, 0), Double(limit))) - 1
+        }
         page = min(max(0, page), n - 1)
         // `cyclic` 从最上面那张起；排回原来的顺序。
         let ordered = (0..<n).map { cyclic[($0 - page + n) % n] }

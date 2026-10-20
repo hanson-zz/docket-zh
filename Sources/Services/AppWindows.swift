@@ -41,6 +41,8 @@ enum AppWindows {
         guard let list = copy(element, kAXWindowsAttribute) as? [AXUIElement] else { return [] }
         var out: [Window] = []
         for (index, window) in list.enumerated() {
+            // 超时只管设过的那个元素；窗口元素不设会按系统默认等约 6 秒，App 卡住时面板跟着卡。
+            AXUIElementSetMessagingTimeout(window, 0.25)
             let subrole = copy(window, kAXSubroleAttribute) as? String
             if let subrole, subrole != (kAXStandardWindowSubrole as String),
                subrole != (kAXDialogSubrole as String) { continue }

@@ -128,4 +128,9 @@ final class AmbientMixTests: XCTestCase {
         XCTAssertFalse(AmbientCustomTimer.isCustom(30))
         XCTAssertFalse(AmbientCustomTimer.isCustom(0))
     }
+
+    func testHugeLevelsDoNotCrash() {
+        XCTAssertEqual(AmbientLevels.parse(["rain:1e300", "fire:-1e300"]), [.rain: 100, .fire: 0])
+        XCTAssertEqual(AmbientMix.parse("大=rain:1e300")?.levels, [.rain: 100])
+    }
 }

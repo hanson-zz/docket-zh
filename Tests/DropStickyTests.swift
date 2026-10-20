@@ -156,4 +156,15 @@ final class DropStickyTests: XCTestCase {
         XCTAssertEqual(swipe.feed(-30, precise: true, at: 10.05), 1)
         XCTAssertNil(swipe.feed(-80, precise: true, at: 10.1))
     }
+
+    func testBrokenPageNumberDoesNotCrash() {
+        let behind: WidgetConfig.Value = .list([.list([.string("mint"), .string("b")])])
+        for page in [1e300, -1e300, 0.0] {
+            let config = WidgetConfig(["text": .string("a"), "color": .string("yellow"),
+                                       "stack": behind, "page": .number(page)])
+            let pile = StickyStack.pile(config)
+            XCTAssertEqual(pile.count, 2)
+            XCTAssertTrue((0..<2).contains(pile.page))
+        }
+    }
 }

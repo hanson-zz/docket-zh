@@ -155,8 +155,10 @@ struct PetDetail: View {
         guard !context.isPreview else { return }
         let name = VirtualPet.cleanName(nameDraft)
         let value: WidgetConfig.Value? = name.isEmpty || name == character.title ? nil : .string(name)
-        guard instance.config.values[VirtualPet.nameKey] != value else { return }
-        WidgetWriter.write(instance) { $0.set(VirtualPet.nameKey, value) }
+        // 按存着的最新一份改（失焦提交时面板里的副本可能已经旧了）。
+        let current = WidgetWriter.current(instance.id) ?? instance
+        guard current.config.values[VirtualPet.nameKey] != value else { return }
+        WidgetWriter.write(current) { $0.set(VirtualPet.nameKey, value) }
     }
 
     // MARK: Needs
