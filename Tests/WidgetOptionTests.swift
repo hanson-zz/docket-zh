@@ -298,6 +298,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "radio.skin",
         // 麦克风的静音快捷键在面板里录，设置里不给文字框。
         "microphone.muteKey",
+        // 圆环仪表的警戒线只列卡片上有的圆环（默认存储和电池，CPU 和内存没勾时不列）。
+        "gauges.cpuAlert", "gauges.memoryAlert", "gauges.storageAlert", "gauges.batteryAlert",
     ]
 
     func testStockOptionsFollowTheList() {
