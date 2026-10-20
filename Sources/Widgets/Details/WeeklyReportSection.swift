@@ -293,6 +293,8 @@ final class FocusLogStore {
                                                       now: now) else { return }
         defaults.set(deadline.timeIntervalSince1970, forKey: Self.loggedKey)
         let seconds = FocusLog.sessionSeconds(state)
+        // 今天时间轴上的一段，带上任务名。
+        FocusSessionStore.shared.record(seconds: seconds, endedAt: deadline, task: state.task)
         let total = FocusLog.addingTotal(seconds: seconds, stored: defaults.integer(forKey: Self.totalKey),
                                          lines: lines)
         let next = FocusLog.adding(seconds: seconds, endedAt: deadline, to: lines)

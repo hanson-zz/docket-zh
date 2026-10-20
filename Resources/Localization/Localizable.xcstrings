@@ -771,6 +771,28 @@
         }
       }
     },
+    "%@ 个番茄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pomodoros"
+          }
+        }
+      }
+    },
+    "%@ 个番茄 · 第 %@ 个进行中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pomodoros · No. %@ in progress"
+          }
+        }
+      }
+    },
     "%@ 个网址 · 用默认浏览器打开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1915,6 +1937,17 @@
         }
       }
     },
+    "%@ 轮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ rounds"
+          }
+        }
+      }
+    },
     "%@ 通知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2091,6 +2124,17 @@
         }
       }
     },
+    "%@减少" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease %@"
+          }
+        }
+      }
+    },
     "%@分钟后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2142,6 +2186,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@!"
+          }
+        }
+      }
+    },
+    "%@增加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase %@"
           }
         }
       }
@@ -5101,6 +5156,17 @@
         }
       }
     },
+    "不播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
     "不支持 %@ 地址：只能播 http(s) 音频流和 HLS（.m3u8）。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5332,6 +5398,28 @@
         }
       }
     },
+    "专注中 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focusing · %@"
+          }
+        }
+      }
+    },
+    "专注历史统计是码头 Pro 专属，免费版只看今天。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus history is a Dockling Pro feature; the free version shows today only. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
     "专注或休息结束时发出通知。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5416,6 +5504,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus Timer"
+          }
+        }
+      }
+    },
+    "专注设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Settings"
           }
         }
       }
@@ -6641,6 +6740,17 @@
         }
       }
     },
+    "今天完成 %@ 个番茄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pomodoros finished today"
+          }
+        }
+      }
+    },
     "今天已喝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6945,6 +7055,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No water yet today. Click a button above to log a cup and the red panda starts filling up."
+          }
+        }
+      }
+    },
+    "今天还没有完成的番茄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pomodoros finished today yet"
           }
         }
       }
@@ -7257,6 +7378,17 @@
         }
       }
     },
+    "从最近中删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Recent"
+          }
+        }
+      }
+    },
     "从模板添加" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7455,6 +7587,17 @@
         }
       }
     },
+    "任务名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task name"
+          }
+        }
+      }
+    },
     "任务完成时通知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7594,6 +7737,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On breaks the card turns green and asks you to stand up. While the Focus Timer runs, the stand-up reminder stays quiet."
+          }
+        }
+      }
+    },
+    "休息时声音停下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop sound during breaks"
           }
         }
       }
@@ -9171,6 +9325,17 @@
         }
       }
     },
+    "共 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min total"
+          }
+        }
+      }
+    },
     "共 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9589,6 +9754,17 @@
         }
       }
     },
+    "写第二批面板说明" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write the panel notes"
+          }
+        }
+      }
+    },
     "农历" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9776,6 +9952,17 @@
         }
       }
     },
+    "准备专注 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready · %@"
+          }
+        }
+      }
+    },
     "准备好了就开始" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9827,6 +10014,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Within minutes"
+          }
+        }
+      }
+    },
+    "几轮一组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rounds per set"
           }
         }
       }
@@ -10652,6 +10850,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ left%@."
+          }
+        }
+      }
+    },
+    "剩余 %@，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left, %@"
           }
         }
       }
@@ -13772,6 +13981,17 @@
         }
       }
     },
+    "回邮件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply to email"
+          }
+        }
+      }
+    },
     "团队午餐" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14219,6 +14439,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open in Mail"
+          }
+        }
+      }
+    },
+    "在上面写下任务名，开始专注后会记在这里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write a task name above; it is kept here once you start focusing."
           }
         }
       }
@@ -16517,13 +16748,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character and 8 Pro Radio looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character and 8 Pro Radio looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
           }
         }
       }
@@ -17316,6 +17547,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One short is a %@ (%@), "
+          }
+        }
+      }
+    },
+    "已专注 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focused %@ min"
+          }
+        }
+      }
+    },
+    "已专注 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focused %@ h"
+          }
+        }
+      }
+    },
+    "已专注 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focused %@ h %@ min"
           }
         }
       }
@@ -19211,6 +19475,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start a %@ min focus session"
+          }
+        }
+      }
+    },
+    "开始专注时播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play when focus starts"
+          }
+        }
+      }
+    },
+    "开始专注时自动播放，点一下选别的声音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays when focus starts. Click to pick another sound"
           }
         }
       }
@@ -21884,6 +22170,28 @@
         }
       }
     },
+    "换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "换下一种环境音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next ambient sound"
+          }
+        }
+      }
+    },
     "捷克" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22023,6 +22331,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        }
+      }
+    },
+    "改图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo the icon"
           }
         }
       }
@@ -22397,6 +22716,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Slowest"
+          }
+        }
+      }
+    },
+    "最近的任务名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent tasks"
           }
         }
       }
@@ -23178,6 +23508,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to add 10%, back to 0 when full"
+          }
+        }
+      }
+    },
+    "点一下沿用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to reuse"
           }
         }
       }
@@ -32043,6 +32384,17 @@
         }
       }
     },
+    "环境音音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ambient volume"
+          }
+        }
+      }
+    },
     "环球资讯广播" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32692,6 +33044,17 @@
         }
       }
     },
+    "番茄时长 · 环境音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomodoro length · Ambient sound"
+          }
+        }
+      }
+    },
     "登录已过期" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33073,6 +33436,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Short"
+          }
+        }
+      }
+    },
+    "短休息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short break"
           }
         }
       }
@@ -34309,6 +34683,17 @@
         }
       }
     },
+    "第 %@ / %@ 轮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Round %@ / %@"
+          }
+        }
+      }
+    },
     "第 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34404,6 +34789,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Step %@ of %@"
+          }
+        }
+      }
+    },
+    "第 1 个番茄进行中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First pomodoro in progress"
           }
         }
       }
@@ -38294,6 +38690,17 @@
         }
       }
     },
+    "读论文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read a paper"
+          }
+        }
+      }
+    },
     "谁开始播放就切到谁" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39427,6 +39834,17 @@
         }
       }
     },
+    "近七天专注统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 days of focus"
+          }
+        }
+      }
+    },
     "近七天报告" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39698,6 +40116,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not at work yet"
+          }
+        }
+      }
+    },
+    "还没开始专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No focus yet"
           }
         }
       }
@@ -40006,6 +40435,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@%% of the year gone"
+          }
+        }
+      }
+    },
+    "这一轮要做什么" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is this round for?"
           }
         }
       }

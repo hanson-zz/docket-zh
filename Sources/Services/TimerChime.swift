@@ -65,13 +65,20 @@ final class FocusCycleDriver {
     func tick(now: Date = .now) {
         let provider = TimerStateProvider.shared
         let state = provider.state
-        guard let next = FocusCycle.advanced(state, now: now) else { return }
+        guard var next = FocusCycle.advanced(state, now: now) else {
+            FocusAmbientDriver.shared.sync(state, now: now)
+            return
+        }
         if state.phase == .focus {
             FocusLogStore.shared.check(now: now)
             PetFocusWatcher.shared.check(now: now)
+            // 做完一个番茄，任务名记进“最近的任务名”（卡片上直接开始的也算）。
+            next.recentTasks = FocusDay.remembering(state.task, in: state.recentTasks)
         }
         let stale = now.timeIntervalSince(state.deadline ?? now) > FocusCycle.staleAfter
         provider.state = next
+        // 专注到点接休息：按“休息时声音停下”停掉或接着放环境音。
+        FocusAmbientDriver.shared.sync(next, now: now)
         // 合盖很久回来的不响，只有刚到点的才提醒。
         if state.alerts, !stale, now.timeIntervalSince(state.deadline ?? now) < 60 {
             TimerChime.play(.focus)

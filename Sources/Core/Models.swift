@@ -1109,6 +1109,16 @@ public struct TimerState: Codable, Hashable, Sendable {
     public var standUp: Bool = true
     /// 上一次休息环节结束的时刻，久坐提醒从这里重新算已坐多久。
     public var stoodUp: Date?
+    /// 正在做的事（专注计时面板顶上那一行），空是没写。
+    public var task: String = ""
+    /// 最近用过的任务名，最新的在前，见 `FocusDay.remembering`。
+    public var recentTasks: [String] = []
+    /// 开始专注时放的环境音（`AmbientSound` 的 rawValue），空是不播放。
+    public var ambient: String = ""
+    /// 专注环境音的音量，0...100。
+    public var ambientVolume: Int = 55
+    /// 休息时环境音停下，回到专注再放。
+    public var quietOnBreak: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1134,6 +1144,11 @@ public struct TimerState: Codable, Hashable, Sendable {
         duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
         standUp = try c.decodeIfPresent(Bool.self, forKey: .standUp) ?? true
         stoodUp = try c.decodeIfPresent(Date.self, forKey: .stoodUp)
+        task = try c.decodeIfPresent(String.self, forKey: .task) ?? ""
+        recentTasks = try c.decodeIfPresent([String].self, forKey: .recentTasks) ?? []
+        ambient = try c.decodeIfPresent(String.self, forKey: .ambient) ?? ""
+        ambientVolume = try c.decodeIfPresent(Int.self, forKey: .ambientVolume) ?? 55
+        quietOnBreak = try c.decodeIfPresent(Bool.self, forKey: .quietOnBreak) ?? true
     }
 
     public init() {}
