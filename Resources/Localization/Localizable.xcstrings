@@ -100,6 +100,17 @@
         }
       }
     },
+    "%@ %@ 个日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@ events"
+          }
+        }
+      }
+    },
     "%@ %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1409,6 +1420,17 @@
         }
       }
     },
+    "%@ 月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month %@"
+          }
+        }
+      }
+    },
     "%@ 月 %@ 日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1427,6 +1449,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Added %@/%@"
+          }
+        }
+      }
+    },
+    "%@ 月 · %@ %@ 个日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month %@ · %@, %@ events"
+          }
+        }
+      }
+    },
+    "%@ 月 · %@没有日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month %@ · nothing %@"
           }
         }
       }
@@ -2956,6 +3000,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "3/3 done"
+          }
+        }
+      }
+    },
+    "30 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 min"
           }
         }
       }
@@ -5058,6 +5113,17 @@
       }
     },
     "专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus"
+          }
+        }
+      }
+    },
+    "专注一下" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -8566,6 +8632,17 @@
         }
       }
     },
+    "全天日程不占时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All-day events don't block time"
+          }
+        }
+      }
+    },
     "全天空" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9094,6 +9171,17 @@
         }
       }
     },
+    "再点一次删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to delete"
+          }
+        }
+      }
+    },
     "再算一次这一条" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9134,6 +9222,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Goal days left to unlock: %@"
+          }
+        }
+      }
+    },
+    "写一句，如「明天下午 3 点开会」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type it, e.g. \"meeting tomorrow 3 pm\""
+          }
+        }
+      }
+    },
+    "写回系统日历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to your Mac's calendar"
           }
         }
       }
@@ -10505,6 +10615,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to Podcasts"
+          }
+        }
+      }
+    },
+    "加到日历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Calendar"
           }
         }
       }
@@ -12280,6 +12401,17 @@
         }
       }
     },
+    "后天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day after tomorrow"
+          }
+        }
+      }
+    },
     "后退 15 秒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12580,6 +12712,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exhale"
+          }
+        }
+      }
+    },
+    "和「%@」不冲突" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear of \"%@\""
+          }
+        }
+      }
+    },
+    "和「%@」冲突" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overlaps \"%@\""
+          }
+        }
+      }
+    },
+    "和「%@」等 %@ 个日程冲突" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overlaps \"%@\" and %@ events in all"
           }
         }
       }
@@ -16682,6 +16847,17 @@
         }
       }
     },
+    "已加到日历：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added to Calendar: %@"
+          }
+        }
+      }
+    },
     "已听 %@%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18364,6 +18540,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start \"%@\""
+          }
+        }
+      }
+    },
+    "开始专注 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a %@ min focus session"
           }
         }
       }
@@ -20476,6 +20663,17 @@
         }
       }
     },
+    "拖两端改时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the ends to change"
+          }
+        }
+      }
+    },
     "拖入" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20993,6 +21191,17 @@
         }
       }
     },
+    "改开始时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change start time"
+          }
+        }
+      }
+    },
     "数码卡座" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21121,6 +21330,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Event"
+          }
+        }
+      }
+    },
+    "日程标题" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event title"
           }
         }
       }
@@ -21576,6 +21796,17 @@
         }
       }
     },
+    "没有能写的日历，请先在日历 App 里建一个。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No writable calendar. Create one in the Calendar app first."
+          }
+        }
+      }
+    },
     "没有这个预设" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21583,6 +21814,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No station on this preset"
+          }
+        }
+      }
+    },
+    "没能写回日历，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the change. Try again later."
+          }
+        }
+      }
+    },
+    "没能写进日历，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't add the event. Try again later."
+          }
+        }
+      }
+    },
+    "没能删除，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete the event. Try again later."
           }
         }
       }
@@ -31812,6 +32076,17 @@
         }
       }
     },
+    "码头只能添加日程，读不到日历。请在系统设置里改成完整访问。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling can only add events and can't read your calendar. Switch to Full Access in System Settings."
+          }
+        }
+      }
+    },
     "码头可读取%@，以及可脚本控制的浏览器标签页中的视频。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32611,6 +32886,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Space"
+          }
+        }
+      }
+    },
+    "空档 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free %@"
           }
         }
       }
@@ -38063,6 +38349,17 @@
         }
       }
     },
+    "还没放专注计时卡片，先添加一个再来专注。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a Focus Timer widget first, then come back to focus."
+          }
+        }
+      }
+    },
     "还没有 AI 字牌。在货架的 AI 助手卡片上点“＋”添加。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38404,6 +38701,17 @@
         }
       }
     },
+    "这个日历是只读的，改不了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This calendar is read-only."
+          }
+        }
+      }
+    },
     "这个月" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38653,6 +38961,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't reach the weather service this time. Showing the last data"
+          }
+        }
+      }
+    },
+    "这段时间没有别的日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing else at this time"
           }
         }
       }
@@ -39544,6 +39863,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename Group…"
+          }
+        }
+      }
+    },
+    "重复日程：只改这一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeating event: only this one changes"
           }
         }
       }
@@ -43778,6 +44108,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show the 2-hour rain outlook in the panel"
+          }
+        }
+      }
+    },
+    "＋ 新建" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ New"
           }
         }
       }
