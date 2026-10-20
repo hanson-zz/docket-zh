@@ -163,7 +163,10 @@ final class ClockPanelTests: XCTestCase {
         XCTAssertEqual(morning?.at, at(21, 7, 30))
         XCTAssertEqual(ClockPanelData.dayWord(morning!.at, now: sample, calendar: calendar), "明天")
         XCTAssertNil(ClockPanelData.nextAlarm([], now: sample, calendar: calendar))
-        XCTAssertNil(ClockPanelData.nextAlarm([WidgetConfig()], now: sample, calendar: calendar))
+        // 一个闹钟都没有（清空了的闹钟卡片）。没存过 alarms 的旧卡片按卡片自己的旧闹钟读，不算空。
+        var empty = WidgetConfig()
+        AlarmBook.store([], in: &empty)
+        XCTAssertNil(ClockPanelData.nextAlarm([empty], now: sample, calendar: calendar))
     }
 
     func testNextEventSkipsAllDayStartedAndFarOnes() {
