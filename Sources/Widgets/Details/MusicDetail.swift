@@ -1,18 +1,19 @@
 import AppKit
 import SwiftUI
 
-/// Now Playing at length: the artwork as the whole card, the transport in
-/// its middle, and the track and a scrubber you can drag along its foot.
+/// 「正在播放」面板（效果图 design/media-panel.png）。
 ///
-/// It used to stack them: artwork, then title, then scrubber, then controls,
-/// which spent most of the panel on the gaps between four rows and left the
-/// picture a small square in the middle of it. The card is the picture now,
-/// dimmed where text sits on it, the way the system's own player does it.
+/// 从上到下：来源胶囊（App 图标、名字、播放中小竖条、展开箭头）和「在 App 中打开」，
+/// 大封面，歌名 / 歌手 · 专辑，进度条（能拖才有圆点），上一首 / 播放 / 下一首
+/// （白色实心钮、深色字形；Apple 音乐和 Spotify 两侧加随机、循环），音量条，再往下是
+/// Apple 音乐的「接下来」或 Spotify 的「刚才听过」入口。底部「外观」行由面板外框画。
 ///
-/// The tile is width-starved - 264pt carrying artwork, two lines of text, a
-/// scrubber and buttons - so it hides controls and shrinks the art. None of
-/// those compromises apply here, and the panel undoes them rather than
-/// restating the tile larger.
+/// 原来是一张铺满封面的卡片，往外多画 10pt（`bleed`），超出面板内边距，右边贴着面板
+/// 边缘露出一条亮边；现在不再越界，背景改成深色玻璃加封面主色光晕（外框按
+/// `ground` 画，不超过 15%）。
+///
+/// 点来源胶囊展开来源列表（开着的播放器、浏览器标签页、「谁开始播放就切到谁」）；
+/// 没在播放时是小熊猫空状态、「打开 X」和其他开着的播放器。
 ///
 /// It does not start the services: the panel only ever opens from a tile that
 /// is already on screen, and that tile owns the poll and the source list.
@@ -20,48 +21,50 @@ struct MusicDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    private enum Page { case player, sources, list }
+
+    @State private var page: Page = .player
     /// Where a drag is holding the playhead, 0…1, or nil when the bar is
-    /// following playback. Readings keep arriving mid-drag, so the bar has to
-    /// answer to the pointer until it is let go or it fights the poll.
+    /// following playback.
     @State private var scrubbing: Double?
+    /// 拖音量时先跟手，松开前不让读数把滑块拉回去。
+    @State private var dragVolume: Double?
+    @State private var hovered: String?
+    @State private var showAllRecent = false
 
-    private var config: WidgetConfig { instance.config }
-
-    /// Same preference order the tile reads, so the panel cannot end up
-    /// showing a different player than the tile it grew out of.
-    private var sources: [MusicSource] {
-        var list: [MusicSource] = []
-        if config.bool("spotify", default: true) { list.append(.spotify) }
-        if config.bool("apple", default: true) { list.append(.appleMusic) }
-        if config.bool("netease", default: true) { list.append(.netease) }
-        if config.bool("xiaoyuzhou", default: true) { list.append(.xiaoyuzhou) }
-        return list
-    }
-
+    /// 写过之后面板拿到的仍可能是打开时的那份，读最新存着的。
+    private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
+    private var config: WidgetConfig { current.config }
+    private var sources: [MusicSource] { MusicSource.enabled(in: config) }
     private var browsersEnabled: Bool { config.bool("browsers", default: true) }
+    private var autoSwitch: Bool { MusicSourceSwitch.autoSwitch(config) }
 
-    /// The ground the chrome paints, if the artwork gave one.
-    ///
-    /// Static because the chrome asks before this view exists, and it asks
-    /// through the same `playing` resolution so the colour can never belong
-    /// to a different track than the one on screen.
+    private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
+    private let ink = Color.white
+
+    /// 面板外框画的底色：封面主色做顶部光晕。没有封面时给一个没有颜色的，外框
+    /// 照样画深色底（白字在浅色系统外观下也看得见）。
     @MainActor
     static func ground(instance: WidgetInstance, context: WidgetContext) -> ArtworkTint? {
         MusicDetail(instance: instance, context: context).playing?.tint
+            ?? ArtworkTint(hue: 0, saturation: 0)
     }
 
     fileprivate var playing: Playing? {
         guard !context.isPreview else { return nil }
         let native = MusicService.shared.nowPlaying.map(Playing.init(native:))
-        let browser = browsersEnabled
-            ? BrowserMedia.shared.track.map {
-                Playing(browser: $0, artwork: BrowserMedia.shared.artwork,
-                        icon: BrowserMedia.shared.siteIcon, tint: BrowserMedia.shared.tint)
-            }
-            : nil
+        let browser = browserPlaying
         if native?.isPlaying == true { return native }
         if browser?.isPlaying == true { return browser }
         return native ?? browser
+    }
+
+    private var browserPlaying: Playing? {
+        guard browsersEnabled else { return nil }
+        return BrowserMedia.shared.track.map {
+            Playing(browser: $0, artwork: BrowserMedia.shared.artwork,
+                    icon: BrowserMedia.shared.siteIcon, tint: BrowserMedia.shared.tint)
+        }
     }
 
     private var needsPermission: Bool {
@@ -71,165 +74,288 @@ struct MusicDetail: View {
     }
 
     var body: some View {
-        Group {
-            if let track = playing {
-                card(track)
-            } else if needsPermission {
-                connect
-            } else {
-                idle
+        VStack(alignment: .leading, spacing: 0) {
+            switch page {
+            case .sources:
+                topRow(playing)
+                sourcesPage
+            case .list where playing?.native != nil:
+                topRow(playing)
+                listPage(playing!)
+            default:
+                if let track = playing {
+                    topRow(track)
+                    player(track)
+                } else if needsPermission {
+                    connect
+                } else {
+                    topRow(nil)
+                    idle
+                }
             }
         }
-        .frame(maxWidth: .infinity)
+        .foregroundStyle(ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            guard !context.isPreview else { return }
+            MusicService.shared.configure(config)
+            MusicService.shared.setWantsUpNext(true)
+            // 只有已经给过录音权限才启动应用音量（它会按需建 tap），绝不为了
+            // 音量条去弹权限。
+            if AppVolumeService.recordingGranted { AppVolumeService.shared.start() }
+        }
+        .onDisappear {
+            guard !context.isPreview else { return }
+            MusicService.shared.setWantsUpNext(false)
+        }
     }
 
-    /// Everything on the card is on a picture or on the source's colour, both
-    /// darkened, so the ink is fixed white rather than following the system:
-    /// a semantic colour would go dark in a light appearance and disappear.
-    private let ink = Color.white
-    private let subInk = Color.white.opacity(0.75)
-    private let trackInk = Color.white.opacity(0.3)
+    // MARK: 来源
 
-    // MARK: Card
+    /// 正在看的来源：在播放的那个，没有就是服务挑的（可能没开）。
+    private var shownSource: MusicSource? {
+        if let source = playing?.source { return source }
+        return MusicService.shared.current ?? sources.first(where: { MusicService.isInstalled($0) })
+    }
 
-    /// How far the card reaches past the panel's padding: to 6pt from its
-    /// edge, where a 14pt corner sits concentric with the panel's 20.
-    private static let bleed: CGFloat = 10
-    private static let corner: CGFloat = 14
+    private func accent(_ source: MusicSource?) -> Color {
+        switch source {
+        case .netease: Color(hex: "#FF5A66")
+        case .appleMusic: Color(hex: "#FF6A86")
+        case .qqmusic: Color(hex: "#45D483")
+        case .spotify: Color(hex: "#1ED760")
+        case .xiaoyuzhou: Color(hex: "#25B4E1")
+        case nil: Color(hex: "#5AA9FF")
+        }
+    }
 
-    private func card(_ track: Playing) -> some View {
-        let icon = track.icon ?? AppCatalog.shared.icon(forBundleID: track.sourceBundleID)
-        return ZStack {
-            backdrop(track.artwork, tint: track.tint)
-            scrim
-            VStack(spacing: 0) {
-                HStack {
-                    if let icon {
-                        // Whose it is: Netflix, Spotify, Music. Beside the
-                        // picture rather than instead of it.
-                        Image(nsImage: icon)
-                            .resizable()
-                            .interpolation(.high)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 22, height: 22)
-                            .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+    /// 强调色上的深色字（实心按钮用）。
+    private func accentInk(_ source: MusicSource?) -> Color {
+        switch source {
+        case .netease: Color(hex: "#2B0306")
+        case .appleMusic: Color(hex: "#33040F")
+        case .qqmusic: Color(hex: "#04230F")
+        case .spotify: Color(hex: "#04210D")
+        case .xiaoyuzhou: Color(hex: "#03202B")
+        case nil: Color(hex: "#03152E")
+        }
+    }
+
+    private func icon(for bundleID: String) -> NSImage? {
+        context.isPreview ? nil : AppCatalog.shared.icon(forBundleID: bundleID)
+    }
+
+    // MARK: 顶部
+
+    private func topRow(_ track: Playing?) -> some View {
+        let source = track?.source ?? (track == nil ? shownSource : nil)
+        let name = track.map { $0.isBrowser ? $0.artist : ($0.source?.displayName ?? "") }
+            ?? source?.displayName ?? tr("正在播放")
+        let image = track?.icon ?? track.flatMap { icon(for: $0.sourceBundleID) }
+            ?? source.flatMap { icon(for: $0.bundleID) }
+        let bundleID = track?.sourceBundleID ?? source?.bundleID
+        return HStack(spacing: 0) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { page = page == .sources ? .player : .sources }
+            } label: {
+                HStack(spacing: 8) {
+                    appIcon(image, size: 20)
+                    Text(name)
+                        .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                    if track?.isPlaying == true {
+                        PlayingBarsView(playing: true, tint: accent(track?.source), height: 12, visible: true)
                     }
-                    Spacer()
+                    Image(systemName: page == .sources ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
                 }
-                Spacer(minLength: 8)
-                transport(track)
-                Spacer(minLength: 8)
-                titles(track)
-                // A video with no readable duration would draw two 0:00
-                // clocks around a bar that can never move, so it gets none.
-                if track.duration > 0 || !track.isBrowser {
-                    scrubber(track).padding(.top, 10)
-                }
+                .padding(.leading, 6)
+                .padding(.trailing, 12)
+                .frame(height: 32)
+                .background(Capsule().fill(.white.opacity(0.10)))
+                .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                .contentShape(Capsule())
             }
-            .padding(14)
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("切换来源"))
+            Spacer(minLength: 8)
+            if let bundleID {
+                Button {
+                    guard !context.isPreview else { return }
+                    openApp(bundleID)
+                } label: {
+                    Image(systemName: "arrow.up.forward.square")
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(width: 32, height: 32)
+                        .background(Circle().fill(.white.opacity(0.10)))
+                        .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(tr("在 App 中打开"))
+                .accessibilityLabel(tr("在 App 中打开"))
+            }
         }
-        .frame(height: 250)
-        .clipShape(.rect(cornerRadius: Self.corner, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
-                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
-        }
-        .padding(-Self.bleed)
     }
 
-    /// The artwork filling the card, or with none, the colour the source's
-    /// icon gave, so a page with no picture still stands on its own brand.
+    private func openApp(_ bundleID: String) {
+        if let source = MusicSource(bundleID: bundleID) {
+            MusicService.shared.open(source)
+        } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, _ in }
+        }
+    }
+
     @ViewBuilder
-    private func backdrop(_ image: NSImage?, tint: ArtworkTint?) -> some View {
+    private func appIcon(_ image: NSImage?, size: CGFloat) -> some View {
         if let image {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)
-                .aspectRatio(contentMode: .fill)
-                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                .clipped()
-                .accessibilityLabel("封面")
-        } else if let tint {
-            LinearGradient(colors: [Self.colour(tint.top), Self.colour(tint.bottom)],
-                           startPoint: .top, endPoint: .bottom)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
         } else {
-            LinearGradient(colors: [Color(white: 0.26), Color(white: 0.12)],
-                           startPoint: .top, endPoint: .bottom)
+            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .fill(.white.opacity(0.16))
+                .frame(width: size, height: size)
+                .overlay(Image(systemName: "music.note").font(.system(size: size * 0.5, weight: .semibold)))
         }
     }
 
-    /// Dark enough under the controls to read on any picture, darker still
-    /// under the title and scrubber, and light at the top so the picture is
-    /// still the picture.
-    private var scrim: some View {
-        ZStack {
-            Color.black.opacity(0.22)
-            LinearGradient(stops: [
-                .init(color: .black.opacity(0.25), location: 0),
-                .init(color: .clear, location: 0.3),
-                .init(color: .clear, location: 0.45),
-                .init(color: .black.opacity(0.75), location: 1),
-            ], startPoint: .top, endPoint: .bottom)
+    // MARK: 播放中
+
+    private func player(_ track: Playing) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            cover(track)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 18)
+            titles(track)
+                .padding(.top, 22)
+            if track.duration > 0 || !track.isBrowser {
+                scrubber(track)
+                    .padding(.top, 18)
+            }
+            transport(track)
+                .padding(.top, 16)
+            volume(track)
+            entryRow(track)
         }
     }
 
-    private static func colour(_ rgb: (red: Double, green: Double, blue: Double)) -> Color {
-        Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    private func cover(_ track: Playing) -> some View {
+        let side: CGFloat = 204
+        let glow = track.tint.map { Self.colour($0.glow) } ?? .white
+        return ZStack {
+            // 封面主色的光晕，不超过 15%。
+            Circle()
+                .fill(RadialGradient(colors: [glow.opacity(ArtworkTint.glowOpacity), glow.opacity(0)],
+                                     center: .center, startRadius: 0, endRadius: side * 0.82))
+                .frame(width: side * 1.64, height: side * 1.64)
+                .allowsHitTesting(false)
+            Group {
+                if let image = track.artwork {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    LinearGradient(colors: [glow.opacity(0.55), Color(white: 0.16)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .overlay {
+                            appIcon(track.icon ?? icon(for: track.sourceBundleID), size: 64)
+                                .opacity(0.9)
+                        }
+                }
+            }
+            .frame(width: side, height: side)
+            .clipShape(.rect(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
+            .accessibilityLabel(tr("封面"))
+        }
+        .frame(height: side)
     }
-
-    // MARK: Track
 
     private func titles(_ track: Playing) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(track.title)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(ink)
-            Text(track.artist)
-                .font(WidgetStyle.caption(12))
-                .foregroundStyle(subInk)
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(track.title)
+                    .font(.system(size: 20, weight: .bold))
+                Text(subtitle(track))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if track.source?.hasFavorite == true, let native = track.native {
+                heart(native.favorited ?? false, source: track.source, size: 34)
+            }
         }
-        // Truncated, never wrapped: the panel is sized once when it opens, so
-        // a title that took a second line would be clipped by the window
-        // rather than given room.
-        .lineLimit(1)
-        .truncationMode(.tail)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .shadow(color: .black.opacity(0.3), radius: 4, y: 1)
     }
 
-    // MARK: Scrubber
+    private func subtitle(_ track: Playing) -> String {
+        [track.artist, track.album].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private func heart(_ on: Bool, source: MusicSource?, size: CGFloat) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            MusicService.shared.toggleFavorite()
+        } label: {
+            Image(systemName: on ? "heart.fill" : "heart")
+                .font(.system(size: size * 0.47, weight: .semibold))
+                .foregroundStyle(on ? accent(source) : .white.opacity(0.75))
+                .frame(width: size, height: size)
+                .background(Circle().fill(.white.opacity(0.08)))
+                .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(on ? tr("取消喜欢") : tr("喜欢"))
+    }
+
+    // MARK: 进度
 
     private func scrubber(_ track: Playing) -> some View {
+        let seekable = canSeek(track)
         let ratio = scrubbing ?? track.progress
-        return HStack(spacing: 9) {
-            time(MusicTime.clock(scrubbing.map { $0 * track.duration } ?? track.elapsed),
-                 alignment: .leading)
+        return VStack(spacing: 8) {
             GeometryReader { geo in
+                let width = geo.size.width
+                let height: CGFloat = seekable ? 5 : 4
                 ZStack(alignment: .leading) {
-                    Capsule().fill(trackInk)
-                    Capsule()
-                        .fill(ink)
-                        .frame(width: max(0, geo.size.width * ratio))
-                        // Playback advances at a constant rate, so gliding to
-                        // each reading at that rate is the truth; a drag is
-                        // not, and must land exactly where the pointer is.
+                    Capsule().fill(.white.opacity(0.22)).frame(height: height)
+                    Capsule().fill(.white.opacity(0.95))
+                        .frame(width: max(0, width * ratio), height: height)
                         .animation(track.isPlaying && scrubbing == nil
-                                   ? .linear(duration: MusicTile.pollInterval) : nil,
-                                   value: ratio)
+                                   ? .linear(duration: MusicTile.pollInterval) : nil, value: ratio)
+                    if seekable {
+                        // 圆点 = 能拖；网易云、QQ 只读，没有圆点。
+                        Circle().fill(.white)
+                            .frame(width: 14, height: 14)
+                            .shadow(color: .black.opacity(0.25), radius: 1)
+                            .offset(x: min(max(0, width * ratio - 7), width - 14))
+                            .animation(track.isPlaying && scrubbing == nil
+                                       ? .linear(duration: MusicTile.pollInterval) : nil, value: ratio)
+                    }
                 }
+                .frame(height: 14)
                 .contentShape(Rectangle())
-                .gesture(seek(track, width: geo.size.width))
+                .gesture(seek(track, width: width))
             }
-            .frame(height: 5)
-            time(MusicTime.clock(track.duration), alignment: .trailing)
+            .frame(height: 14)
+            HStack {
+                time(MusicTime.clock(scrubbing.map { $0 * track.duration } ?? track.elapsed))
+                Spacer()
+                time(MusicTime.clock(track.duration))
+            }
         }
     }
 
-    /// Browser playback is read-only apart from play/pause: there is no way to
-    /// move a `<video>` element's playhead from here.
     private func seek(_ track: Playing, width: CGFloat) -> some Gesture {
-        // Zero minimum distance so a plain click seeks too - jumping to a
-        // point is the more common gesture, dragging the rarer one.
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 guard canSeek(track), width > 0 else { return }
@@ -247,138 +373,732 @@ struct MusicDetail: View {
         !context.isPreview && !track.isBrowser && track.canSeek && track.duration > 0
     }
 
-    /// A minimum width rather than a fitted one: without it the bar shifts
-    /// sideways the moment a track crosses ten minutes.
-    private func time(_ text: String, alignment: Alignment) -> some View {
+    private func time(_ text: String) -> some View {
         Text(text)
-            .font(WidgetStyle.caption(12))
+            .font(.system(size: 13, weight: .medium))
             .monospacedDigit()
             .rollingValue(text)
-            .foregroundStyle(subInk)
+            .foregroundStyle(.white.opacity(0.62))
             .lineLimit(1)
             .fixedSize()
-            .frame(minWidth: 34, alignment: alignment)
     }
 
-    // MARK: Transport
+    // MARK: 播放控制
 
-    /// Previous and next are unconditional here even though the tile makes
-    /// them optional - that switch exists to buy width on a 264pt strip, and
-    /// the panel has width to spare. The skip-by-N buttons stay opt-in,
-    /// because those are a preference rather than a concession to space.
     @ViewBuilder
     private func transport(_ track: Playing) -> some View {
         if track.isBrowser {
-            // One control, so it had better look deliberate. A lone glyph
-            // under the scrubber reads as something left unfinished.
-            play(track.isPlaying) { toggle(track) }
+            // 浏览器标签页只能播放 / 暂停。
+            playButton(track.isPlaying, size: 62) { BrowserMedia.shared.playPause() }
+                .frame(maxWidth: .infinity)
         } else {
-            let step = max(1, config.int("skip", default: 15))
-            HStack(spacing: 14) {
-                if config.bool("backward"), track.canSeek {
-                    secondary(skipSymbol("gobackward", step), 15) {
-                        MusicService.shared.skip(by: -Double(step))
-                    }
+            let native = track.native
+            let extras = track.source?.hasShuffleAndRepeat == true
+            ZStack {
+                HStack(spacing: 30) {
+                    glyphButton("backward.end.fill", 24, label: tr("上一首")) { MusicService.shared.previous() }
+                    playButton(track.isPlaying, size: 62) { MusicService.shared.playPause() }
+                    glyphButton("forward.end.fill", 24, label: tr("下一首")) { MusicService.shared.next() }
                 }
-                secondary("backward.end.fill", 17) { MusicService.shared.previous() }
-                play(track.isPlaying) { MusicService.shared.playPause() }
-                secondary("forward.end.fill", 17) { MusicService.shared.next() }
-                if config.bool("forward"), track.canSeek {
-                    secondary(skipSymbol("goforward", step), 15) {
-                        MusicService.shared.skip(by: Double(step))
+                if extras {
+                    HStack {
+                        toggleGlyph("shuffle", on: native?.shuffle == true, source: track.source,
+                                    label: tr("随机播放")) {
+                            MusicService.shared.setShuffle(!(native?.shuffle ?? false))
+                        }
+                        Spacer()
+                        let mode = native?.repeatMode ?? .off
+                        toggleGlyph(mode == .one ? "repeat.1" : "repeat", on: mode != .off,
+                                    source: track.source, label: mode.label) {
+                            MusicService.shared.cycleRepeat()
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
         }
     }
 
-    /// Whichever service owns what is on screen. Firing both means pausing a
-    /// tab also starts Spotify, and the panel then jumps to another track.
-    private func toggle(_ track: Playing) {
-        if track.isBrowser { BrowserMedia.shared.playPause() }
-        else { MusicService.shared.playPause() }
-    }
-
-    /// SF Symbols ships numbered skip glyphs for a handful of intervals only;
-    /// anything else falls back to the plain arrow rather than a blank square.
-    private func skipSymbol(_ base: String, _ seconds: Int) -> String {
-        let numbered: Set<Int> = [5, 10, 15, 30, 45, 60, 75, 90]
-        return numbered.contains(seconds) ? "\(base).\(seconds)" : base
-    }
-
-    /// The one you came for.
-    ///
-    /// `compact` is the same control sized to sit in the scrubber's row
-    /// rather than to anchor a row of its own.
-    private func play(_ playing: Bool, compact: Bool = false,
-                      action: @escaping () -> Void) -> some View {
+    /// 白色实心圆，深色字形。
+    private func playButton(_ playing: Bool, size: CGFloat, action: @escaping () -> Void) -> some View {
         Button {
             guard !context.isPreview else { return }
             action()
         } label: {
             Image(systemName: playing ? "pause.fill" : "play.fill")
-                .font(.system(size: compact ? 13 : 21, weight: .semibold))
-                // Optical, not geometric: play.fill is a triangle whose mass
-                // sits left of its box, so centring the box leaves it looking
-                // shoved to one side inside a circle. Pause is symmetric and
-                // needs none.
-                .offset(x: playing ? 0 : 1.5)
+                .font(.system(size: size * 0.36, weight: .bold))
+                .offset(x: playing ? 0 : size * 0.03)
                 .playPauseMorph(playing ? "pause.fill" : "play.fill")
+                .foregroundStyle(Self.base)
+                .frame(width: size, height: size)
+                .background(Circle().fill(.white))
+                .contentShape(Circle())
         }
-        .buttonStyle(TransportButton(primary: true, ink: ink, compact: compact))
+        .buttonStyle(PressScale())
         .accessibilityLabel(playing ? tr("暂停") : tr("播放"))
     }
 
-    private func secondary(_ symbol: String, _ size: CGFloat,
-                           action: @escaping () -> Void) -> some View {
+    private func glyphButton(_ symbol: String, _ size: CGFloat, label: String,
+                             action: @escaping () -> Void) -> some View {
         Button {
             guard !context.isPreview else { return }
             action()
         } label: {
-            Image(systemName: symbol).font(.system(size: size, weight: .semibold))
+            Image(systemName: symbol)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.92))
+                .frame(width: 40, height: 40)
+                .contentShape(Circle())
         }
-        .buttonStyle(TransportButton(primary: false, ink: ink))
+        .buttonStyle(PressScale())
+        .accessibilityLabel(label)
     }
 
-    // MARK: Empty states
+    private func toggleGlyph(_ symbol: String, on: Bool, source: MusicSource?, label: String,
+                             action: @escaping () -> Void) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            action()
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(on ? accent(source) : .white.opacity(0.62))
+                Circle().fill(on ? accent(source) : .clear).frame(width: 4, height: 4)
+            }
+            .frame(width: 32, height: 40)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressScale())
+        .help(label)
+        .accessibilityLabel(label)
+        .accessibilityValue(on ? tr("开") : tr("关"))
+    }
+
+    // MARK: 音量
+
+    @ViewBuilder
+    private func volume(_ track: Playing) -> some View {
+        if let source = track.source, !track.isBrowser {
+            switch MusicVolumeRoute.route(for: source, recordingGranted: AppVolumeService.recordingGranted) {
+            case .player:
+                if let level = track.native?.volume {
+                    volumeRow(value: dragVolume ?? level / 100) { value, done in
+                        dragVolume = done ? nil : value
+                        MusicService.shared.setVolume(value * 100)
+                    }
+                }
+            case .appVolume:
+                let setting = AppVolumeService.shared.setting(for: source.bundleID)
+                volumeRow(value: dragVolume ?? min(100, setting.percent) / 100) { value, done in
+                    dragVolume = done ? nil : value
+                    AppVolumeService.shared.setPercent(value * 100, for: source.bundleID)
+                }
+            case .none:
+                EmptyView()
+            }
+        }
+    }
+
+    private func volumeRow(value: Double, change: @escaping (Double, Bool) -> Void) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "speaker.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+            GeometryReader { geo in
+                let width = geo.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.22)).frame(height: 5)
+                    Capsule().fill(.white.opacity(0.85)).frame(width: max(0, width * value), height: 5)
+                    Circle().fill(.white)
+                        .frame(width: 14, height: 14)
+                        .shadow(color: .black.opacity(0.25), radius: 1)
+                        .offset(x: min(max(0, width * value - 7), width - 14))
+                }
+                .frame(height: 14)
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged { drag in
+                        guard !context.isPreview, width > 0 else { return }
+                        change(min(1, max(0, drag.location.x / width)), false)
+                    }
+                    .onEnded { drag in
+                        guard !context.isPreview, width > 0 else { return }
+                        change(min(1, max(0, drag.location.x / width)), true)
+                    })
+            }
+            .frame(height: 14)
+            Image(systemName: "speaker.wave.2.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.62))
+        }
+        .padding(.top, 14)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("音量"))
+        .accessibilityValue(Text(verbatim: "\(Int((value * 100).rounded()))%"))
+    }
+
+    // MARK: 「接下来」「刚才听过」入口
+
+    @ViewBuilder
+    private func entryRow(_ track: Playing) -> some View {
+        if let source = track.source, let native = track.native {
+            if source.hasUpNext, MusicUpNext.visible(shuffle: native.shuffle ?? false) {
+                let name = MusicService.shared.upNext?.playlist ?? ""
+                entryButton(name.isEmpty ? tr("接下来") : tr("接下来 · 歌单「\(name)」"))
+            } else if source.keepsRecent {
+                entryButton(tr("刚才听过"))
+            }
+        }
+    }
+
+    private func entryButton(_ title: String) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) { page = .list }
+        } label: {
+            HStack {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+                Spacer(minLength: 6)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 40)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.10), lineWidth: 0.6))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 16)
+    }
+
+    // MARK: 次页：接下来 / 刚才听过
+
+    @ViewBuilder
+    private func listPage(_ track: Playing) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            miniNow(track)
+                .padding(.top, 12)
+            if track.source == .appleMusic {
+                upNextList(track)
+            } else if track.source == .spotify {
+                recentList(track)
+            }
+        }
+    }
+
+    /// 一行迷你正在播放；点空白处回到大封面。
+    private func miniNow(_ track: Playing) -> some View {
+        HStack(spacing: 12) {
+            thumb(track.artwork, glow: track.tint.map { Self.colour($0.glow) }, size: 48, corner: 9)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(track.title).font(.system(size: 15, weight: .bold))
+                Text(track.isBrowser ? track.artist : subtitle(track))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if track.source?.hasFavorite == true, let native = track.native {
+                heart(native.favorited ?? false, source: track.source, size: 30)
+            }
+            playButton(track.isPlaying, size: 34) {
+                if track.isBrowser { BrowserMedia.shared.playPause() } else { MusicService.shared.playPause() }
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .contentShape(Rectangle())
+        .onTapGesture { withAnimation(.snappy(duration: 0.2)) { page = .player } }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(tr("回到正在播放"))
+    }
+
+    @ViewBuilder
+    private func upNextList(_ track: Playing) -> some View {
+        let shuffle = track.native?.shuffle ?? false
+        let list = MusicService.shared.upNext
+        let playlist = list?.playlist ?? ""
+        section(playlist.isEmpty ? tr("接下来") : tr("接下来 · 歌单「\(playlist)」"),
+                right: shuffle ? tr("随机 开") : tr("随机 关"))
+        if !MusicUpNext.visible(shuffle: shuffle) {
+            // 开随机时顺序没有意义，「接下来」隐藏。
+            note(tr("随机播放时没有固定的接下来"))
+        } else if let items = list?.items, !items.isEmpty {
+            rows {
+                ForEach(items) { item in
+                    trackRow(id: "up-\(item.id)", title: item.title, artist: item.artist,
+                             duration: item.duration, artwork: nil, glow: track.tint.map { Self.colour($0.glow) }) {
+                        MusicService.shared.play(item)
+                    }
+                }
+            }
+            Text("点一下从这首开始放")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
+        } else {
+            note(list == nil ? tr("正在读取歌单…") : tr("歌单里后面没有歌了"))
+        }
+    }
+
+    @ViewBuilder
+    private func recentList(_ track: Playing) -> some View {
+        let all = MusicService.shared.recent.listed(excluding: track.native?.trackID)
+        let shown = showAllRecent ? all : Array(all.prefix(5))
+        section(tr("刚才听过 · 只存在本机"), right: all.isEmpty ? nil : tr("清空")) {
+            MusicService.shared.clearRecent()
+            showAllRecent = false
+        }
+        if shown.isEmpty {
+            note(tr("放过的歌会记在这里，点一下重放"))
+        } else {
+            rows {
+                ForEach(shown) { entry in
+                    trackRow(id: "re-\(entry.uri)", title: entry.title, artist: entry.artist,
+                             duration: entry.duration, artwork: entry.artworkURL.flatMap { URL(string: $0) },
+                             glow: nil) {
+                        MusicService.shared.replay(entry)
+                    }
+                }
+            }
+            if all.count > 5 {
+                Button(showAllRecent ? tr("收起") : tr("显示全部 \(all.count) 首")) {
+                    withAnimation(.snappy(duration: 0.2)) { showAllRecent.toggle() }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
+            }
+        }
+        // Spotify 不给读队列：写一行说明，去 App 里看。
+        VStack(alignment: .leading, spacing: 4) {
+            Text("接下来的队列").font(.system(size: 15, weight: .bold))
+            Text("Spotify 不开放给小工具读取")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.62))
+            Button {
+                guard !context.isPreview else { return }
+                MusicService.shared.open(.spotify)
+            } label: {
+                Label(tr("在 Spotify 中查看"), systemImage: "arrow.up.forward.square")
+                    .font(.system(size: 13, weight: .semibold))
+                    .padding(.horizontal, 14)
+                    .frame(height: 32)
+                    .background(Capsule().fill(.white.opacity(0.10)))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .padding(.top, 14)
+    }
+
+    private func section(_ title: String, right: String? = nil, action: (() -> Void)? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.62))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            if let right {
+                if let action {
+                    Button(right) { guard !context.isPreview else { return }; action() }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
+                } else {
+                    Text(right)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+            }
+        }
+        .padding(.top, 20)
+        .padding(.bottom, 10)
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.white.opacity(0.62))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
+    }
+
+    private func rows<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(spacing: 0) { content() }
+            .padding(2)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+    }
+
+    private func trackRow(id: String, title: String, artist: String, duration: Double,
+                          artwork: URL?, glow: Color?, action: @escaping () -> Void) -> some View {
+        let hover = hovered == id
+        return Button {
+            guard !context.isPreview else { return }
+            action()
+        } label: {
+            HStack(spacing: 10) {
+                Group {
+                    if let artwork {
+                        AsyncImage(url: artwork) { image in
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            thumb(nil, glow: glow, size: 36, corner: 7)
+                        }
+                        .frame(width: 36, height: 36)
+                        .clipShape(.rect(cornerRadius: 7, style: .continuous))
+                    } else {
+                        thumb(nil, glow: glow, size: 36, corner: 7)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.95))
+                    Text(artist).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+                }
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if hover {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Self.base)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(.white))
+                } else if duration > 0 {
+                    Text(MusicTime.clock(duration))
+                        .font(.system(size: 13, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 50)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(hover ? 0.07 : 0)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { inside in hovered = inside ? id : (hovered == id ? nil : hovered) }
+        .accessibilityLabel(tr("播放 \(title)"))
+    }
+
+    private func thumb(_ image: NSImage?, glow: Color?, size: CGFloat, corner: CGFloat) -> some View {
+        Group {
+            if let image {
+                Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fill)
+            } else {
+                LinearGradient(colors: [(glow ?? .white).opacity(0.45), Color(white: 0.18)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .overlay(Image(systemName: "music.note")
+                        .font(.system(size: size * 0.38, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7)))
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(.rect(cornerRadius: corner, style: .continuous))
+    }
+
+    // MARK: 次页：来源列表
+
+    private var sourcesPage: some View {
+        let service = MusicService.shared
+        let players = context.isPreview ? [] : service.players
+        let browser = browserPlaying
+        let shown = playing
+        return VStack(alignment: .leading, spacing: 0) {
+            VStack(spacing: 0) {
+                if players.isEmpty && browser == nil {
+                    Text("没有开着的播放器")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.62))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                }
+                ForEach(Array(players.enumerated()), id: \.element.source) { index, player in
+                    if index > 0 { divider }
+                    sourceRow(player, selected: shown?.source == player.source && shown?.isBrowser == false)
+                }
+                if let browser {
+                    if !players.isEmpty { divider }
+                    browserRow(browser, selected: shown?.isBrowser == true)
+                }
+            }
+            .padding(2)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.07)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+            .padding(.top, 12)
+
+            switchCard
+                .padding(.top, 14)
+
+            if let shown {
+                miniNow(shown)
+                    .padding(.top, 16)
+            }
+        }
+    }
+
+    private var divider: some View {
+        Rectangle().fill(.white.opacity(0.10)).frame(height: 0.6).padding(.leading, 56).padding(.trailing, 10)
+    }
+
+    private func sourceRow(_ player: MusicService.Player, selected: Bool) -> some View {
+        let source = player.source
+        let track = player.track
+        let detail: String = if let track {
+            track.isPlaying
+                ? [track.title, track.artist].filter { !$0.isEmpty }.joined(separator: " · ")
+                : tr("已暂停 · \(track.title)")
+        } else {
+            tr("开着，读不到曲目")
+        }
+        return HStack(spacing: 12) {
+            appIcon(icon(for: source.bundleID), size: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(source.displayName).font(.system(size: 15, weight: .bold))
+                Text(detail).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if track?.isPlaying == true {
+                PlayingBarsView(playing: true, tint: accent(source), height: 14, visible: true)
+                    .padding(.trailing, 6)
+            } else if track != nil, MusicService.shared.canControl(source) {
+                smallPlay { MusicService.shared.playPause(source) }
+            } else {
+                // 网易云、QQ 不是系统正在播放的那个时控制不了，只能打开它。
+                Button(tr("打开")) { guard !context.isPreview else { return }; MusicService.shared.open(source) }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 13, weight: .semibold))
+                    .padding(.horizontal, 14)
+                    .frame(height: 28)
+                    .background(Capsule().fill(.white.opacity(0.10)))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 58)
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+            .fill(selected ? accent(source).opacity(0.14) : .clear))
+        .contentShape(Rectangle())
+        .onTapGesture { choose(source) }
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func browserRow(_ track: Playing, selected: Bool) -> some View {
+        HStack(spacing: 12) {
+            appIcon(track.icon ?? icon(for: track.sourceBundleID), size: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tr("\(track.artist) 标签页")).font(.system(size: 15, weight: .bold))
+                Text(tr("视频 · 只能播放暂停")).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            smallPlay(playing: track.isPlaying) { BrowserMedia.shared.playPause() }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 58)
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+            .fill(selected ? accent(nil).opacity(0.14) : .clear))
+    }
+
+    private func smallPlay(playing: Bool = false, action: @escaping () -> Void) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            action()
+        } label: {
+            Image(systemName: playing ? "pause.fill" : "play.fill")
+                .font(.system(size: 11, weight: .bold))
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.white.opacity(0.12)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressScale())
+        .accessibilityLabel(playing ? tr("暂停") : tr("播放"))
+    }
+
+    /// 点一个来源：显示它；自动切换关着时它就是固定的来源。
+    private func choose(_ source: MusicSource) {
+        guard !context.isPreview else { return }
+        if !autoSwitch {
+            WidgetWriter.write(current) { $0.set(MusicSourceSwitch.pinnedKey, .string(source.rawValue)) }
+            var updated = config
+            updated.set(MusicSourceSwitch.pinnedKey, .string(source.rawValue))
+            MusicService.shared.configure(updated)
+        }
+        MusicService.shared.select(source)
+        withAnimation(.snappy(duration: 0.2)) { page = .player }
+    }
+
+    private var switchCard: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("谁开始播放就切到谁").font(.system(size: 14, weight: .semibold))
+                Text("关掉后停在你选的来源")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle("", isOn: Binding(get: { autoSwitch }, set: { setAutoSwitch($0) }))
+                .toggleStyle(.switch)
+                .tint(accent(shownSource))
+                .labelsHidden()
+                .accessibilityLabel(tr("谁开始播放就切到谁"))
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 56)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+    }
+
+    /// 关掉时把现在显示的来源记成固定来源，之后谁开始播放都不换。
+    private func setAutoSwitch(_ on: Bool) {
+        guard !context.isPreview else { return }
+        let pin = on ? nil : (playing?.source ?? MusicService.shared.current)
+        WidgetWriter.write(current) { config in
+            config.set(MusicSourceSwitch.autoKey, .bool(on))
+            if let pin { config.set(MusicSourceSwitch.pinnedKey, .string(pin.rawValue)) }
+        }
+        var updated = config
+        updated.set(MusicSourceSwitch.autoKey, .bool(on))
+        if let pin { updated.set(MusicSourceSwitch.pinnedKey, .string(pin.rawValue)) }
+        MusicService.shared.configure(updated)
+    }
+
+    // MARK: 没在播放
+
+    private var idle: some View {
+        let target = shownSource
+        let others = context.isPreview ? [] : MusicService.shared.players.filter { $0.source != target && $0.track != nil }
+        let setup = browserSetupHint
+        return VStack(spacing: 0) {
+            if let image = PandaArt.image("pet-panda-rest") {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 128)
+                    .padding(.top, 14)
+                    .accessibilityHidden(true)
+            }
+            Text(setup == nil ? tr("没在播放") : tr("有标签页正在播放码头无法读取的媒体"))
+                .font(.system(size: 19, weight: .bold))
+                .multilineTextAlignment(.center)
+                .padding(.top, 12)
+            Text(setup ?? idleLine(target))
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white.opacity(0.62))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+            if let target, MusicService.isInstalled(target) {
+                Button {
+                    guard !context.isPreview else { return }
+                    MusicService.shared.open(target)
+                } label: {
+                    Text(tr("打开 \(target.displayName)"))
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(accentInk(target))
+                        .padding(.horizontal, 26)
+                        .frame(height: 40)
+                        .background(Capsule().fill(accent(target)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(PressScale())
+                .padding(.top, 18)
+            }
+            if !others.isEmpty {
+                section(tr("其他开着的"))
+                VStack(spacing: 8) {
+                    ForEach(others, id: \.source) { player in
+                        otherRow(player)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func idleLine(_ target: MusicSource?) -> String {
+        if let target { return tr("在 \(target.displayName) 里放首歌，这里就会出现") }
+        let names = sources.map(\.displayName)
+        let list = names.isEmpty ? tr("无来源") : names.joined(separator: tr("、"))
+        return tr("码头可读取\(list)，以及可脚本控制的浏览器标签页中的视频。")
+    }
+
+    private func otherRow(_ player: MusicService.Player) -> some View {
+        let track = player.track
+        return HStack(spacing: 12) {
+            ZStack(alignment: .bottomTrailing) {
+                thumb(track?.artwork, glow: nil, size: 42, corner: 8)
+                appIcon(icon(for: player.source.bundleID), size: 18)
+                    .offset(x: 4, y: 4)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track?.title ?? player.source.displayName).font(.system(size: 15, weight: .bold))
+                Text(track?.isPlaying == true ? tr("\(player.source.displayName) · 播放中")
+                                              : tr("\(player.source.displayName) · 已暂停"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            playButton(track?.isPlaying == true, size: 30) {
+                if autoSwitch {
+                    MusicService.shared.playPause(player.source)
+                } else {
+                    choose(player.source)
+                    MusicService.shared.playPause()
+                }
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+    }
+
+    // MARK: 权限
 
     /// The only thing that ever raises the automation consent dialog, and it
     /// runs solely because the user clicked it.
     private var connect: some View {
-        Button {
-            guard !context.isPreview else { return }
-            MusicService.shared.requestAutomationPermission()
-            if browsersEnabled { BrowserMedia.shared.requestPermission() }
-        } label: {
-            Text("连接")
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(WidgetStyle.primary)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 7)
-                .background(Capsule().fill(WidgetStyle.primary.opacity(0.1)))
-                .contentShape(Capsule())
+        VStack(spacing: 10) {
+            Text("码头需要你允许它读取音乐 App")
+                .font(.system(size: 14, weight: .semibold))
+                .multilineTextAlignment(.center)
+            Button {
+                guard !context.isPreview else { return }
+                MusicService.shared.requestAutomationPermission()
+                if browsersEnabled { BrowserMedia.shared.requestPermission() }
+            } label: {
+                Text("连接")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Self.base)
+                    .padding(.horizontal, 26)
+                    .frame(height: 36)
+                    .background(Capsule().fill(.white))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(PressScale())
         }
-        .buttonStyle(.plain)
-    }
-
-    /// Three different lines, because they mean different things: a player
-    /// open and idle, a browser that will not run our JavaScript, or nothing
-    /// open at all.
-    private var idle: some View {
-        let open = !context.isPreview && MusicService.shared.hasPlayer
-        let setup = browserSetupHint
-        return VStack(spacing: 4) {
-            Text(setup == nil ? (open ? tr("未在播放") : tr("无可读取内容"))
-                              : tr("有标签页正在播放码头无法读取的媒体"))
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(WidgetStyle.primary)
-            Text(setup ?? (open ? tr("在\(sourceNames)中播放点什么吧。")
-                                : tr("码头可读取\(sourceNames)，以及可脚本控制的浏览器标签页中的视频。")))
-                .font(WidgetStyle.caption(12))
-                .foregroundStyle(WidgetStyle.secondary)
-        }
-        .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     /// The menu item the user has to switch on, or nil when nothing is asking.
@@ -388,51 +1108,17 @@ struct MusicDetail: View {
         return hint.isEmpty ? nil : hint
     }
 
-    private var sourceNames: String {
-        let names = sources.map(\.displayName)
-        guard !names.isEmpty else { return tr("无来源") }
-        return names.count == 1 ? names[0] : names.joined(separator: tr("或"))
+    private static func colour(_ rgb: (red: Double, green: Double, blue: Double)) -> Color {
+        Color(.sRGB, red: rgb.red, green: rgb.green, blue: rgb.blue, opacity: 1)
     }
 }
 
-/// Transport controls that answer a click and say which one is the point.
-///
-/// Every control used to be the same bare glyph at a different point size on
-/// `.plain`, which draws no pressed state at all: play and pause read as
-/// merely the largest of five rather than the one the panel is for, and
-/// nothing acknowledged being clicked. A filled disc for the primary and
-/// plain glyphs either side is the hierarchy Apple Music uses, and it is the
-/// same disc-deepens-and-shrinks response `TileGlyph` already gives the
-/// shelf, so the two surfaces answer a press the same way.
-///
-/// Ink is passed in rather than taken from `WidgetStyle`. When the panel is
-/// standing on a colour drawn from the artwork, its brightness is fixed by
-/// this app rather than by the system, so a semantic colour here would go
-/// dark in a forced-light appearance and disappear into it. The title and
-/// the scrubber were already pinned for that reason; these were missed.
-private struct TransportButton: ButtonStyle {
-    var primary: Bool
-    var ink: Color
-    /// Sized to ride in another row rather than to anchor one.
-    var compact = false
-
+/// 按下时缩一点，松开弹回；面板里的圆钮都用它。
+private struct PressScale: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        let side: CGFloat = compact ? 28 : (primary ? 46 : 34)
-        return configuration.label
-            // The secondaries sit back a little so the primary leads without
-            // having to be enormous.
-            .foregroundStyle(ink.opacity(primary ? 1 : (pressed ? 1 : 0.7)))
-            .frame(width: side, height: side)
-            .background {
-                if primary {
-                    Circle().fill(ink.opacity(pressed ? 0.26 : 0.14))
-                }
-            }
-            // Round, so the corners of the box do not swallow a click meant
-            // for the neighbour.
-            .contentShape(Circle())
-            .scaleEffect(pressed ? 0.92 : 1)
-            .animation(.snappy(duration: 0.14), value: pressed)
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.92 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.snappy(duration: 0.14), value: configuration.isPressed)
     }
 }

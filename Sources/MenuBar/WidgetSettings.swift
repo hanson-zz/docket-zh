@@ -556,6 +556,8 @@ struct WidgetSettingsSections: View {
         "apple": tr("Apple 音乐"),
         "netease": tr("网易云音乐"),
         "xiaoyuzhou": tr("小宇宙"),
+        "qqmusic": tr("QQ 音乐"),
+        "autoSwitch": tr("谁开始播放就切到谁"),
         "browsers": tr("浏览器标签页"),
         "devices": tr("设备"),
         "bluetooth": tr("显示蓝牙设备（耳机、鼠标、触控板等）"),

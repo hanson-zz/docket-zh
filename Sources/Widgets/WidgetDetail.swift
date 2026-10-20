@@ -502,8 +502,15 @@ struct WidgetDetailChrome: View {
             // that the panel's shadow traces.
             .overlay {
                 if let ground {
-                    LinearGradient(colors: [Self.colour(ground.top), Self.colour(ground.bottom)],
-                                   startPoint: .top, endPoint: .bottom)
+                    // 正在播放：深色玻璃打底，顶上叠封面主色的光晕（不超过 15%，
+                    // 往下渐隐），不再整面铺封面色。
+                    ZStack {
+                        Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
+                        LinearGradient(stops: [
+                            .init(color: Self.colour(ground.glow).opacity(ArtworkTint.glowOpacity), location: 0),
+                            .init(color: Self.colour(ground.glow).opacity(0), location: ArtworkTint.glowReach),
+                        ], startPoint: .top, endPoint: .bottom)
+                    }
                 }
             }
             // Opaque where there is a ground, because a translucent tint over
@@ -606,7 +613,8 @@ enum WidgetDetail {
         case .network: 340
         // 天气面板改版：降水条、生活指数三格、6 小时折线和城市管理，320 和第一批面板一致。
         case .weather: 320
-        case .music: 330
+        // 正在播放改版：和第一批面板一样 320。
+        case .music: 320
         case .photos, .screenshots: 340
         case .downloads, .fileShelf, .clipboard, .search: 320
         case .wallpaper: 340

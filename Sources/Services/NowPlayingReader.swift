@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 /// Reads the system's Now Playing for players with no AppleScript, such as
-/// 网易云音乐.
+/// 网易云音乐 and QQ 音乐.
 ///
 /// MediaRemote has been entitlement-gated since macOS 15.4 for ordinary
 /// apps, but `osascript` is a platform binary that is still allowed to ask,
@@ -45,10 +45,15 @@ enum NowPlayingReader {
     }
     """
 
-    static func read(bundleID: String) -> NowPlaying? {
-        guard let output = run([]), let info = NowPlayingInfo.decode(output),
-              let track = info.track(for: bundleID, now: .now),
-              let source = MusicSource.allCases.first(where: { $0.bundleID == bundleID }) else { return nil }
+    /// 系统「正在播放」一次读出来；网易云、QQ 音乐、小宇宙各自用 `track(from:source:)`
+    /// 对是不是自己，一次轮询只跑一次 osascript。
+    static func info() -> NowPlayingInfo? {
+        guard let output = run([]) else { return nil }
+        return NowPlayingInfo.decode(output)
+    }
+
+    static func track(from info: NowPlayingInfo, source: MusicSource) -> NowPlaying? {
+        guard let track = info.track(for: source.bundleID, now: .now) else { return nil }
         return NowPlaying(title: track.title, artist: track.artist, album: track.album,
                           duration: track.duration, elapsed: track.elapsed,
                           isPlaying: track.isPlaying, artwork: nil, source: source)

@@ -159,6 +159,10 @@ public enum WidgetCatalog {
               defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),
                            "backward": .bool(false), "forward": .bool(false), "skip": .number(15),
                            "spotify": .bool(true), "apple": .bool(true), "netease": .bool(true), "xiaoyuzhou": .bool(true),
+                           // QQ 音乐和网易云走同一路：系统「正在播放」加媒体键。
+                           "qqmusic": .bool(true),
+                           // 谁开始播放就切到谁；关掉后停在面板里选的来源（pinned，设置页不列）。
+                           MusicSourceSwitch.autoKey: .bool(true), MusicSourceSwitch.pinnedKey: .string(""),
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true)]),
@@ -642,6 +646,9 @@ public enum WidgetCatalog {
         case (.music, "previous"), (.music, "next"), (.music, "backward"),
              (.music, "forward"), (.music, "skip"):
             !config.bool("mini")
+        // 固定的来源在面板的来源列表里点选，设置页不给文字框。
+        case (.music, MusicSourceSwitch.pinnedKey):
+            false
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"

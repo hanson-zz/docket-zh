@@ -3,35 +3,7 @@ import CoreServices
 import Foundation
 import Observation
 
-/// Which player a reading came from.
-public enum MusicSource: String, Sendable, CaseIterable {
-    case spotify, appleMusic, netease, xiaoyuzhou
-
-    var bundleID: String {
-        switch self {
-        case .spotify: "com.spotify.client"
-        case .appleMusic: "com.apple.Music"
-        case .netease: "com.netease.163music"
-        // The iPhone app, run on an Apple silicon Mac.
-        case .xiaoyuzhou: "app.podcast.cosmos"
-        }
-    }
-
-    /// 网易云音乐 and 小宇宙 have no AppleScript dictionary: they are read
-    /// from the system's Now Playing and driven with the media keys, so they
-    /// cannot be seeked.
-    public var readsNowPlaying: Bool { self == .netease || self == .xiaoyuzhou }
-    public var canSeek: Bool { !readsNowPlaying }
-
-    var displayName: String {
-        switch self {
-        case .spotify: "Spotify"
-        case .appleMusic: tr("音乐")
-        case .netease: tr("网易云音乐")
-        case .xiaoyuzhou: tr("小宇宙")
-        }
-    }
-}
+// `MusicSource` lives in Core (MusicSources.swift) so the switching rules can be tested.
 
 /// One player's current track.
 ///
@@ -50,6 +22,18 @@ public struct NowPlaying: @unchecked Sendable, Equatable {
     /// decode time rather than from the image afterwards.
     public var tint: ArtworkTint?
     public var source: MusicSource
+
+    // 只有 Apple 音乐 / Spotify（AppleScript）读得到的几项；网易云、QQ 是 nil。
+    public var shuffle: Bool?
+    public var repeatMode: MusicRepeat?
+    /// 播放器自己的音量，0…100。
+    public var volume: Double?
+    /// Apple 音乐的喜欢（macOS 14 起 favorited，之前 loved）。
+    public var favorited: Bool?
+    /// Spotify 是 `spotify:track:…`，Apple 音乐是 database ID。
+    public var trackID: String?
+    /// Spotify 给的封面网址，「刚才听过」记下来当缩略图。
+    public var artworkURL: URL?
 
     /// 0…1, and never NaN - a live stream reports a zero duration.
     public var progress: Double {
@@ -75,8 +59,26 @@ public struct NowPlaying: @unchecked Sendable, Equatable {
 public final class MusicService {
     public static let shared = MusicService()
 
-    /// Last good reading. A failed poll leaves it alone rather than blanking
-    /// the tile every time a script times out.
+    /// 一个开着的播放器：读得到曲目时带着它。
+    public struct Player: Equatable, Sendable {
+        public var source: MusicSource
+        public var track: NowPlaying?
+    }
+
+    /// 面板「接下来」：Apple 音乐当前歌单里排在后面的几首。
+    public struct UpNext: Equatable, Sendable {
+        public struct Item: Equatable, Sendable, Identifiable {
+            public var id: String       // database ID
+            public var title: String
+            public var artist: String
+            public var duration: Double
+        }
+        public var playlist: String
+        public var items: [Item]
+    }
+
+    /// The track of the source on screen (`current`). A failed poll leaves it
+    /// alone rather than blanking the tile every time a script times out.
     public private(set) var nowPlaying: NowPlaying?
     /// True when a player is running but macOS has not been asked for consent
     /// yet (or consent was refused). The tile shows a "Connect" button for
@@ -84,16 +86,35 @@ public final class MusicService {
     public private(set) var needsAutomationPermission = false
 
     /// Whether a *supported* player is open at all.
-    ///
-    /// Only Spotify and Apple Music can be read. Browser audio cannot: the
-    /// one system-wide source is MediaRemote, which Apple entitlement-gated
-    /// in macOS 15.4. The widget needs to say which of "nothing is open" and
-    /// "something is open but idle" it is looking at, or it reads as broken
-    /// whenever music is playing in a tab.
     public private(set) var hasPlayer = false
+
+    /// 开着的播放器，按偏好顺序，给面板的来源列表和「其他开着的」。
+    public private(set) var players: [Player] = []
+
+    /// 正在显示、按钮控制的来源。可能没开（自动切换关着、固定的来源没开）。
+    public private(set) var current: MusicSource?
 
     /// Sources to consult, in the order the config prefers them.
     public var enabled: [MusicSource] = MusicSource.allCases
+
+    /// 「谁开始播放就切到谁」，卡片和面板从配置同步过来（`configure`）。
+    public private(set) var autoSwitch = true
+    /// 自动切换关着时固定用的来源。
+    public private(set) var pinned: MusicSource?
+
+    /// Spotify「刚才听过」，只存在本机。
+    public private(set) var recent = MusicRecent.decode(UserDefaults.standard.data(forKey: MusicRecent.defaultsKey))
+
+    /// Apple 音乐的「接下来」，面板开着时才读。
+    public private(set) var upNext: UpNext?
+    /// 面板开着时才读「接下来」，关着时不为它多发 Apple Event。
+    @ObservationIgnored private var wantsUpNext = false
+
+    public func setWantsUpNext(_ on: Bool) {
+        guard on != wantsUpNext else { return }
+        wantsUpNext = on
+        if on { upNextKey = nil; refreshUpNext() }
+    }
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var polling = false
@@ -106,18 +127,22 @@ public final class MusicService {
     /// The play state the user asked for, until a reading confirms it.
     @ObservationIgnored private var asked: Bool?
 
+    /// 上一次读到时各来源是否在放，认「刚开始播放」用。
+    @ObservationIgnored private var wasPlaying: [MusicSource: Bool] = [:]
+    /// 上次记进「刚才听过」的 Spotify 曲目。
+    @ObservationIgnored private var lastRecorded: String?
+    @ObservationIgnored private var upNextKey: String?
+    @ObservationIgnored private var upNextLoading = false
+    /// 随机、循环、音量、喜欢刚点过时，读数先不盖掉它。
+    @ObservationIgnored private var heldExtras: (until: Date, apply: (inout NowPlaying) -> Void)?
+
     /// How long a reading may contradict what was just asked for before it is
-    /// believed. Same bargain as the browser side: long enough for the player
-    /// to hear the command and be read again, short enough that a command
-    /// which never landed corrects itself quickly.
+    /// believed. Long enough for the player to hear the command and be read
+    /// again, short enough that a command which never landed corrects itself.
     private static let commandHold: TimeInterval = 1.5
 
     /// How long after one of our own commands a timed-out probe is treated as
     /// our own traffic rather than as the player refusing.
-    ///
-    /// Long enough to cover a burst of clicks plus one probe's budget, short
-    /// enough that something genuinely unresponsive still gives up within a
-    /// few seconds of the last press.
     private static let commandGrace: TimeInterval = 5
 
     /// Set once a probe has hung; cleared when the user asks to connect.
@@ -126,10 +151,8 @@ public final class MusicService {
 
     /// Only a playing track needs second-by-second refreshing, for its scrubber.
     private var probeInterval: TimeInterval {
-        guard let playing = nowPlaying else { return 8 }
-        // 0.85 rather than 1: a strict 1.0 against a 1s timer means jitter
-        // makes every other tick miss, halving the scrubber's update rate.
-        return playing.isPlaying ? 0.85 : 5
+        if players.contains(where: { $0.track?.isPlaying == true }) { return 0.85 }
+        return nowPlaying == nil && players.isEmpty ? 8 : 5
     }
     @ObservationIgnored private var artworkKey: String?
 
@@ -154,22 +177,25 @@ public final class MusicService {
         timer = nil
     }
 
+    /// 卡片和面板从配置同步来源和切换设置。
+    public func configure(_ config: WidgetConfig) {
+        let sources = MusicSource.enabled(in: config)
+        if enabled != sources { enabled = sources }
+        let auto = MusicSourceSwitch.autoSwitch(config)
+        let pin = MusicSourceSwitch.pinned(config)
+        if pinned != pin || autoSwitch != auto {
+            pinned = pin
+            autoSwitch = auto
+            reselect()
+        }
+    }
+
     // MARK: Reading
 
     public func refresh() {
         // Every reason not to poll is weighed *before* the in-flight flag is
-        // armed. This used to set `polling = true` first and then return early
-        // on the throttle below, which leaked the flag permanently: the timer
-        // ticks at 1s, the idle interval is 8s, so the very first tick after
-        // launch wedged the service for the life of the process.
-        //
-        // The conditions, in order: a slow player (Music with a huge library
-        // can take a beat) must not queue a second poll behind the first; a
-        // player we were never granted access to blocks the Apple Event
-        // indefinitely, because the consent dialog is never shown for a
-        // background agent that is never frontmost; and a paused player's
-        // track does not change, so a synchronous Apple Event round trip once
-        // a second is far too expensive to spend on nothing.
+        // armed: arming it first and returning on the throttle leaked the flag
+        // and wedged the service for the life of the process.
         let now = Date.now
         guard PollGate.shouldStart(inFlight: polling,
                                    blocked: blocked,
@@ -178,9 +204,10 @@ public final class MusicService {
         polling = true
         lastProbe = now
         let sources = enabled
+        let favoriteFor = current == .appleMusic
         Task { [sources] in
-            let result = await withTimeout(seconds: 2) {
-                await Bridge.probe(sources)
+            let result = await withTimeout(seconds: 2.5) {
+                await Bridge.probe(sources, readFavorite: favoriteFor)
             }
             if let result {
                 await self.apply(result)
@@ -190,83 +217,95 @@ public final class MusicService {
         }
     }
 
-    /// The probe hung: stop asking (each attempt would strand another thread)
-    /// and show the affordance that can actually resolve it.
-    /// Slowness is not refusal.
-    ///
-    /// One slow probe used to block the service for the life of the process,
-    /// but a player busy with a large library recovers on its own - only a
-    /// player that never answers is actually refusing. Mirrors the browser
-    /// side's three-strike backoff.
+    /// The probe hung. Slowness is not refusal: a player that has answered
+    /// before is waited on, and only one that never has gets the Connect
+    /// button after three strikes.
     private func stall() {
         polling = false
-        // Back off rather than hammering a player that is busy.
         lastProbe = .now
-        // Our own traffic, not a refusal. Same shape as the browser side:
-        // commands and probes share a queue, so a run of presses starves the
-        // probe behind them and three of those blocked the service, leaving
-        // the tile asking for consent it already had.
         guard Date().timeIntervalSince(lastCommand) >= Self.commandGrace else { return }
         timeouts += 1
-
-        // A player that has answered Docket before has been granted access,
-        // and consent, once given, is not silently withdrawn: revoking it in
-        // System Settings comes back as a -1743 on the next real attempt,
-        // which the probe already reports as such. So a stall from a player
-        // that has answered is slowness - a big library, a Mac just woken -
-        // and the answer is to wait and ask again, never to stop syncing and
-        // show a Connect button for permission that is already there. That
-        // is what happened: three slow probes and the tile asked to connect
-        // and stopped updating until it was clicked.
         if Self.hasAnswered {
-            // Waits a little longer each time, to half a minute, so a player
-            // that is struggling is not hammered while it recovers.
             lastProbe = Date().addingTimeInterval(min(30, 2 * Double(timeouts)))
             return
         }
-
-        // Never answered: a player that has not been asked for consent does
-        // not refuse, it hangs, because a background agent's consent prompt
-        // is never shown. Only then is Connect the thing that can fix it.
         guard timeouts >= 3 else { return }
         blocked = true
         needsAutomationPermission = true
     }
 
     /// Whether a player has ever answered one of Docket's probes.
-    ///
-    /// Kept across launches, because the permission it stands for is too.
     private static var hasAnswered: Bool {
         get { UserDefaults.standard.bool(forKey: "music.hasAnswered") }
         set { UserDefaults.standard.set(newValue, forKey: "music.hasAnswered") }
     }
 
-
-
     private func apply(_ result: Bridge.Probe) async {
         defer { polling = false }
-        timeouts = 0            // it answered, so it is not refusing
-        needsAutomationPermission = result.needsPermission
-        if result.sawRunningPlayer, !result.needsPermission { Self.hasAnswered = true }
+        timeouts = 0
+        let hasTrack = result.players.contains { $0.track != nil }
+        needsAutomationPermission = result.needsPermission && !hasTrack
+        if result.sawRunningPlayer, !needsAutomationPermission { Self.hasAnswered = true }
         hasPlayer = result.sawRunningPlayer
 
-        guard var track = result.track else {
-            // Only clear once we know nothing is running. A script that failed
-            // mid-song keeps the last good reading on screen.
-            if result.sawRunningPlayer == false { nowPlaying = nil; artworkKey = nil }
+        // 一次失败的读数（脚本超时、读到一半）不该把正在显示的曲目清掉：
+        // 还开着的来源这次没读到，沿用上次的曲目。
+        var next: [Player] = []
+        for reading in result.players {
+            var track = reading.track
+            if track == nil, !reading.source.readsNowPlaying, !reading.idle,
+               let old = players.first(where: { $0.source == reading.source })?.track {
+                track = old
+            }
+            next.append(Player(source: reading.source, track: track))
+        }
+        recordRecent(next)
+        players = next
+
+        let chosen = MusicSourceSwitch.choose(
+            players: next.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) },
+            wasPlaying: wasPlaying, current: current, autoSwitch: autoSwitch, pinned: pinned)
+        wasPlaying = Dictionary(next.map { ($0.source, $0.track?.isPlaying == true) }, uniquingKeysWith: { a, _ in a })
+        if current != chosen { current = chosen; asked = nil }
+
+        let ref = result.players.first(where: { $0.source == chosen })?.artworkRef
+        await show(next.first(where: { $0.source == chosen })?.track, artworkRef: ref)
+        refreshUpNext()
+    }
+
+    /// 来源变了（用户在面板里点、固定来源改了）就用已有的读数立即换上，不等下一次轮询。
+    private func reselect() {
+        let chosen = MusicSourceSwitch.choose(
+            players: players.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) },
+            wasPlaying: wasPlaying, current: current, autoSwitch: autoSwitch, pinned: pinned)
+        guard chosen != current else { return }
+        current = chosen
+        asked = nil
+        artworkKey = nil
+        nowPlaying = players.first(where: { $0.source == chosen })?.track
+        lastProbe = .distantPast
+        refresh()
+    }
+
+    private func show(_ reading: NowPlaying?, artworkRef: Bridge.ArtworkRef?) async {
+        guard var track = reading else {
+            nowPlaying = nil
+            artworkKey = nil
+            upNext = nil
             return
         }
 
         // A probe already in flight when the button was pressed comes back
-        // describing the player as it was, and believing it flips the glyph
-        // back under the pointer. Held until a reading agrees, or until the
-        // window closes and a command that never landed is admitted.
+        // describing the player as it was; held until a reading agrees.
         if let asked {
             if track.isPlaying == asked || Date().timeIntervalSince(lastCommand) >= Self.commandHold {
                 self.asked = nil
             } else {
                 track.isPlaying = asked
             }
+        }
+        if let held = heldExtras {
+            if Date() < held.until { held.apply(&track) } else { heldExtras = nil }
         }
 
         if track.trackKey == artworkKey {
@@ -281,24 +320,116 @@ public final class MusicService {
         nowPlaying = track
 
         let key = track.trackKey
-        // Budgeted. `apply` clears `polling` with a defer, which never runs if
-        // the function never returns - and this await had no bound at all: an
-        // Apple Music artwork event can hang indefinitely, and a URL fetch
-        // only stops at URLSession's 60s default. Either wedged the service
-        // exactly the way arming the flag too early used to.
+        // Budgeted: an Apple Music artwork event can hang indefinitely.
         let found = await withTimeout(seconds: 5) {
-            await Bridge.artwork(for: result.artworkRef)
+            await Bridge.artwork(for: artworkRef)
         }
-        // A later track may have landed while the download was in flight.
-        guard artworkKey == key, var current = nowPlaying, current.trackKey == key else { return }
-        current.artwork = found?.image
-        current.tint = found?.tint
-        nowPlaying = current
+        guard artworkKey == key, var latest = nowPlaying, latest.trackKey == key else { return }
+        latest.artwork = found?.image
+        latest.tint = found?.tint
+        nowPlaying = latest
+    }
+
+    // MARK: 刚才听过
+
+    private func recordRecent(_ next: [Player]) {
+        guard let track = next.first(where: { $0.source == .spotify })?.track,
+              track.isPlaying, let uri = track.trackID, uri != lastRecorded else { return }
+        lastRecorded = uri
+        var list = recent
+        list.record(.init(uri: uri, title: track.title, artist: track.artist,
+                          duration: track.duration, artworkURL: track.artworkURL?.absoluteString))
+        guard list != recent else { return }
+        recent = list
+        UserDefaults.standard.set(list.encoded(), forKey: MusicRecent.defaultsKey)
+    }
+
+    public func clearRecent() {
+        recent.clear()
+        UserDefaults.standard.removeObject(forKey: MusicRecent.defaultsKey)
+    }
+
+    public func replay(_ entry: MusicRecent.Entry) {
+        guard let body = MusicRecent.playCommand(entry.uri) else { return }
+        select(.spotify)
+        lastCommand = .now
+        Bridge.send(body, to: .spotify, cache: false)
+        lastProbe = .distantPast
+    }
+
+    // MARK: 接下来
+
+    private func refreshUpNext() {
+        guard wantsUpNext, let track = nowPlaying, track.source == .appleMusic,
+              MusicUpNext.visible(shuffle: track.shuffle ?? false), let id = track.trackID else {
+            if nowPlaying?.source != .appleMusic { upNext = nil; upNextKey = nil }
+            return
+        }
+        let wrap = track.repeatMode == .all
+        let key = "\(id)|\(wrap)"
+        guard key != upNextKey, !upNextLoading else { return }
+        upNextLoading = true
+        Task {
+            let list = await withTimeout(seconds: 4) { await Bridge.upNext(wrap: wrap) }
+            self.upNextLoading = false
+            // 读的时候歌已经换了就作废，下一次轮询再读。
+            guard self.nowPlaying?.trackID == id else { return }
+            self.upNextKey = key
+            self.upNext = list ?? nil
+        }
+    }
+
+    public func play(_ item: UpNext.Item) {
+        guard let id = Int(item.id) else { return }
+        lastCommand = .now
+        Bridge.send("play (some track of current playlist whose database ID is \(id))", to: .appleMusic, cache: false)
+        lastProbe = .distantPast
+    }
+
+    // MARK: Choosing a source
+
+    /// 用户在面板里点了一个来源：先显示它。自动切换开着时，下次有别的来源开始播放
+    /// 还会切走；关着时由面板把它写成固定来源。
+    public func select(_ source: MusicSource) {
+        guard current != source else { return }
+        current = source
+        asked = nil
+        artworkKey = nil
+        upNext = nil
+        upNextKey = nil
+        nowPlaying = players.first(where: { $0.source == source })?.track
+        lastProbe = .distantPast
+        refresh()
+    }
+
+    /// 这个来源能不能直接控制：网易云、QQ 只在它是系统「正在播放」时才行，
+    /// 否则媒体键会落到别的 App 上。
+    public func canControl(_ source: MusicSource) -> Bool {
+        guard let player = players.first(where: { $0.source == source }) else { return false }
+        return !source.readsNowPlaying || player.track != nil
+    }
+
+    /// 打开或切到这个播放器（「在 App 中打开」「打开 X」）。不播放任何东西。
+    public func open(_ source: MusicSource) {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: source.bundleID) else { return }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in }
+    }
+
+    nonisolated public static func isInstalled(_ source: MusicSource) -> Bool {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: source.bundleID) != nil
     }
 
     // MARK: Transport
 
     public func playPause() { command("playpause") }
+
+    /// 列表里别的来源的播放键：切过去再播放/暂停。
+    public func playPause(_ source: MusicSource) {
+        select(source)
+        command("playpause")
+    }
 
     public func next() { command("next track") }
 
@@ -329,7 +460,7 @@ public final class MusicService {
     }
 
     private func command(_ body: String) {
-        guard let source = nowPlaying?.source else { return }
+        guard let source = nowPlaying?.source ?? current, canControl(source) else { return }
         if body == "playpause" {
             optimistically { $0.isPlaying.toggle() }
             asked = nowPlaying?.isPlaying
@@ -338,12 +469,59 @@ public final class MusicService {
         Bridge.send(body, to: source)
     }
 
+    // MARK: 随机、循环、音量、喜欢
+
+    public func setShuffle(_ on: Bool) {
+        guard let source = nowPlaying?.source, source.hasShuffleAndRepeat else { return }
+        hold { $0.shuffle = on }
+        let body = source == .appleMusic ? "set shuffle enabled to \(on)" : "set shuffling to \(on)"
+        lastCommand = .now
+        Bridge.send(body, to: source)
+    }
+
+    public func cycleRepeat() {
+        guard let track = nowPlaying, track.source.hasShuffleAndRepeat else { return }
+        let mode = (track.repeatMode ?? .off).next(allowsOne: track.source.hasRepeatOne)
+        hold { $0.repeatMode = mode }
+        let body = track.source == .appleMusic
+            ? "set song repeat to \(mode.rawValue)"
+            : "set repeating to \(mode != .off)"
+        lastCommand = .now
+        Bridge.send(body, to: track.source)
+    }
+
+    /// 0…100。拖动时一直调，脚本按整数缓存，最多 101 份。
+    public func setVolume(_ percent: Double) {
+        guard let source = nowPlaying?.source, MusicVolumeRoute.route(for: source, recordingGranted: false) == .player else { return }
+        let value = Int(min(100, max(0, percent)).rounded())
+        hold { $0.volume = Double(value) }
+        lastCommand = .now
+        Bridge.send("set sound volume to \(value)", to: source)
+    }
+
+    public func toggleFavorite() {
+        guard let track = nowPlaying, track.source.hasFavorite else { return }
+        let on = !(track.favorited ?? false)
+        hold { $0.favorited = on }
+        lastCommand = .now
+        Bridge.setFavorite(on)
+    }
+
+    /// 改完先显示新值，接下来 2 秒的读数（可能是改之前发出的）不盖掉它。
+    private func hold(_ change: @escaping (inout NowPlaying) -> Void) {
+        optimistically(change)
+        heldExtras = (Date().addingTimeInterval(2), change)
+    }
+
     /// Update the local reading straight away so a tap feels instant; the next
     /// poll (≤1s) replaces it with the truth either way.
     private func optimistically(_ change: (inout NowPlaying) -> Void) {
         guard var track = nowPlaying else { return }
         change(&track)
         nowPlaying = track
+        if let index = players.firstIndex(where: { $0.source == track.source }) {
+            players[index].track = track
+        }
     }
 
     // MARK: Permission
@@ -352,17 +530,11 @@ public final class MusicService {
     /// it runs solely because the user clicked "Connect".
     public func requestAutomationPermission() {
         let sources = enabled
-        // The consent dialog is only shown for the frontmost app, and an
-        // accessory agent with no ordinary window never becomes frontmost.
         let policy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         blocked = false
         polling = false
-        // The strike count too. You only reach Connect *because* three probes
-        // timed out, so leaving the counter at three meant the very next
-        // timeout hit four and re-blocked instantly - Connect became a
-        // one-shot that flickered straight back.
         timeouts = 0
         lastProbe = .distantPast
         Task { [sources] in
@@ -380,20 +552,27 @@ public final class MusicService {
 /// AppleScript execution is serialised onto one queue: `NSAppleScript` is not
 /// documented as thread-safe, and a 1s poll has no need for concurrency.
 enum Bridge {
-    struct Probe: Sendable {
+    struct Reading: Sendable {
+        var source: MusicSource
         var track: NowPlaying?
+        var artworkRef: ArtworkRef?
+        /// 播放器明确说没在放（stopped），而不是脚本失败。
+        var idle = false
+    }
+
+    struct Probe: Sendable {
+        var players: [Reading] = []
         var needsPermission = false
         /// Distinguishes "nothing is running" from "the script failed", so a
         /// transient error does not blank the tile.
         var sawRunningPlayer = false
-        var artworkRef: ArtworkRef?
     }
 
     /// How to obtain artwork for the track we just read.
     enum ArtworkRef: Sendable {
         case url(URL)          // Spotify hands out an https image URL
         case appleMusic        // Music hands out raw bytes, over another event
-        case nowPlaying        // 网易云音乐: the system's Now Playing artwork
+        case nowPlaying        // 网易云音乐 / QQ 音乐: the system's Now Playing artwork
     }
 
     private static let queue = DispatchQueue(label: "com.namanparashar.plinth.music")
@@ -406,65 +585,47 @@ enum Bridge {
 
     // MARK: Probing
 
-    /// Consent is judged from the result of the actual Apple Event, never
-    /// from a pre-flight check.
+    /// 每个开着的来源都读一次（来源列表和「谁开始播放」都要看全部），系统「正在
+    /// 播放」只读一次，网易云、QQ、小宇宙各自对一下是不是自己。
     ///
-    /// `AEDeterminePermissionToAutomateTarget` blocks - on a background queue
-    /// it wedged this service permanently (one hung probe, and `polling` never
-    /// cleared, so the widget sat on "Not playing" forever); moved to the main
-    /// actor it froze the whole app and the shelf never appeared at all.
-    /// Running the script and reading its error code tells us the same thing
-    /// without blocking anything.
-    static func probe(_ sources: [MusicSource]) async -> Probe {
+    /// Consent is judged from the result of the actual Apple Event, never from
+    /// `AEDeterminePermissionToAutomateTarget`, which blocks.
+    static func probe(_ sources: [MusicSource], readFavorite: Bool) async -> Probe {
         await offMain {
             var result = Probe()
-            var fallback: (NowPlaying, ArtworkRef?)?
-
+            var system: NowPlayingInfo??
             for source in sources where isRunning(source) {
                 result.sawRunningPlayer = true
+                if source.readsNowPlaying {
+                    if system == nil { system = .some(NowPlayingReader.info()) }
+                    let track = system.flatMap { $0 }.flatMap { NowPlayingReader.track(from: $0, source: source) }
+                    result.players.append(Reading(source: source, track: track,
+                                                  artworkRef: track == nil ? nil : .nowPlaying))
+                    continue
+                }
                 switch read(source) {
                 case .denied:
-                    // The pre-flight check can report a player as reachable
-                    // when consent has merely never been asked for, so trust
-                    // what the actual attempt says.
                     result.needsPermission = true
+                    result.players.append(Reading(source: source, track: nil))
                 case .idle:
-                    continue
-                case .track(let track, let artwork):
-                    // Whatever is actually playing wins; otherwise the first
-                    // enabled source that has a track loaded.
-                    if track.isPlaying {
-                        result.track = track
-                        result.artworkRef = artwork
-                        result.needsPermission = false
-                        return result
-                    }
-                    if fallback == nil { fallback = (track, artwork) }
+                    result.players.append(Reading(source: source, track: nil, idle: true))
+                case .failed:
+                    result.players.append(Reading(source: source, track: nil))
+                case .track(var track, let artwork):
+                    if source == .appleMusic, readFavorite { track.favorited = favorite() }
+                    result.players.append(Reading(source: source, track: track, artworkRef: artwork))
                 }
-            }
-
-            if let fallback {
-                result.track = fallback.0
-                result.artworkRef = fallback.1
-                result.needsPermission = false
             }
             return result
         }
     }
 
     /// The image and the colour behind it, together.
-    ///
-    /// Both branches already had the bytes in hand and dropped them into
-    /// `NSImage(data:)`, so the tint costs one call beside the decode. Doing
-    /// it later from the NSImage would mean re-encoding a picture we had.
-    /// `Bridge` is a bare enum and so nonisolated, which is where this work
-    /// belongs.
     static func artwork(for ref: ArtworkRef?) async -> (image: NSImage?, tint: ArtworkTint?) {
         switch ref {
         case .none:
             return (nil, nil)
         case .url(let url):
-            // Never on the main thread, and a dead CDN just means no artwork.
             guard let (data, _) = try? await URLSession.shared.data(from: url) else { return (nil, nil) }
             return (NSImage(data: data), ArtworkTint.extract(data))
         case .appleMusic:
@@ -483,9 +644,79 @@ enum Bridge {
         }
     }
 
+    // MARK: Apple 音乐的喜欢和接下来
+
+    /// macOS 14 起叫 favorited，之前叫 loved。两份脚本分开编译：词典里没有的词
+    /// 让整份脚本编译失败，放在一起就连另一个也读不到。
+    private static let favoritedScript = "tell application id \"com.apple.Music\" to return (favorited of current track) as text"
+    private static let lovedScript = "tell application id \"com.apple.Music\" to return (loved of current track) as text"
+
+    private static func favorite() -> Bool? {
+        for source in [favoritedScript, lovedScript] {
+            if case .value(let descriptor) = script(source), let text = descriptor.stringValue {
+                return text == "true"
+            }
+        }
+        return nil
+    }
+
+    static func setFavorite(_ on: Bool) {
+        guard isRunning(.appleMusic) else { return }
+        queue.async {
+            guard permitted(.appleMusic, ask: false) else { return }
+            if case .value = script("tell application id \"com.apple.Music\" to set favorited of current track to \(on)") { return }
+            _ = script("tell application id \"com.apple.Music\" to set loved of current track to \(on)")
+        }
+    }
+
+    /// 当前歌单名、当前这首在歌单里第几首、歌单共几首，再按 `MusicUpNext` 取后面几首。
+    static func upNext(wrap: Bool) async -> MusicService.UpNext? {
+        await offMain {
+            guard isRunning(.appleMusic) else { return nil }
+            let locate = """
+            tell application id "com.apple.Music"
+                if player state is stopped then return ""
+                set p to current playlist
+                set did to database ID of current track
+                set i to 0
+                try
+                    set i to index of (first track of p whose database ID is did)
+                end try
+                return (name of p) & tab & (i as text) & tab & ((count of tracks of p) as text)
+            end tell
+            """
+            guard case .value(let found) = script(locate), let raw = found.stringValue else { return nil }
+            let f = raw.components(separatedBy: "\t")
+            guard f.count == 3, let index = Int(f[1]), let count = Int(f[2]) else { return nil }
+            let indices = MusicUpNext.indices(current: index, count: count, wrap: wrap)
+            guard !indices.isEmpty else { return MusicService.UpNext(playlist: f[0], items: []) }
+            let list = indices.map(String.init).joined(separator: ", ")
+            let body = """
+            tell application id "com.apple.Music"
+                set p to current playlist
+                set out to ""
+                repeat with j in {\(list)}
+                    set t to track (j as integer) of p
+                    set out to out & ((database ID of t) as text) & tab & (name of t) & tab & (artist of t) & tab & ((duration of t) as text) & linefeed
+                end repeat
+                return out
+            end tell
+            """
+            guard case .value(let rows) = script(body, cache: false), let text = rows.stringValue else {
+                return MusicService.UpNext(playlist: f[0], items: [])
+            }
+            let items = text.split(separator: "\n").compactMap { line -> MusicService.UpNext.Item? in
+                let c = line.components(separatedBy: "\t")
+                guard c.count >= 4, !c[1].isEmpty else { return nil }
+                return .init(id: c[0], title: c[1], artist: c[2], duration: Double(c[3]) ?? 0)
+            }
+            return MusicService.UpNext(playlist: f[0], items: items)
+        }
+    }
+
     // MARK: Commands
 
-    static func send(_ body: String, to source: MusicSource) {
+    static func send(_ body: String, to source: MusicSource, cache: Bool = true) {
         guard isRunning(source) else { return }
         if source.readsNowPlaying {
             switch body {
@@ -499,7 +730,7 @@ enum Bridge {
         let id = source.bundleID
         queue.async {
             guard permitted(source, ask: false) else { return }
-            _ = script("tell application id \"\(id)\" to \(body)")
+            _ = script("tell application id \"\(id)\" to \(body)", cache: cache)
         }
     }
 
@@ -533,63 +764,62 @@ enum Bridge {
         case failed
     }
 
-    /// Compiled scripts, keyed by source.
-    ///
-    /// Confined to the serial `music` queue - every call reaches here through
-    /// `offMain`, so no locking is needed. Recompiling on each poll was the
-    /// single biggest cost in a profile of the running app.
+    /// Compiled scripts, keyed by source. Confined to the serial queue.
     nonisolated(unsafe) private static var compiled: [String: NSAppleScript] = [:]
 
-    private static func script(_ source: String) -> ScriptOutcome {
+    private static func script(_ source: String, cache: Bool = true) -> ScriptOutcome {
         let script: NSAppleScript
         if let cached = compiled[source] {
             script = cached
         } else {
             guard let made = NSAppleScript(source: source) else { return .failed }
             made.compileAndReturnError(nil)
-            compiled[source] = made
+            if cache { compiled[source] = made }
             script = made
         }
         var error: NSDictionary?
         let result = script.executeAndReturnError(&error)
         guard let error else { return .value(result) }
-        // -1743 not permitted, -1744 consent never granted. Swallowing these
-        // made a blocked player indistinguishable from a stopped one, so the
-        // widget sat on "Not playing" and never offered the way to fix it.
+        // -1743 not permitted, -1744 consent never granted.
         let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
         return (code == -1743 || code == -1744) ? .denied : .failed
     }
 
     /// One round trip per player. Fields are tab-separated because a track
     /// title can contain almost anything else.
-    enum Reading {
+    enum PlayerReading {
         case track(NowPlaying, ArtworkRef?)
         case idle
+        case failed
         case denied
     }
 
-    private static func read(_ source: MusicSource) -> Reading {
-        if source.readsNowPlaying {
-            guard let track = NowPlayingReader.read(bundleID: source.bundleID) else { return .idle }
-            return .track(track, .nowPlaying)
-        }
+    /// 前 6 项两家一样；后面的随机、循环、音量、曲目 id 包在 try 里，读不到
+    /// （电台、广告）也不影响曲目本身。
+    private static func read(_ source: MusicSource) -> PlayerReading {
         let id = source.bundleID
-        let extra = source == .spotify ? " & tab & (artwork url of t)" : ""
+        let extras = source == .spotify
+            ? "(shuffling as text) & tab & (repeating as text) & tab & (sound volume as text) & tab & (id of t) & tab & (artwork url of t)"
+            : "(shuffle enabled as text) & tab & (song repeat as text) & tab & (sound volume as text) & tab & ((database ID of t) as text)"
         let body = """
         tell application id "\(id)"
             if player state is stopped then return ""
             set t to current track
+            set ex to ""
+            try
+                set ex to \(extras)
+            end try
             return (name of t) & tab & (artist of t) & tab & (album of t) & tab \
         & ((duration of t) as text) & tab & ((player position) as text) & tab \
-        & (player state as text)\(extra)
+        & (player state as text) & tab & ex
         end tell
         """
         let outcome = script(body)
         guard case .value(let descriptor) = outcome else {
             if case .denied = outcome { return .denied }
-            return .idle
+            return .failed
         }
-        guard let raw = descriptor.stringValue else { return .idle }
+        guard let raw = descriptor.stringValue, !raw.isEmpty else { return .idle }
         let f = raw.components(separatedBy: "\t")
         guard f.count >= 6, !f[0].isEmpty else { return .idle }
 
@@ -608,10 +838,16 @@ enum Bridge {
         // past its own end.
         if track.duration > 0 { track.elapsed = min(track.elapsed, track.duration) }
 
-        let ref: ArtworkRef? = switch source {
-        case .spotify: f.count > 6 ? URL(string: f[6]).map(ArtworkRef.url) : nil
-        case .appleMusic: .appleMusic
-        case .netease, .xiaoyuzhou: .nowPlaying
+        if f.count >= 10, !f[6].isEmpty {
+            track.shuffle = f[6] == "true"
+            track.repeatMode = source == .spotify ? (f[7] == "true" ? .all : .off) : MusicRepeat(appleScript: f[7])
+            track.volume = Double(f[8].replacingOccurrences(of: ",", with: "."))
+            track.trackID = f[9].isEmpty ? nil : f[9]
+        }
+        var ref: ArtworkRef? = source == .appleMusic ? .appleMusic : nil
+        if source == .spotify, f.count >= 11, let url = URL(string: f[10]), url.scheme != nil {
+            track.artworkURL = url
+            ref = .url(url)
         }
         return .track(track, ref)
     }

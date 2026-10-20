@@ -419,6 +419,17 @@
         }
       }
     },
+    "%@ · 已暂停" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Paused"
+          }
+        }
+      }
+    },
     "%@ · 已过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -426,6 +437,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · passed"
+          }
+        }
+      }
+    },
+    "%@ · 播放中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Playing"
           }
         }
       }
@@ -1592,6 +1614,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ cups · %@ counted"
+          }
+        }
+      }
+    },
+    "%@ 标签页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ tab"
           }
         }
       }
@@ -3664,6 +3697,17 @@
         }
       }
     },
+    "QQ 音乐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QQ Music"
+          }
+        }
+      }
+    },
     "Safari 浏览器" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3682,6 +3726,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Safari ▸ Settings ▸ Developer ▸ Allow JavaScript from Apple Events"
+          }
+        }
+      }
+    },
+    "Spotify 不开放给小工具读取" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify does not let widgets read it"
           }
         }
       }
@@ -4287,6 +4342,17 @@
         }
       }
     },
+    "上一首" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        }
+      }
+    },
     "上个月" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4596,6 +4662,17 @@
       }
     },
     "下一步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "下一首" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -8995,6 +9072,17 @@
         }
       }
     },
+    "关掉后停在你选的来源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, stays on the source you pick"
+          }
+        }
+      }
+    },
     "关掉时每块屏幕都有入口；打开后只在带菜单栏的那块屏幕上显示。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9090,6 +9178,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turn alarm off"
+          }
+        }
+      }
+    },
+    "其他开着的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also open"
           }
         }
       }
@@ -9688,6 +9787,17 @@
         }
       }
     },
+    "切换来源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch source"
+          }
+        }
+      }
+    },
     "切换深色模式" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9805,6 +9915,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fresh captures, drag them out"
+          }
+        }
+      }
+    },
+    "刚才听过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently played"
+          }
+        }
+      }
+    },
+    "刚才听过 · 只存在本机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently played · this Mac only"
           }
         }
       }
@@ -11026,6 +11158,17 @@
         }
       }
     },
+    "单曲循环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat one"
+          }
+        }
+      }
+    },
     "单色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11682,6 +11825,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove"
+          }
+        }
+      }
+    },
+    "取消喜欢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unfavorite"
           }
         }
       }
@@ -12936,6 +13090,17 @@
         }
       }
     },
+    "喜欢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite"
+          }
+        }
+      }
+    },
     "喝一杯水、完成一项习惯打卡或一轮专注，都会喂它一点；有几只宠物就每只都喂。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13174,6 +13339,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back to this month"
+          }
+        }
+      }
+    },
+    "回到正在播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to Now Playing"
           }
         }
       }
@@ -13574,6 +13750,28 @@
         }
       }
     },
+    "在 %@ 里放首歌，这里就会出现" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play something in %@ and it shows up here"
+          }
+        }
+      }
+    },
+    "在 App 中打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in app"
+          }
+        }
+      }
+    },
     "在 GitHub 上星标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13592,6 +13790,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buy me a coffee on Ko-fi"
+          }
+        }
+      }
+    },
+    "在 Spotify 中查看" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View in Spotify"
           }
         }
       }
@@ -18676,6 +18885,17 @@
         }
       }
     },
+    "开着，读不到曲目" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open, track not readable"
+          }
+        }
+      }
+    },
     "开罗" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18991,6 +19211,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get your first %@"
+          }
+        }
+      }
+    },
+    "循环 关" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat off"
+          }
+        }
+      }
+    },
+    "循环全部" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat all"
           }
         }
       }
@@ -21158,6 +21400,28 @@
         }
       }
     },
+    "接下来 · 歌单「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up next · playlist \"%@\""
+          }
+        }
+      }
+    },
+    "接下来的队列" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up next queue"
+          }
+        }
+      }
+    },
     "搜索快捷指令" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21209,6 +21473,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change start time"
+          }
+        }
+      }
+    },
+    "放过的歌会记在这里，点一下重放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs you play are kept here. Click one to play it again"
           }
         }
       }
@@ -21418,6 +21693,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daylight %@"
+          }
+        }
+      }
+    },
+    "显示全部 %@ 首" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all %@"
           }
         }
       }
@@ -21653,6 +21939,28 @@
         }
       }
     },
+    "歌单里后面没有歌了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing after this in the playlist"
+          }
+        }
+      }
+    },
+    "正在读取歌单…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading playlist…"
+          }
+        }
+      }
+    },
     "正在运行…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21796,6 +22104,17 @@
         }
       }
     },
+    "没在播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not playing"
+          }
+        }
+      }
+    },
     "没有名字里带“%@”的快捷指令。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21803,6 +22122,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No shortcut names contain \"%@\"."
+          }
+        }
+      }
+    },
+    "没有开着的播放器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No player is open"
           }
         }
       }
@@ -22023,6 +22353,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thirsty"
+          }
+        }
+      }
+    },
+    "点一下从这首开始放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a song to play from there"
           }
         }
       }
@@ -32384,6 +32725,17 @@
         }
       }
     },
+    "码头需要你允许它读取音乐 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling needs your permission to read your music apps"
+          }
+        }
+      }
+    },
     "码头：保持唤醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35944,6 +36296,17 @@
         }
       }
     },
+    "视频 · 只能播放暂停" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video · play and pause only"
+          }
+        }
+      }
+    },
     "视频会议" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36959,6 +37322,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Readings"
+          }
+        }
+      }
+    },
+    "谁开始播放就切到谁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to whoever starts playing"
           }
         }
       }
@@ -40805,6 +41179,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shuffle"
+          }
+        }
+      }
+    },
+    "随机 关" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle off"
+          }
+        }
+      }
+    },
+    "随机 开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle on"
+          }
+        }
+      }
+    },
+    "随机播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle"
+          }
+        }
+      }
+    },
+    "随机播放时没有固定的接下来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No fixed up next while shuffling"
           }
         }
       }

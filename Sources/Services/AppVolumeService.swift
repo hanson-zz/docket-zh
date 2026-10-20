@@ -114,6 +114,14 @@ final class AppVolumeService {
         update(setting, for: bundleID)
     }
 
+    /// 「正在播放」面板借这一路给网易云、QQ 音乐做音量条：读现在的设置。
+    func setting(for bundleID: String) -> AppVolumeSetting {
+        settings[bundleID] ?? AppVolumeSetting()
+    }
+
+    /// 录音权限是否已经给过。只读，不弹权限：面板没权限就不显示音量条。
+    static var recordingGranted: Bool { AudioCapturePermission.status() == .granted }
+
     func setMuted(_ muted: Bool, for bundleID: String) {
         var setting = settings[bundleID] ?? AppVolumeSetting()
         setting.muted = muted

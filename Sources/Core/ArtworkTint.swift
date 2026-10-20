@@ -64,6 +64,17 @@ public struct ArtworkTint: Sendable, Equatable {
         Self.rgb(hue: hue, saturation: saturation, value: Self.bottomBrightness)
     }
 
+    /// 「正在播放」面板改版后不再整面铺封面色：深色玻璃打底，只在顶上叠一层封面
+    /// 主色的光晕，透明度不超过 15%，往下 55% 处消失。光晕用这个色相的亮色，
+    /// 叠在深色上才看得出是什么颜色。
+    public static let glowOpacity = 0.15
+    public static let glowReach = 0.55
+    public static let glowBrightness = 0.85
+
+    public var glow: (red: Double, green: Double, blue: Double) {
+        Self.rgb(hue: hue, saturation: saturation, value: Self.glowBrightness)
+    }
+
     // MARK: Extraction
 
     /// The dominant hue of an image, or nil if the data is not an image.

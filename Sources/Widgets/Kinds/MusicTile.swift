@@ -20,16 +20,9 @@ struct MusicTile: View {
     private var config: WidgetConfig { instance.config }
     private var isMini: Bool { config.bool("mini") }
 
-    /// Sources the user allows, in preference order - whichever is enabled
-    /// first wins when both are playing.
-    private var sources: [MusicSource] {
-        var list: [MusicSource] = []
-        if config.bool("spotify", default: true) { list.append(.spotify) }
-        if config.bool("apple", default: true) { list.append(.appleMusic) }
-        if config.bool("netease", default: true) { list.append(.netease) }
-        if config.bool("xiaoyuzhou", default: true) { list.append(.xiaoyuzhou) }
-        return list
-    }
+    /// Sources the user allows, in preference order. 加了 QQ 音乐；顺序和读法在
+    /// Core 的 `MusicSource.enabled`，面板读同一份。
+    private var sources: [MusicSource] { MusicSource.enabled(in: config) }
 
     private var browsersEnabled: Bool { config.bool("browsers", default: true) }
 
@@ -114,13 +107,14 @@ struct MusicTile: View {
             guard !context.isPreview else { return }
             // ponytail: shared poll, start-only - the shelf is always on
             // screen, so there is nothing to stop it for.
-            MusicService.shared.enabled = sources
+            // 来源、「谁开始播放就切到谁」和固定来源一起同步。
+            MusicService.shared.configure(config)
             MusicService.shared.start()
             BrowserMedia.shared.enabled = browsersEnabled
             BrowserMedia.shared.start()
         }
-        .onChange(of: sources) { _, new in
-            if !context.isPreview { MusicService.shared.enabled = new }
+        .onChange(of: config) { _, new in
+            if !context.isPreview { MusicService.shared.configure(new) }
         }
         .onChange(of: browsersEnabled) { _, new in
             if !context.isPreview { BrowserMedia.shared.enabled = new }
@@ -470,6 +464,12 @@ struct Playing {
     /// The ground the detail panel stands on, when the artwork yielded one.
     var tint: ArtworkTint?
 
+    /// 哪个播放器（浏览器标签页是 nil），面板按它决定随机、循环、喜欢这些。
+    var source: MusicSource?
+    var album = ""
+    /// 原始读数，面板要读随机、循环、音量、喜欢。
+    var native: NowPlaying?
+
     /// Whether anything beyond play/pause is meaningful.
     ///
     /// A `<video>` element has nothing to skip to, so browser playback offers
@@ -489,6 +489,9 @@ struct Playing {
         canSeek = native.source.canSeek
         sourceBundleID = native.source.bundleID
         tint = native.tint
+        source = native.source
+        album = native.album
+        self.native = native
     }
 
     /// Artwork comes from `BrowserMedia`, which fetches it once per video

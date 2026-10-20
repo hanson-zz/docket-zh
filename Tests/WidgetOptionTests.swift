@@ -79,7 +79,8 @@ final class WidgetOptionTests: XCTestCase {
             .reminders: ["list"],
             .notes: ["text", "color"],
             .music: ["mini", "previous", "next", "backward", "forward",
-                     "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers"],
+                     "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers",
+                     "qqmusic", "autoSwitch", "pinned"],
             .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart"],
@@ -250,7 +251,7 @@ final class OptionApplicabilityTests: XCTestCase {
     /// whichever source is playing, so narrowing the sources narrows what it
     /// can show.
     func testTheSourceOptionsApplyInMiniToo() {
-        for key in ["spotify", "apple", "netease", "xiaoyuzhou", "browsers"] {
+        for key in ["spotify", "apple", "netease", "qqmusic", "xiaoyuzhou", "browsers", "autoSwitch"] {
             XCTAssertTrue(WidgetCatalog.applies(key, to: music(mini: true), kind: .music), key)
         }
     }
@@ -266,6 +267,8 @@ final class OptionApplicabilityTests: XCTestCase {
     private static let conditional: Set<String> = [
         "system.chart",
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
+        // 固定的来源在面板的来源列表里选，设置页不列。
+        "music.pinned",
         "search.engine",
         "weather.city", "weather.cities",
         // 副标题只有“当前”有，天数只有“多日预报”有（WeatherStyle）。
