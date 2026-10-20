@@ -114,6 +114,7 @@ final class WidgetOptionTests: XCTestCase {
             .anniversary: ["showRing"],
             .water: ["cupSize", "remindEvery", "start", "end", "unit", "character", "dryUp"],
             .clipboard: ["pasteOnClick"],
+            .fileShelf: ["expire"],
             .translate: ["clickAction", "autoDirection"],
             .pet: ["character"],
             .perfectDay: ["look"],

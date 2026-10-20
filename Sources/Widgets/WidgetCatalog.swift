@@ -312,9 +312,11 @@ public enum WidgetCatalog {
         Entry(kind: .downloads, name: tr("下载"), category: .files, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // The held paths live under `files`, which is deliberately not a
-        // default: it is the shelf's contents, not a setting.
-        Entry(kind: .fileShelf, name: tr("文件暂存"), category: .files, defaults: c([:]),
+        // The held paths live under `files` and when each was put down under
+        // `added`, deliberately not defaults: they are the shelf's contents,
+        // not settings. `expire` is the one setting (see `FileShelfList`).
+        Entry(kind: .fileShelf, name: tr("文件暂存"), category: .files,
+              defaults: c([FileShelfList.expireKey: .string(FileShelfList.defaultExpiry.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Starred texts live under `pins`, contents rather than a setting.

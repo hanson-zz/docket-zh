@@ -52,6 +52,23 @@ struct FileShelfTile: View {
                 dragged = count
             },
             receive: { urls in _ = FileShelf.add(urls, to: instance) }))
+        // 自动移出：现在看一次，再睡到下一个条目到期（最多一小时）再看。
+        .task(id: sweepKey) {
+            guard !context.isPreview else { return }
+            while !Task.isCancelled {
+                FileShelf.sweep(instance)
+                let config = (WidgetWriter.current(instance.id) ?? instance).config
+                let next = FileShelfList.nextExpiry(FileShelfList.read(config),
+                                                    expiry: FileShelfList.expiry(config))
+                let wait = min(3600, max(60, (next ?? .distantFuture).timeIntervalSinceNow + 1))
+                try? await Task.sleep(for: .seconds(wait))
+            }
+        }
+    }
+
+    /// 清单或自动移出设置一变，重新安排检查。
+    private var sweepKey: String {
+        FileShelfList.expiry(instance.config).rawValue + "|" + FileShelfList.paths(instance.config).joined(separator: "\n")
     }
 
     private func badge(size: CGFloat) -> some View {
@@ -85,28 +102,53 @@ struct FileShelfTile: View {
     }
 }
 
-/// The shelf's list, kept in the widget's config.
+/// The shelf's list, kept in the widget's config (paths and when each was
+/// put down, see `FileShelfList`).
+///
+/// Nothing here ever deletes, moves or copies a file: removing, clearing,
+/// auto-expiry and "clear the missing ones" only edit the list.
 @MainActor
 enum FileShelf {
-    static let key = "files"
-    static let limit = 50
+    /// One held path: the file as it is now, or nil when it has gone away
+    /// (moved, renamed, deleted, or on a disk that is not mounted).
+    struct Entry: Identifiable {
+        var item: FileShelfList.Item
+        var file: ListedFile?
 
-    static func paths(_ instance: WidgetInstance) -> [String] {
-        instance.config.strings(key)
+        var id: String { item.path }
+        var url: URL { URL(fileURLWithPath: item.path) }
+        var name: String { url.lastPathComponent }
+        var missing: Bool { file == nil }
+    }
+
+    static func entries(_ instance: WidgetInstance) -> [Entry] {
+        FileShelfList.read(instance.config).map { item in
+            Entry(item: item, file: listed(URL(fileURLWithPath: item.path)))
+        }
     }
 
     /// The held files that still exist, in the order they were put down,
     /// newest first.
     static func files(_ instance: WidgetInstance) -> [ListedFile] {
-        paths(instance).compactMap { path in
-            let url = URL(fileURLWithPath: path)
-            let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey,
-                                                           .isPackageKey, .fileSizeKey])
-            guard values != nil else { return nil }
-            return ListedFile(url: url,
-                              date: values?.contentModificationDate ?? .distantPast,
-                              isDirectory: values?.isDirectory == true && values?.isPackage != true,
-                              size: values?.fileSize.map(Int64.init))
+        entries(instance).compactMap(\.file)
+    }
+
+    private static func listed(_ url: URL) -> ListedFile? {
+        guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey,
+                                                             .isPackageKey, .fileSizeKey]) else { return nil }
+        return ListedFile(url: url,
+                          date: values.contentModificationDate ?? .distantPast,
+                          isDirectory: values.isDirectory == true && values.isPackage != true,
+                          size: values.fileSize.map(Int64.init))
+    }
+
+    /// Edits the list on the copy saved right now, so a write made after an
+    /// await (compressing, the move menu) never puts back a stale list.
+    private static func edit(_ instance: WidgetInstance,
+                             _ change: ([FileShelfList.Item]) -> [FileShelfList.Item]) {
+        let current = WidgetWriter.current(instance.id) ?? instance
+        WidgetWriter.write(current) { config in
+            FileShelfList.write(change(FileShelfList.read(config)), into: &config)
         }
     }
 
@@ -114,24 +156,53 @@ enum FileShelf {
     static func add(_ urls: [URL], to instance: WidgetInstance) -> Bool {
         let incoming = urls.filter(\.isFileURL).map(\.path)
         guard !incoming.isEmpty else { return false }
-        WidgetWriter.write(instance) { config in
-            var list = config.strings(key)
-            for path in incoming.reversed() {
-                list = RecentList.inserting(path, into: list, limit: limit)
-            }
-            config.set(key, .list(list.map { .string($0) }))
-        }
+        edit(instance) { FileShelfList.adding(incoming, to: $0, now: Date()) }
         return true
     }
 
     static func remove(_ url: URL, from instance: WidgetInstance) {
-        WidgetWriter.write(instance) { config in
-            let list = config.strings(key).filter { $0 != url.path }
-            config.set(key, .list(list.map { .string($0) }))
+        remove([url.path], from: instance)
+    }
+
+    static func remove(_ paths: [String], from instance: WidgetInstance) {
+        let drop = Set(paths)
+        guard !drop.isEmpty else { return }
+        edit(instance) { FileShelfList.removing(drop, from: $0) }
+    }
+
+    /// After "Move to…": the shelf follows the files to where they went,
+    /// keeping their place in the list and when they were put down.
+    static func relocate(_ moves: [(from: String, to: String)], in instance: WidgetInstance) {
+        guard !moves.isEmpty else { return }
+        let map = Dictionary(moves.map { ($0.from, $0.to) }, uniquingKeysWith: { first, _ in first })
+        edit(instance) { items in
+            var seen = Set<String>()
+            return items.compactMap { item in
+                var item = item
+                if let moved = map[item.path] { item.path = moved }
+                return seen.insert(item.path).inserted ? item : nil
+            }
         }
     }
 
     static func clear(_ instance: WidgetInstance) {
-        WidgetWriter.write(instance) { $0.set(key, .list([])) }
+        WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) { FileShelfList.write([], into: &$0) }
+    }
+
+    static func setExpiry(_ expiry: FileShelfList.Expiry, for instance: WidgetInstance) {
+        WidgetWriter.write(WidgetWriter.current(instance.id) ?? instance) {
+            $0.set(FileShelfList.expireKey, .string(expiry.rawValue))
+        }
+        sweep(instance)
+    }
+
+    /// Takes whatever has expired off the list. Writes only when something
+    /// changed, so calling it from a view's task never loops.
+    static func sweep(_ instance: WidgetInstance, now: Date = Date()) {
+        let current = WidgetWriter.current(instance.id) ?? instance
+        let result = FileShelfList.sweep(FileShelfList.read(current.config),
+                                         expiry: FileShelfList.expiry(current.config), now: now)
+        guard result.changed else { return }
+        WidgetWriter.write(current) { FileShelfList.write(result.kept, into: &$0) }
     }
 }

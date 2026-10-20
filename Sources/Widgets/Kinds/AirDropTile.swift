@@ -28,7 +28,7 @@ struct AirDropTile: View {
     private var blue: Color { WidgetStyle.dropBlue(scheme) }
 
     /// 系统有没有隔空投送服务，启动后不会变，读一次。
-    @MainActor private static let available = NSSharingService(named: .sendViaAirDrop) != nil
+    @MainActor private static var available: Bool { AirDropSender.available }
 
     private var state: AirDropDrop.State {
         AirDropDrop.state(available: context.isPreview || Self.available,
@@ -68,7 +68,7 @@ struct AirDropTile: View {
                 dragging = inside
                 files = count
             },
-            send: Self.send))
+            send: { [id = instance.id] urls in _ = AirDropSender.send(urls, recordInto: id) }))
         .help(state.disabled ? state.caption : tr("把文件拖到这里，用隔空投送发送"))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(state.title)，\(state.caption)")
@@ -139,26 +139,12 @@ struct AirDropTile: View {
         .dockAnimation(.snappy(duration: 0.18), value: state.highlighted)
         .dockAnimation(.easeOut(duration: 0.15), value: hovered)
     }
-
-    // MARK: Sending
-
-    /// 交给系统的隔空投送面板。先把码头带到前台，面板才不会躲在别的窗口后面。
-    @MainActor
-    private static func send(_ urls: [URL]) {
-        guard !urls.isEmpty,
-              let service = NSSharingService(named: .sendViaAirDrop),
-              service.canPerform(withItems: urls) else {
-            NSSound.beep()
-            return
-        }
-        NSApp.activate()
-        service.perform(withItems: urls)
-    }
 }
 
 /// 接住拖放：数拖进来的文件个数给卡片显示，松手后读出文件地址再发送。
+/// 卡片和面板（整块面板就是拖放区）共用。
 @MainActor
-private struct AirDropDropDelegate: DropDelegate {
+struct AirDropDropDelegate: DropDelegate {
     var enabled: Bool
     var update: @MainActor (Bool, Int) -> Void
     var send: @MainActor ([URL]) -> Void

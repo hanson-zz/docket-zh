@@ -595,6 +595,17 @@
         }
       }
     },
+    "%@ 个可选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ selectable"
+          }
+        }
+      }
+    },
     "%@ 个圆环 · 编辑里拖动排序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -690,6 +701,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ files"
+          }
+        }
+      }
+    },
+    "%@ 个文件 · %@ 个找不到了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ files · %@ missing"
           }
         }
       }
@@ -3180,6 +3202,17 @@
         }
       }
     },
+    "1 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day"
+          }
+        }
+      }
+    },
     "1 小时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3407,6 +3440,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Room 3"
+          }
+        }
+      }
+    },
+    "3 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 days"
           }
         }
       }
@@ -4404,6 +4448,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "\"%@\" is no longer in the Trash"
+          }
+        }
+      }
+    },
+    "「%@」找不到了，可能被移走或删掉了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't find \"%@\". It may have been moved or deleted"
           }
         }
       }
@@ -5702,6 +5757,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Original location unknown; click for details"
+          }
+        }
+      }
+    },
+    "不移出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
           }
         }
       }
@@ -7884,6 +7950,17 @@
         }
       }
     },
+    "从卡片或这里发出去的文件会列在这里，点一下再发一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files you send from the card or here show up here. Click to send one again."
+          }
+        }
+      }
+    },
     "从备份中新增 %@ 个，替换 %@ 个。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9919,6 +9996,17 @@
         }
       }
     },
+    "全部拖出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag Out"
+          }
+        }
+      }
+    },
     "全部时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10399,6 +10487,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nairobi"
+          }
+        }
+      }
+    },
+    "再发一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send Again"
           }
         }
       }
@@ -13171,6 +13270,17 @@
         }
       }
     },
+    "原文件被移走或删掉了，可以移出暂存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The original was moved or deleted. You can remove it from the shelf"
+          }
+        }
+      }
+    },
     "原文已经是%@，换一个目标语言试试。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13849,6 +13959,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only %@"
+          }
+        }
+      }
+    },
+    "只移出列表，不删文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only removed from the list, files are never deleted"
           }
         }
       }
@@ -19549,6 +19670,17 @@
         }
       }
     },
+    "已压缩为「%@」，放在暂存最上面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compressed to \"%@\" and added to the top of the shelf"
+          }
+        }
+      }
+    },
     "已听 %@%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19923,6 +20055,17 @@
         }
       }
     },
+    "已拷贝路径" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Path copied"
+          }
+        }
+      }
+    },
     "已拷贝，可以直接粘贴" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20161,6 +20304,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stations added: %@. Unsupported addresses skipped: %@."
+          }
+        }
+      }
+    },
+    "已清掉 %@ 个，只是移出列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removed %@ from the list, no files deleted"
           }
         }
       }
@@ -23992,6 +24146,17 @@
         }
       }
     },
+    "把文件从访达或其他应用拖到这里或扩展栏上的卡片，稍后再拖出。只记住文件的位置，不会复制、移动或删除文件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files here or onto the card from Finder or any app, and drag them out later. Only their locations are kept. Files are never copied, moved or deleted."
+          }
+        }
+      }
+    },
     "把文件拖到卡片上即可移到废纸篓。苍蝇的灵感来自 BananaBin。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24032,6 +24197,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drop files here to move them to the Trash"
+          }
+        }
+      }
+    },
+    "把文件拖到这里发送" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop files here to send"
           }
         }
       }
@@ -24531,6 +24707,17 @@
         }
       }
     },
+    "拷贝路径" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Path"
+          }
+        }
+      }
+    },
     "拷贝邮箱" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24670,6 +24857,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommended for you"
+          }
+        }
+      }
+    },
+    "按住「全部拖出」拖到要放的地方" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold \"Drag Out\" and drag to where they should go"
+          }
+        }
+      }
+    },
+    "按住拖到访达或其他应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold and drag to Finder or another app"
           }
         }
       }
@@ -24956,6 +25165,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up next queue"
+          }
+        }
+      }
+    },
+    "接收模式仍在控制中心或系统设置里改" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change who can send to you in Control Center or System Settings"
           }
         }
       }
@@ -25528,6 +25748,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Songs you play are kept here. Click one to play it again"
+          }
+        }
+      }
+    },
+    "放进来多久后自动移出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from shelf after"
+          }
+        }
+      }
+    },
+    "放进来多久后自动移出（只移出列表，不删文件）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from shelf after (files are never deleted)"
           }
         }
       }
@@ -26133,6 +26375,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recently used"
+          }
+        }
+      }
+    },
+    "最近发过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Sent"
           }
         }
       }
@@ -27409,6 +27662,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Station"
+          }
+        }
+      }
+    },
+    "清掉找不到的 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear %@ Missing"
           }
         }
       }
@@ -36252,6 +36516,17 @@
         }
       }
     },
+    "点行勾选 · 按住「全部拖出」拖走" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click rows to select · hold \"Drag Out\" to drag"
+          }
+        }
+      }
+    },
     "点选一个窗口截图" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38232,6 +38507,17 @@
         }
       }
     },
+    "码头经手的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent from Docket"
+          }
+        }
+      }
+    },
     "码头自己不用加" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38668,6 +38954,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from Shelf"
+          }
+        }
+      }
+    },
+    "移出暂存（不删文件）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from shelf (file is kept)"
           }
         }
       }
@@ -42998,6 +43295,17 @@
         }
       }
     },
+    "访达的隔空投送窗口，附近的设备在那里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder's AirDrop window, where nearby devices are listed"
+          }
+        }
+      }
+    },
     "访达里的图标没换成：码头所在的文件夹不可写。把码头放进“应用程序”文件夹后再选一次即可。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46474,6 +46782,17 @@
         }
       }
     },
+    "选择文件发送…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Files to Send…"
+          }
+        }
+      }
+    },
     "选择文件夹…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46503,6 +46822,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose the folder for the photo slideshow"
+          }
+        }
+      }
+    },
+    "选择要用隔空投送发送的文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose files to send with AirDrop"
           }
         }
       }
