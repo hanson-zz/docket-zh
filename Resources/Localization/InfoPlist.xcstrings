@@ -435,6 +435,35 @@
           }
         }
       }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling uses on-device speech recognition to turn your Recorder memos into text. Audio never leaves your Mac."
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在本机用系统语音识别把“录音”小组件的录音转成文字，声音不会离开你的 Mac。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在本机用系统语音识别把“录音”小组件的录音转成文字，声音不会离开你的 Mac。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "码头会在本机用系统语音识别把“录音”小组件的录音转成文字，声音不会离开你的 Mac。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

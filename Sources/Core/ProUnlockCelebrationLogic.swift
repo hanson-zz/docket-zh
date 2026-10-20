@@ -221,6 +221,8 @@ public enum ProUnlockStyle: String, CaseIterable, Sendable {
     case moreHabits
     /// 收音机的 8 款 Pro 外观（三款复古皮肤和烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）。
     case radioSkins
+    /// 录音的本机转文字、裁剪和编辑。
+    case recorderTools
 }
 
 /// 卡片上的胶囊标签：最有卖点的 5 个功能，第 6 个是“+N”。

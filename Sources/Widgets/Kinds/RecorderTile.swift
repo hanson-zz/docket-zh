@@ -23,6 +23,11 @@ struct RecorderTile: View {
         if context.isPreview { return tr("点按开始录音") }
         if recorder.error != nil { return tr("没有麦克风权限") }
         if recording { return tr("正在录音…") }
+        // 录完正在转文字（Pro）时写进度。
+        if let last = recorder.recordings.first,
+           case .running(let p)? = RecordingTranscriber.shared.status(last.url) {
+            return p > 0 ? tr("正在转文字 \(Int(p * 100))%") : tr("正在转文字…")
+        }
         if let last = recorder.recordings.first {
             return tr("上次 \(RelativeAge.caption(last.date, now: context.now))")
         }

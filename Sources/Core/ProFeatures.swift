@@ -19,6 +19,7 @@ import Foundation
 ///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
 ///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
+/// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
 /// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
 /// - 邮件面板的多账户筛选（`MailInbox`），见 `ProLicenseGate.canFilterMailAccounts`。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
@@ -36,16 +37,18 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 17 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// 整种都是 Pro 的小组件，共 16 种：摸鱼时钟、环境音、播客、废纸篓、
     /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
-    /// 应用音量、录音、股票、自选股、加密货币行情、壁纸切换、文件暂存、翻译。
+    /// 应用音量、股票、自选股、加密货币行情、壁纸切换、文件暂存、翻译。
     /// 时间进度和习惯打卡 2026-10-19 起改为免费：时间进度的液态和四格、
     /// 习惯打卡第 4 个起和报告仍是 Pro。收音机 2026-10-20 起改为免费，经典的
-    /// 半圆表盘免费，三款复古皮肤和五款新外观是 Pro（见 `RadioSkin`）。
+    /// 半圆表盘免费，三款复古皮肤和五款新外观是 Pro（见 `RadioSkin`）。录音
+    /// 2026-10-20 起改为免费，转文字、裁剪和编辑是 Pro（见
+    /// `ProLicenseGate.canUseRecorderTools`）。
     public static let proKinds: Set<WidgetKind> = [
         .slacker, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
-        .appVolume, .recorder, .stock, .watchlist, .crypto,
+        .appVolume, .stock, .watchlist, .crypto,
         .wallpaper, .fileShelf, .translate,
     ]
 
