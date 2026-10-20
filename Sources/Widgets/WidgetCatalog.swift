@@ -365,9 +365,12 @@ public enum WidgetCatalog {
         Entry(kind: .volume, name: tr("音量"), category: .media, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
-        // Which switches, in order; see QuickToggle.
+        // Which switches, in order; see QuickToggle. 保持唤醒多久（`KeepAwakeTimer`，
+        // 默认一直，和以前一样）和圆钮下显示名字（默认不显示）在面板里也能改。
         Entry(kind: .toggles, name: tr("快速开关"), category: .tools,
-              defaults: c([QuickToggle.key: .list(QuickToggle.defaults.map { .string($0.rawValue) })]),
+              defaults: c([QuickToggle.key: .list(QuickToggle.defaults.map { .string($0.rawValue) }),
+                           KeepAwakeTimer.key: .string(String(KeepAwakeTimer.defaultMinutes)),
+                           QuickToggle.showNamesKey: .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
@@ -447,8 +450,13 @@ public enum WidgetCatalog {
         // Storage from URLResourceValues, battery from the power-source API,
         // CPU and memory from the System Activity sampler. 圆只留给它：任意
         // 拼装多个指标。CPU temperature is left out: macOS has no public API for it.
+        // 每个圆环的警戒线（`GaugeAlert`）：存储剩 10%、电池 10% 以下变红，CPU 和内存默认不变红。
         Entry(kind: .gauges, name: tr("圆环仪表"), category: .system,
-              defaults: c(["rings": .list(GaugeReading.defaultRings.map { .string($0) })]),
+              defaults: c(["rings": .list(GaugeReading.defaultRings.map { .string($0) }),
+                           GaugeAlert.key("storage"): .string(String(GaugeAlert.defaultValue("storage"))),
+                           GaugeAlert.key("battery"): .string(String(GaugeAlert.defaultValue("battery"))),
+                           GaugeAlert.key("cpu"): .string(String(GaugeAlert.defaultValue("cpu"))),
+                           GaugeAlert.key("memory"): .string(String(GaugeAlert.defaultValue("memory")))]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 小熊猫陪坐，到点叫你起身；提醒时段、通知、每天起身目标（`goal`，
@@ -704,6 +712,9 @@ public enum WidgetCatalog {
         // 第一项同步回 city），不再单独给一个文字框。
         case (.world, "city"):
             false
+        // 圆环仪表的警戒线只列卡片上有的圆环。
+        case (.gauges, let alertKey) where GaugeAlert.keys.contains(alertKey):
+            GaugeReading.rings(config).contains { GaugeAlert.key($0) == alertKey }
         // 离开多久算休息：离开检测关着时没用。
         case (.posture, PostureAway.afterKey):
             PostureAway.isEnabled(config)
@@ -997,7 +1008,8 @@ public enum WidgetCatalog {
         case .emoji: return CGSize(width: 160, height: 62)
         case .search: return CGSize(width: 220, height: 62)
         case .volume: return CGSize(width: 200, height: 62)
-        case .toggles: return CGSize(width: QuickToggle.length(count: QuickToggle.chosen(cfg).count), height: 62)
+        case .toggles: return CGSize(width: QuickToggle.length(count: QuickToggle.chosen(cfg).count,
+                                                               names: QuickToggle.showsNames(cfg)), height: 62)
         case .github: return CGSize(width: 196, height: 62)
         // 「算」：字牌、输入和结果、右上角的类别小标签。
         case .calculator: return CGSize(width: 184, height: 62)
@@ -1105,7 +1117,8 @@ public enum WidgetCatalog {
         case .capture:
             return 112
         case .toggles:
-            return Double(QuickToggle.chosen(cfg).count * 30 + 8)
+            // 圆钮下显示名字时每个多 16pt。
+            return Double(QuickToggle.chosen(cfg).count * (QuickToggle.showsNames(cfg) ? 46 : 30) + 8)
         // The badge, the pair and two lines of the last result.
         case .translate:
             return 96

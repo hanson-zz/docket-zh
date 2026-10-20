@@ -121,6 +121,10 @@ struct WidgetDetailBody: View {
             AIAssistantDetail(instance: instance, context: context)
         case .emoji:
             EmojiDetail(instance: instance, context: context)
+        case .toggles:
+            QuickTogglesDetail(instance: instance, context: context)
+        case .gauges:
+            GaugesDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

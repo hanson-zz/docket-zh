@@ -28,6 +28,8 @@ final class QuickActions {
     /// drawn again.
     private(set) var revision = 0
     private(set) var keepAwake = false
+    /// 保持唤醒到点自动关的时刻；一直开着或没开是 nil（见 `KeepAwakeTimer`）。
+    private(set) var keepAwakeUntil: Date?
     /// 麦克风静音和麦克风面板的全局静音是同一份（`MicrophoneMonitor.globalMuted`）。
     var micMuted: Bool { MicrophoneMonitor.shared.globalMuted }
 
@@ -37,6 +39,7 @@ final class QuickActions {
     private(set) var lowPower: LowPowerSetting.Reading?
 
     @ObservationIgnored private var assertion = IOPMAssertionID(0)
+    @ObservationIgnored private var keepAwakeTimer: Timer?
     @ObservationIgnored private var lowPowerRequested = false
 
     private init() {
@@ -97,7 +100,8 @@ final class QuickActions {
             Self.run("/usr/bin/osascript", ["-e",
                 "tell application \"System Events\" to tell appearance preferences to set dark mode to not dark mode"], then: done)
         case .keepAwake:
-            setKeepAwake(!keepAwake)
+            // 没有卡片时长可读（菜单、快捷键）时按一直开着，和以前一样。
+            if keepAwake { setKeepAwake(false) } else { setKeepAwake(true) }
             done()
         case .lock:
             Self.run("/usr/bin/pmset", ["displaysleepnow"], then: done)
@@ -161,7 +165,52 @@ final class QuickActions {
 
     // MARK: Keep Awake
 
+    /// 卡片和面板点保持唤醒：关着就按卡片选的时长打开（0 是一直），开着就关。
+    func toggleKeepAwake(minutes: Int) {
+        if keepAwake {
+            setKeepAwake(false)
+        } else {
+            setKeepAwake(true)
+            if keepAwake { armKeepAwake(minutes: minutes) }
+        }
+        revision += 1
+    }
+
+    /// 在面板里换了时长：正开着的从现在起按新时长重新计（选「一直」就不再到点关）。
+    func changeKeepAwakeDuration(minutes: Int) {
+        guard keepAwake, presentation == nil else { return }
+        armKeepAwake(minutes: minutes)
+    }
+
+    /// 定一个到点自动关的时刻；0 分钟是一直开着。只有一个定时器，换时长先撤掉旧的。
+    private func armKeepAwake(minutes: Int) {
+        keepAwakeTimer?.invalidate()
+        keepAwakeTimer = nil
+        keepAwakeUntil = KeepAwakeTimer.deadline(minutes: minutes, from: .now)
+        guard let until = keepAwakeUntil else { return }
+        let timer = Timer(fire: until, interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.keepAwakeExpired() }
+        }
+        timer.tolerance = 5
+        RunLoop.main.add(timer, forMode: .common)
+        keepAwakeTimer = timer
+    }
+
+    private func keepAwakeExpired() {
+        keepAwakeTimer = nil
+        keepAwakeUntil = nil
+        // 演示模式要一直醒着，到点也不关。
+        guard presentation == nil else { return }
+        setKeepAwake(false)
+        revision += 1
+    }
+
     func setKeepAwake(_ on: Bool) {
+        if !on {
+            keepAwakeTimer?.invalidate()
+            keepAwakeTimer = nil
+            keepAwakeUntil = nil
+        }
         if on, !keepAwake {
             let result = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep as CFString,
                                                      IOPMAssertionLevel(kIOPMAssertionLevelOn),
@@ -231,6 +280,12 @@ final class QuickActions {
         }
         savePresentation()
         if let awake = changes.setKeepAwake { setKeepAwake(awake) }
+        // 进演示模式时保持唤醒本来就开着（带时长）：改成一直开着，不让它中途到点关掉。
+        if presentation != nil, keepAwakeUntil != nil {
+            keepAwakeTimer?.invalidate()
+            keepAwakeTimer = nil
+            keepAwakeUntil = nil
+        }
         let running = Dictionary(NSWorkspace.shared.runningApplications.map { ($0.processIdentifier, $0) },
                                  uniquingKeysWith: { first, _ in first })
         changes.hide.forEach { _ = running[$0]?.hide() }

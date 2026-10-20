@@ -15,6 +15,9 @@ final class ProcessMonitor {
     static let shared = ProcessMonitor()
 
     private(set) var rows: [ProcessUsageRow] = []
+    /// 圆环仪表面板要同时看 CPU 和内存最高的几个，不跟着 `sort` 换：两种都排一遍。
+    private(set) var topCPU: [ProcessUsageRow] = []
+    private(set) var topMemory: [ProcessUsageRow] = []
     var sort: ProcessSort = .cpu {
         didSet { if oldValue != sort { rank() } }
     }
@@ -131,9 +134,14 @@ final class ProcessMonitor {
     }
 
     private func rank() {
-        let next = ProcessRanking.top(previous: lastPrevious, current: lastReadings,
-                                      elapsedNanos: lastElapsed, sort: sort)
+        let cpu = ProcessRanking.top(previous: lastPrevious, current: lastReadings,
+                                     elapsedNanos: lastElapsed, sort: .cpu)
+        let memory = ProcessRanking.top(previous: lastPrevious, current: lastReadings,
+                                        elapsedNanos: lastElapsed, sort: .memory)
+        let next = sort == .cpu ? cpu : memory
         if next != rows { rows = next }
+        if cpu != topCPU { topCPU = cpu }
+        if memory != topMemory { topMemory = memory }
     }
 
     private static func allPIDs() -> [pid_t] {

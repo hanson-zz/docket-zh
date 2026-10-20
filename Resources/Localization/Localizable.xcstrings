@@ -584,6 +584,17 @@
         }
       }
     },
+    "%@ 个圆环 · 编辑里拖动排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ rings · reorder in Edit"
+          }
+        }
+      }
+    },
     "%@ 个复刻" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -635,6 +646,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ apps running"
+          }
+        }
+      }
+    },
+    "%@ 个开关 · 点一下就生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ toggles · one click to apply"
           }
         }
       }
@@ -2641,6 +2663,17 @@
         }
       }
     },
+    "%@警戒线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ alert line"
+          }
+        }
+      }
+    },
     "%@调休" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3587,6 +3620,17 @@
         }
       }
     },
+    "CPU 警戒线（超过多少变红）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU alert line (red above)"
+          }
+        }
+      }
+    },
     "Codex %@已用 %@%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4507,6 +4551,28 @@
         }
       }
     },
+    "一直" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always"
+          }
+        }
+      }
+    },
+    "一直开着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On until turned off"
+          }
+        }
+      }
+    },
     "一直插着电对电池不太好，可以拔掉电源。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5376,6 +5442,17 @@
         }
       }
     },
+    "不变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
     "不响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5548,6 +5625,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No date"
+          }
+        }
+      }
+    },
+    "不设警戒线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alert line"
           }
         }
       }
@@ -8214,6 +8302,17 @@
         }
       }
     },
+    "会先确认" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asks first"
+          }
+        }
+      }
+    },
     "会友" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8313,6 +8412,17 @@
         }
       }
     },
+    "低于 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Below %@%%"
+          }
+        }
+      }
+    },
     "低于时提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8320,6 +8430,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alert when below"
+          }
+        }
+      }
+    },
+    "低电量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low Power"
           }
         }
       }
@@ -8760,6 +8881,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep Awake"
+          }
+        }
+      }
+    },
+    "保持唤醒多久" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Awake for"
           }
         }
       }
@@ -10117,6 +10249,17 @@
         }
       }
     },
+    "内存警戒线（超过多少变红）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory alert line (red above)"
+          }
+        }
+      }
+    },
     "内容不能为空" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11448,6 +11591,17 @@
         }
       }
     },
+    "剩 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min left"
+          }
+        }
+      }
+    },
     "剩 %@ 分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11477,6 +11631,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hr left"
+          }
+        }
+      }
+    },
+    "剩 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ h %@ min left"
+          }
+        }
+      }
+    },
+    "剩 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% left"
+          }
+        }
+      }
+    },
+    "剩 %@%% 以下变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red below %@%% free"
           }
         }
       }
@@ -12082,6 +12269,17 @@
         }
       }
     },
+    "勾选 + 拖动排序 · %@ 个可选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check and drag to reorder · %@ available"
+          }
+        }
+      }
+    },
     "勾选加入 · 拖动排序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12111,6 +12309,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose shortcuts, reorder them, change colors and icons"
+          }
+        }
+      }
+    },
+    "勾选显示哪些 · 拖动排序 · 警戒线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose rings · drag to reorder · alert lines"
           }
         }
       }
@@ -12562,6 +12771,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No AI tiles on the card yet."
+          }
+        }
+      }
+    },
+    "卡片圆钮下显示名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show names under the buttons"
           }
         }
       }
@@ -14549,6 +14769,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nursing"
+          }
+        }
+      }
+    },
+    "唤醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awake"
           }
         }
       }
@@ -17038,6 +17269,28 @@
         }
       }
     },
+    "存储" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage"
+          }
+        }
+      }
+    },
+    "存储 · 剩 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage · %@ free"
+          }
+        }
+      }
+    },
     "存储到桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17067,6 +17320,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storage"
+          }
+        }
+      }
+    },
+    "存储警戒线（剩多少以下变红）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage alert line (red below this much free)"
           }
         }
       }
@@ -18515,6 +18779,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Even its tail is drooping. Have a glass of water and let's both perk up. %@ to go."
+          }
+        }
+      }
+    },
+    "屏保" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saver"
           }
         }
       }
@@ -22797,6 +23072,28 @@
         }
       }
     },
+    "打开“储存空间”设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Storage settings"
+          }
+        }
+      }
+    },
+    "打开“电池”设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Battery settings"
+          }
+        }
+      }
+    },
     "打开「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22995,6 +23292,17 @@
         }
       }
     },
+    "打开活动监视器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Activity Monitor"
+          }
+        }
+      }
+    },
     "打开系统设置" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23101,6 +23409,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Initiate day"
+          }
+        }
+      }
+    },
+    "扩展名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensions"
           }
         }
       }
@@ -24344,6 +24663,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up next queue"
+          }
+        }
+      }
+    },
+    "推出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eject"
+          }
+        }
+      }
+    },
+    "推出全部" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ejects all"
           }
         }
       }
@@ -25789,6 +26130,28 @@
         }
       }
     },
+    "框选拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select to copy"
+          }
+        }
+      }
+    },
+    "桌面图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop"
+          }
+        }
+      }
+    },
     "检查" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25851,6 +26214,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Checking…"
+          }
+        }
+      }
+    },
+    "正在统计应用、下载和废纸篓…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Measuring apps, Downloads and Trash…"
           }
         }
       }
@@ -26687,6 +27061,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Full day"
+          }
+        }
+      }
+    },
+    "演示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Present"
           }
         }
       }
@@ -35079,6 +35464,17 @@
         }
       }
     },
+    "点按取色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to pick"
+          }
+        }
+      }
+    },
     "点按右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35101,6 +35497,17 @@
         }
       }
     },
+    "点按启动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to start"
+          }
+        }
+      }
+    },
     "点按展开对话" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35108,6 +35515,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to open the chat"
+          }
+        }
+      }
+    },
+    "点按开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to start"
           }
         }
       }
@@ -35233,6 +35651,17 @@
         }
       }
     },
+    "点按清空" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to clear"
+          }
+        }
+      }
+    },
     "点按编辑" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35284,6 +35713,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to mark up"
+          }
+        }
+      }
+    },
+    "点按锁定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to lock"
           }
         }
       }
@@ -35427,6 +35867,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Melting, take a break"
+          }
+        }
+      }
+    },
+    "照一照" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take a look"
           }
         }
       }
@@ -35871,6 +36322,17 @@
         }
       }
     },
+    "生成或识别" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make or scan"
+          }
+        }
+      }
+    },
     "生日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36102,6 +36564,17 @@
         }
       }
     },
+    "用电池时低于 %@%% 变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red below %@%% on battery"
+          }
+        }
+      }
+    },
     "用简体中文总结下面的内容：先用一句话概括，再分条列出要点。\n\n{文本}" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36245,6 +36718,17 @@
         }
       }
     },
+    "电池 · %@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery · %@ · %@"
+          }
+        }
+      }
+    },
     "电池、网络、系统活动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36307,6 +36791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Battery above %@°C"
+          }
+        }
+      }
+    },
+    "电池警戒线（用电池时低于多少变红）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery alert line (red below this on battery)"
           }
         }
       }
@@ -41572,6 +42067,17 @@
         }
       }
     },
+    "警戒线（过了线圆环变红）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert lines (the ring turns red past the line)"
+          }
+        }
+      }
+    },
     "计 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42910,6 +43416,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flies come above %@"
+          }
+        }
+      }
+    },
+    "超过 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Above %@%%"
+          }
+        }
+      }
+    },
+    "超过 %@%% 变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red above %@%%"
           }
         }
       }
@@ -45246,6 +45774,17 @@
         }
       }
     },
+    "退出应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit Apps"
+          }
+        }
+      }
+    },
     "退出码头" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45862,6 +46401,17 @@
         }
       }
     },
+    "重启" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart"
+          }
+        }
+      }
+    },
     "重启程序坞和访达" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46221,6 +46771,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lock Screen"
+          }
+        }
+      }
+    },
+    "锁键盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyboard"
           }
         }
       }
@@ -47009,6 +47570,17 @@
         }
       }
     },
+    "隐藏文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
     "隐藏时保留一条细边" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47489,6 +48061,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indigo"
+          }
+        }
+      }
+    },
+    "面板打开时统计应用、下载和废纸篓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps, Downloads and Trash are measured when the panel opens"
           }
         }
       }

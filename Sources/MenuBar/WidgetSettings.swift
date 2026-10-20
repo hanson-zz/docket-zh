@@ -579,6 +579,14 @@ struct WidgetSettingsSections: View {
         "xiaoyuzhou": tr("小宇宙"),
         "qqmusic": tr("QQ 音乐"),
         "autoSwitch": tr("谁开始播放就切到谁"),
+        // 快速开关：面板里也能改。
+        "keepAwakeFor": tr("保持唤醒多久"),
+        "showNames": tr("卡片圆钮下显示名字"),
+        // 圆环仪表：每个圆环的警戒线。
+        "storageAlert": tr("存储警戒线（剩多少以下变红）"),
+        "batteryAlert": tr("电池警戒线（用电池时低于多少变红）"),
+        "cpuAlert": tr("CPU 警戒线（超过多少变红）"),
+        "memoryAlert": tr("内存警戒线（超过多少变红）"),
         "browsers": tr("浏览器标签页"),
         "devices": tr("设备"),
         "bluetooth": tr("显示蓝牙设备（耳机、鼠标、触控板等）"),
@@ -856,6 +864,11 @@ struct WidgetSettingsSections: View {
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
         "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
         "posture.awayAfter": PostureAway.minuteChoices.map { (tr("\($0) 分钟"), "\($0)") },
+        "toggles.keepAwakeFor": KeepAwakeTimer.choices.map { (KeepAwakeTimer.title($0), "\($0)") },
+        "gauges.storageAlert": GaugeAlert.choices("storage").map { (GaugeAlert.short("storage", $0), "\($0)") },
+        "gauges.batteryAlert": GaugeAlert.choices("battery").map { (GaugeAlert.short("battery", $0), "\($0)") },
+        "gauges.cpuAlert": GaugeAlert.choices("cpu").map { (GaugeAlert.short("cpu", $0), "\($0)") },
+        "gauges.memoryAlert": GaugeAlert.choices("memory").map { (GaugeAlert.short("memory", $0), "\($0)") },
     ]
 
     /// “再达标 3 天解锁” for a 喝水 character still to be earned, nil for

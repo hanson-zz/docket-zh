@@ -586,9 +586,9 @@ enum WidgetDetail {
     /// than the app the widget is about.
     static func exists(for kind: WidgetKind) -> Bool {
         switch kind {
-        // Every control these have is already on the card; a panel would
-        // only repeat the buttons.
-        case .volume, .toggles, .gauges:
+        // Every control it has is already on the card; a panel would only
+        // repeat the buttons. 快速开关和圆环仪表从第三批起有自己的面板。
+        case .volume:
             false
         default:
             true
@@ -666,6 +666,8 @@ enum WidgetDetail {
         case .translate: 340
         // 表情符号：一行 8 个 36 的格子，和第二批面板一样 320。
         case .emoji: 320
+        // 快速开关三列大按钮、圆环仪表每个圆环一行详情，和第三批面板一样 320。
+        case .toggles, .gauges: 320
         default: 300
         }
     }

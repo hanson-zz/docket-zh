@@ -98,7 +98,7 @@ final class WidgetOptionTests: XCTestCase {
             .mail: ["limit", "markReadOnOpen", "summary"],
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],
-            .gauges: ["rings"],
+            .gauges: ["rings", "storageAlert", "batteryAlert", "cpuAlert", "memoryAlert"],
             .microphone: ["muteKey", "notifyCamera", "notifyMic", "redWhenMuted"],
             .posture: ["duration", "start", "end", "notify", "goal", "away", "awayAfter"],
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras", "look"],
@@ -118,7 +118,7 @@ final class WidgetOptionTests: XCTestCase {
             .pet: ["character"],
             .perfectDay: ["look"],
             .podcast: ["notify"],
-            .toggles: ["actions"],
+            .toggles: ["actions", "keepAwakeFor", "showNames"],
             // 时钟的子选项来自样式注册表，各由 ClockStyles.face 读（见 ClockStyleTests）。
             .clock: Set(["seconds"] + ClockStyles.optionKeys),
             .aiAssistant: [],

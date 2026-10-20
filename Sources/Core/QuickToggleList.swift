@@ -128,7 +128,102 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     }
 
     /// Room for the round buttons in a row, or a column on a side shelf.
-    public static func length(count: Int) -> Double {
-        Double(max(count, 1)) * 30 + 20
+    /// 圆钮下显示名字时每个按钮占 46pt 宽（名字最多四个字）。
+    public static func length(count: Int, names: Bool = false) -> Double {
+        Double(max(count, 1)) * (names ? 46 : 30) + 20
+    }
+
+    // MARK: 卡片名字和面板
+
+    /// 卡片圆钮下显示名字的开关（设置和面板编辑里都能改）。旧卡片没有这个键，照旧不显示。
+    public static let showNamesKey = "showNames"
+
+    public static func showsNames(_ config: WidgetConfig) -> Bool {
+        config.bool(showNamesKey, default: false)
+    }
+
+    /// 卡片圆钮下的短名字，最多四个字，排得进 46pt。
+    public var shortTitle: String {
+        switch self {
+        case .darkMode: tr("深色")
+        case .keepAwake: tr("唤醒")
+        case .lock: tr("锁屏")
+        case .screenSaver: tr("屏保")
+        case .emptyTrash: tr("废纸篓")
+        case .hiddenFiles: tr("隐藏文件")
+        case .hideDesktop: tr("桌面图标")
+        case .extensions: tr("扩展名")
+        case .muteMic: tr("麦克风")
+        case .ejectDisks: tr("推出")
+        case .clearClipboard: tr("剪贴板")
+        case .cleanScreen: tr("清洁")
+        case .quitApps: tr("退出应用")
+        case .textCapture: tr("识字")
+        case .colorPicker: tr("取色")
+        case .presentation: tr("演示")
+        case .keyboardLock: tr("锁键盘")
+        case .qrCode: tr("二维码")
+        case .mirror: tr("镜子")
+        case .lowPower: tr("低电量")
+        case .restartDock: tr("重启")
+        }
+    }
+
+    /// 面板大按钮名字下面那行：有开关的写开或关（保持唤醒另算，见 `KeepAwakeTimer`），
+    /// 一次性的动作写点了会怎样。
+    public func caption(on: Bool) -> String {
+        if hasState { return on ? tr("开") : tr("关") }
+        switch self {
+        case .lock: return tr("点按锁定")
+        case .screenSaver: return tr("点按启动")
+        case .emptyTrash, .quitApps, .restartDock: return tr("会先确认")
+        case .ejectDisks: return tr("推出全部")
+        case .clearClipboard: return tr("点按清空")
+        case .cleanScreen: return tr("点按开始")
+        case .textCapture: return tr("框选拷贝")
+        case .colorPicker: return tr("点按取色")
+        case .qrCode: return tr("生成或识别")
+        case .mirror: return tr("照一照")
+        default: return ""
+        }
+    }
+}
+
+/// 保持唤醒多久：30 分钟、1 小时、2 小时或一直（0），到点自动关。
+///
+/// 存在卡片的 `keepAwakeFor` 里（分钟数的字符串）。旧卡片和新放的卡片都是「一直」，
+/// 和以前一样；在面板或设置里选了时长，之后每次打开保持唤醒都按这个时长。
+public enum KeepAwakeTimer {
+    public static let key = "keepAwakeFor"
+    public static let choices = [30, 60, 120, 0]
+    public static let defaultMinutes = 0
+
+    public static func minutes(_ config: WidgetConfig) -> Int {
+        let value = Int(config.string(key, default: String(defaultMinutes))) ?? defaultMinutes
+        return choices.contains(value) ? value : defaultMinutes
+    }
+
+    public static func title(_ minutes: Int) -> String {
+        switch minutes {
+        case 0: tr("一直")
+        case 60: tr("1 小时")
+        case 120: tr("2 小时")
+        default: tr("\(minutes) 分钟")
+        }
+    }
+
+    /// 到点的时刻；一直开着是 nil。
+    public static func deadline(minutes: Int, from now: Date) -> Date? {
+        minutes > 0 ? now.addingTimeInterval(Double(minutes) * 60) : nil
+    }
+
+    /// 面板和卡片悬停写的剩余时间：“剩 42 分”“剩 1 小时 5 分”，不到一分钟算一分钟；
+    /// 没有到点时刻是“一直开着”。
+    public static func remaining(until deadline: Date?, now: Date) -> String {
+        guard let deadline else { return tr("一直开着") }
+        let minutes = max(1, Int((deadline.timeIntervalSince(now) / 60).rounded(.up)))
+        if minutes < 60 { return tr("剩 \(minutes) 分") }
+        let rest = minutes % 60
+        return rest == 0 ? tr("剩 \(minutes / 60) 小时") : tr("剩 \(minutes / 60) 小时 \(rest) 分")
     }
 }
