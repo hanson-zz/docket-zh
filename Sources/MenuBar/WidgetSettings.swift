@@ -618,6 +618,8 @@ struct WidgetSettingsSections: View {
         "github.repos": tr("关注的项目（最多 \(GitHubWatch.maxRepos) 个）"),
         "podcast.notify": tr("有新单集时通知"),
         "posture.goal": tr("每天起身目标"),
+        "posture.away": tr("离开电脑时自动算一次休息"),
+        "posture.awayAfter": tr("离开多久算一次休息"),
         // 「算」只写了一种币种时：是「默认换成」那种就换成常用币种，否则换成「默认换成」。
         "calculator.currencyFrom": tr("常用币种（输入本币时换成它）"),
         "calculator.currencyTo": tr("默认换成（只写一种币种时）"),
@@ -792,6 +794,7 @@ struct WidgetSettingsSections: View {
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
         "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
+        "posture.awayAfter": PostureAway.minuteChoices.map { (tr("\($0) 分钟"), "\($0)") },
     ]
 
     /// “再达标 3 天解锁” for a 喝水 character still to be earned, nil for

@@ -9,6 +9,8 @@ import SwiftUI
 ///   卡片照常是压暗的深色玻璃（浅色壁纸上也看得清），粉色只在小熊猫身后铺一层渐隐淡底。
 /// - 开着专注计时（并且打开了“休息时提醒起身”）：小熊猫趴着不打扰，起身交给专注的
 ///   休息环节，这时不发通知，两个都放也只提醒一次（`SitFocus`）。
+/// - 离开电脑中（锁屏、休眠或很久没碰键盘鼠标，见 `PostureAwayMonitor`）：到点不发
+///   通知、不变成到点的样子；离开满设定时间自动算一次休息，回来从头计时。
 ///
 /// 卡片其余地方的点按留给码头（打开面板）。
 struct PostureTile: View {
@@ -40,7 +42,12 @@ struct PostureTile: View {
         return SitFocus.sat(schedule, lastBreak: lastBreak, now: context.now)
     }
 
-    private var due: Bool { active && !yields && remaining <= 0 }
+    /// 离开电脑中，并且这张卡片开着离开检测：到点不提醒。
+    private var away: Bool {
+        !context.isPreview && PostureAway.suppresses(instance.config, away: PostureAwayMonitor.shared.isAway)
+    }
+
+    private var due: Bool { active && !yields && !away && remaining <= 0 }
 
     private var breaksToday: Int {
         if context.isPreview { return 3 }
@@ -50,7 +57,7 @@ struct PostureTile: View {
 
     /// 下一次通知的时刻；不在时段、开着专注时没有。
     private var nextReminder: Date? {
-        guard !context.isPreview, !yields else { return nil }
+        guard !context.isPreview, !yields, !away else { return nil }
         return schedule.nextReminder(lastBreak: lastBreak, now: context.now)
     }
 
@@ -212,6 +219,41 @@ enum PostureLog {
             config.set("breakCount", .number(Double(tally.count)))
             config.set(PostureTrack.breaksKey, .list(breaks))
             config.set(PostureTrack.historyKey, .list(history))
+        }
+    }
+
+    /// 离开电脑满设定时间，自动算一次休息（`PostureAwayMonitor` 调）。
+    ///
+    /// 久坐计时从现在清零（回来时再改成回来那一刻）。`logged` 时和点「起来了」一样
+    /// 记进今天的次数、`breaks`（记在离开那一刻）和近 7 天，另在 `autoBreaks` 里开一段
+    /// 还没回来的自动休息，面板时间轴据此画成浅一点的「自动」。
+    static func logAutoBreak(_ instance: WidgetInstance, since: Date, logged: Bool, now: Date = .now) {
+        let config = instance.config
+        guard logged else {
+            WidgetWriter.write(instance) { $0.set("lastBreak", .number(now.timeIntervalSince1970)) }
+            return
+        }
+        let tally = PostureTally.logging(storedDay: config.string("breakDay"),
+                                         count: config.int("breakCount"), now: now)
+        let breaks = PostureTrack.breaksAfterLogging(config, at: since, now: now)
+        let history = PostureTrack.historyAfterLogging(config, todayCount: tally.count, now: now)
+        let segments = PostureAway.segmentsAfterResting(config, since: since, now: now)
+        WidgetWriter.write(instance) { config in
+            config.set("lastBreak", .number(now.timeIntervalSince1970))
+            config.set("breakDay", .string(tally.day))
+            config.set("breakCount", .number(Double(tally.count)))
+            config.set(PostureTrack.breaksKey, .list(breaks))
+            config.set(PostureTrack.historyKey, .list(history))
+            config.set(PostureAway.segmentsKey, .list(segments))
+        }
+    }
+
+    /// 离开算过休息之后回来了：久坐从回来那一刻重新计时，还没收尾的自动休息收在这一刻。
+    static func resume(_ instance: WidgetInstance, at: Date, now: Date = .now) {
+        let segments = PostureAway.segmentsAfterReturning(instance.config, at: at, now: now)
+        WidgetWriter.write(instance) { config in
+            config.set("lastBreak", .number(at.timeIntervalSince1970))
+            if !segments.isEmpty { config.set(PostureAway.segmentsKey, .list(segments)) }
         }
     }
 }

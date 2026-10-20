@@ -6267,6 +6267,17 @@
         }
       }
     },
+    "今天坐了 %@ 段，自动记的休息 %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sitting stretches today, %@ automatic breaks"
+          }
+        }
+      }
+    },
     "今天已喝" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31632,6 +31643,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fukuoka"
+          }
+        }
+      }
+    },
+    "离开多久算一次休息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away this long counts as a break"
+          }
+        }
+      }
+    },
+    "离开电脑中 · 到点不提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away from the Mac · reminders paused"
+          }
+        }
+      }
+    },
+    "离开电脑时自动算一次休息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Count time away from the Mac as a break"
           }
         }
       }

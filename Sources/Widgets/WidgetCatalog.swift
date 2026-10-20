@@ -407,11 +407,14 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // 小熊猫陪坐，到点叫你起身；提醒时段、通知、每天起身目标（`goal`，
-        // 见 PostureTrack），面板里画今天的时间轴和近 7 天。
+        // 见 PostureTrack），面板里画今天的时间轴和近 7 天。离开电脑满
+        // `awayAfter` 分钟自动算一次休息（`away`，默认开，见 PostureAway）。
         Entry(kind: .posture, name: tr("久坐提醒"), category: .health,
               defaults: c(["duration": .number(1800), "start": .string("09:00"),
                            "end": .string("18:00"), "notify": .bool(true),
-                           "goal": .number(Double(PostureTrack.defaultGoal))]),
+                           "goal": .number(Double(PostureTrack.defaultGoal)),
+                           PostureAway.enabledKey: .bool(true),
+                           PostureAway.afterKey: .string("\(PostureAway.defaultMinutes)")]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // A list of its own under `items`, never the system's Reminders.
@@ -597,8 +600,17 @@ public enum WidgetCatalog {
     public static func configurableKeys(_ kind: WidgetKind) -> [String] {
         guard let entry = entry(kind) else { return [] }
         // 按字母排；时钟的子选项恰好是大小在粗细前、卡片在翻法前。
-        return entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
+        let keys = entry.defaults.values.keys.filter { $0 != "layout" }.sorted()
+        // 列在 `keyOrder` 里的种类按那里的先后，没列到的排在后面（仍按字母）。
+        guard let order = keyOrder[kind] else { return keys }
+        return keys.sorted { (order.firstIndex(of: $0) ?? order.count) < (order.firstIndex(of: $1) ?? order.count) }
     }
+
+    /// 字母顺序读起来不顺的几种：久坐提醒的离开检测（away 开头）排到最后，
+    /// 跟在提醒时段、通知和目标后面。
+    private static let keyOrder: [WidgetKind: [String]] = [
+        .posture: ["duration", "start", "end", "notify", "goal", PostureAway.enabledKey, PostureAway.afterKey],
+    ]
 
     /// Whether an option means anything given the rest of the configuration.
     ///
@@ -649,6 +661,9 @@ public enum WidgetCatalog {
         // 第一项同步回 city），不再单独给一个文字框。
         case (.world, "city"):
             false
+        // 离开多久算休息：离开检测关着时没用。
+        case (.posture, PostureAway.afterKey):
+            PostureAway.isEnabled(config)
         // The multi-city card shows its own list of places and no other;
         // every other layout reads the one city and never the list.
         case (.weather, "cities"):

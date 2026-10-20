@@ -10,7 +10,8 @@ import Foundation
 ///
 /// 改版前记的起身只有 `breakCount` 和 `lastBreak`，没有时间戳：今天次数仍用
 /// `breakCount`（见 `PostureTally`），时间轴只能按 `lastBreak` 切一刀。
-/// 锁屏或空闲的「离开」不在这里，时间轴不画离开段。
+/// 锁屏或空闲的「离开」自动记的休息见 `PostureAway`，算段时传进来（`away`），
+/// 离开那段不算坐着，回来后的一段从回来那一刻算。
 public enum PostureTrack {
     public static let breaksKey = "breaks"
     public static let historyKey = "history"
@@ -43,9 +44,11 @@ public enum PostureTrack {
     }
 
     /// 记一次起身之后的 `breaks`：今天已有的加上这一次，昨天的丢掉。
-    public static func breaksAfterLogging(_ config: WidgetConfig, now: Date,
+    /// `at` 是起身的时刻，默认就是现在；离开电脑自动记的休息记在离开那一刻。
+    public static func breaksAfterLogging(_ config: WidgetConfig, at: Date? = nil, now: Date,
                                           calendar: Calendar = .current) -> [WidgetConfig.Value] {
-        (breaks(config, now: now, calendar: calendar) + [now])
+        (breaks(config, now: now, calendar: calendar) + [at ?? now])
+            .sorted()
             .map { .number($0.timeIntervalSince1970) }
     }
 
@@ -109,6 +112,8 @@ public enum PostureTrack {
         public var end: Date
         /// 还在坐着（到现在为止）的那一段。
         public var ongoing: Bool
+        /// 这段是离开电脑自动记的休息之后开始的（时间轴上那个起身点画浅一点）。
+        public var afterAway: Bool = false
 
         public var duration: TimeInterval { max(0, end.timeIntervalSince(start)) }
     }
@@ -131,25 +136,49 @@ public enum PostureTrack {
     /// 从提醒时段开始，到每次起身，再到现在（或时段结束）的一段段坐着。
     ///
     /// `breaks` 可以乱序、可以重复（相差 1 秒内算一次），时段外的不算。
+    /// `away` 是离开电脑自动记的休息（见 `PostureAway`）：那一段不算坐着，坐着的段
+    /// 在离开那一刻结束，下一段从回来那一刻开始；还没回来就没有正在坐的段。
     /// 时段还没开始时没有段。
-    public static func stretches(_ schedule: PostureSchedule, breaks: [Date], now: Date,
+    public static func stretches(_ schedule: PostureSchedule, breaks: [Date],
+                                 away: [PostureAway.Segment] = [], now: Date,
                                  calendar: Calendar = .current) -> [Stretch] {
         guard let window = window(schedule, now: now, calendar: calendar) else { return [] }
         let stop = min(now, window.end)
         guard stop > window.start else { return [] }
-        var cuts: [Date] = []
-        for date in breaks.sorted() where date > window.start && date < stop {
-            if let last = cuts.last, date.timeIntervalSince(last) < 1 { continue }
-            cuts.append(date)
+        // 起身是一刻（开始和结束相同），离开是一段。
+        var gaps: [(start: Date, end: Date, away: Bool)] = []
+        for date in breaks where date > window.start && date < stop {
+            gaps.append((date, date, false))
         }
+        for segment in away {
+            let end = min(segment.end ?? now, stop)
+            guard end > window.start, segment.start < stop else { continue }
+            gaps.append((max(segment.start, window.start), max(end, segment.start), true))
+        }
+        gaps.sort { ($0.start, $0.away ? 0 : 1) < ($1.start, $1.away ? 0 : 1) }
+
         var result: [Stretch] = []
         var from = window.start
-        for cut in cuts {
-            result.append(Stretch(start: from, end: cut, ongoing: false))
-            from = cut
+        var lastCut: Date?
+        var afterAway = false
+        for gap in gaps {
+            if !gap.away {
+                // 离开那段里面（含两头）的起身不另算；相差 1 秒内的起身算一次。
+                if gap.start <= from, afterAway { continue }
+                if let lastCut, gap.start.timeIntervalSince(lastCut) < 1 { continue }
+            }
+            if gap.start > from {
+                result.append(Stretch(start: from, end: gap.start, ongoing: false, afterAway: afterAway))
+            }
+            if gap.away || gap.end > from {
+                afterAway = gap.away
+            }
+            from = max(from, gap.end)
+            lastCut = from
         }
-        if stop > from {
-            result.append(Stretch(start: from, end: stop, ongoing: now < window.end))
+        let stillAway = away.contains { $0.end == nil && $0.start < stop }
+        if stop > from, !stillAway {
+            result.append(Stretch(start: from, end: stop, ongoing: now < window.end, afterAway: afterAway))
         }
         return result
     }

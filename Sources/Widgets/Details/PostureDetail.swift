@@ -6,7 +6,8 @@ import SwiftUI
 ///
 /// 深色玻璃，粉色只做头图里小熊猫身后的淡底、时间轴的坐着段、今天的柱子和按钮。
 /// 数据都在小组件自己的配置里（`breaks`、`history`、`goal`），算法见 `PostureTrack`。
-/// 锁屏或空闲的「离开」还没记，时间轴不画离开段。
+/// 离开电脑自动记的休息（`autoBreaks`，见 `PostureAway`）在时间轴上画成浅色的一段、
+/// 空心的点，和手动点「起来了」的实心白点区分，图例写「自动」。
 struct PostureDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -40,6 +41,10 @@ struct PostureDetail: View {
         var over: TimeInterval
         var count: Int
         var stretches: [PostureTrack.Stretch]
+        /// 离开电脑自动记的休息，裁到时段和现在之内。
+        var rests: [PostureTrack.Stretch]
+        /// 离开电脑中（开着离开检测）：到点不提醒。
+        var away: Bool = false
         var windowStart: Date
         var windowEnd: Date
         var week: [PostureTrack.Day]
@@ -60,27 +65,32 @@ struct PostureDetail: View {
         let timer = TimerStateProvider.shared.state
         let yields = SitFocus.postureYields(to: timer, now: now)
         let active = schedule.isActive(now)
+        let away = PostureAway.suppresses(instance.config, away: PostureAwayMonitor.shared.isAway)
         let left = schedule.remaining(lastBreak: lastBreak, now: now)
         let count = PostureTally.today(storedDay: instance.config.string("breakDay"),
                                        count: instance.config.int("breakCount"), now: now)
         // 改版前只记了上次起身：时间轴至少在那一刻切一刀。专注休息结束也算一次起身。
         var breaks = PostureTrack.breaks(instance.config, now: now)
         if let lastBreak, PostureTally.dayKey(lastBreak) == PostureTally.dayKey(now) { breaks.append(lastBreak) }
+        let segments = PostureAway.segments(instance.config, now: now)
         let window = PostureTrack.window(schedule, now: now)
         let todayStart = calendar.startOfDay(for: now).addingTimeInterval(TimeInterval(schedule.start * 60))
         let start = window?.start ?? todayStart
-        return Model(now: now, active: active, yields: yields, due: active && !yields && left <= 0,
+        return Model(now: now, active: active, yields: yields, due: active && !yields && !away && left <= 0,
                      left: left, sat: SitFocus.sat(schedule, lastBreak: lastBreak, now: now),
                      over: now.timeIntervalSince(schedule.due(lastBreak: lastBreak, now: now)),
                      count: count,
-                     stretches: PostureTrack.stretches(schedule, breaks: breaks, now: now),
+                     stretches: PostureTrack.stretches(schedule, breaks: breaks, away: segments, now: now),
+                     rests: PostureAway.rests(schedule, segments: segments, now: now),
+                     away: away,
                      windowStart: start,
                      windowEnd: window?.end ?? start.addingTimeInterval(TimeInterval(length * 60)),
                      week: PostureTrack.week(instance.config, todayCount: count, now: now),
                      goal: goal)
     }
 
-    /// 小组件库里的示例：今天 14:03，到点超时 13 分钟，最长连坐 72 分，和效果图接近。
+    /// 小组件库里的示例：今天 14:03，到点超时 13 分钟，最长连坐 72 分，和效果图接近；
+    /// 12:05 离开电脑 15 分钟，是一次自动记的休息。
     private func preview(now: Date, goal: Int) -> Model {
         let calendar = Calendar.current
         let day = calendar.startOfDay(for: now)
@@ -88,12 +98,15 @@ struct PostureDetail: View {
         let fake = at(14 * 60 + 3)
         let sample = PostureSchedule(interval: 1800, start: 9 * 60, end: 18 * 60)
         let breaks = [9 * 60 + 40, 10 * 60 + 52, 11 * 60 + 20, 12 * 60 + 5, 12 * 60 + 50, 13 * 60 + 20].map(at)
+        let away = [PostureAway.Segment(start: at(12 * 60 + 5), end: at(12 * 60 + 20))]
         let counts = [6, 9, 5, 3, 1, 7, breaks.count]
         let week = PostureTrack.recentDays(now: fake).enumerated().map { index, date in
             PostureTrack.Day(date: date, count: counts[index], isToday: index == counts.count - 1)
         }
         return Model(now: fake, active: true, yields: false, due: true, left: 0, sat: 43 * 60, over: 13 * 60,
-                     count: breaks.count, stretches: PostureTrack.stretches(sample, breaks: breaks, now: fake),
+                     count: breaks.count,
+                     stretches: PostureTrack.stretches(sample, breaks: breaks, away: away, now: fake),
+                     rests: PostureAway.rests(sample, segments: away, now: fake),
                      windowStart: at(9 * 60), windowEnd: at(18 * 60), week: week, goal: goal)
     }
 
@@ -179,6 +192,7 @@ struct PostureDetail: View {
         if m.due { return m.over >= 60 ? tr("到点了 · 超时 \(minutesText(m.over))") : tr("到点了") }
         if m.yields { return tr("专注中") }
         guard m.active else { return tr("不在提醒时段") }
+        if m.away { return tr("离开电脑中 · 到点不提醒") }
         return SitFocus.dueText(schedule.interval)
     }
 
@@ -261,10 +275,21 @@ struct PostureDetail: View {
                 }
             }
             Text(tr("长"))
+            awayDot
+                .frame(width: 10, height: 10)
+                .padding(.leading, 6)
+            Text(tr("自动"))
         }
         .font(.system(size: 13, weight: .medium))
         .foregroundStyle(.white.opacity(0.62))
         .accessibilityHidden(true)
+    }
+
+    /// 自动记的休息：空心的点，比手动起身的实心白点浅。
+    private var awayDot: some View {
+        Circle()
+            .fill(Self.base)
+            .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1.6))
     }
 
     private static let labelRow: CGFloat = 20
@@ -330,8 +355,32 @@ struct PostureDetail: View {
                     .frame(width: 1.2, height: Self.barHeight + 6)
                     .offset(x: nowX - 0.6, y: barTop - 3)
             }
-            // 起身：每段之间一个白点。
-            ForEach(Array(m.stretches.dropFirst().enumerated()), id: \.offset) { _, stretch in
+            // 离开电脑自动记的休息：浅色一段，够宽时写「自动」。
+            ForEach(Array(m.rests.enumerated()), id: \.offset) { _, rest in
+                let left = x(rest.start), right = x(rest.end)
+                let span = right - left
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(.white.opacity(0.1))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .strokeBorder(.white.opacity(0.22), lineWidth: 0.6)
+                    }
+                    .frame(width: max(1, span - 1.6), height: Self.barHeight)
+                    .offset(x: left + 0.8, y: barTop)
+                if span >= Self.estimate(tr("自动"), size: 13) + 6 {
+                    Text(tr("自动"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.62))
+                        .fixedSize()
+                        .position(x: (left + right) / 2, y: barTop + Self.barHeight / 2)
+                } else {
+                    awayDot
+                        .frame(width: 8, height: 8)
+                        .position(x: (left + right) / 2, y: barTop + Self.barHeight / 2)
+                }
+            }
+            // 起身：每段之间一个白点（自动休息之后开始的段不画，那段自己有标记）。
+            ForEach(Array(m.stretches.dropFirst().filter { !$0.afterAway }.enumerated()), id: \.offset) { _, stretch in
                 Circle()
                     .fill(.white)
                     .overlay(Circle().strokeBorder(Self.base, lineWidth: 1.4))
@@ -355,7 +404,8 @@ struct PostureDetail: View {
         }
         .frame(width: width, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tr("今天坐了 \(m.stretches.count) 段"))
+        .accessibilityLabel(m.rests.isEmpty ? tr("今天坐了 \(m.stretches.count) 段")
+                            : tr("今天坐了 \(m.stretches.count) 段，自动记的休息 \(m.rests.count) 次"))
     }
 
     // MARK: 近 7 天
