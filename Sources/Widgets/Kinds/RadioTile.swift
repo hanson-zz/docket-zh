@@ -25,7 +25,7 @@ struct RadioTile: View {
     private var player: RadioPlayer { RadioPlayer.shared }
 
     private var unlocked: Bool { licenseUnlocked || supporterUnlocked || context.isPreview }
-    /// 实际画的皮肤：三款复古皮肤是 Pro，没解锁时画回经典，不盖锁，配置不改写。
+    /// 实际画的皮肤：经典以外都是 Pro，没解锁时画回经典，不盖锁，配置不改写。
     private var skin: RadioSkin { ProLicenseGate.radioSkin(config: instance.config, unlocked: unlocked) }
 
     private var stations: [RadioStation] { RadioDial.stations(instance.config) }
@@ -48,7 +48,10 @@ struct RadioTile: View {
         WidgetSurface {
             if station == nil {
                 PandaEmptyTile(empty: .radio, title: tr("搜索电台"), instance: instance, context: context)
-            } else if skin != .classic {
+            } else if let model = skinModel {
+                // 五款新外观：内容画在 RadioSkins/ 下各自的文件里，深浅跟着扩展栏走。
+                RadioModernCard(model: model, vertical: context.position.isVertical)
+            } else if skin.isRetro {
                 retro
             } else if context.position.isVertical {
                 VStack(spacing: 4) {
@@ -85,6 +88,53 @@ struct RadioTile: View {
         .onChange(of: volume) { _, now in
             if !context.isPreview, player.plays(station) { player.setVolume(now) }
         }
+    }
+
+    // MARK: 新外观
+
+    /// 交给新外观的数据和回调（见 RadioSkinKit.swift），经典和复古皮肤是 nil。
+    /// 卡片的深浅读扩展栏当前的外观：白底、浅色玻璃是浅色，黑底、深色玻璃是深色，
+    /// 其余跟系统（见 `ShelfLook.forcedAppearance`）。
+    private var skinModel: RadioSkinModel? {
+        let tone = RadioSkinTone(darkContent: scheme == .dark)
+        guard skin.isModern, let palette = RadioSkinPalette.palette(skin, tone: tone) else { return nil }
+        let preview = context.isPreview
+        return RadioSkinModel(
+            skin: skin, tone: tone, palette: palette, stations: stations, index: index,
+            playing: playing, buffering: !preview && playing && player.isBuffering,
+            status: caption,
+            detail: station.map { "\($0.detail) · \(RadioDial.channelOfTotal(index, count: stations.count))" } ?? caption,
+            detailIsProblem: !preview && playing && player.problem != nil,
+            caption: modernCaption, volume: volume, isPreview: preview,
+            onTune: { target in
+                guard !preview else { return }
+                RadioRemote.tune(instance, to: target)
+            },
+            onPrevious: {
+                guard !preview, stations.count > 1 else { return }
+                RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
+            },
+            onNext: {
+                guard !preview, stations.count > 1 else { return }
+                RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
+            },
+            onToggle: {
+                guard !preview, let station else { return }
+                player.toggle(station, volume: volume, stations: stations, owner: instance.id)
+            },
+            onVolume: { value in
+                guard !preview else { return }
+                player.setVolume(value)
+            },
+            onVolumeEnd: {})
+    }
+
+    /// 新外观卡片第二行：照设计稿写“频道 03 / 05”；暂停、连接中、出错时写状态。
+    private var modernCaption: String {
+        let channel = RadioDial.channelOfTotal(index, count: stations.count)
+        if context.isPreview { return channel }
+        guard playing, player.problem == nil, !player.isBuffering else { return caption }
+        return channel
     }
 
     // MARK: 复古皮肤

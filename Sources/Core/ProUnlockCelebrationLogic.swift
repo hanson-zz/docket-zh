@@ -219,7 +219,7 @@ public enum ProUnlockStyle: String, CaseIterable, Sendable {
     case progressQuad
     /// 习惯打卡第 4 个起和近七天报告。
     case moreHabits
-    /// 收音机的三款复古皮肤（木壳电子管、晶体管便携、数码卡座）。
+    /// 收音机的 8 款 Pro 外观（三款复古皮肤和烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）。
     case radioSkins
 }
 

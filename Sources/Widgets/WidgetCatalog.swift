@@ -517,8 +517,8 @@ public enum WidgetCatalog {
 
         // Internet radio through one shared AVPlayer; favourites live under
         // `stations` like the to-do list's items, see RadioDial and RadioPlayer.
-        // 整种免费；皮肤存在 `skin` 下：经典（半圆表盘，免费，默认）和三款复古
-        // 皮肤（Pro，见 RadioSkin）。没存 skin 的旧卡片按经典读。
+        // 整种免费；皮肤存在 `skin` 下：经典（半圆表盘，免费，默认）、三款复古
+        // 皮肤和五款新外观（都是 Pro，见 RadioSkin）。没存 skin 的旧卡片按经典读。
         Entry(kind: .radio, name: tr("收音机"), category: .media,
               defaults: c(["volume": .number(60), RadioSkin.key: .string(RadioSkin.fallback.rawValue)]),
               variants: RadioSkin.allCases.map { (title: $0.title, overrides: [RadioSkin.key: WidgetConfig.Value.string($0.rawValue)]) },

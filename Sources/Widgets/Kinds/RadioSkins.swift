@@ -46,6 +46,8 @@ extension RadioSkin {
         case .wood: RadioRetroInk.amber
         case .transistor: RadioRetroInk.red
         case .deck: RadioRetroInk.vfd
+        // 新外观按暗色版取，面板和卡片里实际用 `RadioSkinModel.palette`。
+        default: RadioSkinPalette.palette(self, tone: .dark).map { Color(code: $0.accent) } ?? Color(hex: "#FF9F2E")
         }
     }
 
@@ -54,6 +56,8 @@ extension RadioSkin {
     var textAccent: Color {
         switch self {
         case .transistor: RadioRetroInk.redText
+        case .smoke, .led, .porcelain, .pixel, .ruler:
+            RadioSkinPalette.palette(self, tone: .dark).map { Color(code: $0.accentText) } ?? accent
         default: accent
         }
     }
@@ -64,6 +68,7 @@ extension RadioSkin {
         case .classic, .deck: RadioRetroInk.inkMetal
         case .wood: RadioRetroInk.inkWood
         case .transistor: RadioRetroInk.inkRed
+        default: RadioSkinPalette.palette(self, tone: .dark).map { Color(code: $0.ink) } ?? RadioRetroInk.inkMetal
         }
     }
 }
@@ -242,8 +247,6 @@ struct RadioRetroFace: View {
 
     var body: some View {
         switch skin {
-        case .classic:
-            EmptyView()
         case .wood:
             RadioWoodFace(count: count, index: index, playing: playing, volume: volume,
                           onTune: onTune, onNext: onNext)
@@ -252,6 +255,9 @@ struct RadioRetroFace: View {
         case .deck:
             RadioDeckFace(count: count, index: index, playing: playing, stationName: stationName,
                           animated: animated, onTune: onTune)
+        default:
+            // 经典和新外观不走这里（新外观见 RadioSkins/ 下各自的文件）。
+            EmptyView()
         }
     }
 }
@@ -976,7 +982,7 @@ struct RadioRetroKeyFace: View {
                     }
                     glyph
                 }
-            case .wood, .classic:
+            default:
                 ZStack {
                     Circle().fill(.black.opacity(0.35)).offset(x: 0.8, y: 2)
                     Circle().fill(main ? RadioRetroInk.amber : RadioRetroInk.ivory)
@@ -1071,7 +1077,7 @@ struct RadioRetroVolume: View {
                 Capsule().fill(.white.opacity(0.14)).frame(height: 6)
                 Capsule().fill(RadioRetroInk.red).frame(width: max(0, filled), height: 6)
             }
-        case .wood, .classic:
+        default:
             ZStack(alignment: .leading) {
                 Capsule().fill(.black.opacity(0.45))
                     .overlay(Capsule().strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
@@ -1096,7 +1102,7 @@ struct RadioRetroVolume: View {
                 .fill(LinearGradient(gradient: RadioRetroInk.chrome, startPoint: .top, endPoint: .bottom))
                 .overlay(Circle().strokeBorder(.black.opacity(0.3), lineWidth: 0.6))
                 .frame(width: 17, height: 17)
-        case .wood, .classic:
+        default:
             Circle()
                 .fill(Color(hex: "#3B1F10"))
                 .overlay(Circle().strokeBorder(RadioRetroInk.brass, lineWidth: 1.6))
@@ -1132,7 +1138,7 @@ struct RadioRetroTileArt: View {
             case .wood: Self.drawWood(&c, fraction: fraction)
             case .transistor: Self.drawTransistor(&c, fraction: fraction)
             case .deck: Self.drawDeck(&c, frequency: frequency, playing: playing)
-            case .classic: break
+            default: break
             }
         }
         .frame(width: design.width * scale, height: design.height * scale)
@@ -1231,7 +1237,7 @@ struct RadioRetroTilePlay: View {
                     Circle().fill(RadioRetroInk.red).padding(size * 0.07)
                     glyph
                 }
-            case .wood, .classic:
+            default:
                 ZStack {
                     Circle().fill(RadioRetroInk.amber)
                     Circle().strokeBorder(RadioRetroInk.brass, lineWidth: 1)

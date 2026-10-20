@@ -348,10 +348,13 @@ extension RadioDial {
 
 // MARK: - Skins
 
-/// 收音机的四种皮肤，存在 `skin` 键下。半圆表盘的经典样式免费，也是默认；
-/// 三款复古皮肤是 Pro 样式（见 `ProFeatures.isKindProStyle`）。旧卡片没存这个
-/// 键，按经典读；没解锁时复古皮肤画回经典，不盖锁，配置不改写（见
-/// `ProLicenseGate.radioSkin`）。
+/// 收音机的九种皮肤，存在 `skin` 键下。半圆表盘的经典样式免费，也是默认；
+/// 三款复古皮肤和五款新外观都是 Pro 样式（见 `ProFeatures.isKindProStyle`）。
+/// 旧卡片没存这个键，按经典读；没解锁时 Pro 皮肤画回经典，不盖锁，配置不改写
+/// （见 `ProLicenseGate.radioSkin`）。
+///
+/// 五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）每套有暗色和浅色两版，
+/// 跟着内容当前是深色还是浅色切换，配色见 `RadioSkinPalette`。
 public enum RadioSkin: String, CaseIterable, Sendable {
     /// 半圆刻度盘加红指针，原来的样子。
     case classic
@@ -361,6 +364,16 @@ public enum RadioSkin: String, CaseIterable, Sendable {
     case transistor
     /// 数码卡座：拉丝金属、绿色段码屏、双 VU 表、1 到 5 琴键。
     case deck
+    /// 烟晶：磨砂玻璃叠层，背后透出香槟和玫瑰色光斑。
+    case smoke
+    /// 灯阵：黑底圆点 LED 屏，暖黄点阵数字和频谱。
+    case led
+    /// 瓷白圆盘：暖瓷白拟态，大圆盘拨动换台。
+    case porcelain
+    /// 掌机像素：红色液晶屏，像素数字和像素小熊猫。
+    case pixel
+    /// 墨白直尺：纯黑白排版，卷尺刻度配一根红指针。
+    case ruler
 
     public static let key = "skin"
     public static let fallback: RadioSkin = .classic
@@ -371,11 +384,25 @@ public enum RadioSkin: String, CaseIterable, Sendable {
         case .wood: tr("木壳电子管")
         case .transistor: tr("晶体管便携")
         case .deck: tr("数码卡座")
+        case .smoke: tr("烟晶")
+        case .led: tr("灯阵")
+        case .porcelain: tr("瓷白圆盘")
+        case .pixel: tr("掌机像素")
+        case .ruler: tr("墨白直尺")
         }
     }
 
-    /// 三款复古皮肤是 Pro，经典免费。
+    /// 经典以外都是 Pro。
     public var isPro: Bool { self != .classic }
+
+    /// 三款复古皮肤：木壳电子管、晶体管便携、数码卡座。
+    public var isRetro: Bool { self == .wood || self == .transistor || self == .deck }
+
+    /// 五款新外观，每套有暗色和浅色两版（见 `RadioSkinPalette`）。
+    public var isModern: Bool { RadioSkinPalette.skins.contains(self) }
+
+    /// Pro 外观一共几款，付费墙和官网的数量跟着它。
+    public static var proCount: Int { allCases.filter(\.isPro).count }
 
     /// 存的值读回来，认不出或没存时是经典。
     public init(stored raw: String) {

@@ -14652,6 +14652,17 @@
         }
       }
     },
+    "墨白直尺" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ink Ruler"
+          }
+        }
+      }
+    },
     "墨西哥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16341,13 +16352,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机复古皮肤；习惯打卡第 4 个起和近七天报告；书签分组文件夹" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character and the retro Radio skins; a fourth habit and beyond, and the 7-day habit report; bookmark group folders"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character and 8 Pro Radio looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders"
           }
         }
       }
@@ -21675,6 +21686,17 @@
         }
       }
     },
+    "掌机像素" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handheld Pixel"
+          }
+        }
+      }
+    },
     "接下来 · 歌单「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22291,6 +22313,17 @@
         }
       }
     },
+    "正在听" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing"
+          }
+        }
+      }
+    },
     "正在检查…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22760,6 +22793,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thirsty"
+          }
+        }
+      }
+    },
+    "灯阵" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LED Matrix"
           }
         }
       }
@@ -31427,6 +31471,17 @@
         }
       }
     },
+    "烟晶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smoked Glass"
+          }
+        }
+      }
+    },
     "热化了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31797,6 +31852,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Swiss franc"
+          }
+        }
+      }
+    },
+    "瓷白圆盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porcelain Dial"
           }
         }
       }

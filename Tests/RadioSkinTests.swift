@@ -104,12 +104,15 @@ final class RadioSkinTests: XCTestCase {
 
     func testSkinIsStoredUnderSkinAndOldCardsAreClassic() {
         XCTAssertEqual(RadioSkin.key, "skin")
-        XCTAssertEqual(RadioSkin.allCases.map(\.rawValue), ["classic", "wood", "transistor", "deck"])
+        XCTAssertEqual(RadioSkin.allCases.map(\.rawValue),
+                       ["classic", "wood", "transistor", "deck", "smoke", "led", "porcelain", "pixel", "ruler"])
         XCTAssertEqual(RadioSkin.stored(WidgetConfig()), .classic, "旧卡片没存 skin 时是经典")
         XCTAssertEqual(RadioSkin.stored(WidgetConfig([RadioSkin.key: .string("deck")])), .deck)
         XCTAssertEqual(RadioSkin.stored(WidgetConfig([RadioSkin.key: .string("bogus")])), .classic)
         XCTAssertFalse(RadioSkin.classic.isPro)
         XCTAssertTrue([RadioSkin.wood, .transistor, .deck].allSatisfy(\.isPro))
+        XCTAssertTrue([RadioSkin.smoke, .led, .porcelain, .pixel, .ruler].allSatisfy(\.isPro), "五款新外观全是 Pro")
+        XCTAssertEqual(RadioSkin.proCount, 8)
     }
 
     func testRadioIsFreeAndOnlyTheRetroSkinsArePro() {
@@ -147,7 +150,8 @@ final class RadioSkinTests: XCTestCase {
 
     func testCatalogOffersClassicFirstAndAsTheDefault() {
         guard let entry = WidgetCatalog.entry(.radio) else { return XCTFail("收音机不在目录里") }
-        XCTAssertEqual(entry.variants.map(\.title), ["经典", "木壳电子管", "晶体管便携", "数码卡座"])
+        XCTAssertEqual(entry.variants.map(\.title), ["经典", "木壳电子管", "晶体管便携", "数码卡座",
+                                                     "烟晶", "灯阵", "瓷白圆盘", "掌机像素", "墨白直尺"])
         XCTAssertEqual(entry.defaults[RadioSkin.key], .string("classic"))
         XCTAssertEqual(WidgetCatalog.make(.radio)?.config[RadioSkin.key], .string("classic"))
         XCTAssertFalse(WidgetCatalog.applies(RadioSkin.key, to: WidgetConfig(), kind: .radio),
@@ -155,7 +159,7 @@ final class RadioSkinTests: XCTestCase {
         let deck = WidgetConfig([RadioSkin.key: .string("deck")])
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: deck, kind: .radio), "数码卡座")
         XCTAssertEqual(WidgetCatalog.naturalSize(WidgetInstance(kind: .radio, config: deck)),
-                       CGSize(width: 212, height: 62), "四种皮肤卡片一样大")
+                       CGSize(width: 212, height: 62), "九种皮肤卡片一样大")
         XCTAssertTrue(ProUnlockStyle.allCases.contains(.radioSkins))
     }
 }

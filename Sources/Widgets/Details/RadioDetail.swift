@@ -26,6 +26,9 @@ struct RadioDetail: View {
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporterUnlocked = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 面板窗口当前的外观（DetailCard 里面总是深色，这里读的是外面的）。新外观的
+    /// 暗色、浅色两版跟着它切换。
+    @Environment(\.colorScheme) private var outerScheme
     @Namespace private var tabSlot
 
     @State private var tab: Tab = .favourites
@@ -72,24 +75,41 @@ struct RadioDetail: View {
         return context.isPreview ? RadioRegion.fallback : RadioRegion.stored(instance.config)
     }
 
-    /// 实际画的皮肤：三款复古皮肤是 Pro，没解锁时画回经典（预览照常画）。
+    /// 实际画的皮肤：经典以外都是 Pro，没解锁时画回经典（预览照常画）。
     private var skin: RadioSkin {
         ProLicenseGate.radioSkin(config: instance.config,
                                  unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
     }
-    private var retro: Bool { skin != .classic }
+    private var retro: Bool { skin.isRetro }
+    /// 五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺），上半部分画在
+    /// RadioSkins/ 下各自的文件里。
+    private var modern: Bool { skin.isModern }
+    private var tone: RadioSkinTone { RadioSkinTone(darkContent: outerScheme == .dark) }
+    /// 新外观这一版的配色，经典和复古皮肤是 nil。
+    private var palette: RadioSkinPalette? { RadioSkinPalette.palette(skin, tone: tone) }
+    /// 面板里的字色：新外观跟调色板（浅色版是深色字），其余照旧白字。
+    private var fg: Color { palette.map { Color(code: $0.text) } ?? .white }
+    /// 新外观浅色版：卡片里的系统控件也要按浅色画。
+    private var lightSkin: Bool { palette?.isLight ?? false }
 
-    /// 复古皮肤用自己的琥珀、红、VFD 绿；经典照旧跟颜色面板走。
-    private var accent: Color { retro ? skin.accent : panelTint.accent(or: RadioIcon.glow) }
+    /// 复古皮肤用自己的琥珀、红、VFD 绿；新外观跟调色板；经典照旧跟颜色面板走。
+    private var accent: Color {
+        if let palette { return Color(code: palette.accent) }
+        return retro ? skin.accent : panelTint.accent(or: RadioIcon.glow)
+    }
     /// 压在深色底上的小字用的强调色：晶体管的红换浅一档；经典跟主题色时
     /// 按深色面板卡片调亮到 4.5:1，本来就够的颜色原样用。
     private var accentText: Color {
+        if let palette { return Color(code: palette.accentText) }
         if retro { return skin.textAccent }
         guard let code = WidgetTintPicker.code(accent) else { return accent }
         return Color(code: WidgetTint.readable(code, dark: true, minimum: 4.5))
     }
     /// 收藏/搜索切换选中那一段：复古皮肤是皮肤强调色，经典跟主题色；字深色。
-    private var segmentInk: Color { retro ? skin.ink : panelTint.ink(or: RadioRetroInk.inkMetal) }
+    private var segmentInk: Color {
+        if let palette { return Color(code: palette.ink) }
+        return retro ? skin.ink : panelTint.ink(or: RadioRetroInk.inkMetal)
+    }
     private static let needle = Color(hex: "#FF453A")
 
     var body: some View {
@@ -106,11 +126,17 @@ struct RadioDetail: View {
 
     private func content(now: Date) -> some View {
         DetailCard {
-            MeshBackdrop(color: accent)
+            if let model = skinModel {
+                RadioModernBackdrop(model: model)
+            } else {
+                MeshBackdrop(color: accent)
+            }
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 if showsHealthBanner { healthBanner }
-                if retro {
+                if let model = skinModel {
+                    RadioModernPanel(model: model)
+                } else if retro {
                     retroTop
                 } else {
                     header
@@ -135,11 +161,53 @@ struct RadioDetail: View {
                         Image(systemName: "arrow.up.right")
                     }
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(fg.opacity(0.62))
                 }
                 .buttonStyle(.plain)
             }
+            // DetailCard 把内容固定成深色；新外观浅色版换回浅色，输入框、菜单按浅底画。
+            .environment(\.colorScheme, lightSkin ? .light : .dark)
         }
+    }
+
+    // MARK: New looks
+
+    /// 交给新外观的数据和回调（见 RadioSkinKit.swift），经典和复古皮肤是 nil。
+    private var skinModel: RadioSkinModel? {
+        guard modern, let palette else { return nil }
+        return RadioSkinModel(
+            skin: skin, tone: tone, palette: palette, stations: stations, index: index,
+            playing: playing, buffering: !context.isPreview && playing && player.isBuffering,
+            status: statusText, detail: retroSubline,
+            detailIsProblem: player.problem != nil && playing && !context.isPreview,
+            caption: statusText, volume: volume, isPreview: context.isPreview,
+            onTune: { target in
+                guard !context.isPreview else { return }
+                RadioRemote.tune(instance, to: target)
+            },
+            onPrevious: {
+                guard !context.isPreview, stations.count > 1 else { return }
+                RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
+            },
+            onNext: {
+                guard !context.isPreview, stations.count > 1 else { return }
+                RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
+            },
+            onToggle: {
+                guard !context.isPreview, let station else { return }
+                player.toggle(station, volume: volume, stations: stations, owner: instance.id)
+            },
+            onVolume: { value in
+                guard !context.isPreview else { return }
+                dragging = value
+                player.setVolume(value)
+            },
+            onVolumeEnd: {
+                if let value = dragging {
+                    save { $0.set("volume", .number(value.rounded())) }
+                    dragging = nil
+                }
+            })
     }
 
     // MARK: Tabs
@@ -151,8 +219,8 @@ struct RadioDetail: View {
             tabSegment(.search, title: tr("搜索电台"))
         }
         .padding(2)
-        .background(Capsule().fill(.white.opacity(0.08)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
+        .background(Capsule().fill(fg.opacity(0.08)))
+        .overlay(Capsule().strokeBorder(fg.opacity(0.1), lineWidth: 0.5))
     }
 
     private func tabSegment(_ value: Tab, title: String) -> some View {
@@ -164,7 +232,7 @@ struct RadioDetail: View {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(on ? segmentInk : .white.opacity(0.72))
+                .foregroundStyle(on ? segmentInk : fg.opacity(0.72))
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
                 .background {
@@ -209,7 +277,7 @@ struct RadioDetail: View {
         .frame(maxWidth: .infinity, alignment: .center)
         RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
                           detailColor: player.problem != nil && playing && !context.isPreview
-                              ? accentText : .white.opacity(0.6))
+                              ? accentText : fg.opacity(0.6))
         RadioRetroTransport(skin: skin, playing: playing, canPlay: station != nil, canStep: stations.count > 1,
                             onPrevious: {
                                 guard !context.isPreview else { return }
@@ -240,14 +308,14 @@ struct RadioDetail: View {
         HStack(spacing: 6) {
             Text("网络电台")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(fg.opacity(0.72))
             Spacer()
             Circle()
-                .fill(playing ? accent : .white.opacity(0.35))
+                .fill(playing ? accent : fg.opacity(0.35))
                 .frame(width: 6.4, height: 6.4)
             Text(statusText)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(playing ? 0.88 : 0.55))
+                .foregroundStyle(fg.opacity(playing ? 0.88 : 0.55))
         }
     }
 
@@ -267,14 +335,14 @@ struct RadioDetail: View {
         HStack(spacing: 6) {
             Text("网络电台")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(fg.opacity(0.72))
             Spacer()
             if playing {
                 RadioBars(active: !context.isPreview, color: accent, barWidth: 2, height: 10)
             }
             Text(statusText)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(playing ? 0.88 : 0.62))
+                .foregroundStyle(fg.opacity(playing ? 0.88 : 0.62))
         }
     }
 
@@ -290,9 +358,9 @@ struct RadioDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     HStack(spacing: 0) {
-                        Text("0").foregroundStyle(.white.opacity(0.3))
+                        Text("0").foregroundStyle(fg.opacity(0.3))
                         Text(station.map { _ in RadioDial.channelText(index) } ?? "--")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(fg)
                             .contentTransition(.numericText())
                             .animation(.snappy, value: index)
                     }
@@ -309,13 +377,13 @@ struct RadioDetail: View {
                 }
                 Text(station?.name ?? tr("还没有电台"))
                     .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(fg)
                     .lineLimit(1)
                     .minimumScaleFactor(13.0 / 19.0)
                 // 第二行 13pt，长的（连接出错、节目名）折到两行，不缩字。
                 Text(subline)
                     .font(.system(size: 13))
-                    .foregroundStyle(player.problem != nil && playing ? accentText : .white.opacity(0.65))
+                    .foregroundStyle(player.problem != nil && playing ? accentText : fg.opacity(0.65))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -371,10 +439,10 @@ struct RadioDetail: View {
             Image(systemName: symbol)
                 .playPauseMorph(symbol)
                 .font(.system(size: size * 0.36, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(fg)
                 .frame(width: size, height: size)
-                .background(Circle().fill(.white.opacity(filled ? 0.2 : 0.08)))
-                .overlay(Circle().strokeBorder(.white.opacity(filled ? 0.3 : 0.12), lineWidth: 0.5))
+                .background(Circle().fill(fg.opacity(filled ? 0.2 : 0.08)))
+                .overlay(Circle().strokeBorder(fg.opacity(filled ? 0.3 : 0.12), lineWidth: 0.5))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -386,7 +454,7 @@ struct RadioDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "speaker.fill")
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(fg.opacity(0.6))
             Slider(value: Binding(
                 get: { volume },
                 set: { value in
@@ -403,10 +471,10 @@ struct RadioDetail: View {
                 .disabled(context.isPreview)
             Image(systemName: "speaker.wave.3.fill")
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(fg.opacity(0.6))
             Text("\(Int(volume.rounded()))%")
                 .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(fg.opacity(0.78))
                 .lineLimit(1)
                 .fixedSize()
                 .frame(minWidth: 40, alignment: .trailing)
@@ -418,7 +486,7 @@ struct RadioDetail: View {
             HStack {
                 Text("定时关闭")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(fg.opacity(0.65))
                 Spacer()
                 if let end = player.stopAt, player.isPlaying, !context.isPreview {
                     Text(tr("\(RadioSleep.remaining(until: end, now: now)) 后停止"))
@@ -440,11 +508,11 @@ struct RadioDetail: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
                 .fixedSize()
-                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                .foregroundStyle(on ? fg : fg.opacity(0.7))
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
-                .background(Capsule().fill(on ? accent.opacity(0.4) : .white.opacity(0.08)))
+                .background(Capsule().fill(on ? accent.opacity(0.4) : fg.opacity(0.08)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -497,22 +565,110 @@ struct RadioDetail: View {
 
     /// 量到的收藏行高，经典和复古分开记，换皮肤不会拿错。
     private var favouriteRowHeight: CGFloat {
-        (retro ? retroRowHeight : classicRowHeight) ?? RadioFavouriteList.fallbackRowHeight(retro: retro)
+        (tallRows ? retroRowHeight : classicRowHeight) ?? RadioFavouriteList.fallbackRowHeight(retro: tallRows)
     }
 
     private func noteRowHeight(_ height: CGFloat) {
         guard height > 1 else { return }
         let rounded = (height * 2).rounded(.up) / 2
-        if retro {
+        if tallRows {
             if retroRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { retroRowHeight = rounded }
         } else {
             if classicRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { classicRowHeight = rounded }
         }
     }
 
+    /// 复古皮肤和新外观的收藏行都是固定 34pt 的单行。
+    private var tallRows: Bool { retro || modern }
+
     @ViewBuilder
     private func favouriteRow(_ item: RadioStation, offset: Int) -> some View {
-        if retro { retroFavouriteRow(item, offset: offset) } else { classicFavouriteRow(item, offset: offset) }
+        if let palette {
+            modernFavouriteRow(item, offset: offset, palette: palette)
+        } else if retro {
+            retroFavouriteRow(item, offset: offset)
+        } else {
+            classicFavouriteRow(item, offset: offset)
+        }
+    }
+
+    /// 新外观的收藏行：编号、台名，当前那一行右边写“正在听”。当前行的标法跟
+    /// `RadioSkinPalette.rowStyle`：圆角强调底加竖条、直角强调底加爱心，或只在
+    /// 下面画一根强调色细线。
+    private func modernFavouriteRow(_ item: RadioStation, offset: Int, palette: RadioSkinPalette) -> some View {
+        let tuned = offset == index
+        let style = palette.rowStyle
+        let corner: CGFloat = style == .round ? 9 : 0
+        return HStack(spacing: 8) {
+            Button {
+                guard !context.isPreview else { return }
+                RadioRemote.tune(instance, to: offset, play: true)
+            } label: {
+                HStack(spacing: 10) {
+                    Text(verbatim: RadioDial.channelText(offset))
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(fg.opacity(tuned ? 0.9 : palette.secondaryOpacity))
+                        .frame(width: 22, alignment: .leading)
+                    Text(item.name)
+                        .font(.system(size: 15, weight: tuned ? .semibold : .medium))
+                        .foregroundStyle(fg.opacity(tuned ? 1 : 0.9))
+                        .lineLimit(1)
+                    stationTags(item)
+                    Spacer(minLength: 0)
+                    if tuned {
+                        Text(tr("正在听"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(accentText)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("收听 \(item.name)"))
+
+            if item.isCustom { renameButton(item) }
+            removeButton(item, offset: offset)
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .frame(height: 34)
+        .background {
+            if tuned {
+                if style == .line {
+                    Rectangle().fill(fg.opacity(0.05))
+                } else {
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .fill(accent.opacity(palette.highlightOpacity))
+                        .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous)
+                            .strokeBorder(accent.opacity(0.5), lineWidth: 0.6))
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if tuned, style == .line {
+                Rectangle().fill(accentText).frame(height: 1.5)
+            } else if !tuned {
+                Rectangle().fill(Color(code: palette.line).opacity(0.08)).frame(height: 0.5).padding(.horizontal, 10)
+            }
+        }
+        .overlay(alignment: .leading) {
+            if tuned {
+                switch style {
+                case .round:
+                    Capsule().fill(accentText).frame(width: 3, height: 16).padding(.leading, 6)
+                case .square:
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(accentText)
+                        .padding(.leading, 3)
+                        .accessibilityHidden(true)
+                case .line:
+                    EmptyView()
+                }
+            }
+        }
     }
 
     /// 复古皮肤的收藏行：编号、台名、右边按收藏顺序排的“FM 98.0”；当前那一行
@@ -527,17 +683,17 @@ struct RadioDetail: View {
                 HStack(spacing: 10) {
                     Text(verbatim: RadioDial.channelText(offset))
                         .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.white.opacity(tuned ? 0.9 : 0.62))
+                        .foregroundStyle(fg.opacity(tuned ? 0.9 : 0.62))
                         .frame(width: 22, alignment: .leading)
                     Text(item.name)
                         .font(.system(size: 15, weight: tuned ? .semibold : .medium))
-                        .foregroundStyle(.white.opacity(tuned ? 1 : 0.88))
+                        .foregroundStyle(fg.opacity(tuned ? 1 : 0.88))
                         .lineLimit(1)
                     stationTags(item)
                     Spacer(minLength: 0)
                     Text(verbatim: RadioDial.fmText(offset, count: stations.count))
                         .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        .foregroundStyle(tuned ? accentText : .white.opacity(0.65))
+                        .foregroundStyle(tuned ? accentText : fg.opacity(0.65))
                 }
                 .contentShape(.rect)
             }
@@ -552,7 +708,7 @@ struct RadioDetail: View {
         .frame(height: 34)
         .background {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(tuned ? accent.opacity(0.15) : .white.opacity(0.04))
+                .fill(tuned ? accent.opacity(0.15) : fg.opacity(0.04))
                 .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .strokeBorder(accent.opacity(tuned ? 0.45 : 0), lineWidth: 0.6))
         }
@@ -573,18 +729,18 @@ struct RadioDetail: View {
                 HStack(spacing: 8) {
                     Text(RadioDial.channelText(offset))
                         .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(tuned ? accentText : .white.opacity(0.62))
+                        .foregroundStyle(tuned ? accentText : fg.opacity(0.62))
                         .frame(width: 24, alignment: .leading)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(item.name)
                             .font(.system(size: 13, weight: tuned ? .semibold : .regular))
-                            .foregroundStyle(.white.opacity(0.95))
+                            .foregroundStyle(fg.opacity(0.95))
                             .lineLimit(1)
                         HStack(spacing: 4) {
                             stationTags(item)
                             Text(item.detail)
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.62))
+                                .foregroundStyle(fg.opacity(0.62))
                                 .lineLimit(1)
                         }
                     }
@@ -604,7 +760,7 @@ struct RadioDetail: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(tuned ? accent.opacity(0.14) : .white.opacity(0.05)))
+            .fill(tuned ? accent.opacity(0.14) : fg.opacity(0.05)))
     }
 
     private func remove(_ item: RadioStation, at offset: Int) {
@@ -630,12 +786,12 @@ struct RadioDetail: View {
     private func tag(_ text: String, warn: Bool) -> some View {
         Text(verbatim: text)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(warn ? accentText : .white.opacity(0.75))
+            .foregroundStyle(warn ? accentText : fg.opacity(0.75))
             .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, 5)
             .frame(height: 18)
-            .background(Capsule().fill(warn ? accent.opacity(0.16) : .white.opacity(0.1)))
+            .background(Capsule().fill(warn ? accent.opacity(0.16) : fg.opacity(0.1)))
     }
 
     private func renameButton(_ item: RadioStation) -> some View {
@@ -645,7 +801,7 @@ struct RadioDetail: View {
         } label: {
             Image(systemName: "pencil")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(fg.opacity(0.55))
                 .frame(width: 24, height: 24)
                 .contentShape(.rect)
         }
@@ -661,7 +817,7 @@ struct RadioDetail: View {
         } label: {
             Image(systemName: "xmark")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(fg.opacity(0.55))
                 .frame(width: 24, height: 24)
                 .contentShape(.rect)
         }
@@ -697,7 +853,7 @@ struct RadioDetail: View {
             TextField("", text: $renameText, prompt: Text(verbatim: item.name))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(fg)
                 .padding(.horizontal, 8)
                 .frame(height: 28)
                 .glassPane(cornerRadius: 8)
@@ -708,7 +864,7 @@ struct RadioDetail: View {
         }
         .padding(.horizontal, 8)
         .frame(height: favouriteRowHeight)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fg.opacity(0.05)))
     }
 
     /// 收藏上面一排：“添加电台”和“检查”。
@@ -721,12 +877,12 @@ struct RadioDetail: View {
                 ProgressView().controlSize(.mini)
                 Text(verbatim: tr("正在检查…"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(fg.opacity(0.65))
             } else {
                 if !context.isPreview, healthCheck.reports[instance.id] == 0 {
                     Text(verbatim: tr("都连得上"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(fg.opacity(0.6))
                 }
                 toolChip(tr("检查"), symbol: "antenna.radiowaves.left.and.right") {
                     dismissedHealth = nil
@@ -760,7 +916,7 @@ struct RadioDetail: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: tr("添加电台"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(fg.opacity(0.72))
             formField(addressBinding, prompt: tr("直播地址：http(s) 音频流或 .m3u8"))
             formField(nameBinding, prompt: tr("名称（可选）"))
             addStatus(draft)
@@ -777,14 +933,14 @@ struct RadioDetail: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(fg.opacity(0.05)))
     }
 
     private func formField(_ text: Binding<String>, prompt: String) -> some View {
         TextField("", text: text, prompt: Text(verbatim: prompt))
             .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .foregroundStyle(.white)
+            .foregroundStyle(fg)
             .padding(.horizontal, 8)
             .frame(height: 28)
             .glassPane(cornerRadius: 8)
@@ -801,7 +957,7 @@ struct RadioDetail: View {
                 ProgressView().controlSize(.mini)
                 Text(verbatim: text)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(fg.opacity(0.7))
             }
         case .message(let text):
             note(text)
@@ -845,10 +1001,10 @@ struct RadioDetail: View {
                     .lineLimit(1)
                     .fixedSize()
             }
-            .foregroundStyle(filled ? segmentInk : .white.opacity(0.85))
+            .foregroundStyle(filled ? segmentInk : fg.opacity(0.85))
             .padding(.horizontal, 10)
             .frame(height: 28)
-            .background(Capsule().fill(filled ? accent : .white.opacity(0.1)))
+            .background(Capsule().fill(filled ? accent : fg.opacity(0.1)))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -881,11 +1037,11 @@ struct RadioDetail: View {
                             .foregroundStyle(accentText)
                         Text(verbatim: tr("\(dead.count) 个电台连不上"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(fg.opacity(0.92))
                             .lineLimit(1)
                         Image(systemName: healthOpen ? "chevron.up" : "chevron.down")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(fg.opacity(0.6))
                         Spacer(minLength: 0)
                     }
                     .contentShape(.rect)
@@ -898,7 +1054,7 @@ struct RadioDetail: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(fg.opacity(0.55))
                         .frame(width: 24, height: 24)
                         .contentShape(.rect)
                 }
@@ -908,14 +1064,14 @@ struct RadioDetail: View {
             if healthOpen {
                 Text(verbatim: tr("每条地址都试过，都连不上。可能只是暂时离线，确认后才会删除。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(fg.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(dead) { item in
                         HStack(spacing: 6) {
                             Text(item.name)
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(fg.opacity(0.9))
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                             tag(tr("可能失效"), warn: true)
@@ -926,7 +1082,7 @@ struct RadioDetail: View {
                     if confirmingDelete {
                         Text(verbatim: tr("确定删除？"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(fg.opacity(0.85))
                         Spacer(minLength: 0)
                         toolChip(tr("取消")) { confirmingDelete = false }
                         toolChip(tr("删除 \(dead.count) 个"), filled: true) { removeDead(dead) }
@@ -939,9 +1095,9 @@ struct RadioDetail: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(fg.opacity(0.07)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
+            .strokeBorder(fg.opacity(0.1), lineWidth: 0.5))
     }
 
     private func dismissHealth(_ dead: [RadioStation]) {
@@ -978,11 +1134,11 @@ struct RadioDetail: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(fg.opacity(0.65))
                 TextField("", text: $query, prompt: Text("电台名称，或粘贴 http(s) 串流地址"))
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(fg)
                     .onSubmit { typedAddress ? addCustom() : run() }
                     .disabled(context.isPreview)
                 if searching { ProgressView().controlSize(.mini) }
@@ -992,7 +1148,7 @@ struct RadioDetail: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.55))
+                            .foregroundStyle(fg.opacity(0.55))
                             .frame(width: 24, height: 24)
                             .contentShape(.rect)
                     }
@@ -1011,7 +1167,7 @@ struct RadioDetail: View {
                 HStack(spacing: 6) {
                     Text(listTitle)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(fg.opacity(0.65))
                         .lineLimit(1)
                     Spacer()
                     if !trimmedQuery.isEmpty { chip(tr("搜索")) { run() } }
@@ -1066,11 +1222,11 @@ struct RadioDetail: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
                 .fixedSize()
-                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                .foregroundStyle(on ? fg : fg.opacity(0.7))
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
-                .background(Capsule().fill(on ? accent.opacity(0.4) : .white.opacity(0.08)))
+                .background(Capsule().fill(on ? accent.opacity(0.4) : fg.opacity(0.08)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -1083,7 +1239,7 @@ struct RadioDetail: View {
             TextField("", text: $customName, prompt: Text("名称（可选）"))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(fg)
                 .padding(.horizontal, 8)
                 .frame(height: 28)
                 .glassPane(cornerRadius: 8)
@@ -1102,11 +1258,11 @@ struct RadioDetail: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(result.name)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(fg.opacity(0.95))
                         .lineLimit(1)
                     Text(result.detail)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(fg.opacity(0.62))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1123,9 +1279,9 @@ struct RadioDetail: View {
             } label: {
                 Image(systemName: saved ? "checkmark" : "plus")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(saved ? accentText : .white.opacity(0.75))
+                    .foregroundStyle(saved ? accentText : fg.opacity(0.75))
                     .frame(width: 24, height: 24)
-                    .background(Circle().fill(.white.opacity(saved ? 0 : 0.1)))
+                    .background(Circle().fill(fg.opacity(saved ? 0 : 0.1)))
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -1133,7 +1289,7 @@ struct RadioDetail: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fg.opacity(0.05)))
     }
 
     private func chip(_ title: String, action: @escaping () -> Void) -> some View {
@@ -1143,12 +1299,12 @@ struct RadioDetail: View {
         } label: {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(fg.opacity(0.85))
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, 10)
                 .frame(height: 28)
-                .background(Capsule().fill(.white.opacity(0.1)))
+                .background(Capsule().fill(fg.opacity(0.1)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -1157,7 +1313,7 @@ struct RadioDetail: View {
     private func note(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(fg.opacity(0.65))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
     }
@@ -1227,6 +1383,8 @@ struct RadioArcDial: View {
     var index: Int
     var accent: Color
     var needle: Color
+    /// 刻度、表面和未选中的点的颜色；深色面板上是白色，新外观的浅色版传深色字。
+    var ink: Color = .white
     var onTune: (Int) -> Void
 
     @State private var dragIndex: Int?
@@ -1267,6 +1425,7 @@ struct RadioArcDial: View {
             let shown = dragIndex ?? index
             let marks = count
             let tint = accent
+            let ink = self.ink
             ZStack {
                 Canvas { context, size in
                     let (center, radius) = Self.geometry(size)
@@ -1277,7 +1436,7 @@ struct RadioArcDial: View {
                     face.addArc(center: center, radius: radius - 14, startAngle: .radians(.pi),
                                 endAngle: .radians(2 * .pi), clockwise: false)
                     face.closeSubpath()
-                    context.fill(face, with: .color(.white.opacity(0.05)))
+                    context.fill(face, with: .color(ink.opacity(0.05)))
 
                     for tick in 0...60 {
                         let angle = .pi + Double(tick) / 60 * .pi
@@ -1285,17 +1444,17 @@ struct RadioArcDial: View {
                         var line = Path()
                         line.move(to: point(angle, radius - (long ? 10 : 5)))
                         line.addLine(to: point(angle, radius))
-                        context.stroke(line, with: .color(.white.opacity(long ? 0.45 : 0.18)),
+                        context.stroke(line, with: .color(ink.opacity(long ? 0.45 : 0.18)),
                                        lineWidth: long ? 1.2 : 0.8)
                     }
                     for station in 0..<marks {
                         let at = point(Self.angle(station, count: marks), radius - 20)
                         let dot = CGRect(x: at.x - 2.5, y: at.y - 2.5, width: 5, height: 5)
                         context.fill(Path(ellipseIn: dot),
-                                     with: .color(station == shown ? tint : .white.opacity(0.4)))
+                                     with: .color(station == shown ? tint : ink.opacity(0.4)))
                     }
                     let hub = CGRect(x: center.x - 6, y: center.y - 6, width: 12, height: 12)
-                    context.stroke(Path(ellipseIn: hub), with: .color(.white.opacity(0.35)), lineWidth: 1)
+                    context.stroke(Path(ellipseIn: hub), with: .color(ink.opacity(0.35)), lineWidth: 1)
                 }
                 if count > 0 {
                     DialNeedle(angle: Self.angle(shown, count: count))
