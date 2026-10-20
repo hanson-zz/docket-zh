@@ -483,8 +483,12 @@ struct AppSwitcherDetail: View {
     }
 
     private func toggleExpand(_ id: String) {
-        withAnimation(.snappy(duration: 0.2)) {
-            expanded = expanded == id ? nil : id
+        // 授权回来再点箭头：刚给了权限就直接列窗口，不收起。
+        let justAllowed = expanded == id && !trusted && AppWindows.isTrusted
+        if !justAllowed {
+            withAnimation(.snappy(duration: 0.2)) {
+                expanded = expanded == id ? nil : id
+            }
         }
         reloadWindows()
     }
