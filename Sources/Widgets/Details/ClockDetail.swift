@@ -1,15 +1,30 @@
 import SwiftUI
 
-/// The local clock said at length: the time to the second, the date written
-/// out in full, and the zone the machine is actually keeping.
+/// 时钟的展开面板，样子跟着卡片的外观走。
 ///
-/// The thinnest panel in the app, deliberately. A clock knows the time and
-/// nothing else, so the honest list of what its tile leaves out is short -
-/// seconds, the weekday and year the card has to abbreviate away, and the name
-/// of the zone. Anything more would be invented reasons to be large.
+/// 像素卡片开点阵屏，液晶卡片开七段数码管，标准开带天空的经典面板，模拟表盘、
+/// 翻页、中文、霓虹、实景各有一套（`ClockPanelKind`，画法在 ClockPanelFaces.swift）。
+/// Pro 样式没解锁时卡片画成翻页，面板也开翻页，卡片和面板对得上。
+///
+/// 几套面板的信息一样：时间到秒、日期、今天过了多少、三座城市的世界时钟、
+/// 农历和下一个节气、第几周，以及下一个日程和下一个闹钟（没有就不显示）。
 struct ClockDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
+
+    @Environment(\.panelTint) private var panelTint
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// 一天才变的（农历、节气、日出日落），每分钟重算一次。
+    @State private var daily: ClockPanelDaily?
+    /// 下一个日程和闹钟，也是每分钟读一次：日历查询不便宜，不必每秒做。
+    @State private var event: ClockPanelData.Upcoming?
+    @State private var alarm: ClockPanelData.Upcoming?
+
+    /// 卡片实际画的画法，没解锁的 Pro 样式是翻页。
+    private var face: ClockFace {
+        ClockStyles.face(instance.config, unlocked: ProAccess.isUnlocked, preview: context.isPreview)
+    }
 
     var body: some View {
         // The seconds have to be driven from here. `WidgetDetailChrome`
@@ -17,32 +32,56 @@ struct ClockDetail: View {
         // frozen for as long as it stays up and a second hand read from it
         // would sit perfectly still.
         TimelineView(.periodic(from: .now, by: 1)) { tick in
-            let now = tick.date
-            // On the sky for this hour, with the sun where it is: the panel
-            // is the time of day before it is a number.
-            DetailCard {
-                SkyBackdrop(date: now, zone: .current)
-            } content: {
-                VStack(alignment: .leading, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ClockPanelTime(now: now, zone: .current, size: 46)
-                        Text(ClockPanelFormat.fullDate(now, zone: .current))
-                            .font(WidgetStyle.label(13))
-                            .foregroundStyle(.white.opacity(0.8))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .padding(.top, 18)
-
-                    HStack(spacing: 8) {
-                        StatChip(label: tr("时区"),
-                                 value: ClockPanelFormat.zoneName(.current, at: now))
-                        StatChip(label: "UTC", value: ClockPanelFormat.gmt(.current, at: now))
-                            .frame(width: 92)
-                    }
-                }
-            }
+            panel(model(at: tick.date))
+                .onChange(of: Int(tick.date.timeIntervalSince1970) / 60) { _, _ in refresh(tick.date) }
         }
+        .onAppear { refresh(.now) }
+    }
+
+    private func model(at now: Date) -> ClockPanelModel {
+        let second = Calendar.current.component(.second, from: now)
+        return ClockPanelModel(
+            now: now,
+            digits: ClockDigits(now: now, zone: .current),
+            progress: ClockPanelData.day(now),
+            cities: ClockPanelData.cities(instance.config).map { ClockPanelData.cityTime($0, now: now) },
+            daily: daily ?? ClockPanelDaily.at(now),
+            event: event,
+            alarm: alarm,
+            // 冒号奇数秒灭；减少动态效果时不闪。
+            colonOn: reduceMotion || second % 2 == 0,
+            tint: panelTint)
+    }
+
+    /// 每分钟一次：农历这些一天的读数，下一个日程（没有日历权限是 nil，那一行
+    /// 不显示），码头上各个闹钟卡片里最先要响的一个。
+    private func refresh(_ now: Date) {
+        daily = ClockPanelDaily.at(now)
+        guard !context.isPreview else { return }
+        event = CalendarEventStore.nextEvent(after: now)
+        let alarms = TimedAlertDriver.shared.widgets().filter { $0.kind == .alarm }.map(\.config)
+        alarm = ClockPanelData.nextAlarm(alarms, now: now)
+    }
+
+    @ViewBuilder
+    private func panel(_ model: ClockPanelModel) -> some View {
+        let input = ClockPanelInput(model: model, editable: !context.isPreview, onPick: pick)
+        switch ClockPanelKind.of(face) {
+        case .pixel: PixelClockPanel(input: input)
+        case .lcd: LCDClockPanel(input: input)
+        case .classic: ClassicClockPanel(input: input)
+        case .analog: AnalogClockPanel(input: input)
+        case .flip: FlipClockPanel(input: input, face: face)
+        case .words: WordsClockPanel(input: input)
+        case .neon: NeonClockPanel(input: input)
+        case .nixie: NixieClockPanel(input: input)
+        }
+    }
+
+    /// 世界时钟换城市：写回 `clockCities`，面板跟着刷新。
+    private func pick(_ slot: Int, _ city: WorldCity) {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(instance) { ClockPanelData.set(city, at: slot, in: &$0) }
     }
 }
 

@@ -111,6 +111,17 @@
         }
       }
     },
+    "%@ %@ 天后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in %@ days"
+          }
+        }
+      }
+    },
     "%@ %@ 正在响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -749,6 +760,17 @@
         }
       }
     },
+    "%@ 分后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ min"
+          }
+        }
+      }
+    },
     "%@ 分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1207,6 +1229,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Day %@, %@"
+          }
+        }
+      }
+    },
+    "%@ 时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ h"
+          }
+        }
+      }
+    },
+    "%@ 时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ h %@ min"
+          }
+        }
+      }
+    },
+    "%@ 时后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ h"
           }
         }
       }
@@ -5750,6 +5805,17 @@
         }
       }
     },
+    "今天 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %@%%"
+          }
+        }
+      }
+    },
     "今天 %@/%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5900,6 +5966,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Checked in today"
+          }
+        }
+      }
+    },
+    "今天已过 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of today gone"
           }
         }
       }
@@ -6208,6 +6285,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collected this year"
+          }
+        }
+      }
+    },
+    "今年第 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@ of the year"
           }
         }
       }
@@ -11136,6 +11224,17 @@
         }
       }
     },
+    "同此处" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as here"
+          }
+        }
+      }
+    },
     "名字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13089,6 +13188,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daily forecast"
+          }
+        }
+      }
+    },
+    "夜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
           }
         }
       }
@@ -18921,6 +19031,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "日出 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunrise %@"
+          }
+        }
+      }
+    },
+    "日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event"
+          }
+        }
+      }
+    },
+    "日落 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunset %@"
+          }
+        }
+      }
+    },
+    "昨天 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday %@"
+          }
+        }
+      }
+    },
+    "昼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
+    "昼长 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daylight %@"
           }
         }
       }
@@ -27456,6 +27632,17 @@
         }
       }
     },
+    "点按换一座城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to change the city"
+          }
+        }
+      }
+    },
     "点按播放或暂停" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29828,6 +30015,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of %@"
+          }
+        }
+      }
+    },
+    "第 %@ 周" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %@"
           }
         }
       }
@@ -34389,6 +34587,17 @@
         }
       }
     },
+    "还剩 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
     "还剩 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36486,6 +36695,17 @@
         }
       }
     },
+    "闹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AL"
+          }
+        }
+      }
+    },
     "闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37794,6 +38014,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hong Kong"
+          }
+        }
+      }
+    },
+    "马上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now"
           }
         }
       }

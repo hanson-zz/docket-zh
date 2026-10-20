@@ -592,9 +592,9 @@ enum WidgetDetail {
         case .calendar, .reminders: 320
         // Set by the twelve-column strip of the next hours there.
         case .world: 320
-        // A big time, a date and two rows: 300 left a gutter wide enough to
-        // read as padding.
-        case .clock: 280
+        // 时钟面板跟着卡片外观分好几套，带今天进度、三座城市的世界时钟、
+        // 农历和本周两张小卡，320 才排得下三列城市。
+        case .clock: 320
         case .battery: 330
         case .notes: 300
         case .system, .network: 340

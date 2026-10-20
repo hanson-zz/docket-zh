@@ -25,7 +25,7 @@ struct CalendarDetail: View {
     /// reopened. `nil` means "not touched yet, read the config".
     @State private var picked: Set<String>?
 
-    private var store: EKEventStore { CalendarStore.shared }
+    private var store: EKEventStore { CalendarEventStore.shared }
 
     private var config: WidgetConfig { instance.config }
 
@@ -311,16 +311,6 @@ struct CalendarDetail: View {
     private func clock(_ date: Date) -> String {
         date.formatted(date: .omitted, time: .shortened)
     }
-}
-
-/// One store, made the first time a calendar panel opens.
-///
-/// Held here rather than in `@State`: the panel is rebuilt on every tick of
-/// the clock, and a store in state would mean a fresh connection to the
-/// calendar daemon each second, all but one of them thrown away.
-@MainActor
-private enum CalendarStore {
-    static let shared = EKEventStore()
 }
 
 /// One row, flattened off its `EKEvent` when the day is read.

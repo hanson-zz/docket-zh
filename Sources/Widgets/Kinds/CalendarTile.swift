@@ -61,8 +61,9 @@ struct CalendarTile: View {
         // `now` ticks every second; a day out of the local cache is cheap but
         // not free. Five minutes is coarse enough to be invisible and still
         // lands on midnight, which is when the page has to turn - and it is
-        // also what picks up access granted from the panel, whose store is
-        // not this one.
+        // also what picks up access granted from the panel (the store is
+        // shared now, see `CalendarEventStore`, but the tile still has to
+        // read again to show it).
         .onChange(of: Int(context.now.timeIntervalSince1970) / 300) { _, _ in load() }
         // An event added or moved in Calendar while the shelf is up.
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
@@ -534,14 +535,14 @@ struct CalendarTile: View {
         let status = EKEventStore.authorizationStatus(for: .event)
         // A store built before the grant keeps answering as if it had none
         // until it is told to look again.
-        if status != access { CalendarTileStore.shared.reset() }
+        if status != access { CalendarEventStore.shared.reset() }
         access = status
         guard status == .fullAccess else {
             events = []
             return
         }
 
-        let store = CalendarTileStore.shared
+        let store = CalendarEventStore.shared
         let all = store.calendars(for: .event)
         let wanted = all.filter { chosen.contains($0.calendarIdentifier) }
         // A predicate over no calendars matches nothing, so a filter whose
@@ -559,17 +560,6 @@ struct CalendarTile: View {
             .compactMap(TileEvent.init)
             .sorted { $0.start == $1.start ? $0.title < $1.title : $0.start < $1.start }
     }
-}
-
-/// One store, made the first time a calendar tile is drawn.
-///
-/// Held here rather than in `@State`: the tile is rebuilt on every tick of the
-/// clock, and a store in state would mean a fresh connection to the calendar
-/// daemon each second, all but one of them thrown away. Making it costs
-/// nothing and prompts for nothing; only a request for access would.
-@MainActor
-private enum CalendarTileStore {
-    static let shared = EKEventStore()
 }
 
 /// The widget's accent, for the date block and for an event whose calendar has

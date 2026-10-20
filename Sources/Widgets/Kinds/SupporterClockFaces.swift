@@ -182,12 +182,12 @@ private struct NixieFace: View {
     }
 }
 
-private struct NixieTube: View {
+struct NixieTube: View {
     var digit: String?
     var width: CGFloat
     var height: CGFloat
-
-    private let orange = Color(red: 1, green: 0.6, blue: 0.16)
+    /// 数字的辉光颜色。时钟面板里秒数那两支管跟着颜色面板选的强调色。
+    var orange = Color(red: 1, green: 0.6, blue: 0.16)
 
     var body: some View {
         ZStack {
@@ -223,7 +223,7 @@ private struct NixieTube: View {
     }
 }
 
-private struct NixieColon: View {
+struct NixieColon: View {
     var height: CGFloat
     private let orange = Color(red: 1, green: 0.6, blue: 0.16)
 
@@ -382,10 +382,12 @@ private struct MinimalFlipFace: View {
     }
 }
 
-private struct DarkFlipCard: View {
+struct DarkFlipCard: View {
     var text: String
     var width: CGFloat
     var height: CGFloat
+    /// 数字颜色。时钟面板里秒数那两张跟着颜色面板选的强调色。
+    var ink: Color = .white
 
     var body: some View {
         ZStack {
@@ -397,7 +399,7 @@ private struct DarkFlipCard: View {
             .shadow(color: .black.opacity(0.45), radius: 1.5, y: 1)
             Text(text)
                 .font(.system(size: height * 0.72, weight: .bold, design: .rounded).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(ink)
                 .contentTransition(.numericText())
                 .animation(.snappy(duration: 0.3), value: text)
             // The hinge shows only at the card's edges, as two pins, so the
