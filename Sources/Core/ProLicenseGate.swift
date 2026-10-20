@@ -31,6 +31,8 @@ import Foundation
 ///   AI 卡片跳转到网页或 App 照旧免费。
 /// - 系统活动的超阈值提醒：规则照样列出，开关和“添加规则”弹付费墙；不判断、
 ///   不发通知、卡片不变红，规则不改写，解锁后恢复。
+/// - 邮件面板的多账户筛选：没解锁时顶部只按「全部」显示，点某个账户弹付费墙；
+///   存着的筛选不改写，解锁或试用时回来。账户开关、显示几封等设置照旧免费。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -193,6 +195,9 @@ public enum ProLicenseGate {
 
     /// 书签面板能不能用分组（顶部分组标签、新建分组、移到分组）。
     public static func canUseBookmarkGroups(unlocked: Bool) -> Bool { unlocked }
+
+    /// 邮件面板顶部能不能按账户筛选（Pro）。没解锁时按「全部」显示，筛选照旧存着。
+    public static func canFilterMailAccounts(unlocked: Bool) -> Bool { unlocked }
 
     // MARK: 天气城市
 

@@ -66,11 +66,96 @@ final class MailService {
         }
     }
 
+    // MARK: 面板的未读列表
+
+    /// 面板读到的列表；nil 是还没读过。只在面板开着时读，关上就不再读。
+    private(set) var snapshot: MailSnapshot?
+    /// 面板列表这一次读得怎样：读到了、「邮件」没开、没有权限、读不出来。
+    private(set) var listState: MailListState = .idle
+    @ObservationIgnored private var listInFlight = false
+
+    /// 读一次账户和最近的未读。「邮件」没开时不读（问它会把它打开）。
+    func loadList(summary: Bool) async {
+        guard Self.isMailRunning else {
+            listState = .notRunning
+            return
+        }
+        guard !listInFlight else { return }
+        listInFlight = true
+        defer { listInFlight = false }
+        if snapshot == nil { listState = .loading }
+        let source = MailInbox.fetchScript(perAccount: MailInbox.perAccount, summary: summary)
+        let result = await withTimeout(seconds: 20) { await MailBridge.execute(source) }
+        switch result {
+        case .some(.text(let text)):
+            snapshot = MailInbox.parse(text, now: .now)
+            listState = .loaded
+        case .some(.denied):
+            listState = .denied
+            state = .denied
+        case .some(.failed), .none:
+            // 读过一次的照旧显示上次的列表，只是这次没读到。
+            listState = snapshot == nil ? .failed : .loaded
+        }
+    }
+
+    /// 把一封标成已读：先在本地拿掉，再让「邮件」改，改完刷新卡片上的数。
+    func markRead(_ message: MailMessage) async -> Bool {
+        if let snapshot { self.snapshot = MailInbox.removing(message, from: snapshot) }
+        let source = MailInbox.markReadScript(account: message.account, mailID: message.mailID)
+        let result = await withTimeout(seconds: 10) { await MailBridge.execute(source) }
+        refresh(force: true)
+        return Self.succeeded(result)
+    }
+
+    /// 把几个账户的未读全部标成已读。
+    func markAllRead(_ accounts: [String]) async -> Bool {
+        guard !accounts.isEmpty else { return true }
+        if let snapshot { self.snapshot = MailInbox.clearing(accounts, from: snapshot) }
+        let source = MailInbox.markAllReadScript(accounts: accounts)
+        let result = await withTimeout(seconds: 20) { await MailBridge.execute(source) }
+        refresh(force: true)
+        return Self.succeeded(result)
+    }
+
+    private static func succeeded(_ result: MailScriptResult?) -> Bool {
+        if case .some(.text) = result { return true }
+        return false
+    }
+
+    /// 点开一封：有 Message-ID 就跳到那一封，没有就只打开「邮件」。
+    func open(_ message: MailMessage) {
+        if let url = MailInbox.messageURL(message.messageID), NSWorkspace.shared.open(url) { return }
+        openMail()
+    }
+
+    func openMail() {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.bundleID) else { return }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
     func openAutomationSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
             NSWorkspace.shared.open(url)
         }
     }
+}
+
+/// 面板列表的状态。
+enum MailListState: Equatable, Sendable {
+    case idle
+    case loading
+    case notRunning
+    case denied
+    case failed
+    case loaded
+}
+
+/// 跑一段脚本的结果：返回的文字、没有权限、出错。
+enum MailScriptResult: Sendable {
+    case text(String)
+    case denied
+    case failed
 }
 
 /// The Apple Event itself, on its own serial queue.
@@ -81,6 +166,24 @@ enum MailBridge {
         await withCheckedContinuation { continuation in
             queue.async { continuation.resume(returning: run()) }
         }
+    }
+
+    /// 跑任意一段脚本（读列表、标已读），和读未读数排在同一个队列里。
+    static func execute(_ source: String) async -> MailScriptResult {
+        await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: runScript(source)) }
+        }
+    }
+
+    private static func runScript(_ source: String) -> MailScriptResult {
+        guard let script = NSAppleScript(source: source) else { return .failed }
+        var error: NSDictionary?
+        let result = script.executeAndReturnError(&error)
+        if let error {
+            let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
+            return code == -1743 || code == -1744 ? .denied : .failed
+        }
+        return .text(result.stringValue ?? "")
     }
 
     private static func run() -> MailState {

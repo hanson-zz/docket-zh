@@ -20,6 +20,7 @@ import Foundation
 ///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 /// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
+/// - 邮件面板的多账户筛选（`MailInbox`），见 `ProLicenseGate.canFilterMailAccounts`。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
 ///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。

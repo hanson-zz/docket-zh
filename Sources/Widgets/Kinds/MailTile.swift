@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// How many messages in Mail's inbox are unread. The card opens Mail.
+/// How many messages in Mail's inbox are unread. The card opens its panel
+/// (MailDetail), which lists the newest unread messages.
 struct MailTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -66,7 +67,8 @@ struct MailTile: View {
     private var caption: String {
         switch state {
         case .unread(let count): MailBadge.caption(count)
-        case .notRunning: tr("未打开，点按打开")
+        // 点卡片打开面板，面板里有「打开邮件 App」。
+        case .notRunning: tr("未打开")
         case .denied: TilePermission.prompt(Self.permission)
         case .failed: tr("暂时无法读取")
         }

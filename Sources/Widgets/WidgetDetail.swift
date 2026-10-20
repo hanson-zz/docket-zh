@@ -586,7 +586,7 @@ enum WidgetDetail {
         switch kind {
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .emoji, .volume, .toggles, .mail, .microphone, .gauges:
+        case .capture, .emoji, .volume, .toggles, .microphone, .gauges:
             false
         default:
             true
@@ -621,6 +621,8 @@ enum WidgetDetail {
         case .appSwitcher: 320
         case .bookmarks: 320
         case .recorder: 320
+        // 邮件：最近几封未读，和第二批面板一样 320。
+        case .mail: 320
         // 「算」：输入框、结果、最近记录，和原来汇率换算的面板一样宽。
         case .calculator: 320
         // 快捷指令：卡片预览一排 4 个大图标，每行图标、名字、上次结果和运行键。

@@ -374,7 +374,12 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Read from Mail over AppleScript, and only while Mail is open.
-        Entry(kind: .mail, name: tr("邮件"), category: .ai, defaults: c([:]),
+        // 面板列最近未读（MailInbox）：每次显示几封、摘要、点开后是否标已读是设置；
+        // 关掉的账户 `hiddenAccounts` 和顶部筛选 `filter`（Pro）由面板写，不进设置页。
+        Entry(kind: .mail, name: tr("邮件"), category: .ai,
+              defaults: c([MailInbox.limitKey: .string("\(MailInbox.defaultLimit)"),
+                           MailInbox.markReadKey: .bool(false),
+                           MailInbox.summaryKey: .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 「算」：计算器、单位换算和汇率换算合成一张，输入什么自动认（SmartCalc）。

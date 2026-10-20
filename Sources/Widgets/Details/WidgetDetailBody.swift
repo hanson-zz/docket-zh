@@ -69,6 +69,8 @@ struct WidgetDetailBody: View {
             CalculatorDetail(instance: instance, context: context)
         case .recorder:
             RecorderDetail(instance: instance, context: context)
+        case .mail:
+            MailDetail(instance: instance, context: context)
         case .bookmarks:
             BookmarksDetail(instance: instance, context: context)
         case .appSwitcher:

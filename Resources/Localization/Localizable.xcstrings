@@ -1178,6 +1178,17 @@
         }
       }
     },
+    "%@ 封" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
     "%@ 封未读" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1185,6 +1196,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ unread"
+          }
+        }
+      }
+    },
+    "%@ 封未读 · 点开跳到那一封" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ unread · click to jump to it"
           }
         }
       }
@@ -2905,6 +2927,17 @@
         }
       }
     },
+    "10 月 24 日 9:00 至 15:00 停水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water off Oct 24, 9:00 to 15:00"
+          }
+        }
+      }
+    },
     "100 USD、5 km、3*4+2" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4034,6 +4067,28 @@
         }
       }
     },
+    "「邮件」没开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail is not open"
+          }
+        }
+      }
+    },
+    "「邮件」没有回应，稍后会再试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail did not respond. Trying again shortly."
+          }
+        }
+      }
+    },
     "一" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4767,6 +4822,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Work next %@"
+          }
+        }
+      }
+    },
+    "下周家长会" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next week's parent meeting"
           }
         }
       }
@@ -8852,6 +8918,17 @@
         }
       }
     },
+    "全部 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All %@"
+          }
+        }
+      }
+    },
     "全部 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8958,6 +9035,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear All"
+          }
+        }
+      }
+    },
+    "全部读完时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When all read"
           }
         }
       }
@@ -9226,6 +9314,17 @@
         }
       }
     },
+    "关着时要点「标已读」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, click Mark Read"
+          }
+        }
+      }
+    },
     "关闭" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9398,6 +9497,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click again to delete"
+          }
+        }
+      }
+    },
+    "再点一次：%@ 封" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again: %@"
           }
         }
       }
@@ -11719,6 +11829,17 @@
         }
       }
     },
+    "去允许" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
     "去开启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12566,6 +12687,17 @@
         }
       }
     },
+    "合同第二版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contract, second draft"
+          }
+        }
+      }
+    },
     "吉达" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12987,6 +13119,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thu"
+          }
+        }
+      }
+    },
+    "周四下午可以吗？我先把稿子发你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Does Thursday afternoon work? I'll send the draft first"
+          }
+        }
+      }
+    },
+    "周岚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lan Zhou"
           }
         }
       }
@@ -14054,6 +14208,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow Dockling to record system audio in \"Privacy & Security ▸ Screen & System Audio Recording\"."
+          }
+        }
+      }
+    },
+    "在「邮件」中打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Mail"
           }
         }
       }
@@ -19820,6 +19985,17 @@
         }
       }
     },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter"
+          }
+        }
+      }
+    },
     "快速开始" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20553,6 +20729,17 @@
         }
       }
     },
+    "打开「邮件」后这里列出账户" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Mail to list your accounts here"
+          }
+        }
+      }
+    },
     "打开专属页" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20593,6 +20780,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open it to control it here"
+          }
+        }
+      }
+    },
+    "打开它就能在这里看未读，不会自动打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open it to see unread mail here. Dockling never opens it on its own."
           }
         }
       }
@@ -20725,6 +20923,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "打开邮件 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Mail"
           }
         }
       }
@@ -21796,6 +22005,17 @@
         }
       }
     },
+    "改了付款节点，附件在最下面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment milestones changed, attachment at the bottom"
+          }
+        }
+      }
+    },
     "改名" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21983,6 +22203,17 @@
         }
       }
     },
+    "时间定在周五晚上七点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set for Friday at 7 pm"
+          }
+        }
+      }
+    },
     "昆明" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22034,6 +22265,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daylight %@"
+          }
+        }
+      }
+    },
+    "显示一行摘要" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show a one-line preview"
           }
         }
       }
@@ -22225,6 +22467,39 @@
         }
       }
     },
+    "未知发件人" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown sender"
+          }
+        }
+      }
+    },
+    "本周六停水通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water outage this Saturday"
+          }
+        }
+      }
+    },
+    "本周灵感 12 则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 ideas this week"
+          }
+        }
+      }
+    },
     "本地" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22243,6 +22518,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sapporo"
+          }
+        }
+      }
+    },
+    "李老师" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ms. Li"
           }
         }
       }
@@ -22276,6 +22562,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cambodia"
+          }
+        }
+      }
+    },
+    "标已读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark Read"
           }
         }
       }
@@ -22368,6 +22665,17 @@
         }
       }
     },
+    "正在读取未读邮件…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading unread mail…"
+          }
+        }
+      }
+    },
     "正在读取歌单…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22452,6 +22760,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every address was tried and none connected. They may just be offline for now; nothing is deleted until you confirm."
+          }
+        }
+      }
+    },
+    "每次显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
           }
         }
       }
@@ -22566,6 +22885,17 @@
         }
       }
     },
+    "没有未读邮件，歇会儿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No unread mail. Take a break."
+          }
+        }
+      }
+    },
     "没有能写的日历，请先在日历 App 里建一个。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22617,6 +22947,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't delete the event. Try again later."
+          }
+        }
+      }
+    },
+    "没能标为已读，稍后会再读一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not mark as read. Checking again shortly."
           }
         }
       }
@@ -22727,6 +23068,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shenzhen"
+          }
+        }
+      }
+    },
+    "深色界面里怎么做层次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building depth in dark interfaces"
           }
         }
       }
@@ -22859,6 +23211,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click a city to show or hide the next 12 hours"
+          }
+        }
+      }
+    },
+    "点开后自动标已读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark read when opened"
           }
         }
       }
@@ -31548,6 +31911,17 @@
         }
       }
     },
+    "物业服务中心" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Property Management"
+          }
+        }
+      }
+    },
     "特拉维夫" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34052,6 +34426,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "First Full Basket"
+          }
+        }
+      }
+    },
+    "第一次要允许码头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling needs permission"
+          }
+        }
+      }
+    },
+    "第二批面板评审" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Second panel batch review"
           }
         }
       }
@@ -37392,6 +37788,17 @@
         }
       }
     },
+    "设计周刊" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design Weekly"
+          }
+        }
+      }
+    },
     "设计评审" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37854,6 +38261,28 @@
         }
       }
     },
+    "读取和控制「邮件」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "to read and control Mail"
+          }
+        }
+      }
+    },
+    "读完了！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All read!"
+          }
+        }
+      }
+    },
     "读数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38048,6 +38477,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Beirut"
+          }
+        }
+      }
+    },
+    "账户" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accounts"
           }
         }
       }
@@ -39482,6 +39922,17 @@
         }
       }
     },
+    "还没有读到账户" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No accounts read yet"
+          }
+        }
+      }
+    },
     "还没有闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40483,6 +40934,28 @@
         }
       }
     },
+    "选账户 · 显示几封 · 点开后怎样" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accounts · how many · on open"
+          }
+        }
+      }
+    },
+    "选账户、显示几封、点开后是否标已读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose accounts, how many to show and whether opening marks read"
+          }
+        }
+      }
+    },
     "选项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40655,6 +41128,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mail"
+          }
+        }
+      }
+    },
+    "邮件设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail Settings"
           }
         }
       }
@@ -41689,6 +42173,17 @@
         }
       }
     },
+    "陈一凡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yifan Chen"
+          }
+        }
+      }
+    },
     "降低透明度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42165,6 +42660,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Needs permission: %@. Requested on first use."
+          }
+        }
+      }
+    },
+    "需要允许码头读取「邮件」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Dockling to read Mail"
           }
         }
       }
@@ -43360,6 +43866,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "(local time)"
+          }
+        }
+      }
+    },
+    "（无主题）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(No Subject)"
           }
         }
       }
@@ -45692,17 +46209,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Code Editor"
-          }
-        }
-      }
-    },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts"
           }
         }
       }

@@ -27,7 +27,7 @@ private struct ProPerk: Identifiable {
             ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("专属配色和样式"),
                     detail: tr("小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹")),
             ProPerk(id: "tools", symbol: "wand.and.stars", title: tr("Pro 工具"),
-                    detail: tr("快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒")),
+                    detail: tr("快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选")),
         ]
     }
 }

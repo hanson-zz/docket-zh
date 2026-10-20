@@ -651,6 +651,9 @@ struct WidgetSettingsSections: View {
         "weather.moreCities": tr("更多城市（第 2 个起需要 Pro，面板里左右切换）"),
         "weather.showIndices": tr("面板显示生活指数"),
         "weather.showRain": tr("面板显示 2 小时降水提示"),
+        "mail.limit": tr("每次显示"),
+        "mail.markReadOnOpen": tr("点开后自动标已读"),
+        "mail.summary": tr("显示一行摘要"),
     ]
 
     static func label(_ key: String) -> String {
@@ -778,6 +781,7 @@ struct WidgetSettingsSections: View {
         "calculator.currencyTo": CurrencyNames.common.map { ("\($0.name) \($0.code)", $0.code) },
         "lunar.workAlertLead": LunarCard.leadChoices.map { (tr("\($0) 天"), "\($0)") },
         "trash.threshold": TrashFlies.thresholds.map { ($0.label, $0.value) },
+        "mail.limit": MailInbox.limitChoices.map { (tr("\($0) 封"), "\($0)") },
         "crypto.currency": [(tr("人民币 CNY"), "cny"), (tr("美元 USD"), "usd")],
         "crypto.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },
         "stock.colors": ChangeColors.allCases.map { ($0.title, $0.rawValue) },

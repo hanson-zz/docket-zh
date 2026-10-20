@@ -94,6 +94,7 @@ final class WidgetOptionTests: XCTestCase {
             .github: ["repos", "notify", "interval"],
             .calculator: ["currencyFrom", "currencyTo"],
             .recorder: ["folder"],
+            .mail: ["limit", "markReadOnOpen", "summary"],
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],
             .gauges: ["rings"],
