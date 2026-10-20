@@ -49,7 +49,7 @@ public enum WidgetSearch {
         "bookmarks": ["bookmarks", "links", "网址", "链接"],
         "app-switcher": ["app switcher", "running apps", "切换应用", "运行中"],
         "wallpaper": ["wallpaper", "背景", "桌面"],
-        "microphone": ["microphone", "mic", "mute", "静音"],
+        "microphone": ["microphone", "mic", "mute", "静音", "camera", "摄像头", "隐私"],
         "gauges": ["gauges", "disk", "storage", "磁盘", "存储", "仪表"],
         "posture": ["posture", "stand up", "break", "站起来", "休息"],
         "todo": ["todo", "tasks", "待办", "清单"],

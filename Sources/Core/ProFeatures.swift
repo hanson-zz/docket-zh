@@ -28,6 +28,8 @@ import Foundation
 /// - AI 刘海对话的设置和电池面板里的充电上限。
 /// - 系统活动面板里的超阈值提醒（规则存在卡片的 `alertRules`），见
 ///   `ProLicenseGate.systemAlertsActive`。
+/// - 麦克风面板的使用记录保留 30 天（免费只看今天），见
+///   `ProLicenseGate.micHistoryActive`。
 public enum ProFeatures {
 
     /// 胶囊上的字。

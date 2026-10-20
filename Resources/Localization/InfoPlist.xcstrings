@@ -297,25 +297,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dockling uses the microphone to record voice memos when you press the Recorder widget's button. Recordings are saved only in the folder you choose."
+            "value" : "Dockling uses the microphone to record voice memos when you press the Recorder widget's button. Recordings are saved only in the folder you choose. It also uses it to show the input level when you tap Test level in the Microphone panel; nothing is recorded or kept."
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。"
+            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。在麦克风面板里点「测电平」时也会用麦克风显示输入电平，不录下也不保存。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。"
+            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。在麦克风面板里点「测电平」时也会用麦克风显示输入电平，不录下也不保存。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。"
+            "value" : "码头会在你按下“录音”小组件的按钮时使用麦克风录制语音备忘录，录音只保存在你选择的文件夹中。在麦克风面板里点「测电平」时也会用麦克风显示输入电平，不录下也不保存。"
           }
         }
       }

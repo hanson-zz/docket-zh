@@ -655,6 +655,9 @@ struct WidgetSettingsSections: View {
         "mail.limit": tr("每次显示"),
         "mail.markReadOnOpen": tr("点开后自动标已读"),
         "mail.summary": tr("显示一行摘要"),
+        "microphone.notifyMic": tr("有 App 开始用麦克风时提醒"),
+        "microphone.notifyCamera": tr("摄像头亮起时提醒"),
+        "microphone.redWhenMuted": tr("静音时卡片变红"),
     ]
 
     static func label(_ key: String) -> String {

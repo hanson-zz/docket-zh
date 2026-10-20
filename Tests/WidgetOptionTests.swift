@@ -98,6 +98,7 @@ final class WidgetOptionTests: XCTestCase {
             .bookmarks: ["links"],
             .wallpaper: ["folder", "allScreens"],
             .gauges: ["rings"],
+            .microphone: ["muteKey", "notifyCamera", "notifyMic", "redWhenMuted"],
             .posture: ["duration", "start", "end", "notify", "goal", "away", "awayAfter"],
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras", "look"],
             .todo: ["showDone"],

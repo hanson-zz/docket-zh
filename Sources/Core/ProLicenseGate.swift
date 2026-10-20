@@ -35,6 +35,8 @@ import Foundation
 ///   不发通知、卡片不变红，规则不改写，解锁后恢复。
 /// - 邮件面板的多账户筛选：没解锁时顶部只按「全部」显示，点某个账户弹付费墙；
 ///   存着的筛选不改写，解锁或试用时回来。账户开关、显示几封等设置照旧免费。
+/// - 麦克风面板的使用记录：免费只看今天；以前的照旧存在本机（最多 30 天），
+///   不删不改，解锁或试用时能往前翻。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -249,6 +251,9 @@ public enum ProLicenseGate {
     /// 系统活动的超阈值提醒在不在判断：没解锁时不提醒、卡片不变红，规则照旧
     /// 存着，解锁或试用后自动恢复。面板里规则照样列出，开关和“添加规则”弹付费墙。
     public static func systemAlertsActive(unlocked: Bool) -> Bool { unlocked }
+
+    /// 麦克风面板能不能往前看 30 天的使用记录；没解锁只看今天，记录照旧留着。
+    public static func micHistoryActive(unlocked: Bool) -> Bool { unlocked }
 
     // MARK: AI 刘海对话和充电上限
 

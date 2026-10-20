@@ -46,6 +46,7 @@ public enum NotificationAccess: Equatable, Sendable {
         "github": ["notify"],
         "ai-usage": ["notify", "notifyDone"],
         "lunar": ["workAlert"],
+        "microphone": ["notifyMic", "notifyCamera"],
     ]
 
     public static func isNotificationSwitch(kind: String, key: String) -> Bool {

@@ -28,7 +28,8 @@ final class QuickActions {
     /// drawn again.
     private(set) var revision = 0
     private(set) var keepAwake = false
-    private(set) var micMuted = UserDefaults.standard.bool(forKey: "quick.micMuted")
+    /// 麦克风静音和麦克风面板的全局静音是同一份（`MicrophoneMonitor.globalMuted`）。
+    var micMuted: Bool { MicrophoneMonitor.shared.globalMuted }
 
     /// 演示模式打开前的样子；nil 表示没在演示。
     private(set) var presentation: PresentationSnapshot? = QuickActions.loadPresentation()
@@ -175,22 +176,13 @@ final class QuickActions {
     // MARK: Microphone
 
     /// Input volume to 0, remembering what it was so the second click puts
-    /// it back.
+    /// it back. 和麦克风面板的全局静音同一份：Core Audio 拉输入音量，记下的原值
+    /// 存在 `quick.micLevel`。
     private func toggleMicrophone(then done: @escaping @MainActor () -> Void) {
-        let muting = !micMuted
-        micMuted = muting
-        UserDefaults.standard.set(muting, forKey: "quick.micMuted")
-        if muting {
-            Self.capture("/usr/bin/osascript", ["-e", "input volume of (get volume settings)"]) { output in
-                let level = Int(output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 50
-                if level > 0 { UserDefaults.standard.set(level, forKey: "quick.micLevel") }
-                Self.run("/usr/bin/osascript", ["-e", "set volume input volume 0"], then: done)
-            }
-        } else {
-            let saved = UserDefaults.standard.integer(forKey: "quick.micLevel")
-            let level = saved > 0 ? saved : 50
-            Self.run("/usr/bin/osascript", ["-e", "set volume input volume \(level)"], then: done)
-        }
+        let mic = MicrophoneMonitor.shared
+        mic.start()
+        mic.toggleGlobalMute()
+        done()
     }
 
     // MARK: Presentation

@@ -412,8 +412,13 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Whether any app is using the default input device, from Core Audio.
-        // Reading the state needs no microphone permission.
-        Entry(kind: .microphone, name: tr("麦克风"), category: .system, defaults: c([:]),
+        // Reading the state needs no microphone permission. 面板：谁在用、摄像头开着、
+        // 全局静音（快捷键 muteKey，面板里录）、提醒和卡片静音变红。
+        Entry(kind: .microphone, name: tr("麦克风"), category: .system,
+              defaults: c([MicPrivacySettings.muteKeyKey: .string(MicPrivacySettings.defaultMuteKeyText),
+                           MicPrivacySettings.notifyCameraKey: .bool(true),
+                           MicPrivacySettings.notifyMicKey: .bool(true),
+                           MicPrivacySettings.redWhenMutedKey: .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Storage from URLResourceValues, battery from the power-source API,
@@ -715,6 +720,9 @@ public enum WidgetCatalog {
             AlarmBook.isLegacy(config)
         // 三个预设在面板里改。
         case (.countdown, CountdownRun.presetsKey):
+            false
+        // 静音快捷键在麦克风面板里录，设置页不给文字框。
+        case (.microphone, MicPrivacySettings.muteKeyKey):
             false
         // 收音机的皮肤在“样式”里选，不再单列一项。
         case (.radio, RadioSkin.key):

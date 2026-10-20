@@ -586,7 +586,7 @@ enum WidgetDetail {
         switch kind {
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .volume, .toggles, .microphone, .gauges:
+        case .capture, .volume, .toggles, .gauges:
             false
         default:
             true
@@ -642,6 +642,8 @@ enum WidgetDetail {
         // 分时图、提醒列表；自选股每行有代码、迷你走势、现价和色块。
         case .stock, .watchlist: 360
         case .appVolume: 320
+        // 麦克风与摄像头：谁在用、全局静音、输入设备和音量，和第二批面板一样 320。
+        case .microphone: 320
         case .radio: 340
         case .anniversary: 360
         case .water: 360

@@ -49589,6 +49589,611 @@
           }
         }
       }
+    },
+    "摄像头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        }
+      }
+    },
+    "%@ 开始用麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ started using the microphone"
+          }
+        }
+      }
+    },
+    "在码头的麦克风面板里可以一键静音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can mute it in one click from Dockling's Microphone panel."
+          }
+        }
+      }
+    },
+    "摄像头亮起了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The camera turned on"
+          }
+        }
+      }
+    },
+    "有 App 打开了摄像头。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An app turned on the camera."
+          }
+        }
+      }
+    },
+    "静音中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muted"
+          }
+        }
+      }
+    },
+    "现在没有 App 在用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is using them"
+          }
+        }
+      }
+    },
+    "摄像头开着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera is on"
+          }
+        }
+      }
+    },
+    "%@ 个 App 正在用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ apps in use"
+          }
+        }
+      }
+    },
+    "%@ 个 App 正在用 · 摄像头开着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ apps in use · Camera on"
+          }
+        }
+      }
+    },
+    "%@ 在用麦克风，听不到你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is using the microphone but cannot hear you"
+          }
+        }
+      }
+    },
+    "%@ 等 %@ 个 App 在用麦克风，听不到你" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ and others (%@ apps) are using the microphone but cannot hear you"
+          }
+        }
+      }
+    },
+    "麦克风与摄像头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone & Camera"
+          }
+        }
+      }
+    },
+    "麦克风设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone Settings"
+          }
+        }
+      }
+    },
+    "提醒、快捷键和使用记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerts, shortcut and usage history"
+          }
+        }
+      }
+    },
+    "正在使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Use"
+          }
+        }
+      }
+    },
+    "会议软件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meeting App"
+          }
+        }
+      }
+    },
+    "语音备忘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice Memos"
+          }
+        }
+      }
+    },
+    "没有 App 在用麦克风和摄像头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is using the mic or camera"
+          }
+        }
+      }
+    },
+    "有人开始用时会出现在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps show up here when they start"
+          }
+        }
+      }
+    },
+    "静音麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mute Microphone"
+          }
+        }
+      }
+    },
+    "取消静音麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmute Microphone"
+          }
+        }
+      }
+    },
+    "恢复静音前的输入音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore the input volume from before muting"
+          }
+        }
+      }
+    },
+    "把输入音量拉到 0，所有 App 都听不到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set the input volume to 0 so no app can hear you"
+          }
+        }
+      }
+    },
+    "这个输入设备不能静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This input device cannot be muted"
+          }
+        }
+      }
+    },
+    "点一下恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to unmute"
+          }
+        }
+      }
+    },
+    "所有 App 都听不到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app can hear you"
+          }
+        }
+      }
+    },
+    "没有输入设备。接上麦克风或耳机后会出现在这里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No input device. Connect a microphone or headset and it will appear here."
+          }
+        }
+      }
+    },
+    "内建麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in Microphone"
+          }
+        }
+      }
+    },
+    "USB 麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "USB Microphone"
+          }
+        }
+      }
+    },
+    "蓝牙耳机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth Headset"
+          }
+        }
+      }
+    },
+    "输入音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Volume"
+          }
+        }
+      }
+    },
+    "这个设备不能在这里调输入音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device's input volume cannot be changed here"
+          }
+        }
+      }
+    },
+    "输入电平" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Level"
+          }
+        }
+      }
+    },
+    "停止测电平" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Test"
+          }
+        }
+      }
+    },
+    "测电平" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test Level"
+          }
+        }
+      }
+    },
+    "测电平要用麦克风取声音，最多一分钟，面板关上就停，什么都不录下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testing the level listens to the microphone for up to a minute and stops when the panel closes. Nothing is recorded."
+          }
+        }
+      }
+    },
+    "静音中，电平是 0" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muted, so the level is 0"
+          }
+        }
+      }
+    },
+    "对着麦克风说话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speak into the microphone"
+          }
+        }
+      }
+    },
+    "打不开麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't open the microphone"
+          }
+        }
+      }
+    },
+    "点一下才用麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses the mic only when tapped"
+          }
+        }
+      }
+    },
+    "有 App 开始用麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An App Starts Using the Mic"
+          }
+        }
+      }
+    },
+    "摄像头亮起时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the Camera Turns On"
+          }
+        }
+      }
+    },
+    "静音时卡片变红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card Turns Red When Muted"
+          }
+        }
+      }
+    },
+    "静音快捷键" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mute Shortcut"
+          }
+        }
+      }
+    },
+    "录新快捷键" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Shortcut"
+          }
+        }
+      }
+    },
+    "今天谁用过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used Today"
+          }
+        }
+      }
+    },
+    "%@谁用过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used %@"
+          }
+        }
+      }
+    },
+    "只存在本机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kept on this Mac only"
+          }
+        }
+      }
+    },
+    "今天还没有 App 用过麦克风或摄像头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app has used the mic or camera today"
+          }
+        }
+      }
+    },
+    "这天没有记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing recorded that day"
+          }
+        }
+      }
+    },
+    "使用记录保留 30 天，可以往前翻" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep 30 days of usage history and browse back"
+          }
+        }
+      }
+    },
+    "有 App 开始用麦克风时提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert when an app starts using the microphone"
+          }
+        }
+      }
+    },
+    "摄像头亮起时提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert when the camera turns on"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

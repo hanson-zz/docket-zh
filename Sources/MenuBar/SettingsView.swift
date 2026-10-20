@@ -1504,6 +1504,7 @@ final class ShortcutKeyRecorder {
         HotKeyService.shared.suspend()
         AIHotKey.shared.suspend()
         TodoHotKey.shared.suspend()
+        MicMuteHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1520,6 +1521,7 @@ final class ShortcutKeyRecorder {
         HotKeyService.shared.resume()
         AIHotKey.shared.resume()
         TodoHotKey.shared.resume()
+        MicMuteHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

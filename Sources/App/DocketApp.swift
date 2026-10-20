@@ -171,6 +171,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return nil
         }
 
+        // 麦克风与摄像头：提醒、静音快捷键和「静音时卡片变红」读第一个麦克风小组件，
+        // 在哪个布局都算；有麦克风小组件就开始每秒读，使用记录和提醒不靠卡片在屏幕上。
+        MicrophoneMonitor.shared.settings = { [state] in
+            func microphone(in items: [DockItem]) -> WidgetInstance? {
+                for item in items {
+                    switch item {
+                    case .widget(let widget) where widget.kind == .microphone: return widget
+                    case .group(let group): if let found = microphone(in: group.items) { return found }
+                    default: continue
+                    }
+                }
+                return nil
+            }
+            for profile in state.state.profiles {
+                if let widget = microphone(in: profile.items) { return MicPrivacySettings(config: widget.config) }
+            }
+            return nil
+        }
+        if MicrophoneMonitor.shared.settings() != nil { MicrophoneMonitor.shared.start() }
+
         // 灵动提示: off unless switched on in Settings ▸ 通用.
         IslandController.shared.apply(state.state.island)
         state.onIslandChanged = { island in IslandController.shared.apply(island) }

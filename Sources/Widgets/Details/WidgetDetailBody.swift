@@ -97,6 +97,8 @@ struct WidgetDetailBody: View {
             CryptoDetail(instance: instance, context: context)
         case .appVolume:
             AppVolumeDetail(instance: instance, context: context)
+        case .microphone:
+            MicrophoneDetail(instance: instance, context: context)
         case .radio:
             RadioDetail(instance: instance, context: context)
         case .anniversary:
