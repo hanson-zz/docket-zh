@@ -493,12 +493,11 @@ struct PhotoFrameDetail: View {
 
     @ViewBuilder
     private func excludedSection(_ album: PhotoAlbum) -> some View {
-        let ids = album.excluded
+        let ids: [String] = album.excluded
         let lookup = album.lookup
-        AlbumSection(label: tr("已排除 \(ids.count) 张"),
-                     right: ids.isEmpty ? nil : tr("全部恢复"),
-                     rightColor: accent,
-                     rightAction: ids.isEmpty ? nil : restoreAll)
+        let right: String? = ids.isEmpty ? nil : tr("全部恢复")
+        let action: (() -> Void)? = ids.isEmpty ? nil : { restoreAll() }
+        AlbumSection(label: tr("已排除 \(ids.count) 张"), right: right, rightColor: accent, rightAction: action)
             .padding(.top, 6)
         if ids.isEmpty {
             Text(verbatim: tr("浏览时悬停在照片上点“排除”，就不再轮到它"))
