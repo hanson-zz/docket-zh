@@ -222,11 +222,50 @@ final class MicPrivacyTests: XCTestCase {
         XCTAssertTrue(defaults.notifyCamera)
         XCTAssertTrue(defaults.redWhenMuted)
         XCTAssertEqual(defaults.muteKey, MicPrivacySettings.defaultMuteKey)
-        XCTAssertEqual(defaults.muteKey?.displayString, "⌥⌘M")
+        XCTAssertEqual(defaults.muteKey?.displayString, "⌃⌥⌘M")
 
         var cleared = WidgetConfig()
         cleared.set(MicPrivacySettings.muteKeyKey, .string(MicPrivacySettings.encode(nil)))
         XCTAssertNil(MicPrivacySettings(config: cleared).muteKey, "an empty string means no shortcut")
+    }
+
+    func testOldDefaultMuteKeyMovesToNewDefaultOnce() {
+        var old = WidgetConfig()
+        old.set(MicPrivacySettings.muteKeyKey, .string(MicPrivacySettings.legacyDefaultMuteKeyText))
+        let moved = MicPrivacySettings.migratingMuteKey(old)
+        XCTAssertEqual(MicPrivacySettings(config: moved).muteKey?.displayString, "⌃⌥⌘M")
+
+        // 迁移过之后再录 ⌥⌘M，不会又被换掉。
+        var rerecorded = moved
+        rerecorded.set(MicPrivacySettings.muteKeyKey, .string(MicPrivacySettings.legacyDefaultMuteKeyText))
+        XCTAssertEqual(MicPrivacySettings(config: MicPrivacySettings.migratingMuteKey(rerecorded)).muteKey?.displayString,
+                       "⌥⌘M")
+
+        // 自己录的别的键、清除了的都不动。
+        var custom = WidgetConfig()
+        custom.set(MicPrivacySettings.muteKeyKey, .string("0:\(KeyCombo.Modifier.control | KeyCombo.Modifier.command)"))
+        XCTAssertEqual(MicPrivacySettings(config: MicPrivacySettings.migratingMuteKey(custom)).muteKey?.displayString, "⌃⌘A")
+        var cleared = WidgetConfig()
+        cleared.set(MicPrivacySettings.muteKeyKey, .string(""))
+        XCTAssertNil(MicPrivacySettings(config: MicPrivacySettings.migratingMuteKey(cleared)).muteKey)
+    }
+
+    func testOldDefaultMuteKeyMigratesWhenDecoded() throws {
+        var old = WidgetConfig()
+        old.set(MicPrivacySettings.muteKeyKey, .string(MicPrivacySettings.legacyDefaultMuteKeyText))
+        let item = WidgetInstance(kind: .microphone, config: old)
+        let data = try JSONEncoder().encode(item)
+        let back = try JSONDecoder().decode(WidgetInstance.self, from: data)
+        XCTAssertEqual(MicPrivacySettings(config: back.config).muteKey, MicPrivacySettings.defaultMuteKey)
+    }
+
+    func testPollingStopsOnlyWhenNothingNeedsIt() {
+        XCTAssertFalse(MicPolling.keepsRunning(hasWidget: false, panelOpen: false, conditional: false, muted: false))
+        XCTAssertTrue(MicPolling.keepsRunning(hasWidget: true, panelOpen: false, conditional: false, muted: false))
+        XCTAssertTrue(MicPolling.keepsRunning(hasWidget: false, panelOpen: true, conditional: false, muted: false))
+        XCTAssertTrue(MicPolling.keepsRunning(hasWidget: false, panelOpen: false, conditional: true, muted: false))
+        XCTAssertTrue(MicPolling.keepsRunning(hasWidget: false, panelOpen: false, conditional: false, muted: true),
+                      "a mute from the quick switch keeps checking whether the volume came back")
     }
 
     func testHotKeyEncodingRoundTripsAndRejectsJunk() {

@@ -23,7 +23,8 @@ import Observation
 ///
 /// 使用记录只存在本机（Application Support/Docket/microphone-log.json），逻辑在
 /// Core 的 `MicUsageLog`。每秒读一次，一个计时器给所有麦克风卡片、面板和按条件
-/// 显示共用。
+/// 显示共用。没有麦克风卡片、面板没开、没有卡片按麦克风显示、也没在静音时停掉
+/// （`MicPolling`），卡片放上来、面板打开、条件或快速开关用到时再开始。
 @MainActor @Observable
 final class MicrophoneMonitor {
     static let shared = MicrophoneMonitor()
@@ -93,7 +94,7 @@ final class MicrophoneMonitor {
         guard timer == nil else { return }
         read()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.read() }
+            MainActor.assumeIsolated { self?.poll() }
         }
         timer.tolerance = 0.3
         RunLoop.main.add(timer, forMode: .common)
@@ -104,6 +105,22 @@ final class MicrophoneMonitor {
                 MainActor.assumeIsolated { MicrophoneMonitor.shared.saveLog() }
             }
         }
+    }
+
+    /// 计时器每秒一次：读一遍，再看还要不要接着读。刚开始时那次读不判断，
+    /// 免得快速开关先开始、还没来得及静音就停了。
+    private func poll() {
+        read()
+        let keep = MicPolling.keepsRunning(hasWidget: settings() != nil, panelOpen: panels > 0,
+                                           conditional: WidgetConditionMonitor.shared.watchesMicrophone,
+                                           muted: globalMuted)
+        if !keep { stop() }
+    }
+
+    /// 没人用了：停掉每秒的读。最后那次读已经把没收尾的使用记录收好、快捷键注销。
+    private func stop() {
+        timer?.invalidate()
+        timer = nil
     }
 
     /// 面板打开、关上。开着时每秒多读设备列表。

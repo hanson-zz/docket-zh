@@ -11,7 +11,10 @@ struct EmojiTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    /// 刚拷贝的那一格，亮约一秒就灭（不再一直亮着）。
     @State private var copied: String?
+    /// 每点一次加一，连点同一格也重新亮满一秒。
+    @State private var copyCount = 0
 
     private var prefs: EmojiPrefs { EmojiPrefs(instance.config) }
 
@@ -41,6 +44,12 @@ struct EmojiTile: View {
                 }
             }
         }
+        .task(id: copyCount) {
+            guard copied != nil else { return }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) { copied = nil }
+        }
     }
 
     @ViewBuilder
@@ -51,6 +60,7 @@ struct EmojiTile: View {
                 guard !context.isPreview else { return }
                 ColorSampling.copy(shown)
                 copied = item
+                copyCount &+= 1
                 let latest = WidgetWriter.current(instance.id) ?? instance
                 WidgetWriter.write(latest) { config in
                     let next = EmojiPrefs(config).recording(item)

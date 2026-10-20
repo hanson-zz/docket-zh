@@ -295,6 +295,17 @@ public struct MicAlertTracker: Sendable {
 
 // MARK: - 电平
 
+/// 每秒读麦克风要不要接着读。
+///
+/// 有麦克风卡片（在哪个布局都算：使用记录、提醒和静音快捷键靠它）、麦克风面板开着、
+/// 有卡片按「麦克风在用」显示、或者正在全局静音（要看别处有没有把音量调回来）时读；
+/// 都没有就停，等这些条件再出现时重新开始。
+public enum MicPolling {
+    public static func keepsRunning(hasWidget: Bool, panelOpen: Bool, conditional: Bool, muted: Bool) -> Bool {
+        hasWidget || panelOpen || conditional || muted
+    }
+}
+
 public enum MicLevel {
     /// 电平表一共几格，前几格是绿的。
     public static let segments = 24
@@ -324,10 +335,28 @@ public struct MicPrivacySettings: Equatable, Sendable {
     public static let redWhenMutedKey = "redWhenMuted"
     public static let muteKeyKey = "muteKey"
 
-    /// 默认快捷键 ⌥⌘M（M 的键码是 46）。
+    /// 默认快捷键 ⌃⌥⌘M（M 的键码是 46）。原来的 ⌥⌘M 和系统「最小化全部窗口」撞了。
     public static let defaultMuteKey = KeyCombo(keyCode: 46,
-                                                modifiers: KeyCombo.Modifier.option | KeyCombo.Modifier.command)
+                                                modifiers: KeyCombo.Modifier.control | KeyCombo.Modifier.option
+                                                    | KeyCombo.Modifier.command)
     public static var defaultMuteKeyText: String { encode(defaultMuteKey) }
+    /// 改默认之前的 ⌥⌘M。
+    public static let legacyDefaultMuteKeyText = encode(KeyCombo(keyCode: 46,
+                                                                 modifiers: KeyCombo.Modifier.option | KeyCombo.Modifier.command))
+    /// 换过默认快捷键的记号，不在设置页显示。
+    public static let muteKeyMigratedKey = "muteKeyMigrated"
+
+    /// 老卡片存的还是旧默认 ⌥⌘M 的，换成新默认 ⌃⌥⌘M；只换一次（打上记号），
+    /// 以后再录 ⌥⌘M 也照用。录过别的或清除了的不动。
+    public static func migratingMuteKey(_ config: WidgetConfig) -> WidgetConfig {
+        guard config.values[muteKeyMigratedKey] == nil else { return config }
+        var copy = config
+        if case .string(let text) = copy.values[muteKeyKey], text == legacyDefaultMuteKeyText {
+            copy.set(muteKeyKey, .string(defaultMuteKeyText))
+        }
+        copy.set(muteKeyMigratedKey, .bool(true))
+        return copy
+    }
 
     public var notifyMic: Bool
     public var notifyCamera: Bool

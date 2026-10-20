@@ -11,6 +11,9 @@ import SwiftUI
 ///
 /// The figures come from `WeeklyReport` in Core; this file only draws them,
 /// and the three wrappers at the bottom feed it each widget's own log.
+///
+/// 字都不小于 13pt：大数字下的说明、小块、日期和星期、目标线说明都是 13pt，
+/// 说明放不下时换到第二行；目标线的说明不再贴在虚线上，挪到柱子下面单独一行。
 struct WeeklyReportStat: Hashable {
     var value: String
     var unit: String = ""
@@ -31,6 +34,8 @@ struct WeeklyReportSection<Accessory: View>: View {
     @ViewBuilder var accessory: () -> Accessory
 
     private let chartHeight: CGFloat = 84
+    /// 七根柱子之间的空隙。13pt 的「周三」「Wed」要放得下，比原来窄一点。
+    private let barSpacing: CGFloat = 4
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,19 +49,23 @@ struct WeeklyReportSection<Accessory: View>: View {
             HStack(alignment: .top, spacing: 0) {
                 ForEach(Array(headline.enumerated()), id: \.offset) { index, stat in
                     if index > 0 {
-                        Rectangle().fill(.white.opacity(0.18)).frame(width: 0.5, height: 34)
-                            .padding(.horizontal, 12)
+                        Rectangle().fill(.white.opacity(0.18)).frame(width: 0.5, height: 40)
+                            .padding(.horizontal, 10)
                     }
                     big(stat)
                 }
-                Spacer(minLength: 0)
             }
             if !chips.isEmpty {
-                HStack(spacing: 8) {
-                    ForEach(chips, id: \.self) { StatChip(label: $0.label, value: "\($0.value)\($0.unit)") }
+                HStack(alignment: .top, spacing: 8) {
+                    ForEach(chips, id: \.self) { chip($0) }
                 }
+                // 两块一样高：一块说明换了行，另一块跟着拉高。
+                .fixedSize(horizontal: false, vertical: true)
             }
             chart
+            if let goalLabel, report.goalFraction != nil {
+                goalLegend(goalLabel)
+            }
         }
         .padding(10)
         .glassPane(cornerRadius: 12)
@@ -70,18 +79,61 @@ struct WeeklyReportSection<Accessory: View>: View {
                     .foregroundStyle(.white)
                     .monospacedDigit()
                     .rollingValue(stat.value)
+                    .lineLimit(1)
+                    // 22pt 的数字最多缩到 13pt。
+                    .minimumScaleFactor(13.0 / 22.0)
                 if !stat.unit.isEmpty {
                     Text(stat.unit)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.75))
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
             Text(stat.label)
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.6))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 大数字下面的小块，说明和数字都是 13pt；说明放不下换行。
+    private func chip(_ stat: WeeklyReportStat) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(stat.label)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.6))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(verbatim: "\(stat.value)\(stat.unit)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .rollingValue("\(stat.value)\(stat.unit)")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .glassPane(cornerRadius: 10)
+    }
+
+    /// 柱子下面一行：一小段虚线加「目标 2000 毫升」，说明这条虚线是什么。
+    private func goalLegend(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            GoalRule()
+                .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                .frame(width: 16, height: 1)
+            Text(verbatim: text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.7))
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Bars
@@ -89,7 +141,7 @@ struct WeeklyReportSection<Accessory: View>: View {
     private var chart: some View {
         VStack(spacing: 4) {
             ZStack(alignment: .topLeading) {
-                HStack(alignment: .bottom, spacing: 8) {
+                HStack(alignment: .bottom, spacing: barSpacing) {
                     ForEach(report.days, id: \.key) { day in bar(day) }
                 }
                 .frame(height: chartHeight, alignment: .bottom)
@@ -98,18 +150,19 @@ struct WeeklyReportSection<Accessory: View>: View {
                 }
             }
             .frame(height: chartHeight)
-            HStack(spacing: 8) {
+            HStack(spacing: barSpacing) {
                 ForEach(report.days, id: \.key) { day in
                     VStack(spacing: 0) {
                         Text(day.dayLabel)
-                            .font(.system(size: 10, weight: day.isToday ? .bold : .semibold))
+                            .font(.system(size: 13, weight: day.isToday ? .bold : .semibold))
                             .monospacedDigit()
                         Text(day.weekdayLabel)
-                            .font(.system(size: 9, weight: day.isToday ? .bold : .medium))
+                            .font(.system(size: 13, weight: day.isToday ? .bold : .medium))
                     }
                     .foregroundStyle(.white.opacity(day.isToday ? 0.95 : 0.5))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    // 放不下时让出柱子间的空隙，不缩字。
+                    .fixedSize()
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -131,23 +184,14 @@ struct WeeklyReportSection<Accessory: View>: View {
             .accessibilityLabel("\(day.isToday ? tr("今天，") : "")\(day.axisLabel)，\(valueText(day))\(day.isMet ? tr("，达标") : "")")
     }
 
+    /// 只画虚线；说明在柱子下面的 `goalLegend`。
     private func goalLine(at fraction: Double) -> some View {
         let y = chartHeight * (1 - fraction)
-        return ZStack(alignment: .topTrailing) {
-            GoalRule()
-                .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                .frame(maxWidth: .infinity)
-                .frame(height: 1)
-            if let goalLabel {
-                Text(goalLabel)
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(.horizontal, 3)
-                    .background(Capsule().fill(.black.opacity(0.25)))
-                    .offset(y: fraction > 0.85 ? 3 : -11)
-            }
-        }
-        .offset(y: y)
+        return GoalRule()
+            .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .frame(maxWidth: .infinity)
+            .frame(height: 1)
+            .offset(y: y)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -242,7 +286,7 @@ struct FocusWeeklyReport: View {
                 set: { storedGoal = FocusLog.clampGoal($0) }),
                 in: FocusLog.goalRange, step: FocusLog.goalStep) {
                     Text(tr("每日目标 \(goal) 分钟"))
-                        .font(WidgetStyle.label(11))
+                        .font(WidgetStyle.label(13))
                         .foregroundStyle(.white.opacity(0.75))
                         .monospacedDigit()
                 }

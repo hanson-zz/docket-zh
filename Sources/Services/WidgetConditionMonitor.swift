@@ -16,6 +16,8 @@ final class WidgetConditionMonitor {
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var watched: Set<WidgetKind> = []
+    /// 有卡片按「麦克风在用」显示：麦克风每秒的读要接着开。
+    var watchesMicrophone: Bool { watched.contains(.microphone) }
 
     private init() {}
 

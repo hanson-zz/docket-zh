@@ -22,6 +22,11 @@ final class CryptoService {
     @ObservationIgnored private var inFlight: Set<String> = []
     @ObservationIgnored private var timer: Timer?
 
+    /// 所有加密货币卡片现在要的币（按计价），由 DocketApp 接上。每次取价前
+    /// 拿它把登记过的币筛一遍：面板里删掉的币、删掉的卡片、换掉的计价，
+    /// 下一次取价就不带它们，不用等重启。nil（还没接上）时不筛。
+    @ObservationIgnored var inUse: (@MainActor () -> [String: Set<String>])?
+
     private init() {
         for currency in ["cny", "usd"] {
             if let cached = Self.readCache(currency) { snapshots[currency] = cached }
@@ -84,6 +89,15 @@ final class CryptoService {
     }
 
     private func tick() {
+        if let inUse {
+            tracked = CryptoWatch.pruned(tracked, inUse: inUse())
+            // 一个币都不用了，连每分钟的检查也停掉；再有卡片要价时 track 会重新开。
+            if tracked.isEmpty {
+                timer?.invalidate()
+                timer = nil
+                return
+            }
+        }
         let now = Date.now
         for (currency, ids) in tracked where !ids.isEmpty && !inFlight.contains(currency) {
             let have = snapshots[currency]?.quotes ?? [:]

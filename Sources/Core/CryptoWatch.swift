@@ -275,6 +275,32 @@ public enum CryptoWatch {
         Set(alerts.filter(\.on).map(\.coin))
     }
 
+    /// 所有加密货币卡片现在要取价的币，按计价分：卡片自己的币按卡片的计价，
+    /// 开着的提醒（`alertsOn` 时）按提醒设的计价。删掉的币、删掉的卡片、
+    /// 换掉的计价都不在里面，取价时直接跳过。
+    public static func inUse(_ configs: [WidgetConfig], alertsOn: Bool) -> [String: Set<String>] {
+        var result: [String: Set<String>] = [:]
+        for config in configs {
+            let coins = CryptoMarket.coinIDs(config)
+            result[CryptoMarket.currency(config), default: []].formUnion(coins)
+            guard alertsOn else { continue }
+            for alert in alerts(config, coins: coins) where alert.on {
+                result[alert.currency, default: []].insert(alert.coin)
+            }
+        }
+        return result
+    }
+
+    /// 已经登记要取价的，只留还在用的。
+    public static func pruned(_ tracked: [String: Set<String>], inUse: [String: Set<String>]) -> [String: Set<String>] {
+        var result: [String: Set<String>] = [:]
+        for (currency, ids) in tracked {
+            let kept = ids.intersection(inUse[currency] ?? [])
+            if !kept.isEmpty { result[currency] = kept }
+        }
+        return result
+    }
+
     /// 开着的提醒用到的计价：和卡片当前计价不同的也要去取价。
     public static func currencies(_ alerts: [CryptoAlert]) -> Set<String> {
         Set(alerts.filter(\.on).map(\.currency))

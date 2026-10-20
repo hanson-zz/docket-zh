@@ -506,6 +506,10 @@ struct DockShelfView: View {
                   initial: true) { _, kinds in
             WidgetConditionMonitor.shared.watch(kinds)
         }
+        // 麦克风没人用时停了每秒的读；哪个布局里放上麦克风卡片就重新开始。
+        .onChange(of: app.allWidgets.contains { $0.kind == .microphone }, initial: true) { _, has in
+            if has { MicrophoneMonitor.shared.start() }
+        }
         .onChange(of: WidgetConditionMonitor.musicBrowsersAllowed(in: app.customProfile?.items ?? []),
                   initial: true) { _, allowed in
             if let allowed { BrowserMedia.shared.enabled = allowed }

@@ -257,4 +257,28 @@ final class CryptoWatchTests: XCTestCase {
         XCTAssertFalse(keys.contains(CryptoWatch.alertsKey))
         XCTAssertFalse(keys.contains(CryptoWatch.hitsKey))
     }
+
+    // MARK: 只取还在用的币
+
+    func testInUseFollowsCoinsCurrencyAndLiveAlerts() {
+        var config = WidgetConfig()
+        config.set("currency", .string("cny"))
+        CryptoWatch.writeCoins(["bitcoin", "ethereum"], into: &config)
+        CryptoWatch.writeAlerts([CryptoAlert(coin: "bitcoin", above: true, price: 1, currency: "usd"),
+                                 CryptoAlert(coin: "ethereum", above: true, price: 1, currency: "usd", on: false),
+                                 CryptoAlert(coin: "solana", above: true, price: 1, currency: "usd")],
+                                into: &config)
+        XCTAssertEqual(CryptoWatch.inUse([config], alertsOn: true),
+                       ["cny": ["bitcoin", "ethereum"], "usd": ["bitcoin"]],
+                       "an alert for a coin no longer on the card, or switched off, fetches nothing")
+        XCTAssertEqual(CryptoWatch.inUse([config], alertsOn: false), ["cny": ["bitcoin", "ethereum"]])
+        XCTAssertEqual(CryptoWatch.inUse([], alertsOn: true), [:])
+    }
+
+    func testPruningDropsRemovedCoinsAndEmptyCurrencies() {
+        let tracked: [String: Set<String>] = ["cny": ["bitcoin", "dogecoin"], "usd": ["solana"]]
+        XCTAssertEqual(CryptoWatch.pruned(tracked, inUse: ["cny": ["bitcoin", "ethereum"]]),
+                       ["cny": ["bitcoin"]])
+        XCTAssertEqual(CryptoWatch.pruned(tracked, inUse: [:]), [:])
+    }
 }

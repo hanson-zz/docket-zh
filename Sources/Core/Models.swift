@@ -434,6 +434,8 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
             // 天气七个样式并成四个：天气状况、风与日出日落读成“当前”加副标题，
             // 未来 7 天、10 天读成“多日预报”加天数。
             case .weather: config = WeatherStyle.migrating(stored)
+            // 静音默认快捷键从 ⌥⌘M 改成 ⌃⌥⌘M，还存着旧默认的老卡片跟着换。
+            case .microphone: config = MicPrivacySettings.migratingMuteKey(stored)
             default: config = stored
             }
         } else if raw == WaterIntake.legacyHydrationKind {
