@@ -440,19 +440,21 @@ public enum WidgetCatalog {
         // personal recommendation unless one is set by hand in the panel,
         // and a default would read as a hand-set 2000 (see WaterGoal).
         Entry(kind: .water, name: tr("喝水"), category: .health,
-              defaults: c(["layout": .string("character"),
+              defaults: c([WaterLayout.key: .string(WaterLayout.legacyDefault.rawValue),
                            "cupSize": .number(250), "remindEvery": .string("60"),
                            "start": .string("09:00"), "end": .string("21:00"),
                            "unit": .string("ml"), "character": .string("panda"),
                            WaterParched.key: .bool(true)]),
-              // 添加面板只列长相不同的三张：角色、圆环、液态。六只角色在面板或
-              // 设置里选（`character`），柴犬、橘猫累计达标 3 天、7 天解锁，
-              // 企鹅、水獭、章鱼是 Pro 专属；原来的六张
-              // 角色卡片本来就存成 layout = character 加角色，读出来就是“角色”
-              // 样式，样子不变（见 WaterPetCards）。
-              variants: [(tr("角色"), ["layout": .string(WaterPetCards.characterLayout)]),
-                         (tr("圆环"), ["layout": .string("ring")]),
-                         (tr("液态"), ["layout": .string(LiquidMotion.layout)])],
+              // 添加面板只列长相不同的三张：圆环（免费，新放的默认）、角色和
+              // 液态（Pro，见 WaterLayout）。六只角色在面板或设置里选
+              // （`character`），柴犬、橘猫累计达标 3 天、7 天解锁，企鹅、水獭、
+              // 章鱼是 Pro 专属；原来的六张角色卡片本来就存成 layout = character
+              // 加角色，读出来就是“角色”样式，样子不变（见 WaterPetCards）。
+              // defaults 里的 layout 仍是 character：没存 layout 的老卡片照旧是
+              // 角色，新放的由 make() 写成圆环。
+              variants: [(tr("圆环"), [WaterLayout.key: .string(WaterLayout.ring.rawValue)]),
+                         (tr("角色"), [WaterLayout.key: .string(WaterLayout.character.rawValue)]),
+                         (tr("液态"), [WaterLayout.key: .string(WaterLayout.liquid.rawValue)])],
               supportsCompact: false, selfContained: true),
 
         // A pet of its own: four needs kept with the time they were true, so
@@ -681,7 +683,7 @@ public enum WidgetCatalog {
             false
         // 渴成骷髅只画在角色上；圆环和液态没有角色。
         case (.water, WaterParched.key):
-            config.string("layout", default: "character") == "character"
+            WaterLayout.stored(config) == .character
         default:
             true
         }
@@ -789,6 +791,8 @@ public enum WidgetCatalog {
         var config = entry.defaults
         if kind == .battery { config.set(BatteryLook.key, .string(BatteryLook.newWidgetDefault.rawValue)) }
         if kind == .progress { config.set(TimeProgress.layoutKey, .string(TimeProgress.newWidgetLayout)) }
+        // 新放的喝水默认圆环（免费）；defaults 里的角色只给没存 layout 的老卡片。
+        if kind == .water { config.set(WaterLayout.key, .string(WaterLayout.newWidget.rawValue)) }
         // 摸鱼时钟的货币符号跟地区走，只写给新放的；不放进 defaults，免得设置页多一栏。
         if kind == .slacker {
             config.set(SlackerClock.currencyKey, .string(RegionalDefaults.current.currencySymbol))
@@ -951,7 +955,7 @@ public enum WidgetCatalog {
             return CGSize(width: Anniversary.tileWidth(layout: cfg.string("layout", default: "single"),
                                                        count: Anniversary.events(cfg).count), height: 62)
         case .water:
-            return CGSize(width: WaterIntake.tileWidth(layout: cfg.string("layout", default: "character")), height: 62)
+            return CGSize(width: WaterIntake.tileWidth(layout: WaterLayout.raw(cfg)), height: 62)
         case .pet: return CGSize(width: 196, height: 62)
         case .podcast: return CGSize(width: 220, height: 62)
         case .perfectDay: return CGSize(width: 196, height: 62)
@@ -1066,7 +1070,7 @@ public enum WidgetCatalog {
             return Anniversary.columnHeight(layout: cfg.string("layout", default: "single"),
                                             count: Anniversary.events(cfg).count)
         case .water:
-            return WaterIntake.columnHeight(layout: cfg.string("layout", default: "character"))
+            return WaterIntake.columnHeight(layout: WaterLayout.raw(cfg))
         // The character, a line, the bar and the bowl.
         case .pet:
             return 118

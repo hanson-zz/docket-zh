@@ -60,7 +60,7 @@ final class WaterPetCardsTests: XCTestCase {
     // MARK: 添加面板和旧卡片
 
     func testTheLibraryNoLongerListsCharacters() {
-        XCTAssertEqual(WidgetCatalog.entry(.water)?.variants.map(\.title), ["角色", "圆环", "液态"])
+        XCTAssertEqual(WidgetCatalog.entry(.water)?.variants.map(\.title), ["圆环", "角色", "液态"])
         XCTAssertEqual(WidgetCatalog.entry(.pet)?.variants.isEmpty, true)
         // 角色仍是两种小组件的设置项。
         XCTAssertTrue(WidgetCatalog.configurableKeys(.water).contains("character"))
@@ -68,8 +68,9 @@ final class WaterPetCardsTests: XCTestCase {
     }
 
     /// 旧版本里从“柴犬”卡片放上去的喝水：存的是 layout = character 加
-    /// character = shiba。读回来配置原样，是“角色”样式、柴犬。柴犬不再是 Pro，
-    /// 改为累计达标 3 天解锁：没达标够又没 Pro 时照旧画小熊猫。
+    /// character = shiba。读回来配置原样，是“角色”样式、柴犬。柴犬这个角色
+    /// 不是 Pro，累计达标 3 天解锁；角色样式 2026-10-20 起是 Pro，没解锁时整张
+    /// 卡片画成圆环（见 ProLicenseGate.waterLayout），配置不改写。
     func testAPlacedShibaWaterCardKeepsItsLook() throws {
         let old = WidgetInstance(kind: .water, config: WidgetConfig([
             "layout": .string("character"), "character": .string("shiba"),
@@ -79,18 +80,27 @@ final class WaterPetCardsTests: XCTestCase {
         XCTAssertEqual(decoded, old)
         XCTAssertEqual(WaterCharacter.from(decoded.config), .shiba)
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: decoded.config, kind: .water), "角色")
-        XCTAssertFalse(ProFeatures.isPro(decoded), "柴犬靠喝水解锁，不算 Pro")
+        XCTAssertFalse(ProFeatures.isSupporterStyle(decoded.config.values), "柴犬靠喝水解锁，不算 Pro 角色")
+        XCTAssertTrue(ProFeatures.isPro(decoded), "角色样式是 Pro")
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: decoded.config, unlocked: false), .ring)
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: decoded.config, unlocked: true), .character)
         XCTAssertEqual(WaterCharacter.shown(decoded.config, unlocked: false), .redPanda, "没解锁时照旧画小熊猫")
         XCTAssertEqual(WaterCharacter.shown(decoded.config, unlocked: true), .shiba)
     }
 
-    func testAPlacedRedPandaWaterCardStaysFree() throws {
+    /// 原来免费的小熊猫角色卡片：角色样式变成 Pro 后标 Pro，没解锁时画成
+    /// 圆环、不盖锁，配置原样留着，解锁后自动回到角色。
+    func testAPlacedRedPandaWaterCardFallsBackToTheRing() throws {
         let old = WidgetInstance(kind: .water, config: WidgetConfig([
             "layout": .string("character"), "character": .string("panda"),
         ]))
         let decoded = try JSONDecoder().decode(WidgetInstance.self, from: JSONEncoder().encode(old))
+        XCTAssertEqual(decoded, old)
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: decoded.config, kind: .water), "角色")
-        XCTAssertFalse(ProFeatures.isPro(decoded))
+        XCTAssertTrue(ProFeatures.isPro(decoded))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(decoded, unlocked: false))
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: decoded.config, unlocked: false), .ring)
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: decoded.config, unlocked: true), .character)
     }
 
     func testAPlacedOtterPetKeepsItsCharacter() throws {

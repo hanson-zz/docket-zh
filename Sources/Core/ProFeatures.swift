@@ -15,7 +15,8 @@ import Foundation
 ///   电池的液态还带插拔电源时水面晃荡溅水珠、低电量变红鼓起圆滴、颜色随电量
 ///   红黄绿渐变（见 `BatteryLiquidFX`），都只属于液态外观，不另算一项 Pro。
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
-///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格。
+///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
+///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）。
 /// - 习惯打卡免费 `freeHabitLimit` 个习惯，第 4 个起和近七天报告是 Pro，见
 ///   `ProLicenseGate` 里的习惯部分。
 /// - 小组件颜色与背景里的自定义取色和渐变背景，见 `WidgetTint.isProChoice`。
@@ -140,6 +141,9 @@ public enum ProFeatures {
             if case .string(let raw) = overrides[noteColorKey] { return isProNoteColor(raw) }
         case .progress:
             if case .string(let layout) = overrides[TimeProgress.layoutKey] { return layout == TimeProgress.quadLayout }
+        case .water:
+            // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。
+            if case .string(let layout) = overrides[WaterLayout.key] { return layout == WaterLayout.character.rawValue }
         case .pet:
             // 电子宠物整种是 Pro，角色照旧：小熊猫以外都标 Pro。喝水的柴犬和
             // 橘猫靠达标天数解锁，那是喝水自己的规则，见 WaterCharacter.access。
@@ -170,7 +174,12 @@ public enum ProFeatures {
 
     /// 一个已经放好的小组件现在要不要标 Pro：整种是 Pro，或现在用的外观是 Pro。
     public static func isPro(_ instance: WidgetInstance) -> Bool {
-        isPro(instance.kind, overrides: instance.config.values)
+        var values = instance.config.values
+        // 没存 `layout` 的老喝水卡片按角色读（画出来也是角色），标识跟着一样。
+        if instance.kind == .water, values[WaterLayout.key] == nil {
+            values[WaterLayout.key] = .string(WaterLayout.legacyDefault.rawValue)
+        }
+        return isPro(instance.kind, overrides: values)
     }
 
     /// 设置里某个单选项的一个值是不是 Pro（如外观选“液态”、喝水选柴犬）。

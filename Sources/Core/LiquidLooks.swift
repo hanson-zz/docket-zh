@@ -42,10 +42,20 @@ public enum LiquidLooks {
         BasketLook(rawValue: config.string(key, default: BasketLook.leaf.rawValue)) ?? .leaf
     }
 
-    /// 喝水的液态 layout。
+    /// 喝水的液态 layout（没存 `layout` 的老卡片是角色，见 `WaterLayout`）。
     public static func waterIsLiquid(_ config: WidgetConfig) -> Bool {
-        config.string("layout", default: "character") == LiquidMotion.layout
+        WaterLayout.stored(config) == .liquid
     }
+
+    /// 喝水液态的水体更浓：前浪上沿 62%、底部 46%、后浪 22%（别的液态是
+    /// 30%、14%、12%），整张卡片一眼看得出是一杯水；白字另加一圈淡黑描边。
+    public static let waterDensity = LiquidDensity(top: 0.62, bottom: 0.46, back: 0.22)
+    /// 其他液态外观原来的浓度。
+    public static let standardDensity = LiquidDensity(top: 0.30, bottom: 0.14, back: 0.12)
+
+    /// 喝水液态点 + 时水珠从哪里溅起（水面横向 0...1）：横排靠右，在 + 旁边；
+    /// 竖排在正中。
+    public static func waterSplashOrigin(vertical: Bool) -> Double { vertical ? 0.5 : 0.82 }
 
     /// 喝水的水位：今天喝的除以目标，超过目标也只到满。
     public static func waterLevel(total: Int, goal: Int) -> Double {
@@ -72,5 +82,18 @@ public enum LiquidLooks {
     public static func cardFill(_ level: Double) -> Double {
         let level = LiquidMotion.level(level)
         return level >= 1 ? 1.04 : level * 0.94
+    }
+}
+
+/// 整张卡片那杯水的浓度：前浪从水面到底边的不透明度渐变，和后浪的不透明度。
+public struct LiquidDensity: Equatable, Sendable {
+    public var top: Double
+    public var bottom: Double
+    public var back: Double
+
+    public init(top: Double, bottom: Double, back: Double) {
+        self.top = top
+        self.bottom = bottom
+        self.back = back
     }
 }

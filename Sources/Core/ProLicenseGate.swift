@@ -10,6 +10,8 @@ import Foundation
 /// - 电池的液态外观也是 Pro，同样退回免费的经典外观显示，不盖遮罩。
 /// - 天气的多城市和电池格没有同样大小的免费样式可退，盖小锁遮罩。
 /// - 时间进度整种免费，液态和四格是 Pro，没解锁时退回圆环显示，不盖遮罩。
+/// - 喝水整种免费，角色和液态是 Pro，没解锁时都画成圆环，不盖遮罩；配置照旧
+///   存着角色或液态，解锁或试用时自动回来。
 /// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
 ///   超过 3 个的不删数据，超出的只读带小锁；近七天报告是 Pro。
 /// - 便签的 Pro 纸色退回默认的柠檬黄显示，不盖遮罩，便签照常能写。
@@ -59,8 +61,8 @@ public enum ProLicenseGate {
 
     /// 已在扩展栏上的这个小组件要不要盖小锁遮罩。
     ///
-    /// 整种是 Pro 的小组件，和用了液态外观的小组件（电池除外）要盖；电池的液态
-    /// 和原来的赞助者外观有免费外观可退，退回去照常显示，不盖。天气的多城市和
+    /// 整种是 Pro 的小组件，和用了液态外观的小组件（电池、时间进度、喝水除外）
+    /// 要盖；这三种的液态和原来的赞助者外观有免费外观可退，退回去照常显示，不盖。天气的多城市和
     /// 电池格要盖。便签的 Pro 纸色退回柠檬黄，不盖。预览（添加面板
     /// 的缩略图）从不盖。
     public static func needsLockOverlay(_ instance: WidgetInstance, unlocked: Bool, isPreview: Bool = false) -> Bool {
@@ -73,8 +75,8 @@ public enum ProLicenseGate {
         default:
             break
         }
-        // 电池和时间进度的 Pro 外观有免费外观可退，不盖。
-        if instance.kind == .battery || instance.kind == .progress { return false }
+        // 电池、时间进度和喝水的 Pro 外观有免费外观可退，不盖。
+        if instance.kind == .battery || instance.kind == .progress || instance.kind == .water { return false }
         return ProFeatures.isLiquid(values)
     }
 
@@ -98,6 +100,14 @@ public enum ProLicenseGate {
         let layout = TimeProgress.layout(config)
         guard !unlocked, layout == LiquidMotion.layout || layout == TimeProgress.quadLayout else { return layout }
         return TimeProgress.newWidgetLayout
+    }
+
+    /// 喝水卡片实际画哪种样式：没解锁时角色和液态都退回圆环。老卡片没存
+    /// `layout` 时按角色读，所以没解锁时同样画圆环。
+    public static func waterLayout(config: WidgetConfig, unlocked: Bool) -> WaterLayout {
+        let layout = WaterLayout.stored(config)
+        guard !unlocked, layout.isPro else { return layout }
+        return .ring
     }
 
     // MARK: 习惯打卡

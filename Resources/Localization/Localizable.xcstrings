@@ -1123,6 +1123,17 @@
         }
       }
     },
+    "%@ 小时没喝了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No water for %@ hr"
+          }
+        }
+      }
+    },
     "%@ 小时额度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14152,6 +14163,17 @@
         }
       }
     },
+    "小口喝着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sipping away"
+          }
+        }
+      }
+    },
     "小宇宙" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17202,6 +17224,17 @@
         }
       }
     },
+    "快喝饱了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almost full"
+          }
+        }
+      }
+    },
     "快捷指令" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19174,6 +19207,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Soft"
+          }
+        }
+      }
+    },
+    "渴了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thirsty"
           }
         }
       }
@@ -35034,6 +35078,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No shortcut yet: while Shiduo is running there's no entry on the notch, so set a shortcut to open the chat any time."
+          }
+        }
+      }
+    },
+    "还渴着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still thirsty"
           }
         }
       }

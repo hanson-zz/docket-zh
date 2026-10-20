@@ -160,7 +160,7 @@ enum WaterArt {
         named(WaterParched.imageName(character))
     }
 
-    private static func named(_ name: String) -> NSImage? {
+    static func named(_ name: String) -> NSImage? {
         if let image = cache[name] { return image }
         guard !missing.contains(name),
               let url = Bundle.main.url(forResource: name, withExtension: "png"),

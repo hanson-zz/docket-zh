@@ -243,6 +243,31 @@ final class ProLicenseTests: XCTestCase {
         XCTAssertFalse(ProLicenseGate.needsLockOverlay(plain, unlocked: false))
     }
 
+    /// 喝水的角色和液态没解锁时退回圆环，不盖遮罩；老赞助者、试用中照常显示。
+    func testWaterFallsBackToTheRing() {
+        let character = WidgetConfig(["layout": .string("character"), "character": .string("otter")])
+        let liquid = WidgetConfig(["layout": .string("liquid")])
+        for config in [character, liquid] {
+            let unlockedBySupporter = ProLicenseGate.isUnlocked(.expiredTrial, supporter: true)
+            let unlockedByTrial = ProLicenseGate.isUnlocked(.trial(daysLeft: 3), supporter: false)
+            let locked = ProLicenseGate.isUnlocked(.expiredTrial, supporter: false)
+            XCTAssertEqual(ProLicenseGate.waterLayout(config: config, unlocked: locked), .ring)
+            XCTAssertEqual(ProLicenseGate.waterLayout(config: config, unlocked: unlockedBySupporter),
+                           WaterLayout.stored(config))
+            XCTAssertEqual(ProLicenseGate.waterLayout(config: config, unlocked: unlockedByTrial),
+                           WaterLayout.stored(config))
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(WidgetInstance(kind: .water, config: config),
+                                                           unlocked: false), "喝水不盖锁")
+        }
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: WidgetConfig(["layout": .string("ring")]),
+                                                  unlocked: false), .ring)
+        for layout in WaterLayout.allCases {
+            XCTAssertFalse(ProFeatures.isProStyle(.water, ["layout": .string(ProLicenseGate.waterLayout(
+                config: WidgetConfig(["layout": .string(layout.rawValue)]), unlocked: false).rawValue)]),
+                "锁着时显示的喝水样式都是免费的")
+        }
+    }
+
     func testBatteryFallsBackToClassic() {
         let liquid = WidgetConfig([BatteryLook.key: .string("liquid")])
         XCTAssertEqual(ProLicenseGate.batteryLook(config: liquid, unlocked: false), .classic)

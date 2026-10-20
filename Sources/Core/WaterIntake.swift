@@ -729,15 +729,11 @@ public struct WaterReminder: Equatable, Sendable {
 
 /// Sizes, beside the logic so the catalog stays free of SwiftUI.
 public extension WaterIntake {
-    /// 液态和圆环一样宽：都没有角色。角色样式的角色站在杯子旁边（不再
-    /// 缩成探头），比原来宽 24。
-    static func tileWidth(layout: String) -> Double {
-        layout == "ring" || layout == LiquidMotion.layout ? 184 : 224
-    }
+    /// 三种样式一样大：横排宽 184、竖排高 112。角色样式不再画杯子，只剩
+    /// 角色和八节竹子，放得下；没解锁时角色和液态画成圆环，大小也不跳。
+    static func tileWidth(layout: String) -> Double { 184 }
 
-    static func columnHeight(layout: String) -> Double {
-        layout == "ring" || layout == LiquidMotion.layout ? 112 : 120
-    }
+    static func columnHeight(layout: String) -> Double { 112 }
 }
 
 // MARK: - Characters

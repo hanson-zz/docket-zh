@@ -34,7 +34,12 @@ final class LiquidLooksTests: XCTestCase {
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: liquid.config, kind: .water), "液态")
         XCTAssertEqual(WidgetCatalog.naturalSize(liquid).width, 184)
         XCTAssertFalse(WidgetCatalog.applies(WaterParched.key, to: liquid.config, kind: .water))
-        XCTAssertTrue(WidgetCatalog.applies(WaterParched.key, to: water.config, kind: .water))
+        // 新放的喝水是圆环，没有角色，也就没有“渴成骷髅”；角色样式和没存
+        // layout 的老卡片才有。
+        XCTAssertFalse(WidgetCatalog.applies(WaterParched.key, to: water.config, kind: .water))
+        let character = WidgetCatalog.make(.water, overrides: ["layout": .string("character")])!
+        XCTAssertTrue(WidgetCatalog.applies(WaterParched.key, to: character.config, kind: .water))
+        XCTAssertTrue(WidgetCatalog.applies(WaterParched.key, to: WidgetConfig(), kind: .water))
     }
 
     // MARK: 水位

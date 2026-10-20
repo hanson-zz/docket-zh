@@ -161,11 +161,65 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertTrue(proStyles.contains("weather:多城市"))
         XCTAssertTrue(proStyles.contains("battery:电池格"))
         XCTAssertTrue(proStyles.contains("progress:四格"))
+        XCTAssertTrue(proStyles.contains("water:角色"))
+        XCTAssertFalse(proStyles.contains("water:圆环"))
         // 便签的纸色不再列成样式，改在面板和设置里选；十五种里免费五种，其余十种是 Pro 选项。
         XCTAssertTrue(proStyles.filter { $0.hasPrefix("notes:") }.isEmpty)
         XCTAssertEqual(PaperColor.picker.filter {
             ProFeatures.isProChoice(kind: .notes, key: "color", value: $0.rawValue)
         }.count, PaperColor.picker.count - 5)
+    }
+
+    /// 喝水：圆环免费，角色和液态是 Pro。没解锁时两者都画成圆环、不盖锁，
+    /// 配置不改写；新放的写圆环，没存 layout 的老卡片按角色读。
+    func testWaterCharacterAndLiquidAreProAndFallBackToTheRing() {
+        let ring: [String: WidgetConfig.Value] = ["layout": .string("ring")]
+        let character: [String: WidgetConfig.Value] = ["layout": .string("character")]
+        let liquid: [String: WidgetConfig.Value] = ["layout": .string(LiquidMotion.layout)]
+        XCTAssertFalse(ProFeatures.isProKind(.water))
+        XCTAssertFalse(ProFeatures.isPro(.water, overrides: ring))
+        XCTAssertTrue(ProFeatures.isPro(.water, overrides: character))
+        XCTAssertTrue(ProFeatures.isPro(.water, overrides: liquid))
+        XCTAssertTrue(ProFeatures.isKindProStyle(.water, character))
+        XCTAssertFalse(ProFeatures.isKindProStyle(.water, liquid), "液态走通用的液态判断")
+        XCTAssertTrue(ProFeatures.isProChoice(kind: .water, key: "layout", value: "character"))
+        XCTAssertFalse(ProFeatures.isProChoice(kind: .water, key: "layout", value: "ring"))
+        // 同样的 layout 值放在别的小组件上不是 Pro。
+        XCTAssertFalse(ProFeatures.isProStyle(.pet, character))
+        XCTAssertFalse(ProFeatures.isProStyle(character))
+        XCTAssertTrue(ProLicenseGate.canAdd(.water, overrides: ring, unlocked: false))
+        for overrides in [character, liquid] {
+            XCTAssertFalse(ProLicenseGate.canAdd(.water, overrides: overrides, unlocked: false))
+            XCTAssertFalse(ProLicenseGate.canChoose(.water, overrides, unlocked: false))
+            XCTAssertTrue(ProLicenseGate.canChoose(.water, overrides, unlocked: true))
+            // 已放好的不盖锁，退回圆环；解锁（或试用、老赞助者）后回来。
+            let config = WidgetConfig(overrides)
+            let placed = WidgetInstance(kind: .water, config: config)
+            XCTAssertTrue(ProFeatures.isPro(placed))
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
+            XCTAssertEqual(ProLicenseGate.waterLayout(config: config, unlocked: false), .ring)
+            XCTAssertEqual(ProLicenseGate.waterLayout(config: config, unlocked: true).rawValue,
+                           config.string("layout"))
+            XCTAssertEqual(placed.config, config, "配置不改写")
+        }
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: WidgetConfig(ring), unlocked: false), .ring)
+        // 新放的是圆环，免费。
+        let fresh = WidgetCatalog.make(.water)!
+        XCTAssertEqual(fresh.config.string("layout"), "ring")
+        XCTAssertFalse(ProFeatures.isPro(fresh))
+        // 没存 layout 的老卡片按角色读：标 Pro，没解锁时画圆环。
+        let legacy = WidgetInstance(kind: .water, config: WidgetConfig(["character": .string("panda")]))
+        XCTAssertTrue(ProFeatures.isPro(legacy))
+        XCTAssertEqual(WaterLayout.stored(legacy.config), .character)
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: legacy.config, unlocked: false), .ring)
+        XCTAssertEqual(ProLicenseGate.waterLayout(config: legacy.config, unlocked: true), .character)
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(legacy, unlocked: false))
+        // 三种样式一样大，退回圆环时卡片不跳。
+        for layout in WaterLayout.allCases {
+            let placed = WidgetCatalog.make(.water, overrides: ["layout": .string(layout.rawValue)])!
+            XCTAssertEqual(WidgetCatalog.naturalSize(placed).width, 184, layout.rawValue)
+            XCTAssertEqual(WidgetCatalog.verticalHeight(placed), 112, layout.rawValue)
+        }
     }
 
     func testNoteColorsSplitIntoFreeAndPro() {

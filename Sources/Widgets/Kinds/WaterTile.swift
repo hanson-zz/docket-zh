@@ -1,18 +1,23 @@
 import Foundation
 import SwiftUI
 
-/// 喝水：今天喝了多少。角色样式以一只杯子和它的水位为主，右边八个小杯是
-/// 今天的进度，选的角色（默认小熊猫）站在杯子旁边，身上是原来的灰/彩水位
-/// 效果，水位和杯子同步：喝一杯两边一起涨、举一下杯子，达标欢呼，提醒时段
-/// 外打盹，很久没喝渴成骷髅（见 `WaterParched`）。电子
-/// 宠物那边角色才是主角，两张卡片不再长得一样（见 `WaterPetCards`）。
+/// 喝水：今天喝了多少。三种样式各管一件事（见 `WaterLayout`）：
 ///
-/// Three styles. 角色 leads with the cup and its level; 圆环
-/// is the Codex tile's ring with the percentage in the middle, for a shelf
-/// that wants something quieter. Both have today's tally and a "+" that logs
-/// one cup of water (`cupSize`). Like the other reminder tiles, the "+" is the only
-/// control: the card's own click opens the panel, where other amounts and
-/// drinks, the day's list, the goal and the history live.
+/// - 圆环（免费，新放的默认）：Codex 卡片那种进度环，环心是百分比，旁边
+///   “1200 / 2000 毫升”。超过目标时画第二圈。
+/// - 角色（Pro）：主角是选的角色（默认小熊猫），按今天的进度换姿势
+///   （还渴着、小口喝着、快喝饱了、达标啦，见 `WaterPose`），下面八节竹子
+///   是进度；不再画杯子涨水。提醒时段里 2 小时没喝“渴了”，5 小时渴成骷髅
+///   （见 `WaterParched`）。点 + 时角色举起竹筒喝一口约 0.8 秒并飘一个 +N。
+/// - 液态（Pro）：整张卡片是一杯水，水更浓、有气泡，点 + 时水面晃一下溅
+///   几颗水珠，满了顶上一道高光。没有角色。
+///
+/// 没解锁时角色和液态都画成圆环、不盖锁，配置照旧存着，解锁或试用时自动
+/// 回来（见 `ProLicenseGate.waterLayout`）。三种样式一样大。
+///
+/// Like the other reminder tiles, the "+" is the only control: it logs one
+/// cup of water (`cupSize`), and the card's own click opens the panel, where
+/// other amounts and drinks, the day's list, the goal and the history live.
 ///
 /// 提醒不再由卡片排：`TimedAlertDriver` 从启动起每秒看着所有布局里的喝水小组件，
 /// 交给 `WaterNotifier` 排，卡片在文件夹里、别的布局里也照样提醒。
@@ -23,16 +28,25 @@ struct WaterTile: View {
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // 和时间进度一样读 @AppStorage：购买或试用到期时卡片马上换样式，不用等下次重绘。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
 
-    private var isRing: Bool { instance.config.string("layout", default: "character") == "ring" }
-    /// 液态：整张卡片是一杯水，水位是今天的进度（见 `LiquidLooks`）。
-    private var isLiquid: Bool { LiquidLooks.waterIsLiquid(instance.config) }
+    /// 点 + 后飘起的量（显示用的数字），nil 时不飘；角色同时举起竹筒喝一口。
+    @State private var gulp: String?
+    /// 每点一次 + 加一，晚到的收尾不会把下一次的那一帧提前收掉。
+    @State private var gulpToken = 0
+
+    private var unlocked: Bool { licenseUnlocked || supporterUnlocked || context.isPreview }
+
+    /// 实际画的样式：角色和液态是 Pro，没解锁时退回圆环（预览照常画）。
+    private var layout: WaterLayout { ProLicenseGate.waterLayout(config: instance.config, unlocked: unlocked) }
     /// 很久没喝或进度很低时角色渴成骷髅（见 `WaterParched`），喝一杯就复活。
     private var parched: Bool {
         !context.isPreview && WaterParched.isParched(instance.config, now: context.now)
     }
-    /// 只有角色样式画骷髅；刚喝下那几秒举着杯子，先不变。
-    private var showsSkeleton: Bool { !isRing && !isLiquid && WaterCupPage.showsSkeleton(parched: parched, mood: mood) }
+    /// 只有角色样式画骷髅。
+    private var showsSkeleton: Bool { layout == .character && parched }
     private var ounces: Bool { WaterIntake.usesOunces(instance.config) }
     /// The library's preview draws the sample week against its own 2000 ml.
     private var goal: Int {
@@ -41,13 +55,20 @@ struct WaterTile: View {
     /// A locked Pro 专属 character is drawn as the red panda; the library's
     /// preview shows the real one, as the clock's supporter faces do.
     private var character: WaterCharacter {
-        WaterCharacter.shown(instance.config, unlocked: ProAccess.isUnlocked || context.isPreview)
+        WaterCharacter.shown(instance.config, unlocked: unlocked)
     }
 
-    /// Re-read every tick, so the cup goes down three seconds after a drink
-    /// and the character dozes off when the reminder hours end.
+    /// Re-read every tick: the liquid's surface glows gold for the few seconds
+    /// after the drink that meets the goal.
     private var mood: WaterMood {
         context.isPreview ? .idle : WaterMood.at(context.now, config: instance.config)
+    }
+
+    /// 液态水面晃一下的起点：最近一次记录的时刻（`WaterLog.drink` 写的 loggedAt）。
+    private var loggedAt: Date? {
+        guard !context.isPreview else { return nil }
+        let seconds = instance.config.double("loggedAt")
+        return seconds > 0 ? Date(timeIntervalSince1970: seconds) : nil
     }
 
     private var today: WaterDay {
@@ -66,20 +87,27 @@ struct WaterTile: View {
         UserDefaults.standard.set(missedDays, forKey: VirtualPet.missedDaysDefault)
     }
 
+    /// 角色这一刻的样子：分档、渴了、骷髅，或刚点了 + 的那一帧。
+    private func look(_ day: WaterDay) -> WaterPose.Look {
+        let stage = WaterPose.stage(total: day.total, goal: day.goal)
+        let dry = context.isPreview ? nil : WaterPose.dryHours(instance.config, now: context.now)
+        return WaterPose.look(stage: stage, dryHours: dry, parched: parched, gulping: gulp != nil)
+    }
+
     var body: some View {
         let day = today
-        let level = WaterIntake.progress(total: day.total, goal: day.goal)
         let done = day.isMet
-        // 圆环样式超过目标时画第二圈，角色的水位照旧满了就停。
+        // 圆环超过目标时画第二圈。
         let lap = RingLap.progress(total: day.total, goal: day.goal)
         return WidgetSurface {
             Group {
-                if isLiquid {
+                switch layout {
+                case .liquid:
                     liquid(day, done: done)
-                } else if context.position.isVertical {
-                    column(day, level: level, lap: lap, done: done)
-                } else {
-                    wide(day, level: level, lap: lap, done: done)
+                case .character:
+                    if context.position.isVertical { characterColumn(day) } else { characterWide(day) }
+                case .ring:
+                    if context.position.isVertical { ringColumn(day, lap: lap, done: done) } else { ringWide(day, lap: lap, done: done) }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -95,50 +123,8 @@ struct WaterTile: View {
         .onChange(of: missedDays) { _, _ in publishMissed() }
     }
 
-    // MARK: Wide
+    // MARK: 圆环
 
-    private func wide(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
-        Group {
-            if isRing {
-                ringWide(day, lap: lap, done: done)
-            } else {
-                cupWide(day, level: level, done: done)
-            }
-        }
-    }
-
-    /// 角色样式：大杯和水位在左，角色站在杯子旁边；右边大数字、目标和八个小杯。
-    private func cupWide(_ day: WaterDay, level: Double, done: Bool) -> some View {
-        HStack(spacing: 10) {
-            WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
-                          parched: showsSkeleton, height: 44, reduceMotion: reduceMotion)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(WaterIntake.figure(day.total, ounces: ounces))
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .monospacedDigit()
-                        .rollingValue(day.total)
-                    Text(done ? tr("达标啦")
-                         : showsSkeleton ? tr("渴成骷髅了")
-                         : "/ \(WaterIntake.figure(day.goal, ounces: ounces)) \(WaterIntake.unitLabel(ounces: ounces))")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(done ? WaterStyle.water
-                                         : showsSkeleton ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary)
-                        .monospacedDigit()
-                }
-                WaterCupRow(filled: WaterPetCards.filledCups(total: day.total, goal: day.goal),
-                            slots: WaterPetCards.cupSlots, cupWidth: 7, spacing: 3.5)
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: day.total)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            Spacer(minLength: 0)
-            drinkButton(size: 12)
-        }
-    }
-
-    /// 圆环样式。
     private func ringWide(_ day: WaterDay, lap: Double, done: Bool) -> some View {
         HStack(spacing: 10) {
             ring(level: lap, done: done, diameter: 40)
@@ -149,11 +135,9 @@ struct WaterTile: View {
                     .monospacedDigit()
                     .rollingValue(day.total)
                 Text(done ? tr("今天达标啦")
-                     : showsSkeleton ? tr("渴成骷髅了 · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                      : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                     .font(.system(size: 12))
-                    .foregroundStyle(done ? WaterStyle.water
-                                     : showsSkeleton ? Color(hex: PaletteColor.red.hex) : WidgetStyle.secondary)
+                    .foregroundStyle(done ? WaterStyle.water : WidgetStyle.secondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.6)
@@ -162,19 +146,10 @@ struct WaterTile: View {
         }
     }
 
-    // MARK: Column
-
-    /// 56pt across: the cup (or ring), the amount, the goal, the "+".
-    private func column(_ day: WaterDay, level: Double, lap: Double, done: Bool) -> some View {
+    /// 竖排 56pt 宽：圆环、数字、目标（11pt）、+。
+    private func ringColumn(_ day: WaterDay, lap: Double, done: Bool) -> some View {
         VStack(spacing: 3) {
-            if isRing {
-                ring(level: lap, done: done, diameter: 34)
-            } else {
-                // 竖排只有 56 宽：角色小一点、多站到杯子前面一些。
-                WaterCupGauge(character: character, mood: mood, level: level, celebrating: done,
-                              parched: showsSkeleton, height: 34, reduceMotion: reduceMotion,
-                              characterScale: 0.72, overlap: 0.35)
-            }
+            ring(level: lap, done: done, diameter: 34)
             VStack(spacing: 0) {
                 Text(WaterIntake.figure(day.total, ounces: ounces))
                     .font(.system(size: 15, weight: .semibold))
@@ -182,7 +157,7 @@ struct WaterTile: View {
                     .monospacedDigit()
                     .rollingValue(day.total)
                 Text(done ? tr("达标啦") : "/ \(WaterIntake.figure(day.goal, ounces: ounces))")
-                    .font(WidgetStyle.caption(9))
+                    .font(WidgetStyle.caption(11))
                     .foregroundStyle(done ? WaterStyle.water : WidgetStyle.secondary)
                     .monospacedDigit()
             }
@@ -192,10 +167,72 @@ struct WaterTile: View {
         }
     }
 
-    // MARK: Liquid
+    // MARK: 角色
 
-    /// 整张卡片是一杯水：水位是今天的进度，满了水面盖过上沿，达标的那一刻
-    /// 起水面闪几秒金光（和喝了一杯举杯子的时间一样）。数字和 + 浮在水上。
+    /// 角色在左，右边大数字和目标、八节竹子、一句状态，最右是 +。
+    private func characterWide(_ day: WaterDay) -> some View {
+        let pose = look(day)
+        let stage = WaterPose.stage(total: day.total, goal: day.goal)
+        return HStack(spacing: 8) {
+            WaterPoseFigure(character: character, look: pose, height: 44, reduceMotion: reduceMotion)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(WaterIntake.figure(day.total, ounces: ounces))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(WidgetStyle.primary)
+                        .monospacedDigit()
+                        .rollingValue(day.total)
+                    Text("/\(WaterIntake.figure(day.goal, ounces: ounces))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+                BambooRow(filled: WaterPetCards.filledCups(total: day.total, goal: day.goal),
+                          slots: WaterPose.bambooSlots, segment: 6.5, spacing: 2.5)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: day.total)
+                Text(WaterPose.caption(pose, stage: stage))
+                    .font(.system(size: 11, weight: pose == .stage(.done) ? .semibold : .regular))
+                    .foregroundStyle(captionColor(pose))
+                    .contentTransition(.opacity)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            Spacer(minLength: 0)
+            drinkButton(size: 12)
+        }
+    }
+
+    /// 竖排 56pt 宽：角色、数字、八节竹子、+。
+    private func characterColumn(_ day: WaterDay) -> some View {
+        VStack(spacing: 3) {
+            WaterPoseFigure(character: character, look: look(day), height: 36, reduceMotion: reduceMotion)
+            Text(WaterIntake.figure(day.total, ounces: ounces))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(WidgetStyle.primary)
+                .monospacedDigit()
+                .rollingValue(day.total)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            BambooRow(filled: WaterPetCards.filledCups(total: day.total, goal: day.goal),
+                      slots: WaterPose.bambooSlots, segment: 4.5, spacing: 1.5)
+                .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: day.total)
+            drinkButton(size: 10)
+        }
+    }
+
+    private func captionColor(_ look: WaterPose.Look) -> Color {
+        switch look {
+        case .stage(.done): Color(hex: PaletteColor.yellow.hex)
+        case .dry, .parched: Color(hex: "#FF8A80")
+        default: WidgetStyle.secondary
+        }
+    }
+
+    // MARK: 液态
+
+    /// 整张卡片是一杯水：水位是今天的进度，满了水面盖过上沿、顶上一道高光，
+    /// 达标的那一刻起水面闪几秒金光。点 + 时水面晃一下溅几颗水珠。数字和 +
+    /// 浮在水上，白字带一圈淡黑描边，水多水少都看得清。
     private func liquid(_ day: WaterDay, done: Bool) -> some View {
         let level = LiquidLooks.waterLevel(total: day.total, goal: day.goal)
         let vertical = context.position.isVertical
@@ -203,20 +240,23 @@ struct WaterTile: View {
             // 液态的水用卡片的颜色主题（喝水默认青蓝，见 `WidgetTint`）。
             LiquidWater(level: level, tint: theme?.main(dark: scheme == .dark) ?? WaterStyle.water,
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
-                        golden: done && mood == .drink)
+                        golden: done && mood == .drink, shine: true, bubbles: vertical ? 4 : 6,
+                        density: LiquidLooks.waterDensity, sloshAt: loggedAt,
+                        splashOrigin: LiquidLooks.waterSplashOrigin(vertical: vertical),
+                        fullHighlight: true)
                 .fillingCard()
             if vertical {
                 VStack(spacing: 3) {
                     Text(WaterIntake.figure(day.total, ounces: ounces))
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.primary)
                         .monospacedDigit()
                         .rollingValue(day.total)
+                        .liquidInk()
                     Text(done ? tr("达标啦") : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(WidgetStyle.primary.opacity(0.75))
+                        .font(WidgetStyle.caption(11))
                         .monospacedDigit()
-                    drinkButton(size: 10)
+                        .liquidInk(0.85)
+                    drinkButton(size: 10, onWater: true)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -225,17 +265,17 @@ struct WaterTile: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                             .rollingValue(day.total)
+                            .liquidInk()
                         Text(done ? tr("今天达标啦") : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
                             .font(.system(size: 12))
-                            .foregroundStyle(WidgetStyle.primary.opacity(0.75))
+                            .liquidInk(0.85)
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     Spacer(minLength: 0)
-                    drinkButton(size: 12)
+                    drinkButton(size: 12, onWater: true)
                 }
             }
         }
@@ -266,17 +306,178 @@ struct WaterTile: View {
         }
     }
 
-    /// One cup of water. The level rising is the confirmation, so the write
-    /// is animated rather than the press.
-    private func drinkButton(size: CGFloat) -> some View {
+    /// One cup of water. The number rolling (and the character's sip, the
+    /// liquid's slosh) is the confirmation, so the write is animated rather
+    /// than the press. 角色和液态另外飘一个 +N；减少动态效果时不飘、不举竹筒。
+    private func drinkButton(size: CGFloat, onWater: Bool = false) -> some View {
         let cup = WaterIntake.cupSize(instance.config)
-        return TileGlyph(symbol: "plus", size: size, tint: WaterStyle.water, action: context.isPreview ? nil : {
+        return TileGlyph(symbol: "plus", size: size, tint: onWater ? .white : WaterStyle.water,
+                         action: context.isPreview ? nil : {
             withAnimation(.snappy(duration: 0.35)) {
                 WaterLog.drink(.water, amount: cup, in: instance)
             }
+            if layout != .ring, !reduceMotion { startGulp(WaterIntake.figure(cup, ounces: ounces)) }
         })
+        .overlay(alignment: .top) {
+            if let gulp {
+                Text("+\(gulp)")
+                    .font(.system(size: 11, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1.5)
+                    .background(Capsule().fill(WaterStyle.water))
+                    .fixedSize()
+                    .offset(y: -size * 1.55)
+                    .transition(.asymmetric(insertion: .offset(y: 6).combined(with: .opacity),
+                                            removal: .offset(y: -6).combined(with: .opacity)))
+                    .allowsHitTesting(false)
+            }
+        }
         .help(tr("喝了一杯水（\(WaterIntake.amount(cup, ounces: ounces))）"))
         .accessibilityLabel(tr("记录一杯水，\(WaterIntake.amount(cup, ounces: ounces))"))
+    }
+
+    /// 举起竹筒喝一口那一帧，约 0.8 秒后回到当前档位。
+    private func startGulp(_ amount: String) {
+        gulpToken += 1
+        let token = gulpToken
+        withAnimation(.easeOut(duration: 0.18)) { gulp = amount }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(WaterPose.gulpSeconds))
+            guard token == gulpToken else { return }
+            withAnimation(.easeIn(duration: 0.25)) { gulp = nil }
+        }
+    }
+}
+
+/// 角色样式的角色：按 `WaterPose.Look` 换图，换的时候淡入淡出。图都用原来
+/// 宠物和喝水的那几张，小熊猫多两张抱竹筒的（`pet-panda-sip`、`pet-panda-drink`）。
+/// 框按最宽的角色图留（宽是高的 0.95），换姿势时旁边的字不会挪。
+struct WaterPoseFigure: View {
+    var character: WaterCharacter
+    var look: WaterPose.Look
+    var height: CGFloat
+    var reduceMotion: Bool
+
+    private var isDry: Bool {
+        if case .dry = look { return true }
+        return false
+    }
+
+    var body: some View {
+        let name = WaterPose.imageName(character, look)
+        ZStack(alignment: .bottom) {
+            if let image = WaterArt.named(name) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    // 渴了：口渴图降饱和、略压暗，像打蔫。
+                    .saturation(isDry ? 0.45 : 1)
+                    .brightness(isDry ? -0.06 : 0)
+                    .id(name)
+                    .transition(.opacity)
+            } else {
+                // 截图工具里没有图：一滴水代替。
+                Image(systemName: "drop.fill")
+                    .font(.system(size: height * 0.6))
+                    .foregroundStyle(WaterStyle.water)
+            }
+        }
+        .frame(width: height * 0.95, height: height, alignment: .bottom)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: name)
+        .overlay(alignment: .topLeading) {
+            if isDry {
+                Text(WaterPose.dryBubble)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.black.opacity(0.8))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.white.opacity(0.92)))
+                    .fixedSize()
+                    .offset(x: -2, y: -3)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .overlay(alignment: .top) {
+            // 小熊猫达标那张图没有彩带，补几条；其他角色的欢呼图自带。
+            if look == .stage(.done), character == .redPanda {
+                Confetti(reduceMotion: reduceMotion)
+                    .frame(width: height * 1.05, height: height * 0.5)
+                    .offset(y: -height * 0.08)
+                    .allowsHitTesting(false)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// 达标时小熊猫头上几条小彩带，慢慢闪；减少动态效果时不动。
+private struct Confetti: View {
+    var reduceMotion: Bool
+
+    private static let pieces: [(x: CGFloat, y: CGFloat, angle: Double, hex: String)] = [
+        (0.08, 0.55, -30, "#FFD36B"), (0.22, 0.15, 25, "#FF7AA2"), (0.4, 0.0, -10, "#6FDC9A"),
+        (0.62, 0.05, 35, "#7FC4E8"), (0.8, 0.2, -25, "#FFD36B"), (0.94, 0.6, 15, "#FF7AA2"),
+    ]
+
+    var body: some View {
+        GeometryReader { proxy in
+            ForEach(Self.pieces.indices, id: \.self) { index in
+                let piece = Self.pieces[index]
+                Capsule()
+                    .fill(Color(hex: piece.hex))
+                    .frame(width: 1.8, height: 4.5)
+                    .rotationEffect(.degrees(piece.angle))
+                    .position(x: piece.x * proxy.size.width, y: piece.y * proxy.size.height)
+            }
+        }
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { view, up in
+            view.opacity(up ? 1 : 0.65).offset(y: up ? -1 : 0.5)
+        } animation: { _ in .easeInOut(duration: 0.9) }
+    }
+}
+
+/// 八节竹子：喝够的那几节是竹子的绿，带一道竹节；没到的淡淡一节空的。
+struct BambooRow: View {
+    var filled: Int
+    var slots: Int
+    /// 一节的宽度，高是宽的 1.3 倍。
+    var segment: CGFloat
+    var spacing: CGFloat
+
+    private static let green = Color(hex: "#86C26A")
+    private static let node = Color(hex: "#4F8B3C")
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(0..<slots, id: \.self) { index in
+                let full = index < filled
+                let shape = RoundedRectangle(cornerRadius: segment * 0.28, style: .continuous)
+                shape
+                    .fill(full ? Self.green : WidgetStyle.primary.opacity(0.1))
+                    .overlay(alignment: .top) {
+                        // 竹节：上面三成处一道深色细线。
+                        Rectangle()
+                            .fill(full ? Self.node : WidgetStyle.primary.opacity(0.14))
+                            .frame(height: max(0.8, segment * 0.14))
+                            .padding(.top, segment * 1.3 * 0.3)
+                    }
+                    .overlay(shape.stroke(WidgetStyle.primary.opacity(full ? 0 : 0.14), lineWidth: 0.6))
+                    .clipShape(shape)
+                    .frame(width: segment, height: segment * 1.3)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    /// 浮在液态水上的白字：一圈淡黑描边（阴影），水多水少都看得清。
+    func liquidInk(_ opacity: Double = 1) -> some View {
+        foregroundStyle(Color.white.opacity(opacity))
+            .shadow(color: .black.opacity(0.3), radius: 0.8)
     }
 }
 

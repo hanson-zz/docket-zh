@@ -178,21 +178,23 @@ final class WaterMergeTests: XCTestCase {
         XCTAssertEqual(WaterCharacter.from(shiba), .shiba)
     }
 
-    /// 角色挪进了设置：添加面板只列角色、圆环、液态，柴犬卡片读出来是
-    /// “角色”样式加柴犬。柴犬改为达标解锁，不算 Pro；水獭仍是 Pro。
+    /// 角色挪进了设置：添加面板只列圆环、角色、液态，柴犬卡片读出来是
+    /// “角色”样式加柴犬。角色样式 2026-10-20 起是 Pro，所以柴犬卡片也标 Pro
+    /// （柴犬这个角色本身仍靠达标解锁）；新放的是圆环，免费。
     func testTheLibraryListsLooksNotCharacters() {
         let entry = WidgetCatalog.entry(.water)!
-        XCTAssertEqual(entry.variants.map(\.title), ["角色", "圆环", "液态"])
+        XCTAssertEqual(entry.variants.map(\.title), ["圆环", "角色", "液态"])
         XCTAssertFalse(entry.variants.contains { WidgetCatalog.isSupporterOnly($0.overrides) })
         let shiba = WidgetCatalog.make(.water, overrides: ["layout": .string("character"),
                                                            "character": .string("shiba")])!
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: shiba.config, kind: .water), "角色")
-        XCTAssertFalse(ProFeatures.isPro(shiba))
+        XCTAssertTrue(ProFeatures.isPro(shiba), "角色样式是 Pro")
+        XCTAssertFalse(ProFeatures.isSupporterStyle(shiba.config.values), "柴犬本身不是 Pro 角色")
         let otter = WidgetCatalog.make(.water, overrides: ["layout": .string("character"),
                                                            "character": .string("otter")])!
         XCTAssertTrue(ProFeatures.isPro(otter))
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetCatalog.make(.water)!.config, kind: .water),
-                       "角色")
+                       "圆环")
         XCTAssertFalse(ProFeatures.isPro(WidgetCatalog.make(.water)!))
     }
 }
