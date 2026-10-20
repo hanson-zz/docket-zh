@@ -386,6 +386,17 @@
         }
       }
     },
+    "%@ · 峰值 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · peak %@"
+          }
+        }
+      }
+    },
     "%@ · 已停止" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3114,6 +3125,17 @@
         }
       }
     },
+    "100% 是原本的音量，不做处理；调过的 App 经系统音频接入处理。右键一行可设开会时降不降低它。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "100% is the app's own volume, left untouched; apps you change go through system audio capture. Right-click a row to choose whether meetings lower it."
+          }
+        }
+      }
+    },
     "100% 是应用原本的音量，不做任何处理。调高、调低或静音时，码头会通过系统的音频接入处理这个应用的声音。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5119,6 +5141,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Download"
+          }
+        }
+      }
+    },
+    "下载 / 上传" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down / Up"
           }
         }
       }
@@ -7510,6 +7543,17 @@
         }
       }
     },
+    "从列表移除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from List"
+          }
+        }
+      }
+    },
     "从刘海下方滑出一张卡片，带快捷动作；约 30 秒后自动收起（闹钟的陪它响完两分钟），指针停在上面时不收，按 Esc 关闭，点卡片打开对应的小组件面板。扩展栏隐藏、卡片不在当前布局时也会弹。关掉喝水时改回系统通知；关掉倒计时或闹钟时照样到点响，只是不弹卡片。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9171,6 +9215,17 @@
         }
       }
     },
+    "先设成静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mute in advance"
+          }
+        }
+      }
+    },
     "先起个名字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9992,6 +10047,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click again to collapse"
+          }
+        }
+      }
+    },
+    "再点一下，全部恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to restore everything"
           }
         }
       }
@@ -16807,6 +16873,17 @@
         }
       }
     },
+    "它已经在列表里了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's already in the list"
+          }
+        }
+      }
+    },
     "安克雷奇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17155,6 +17232,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Family dinner"
+          }
+        }
+      }
+    },
+    "家里-5G" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-5G"
           }
         }
       }
@@ -18959,6 +19047,17 @@
         }
       }
     },
+    "已拷贝名称" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name copied"
+          }
+        }
+      }
+    },
     "已拷贝图片" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20366,6 +20465,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opening stores"
+          }
+        }
+      }
+    },
+    "开会中：其他 App 已降到 30%，再点恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In a meeting: other apps are at 30%. Click again to restore"
+          }
+        }
+      }
+    },
+    "开会时不降低（算会议 App）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't Lower in Meetings (Meeting App)"
+          }
+        }
+      }
+    },
+    "开会时也降低" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower in Meetings Too"
+          }
+        }
+      }
+    },
+    "开会模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meeting Mode"
           }
         }
       }
@@ -22038,6 +22181,17 @@
         }
       }
     },
+    "所有 App 回到原本的音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return every app to its own volume"
+          }
+        }
+      }
+    },
     "所有专注计时小组件共用这些设置，码头将它们视为同一个计时器。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23160,6 +23314,17 @@
         }
       }
     },
+    "拷贝 IP" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy IP"
+          }
+        }
+      }
+    },
     "拷贝原文" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23200,6 +23365,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy File"
+          }
+        }
+      }
+    },
+    "拷贝本机 IP 地址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy this Mac's IP address"
           }
         }
       }
@@ -24623,6 +24799,17 @@
         }
       }
     },
+    "最多添加 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can add up to %@"
+          }
+        }
+      }
+    },
     "最多记 %@ 条，删掉一条再加" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24740,6 +24927,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Month"
+          }
+        }
+      }
+    },
+    "有线网络" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wired"
           }
         }
       }
@@ -25294,6 +25492,50 @@
         }
       }
     },
+    "没在出声 · 原音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not playing · Normal volume"
+          }
+        }
+      }
+    },
+    "没在出声 · 预设 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not playing · Preset %@"
+          }
+        }
+      }
+    },
+    "没在出声 · 预设静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not playing · Preset to mute"
+          }
+        }
+      }
+    },
+    "没在出声的 App 也能先加进来，设好音量或静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add apps that aren't playing yet and set their volume or mute in advance"
+          }
+        }
+      }
+    },
     "没在播放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25400,6 +25642,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No matching files"
+          }
+        }
+      }
+    },
+    "没有联网" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline"
           }
         }
       }
@@ -25829,6 +26082,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to copy · Double-click to insert"
+          }
+        }
+      }
+    },
+    "点一下拷贝网络名称" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to copy the network name"
           }
         }
       }
@@ -36190,6 +36454,17 @@
         }
       }
     },
+    "码头开着时累计，零点清零" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counted while Docket is open, reset at midnight"
+          }
+        }
+      }
+    },
     "码头所有音效的总开关和音量：添加和移除小组件时的轻响，以及提醒到点时的提示音。添加和移除的声音在系统设置里关闭了“播放用户界面音效”时不会播放。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36318,6 +36593,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dockling-%@.png"
+          }
+        }
+      }
+    },
+    "码头自己不用加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Docket doesn't need to be added"
           }
         }
       }
@@ -37796,6 +38082,17 @@
         }
       }
     },
+    "系统更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Software Update"
+          }
+        }
+      }
+    },
     "系统活动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38643,6 +38940,17 @@
         }
       }
     },
+    "网盘同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud Sync"
+          }
+        }
+      }
+    },
     "网站" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38694,6 +39002,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Speed"
+          }
+        }
+      }
+    },
+    "网速单位，卡片也跟着变" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed unit; the card follows"
           }
         }
       }
@@ -41440,6 +41759,17 @@
         }
       }
     },
+    "谁在用网" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who's Using the Network"
+          }
+        }
+      }
+    },
     "谁开始播放就切到谁" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43134,6 +43464,17 @@
         }
       }
     },
+    "还没有应用在播放声音。开始播放后会出现在这里，也可以先添加 App 设好音量。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is playing sound yet. Apps appear here once they play, or add one now and set its volume."
+          }
+        }
+      }
+    },
     "还没有应用在播放声音。开始播放后，它会出现在这里。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43442,6 +43783,17 @@
         }
       }
     },
+    "这个不是能出声的 App，换一个试试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That isn't an app that can play sound. Try another one"
+          }
+        }
+      }
+    },
     "这个习惯和它的全部打卡记录都会删除，不能恢复。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43647,6 +43999,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This drink has been deleted"
+          }
+        }
+      }
+    },
+    "这会儿没有 App 在用网" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is using the network right now"
           }
         }
       }
@@ -43915,6 +44278,17 @@
         }
       }
     },
+    "连接 %@ Mbps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link %@ Mbps"
+          }
+        }
+      }
+    },
     "连接不上电台，%@ 秒后重试" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44153,6 +44527,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose an AI app"
+          }
+        }
+      }
+    },
+    "选一个 App，先设好它的音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an app to set its volume in advance"
           }
         }
       }
@@ -45671,6 +46056,17 @@
         }
       }
     },
+    "除会议 App 外降到 30%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower everything but meeting apps to 30%"
+          }
+        }
+      }
+    },
     "除夕" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46004,6 +46400,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snow grains"
+          }
+        }
+      }
+    },
+    "零点清零" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets at midnight"
           }
         }
       }
@@ -47441,6 +47848,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ New Reminder"
+          }
+        }
+      }
+    },
+    "＋ 添加 App（先设好音量）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Add App (Set Volume First)"
           }
         }
       }

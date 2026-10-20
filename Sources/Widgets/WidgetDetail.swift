@@ -610,9 +610,9 @@ enum WidgetDetail {
         // 倒计时四列快速开始、秒表四列计次表、闹钟的今天时间轴和重复日。
         case .countdown, .stopwatch, .alarm: 320
         case .notes: 300
-        // 系统活动按效果图改成 320；网络活动照旧 340。
+        // 系统活动按效果图改成 320；网络活动按面板实用性效果图也改成 320。
         case .system: 320
-        case .network: 340
+        case .network: 320
         // 天气面板改版：降水条、生活指数三格、6 小时折线和城市管理，320 和第一批面板一致。
         case .weather: 320
         // 正在播放改版：和第一批面板一样 320。

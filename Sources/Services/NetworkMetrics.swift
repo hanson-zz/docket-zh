@@ -19,10 +19,17 @@ final class NetworkMetrics {
     private(set) var downloadHistory: [Double] = []
     private(set) var uploadHistory: [Double] = []
 
+    /// 今天累计下载、上传（码头开着、在采样时加），零点清零，存在 UserDefaults。
+    private(set) var today: NetworkDayTotals
+
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var previous: (rx: UInt64, tx: UInt64, at: TimeInterval)?
+    /// 攒几秒再写一次 UserDefaults，不每秒写盘。
+    @ObservationIgnored private var unsaved = 0
 
-    private init() {}
+    private init() {
+        today = NetworkDayTotals.decode(UserDefaults.standard.data(forKey: NetworkDayTotals.defaultsKey))
+    }
 
     func start() {
         guard timer == nil else { return }
@@ -38,6 +45,7 @@ final class NetworkMetrics {
     func stop() {
         timer?.invalidate()
         timer = nil
+        saveToday()
         // Next start() re-baselines instead of charging the whole idle gap
         // to a single sample.
         previous = nil
@@ -55,10 +63,35 @@ final class NetworkMetrics {
 
         // Counters are 32-bit and wrap, and an interface coming back up resets
         // them; a negative delta is a reset, not 4GB of traffic in one second.
-        download = Double(totals.rx >= last.rx ? totals.rx - last.rx : 0) / elapsed
-        upload = Double(totals.tx >= last.tx ? totals.tx - last.tx : 0) / elapsed
+        let received = totals.rx >= last.rx ? totals.rx - last.rx : 0
+        let sent = totals.tx >= last.tx ? totals.tx - last.tx : 0
+        download = Double(received) / elapsed
+        upload = Double(sent) / elapsed
+        addToToday(received: received, sent: sent)
         record(download, into: &downloadHistory)
         record(upload, into: &uploadHistory)
+    }
+
+    private func addToToday(received: UInt64, sent: UInt64) {
+        let next = today.adding(download: received, upload: sent, at: Date())
+        let newDay = next.day != today.day
+        if next != today { today = next }
+        unsaved += 1
+        // 换日子马上存，免得重启后又读回昨天的数；平时 15 秒一存。
+        if newDay || unsaved >= 15 { saveToday() }
+    }
+
+    /// 退出前把没存的几秒写下去。
+    func flushToday() { if unsaved > 0 { saveToday() } }
+
+    private func saveToday() {
+        unsaved = 0
+        UserDefaults.standard.set(today.encoded(), forKey: NetworkDayTotals.defaultsKey)
+    }
+
+    /// 面板上今天的数：过了零点还没采样时也是 0。
+    func todayShown(at date: Date = Date()) -> (download: UInt64, upload: UInt64) {
+        today.shown(at: date)
     }
 
     private func record(_ value: Double, into history: inout [Double]) {

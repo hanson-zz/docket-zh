@@ -303,6 +303,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DockStrut.releaseNow(borrowed)
         }
         state?.saveNow()
+        // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。
+        NetworkMetrics.shared.flushToday()
     }
 
     /// Asks once, then remembers.

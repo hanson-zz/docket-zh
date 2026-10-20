@@ -207,7 +207,9 @@ public enum WidgetCatalog {
         // reading of the same link. 经典 is free, the other three are
         // Pro 专属 appearances.
         Entry(kind: .network, name: tr("网络活动"), category: .system,
-              defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false)]),
+              defaults: c(["layout": .string("speed"), "display": .string("both"), "chart": .bool(false),
+                          // 单位 MB/s 或 Mbps，面板顶上也能切（见 `NetworkRateUnit`）。
+                          NetworkRateUnit.key: .string(NetworkRateUnit.bytes.rawValue)]),
               // “仅数字”和“带图表”并成“网速”，图表用“显示图表”开关（`chart`）。
               variants: [(tr("网速"), ["layout": .string("speed")])]
                 + wifiVariants,

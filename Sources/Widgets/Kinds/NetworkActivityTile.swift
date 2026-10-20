@@ -166,11 +166,9 @@ struct NetworkActivityTile: View {
         }
     }
 
-    /// KB/s until it no longer fits, then MB/s - matching how the menu bar reads.
+    /// KB/s 到 MB/s，或者按设置的 Mbps（`unit`），和面板顶上的切换是同一个键。
     private func formatted(_ bytesPerSecond: Double) -> (value: String, unit: String) {
-        let kb = max(bytesPerSecond, 0) / 1024
-        if kb < 1024 { return ("\(Int(kb.rounded()))", "KB/s") }
-        return (String(format: "%.1f", kb / 1024), "MB/s")
+        NetworkRateFormat.format(bytesPerSecond, unit: NetworkRateUnit.from(instance.config))
     }
 }
 

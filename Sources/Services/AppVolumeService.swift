@@ -40,13 +40,23 @@ final class AppVolumeService {
         case granted, denied, unknown
     }
 
-    /// Apps playing right now, by name.
+    /// Apps playing right now, by name. 开会模式下 `setting` 是生效的那份（降到 30% 的）。
     private(set) var rows: [Row] = []
+    /// 「＋ 添加 App」加进来、这会儿没在出声的，按加入顺序（卡片不显示，面板列在下面）。
+    private(set) var presets: [Row] = []
+    /// 加进来的全部（含正在出声的），面板用来判断能不能「从列表移除」。
+    private(set) var pinned: [String] = []
+    /// 开会模式开着。
+    private(set) var meeting = false
+    /// 面板里右键改过的「算不算会议 App」。
+    private(set) var meetingChoices: [String: Bool] = [:]
     private(set) var permission: Permission = .unknown
     /// A failure that is not one app's, such as no output device.
     private(set) var problem: String?
 
     @ObservationIgnored private var settings: [String: AppVolumeSetting]
+    /// 开会时在面板上拖过的临时值，关掉开会模式时丢掉。
+    @ObservationIgnored private var meetingOverrides: [String: AppVolumeSetting] = [:]
     @ObservationIgnored private var groups: [AudioAppGroup] = []
     @ObservationIgnored private var taps: [String: AppTap] = [:]
     @ObservationIgnored private var failures: [String: String] = [:]
@@ -57,7 +67,12 @@ final class AppVolumeService {
     private static let defaultsKey = "appVolume.settings"
 
     private init() {
-        settings = AppVolumeSetting.decode(UserDefaults.standard.data(forKey: Self.defaultsKey))
+        let defaults = UserDefaults.standard
+        settings = AppVolumeSetting.decode(defaults.data(forKey: Self.defaultsKey))
+        pinned = AppVolumePresets.decode(defaults.data(forKey: AppVolumePresets.defaultsKey))
+        meeting = defaults.bool(forKey: MeetingMode.activeKey)
+        meetingOverrides = meeting ? MeetingMode.decodeOverrides(defaults.data(forKey: MeetingMode.overridesKey)) : [:]
+        meetingChoices = MeetingMode.decodeCustom(defaults.data(forKey: MeetingMode.customKey))
     }
 
     // MARK: Lifecycle
@@ -109,32 +124,135 @@ final class AppVolumeService {
     // MARK: Changes from the panel
 
     func setPercent(_ percent: Double, for bundleID: String) {
-        var setting = settings[bundleID] ?? AppVolumeSetting()
+        var setting = editedSetting(for: bundleID)
         setting.percent = AppVolume.snapped(percent)
         update(setting, for: bundleID)
     }
 
     /// 「正在播放」面板借这一路给网易云、QQ 音乐做音量条：读现在的设置。
+    /// 开会模式下是降过的那份，和应用音量面板显示的一致。
     func setting(for bundleID: String) -> AppVolumeSetting {
-        settings[bundleID] ?? AppVolumeSetting()
+        effective(for: bundleID)
     }
 
     /// 录音权限是否已经给过。只读，不弹权限：面板没权限就不显示音量条。
     static var recordingGranted: Bool { AudioCapturePermission.status() == .granted }
 
     func setMuted(_ muted: Bool, for bundleID: String) {
-        var setting = settings[bundleID] ?? AppVolumeSetting()
+        var setting = editedSetting(for: bundleID)
         setting.muted = muted
         update(setting, for: bundleID)
     }
 
-    /// Every app back to normal: every tap down.
+    /// Every app back to normal: every tap down. 开会模式一起关掉，加进来的预设留着（回到 100%）。
     func resetAll() {
         settings = [:]
+        meeting = false
+        meetingOverrides = [:]
         save()
+        saveMeeting()
         removeAllTaps()
         failures = [:]
         publishRows()
+    }
+
+    // MARK: 预设和开会模式
+
+    /// 「＋ 添加 App」：没在出声也先放进列表，满了或已经在了就不加。
+    @discardableResult
+    func addPreset(_ bundleID: String) -> Bool {
+        let next = AppVolumePresets.adding(bundleID, to: pinned)
+        guard next != pinned else { return false }
+        pinned = next
+        savePinned()
+        publishRows()
+        return true
+    }
+
+    /// 从列表移除。没在出声的连同预设的音量一起清掉，免得看不见的设置还在起作用；
+    /// 正在出声的只是不再固定，音量照旧。
+    func removePreset(_ bundleID: String) {
+        pinned = AppVolumePresets.removing(bundleID, from: pinned)
+        savePinned()
+        if !groups.contains(where: { $0.bundleID == bundleID }) {
+            settings[bundleID] = nil
+            meetingOverrides[bundleID] = nil
+            save()
+            saveMeeting()
+        }
+        publishRows()
+    }
+
+    /// 一键开会 / 再点恢复。
+    func toggleMeeting() {
+        meeting.toggle()
+        meetingOverrides = [:]
+        saveMeeting()
+        reapply()
+    }
+
+    func isMeetingApp(_ bundleID: String) -> Bool {
+        MeetingMode.isMeetingApp(bundleID, custom: meetingChoices)
+    }
+
+    /// 右键「开会时不降低」/「开会时也降低」：和内置名单一样就不记。
+    func setMeetingApp(_ isMeeting: Bool, for bundleID: String) {
+        if MeetingMode.isMeetingApp(bundleID) == isMeeting {
+            meetingChoices[bundleID] = nil
+        } else {
+            meetingChoices[bundleID] = isMeeting
+        }
+        meetingOverrides[bundleID] = nil
+        UserDefaults.standard.set(MeetingMode.encodeCustom(meetingChoices), forKey: MeetingMode.customKey)
+        saveMeeting()
+        reapply()
+    }
+
+    /// 真正交给音频接入的设置：存着的那份，开会时叠上降到 30% 或这次开会的临时值。
+    private func effective(for bundleID: String) -> AppVolumeSetting {
+        MeetingMode.effective(settings[bundleID] ?? AppVolumeSetting(), active: meeting,
+                              isMeetingApp: isMeetingApp(bundleID), override: meetingOverrides[bundleID])
+    }
+
+    /// 拖动或静音时从哪一份改起：开会时的非会议 App 从生效的那份改，记成临时值。
+    private func editedSetting(for bundleID: String) -> AppVolumeSetting {
+        MeetingMode.editsOverride(active: meeting, isMeetingApp: isMeetingApp(bundleID))
+            ? effective(for: bundleID) : (settings[bundleID] ?? AppVolumeSetting())
+    }
+
+    private var effectiveSettings: [String: AppVolumeSetting] {
+        var all: [String: AppVolumeSetting] = [:]
+        for key in Set(settings.keys).union(groups.map(\.bundleID)).union(meetingOverrides.keys) {
+            all[key] = effective(for: key)
+        }
+        return all
+    }
+
+    /// 开会模式或会议名单变了：已经接入的改音量，该接入、该撤的照新的来。
+    private func reapply() {
+        for (bundleID, tap) in taps {
+            let setting = effective(for: bundleID)
+            if AppVolume.needsTap(setting) {
+                tap.gain.store(AppVolume.gain(percent: setting.percent, muted: setting.muted))
+            }
+        }
+        failures = [:]
+        applyTaps()
+        publishRows()
+    }
+
+    private func savePinned() {
+        UserDefaults.standard.set(AppVolumePresets.encode(pinned), forKey: AppVolumePresets.defaultsKey)
+    }
+
+    private func saveMeeting() {
+        let defaults = UserDefaults.standard
+        defaults.set(meeting, forKey: MeetingMode.activeKey)
+        if meeting, !meetingOverrides.isEmpty {
+            defaults.set(MeetingMode.encodeOverrides(meetingOverrides), forKey: MeetingMode.overridesKey)
+        } else {
+            defaults.removeObject(forKey: MeetingMode.overridesKey)
+        }
     }
 
     func openPrivacySettings() {
@@ -142,9 +260,15 @@ final class AppVolumeService {
         if let url { NSWorkspace.shared.open(url) }
     }
 
-    private func update(_ setting: AppVolumeSetting, for bundleID: String) {
-        settings[bundleID] = setting
-        save()
+    private func update(_ edited: AppVolumeSetting, for bundleID: String) {
+        if MeetingMode.editsOverride(active: meeting, isMeetingApp: isMeetingApp(bundleID)) {
+            meetingOverrides[bundleID] = edited
+            saveMeeting()
+        } else {
+            settings[bundleID] = edited
+            save()
+        }
+        let setting = effective(for: bundleID)
         // A live tap only needs its gain moved; the audio thread reads it.
         if let tap = taps[bundleID], AppVolume.needsTap(setting) {
             tap.gain.store(AppVolume.gain(percent: setting.percent, muted: setting.muted))
@@ -162,7 +286,8 @@ final class AppVolumeService {
     // MARK: Taps
 
     private func applyTaps() {
-        let plan = AppTapPlan.plan(playing: groups, settings: settings,
+        let wanted = effectiveSettings
+        let plan = AppTapPlan.plan(playing: groups, settings: wanted,
                                    tapped: taps.mapValues { $0.objectIDs })
         for bundleID in plan.remove {
             taps.removeValue(forKey: bundleID)?.invalidate()
@@ -193,7 +318,7 @@ final class AppVolumeService {
         }
 
         for group in plan.build where failures[group.bundleID] == nil {
-            let setting = settings[group.bundleID] ?? AppVolumeSetting()
+            let setting = wanted[group.bundleID] ?? AppVolumeSetting()
             do {
                 let tap = try AppTap(group: group, output: outputDevice,
                                      gain: AppVolume.gain(percent: setting.percent, muted: setting.muted))
@@ -213,11 +338,15 @@ final class AppVolumeService {
         let next = groups.map { group in
             Row(bundleID: group.bundleID,
                 name: AppIdentity.name(for: group.bundleID),
-                setting: settings[group.bundleID] ?? AppVolumeSetting(),
+                setting: effective(for: group.bundleID),
                 problem: failures[group.bundleID])
         }
         .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         if next != rows { rows = next }
+        let idle = AppVolumePresets.idle(pinned: pinned, playing: Set(groups.map(\.bundleID))).map { id in
+            Row(bundleID: id, name: AppIdentity.name(for: id), setting: effective(for: id), problem: nil)
+        }
+        if idle != presets { presets = idle }
     }
 }
 

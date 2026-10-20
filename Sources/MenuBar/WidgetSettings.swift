@@ -803,6 +803,7 @@ struct WidgetSettingsSections: View {
     /// missing here keeps its text field, which is the honest fallback.
     static let stringChoices: [String: [(title: String, value: String)]] = [
         "network.display": [(tr("两者"), "both"), (tr("下载"), "download"), (tr("上传"), "upload")],
+        "network.unit": [("MB/s", "bytes"), ("Mbps", "bits")],
         "battery.look": BatteryLook.allCases.map { ($0.title, $0.rawValue) },
         "progress.period": TimeProgress.Period.allCases.map { ($0.title, $0.rawValue) },
         "notes.color": PaperColor.picker.map { ($0.title, $0.rawValue) },

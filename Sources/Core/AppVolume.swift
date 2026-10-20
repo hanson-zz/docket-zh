@@ -285,3 +285,120 @@ public enum AppVolumeText {
         return names.count > 2 ? tr("\(shown) 等 \(names.count) 个") : shown
     }
 }
+
+// MARK: - 预设：没在出声的 App 先放进列表
+
+/// 「＋ 添加 App」加进来的 App（bundle id，按加入顺序）。没在出声也留在面板里，
+/// 可以先设好音量或静音，它一出声就按设好的来。存在 UserDefaults（`appVolume.pinned`）。
+public enum AppVolumePresets {
+    public static let defaultsKey = "appVolume.pinned"
+    /// 面板放得下、也够用的数量。
+    public static let limit = 12
+
+    /// 加一个：已有的不重复，空的不加，满了不加（返回原样）。
+    public static func adding(_ bundleID: String, to list: [String]) -> [String] {
+        let id = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty, !list.contains(where: { $0.caseInsensitiveCompare(id) == .orderedSame }),
+              list.count < limit else { return list }
+        return list + [id]
+    }
+
+    public static func removing(_ bundleID: String, from list: [String]) -> [String] {
+        list.filter { $0.caseInsensitiveCompare(bundleID) != .orderedSame }
+    }
+
+    /// 没在出声、要单独列在下面的预设，按加入顺序。
+    public static func idle(pinned: [String], playing: Set<String>) -> [String] {
+        pinned.filter { !playing.contains($0) }
+    }
+
+    public static func decode(_ data: Data?) -> [String] {
+        guard let data, let list = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+        var clean: [String] = []
+        for id in list { clean = adding(id, to: clean) }
+        return clean
+    }
+
+    public static func encode(_ list: [String]) -> Data? { try? JSONEncoder().encode(list) }
+}
+
+// MARK: - 开会模式
+
+/// 一键开会：除会议 App 外，每个 App 降到 30%（本来就更低或静音的不动），
+/// 再点一下全部回到原来的设置。
+///
+/// 不改存着的设置，只是叠一层：开会时算出「生效的设置」交给音频接入，关掉就
+/// 回到存着的那份，所以恢复不会丢东西，开会途中才出声的 App 也会被降低。
+/// 开会时在面板上拖某个 App，记成这次开会的临时值，关掉开会模式时一起丢掉。
+public enum MeetingMode {
+    public static let activeKey = "appVolume.meeting"
+    public static let overridesKey = "appVolume.meetingOverrides"
+    public static let customKey = "appVolume.meetingApps"
+    public static let level: Double = 30
+
+    /// 常见的会议和通话 App。浏览器里的网页会议分不出来，照样降低。
+    public static let knownApps: Set<String> = [
+        "us.zoom.xos",
+        "com.microsoft.teams", "com.microsoft.teams2",
+        "com.tencent.meeting", "com.tencent.wemeet",
+        "com.electron.lark", "com.bytedance.lark", "com.bytedance.feishu",
+        "com.alibaba.DingTalkMac",
+        "com.cisco.webexmeetingsapp", "Cisco-Systems.Spark",
+        "com.apple.FaceTime",
+        "com.tinyspeck.slackmacgap",
+        "com.hnc.Discord",
+        "com.skype.skype",
+        "com.google.Chrome.app.kjgfgldnnfoeklkmfkjfagphfepbbdan",
+    ]
+
+    /// 是不是会议 App：面板里右键改过的按改过的，否则看内置名单（不分大小写）。
+    public static func isMeetingApp(_ bundleID: String, custom: [String: Bool] = [:]) -> Bool {
+        if let chosen = custom[bundleID] { return chosen }
+        return knownApps.contains { $0.caseInsensitiveCompare(bundleID) == .orderedSame }
+    }
+
+    /// 交给音频接入的设置。
+    public static func effective(_ base: AppVolumeSetting, active: Bool, isMeetingApp: Bool,
+                                 override: AppVolumeSetting? = nil) -> AppVolumeSetting {
+        guard active, !isMeetingApp else { return base }
+        if let override { return override }
+        return AppVolumeSetting(percent: min(AppVolume.clamp(base.percent), level), muted: base.muted)
+    }
+
+    /// 开会模式下拖某个 App 时，改哪一份：非会议 App 改临时值，会议 App 和没开会时改存着的。
+    public static func editsOverride(active: Bool, isMeetingApp: Bool) -> Bool {
+        active && !isMeetingApp
+    }
+
+    public static func decodeCustom(_ data: Data?) -> [String: Bool] {
+        guard let data, let value = try? JSONDecoder().decode([String: Bool].self, from: data) else { return [:] }
+        return value
+    }
+
+    public static func encodeCustom(_ value: [String: Bool]) -> Data? { try? JSONEncoder().encode(value) }
+
+    /// 临时值不剪掉 100% 的：开会时拖回 100% 也是要的。
+    public static func decodeOverrides(_ data: Data?) -> [String: AppVolumeSetting] {
+        guard let data,
+              let value = try? JSONDecoder().decode([String: AppVolumeSetting].self, from: data) else { return [:] }
+        return value
+    }
+
+    public static func encodeOverrides(_ value: [String: AppVolumeSetting]) -> Data? {
+        try? JSONEncoder().encode(value)
+    }
+}
+
+public extension AppVolumeText {
+    /// 没在出声的预设下面那行。
+    static func preset(_ setting: AppVolumeSetting) -> String {
+        if setting.muted { return tr("没在出声 · 预设静音") }
+        if setting.isDefault { return tr("没在出声 · 原音量") }
+        return tr("没在出声 · 预设 \(AppVolume.percentText(setting.percent))")
+    }
+
+    /// 面板标题下那行。
+    static func meetingCaption(active: Bool) -> String {
+        active ? tr("开会中：其他 App 已降到 30%，再点恢复") : tr("除会议 App 外降到 30%")
+    }
+}

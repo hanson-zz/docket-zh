@@ -83,7 +83,7 @@ final class WidgetOptionTests: XCTestCase {
                      "qqmusic", "autoSwitch", "pinned"],
             .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
-            .network: ["display", "chart"],
+            .network: ["display", "chart", "unit"],
             .shortcut: [],
             .stock: ["symbol", "symbols", "chart", "alerts", "rotate", "colors", "metalUnit"],
             .watchlist: ["symbols", "groups", "holdings", "sort", "colors", "metalUnit"],

@@ -1,94 +1,196 @@
+import AppKit
 import SwiftUI
 
-/// Network said at length: the two rates the tile leads with, and under them
-/// the minute they came out of.
+/// 网络活动面板（效果图 panel-practicality-a 第 3 列「改后」）。
 ///
-/// The tile answers "how fast, right now" - a figure that is already stale by
-/// the time it is read. What a card cannot hold is the *shape*: whether this
-/// second is a spike in an idle minute or the tail of a long download, and how
-/// the two directions relate. That is the whole reason this panel exists.
+/// 从上到下：标题和 MB/s ↔ Mbps 切换（写卡片的 `unit`，卡片跟着变）；网络名和
+/// 本机 IP（点名字拷贝名字，「拷贝 IP」拷贝地址）；此刻上下行和最近 60 秒的曲线；
+/// 「谁在用网」前 5 个 App 和各自的上下行（系统自带 nettop 读，只在面板开着时读，
+/// 读不了就整块不显示）；「今天」累计下载和上传（码头开着时累计，零点清零）。
 ///
-/// Only what `NetworkMetrics` publishes: instantaneous rates and the last
-/// sixty one-second samples of each. The sampler sums every non-loopback link,
-/// so there is no interface to name, and it keeps rates rather than counters,
-/// so there is no session total to report. The averages and peaks below are
-/// read off the same history the chart draws - nothing here is a second
-/// source.
+/// 卡片是 Wi-Fi 圆环外观时，标题下多一行信号（圆环、强度、连接速率），和原来一样。
+/// 卡片设成只看下载或只看上传时，面板也只说那一个方向。
 struct NetworkDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    var body: some View {
-        // Deep teal, the colour of a line carrying something, with the
-        // minute's traffic as the ground along its foot.
-        DetailCard {
-            MeshBackdrop(color: Color(red: 0.05, green: 0.45, blue: 0.5))
-        } content: {
-            VStack(alignment: .leading, spacing: 14) {
-                if let wifi = wifiStyle { wifiSection(wifi) }
-                headline
+    @Environment(\.panelTint) private var panelTint
+    /// 刚拷贝的是哪一个（"name" / "ip"），一秒半后变回去。
+    @State private var copied: String?
 
-                // Two samples is the minimum a line can be drawn from, and
-                // the sampler's first tick is only a baseline - so a panel
-                // opened in the first seconds of the shelf's life honestly
-                // shows the rates alone until the history catches up.
-                if window >= 2 {
-                    table
-                    history
+    private var metrics: NetworkMetrics { NetworkMetrics.shared }
+    private var top: NetworkTopApps { NetworkTopApps.shared }
+    private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
+    private var unit: NetworkRateUnit { NetworkRateUnit.from(current.config) }
+    private var preview: Bool { context.isPreview }
+
+    private var accent: Color { panelTint.accent(or: Color(hex: NetPanelStyle.accent)) }
+    private var accentInk: Color { panelTint.ink(or: Color(hex: NetPanelStyle.accentInk)) }
+
+    var body: some View {
+        DetailCard {
+            ZStack {
+                Color(hex: NetPanelStyle.base)
+                RadialGradient(colors: [accent.opacity(0.13), .clear],
+                               center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
+            }
+        } content: {
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                if let wifi = wifiStyle { wifiRow(wifi) }
+                headline
+                if window >= 2 { history }
+                if preview || top.available { whoSection }
+                todaySection
+            }
+        }
+        .onAppear {
+            guard !preview else { return }
+            metrics.start()
+            top.panelAppeared()
+            if wifiStyle != nil { WifiMetrics.shared.start() }
+        }
+        .onDisappear {
+            guard !preview else { return }
+            top.panelDisappeared()
+        }
+    }
+
+    // MARK: 头部
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(verbatim: tr("网络活动"))
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.97))
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                unitSwitch
+            }
+            HStack(spacing: 8) {
+                Button { copy(placeName, tag: "name") } label: {
+                    Text(verbatim: copied == "name" ? tr("已拷贝名称") : placeLine)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.62))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(preview || !canCopyName)
+                .help(canCopyName ? tr("点一下拷贝网络名称") : "")
+                Spacer(minLength: 4)
+                if let ip = address {
+                    Button { copy(ip, tag: "ip") } label: {
+                        Text(verbatim: copied == "ip" ? tr("已拷贝") : tr("拷贝 IP"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(accent)
+                            .lineLimit(1)
+                            .fixedSize()
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(preview)
+                    .help(tr("拷贝本机 IP 地址"))
                 }
             }
         }
     }
 
-    // MARK: Wi-Fi
-    //
-    // Shown when the card is one of the Wi-Fi rings: the same ring larger,
-    // then what the tile has no room for. The rates still follow, because
-    // the link and what flows over it are one question.
+    private var unitSwitch: some View {
+        HStack(spacing: 0) {
+            ForEach(NetworkRateUnit.allCases, id: \.self) { option in
+                let on = option == unit
+                Button { setUnit(option) } label: {
+                    Text(verbatim: option.label)
+                        .font(.system(size: 13, weight: on ? .bold : .semibold))
+                        .foregroundStyle(on ? accentInk : .white.opacity(0.82))
+                        .frame(width: 58, height: 22)
+                        .background(Capsule().fill(on ? accent : .clear))
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(.white.opacity(0.07)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .help(tr("网速单位，卡片也跟着变"))
+    }
+
+    private func setUnit(_ option: NetworkRateUnit) {
+        guard !preview, option != unit else { return }
+        WidgetWriter.write(current) { $0[NetworkRateUnit.key] = .string(option.rawValue) }
+    }
+
+    private var placeName: String {
+        if preview { return tr("家里-5G") }
+        return NetworkPlaceText.name(onWifi: top.onWifi, ssid: top.ssid, hasAddress: top.address != nil)
+    }
+
+    private var address: String? { preview ? "192.168.1.23" : top.address }
+
+    /// 只有真拿到了 Wi-Fi 名称才有东西可拷（「Wi-Fi」「有线网络」不拷）。
+    private var canCopyName: Bool { top.onWifi && !(top.ssid ?? "").isEmpty }
+
+    private var placeLine: String {
+        let name = placeName
+        guard let ip = address else { return name }
+        // 网络名就是「Wi-Fi」时前面不再重复一遍。
+        return (top.onWifi && name != "Wi-Fi") || preview ? "Wi-Fi \(name) · \(ip)" : "\(name) · \(ip)"
+    }
+
+    private func copy(_ text: String, tag: String) {
+        guard !preview, !text.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        withAnimation(.easeOut(duration: 0.15)) { copied = tag }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            if copied == tag { withAnimation(.easeOut(duration: 0.15)) { copied = nil } }
+        }
+    }
+
+    // MARK: Wi-Fi 圆环外观多一行信号
 
     private var wifiStyle: WifiRingStyle? {
         WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
-                            unlocked: ProAccess.isUnlocked || context.isPreview)
+                            unlocked: ProAccess.isUnlocked || preview)
     }
 
-    private var wifiRSSI: Int? { context.isPreview ? -52 : WifiMetrics.shared.rssi }
-    private var wifiNoise: Int? { context.isPreview ? -92 : WifiMetrics.shared.noise }
-    private var wifiRate: Double? { context.isPreview ? 866 : WifiMetrics.shared.rate }
-    private var wifiName: String? { context.isPreview ? nil : WifiMetrics.shared.ssid }
-
-    private func wifiSection(_ style: WifiRingStyle) -> some View {
-        let reading = WifiReading(rssi: wifiRSSI)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 14) {
-                WifiRingView(style: style, reading: reading, diameter: 84)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(reading.label)
-                        .font(WidgetStyle.value(28))
-                        .foregroundStyle(WidgetStyle.primary)
-                    Text(wifiName ?? tr("Wi-Fi 信号"))
-                        .font(WidgetStyle.caption(11))
-                        .foregroundStyle(WidgetStyle.secondary)
-                        .lineLimit(1)
-                }
+    private func wifiRow(_ style: WifiRingStyle) -> some View {
+        let rssi = preview ? -52 : WifiMetrics.shared.rssi
+        let rate = preview ? 866 : WifiMetrics.shared.rate
+        let reading = WifiReading(rssi: rssi)
+        return HStack(spacing: 12) {
+            WifiRingView(style: style, reading: reading, diameter: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: reading.label)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(verbatim: wifiDetail(rssi: rssi, rate: rate, reading: reading))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .monospacedDigit()
             }
-            if let rssi = wifiRSSI {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
-                                    GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    StatChip(label: tr("信号强度"), value: "\(rssi) dBm")
-                    StatChip(label: tr("信号质量"), value: "\(reading.percent)%")
-                    if let noise = wifiNoise, let snr = WifiQuality.snr(rssi: rssi, noise: noise) {
-                        StatChip(label: tr("信噪比"), value: "\(snr) dB")
-                    }
-                    if let rate = wifiRate {
-                        StatChip(label: tr("连接速率"), value: "\(Int(rate.rounded())) Mbps")
-                    }
-                }
-            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
         }
-        .onAppear { if !context.isPreview { WifiMetrics.shared.start() } }
+        .padding(10)
+        .background(pane(0.06))
     }
 
-    // MARK: Now
+    private func wifiDetail(rssi: Int?, rate: Double?, reading: WifiReading) -> String {
+        guard let rssi else { return tr("Wi-Fi 信号") }
+        var parts = ["\(rssi) dBm", "\(reading.percent)%"]
+        if let rate { parts.append(tr("连接 \(Int(rate.rounded())) Mbps")) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: 此刻
 
     private var headline: some View {
         HStack(spacing: 12) {
@@ -98,26 +200,19 @@ struct NetworkDetail: View {
     }
 
     private func reading(_ symbol: String, _ name: String, _ rate: Double, _ tint: Color) -> some View {
-        let value = formatted(rate)
-        return VStack(alignment: .leading, spacing: 1) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Image(systemName: symbol)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(tint)
-                Text(value.value)
-                    .font(WidgetStyle.value(34))
-                    .monospacedDigit()
-                    .foregroundStyle(WidgetStyle.primary)
-                    .rollingValue(value.value)
-                Text(value.unit)
-                    .font(WidgetStyle.caption(12))
-                    .foregroundStyle(WidgetStyle.secondary)
-            }
-            // The tile has room for an arrow and nothing else; at this width
-            // the direction can be said in words.
-            Text(name)
-                .font(WidgetStyle.caption(11))
-                .foregroundStyle(WidgetStyle.secondary)
+        let value = NetworkRateFormat.format(rate, unit: unit)
+        return HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(tint)
+            Text(verbatim: value.value)
+                .font(.system(size: 28, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .contentTransition(.numericText())
+            Text(verbatim: value.unit)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.62))
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -127,132 +222,201 @@ struct NetworkDetail: View {
         .accessibilityValue("\(value.value) \(value.unit)")
     }
 
-    // MARK: History
+    // MARK: 最近 60 秒
 
-    /// Both directions over one shared minute.
-    ///
-    /// Throughput has no natural ceiling the way a percentage does, so the
-    /// scale is the larger of the two series' own peaks - the same choice the
-    /// tile's sparkline makes, and the only one under which the lines can be
-    /// read against each other. Let each auto-scale and a 2 KB/s keepalive
-    /// would draw exactly as tall as a 40 MB/s download sitting beside it.
-    ///
-    /// Floored at 1 KB/s so an idle minute stays pinned to the bottom of the
-    /// frame: without a floor the scale collapses onto the noise and a few
-    /// stray bytes are drawn as a mountain range.
+    /// 两个方向同一把尺子（取两条的峰值，至少 1 KB/s），闲着的一分钟贴底。
     private var history: some View {
-        ZStack(alignment: .topLeading) {
+        VStack(alignment: .leading, spacing: 6) {
             ZStack {
                 if showsDownload {
-                    DitherChart(samples: downloadHistory, tint: Self.downTint,
-                                filled: false, range: scale)
+                    DitherChart(samples: downloadHistory, tint: Self.downTint, filled: false, range: scale)
                 }
                 if showsUpload {
-                    DitherChart(samples: uploadHistory, tint: Self.upTint,
-                                filled: false, range: scale)
+                    DitherChart(samples: uploadHistory, tint: Self.upTint, filled: false, range: scale)
                 }
             }
-            .frame(height: 58)
+            .frame(height: 40)
             .frame(maxWidth: .infinity)
-            .padding(.top, 14)
-            // Named with the span the buffer actually holds, which is under a
-            // minute until it fills.
-            Text((window >= NetworkMetrics.historyLength ? tr("最近 60 秒") : tr("最近 \(window) 秒"))
-                    .uppercased())
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(0.6)
+            Text(verbatim: historyCaption)
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.55))
-                .padding(.horizontal, 16)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
-        // To the card's edges and foot.
-        .padding(.horizontal, -16)
-        .padding(.bottom, -16)
+    }
+
+    /// 曲线下一行：多长时间、峰值多少（原来面板的峰值换成一行字）。
+    private var historyCaption: String {
+        let span = window >= NetworkMetrics.historyLength ? tr("最近 60 秒") : tr("最近 \(window) 秒")
+        var peaks: [String] = []
+        if showsDownload { peaks.append("↓" + NetworkRateFormat.text(downloadHistory.max() ?? 0, unit: unit)) }
+        if showsUpload { peaks.append("↑" + NetworkRateFormat.text(uploadHistory.max() ?? 0, unit: unit)) }
+        return tr("\(span) · 峰值 \(peaks.joined(separator: " "))")
     }
 
     private var scale: ClosedRange<Double> {
-        let peaks = [showsDownload ? peak(downloadHistory) : 0, showsUpload ? peak(uploadHistory) : 0]
+        let peaks = [showsDownload ? (downloadHistory.max() ?? 0) : 0, showsUpload ? (uploadHistory.max() ?? 0) : 0]
         return 0...max(peaks.max() ?? 0, 1024)
     }
 
-    // MARK: Table
+    // MARK: 谁在用网
 
-    /// What the chart's shape cannot be read off it: the level the lines are
-    /// drawn against. The peak names the top of the frame, and the average
-    /// says whether a spike was the whole minute or a moment in it. Chips,
-    /// two to a direction, in place of a table with a header row.
-    private var table: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
-                            GridItem(.flexible(), spacing: 8)], spacing: 8) {
-            if showsDownload {
-                StatChip(label: tr("下载平均"), value: text(average(downloadHistory)))
-                StatChip(label: tr("下载峰值"), value: text(peak(downloadHistory)))
-            }
-            if showsUpload {
-                StatChip(label: tr("上传平均"), value: text(average(uploadHistory)))
-                StatChip(label: tr("上传峰值"), value: text(peak(uploadHistory)))
+    private var whoRows: [NetAppUsage] {
+        if preview {
+            return [
+                NetAppUsage(id: "a", name: tr("浏览器"), bundleID: nil, download: 7_750_000, upload: 140_000),
+                NetAppUsage(id: "b", name: tr("网盘同步"), bundleID: nil, download: 3_500_000, upload: 620_000),
+                NetAppUsage(id: "c", name: tr("微信"), bundleID: nil, download: 762_000, upload: 90_000),
+                NetAppUsage(id: "d", name: tr("音乐"), bundleID: nil, download: 287_000, upload: 4_000),
+                NetAppUsage(id: "e", name: tr("系统更新"), bundleID: nil, download: 50_000, upload: 2_000),
+            ]
+        }
+        return top.apps
+    }
+
+    private var whoSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle(tr("谁在用网"), trailing: tr("下载 / 上传"))
+            let rows = whoRows
+            if rows.isEmpty {
+                Text(verbatim: preview || top.loaded ? tr("这会儿没有 App 在用网") : tr("正在读取…"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .background(pane(0.06, radius: 11))
+            } else {
+                VStack(spacing: 2) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                        whoRow(row, striped: index.isMultiple(of: 2))
+                    }
+                }
             }
         }
     }
 
-    private func text(_ rate: Double) -> String {
-        let value = formatted(rate)
-        return "\(value.value) \(value.unit)"
+    private func whoRow(_ row: NetAppUsage, striped: Bool) -> some View {
+        HStack(spacing: 10) {
+            AppIconSquare(name: row.name, url: nil, bundleID: preview ? nil : row.bundleID, size: 24)
+            Text(verbatim: row.name)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.95))
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 6)
+            Text(verbatim: rowRates(row))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 34)
+        .background {
+            if striped { pane(0.06, radius: 11) }
+        }
+        .accessibilityElement(children: .combine)
     }
 
-    private func average(_ series: [Double]) -> Double {
-        series.isEmpty ? 0 : series.reduce(0, +) / Double(series.count)
+    /// 「↓62 ↑1.2 Mbps」：单位只写一次，省地方。只看一个方向时只写那一个。
+    private func rowRates(_ row: NetAppUsage) -> String {
+        let down = NetworkRateFormat.format(row.download, unit: unit)
+        let up = NetworkRateFormat.format(row.upload, unit: unit)
+        if !showsUpload { return "\(down.value) \(down.unit)" }
+        if !showsDownload { return "\(up.value) \(up.unit)" }
+        if down.unit == up.unit { return "↓\(down.value) ↑\(up.value) \(up.unit)" }
+        return "↓\(down.value) \(down.unit) ↑\(up.value) \(up.unit)"
     }
 
-    private func peak(_ series: [Double]) -> Double { series.max() ?? 0 }
+    // MARK: 今天
 
-    // MARK: Config & data
-    //
-    // The tile's keys, key for key: a widget set to watch one direction must
-    // not have the panel quietly report both.
+    private var todaySection: some View {
+        let totals = preview ? (download: UInt64(3_435_973_837), upload: UInt64(429_916_160))
+            : metrics.todayShown(at: context.now)
+        return VStack(alignment: .leading, spacing: 6) {
+            sectionTitle(tr("今天"), trailing: tr("零点清零"))
+            HStack(spacing: 8) {
+                totalTile(tr("下载"), NetworkByteFormat.text(totals.download))
+                totalTile(tr("上传"), NetworkByteFormat.text(totals.upload))
+            }
+        }
+        .help(tr("码头开着时累计，零点清零"))
+    }
+
+    private func totalTile(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: label)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.62))
+            Text(verbatim: value)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+        .background(pane(0.07))
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: 零件
+
+    private func sectionTitle(_ text: String, trailing: String? = nil) -> some View {
+        HStack {
+            Text(verbatim: text)
+            Spacer(minLength: 8)
+            if let trailing { Text(verbatim: trailing) }
+        }
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.62))
+        .lineLimit(1)
+        .padding(.top, 2)
+    }
+
+    private func pane(_ opacity: Double, radius: CGFloat = 12) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(.white.opacity(opacity))
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .strokeBorder(.white.opacity(0.11), lineWidth: 0.6))
+    }
+
+    // MARK: 配置和数据（和卡片同一套键）
 
     private static let downTint = Color(hex: MetricColor.netDownload)
     private static let upTint = Color(hex: MetricColor.netUpload)
 
-    private var display: String { instance.config.string("display", default: "both") }
+    private var display: String { current.config.string("display", default: "both") }
     private var showsDownload: Bool { display != "upload" }
     private var showsUpload: Bool { display != "download" }
 
-    /// The shorter of the two buffers, so the axis under the chart cannot
-    /// claim more seconds than both lines actually cover.
-    private var window: Int {
-        min(downloadHistory.count, uploadHistory.count)
-    }
+    private var window: Int { min(downloadHistory.count, uploadHistory.count) }
 
-    private var download: Double {
-        context.isPreview ? 999 * 1024 : NetworkMetrics.shared.download
-    }
-
-    private var upload: Double {
-        context.isPreview ? 292 * 1024 : NetworkMetrics.shared.upload
-    }
+    private var download: Double { preview ? 12_400_000 : metrics.download }
+    private var upload: Double { preview ? 800_000 : metrics.upload }
 
     private var downloadHistory: [Double] {
-        context.isPreview ? Self.sample(peak: 999 * 1024, phase: 0) : NetworkMetrics.shared.downloadHistory
+        preview ? Self.sample(peak: 15_000_000, phase: 0) : metrics.downloadHistory
     }
 
     private var uploadHistory: [Double] {
-        context.isPreview ? Self.sample(peak: 292 * 1024, phase: 1.7) : NetworkMetrics.shared.uploadHistory
+        preview ? Self.sample(peak: 1_200_000, phase: 1.7) : metrics.uploadHistory
     }
 
-    /// Deterministic, plausible-looking traffic for the library, matching the
-    /// tile's own preview by eye so a widget and its panel do not disagree.
     private static func sample(peak: Double, phase: Double) -> [Double] {
         (0..<40).map { i in
             let t = Double(i) / 4 + phase
             return peak * (0.45 + 0.35 * sin(t) + 0.18 * sin(t * 2.3))
         }
     }
+}
 
-    /// KB/s until it no longer fits, then MB/s - the tile's rule, so the
-    /// headline reads the same before and after the panel opens.
-    private func formatted(_ bytesPerSecond: Double) -> (value: String, unit: String) {
-        let kb = max(bytesPerSecond, 0) / 1024
-        if kb < 1024 { return ("\(Int(kb.rounded()))", "KB/s") }
-        return (String(format: "%.1f", kb / 1024), "MB/s")
-    }
+/// 网络活动面板的颜色，照效果图 ACC["net"]。
+enum NetPanelStyle {
+    static let base = "#1d1d21"
+    static let accent = "#4FD1C5"
+    static let accentInk = "#032B27"
 }

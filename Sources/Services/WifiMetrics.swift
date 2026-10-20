@@ -38,6 +38,9 @@ final class WifiMetrics {
         timer = nil
     }
 
+    /// 只读一次，不开定时器（网络活动面板打开时读网络名用）。
+    func sampleNow() { sample() }
+
     private func sample() {
         guard let interface = CWWiFiClient.shared().interface() else {
             isPoweredOn = false
