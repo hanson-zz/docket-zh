@@ -683,7 +683,7 @@ struct WidgetSettingsSections: View {
         "stock.alerts": tr("到价提醒（AAPL>237 是涨到，AAPL<220 是跌到）"),
         "stock.rotate": tr("多只时每 10 秒自动轮播"),
         "watchlist.groups": tr("分组（科技=NVDA TSLA，一组一项）"),
-        "watchlist.holdings": tr("持仓（NVDA 100，填了才显示今日盈亏）"),
+        "watchlist.holdings": tr("持仓（NVDA 100，可带成本价 NVDA 100 238；面板里点「编辑」也能填）"),
         "watchlist.sort": tr("排序"),
         "app-switcher.sort": tr("排序（固定和隐藏的 App 在面板「编辑」里改）"),
         "stock.metalUnit": tr("黄金白银单位"),
@@ -741,7 +741,7 @@ struct WidgetSettingsSections: View {
         case "coins": "BTC, ETH, SOL"
         case "alerts": "AAPL>237, AAPL<220"
         case "groups": tr("科技=NVDA TSLA, A股=600519.SS")
-        case "holdings": "NVDA 100, AAPL 50"
+        case "holdings": "NVDA 100 238, AAPL 50"
         default: ""
         }
     }

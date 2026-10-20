@@ -21,6 +21,8 @@ final class AmbientPlayer {
     private(set) var timerMinutes = 0
     /// What is playing, for the tile's caption.
     private(set) var sounds: [AmbientSound] = []
+    /// Each sound's own level (see `AmbientLevels`), under the master volume.
+    private(set) var levels: [AmbientSound: Int] = [:]
 
     @ObservationIgnored private var volume: Double = 60
     @ObservationIgnored private var startedAt: Date?
@@ -36,27 +38,29 @@ final class AmbientPlayer {
     // MARK: Controls
 
     /// The widget's stored mix and volume, applied whether or not it plays.
-    func apply(sounds: [AmbientSound], volume: Double) {
+    func apply(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
         self.sounds = sounds
+        self.levels = levels
         self.volume = volume
         let playing = isPlaying
         box.update { synth in
             synth.setVolume(volume / 100)
-            if playing { synth.setSounds(sounds) }
+            if playing { synth.setSounds(sounds, levels: levels) }
         }
         if playing, sounds.isEmpty { stop() }
         else if playing { publishSession() }
     }
 
-    func toggle(sounds: [AmbientSound], volume: Double) {
-        isPlaying ? pause() : play(sounds: sounds, volume: volume)
+    func toggle(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
+        isPlaying ? pause() : play(sounds: sounds, levels: levels, volume: volume)
     }
 
-    func play(sounds: [AmbientSound], volume: Double) {
+    func play(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
         guard !sounds.isEmpty else { return }
         stopTask?.cancel()
         stopTask = nil
         self.sounds = sounds
+        self.levels = levels
         if engine == nil || engine?.isRunning == false {
             guard startEngine() else { return }
         }
@@ -64,7 +68,7 @@ final class AmbientPlayer {
         self.volume = volume
         box.update { synth in
             synth.setVolume(volume / 100)
-            synth.setSounds(sounds)
+            synth.setSounds(sounds, levels: levels)
         }
         startedAt = .now
         isPlaying = true
@@ -118,7 +122,7 @@ final class AmbientPlayer {
         guard ProAccess.isUnlocked else { return }
         guard let action = MediaSessionRules.action(command, source: .ambient, playing: isPlaying) else { return }
         switch action {
-        case .play: play(sounds: sounds, volume: volume)
+        case .play: play(sounds: sounds, levels: levels, volume: volume)
         case .pause: pause()
         case .stop: stop()
         case .position, .station: break
@@ -168,7 +172,7 @@ final class AmbientPlayer {
         let volume = box.volume
         isPlaying = false
         let deadline = stopAt
-        play(sounds: current, volume: volume * 100)
+        play(sounds: current, levels: levels, volume: volume * 100)
         stopAt = deadline
     }
 

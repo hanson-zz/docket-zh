@@ -151,6 +151,23 @@ final class StockService {
         }
     }
 
+    /// 面板里「输入代码或名称」：Yahoo 的搜索接口，和行情同一个来源、同一个
+    /// User-Agent。失败（断网、限流、格式变了）是空的，面板照样有本地名表和
+    /// 照代码猜的结果。
+    nonisolated static func search(_ text: String) async -> [StockSearch.Hit] {
+        guard let url = StockSearch.url(text) else { return [] }
+        var request = URLRequest(url: url, timeoutInterval: 8)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return [] }
+            return StockSearch.parse(data)
+        } catch {
+            return []
+        }
+    }
+
     /// Mirrors only the handful of fields we read, all optional - a shape
     /// change drops us to `nil`, never a trap.
     private struct Payload: Decodable {

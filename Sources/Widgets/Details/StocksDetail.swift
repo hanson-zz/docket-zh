@@ -21,6 +21,8 @@ struct StocksDetail: View {
     @State private var editingGroup = false
     @State private var groupName = ""
     @State private var groupCodes = ""
+    /// 面板里的「编辑」：搜索添加、删除、排序、填持仓（见 `StockSymbolEditor`）。
+    @State private var editingList = false
 
     private var config: WidgetConfig { edited ?? instance.config }
     private var colors: ChangeColors { StockBoard.colors(config) }
@@ -102,21 +104,105 @@ struct StocksDetail: View {
 
     private var single: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if rotation.count > 1 { symbolPicker }
-            if let quote = quote(symbol) {
-                if quote.stale { staleNote(quote.fetchedAt) }
-                identity(quote)
-                price(quote)
-                change(quote)
-                chart(quote)
-                stats(quote)
-            } else {
-                unavailable(symbol)
+            HStack(spacing: 8) {
+                if rotation.count > 1 { symbolPicker } else { Spacer(minLength: 0) }
+                editButton
             }
-            if hasMetal { unitPicker }
-            alertSection
+            if editingList {
+                symbolEditor
+            } else {
+                singleBody
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var singleBody: some View {
+        if let quote = quote(symbol) {
+            if quote.stale { staleNote(quote.fetchedAt) }
+            identity(quote)
+            price(quote)
+            change(quote)
+            chart(quote)
+            stats(quote)
+        } else {
+            unavailable(symbol)
+        }
+        if hasMetal { unitPicker }
+        alertSection
+    }
+
+    // MARK: 编辑代码
+
+    private var isWatchlist: Bool { instance.kind == .watchlist }
+
+    /// 「编辑」和「完成」：编辑时是实心的深色字按钮。
+    private var editButton: some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) { editingList.toggle() }
+            if !editingList { track() }
+        } label: {
+            Text(editingList ? tr("完成") : tr("编辑"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(editingList ? Color.black.opacity(0.85) : .white)
+                .padding(.horizontal, 12)
+                .frame(height: 26)
+                .background {
+                    if editingList {
+                        Capsule().fill(Color.white.opacity(0.92))
+                    } else {
+                        Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .help(isWatchlist ? tr("添加、删除、排序这一组的股票，填持仓") : tr("添加、删除、排序轮播的股票"))
+    }
+
+    private var symbolEditor: some View {
+        let watchlist = isWatchlist
+        return StockSymbolEditor(
+            symbols: StockBoard.editingSymbols(config, watchlist: watchlist),
+            holdings: watchlist ? StockBoard.holdingEntries(config) : nil,
+            accent: panelTint.accent(or: Color(hex: WidgetCatalog.accentHex(instance.kind) ?? PaletteColor.green.hex)),
+            isPreview: context.isPreview,
+            subtitle: { symbol in
+                StockDisplay.subtitle(symbol, quote: quote(symbol), preview: context.isPreview, unit: unit)
+            },
+            onAdd: { symbol in
+                update { config in
+                    if let next = StockBoard.addingSymbol(symbol, to: config, watchlist: watchlist) { config = next }
+                }
+                track()
+            },
+            onRemove: { symbol in
+                update { config in
+                    let list = StockBoard.editingSymbols(config, watchlist: watchlist)
+                    guard StockBoard.canRemove(count: list.count) else { return }
+                    let key = StockBoard.normalised(symbol)
+                    config = StockBoard.settingSymbols(list.filter { $0 != key }, in: config, watchlist: watchlist)
+                }
+            },
+            onMove: { from, to in
+                update { config in
+                    let list = StockBoard.editingSymbols(config, watchlist: watchlist)
+                    config = StockBoard.settingSymbols(StockBoard.moved(list, from: from, to: to),
+                                                       in: config, watchlist: watchlist)
+                    // 按涨跌幅排时拖了也看不出来：拖过就改成按填写顺序。
+                    if watchlist, StockBoard.Order.from(config) == .change {
+                        config.set("sort", .string(StockBoard.Order.custom.rawValue))
+                    }
+                }
+            },
+            onHolding: { symbol, holding in
+                update { config in
+                    let list = StockBoard.settingHolding(symbol, holding, in: config)
+                    config.set("holdings", .list(list.map { .string($0) }))
+                }
+            })
     }
 
     /// 设了多只时顶部一排代码，点哪只看哪只，卡片也跟着换。
@@ -373,32 +459,44 @@ struct StocksDetail: View {
         let staleTimes = quotes.compactMap { $0 }.filter(\.stale).map(\.fetchedAt)
         return VStack(alignment: .leading, spacing: 8) {
             if !staleTimes.isEmpty { staleNote(OfflineQuote.oldest(staleTimes)) }
-            groupBar(current: group)
+            HStack(spacing: 8) {
+                groupBar(current: group)
+                editButton
+            }
             if editingGroup { groupEditor }
-            summary(symbols, quotes: quotes)
-            HStack {
-                Picker("", selection: Binding(
-                    get: { StockBoard.Order.from(config) },
-                    set: { value in update { $0.set("sort", .string(value.rawValue)) } })) {
-                    ForEach(StockBoard.Order.allCases, id: \.self) { item in
-                        Text(item.title).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .tint(panelTint.control)
-                .labelsHidden()
-                .fixedSize()
-                .disabled(context.isPreview)
-                Spacer(minLength: 0)
+            if editingList {
+                symbolEditor
+            } else {
+                watchlistBody(symbols, quotes: quotes)
             }
-            VStack(spacing: 6) {
-                ForEach(symbols.indices, id: \.self) { index in
-                    row(symbols[index], quote: quotes[index])
-                }
-            }
-            if hasMetal { unitPicker }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func watchlistBody(_ symbols: [String], quotes: [StockQuote?]) -> some View {
+        summary(symbols, quotes: quotes)
+        HStack {
+            Picker("", selection: Binding(
+                get: { StockBoard.Order.from(config) },
+                set: { value in update { $0.set("sort", .string(value.rawValue)) } })) {
+                ForEach(StockBoard.Order.allCases, id: \.self) { item in
+                    Text(item.title).tag(item)
+                }
+            }
+            .pickerStyle(.segmented)
+            .tint(panelTint.control)
+            .labelsHidden()
+            .fixedSize()
+            .disabled(context.isPreview)
+            Spacer(minLength: 0)
+        }
+        VStack(spacing: 6) {
+            ForEach(symbols.indices, id: \.self) { index in
+                row(symbols[index], quote: quotes[index])
+            }
+        }
+        if hasMetal { unitPicker }
     }
 
     /// 分组：点名字换过去，卡片也跟着换；最后是“＋ 分组”。
@@ -504,6 +602,7 @@ struct StocksDetail: View {
             return StockBoard.Position(symbol: symbol, price: quote.price, change: quote.change, currency: currency)
         }
         let profits = holdings.isEmpty ? [] : StockBoard.todayProfit(positions, holdings: holdings)
+        let held = StockBoard.holdingProfit(positions, holdings: StockBoard.holdingEntries(config))
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
@@ -539,10 +638,28 @@ struct StocksDetail: View {
                     }
                 }
             }
+            ForEach(held, id: \.currency) { profit in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(tr("持仓盈亏"))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text(StockBoard.profitText(profit))
+                        .font(WidgetStyle.label(15))
+                        .foregroundStyle(ink(profit.amount))
+                        .monospacedDigit()
+                    if let percent = profit.percent {
+                        Text(StockBoard.percentText(percent))
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(ink(percent))
+                            .monospacedDigit()
+                    }
+                }
+            }
             if holdings.isEmpty {
-                Text("在设置里填上持仓（比如 NVDA 100），这里会算这一组的今日盈亏。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                Text(tr("点右上角「编辑」给每只填上持仓，这里会算这一组的今日盈亏。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

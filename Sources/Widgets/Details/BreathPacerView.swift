@@ -10,9 +10,12 @@ struct BreathPacerView: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
     var isPreview: Bool
+    /// 环境音面板里默认收起，只留一行标题，点开才显示圆圈（面板不至于太高）。
+    var collapsible = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("ambient.breathPattern") private var patternRaw = BreathPacer.Pattern.calm.rawValue
+    @AppStorage("ambient.breathOpen") private var open = false
     @State private var startedAt: Date?
 
     private var pattern: BreathPacer.Pattern { BreathPacer.Pattern.parse(patternRaw) }
@@ -21,9 +24,27 @@ struct BreathPacerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("呼吸引导")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                if collapsible {
+                    Button {
+                        open.toggle()
+                        if !open { startedAt = nil }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(tr("呼吸引导"))
+                            Image(systemName: open ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(open ? tr("收起呼吸引导") : tr("展开呼吸引导"))
+                } else {
+                    Text("呼吸引导")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
                 Spacer()
                 Menu {
                     ForEach(BreathPacer.Pattern.allCases) { option in
@@ -47,37 +68,39 @@ struct BreathPacerView: View {
                 .fixedSize()
             }
 
-            HStack(spacing: 14) {
-                TimelineView(.animation(minimumInterval: 1 / BreathPacer.framesPerSecond(
-                    running: running, reduceMotion: reduceMotion), paused: !running)) { tick in
-                    orb(now: tick.date)
-                }
-                .frame(width: 84, height: 84)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(running ? tr("跟着圆圈呼吸，肩膀放松。") : tr("选一个节奏，跟着圆圈慢慢呼吸。"))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button {
-                        guard !isPreview else { return }
-                        startedAt = running ? nil : .now
-                    } label: {
-                        Label(running ? tr("结束") : tr("开始"), systemImage: running ? "stop.fill" : "wind")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .frame(height: 26)
-                            .background(Capsule().fill(.white.opacity(running ? 0.26 : 0.14)))
-                            .contentShape(Capsule())
+            if !collapsible || open {
+                HStack(spacing: 14) {
+                    TimelineView(.animation(minimumInterval: 1 / BreathPacer.framesPerSecond(
+                        running: running, reduceMotion: reduceMotion), paused: !running)) { tick in
+                        orb(now: tick.date)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(running ? tr("结束呼吸引导") : tr("开始呼吸引导"))
+                    .frame(width: 84, height: 84)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(running ? tr("跟着圆圈呼吸，肩膀放松。") : tr("选一个节奏，跟着圆圈慢慢呼吸。"))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            guard !isPreview else { return }
+                            startedAt = running ? nil : .now
+                        } label: {
+                            Label(running ? tr("结束") : tr("开始"), systemImage: running ? "stop.fill" : "wind")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .frame(height: 26)
+                                .background(Capsule().fill(.white.opacity(running ? 0.26 : 0.14)))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(running ? tr("结束呼吸引导") : tr("开始呼吸引导"))
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
+                .padding(10)
+                .glassPane(cornerRadius: 12)
             }
-            .padding(10)
-            .glassPane(cornerRadius: 12)
         }
     }
 

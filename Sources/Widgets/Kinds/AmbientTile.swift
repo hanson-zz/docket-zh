@@ -3,7 +3,8 @@ import SwiftUI
 /// Rain, waves, wind, a fire or plain noise, with play and pause on the card.
 ///
 /// The mix and the volume are the widget's settings (`sounds`, `volume`);
-/// the panel picks them and the sleep timer. Playback is one shared
+/// the panel picks them, each sound's level (`levels`), the saved mixes
+/// (`mixes`, also on the card's right-click menu) and the sleep timer. Playback is one shared
 /// `AmbientPlayer`, so the button always tells the truth about the speaker.
 struct AmbientTile: View {
     var instance: WidgetInstance
@@ -13,6 +14,12 @@ struct AmbientTile: View {
 
     private var sounds: [AmbientSound] { AmbientSound.parse(instance.config.strings("sounds", default: ["rain"])) }
     private var volume: Double { instance.config.double("volume", default: 50) }
+    private var levels: [AmbientSound: Int] { AmbientLevels.parse(instance.config.strings(AmbientLevels.key, default: [])) }
+    /// 正在用的组合的名字，没有对上哪个组合时是声音的摘要。
+    private var title: String {
+        let mixes = AmbientMixes.all(instance.config.strings(AmbientMixes.key, default: []))
+        return AmbientMixes.matching(sounds: sounds, levels: levels, in: mixes)?.name ?? AmbientSound.summary(sounds)
+    }
 
     private var playing: Bool { context.isPreview ? true : player.isPlaying }
 
@@ -39,15 +46,22 @@ struct AmbientTile: View {
             } else {
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge { mark(symbol, size: 17) }
-                    TileReading(value: AmbientSound.summary(sounds), caption: caption, valueSize: 16)
+                    TileReading(value: title, caption: caption, valueSize: 16)
                     Spacer(minLength: 0)
                     playButton(size: 12)
                 }
             }
         }
-        .onAppear { if !context.isPreview { player.apply(sounds: sounds, volume: volume) } }
-        .onChange(of: sounds) { _, now in if !context.isPreview { player.apply(sounds: now, volume: volume) } }
-        .onChange(of: volume) { _, now in if !context.isPreview { player.apply(sounds: sounds, volume: now) } }
+        .onAppear { if !context.isPreview { player.apply(sounds: sounds, levels: levels, volume: volume) } }
+        .onChange(of: sounds) { _, now in
+            if !context.isPreview { player.apply(sounds: now, levels: levels, volume: volume) }
+        }
+        .onChange(of: levels) { _, now in
+            if !context.isPreview { player.apply(sounds: sounds, levels: now, volume: volume) }
+        }
+        .onChange(of: volume) { _, now in
+            if !context.isPreview { player.apply(sounds: sounds, levels: levels, volume: now) }
+        }
     }
 
     private func mark(_ symbol: String, size: CGFloat) -> some View {
@@ -64,7 +78,7 @@ struct AmbientTile: View {
     private func playButton(size: CGFloat) -> some View {
         TileGlyph(symbol: playing ? "pause.fill" : "play.fill", size: size,
                   action: context.isPreview || sounds.isEmpty ? nil : {
-            player.toggle(sounds: sounds, volume: volume)
+            player.toggle(sounds: sounds, levels: levels, volume: volume)
         })
         .help(playing ? tr("暂停") : tr("播放"))
         .accessibilityLabel(playing ? tr("暂停环境音") : tr("播放环境音"))

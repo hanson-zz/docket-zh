@@ -2014,6 +2014,28 @@
         }
       }
     },
+    "%@ 股" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sh"
+          }
+        }
+      }
+    },
+    "%@ 股数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ shares"
+          }
+        }
+      }
+    },
     "%@ 至 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2824,6 +2846,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ needs care"
+          }
+        }
+      }
+    },
+    "%@音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ volume"
           }
         }
       }
@@ -10282,6 +10315,17 @@
         }
       }
     },
+    "关掉%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off %@"
+          }
+        }
+      }
+    },
     "关掉后停在你选的来源" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12144,6 +12188,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More"
+          }
+        }
+      }
+    },
+    "加上%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@"
           }
         }
       }
@@ -14256,6 +14311,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Take medicine"
+          }
+        }
+      }
+    },
+    "各自音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound levels"
           }
         }
       }
@@ -16529,6 +16595,17 @@
         }
       }
     },
+    "填持仓股数和成本价" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter shares held and cost price"
+          }
+        }
+      }
+    },
     "增删城市、调整顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17569,6 +17646,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text size"
+          }
+        }
+      }
+    },
+    "存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
           }
         }
       }
@@ -19241,6 +19329,17 @@
         }
       }
     },
+    "展开呼吸引导" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand breathing guide"
+          }
+        }
+      }
+    },
     "展开对话的快捷键" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20315,6 +20414,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Removed %@ from the list, no files deleted"
+          }
+        }
+      }
+    },
+    "已满 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ saved (full)"
           }
         }
       }
@@ -21763,6 +21873,17 @@
         }
       }
     },
+    "开始计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Timer"
+          }
+        }
+      }
+    },
     "开尔文" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23057,6 +23178,17 @@
         }
       }
     },
+    "成本价（可选）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost price (optional)"
+          }
+        }
+      }
+    },
     "成都" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23097,6 +23229,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "My favorites %@"
+          }
+        }
+      }
+    },
+    "我的组合" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My mixes"
           }
         }
       }
@@ -24245,6 +24388,17 @@
         }
       }
     },
+    "把点亮的声音和各自音量存成一个组合" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save the sounds that are on, with their levels, as a mix"
+          }
+        }
+      }
+    },
     "把选中的文件移到哪个文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24520,6 +24674,28 @@
         }
       }
     },
+    "拖右边的把手排序，卡片按这个顺序轮播。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the handle on the right to reorder. The card rotates in this order."
+          }
+        }
+      }
+    },
+    "拖右边的把手排序；填了持仓，上面就算今日盈亏，填了成本价再算持仓盈亏。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the handle on the right to reorder. Fill in holdings to see today's P/L above, and a cost price to see total P/L."
+          }
+        }
+      }
+    },
     "拖文件到这里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24769,6 +24945,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ask AI about it"
+          }
+        }
+      }
+    },
+    "持仓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holding"
+          }
+        }
+      }
+    },
+    "持仓盈亏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total P/L"
+          }
+        }
+      }
+    },
+    "持仓（NVDA 100，可带成本价 NVDA 100 238；面板里点「编辑」也能填）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holdings (NVDA 100, or with cost price NVDA 100 238; also editable via Edit in the panel)"
           }
         }
       }
@@ -25099,6 +25308,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next ambient sound"
+          }
+        }
+      }
+    },
+    "换到这个组合；右键可改名或删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to this mix. Right-click to rename or delete."
           }
         }
       }
@@ -25598,6 +25818,17 @@
         }
       }
     },
+    "收起呼吸引导" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse breathing guide"
+          }
+        }
+      }
+    },
     "收起窗口列表" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25638,6 +25869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        }
+      }
+    },
+    "改名…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename…"
           }
         }
       }
@@ -25858,6 +26100,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sri Lanka"
+          }
+        }
+      }
+    },
+    "新名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New name"
           }
         }
       }
@@ -26258,6 +26511,17 @@
         }
       }
     },
+    "最多 %@ 只" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ symbols"
+          }
+        }
+      }
+    },
     "最多 12 个城市，至少留 1 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26276,6 +26540,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@ pinned apps"
+          }
+        }
+      }
+    },
+    "最多存 %@ 个组合，右键删掉一个再存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ mixes. Right-click one to delete it first."
           }
         }
       }
@@ -27215,6 +27490,17 @@
         }
       }
     },
+    "没找到。可以直接输入代码，比如 600519、0700、NVDA。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No match. You can type a symbol directly, e.g. 600519, 0700, NVDA."
+          }
+        }
+      }
+    },
     "没找到「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27611,6 +27897,28 @@
         }
       }
     },
+    "添加、删除、排序轮播的股票" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add, remove and reorder the stocks the card rotates through"
+          }
+        }
+      }
+    },
+    "添加、删除、排序这一组的股票，填持仓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add, remove and reorder stocks in this group, and enter holdings"
+          }
+        }
+      }
+    },
     "添加城市" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27717,6 +28025,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chiang Mai"
+          }
+        }
+      }
+    },
+    "清除持仓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Holding"
           }
         }
       }
@@ -27886,6 +28205,17 @@
         }
       }
     },
+    "点下面的声音放起来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a sound below to start it"
+          }
+        }
+      }
+    },
     "点刻度换台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27893,6 +28223,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the dial to change stations"
+          }
+        }
+      }
+    },
+    "点右上角「编辑」给每只填上持仓，这里会算这一组的今日盈亏。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Edit at the top right to enter holdings, and today's P/L for this group appears here."
           }
         }
       }
@@ -27915,6 +28256,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the name to rename, up to %@ characters"
+          }
+        }
+      }
+    },
+    "点图标关掉这种声音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click an icon to turn that sound off"
           }
         }
       }
@@ -37275,6 +37627,17 @@
         }
       }
     },
+    "用现在的声音覆盖" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace with Current Sounds"
+          }
+        }
+      }
+    },
     "用电池时低于 %@%% 变红" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40410,6 +40773,39 @@
         }
       }
     },
+    "组合 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mix %@"
+          }
+        }
+      }
+    },
+    "组合名，比如 雨夜篝火" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mix name, e.g. Rainy Campfire"
+          }
+        }
+      }
+    },
+    "组合：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mix: %@"
+          }
+        }
+      }
+    },
     "细线" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41777,6 +42173,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep at least one button"
+          }
+        }
+      }
+    },
+    "至少留一只" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep at least one"
           }
         }
       }
@@ -43834,6 +44241,17 @@
         }
       }
     },
+    "调好了存一下，下次一点就回来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save a mix you like and bring it back in one click"
+          }
+        }
+      }
+    },
     "调整%@的顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44556,6 +44974,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type anything: a currency converts money, a unit converts units, and the rest is worked out as a sum."
+          }
+        }
+      }
+    },
+    "输入代码或名称，比如 NVDA、茅台、0700" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol or name, e.g. NVDA, Moutai, 0700"
           }
         }
       }
@@ -49967,6 +50396,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ %@"
+          }
+        }
+      }
+    },
+    "＋ 存为组合" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Save as mix"
           }
         }
       }

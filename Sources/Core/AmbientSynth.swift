@@ -52,7 +52,8 @@ public enum AmbientSound: String, CaseIterable, Sendable, Identifiable {
 
 /// The sleep timer's choices, in minutes. Zero is off.
 public enum AmbientTimer {
-    public static let choices: [Int] = [0, 15, 30, 60, 90]
+    /// 面板上的固定几档；别的时长走「自定义」（见 `AmbientCustomTimer`）。
+    public static let choices: [Int] = [0, 15, 30, 60]
 
     public static func title(_ minutes: Int) -> String {
         minutes == 0 ? tr("不定时") : (minutes >= 60 && minutes % 60 == 0 ? tr("\(minutes / 60) 小时") : tr("\(minutes) 分钟"))
@@ -137,11 +138,13 @@ public struct AmbientSynth: Sendable {
 
     // MARK: Controls
 
-    /// Which sounds play. Everything not listed fades out.
-    public mutating func setSounds(_ sounds: [AmbientSound]) {
+    /// Which sounds play, each at its own level (see `AmbientLevels`; a
+    /// sound with no level plays at the default, which is the old fixed 1).
+    /// Everything not listed fades out.
+    public mutating func setSounds(_ sounds: [AmbientSound], levels: [AmbientSound: Int] = [:]) {
         let on = Set(sounds)
         for (index, sound) in AmbientSound.allCases.enumerated() {
-            targets[index] = on.contains(sound) ? 1 : 0
+            targets[index] = on.contains(sound) ? AmbientLevels.gain(AmbientLevels.level(sound, in: levels)) : 0
         }
     }
 

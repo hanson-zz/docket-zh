@@ -1486,6 +1486,10 @@ struct DockShelfView: View {
                 Button("打开废纸篓") { TrashMonitor.shared.open() }
                 Button("清空废纸篓…") { TrashMonitor.shared.empty() }
             }
+            // 环境音的「我的组合」：右键卡片一点就换过去，正在放的接着放新组合。
+            if let widget = entry.item.widget, widget.kind == .ambient, ProAccess.isUnlocked {
+                ambientMixItems(widget)
+            }
             if entry.item.fileRef != nil {
                 Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }
@@ -1697,6 +1701,34 @@ struct DockShelfView: View {
     }
 
     /// Settings lists the same items, so the naming lives on DockItem now.
+    @ViewBuilder
+    private func ambientMixItems(_ widget: WidgetInstance) -> some View {
+        let mixes = AmbientMixes.all(widget.config.strings(AmbientMixes.key, default: []))
+        if !mixes.isEmpty {
+            let levels = AmbientLevels.parse(widget.config.strings(AmbientLevels.key, default: []))
+            let sounds = AmbientSound.parse(widget.config.strings("sounds", default: ["rain"]))
+            let current = AmbientMixes.matching(sounds: sounds, levels: levels, in: mixes)
+            Divider()
+            ForEach(mixes, id: \.name) { mix in
+                Button {
+                    var updated = widget
+                    let next = AmbientMixes.applying(mix, levels: levels)
+                    updated.config.set("sounds", .list(next.sounds.map { .string($0.rawValue) }))
+                    updated.config.set(AmbientLevels.key, .list(AmbientLevels.encode(next.levels).map { .string($0) }))
+                    app.updateWidget(updated)
+                    AmbientPlayer.shared.apply(sounds: next.sounds, levels: next.levels,
+                                               volume: widget.config.double("volume", default: 50))
+                } label: {
+                    if mix.name == current?.name {
+                        Label(tr("组合：\(mix.name)"), systemImage: "checkmark")
+                    } else {
+                        Text(tr("组合：\(mix.name)"))
+                    }
+                }
+            }
+        }
+    }
+
     private func label(for item: DockItem) -> String { item.displayName }
 }
 

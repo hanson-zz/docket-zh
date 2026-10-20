@@ -558,17 +558,10 @@ public enum StockBoard {
 
     // MARK: 持仓和今日盈亏
 
-    /// 持仓：`NVDA 100`、`AAPL:50`、`600519.SS=200`。填了才算今日盈亏。
+    /// 持仓的股数：`NVDA 100`、`AAPL:50`、`600519.SS=200`，后面可以再跟成本价
+    /// （`NVDA 100 238`，面板里填的就是这样，见 `holdingEntries`）。填了才算今日盈亏。
     public static func holdings(_ config: WidgetConfig) -> [String: Double] {
-        var result: [String: Double] = [:]
-        for raw in config.strings("holdings", default: []) {
-            let parts = raw.split(whereSeparator: { " :=：＝\t".contains($0) })
-            guard parts.count == 2 else { continue }
-            let symbol = normalised(String(parts[0]))
-            guard !symbol.isEmpty, let shares = Double(parts[1]), shares.isFinite, shares != 0 else { continue }
-            result[symbol] = shares
-        }
-        return result
+        holdingEntries(config).mapValues(\.shares)
     }
 
     /// 一只的报价里算盈亏要用的部分。
