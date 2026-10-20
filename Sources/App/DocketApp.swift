@@ -118,6 +118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 文件夹轮询只给还有卡片用到的文件夹：相册移除或取消勾选的文件夹、删掉的
         // 截图和下载卡片，一分钟内停掉。
         FolderFeed.sourcesInUse = { [state] in FolderFeed.sources(for: state.allWidgets) }
+        // 删掉的农历卡排下的生日、纪念日提醒，启动时撤掉。
+        LunarNotifier.shared.sweepEvents(keeping: Set(state.allWidgets.filter { $0.kind == .lunar }.map(\.id)))
         // 点弹出卡片主体、点股票或久坐通知时打开小组件面板：卡片在文件夹里、别的
         // 布局里或扩展栏没开时也打得开。
         WidgetPanelOpener.shared.currentItems = { [state] in state.effectiveItems }

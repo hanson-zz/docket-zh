@@ -172,6 +172,7 @@ final class RadioPlayer {
         endFade()
         timerMinutes = max(0, minutes)
         stopAt = (isPlaying && timerMinutes > 0) ? .now.addingTimeInterval(Double(timerMinutes) * 60) : nil
+        if stopAt != nil { startTicker() }
     }
 
     private static func gain(_ volume: Double, fade: Double = 1) -> Float {
@@ -319,7 +320,7 @@ final class RadioPlayer {
 
     // MARK: Sleep timer
 
-    /// 每 0.25 秒看一次，渐弱才够平滑。只在播放时走。
+    /// 每 0.25 秒看一次，渐弱才够平滑。只在播放且设了定时关闭时走。
     private func startTicker() {
         guard ticker == nil else { return }
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
@@ -332,6 +333,12 @@ final class RadioPlayer {
 
     private func tick() {
         guard isPlaying else { return }
+        // 没设定时关闭就不用每 0.25 秒看着：停掉，设定时的时候再开。
+        guard stopAt != nil || isFading else {
+            ticker?.invalidate()
+            ticker = nil
+            return
+        }
         switch RadioFade.phase(now: .now, stopAt: stopAt) {
         case .due:
             // 渐弱到 0 后暂停；endFade（在 pause 里）把音量恢复原值，下次播放音量正常。

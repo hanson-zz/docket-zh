@@ -42,8 +42,8 @@ final class LunarNotifier {
 
     // MARK: 农历生日、纪念日
 
-    /// 每张卡记下排过的那份，内容没变就不重排。
-    private var eventPlans: [UUID: [String: Date]] = [:]
+    /// 每张卡记下排过的那份（时间和文字），内容没变就不重排；只改名字时间不变也重排。
+    private var eventPlans: [UUID: [String: String]] = [:]
 
     /// 农历生日和纪念日：每条排下一次的提前提醒和当天提醒（见 `LunarEvents.reminders`）。
     /// 改了、删了、或者过了的都撤掉。标识带卡片 id，两张农历卡记了同一个人也各管各的。
@@ -55,7 +55,7 @@ final class LunarNotifier {
                 wanted[prefix + event.id + "." + reminder.slot] = reminder
             }
         }
-        let plan = wanted.mapValues(\.fire)
+        let plan = wanted.mapValues { "\($0.fire.timeIntervalSince1970)|\($0.title)|\($0.body)" }
         if eventPlans[instance.id] == plan { return }
         eventPlans[instance.id] = plan
         let items = wanted.map { (id: $0.key, fire: $0.value.fire, title: $0.value.title, body: $0.value.body) }
@@ -66,6 +66,24 @@ final class LunarNotifier {
             if !stale.isEmpty { center.removePendingNotificationRequests(withIdentifiers: stale) }
             for item in items {
                 await schedule(at: item.fire, title: item.title, body: item.body, identifier: item.id)
+            }
+        }
+    }
+
+    /// 启动时撤掉已经不在任何布局里的农历卡排下的生日、纪念日提醒（卡片删了，
+    /// 提醒不该照响）。
+    func sweepEvents(keeping live: Set<UUID>) {
+        let base = "docket.lunar.event."
+        Task {
+            let pending = await Self.pendingIdentifiers()
+            let stale = pending.filter { id in
+                guard id.hasPrefix(base) else { return false }
+                let rest = id.dropFirst(base.count)
+                guard let uuid = UUID(uuidString: String(rest.prefix(36))) else { return false }
+                return !live.contains(uuid)
+            }
+            if !stale.isEmpty {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: stale)
             }
         }
     }
