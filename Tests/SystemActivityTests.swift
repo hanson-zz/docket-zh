@@ -76,7 +76,7 @@ final class SystemActivityTests: XCTestCase {
         let end = 10_000
         history.record(sample(end - 30, cpu: 0))
         history.record(sample(end - 29, cpu: 0.5))
-        history.record(sample(end - 5, cpu: 1))
+        history.record(sample(end - 1, cpu: 1))
         history.record(sample(end, cpu: 1))
         let parts = history.segments(.cpu, now: SystemActivityHistory.date(ofMinute: end))
         XCTAssertEqual(parts.count, 2)
