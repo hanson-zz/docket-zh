@@ -104,7 +104,7 @@ final class CaptureSettingsTests: XCTestCase {
 
     func testTogglingKeepsBetweenOneAndFour() {
         let full = CaptureButtons.defaults
-        XCTAssertNil(CaptureButtons.toggling(.record, in: full), "已满 4 个不能再加")
+        XCTAssertNil(CaptureButtons.toggling(.recordRegion, in: full), "已满 4 个不能再加")
         XCTAssertEqual(CaptureButtons.toggling(.text, in: full), [.region, .window, .record])
         XCTAssertNil(CaptureButtons.toggling(.region, in: [.region]), "最后一个不能去掉")
         XCTAssertEqual(CaptureButtons.toggling(.record, in: [.region]), [.region, .record])
