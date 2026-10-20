@@ -28,6 +28,23 @@ final class DetailPanelSectionsTests: XCTestCase {
         XCTAssertEqual(DetailPanelSections.openPage(stored: "days", available: Page.allCases), .days)
     }
 
+    func testNewUserOpensTheInitialPage() {
+        // 从没记过：打开给定的默认页；没给默认页时都收起。
+        XCTAssertEqual(DetailPanelSections.openPage(stored: nil, available: Page.allCases, initial: .now), .now)
+        XCTAssertNil(DetailPanelSections.openPage(stored: nil, available: Page.allCases))
+        // 默认页不在能选的页里时都收起。
+        XCTAssertNil(DetailPanelSections.openPage(stored: nil, available: [Page.hours, .days], initial: .now))
+    }
+
+    func testRememberedChoiceBeatsTheInitialPage() {
+        // 用户收起过（存的空字符串）就保持收起。
+        XCTAssertNil(DetailPanelSections.openPage(stored: "", available: Page.allCases, initial: .now))
+        XCTAssertEqual(DetailPanelSections.openPage(stored: "days", available: Page.allCases, initial: .now), .days)
+        // 收起默认页后再读出来仍是收起。
+        let closed = DetailPanelSections.toggled(Page.now, open: .now)
+        XCTAssertNil(DetailPanelSections.openPage(stored: closed, available: Page.allCases, initial: .now))
+    }
+
     func testTappingTheOpenPageClosesIt() {
         XCTAssertEqual(DetailPanelSections.toggled(Page.days, open: .days), "")
         XCTAssertEqual(DetailPanelSections.toggled(Page.days, open: .now), "days")

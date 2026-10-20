@@ -25,9 +25,17 @@ public enum DetailPanelSections {
 
     /// 可以全部收起的分段（收音机）：记着的是空字符串或已不在的页时是 nil，
     /// 也就是一页都不打开。
-    public static func openPage<Page: RawRepresentable>(stored: String, available: [Page]) -> Page?
-    where Page.RawValue == String {
-        available.first { $0.rawValue == stored }
+    ///
+    /// `stored` 为 nil 是从没记过（新用户），这时打开 `initial`（不在能选的页里
+    /// 就都收起）；记过的（包括收起后存的空字符串）照用户的选择。
+    public static func openPage<Page: RawRepresentable>(
+        stored: String?, available: [Page], initial: Page? = nil
+    ) -> Page? where Page.RawValue == String {
+        guard let stored else {
+            guard let initial else { return nil }
+            return available.first { $0.rawValue == initial.rawValue }
+        }
+        return available.first { $0.rawValue == stored }
     }
 
     /// 点了可收起分段里的某一页：点的是已经打开的那页就收起（存空字符串），

@@ -8,8 +8,9 @@ import SwiftUI
 /// The favourites and the tuned channel are written to the widget's config,
 /// so the tile and this panel always show the same station.
 ///
-/// 下半截“我的收藏”“搜索电台”“定时关闭”三页用一条分段切换，默认都收起，
-/// 面板打开时只有上面的主视觉；再点一下打开的那页就收起，打开哪页记住。
+/// 下半截“我的收藏”“搜索电台”“定时关闭”三页用一条分段切换，同时只开一页。
+/// 没记过时（新用户）默认打开“我的收藏”，其余收起；再点一下打开的那页就收起，
+/// 打开哪页（或都收起）记住。
 ///
 /// 收藏上面一排“添加电台”（贴地址或导入 .m3u / .m3u8 / .pls，见
 /// `RadioAddFlow`）和“检查”（试连收藏，见 `RadioStationCheck`）。有电台所有
@@ -21,7 +22,7 @@ struct RadioDetail: View {
     var context: WidgetContext
 
     /// 下半截的三页。面板统一限高后可以全部收起：再点一下打开的那页就收起，
-    /// 打开哪页（或都收起）记住，见 `DetailPanelSections.openPage`。
+    /// 打开哪页（或都收起）记住；没记过时打开收藏，见 `DetailPanelSections.openPage`。
     private enum Tab: String, CaseIterable { case favourites, search, timer }
 
     private var player: RadioPlayer { RadioPlayer.shared }
@@ -33,9 +34,12 @@ struct RadioDetail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var tabSlot
 
-    @AppStorage(DetailPanelSections.pageKey(.radio)) private var storedTab = ""
-    /// 打开着的那页，nil 是都收起（默认）。
-    private var tab: Tab? { DetailPanelSections.openPage(stored: storedTab, available: Tab.allCases) }
+    /// 记着的那页；nil 是从没记过，空字符串是用户收起了。
+    @AppStorage(DetailPanelSections.pageKey(.radio)) private var storedTab: String?
+    /// 打开着的那页，nil 是都收起。没记过时是收藏。
+    private var tab: Tab? {
+        DetailPanelSections.openPage(stored: storedTab, available: Tab.allCases, initial: .favourites)
+    }
     @State private var query = ""
     @State private var customName = ""
     @State private var results: [RadioStation] = []
