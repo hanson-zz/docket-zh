@@ -646,6 +646,9 @@ struct WidgetSettingsSections: View {
         "watchlist.metalUnit": tr("黄金白银单位"),
         "weather.caption": tr("副标题"),
         "weather.days": tr("天数"),
+        "weather.moreCities": tr("更多城市（第 2 个起需要 Pro，面板里左右切换）"),
+        "weather.showIndices": tr("面板显示生活指数"),
+        "weather.showRain": tr("面板显示 2 小时降水提示"),
     ]
 
     static func label(_ key: String) -> String {

@@ -602,9 +602,8 @@ enum WidgetDetail {
         case .countdown, .stopwatch, .alarm: 320
         case .notes: 300
         case .system, .network: 340
-        // Wide enough for the whole hourly series as a strip; the tile fits
-        // five of those hours and the service publishes twelve.
-        case .weather: 340
+        // 天气面板改版：降水条、生活指数三格、6 小时折线和城市管理，320 和第一批面板一致。
+        case .weather: 320
         case .music: 330
         case .photos, .screenshots: 340
         case .downloads, .fileShelf, .clipboard, .search: 320

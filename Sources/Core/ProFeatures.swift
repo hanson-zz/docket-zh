@@ -71,6 +71,9 @@ public enum ProFeatures {
 
     /// 天气的多城市样式（`layout` 为 cities）是 Pro。
     public static let weatherCitiesLayout = "cities"
+    /// 天气面板的城市列表免费能看几个：第 2 个城市起和多城市样式一样是 Pro，
+    /// 见 `ProLicenseGate.isWeatherCityLocked`。
+    public static let freeWeatherCityLimit = 1
     /// 电池的电池格样式（原百分比圆环，`layout` 仍为 gauge）是 Pro。
     public static let batteryGaugeLayout = "gauge"
     /// 便签存纸色的键。

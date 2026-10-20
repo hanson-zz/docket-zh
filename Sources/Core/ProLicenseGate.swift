@@ -9,6 +9,8 @@ import Foundation
 /// - 原来的赞助者外观（表盘、角色、Wi-Fi、电池外观）照旧退回免费外观显示，不盖遮罩。
 /// - 电池的液态外观也是 Pro，同样退回免费的经典外观显示，不盖遮罩。
 /// - 天气的多城市和电池格没有同样大小的免费样式可退，盖小锁遮罩。
+/// - 天气面板的城市列表免费 1 个：没解锁时加第 2 个弹付费墙；已经加了的不删，
+///   带 Pro 标，面板只显示第 1 个，解锁或试用时自动回来。
 /// - 时间进度整种免费，液态和四格是 Pro，没解锁时退回圆环显示，不盖遮罩。
 /// - 喝水整种免费，角色和液态是 Pro，没解锁时都画成圆环，不盖遮罩；配置照旧
 ///   存着角色或液态，解锁或试用时自动回来。例外：卡片选的是累计达标解锁的
@@ -188,6 +190,24 @@ public enum ProLicenseGate {
 
     /// 书签面板能不能用分组（顶部分组标签、新建分组、移到分组）。
     public static func canUseBookmarkGroups(unlocked: Bool) -> Bool { unlocked }
+
+    // MARK: 天气城市
+
+    /// 天气面板最多能切换几个城市：没解锁时 1 个，解锁后列表上限个。
+    public static func weatherCityLimit(unlocked: Bool) -> Int {
+        unlocked ? WeatherPlaces.maxCount : ProFeatures.freeWeatherCityLimit
+    }
+
+    /// 现在有 `count` 个城市时能不能再加。不能时（没解锁且已有 1 个）点“添加”弹付费墙。
+    public static func canAddWeatherCity(count: Int, unlocked: Bool) -> Bool {
+        count < weatherCityLimit(unlocked: unlocked)
+    }
+
+    /// 排在第 `index` 个（从 0 数）的城市是不是锁着：没解锁时第 2 个起带 Pro 标，
+    /// 不删、不改写配置，只是面板上不能切过去。
+    public static func isWeatherCityLocked(at index: Int, unlocked: Bool) -> Bool {
+        !unlocked && index >= ProFeatures.freeWeatherCityLimit
+    }
 
     // MARK: 快速开关
 
