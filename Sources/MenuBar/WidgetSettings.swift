@@ -682,7 +682,7 @@ struct WidgetSettingsSections: View {
         if kind == .posture, key == PostureTrack.goalKey {
             return Double(PostureTrack.goalRange.lowerBound)...Double(PostureTrack.goalRange.upperBound)
         }
-        switch key {
+        return switch key {
         case "duration": 60...14_400
         case "skip": 5...60
         case "interval": 5...3_600
@@ -698,7 +698,7 @@ struct WidgetSettingsSections: View {
 
     static func step(_ key: String, kind: WidgetKind? = nil) -> Double {
         if kind == .posture, key == PostureTrack.goalKey { return 1 }
-        switch key {
+        return switch key {
         case "duration": 300
         case "goal": 100
         case "cupSize": 50
