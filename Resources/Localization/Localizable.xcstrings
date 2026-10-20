@@ -5827,6 +5827,39 @@
         }
       }
     },
+    "中等浅肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium-light skin tone"
+          }
+        }
+      }
+    },
+    "中等深肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium-dark skin tone"
+          }
+        }
+      }
+    },
+    "中等肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium skin tone"
+          }
+        }
+      }
+    },
     "中雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6120,6 +6153,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pinyin, initials or Chinese work too, like tianqi, tq, 天气"
+          }
+        }
+      }
+    },
+    "也能搜 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or try %@"
           }
         }
       }
@@ -8665,6 +8709,17 @@
         }
       }
     },
+    "允许辅助功能后双击能直接插入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Accessibility to insert with a double-click"
+          }
+        }
+      }
+    },
     "元" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9662,6 +9717,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click again to delete"
+          }
+        }
+      }
+    },
+    "再点一次恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to reset"
           }
         }
       }
@@ -11587,6 +11653,17 @@
         }
       }
     },
+    "单个表情按住就能换肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press and hold an emoji to pick its skin tone"
+          }
+        }
+      }
+    },
     "单位" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12078,6 +12155,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Grant"
+          }
+        }
+      }
+    },
+    "去输入框按 ⌘V 粘贴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press ⌘V in a text field to paste"
           }
         }
       }
@@ -14450,6 +14538,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Write a task name above; it is kept here once you start focusing."
+          }
+        }
+      }
+    },
+    "在上面搜索，点表情加星收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search above, then click an emoji to star it"
           }
         }
       }
@@ -18156,6 +18255,17 @@
         }
       }
     },
+    "已插入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserted"
+          }
+        }
+      }
+    },
     "已收 " : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20542,6 +20652,17 @@
         }
       }
     },
+    "恢复默认" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset to Defaults"
+          }
+        }
+      }
+    },
     "悉尼" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21202,6 +21323,17 @@
         }
       }
     },
+    "打开表情面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Emoji Panel"
+          }
+        }
+      }
+    },
     "打开设置" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21741,6 +21873,17 @@
         }
       }
     },
+    "拖动可排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to reorder"
+          }
+        }
+      }
+    },
     "拖动把手调整顺序，卡片显示前 3 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22236,6 +22379,61 @@
         }
       }
     },
+    "插到了光标处" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "at the cursor"
+          }
+        }
+      }
+    },
+    "插到光标处" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insert at Cursor"
+          }
+        }
+      }
+    },
+    "搜一个词（中文或英文），点结果里的表情就加星收藏。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search for a word, then click an emoji in the results to star it."
+          }
+        }
+      }
+    },
+    "搜索、整理收藏、更多表情" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search, organize favorites, more emoji"
+          }
+        }
+      }
+    },
+    "搜索加收藏、调整顺序、移除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search to add favorites, reorder, remove"
+          }
+        }
+      }
+    },
     "搜索快捷指令" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22247,6 +22445,17 @@
         }
       }
     },
+    "搜索结果 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results %@"
+          }
+        }
+      }
+    },
     "搜索结果 · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22254,6 +22463,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Results · %@"
+          }
+        }
+      }
+    },
+    "搜索：笑、心、cat、猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search: smile, heart, cat"
           }
         }
       }
@@ -22291,6 +22511,39 @@
         }
       }
     },
+    "收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        }
+      }
+    },
+    "收藏 %@ / %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites %@ / %@"
+          }
+        }
+      }
+    },
+    "收藏回到默认的 9 个，肤色回到黄色；最近用过不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites go back to the default 9 and the skin tone to yellow. Recents stay."
+          }
+        }
+      }
+    },
     "收藏最多 %@ 个电台，先删掉一些再添加。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22298,6 +22551,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favorites hold up to %@ stations. Remove some before adding more."
+          }
+        }
+      }
+    },
+    "收藏最多 %@ 个，先移除几个再加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ favorites. Remove a few first."
           }
         }
       }
@@ -22375,6 +22639,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Digital Tuner Deck"
+          }
+        }
+      }
+    },
+    "整理" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize"
+          }
+        }
+      }
+    },
+    "整理表情" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize Emoji"
           }
         }
       }
@@ -22555,6 +22841,17 @@
         }
       }
     },
+    "星标收藏 · 拖动排序 · 红钮移除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star to add · Drag to reorder · Red to remove"
+          }
+        }
+      }
+    },
     "昨天 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22665,6 +22962,17 @@
         }
       }
     },
+    "更多表情：打开系统表情面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Emoji: Open Character Viewer"
+          }
+        }
+      }
+    },
     "曼彻斯特" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22716,6 +23024,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Slowest"
+          }
+        }
+      }
+    },
+    "最近用过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Used"
           }
         }
       }
@@ -23215,6 +23534,17 @@
         }
       }
     },
+    "没有找到「%@」。换个说法，或打开系统表情面板。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing found for \"%@\". Try another word, or open the Character Viewer."
+          }
+        }
+      }
+    },
     "没有未读邮件，歇会儿" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23369,6 +23699,17 @@
         }
       }
     },
+    "浅肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light skin tone"
+          }
+        }
+      }
+    },
     "浓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23402,6 +23743,17 @@
         }
       }
     },
+    "深肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark skin tone"
+          }
+        }
+      }
+    },
     "深色界面里怎么做层次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23424,6 +23776,17 @@
         }
       }
     },
+    "添加收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Favorite"
+          }
+        }
+      }
+    },
     "添加电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23442,6 +23805,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Early morning"
+          }
+        }
+      }
+    },
+    "清空最近用过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Recents"
           }
         }
       }
@@ -23508,6 +23882,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to add 10%, back to 0 when full"
+          }
+        }
+      }
+    },
+    "点一下拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to copy"
+          }
+        }
+      }
+    },
+    "点一下拷贝 · 双击插到光标处" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to copy · Double-click to insert"
           }
         }
       }
@@ -32142,6 +32538,17 @@
         }
       }
     },
+    "点星星加收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to star"
+          }
+        }
+      }
+    },
     "点状" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32776,6 +33183,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A spotlight points out progress, Skip and Start in turn"
+          }
+        }
+      }
+    },
+    "用过的表情会排在这里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emoji you use show up here."
           }
         }
       }
@@ -34265,6 +34683,17 @@
         }
       }
     },
+    "移出收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Favorites"
+          }
+        }
+      }
+    },
     "移出暂存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34305,6 +34734,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove"
+          }
+        }
+      }
+    },
+    "移除%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@"
           }
         }
       }
@@ -40307,6 +40747,17 @@
         }
       }
     },
+    "还没有收藏。点「整理」搜索，点表情加星。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No favorites yet. Click Organize, search, and click an emoji to star it."
+          }
+        }
+      }
+    },
     "还没有电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41381,6 +41832,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose date…"
+          }
+        }
+      }
+    },
+    "选肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skin Tone"
           }
         }
       }
@@ -44222,6 +44684,17 @@
         }
       }
     },
+    "默认肤色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Skin Tone"
+          }
+        }
+      }
+    },
     "默认跟随系统语言；系统语言不是中文或英文时显示英文。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44251,6 +44724,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default color: the card and its expanded panel keep their own look."
+          }
+        }
+      }
+    },
+    "默认黄色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default yellow"
           }
         }
       }

@@ -2,22 +2,26 @@ import AppKit
 import SwiftUI
 
 /// The emoji you reach for most, one click from the pasteboard, and a door
-/// to the system's Character Viewer for the rest.
+/// to the panel for the rest.
 ///
-/// The set is the widget's `emoji` option, edited in the Widgets tab as a
-/// comma separated list.
+/// 卡片上是收藏的前 9 个（面板里整理，设置页也能写逗号列表），按默认肤色或
+/// 单个另选的肤色显示；收藏清空了就放最近用过，也没有就放默认的。点一下拷贝
+/// 并记进最近用过，末尾“＋”打开面板（搜索、整理、系统表情面板都在里面）。
 struct EmojiTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var copied: String?
 
-    private var emoji: [String] {
-        let stored = instance.config.strings("emoji", default: EmojiTile.defaults)
-        return Array((stored.isEmpty ? EmojiTile.defaults : stored).prefix(9))
-    }
+    private var prefs: EmojiPrefs { EmojiPrefs(instance.config) }
 
-    static let defaults = ["😂", "✨", "✅", "🔥", "🥹", "🙏", "💡", "🚀", "❤️"]
+    /// 卡片上的 9 个：存的写法（不带肤色），显示时再加。
+    private var emoji: [String] {
+        let p = prefs
+        let source = !p.favorites.isEmpty ? p.favorites
+            : !p.recent.isEmpty ? p.recent : EmojiPrefs.defaultFavorites
+        return Array(source.prefix(9))
+    }
 
     var body: some View {
         let column = context.position.isVertical
@@ -42,12 +46,18 @@ struct EmojiTile: View {
     @ViewBuilder
     private func cell(_ item: String?) -> some View {
         if let item {
+            let shown = prefs.display(item)
             Button {
                 guard !context.isPreview else { return }
-                ColorSampling.copy(item)
+                ColorSampling.copy(shown)
                 copied = item
+                let latest = WidgetWriter.current(instance.id) ?? instance
+                WidgetWriter.write(latest) { config in
+                    let next = EmojiPrefs(config).recording(item)
+                    next.store(in: &config)
+                }
             } label: {
-                Text(item)
+                Text(verbatim: shown)
                     .font(.system(size: 17))
                     .frame(width: 26, height: 24)
                     .background(WidgetStyle.primary.opacity(copied == item ? 0.16 : 0),
@@ -55,12 +65,11 @@ struct EmojiTile: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .help(tr("拷贝 \(item)"))
+            .help(tr("拷贝 \(shown)"))
         } else {
             Button {
                 guard !context.isPreview else { return }
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.orderFrontCharacterPalette(nil)
+                WidgetPanelOpener.shared.open(instance.id)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .semibold))
@@ -69,7 +78,8 @@ struct EmojiTile: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("表情与符号")
+            .help(tr("搜索、整理收藏、更多表情"))
+            .accessibilityLabel(tr("打开表情面板"))
         }
     }
 }

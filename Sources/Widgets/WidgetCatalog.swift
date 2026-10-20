@@ -321,9 +321,10 @@ public enum WidgetCatalog {
         Entry(kind: .capture, name: tr("截图工具"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 收藏在 emoji（设置页能写逗号列表）；最近用过、默认肤色、单个另选的肤色
+        // （recent、skinTone、tones）是内容，在面板里改，不放进默认值，见 EmojiPrefs。
         Entry(kind: .emoji, name: tr("表情符号"), category: .tools,
-              defaults: c(["emoji": .list(["😂", "✨", "✅", "🔥", "🥹", "🙏", "💡", "🚀", "❤️"]
-                                            .map { .string($0) })]),
+              defaults: c(["emoji": .list(EmojiPrefs.defaultFavorites.map { .string($0) })]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // AI 助手：小熊猫是提问入口，后面是勾选的 AI 服务字牌，末尾“＋”添加。

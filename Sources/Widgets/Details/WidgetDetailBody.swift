@@ -115,6 +115,8 @@ struct WidgetDetailBody: View {
             SlackerDetail(instance: instance, context: context)
         case .aiAssistant:
             AIAssistantDetail(instance: instance, context: context)
+        case .emoji:
+            EmojiDetail(instance: instance, context: context)
         default:
             // Nothing reaches this now that every placeable kind has a
             // panel. Better an honest line than a panel that explains its

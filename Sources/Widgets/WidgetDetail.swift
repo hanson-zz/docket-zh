@@ -586,7 +586,7 @@ enum WidgetDetail {
         switch kind {
         // Every control these have is already on the card; a panel would
         // only repeat the buttons.
-        case .capture, .emoji, .volume, .toggles, .microphone, .gauges:
+        case .capture, .volume, .toggles, .microphone, .gauges:
             false
         default:
             true
@@ -653,6 +653,8 @@ enum WidgetDetail {
         case .aiAssistant: 380
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
+        // 表情符号：一行 8 个 36 的格子，和第二批面板一样 320。
+        case .emoji: 320
         default: 300
         }
     }
