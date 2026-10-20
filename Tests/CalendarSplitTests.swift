@@ -307,7 +307,7 @@ final class LunarCardTests: XCTestCase {
         XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("14")])), 14)
         XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("3")])), 3)
         XCTAssertEqual(LunarCard.leadDays(WidgetConfig(["workAlertLead": .string("5")])), 7)
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.lunar), ["showTerm", "workAlert", "workAlertLead"])
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.lunar), ["showAlmanac", "showTerm", "workAlert", "workAlertLead"])
         XCTAssertFalse(WidgetCatalog.applies("workAlertLead", to: WidgetConfig(["workAlert": .bool(false)]), kind: .lunar))
         XCTAssertTrue(WidgetCatalog.applies("workAlertLead", to: WidgetConfig(), kind: .lunar))
     }

@@ -1167,6 +1167,17 @@
         }
       }
     },
+    "%@ 天后是%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days until %@"
+          }
+        }
+      }
+    },
     "%@ 天后要上班" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2289,6 +2300,28 @@
         }
       }
     },
+    "%@日 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@ · %@"
+          }
+        }
+      }
+    },
+    "%@是 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %@"
+          }
+        }
+      }
+    },
     "%@暂时没有可收听的电台。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2340,6 +2373,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@/%@ · schedule not announced"
+          }
+        }
+      }
+    },
+    "%@月%@日 周%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/%@ %@"
           }
         }
       }
@@ -2553,6 +2597,17 @@
         }
       }
     },
+    "%@调休" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ make-up"
+          }
+        }
+      }
+    },
     "%@调休 · 上班 · 农历%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2714,6 +2769,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, %@, today %@"
+          }
+        }
+      }
+    },
+    "%@，%@，还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@, %@ days to go"
           }
         }
       }
@@ -4507,6 +4573,17 @@
         }
       }
     },
+    "上任" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take office"
+          }
+        }
+      }
+    },
     "上传" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4547,6 +4624,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Morning"
+          }
+        }
+      }
+    },
+    "上巳节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shangsi Festival"
           }
         }
       }
@@ -4833,6 +4921,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next month"
+          }
+        }
+      }
+    },
+    "下元节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiayuan Festival"
           }
         }
       }
@@ -5152,6 +5251,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No timer"
+          }
+        }
+      }
+    },
+    "不提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No reminder"
           }
         }
       }
@@ -5695,6 +5805,17 @@
         }
       }
     },
+    "中元节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghost Festival"
+          }
+        }
+      }
+    },
     "中午" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6234,6 +6355,17 @@
         }
       }
     },
+    "争执" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quarrels"
+          }
+        }
+      }
+    },
     "二" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6362,6 +6494,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Swap languages"
+          }
+        }
+      }
+    },
+    "交易" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trading"
           }
         }
       }
@@ -7730,6 +7873,17 @@
         }
       }
     },
+    "伐木" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Felling trees"
+          }
+        }
+      }
+    },
     "休" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7737,6 +7891,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Off"
+          }
+        }
+      }
+    },
+    "休、班和节气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "days off, workdays and solar terms"
           }
         }
       }
@@ -7836,6 +8001,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Priority"
+          }
+        }
+      }
+    },
+    "会友" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meeting friends"
           }
         }
       }
@@ -8434,6 +8610,17 @@
         }
       }
     },
+    "修造" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building"
+          }
+        }
+      }
+    },
     "倒数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8885,6 +9072,17 @@
         }
       }
     },
+    "先写个名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a name first"
+          }
+        }
+      }
+    },
     "先在扩展栏上添加一个快速待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9035,6 +9233,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The entry is the notch itself and takes no menu bar space: move the pointer onto the notch and a small strip with the red panda grows below it. Click the notch or press the shortcut to open it; while an answer is generating, the strip shows three bouncing dots. On external displays the entry is a small capsule centered below the menu bar, semi-transparent until used. While Shiduo is running the notch is left to it, so use the shortcut or the red panda on the AI card in the shelf. The entry steps aside while a Live Alert is showing. The red panda on the AI card opens the same chat."
+          }
+        }
+      }
+    },
+    "入学" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting school"
+          }
+        }
+      }
+    },
+    "入宅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving in"
           }
         }
       }
@@ -9611,6 +9831,17 @@
         }
       }
     },
+    "其他" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
     "其他开着的" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9853,6 +10084,28 @@
         }
       }
     },
+    "农历%@ · %@%@年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunar %@ · %@ %@ year"
+          }
+        }
+      }
+    },
+    "农历%@%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunar %@%@"
+          }
+        }
+      }
+    },
     "农历%@至%@%@%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9893,6 +10146,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lunar & Holidays"
+          }
+        }
+      }
+    },
+    "农历日期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunar date"
           }
         }
       }
@@ -10102,6 +10366,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phoenix"
+          }
+        }
+      }
+    },
+    "出行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel"
           }
         }
       }
@@ -10535,6 +10810,17 @@
         }
       }
     },
+    "删除这一条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
     "删除这一杯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10630,6 +10916,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Don't get too busy, take a sip and carry on. %@ to go today."
+          }
+        }
+      }
+    },
+    "别忘了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't forget"
           }
         }
       }
@@ -11400,6 +11697,17 @@
         }
       }
     },
+    "动土" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breaking ground"
+          }
+        }
+      }
+    },
     "动感 101" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11561,6 +11869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Beijing News Radio"
+          }
+        }
+      }
+    },
+    "北方小年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Little New Year (north)"
           }
         }
       }
@@ -11759,6 +12078,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nanjing"
+          }
+        }
+      }
+    },
+    "南方小年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Little New Year (south)"
           }
         }
       }
@@ -11990,6 +12320,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indonesian"
+          }
+        }
+      }
+    },
+    "危日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danger day"
           }
         }
       }
@@ -13101,6 +13442,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name, e.g. Douban"
+          }
+        }
+      }
+    },
+    "名字，比如妈妈生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name, like Mom's birthday"
           }
         }
       }
@@ -14905,6 +15257,17 @@
         }
       }
     },
+    "坏垣" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knocking down walls"
+          }
+        }
+      }
+    },
     "坐了 %@ 分钟 · 今天第 %@ 次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15099,6 +15462,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Serbia"
+          }
+        }
+      }
+    },
+    "塞穴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filling holes"
           }
         }
       }
@@ -15414,6 +15788,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forks"
+          }
+        }
+      }
+    },
+    "外婆生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grandma's birthday"
           }
         }
       }
@@ -15982,6 +16367,17 @@
         }
       }
     },
+    "妈妈生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mom's birthday"
+          }
+        }
+      }
+    },
     "妙控板" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16055,6 +16451,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Media"
+          }
+        }
+      }
+    },
+    "嫁娶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weddings"
           }
         }
       }
@@ -16202,6 +16609,28 @@
         }
       }
     },
+    "安床" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placing a bed"
+          }
+        }
+      }
+    },
+    "安排未公布" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not announced"
+          }
+        }
+      }
+    },
     "安曼" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16209,6 +16638,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Amman"
+          }
+        }
+      }
+    },
+    "安葬" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Burials"
           }
         }
       }
@@ -16356,6 +16796,17 @@
         }
       }
     },
+    "定日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stable day"
+          }
+        }
+      }
+    },
     "定时关闭" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16363,6 +16814,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sleep timer"
+          }
+        }
+      }
+    },
+    "宜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do"
+          }
+        }
+      }
+    },
+    "宜忌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do and avoid"
           }
         }
       }
@@ -16495,6 +16968,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Key saved to the Keychain. Switched to API."
+          }
+        }
+      }
+    },
+    "寒衣节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Winter Clothes Day"
           }
         }
       }
@@ -16744,6 +17228,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The red panda raised its cup"
+          }
+        }
+      }
+    },
+    "小熊猫会来送祝福" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the red panda drops by with wishes"
           }
         }
       }
@@ -17305,6 +17800,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today"
+          }
+        }
+      }
+    },
+    "就是今天，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's today, %@"
           }
         }
       }
@@ -19164,6 +19670,28 @@
         }
       }
     },
+    "平日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balance day"
+          }
+        }
+      }
+    },
+    "平治道涂" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Road repair"
+          }
+        }
+      }
+    },
     "年" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19457,6 +19985,17 @@
         }
       }
     },
+    "建日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establish day"
+          }
+        }
+      }
+    },
     "开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19464,6 +20003,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On"
+          }
+        }
+      }
+    },
+    "开仓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening stores"
           }
         }
       }
@@ -19688,6 +20238,28 @@
         }
       }
     },
+    "开市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening a business"
+          }
+        }
+      }
+    },
+    "开日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open day"
+          }
+        }
+      }
+    },
     "开普敦" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19695,6 +20267,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cape Town"
+          }
+        }
+      }
+    },
+    "开渠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digging channels"
           }
         }
       }
@@ -19860,6 +20443,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Current chapter, "
+          }
+        }
+      }
+    },
+    "当天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same day"
+          }
+        }
+      }
+    },
+    "当天 %@ 提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder at %@ on the day"
           }
         }
       }
@@ -20212,6 +20817,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bing https://www.bing.com"
+          }
+        }
+      }
+    },
+    "忌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avoid"
           }
         }
       }
@@ -20780,6 +21396,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adult (%@)"
+          }
+        }
+      }
+    },
+    "成日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Success day"
           }
         }
       }
@@ -21400,6 +22027,17 @@
         }
       }
     },
+    "执日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initiate day"
+          }
+        }
+      }
+    },
     "扩展栏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21561,6 +22199,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While the shelf is on screen, connected accounts refresh every five minutes."
+          }
+        }
+      }
+    },
+    "扫舍" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House cleaning"
           }
         }
       }
@@ -22225,6 +22874,39 @@
         }
       }
     },
+    "按农历每年换算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted from the lunar date each year"
+          }
+        }
+      }
+    },
+    "按农历记一个生日或纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a birthday or anniversary by its lunar date"
+          }
+        }
+      }
+    },
+    "按农历记，每年自动换成公历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kept by lunar date, converted every year"
+          }
+        }
+      }
+    },
     "按填写顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22269,6 +22951,17 @@
         }
       }
     },
+    "按建除十二值日简化排出的宜忌，仅供参考" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simplified from the twelve day officers, for reference only"
+          }
+        }
+      }
+    },
     "按当前速度约 %@ 用完" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22309,6 +23002,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Norway"
+          }
+        }
+      }
+    },
+    "捕捉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catching pests"
           }
         }
       }
@@ -22375,6 +23079,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up next queue"
+          }
+        }
+      }
+    },
+    "提前 %@ 天 %@ 提醒，当天再提醒一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder %@ days ahead at %@, and again on the day"
+          }
+        }
+      }
+    },
+    "提前提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind ahead"
           }
         }
       }
@@ -22478,6 +23204,17 @@
         }
       }
     },
+    "搬家" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving house"
+          }
+        }
+      }
+    },
     "摩洛哥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22507,6 +23244,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No http(s) stream addresses found in the playlist."
+          }
+        }
+      }
+    },
+    "收割" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvest"
+          }
+        }
+      }
+    },
+    "收日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive day"
           }
         }
       }
@@ -22617,6 +23376,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change start time"
+          }
+        }
+      }
+    },
+    "放 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days off"
           }
         }
       }
@@ -22830,6 +23600,17 @@
         }
       }
     },
+    "明年" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next year"
+          }
+        }
+      }
+    },
     "明斯克" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22903,6 +23684,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show all %@"
+          }
+        }
+      }
+    },
+    "显示宜忌" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show do and avoid"
           }
         }
       }
@@ -22991,6 +23783,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to 12 cities, at least 1"
+          }
+        }
+      }
+    },
+    "最多记 %@ 条，删掉一条再加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ dates. Delete one to add another"
           }
         }
       }
@@ -23160,6 +23963,17 @@
         }
       }
     },
+    "本月月历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month"
+          }
+        }
+      }
+    },
     "札幌" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23233,6 +24047,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Georgia"
+          }
+        }
+      }
+    },
+    "栽种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planting"
           }
         }
       }
@@ -23402,6 +24227,17 @@
         }
       }
     },
+    "每年自动换成公历，提前提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted every year, with a reminder ahead"
+          }
+        }
+      }
+    },
     "每条地址都试过，都连不上。可能只是暂时离线，确认后才会删除。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23486,6 +24322,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drop"
+          }
+        }
+      }
+    },
+    "求医" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seeing a doctor"
+          }
+        }
+      }
+    },
+    "求财" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seeking wealth"
           }
         }
       }
@@ -23633,6 +24491,17 @@
         }
       }
     },
+    "治病" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treatment"
+          }
+        }
+      }
+    },
     "法定工作日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23721,6 +24590,17 @@
         }
       }
     },
+    "涂泥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plastering"
+          }
+        }
+      }
+    },
     "淡" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23787,6 +24667,17 @@
         }
       }
     },
+    "添加生日 / 纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Birthday or Anniversary"
+          }
+        }
+      }
+    },
     "添加电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23849,6 +24740,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thirsty"
+          }
+        }
+      }
+    },
+    "满日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full day"
           }
         }
       }
@@ -32241,6 +33143,17 @@
         }
       }
     },
+    "点按修改或删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to edit or delete"
+          }
+        }
+      }
+    },
     "点按修改时间、名字和重复" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33000,6 +33913,17 @@
         }
       }
     },
+    "生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birthday"
+          }
+        }
+      }
+    },
     "生日、纪念日、发布日，算到那天还有几天。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33018,6 +33942,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Birthdays and anniversaries, reminded on the day"
+          }
+        }
+      }
+    },
+    "生日与纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birthdays and anniversaries"
+          }
+        }
+      }
+    },
+    "生日快乐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Happy birthday"
+          }
+        }
+      }
+    },
+    "生日那天卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the day, on the card"
           }
         }
       }
@@ -33480,6 +34437,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign-in expired"
+          }
+        }
+      }
+    },
+    "登高" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Climbing"
           }
         }
       }
@@ -34397,6 +35365,28 @@
         }
       }
     },
+    "破屋" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demolition"
+          }
+        }
+      }
+    },
+    "破日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destruction day"
+          }
+        }
+      }
+    },
     "确定删除？" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34470,6 +35460,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sample artist"
+          }
+        }
+      }
+    },
+    "祈福" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Praying"
+          }
+        }
+      }
+    },
+    "祭祀" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offerings"
           }
         }
       }
@@ -34991,6 +36003,17 @@
         }
       }
     },
+    "立券" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signing contracts"
+          }
+        }
+      }
+    },
     "立即重启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35350,6 +36373,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mono"
+          }
+        }
+      }
+    },
+    "筑堤" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building dikes"
           }
         }
       }
@@ -35948,6 +36982,17 @@
         }
       }
     },
+    "纪念日快乐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Happy anniversary"
+          }
+        }
+      }
+    },
     "纪念日，%@%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35977,6 +37022,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nasdaq"
+          }
+        }
+      }
+    },
+    "纳畜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buying livestock"
+          }
+        }
+      }
+    },
+    "纳财" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receiving money"
+          }
+        }
+      }
+    },
+    "纳采" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betrothal gifts"
           }
         }
       }
@@ -36043,6 +37121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CNR Business Radio"
+          }
+        }
+      }
+    },
+    "结婚纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wedding anniversary"
           }
         }
       }
@@ -36340,6 +37429,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Layouts…"
+          }
+        }
+      }
+    },
+    "编辑生日 / 纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Birthday or Anniversary"
           }
         }
       }
@@ -36956,6 +38056,17 @@
         }
       }
     },
+    "腊八节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laba Festival"
+          }
+        }
+      }
+    },
     "腊月" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37326,6 +38437,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Holiday only"
+          }
+        }
+      }
+    },
+    "节气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solar term"
           }
         }
       }
@@ -37759,6 +38881,17 @@
         }
       }
     },
+    "行船" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sailing"
+          }
+        }
+      }
+    },
     "补充繁体中文翻译" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37766,6 +38899,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Traditional Chinese translation"
+          }
+        }
+      }
+    },
+    "补垣" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mending walls"
           }
         }
       }
@@ -38393,6 +39537,17 @@
         }
       }
     },
+    "记一个农历生日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a lunar birthday"
+          }
+        }
+      }
+    },
     "记一条\n待办" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38466,6 +39621,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Log a stand-up"
+          }
+        }
+      }
+    },
+    "记的是闰月：有这个闰月的年份按闰月过，没有就按同名的月过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A leap month: kept in that leap month when the year has one, otherwise in the month of the same number"
           }
         }
       }
@@ -38708,6 +39874,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text"
+          }
+        }
+      }
+    },
+    "诉讼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lawsuits"
           }
         }
       }
@@ -39170,6 +40347,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Makeup workday reminder"
+          }
+        }
+      }
+    },
+    "调休补班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make-up workdays"
           }
         }
       }
@@ -40329,6 +41517,28 @@
         }
       }
     },
+    "近期没有节日节气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No festivals or solar terms coming up"
+          }
+        }
+      }
+    },
+    "近期节日节气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Festivals and solar terms"
+          }
+        }
+      }
+    },
     "返回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40501,6 +41711,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ days left"
+          }
+        }
+      }
+    },
+    "还有 %@ 天 · %@是 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days to go · %@: %@"
           }
         }
       }
@@ -40890,6 +42111,17 @@
         }
       }
     },
+    "这一年%@只有 29 天，按廿九过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ has 29 days this year, so it falls on the 29th"
+          }
+        }
+      }
+    },
     "这一年已过 %@%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40897,6 +42129,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@%% of the year gone"
+          }
+        }
+      }
+    },
+    "这一年没有闰%@，按%@过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No leap %@ this year, so it falls in %@"
+          }
+        }
+      }
+    },
+    "这一年没有闰%@，按%@过；%@只有 29 天，按廿九过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No leap %@ this year, so it falls in %@; %@ has 29 days, so on the 29th"
           }
         }
       }
@@ -40985,6 +42239,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This calendar is read-only."
+          }
+        }
+      }
+    },
+    "这个日子算不出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This date can't be worked out"
           }
         }
       }
@@ -42408,6 +43673,17 @@
         }
       }
     },
+    "重阳节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double Ninth"
+          }
+        }
+      }
+    },
     "金叶之月" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42672,6 +43948,17 @@
         }
       }
     },
+    "闭日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close day"
+          }
+        }
+      }
+    },
     "问 AI" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42712,6 +43999,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leap Day Leaf"
+          }
+        }
+      }
+    },
+    "闰月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leap month"
           }
         }
       }
@@ -43148,6 +44446,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lunar New Year's Eve"
+          }
+        }
+      }
+    },
+    "除日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove day"
           }
         }
       }
@@ -44768,6 +46077,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mouse"
+          }
+        }
+      }
+    },
+    "龙抬头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dragon Head Raising"
           }
         }
       }

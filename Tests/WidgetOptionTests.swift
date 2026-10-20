@@ -102,7 +102,7 @@ final class WidgetOptionTests: XCTestCase {
             .aiUsage: ["show", "notify", "alertAt", "notifyDone", "extras", "look"],
             .todo: ["showDone"],
             .ambient: ["sounds", "volume"],
-            .lunar: ["showTerm", "workAlert", "workAlertLead"],
+            .lunar: ["showAlmanac", "showTerm", "workAlert", "workAlertLead"],
             .trash: ["flies", "threshold"],
             .habit: ["showStreak"],
             .week: ["allDay", "calendars"],

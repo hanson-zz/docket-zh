@@ -19,7 +19,7 @@ struct LunarTile: View {
         return WidgetSurface {
             if context.position.isVertical {
                 VStack(spacing: 4) {
-                    TileBadge(size: WidgetStyle.badgeCompact) { dayBadge(now, size: 15) }
+                    TileBadge(size: WidgetStyle.badgeCompact) { badge(reading, now: now, size: 15) }
                     Text(reading.shortTitle)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(reading.isAlert ? LunarReading.red : WidgetStyle.primary)
@@ -33,7 +33,7 @@ struct LunarTile: View {
                 }
             } else {
                 HStack(spacing: WidgetStyle.rowSpacing) {
-                    TileBadge { dayBadge(now, size: 17) }
+                    TileBadge { badge(reading, now: now, size: 17) }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(reading.title)
                             .font(.system(size: 15, weight: .bold))
@@ -53,16 +53,38 @@ struct LunarTile: View {
             guard !context.isPreview else { return }
             holidays.refresh()
             LunarNotifier.shared.update(instance, known: holidays.known)
+            LunarNotifier.shared.updateEvents(instance)
         }
-        // 放假数据联网更新后，或第二天，重新排前一晚的提醒。
+        // 放假数据联网更新后，或第二天，重新排前一晚的提醒；生日过了一天也要排下一次。
         .onChange(of: ChineseCalendar.key(now)) { _, _ in
-            if !context.isPreview { LunarNotifier.shared.update(instance, known: holidays.known) }
+            guard !context.isPreview else { return }
+            LunarNotifier.shared.update(instance, known: holidays.known)
+            LunarNotifier.shared.updateEvents(instance)
+        }
+        // 面板里加、改、删了生日。
+        .onChange(of: instance.config.strings(LunarEvents.key)) { _, _ in
+            if !context.isPreview { LunarNotifier.shared.updateEvents(instance) }
         }
         .onChange(of: holidays.known.keys.sorted()) { _, _ in
             if !context.isPreview { LunarNotifier.shared.update(instance, known: holidays.known) }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tr("农历\(reading.lunar.short)，\(reading.title)，\(reading.caption)"))
+    }
+
+    /// 生日、纪念日当天换成小熊猫来送祝福，平常是星期和日。
+    @ViewBuilder
+    private func badge(_ reading: LunarReading, now: Date, size: CGFloat) -> some View {
+        if reading.isEvent, let panda = PandaArt.image(LunarReading.pandaPose) {
+            Image(nsImage: panda)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .padding(2)
+                .accessibilityHidden(true)
+        } else {
+            dayBadge(now, size: size)
+        }
     }
 
     private func dayBadge(_ now: Date, size: CGFloat) -> some View {
@@ -80,6 +102,7 @@ struct LunarTile: View {
 }
 
 /// What the tile and the panel both say, worked out once.
+@MainActor
 struct LunarReading {
     var lunar: ChineseCalendar.LunarDate
     var headline: LunarCard.Headline
@@ -93,7 +116,8 @@ struct LunarReading {
         headline = LunarCard.headline(now: now, known: known, breaks: breaks,
                                       leadDays: LunarCard.leadDays(config),
                                       showTerm: config.bool("showTerm", default: true),
-                                      workAlert: config.bool("workAlert", default: true))
+                                      workAlert: config.bool("workAlert", default: true),
+                                      events: LunarEventCache.todays(config, now: now))
         title = LunarCard.title(headline, now: now)
         caption = LunarCard.caption(headline, now: now)
     }
@@ -105,11 +129,20 @@ struct LunarReading {
         return false
     }
 
+    var isEvent: Bool {
+        if case .event = headline { return true }
+        return false
+    }
+
+    /// 生日那天卡片上的小熊猫。
+    static let pandaPose = "pet-panda-cheer"
+
     /// 竖排 56pt：调休写「周六上班」这类短句，倒计时写名字。
     var shortTitle: String {
         switch headline {
         case .makeupWorkday(_, let days, _):
             return days == 0 ? tr("今天上班") : (days == 1 ? tr("明天上班") : tr("\(days) 天后上班"))
+        case .event(let name, _, _): return name
         case .special(let name): return trKey(name)
         case .countdown(let item): return trKey(HolidaySchedule.shortName(item.name))
         case .none: return lunar.dayName
@@ -119,6 +152,7 @@ struct LunarReading {
     var shortCaption: String {
         switch headline {
         case .makeupWorkday: return tr("调休")
+        case .event(_, let kind, _): return LunarEvents.greeting(kind)
         case .special, .none: return lunar.dayName
         case .countdown(let item):
             let days = ChineseCalendar.days(from: today, to: item.start)
@@ -132,5 +166,23 @@ struct LunarReading {
         let names = ["日", "一", "二", "三", "四", "五", "六"]
         let index = ChineseCalendar.gregorian.component(.weekday, from: date) - 1
         return tr("周\(trKey(names[max(0, min(index, 6))]))")
+    }
+}
+
+/// 卡片每秒重画一次，今天有没有人过生日一天只算一次（加、改、删了就重算）。
+@MainActor
+enum LunarEventCache {
+    private static var key = ""
+    private static var value: [LunarEvent] = []
+
+    static func todays(_ config: WidgetConfig, now: Date) -> [LunarEvent] {
+        let stored = config.strings(LunarEvents.key)
+        guard !stored.isEmpty else { return [] }
+        let wanted = ChineseCalendar.key(now) + "\n" + stored.joined(separator: "\n")
+        if wanted != key {
+            key = wanted
+            value = LunarEvents.today(LunarEvents.events(config), now: now)
+        }
+        return value
     }
 }

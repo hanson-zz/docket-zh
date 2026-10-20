@@ -583,6 +583,7 @@ struct WidgetSettingsSections: View {
         "sounds": tr("声音"),
         "volume": tr("音量"),
         "showTerm": tr("显示节气"),
+        "showAlmanac": tr("显示宜忌"),
         "seconds": tr("显示秒（数字类样式）"),
         "workAlert": tr("调休上班提醒"),
         "workAlertLead": tr("提醒提前"),

@@ -505,9 +505,10 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
-        // 同一张卡按优先级只说一件事：调休上班 > 节气节日当天 > 下一个假期，见 LunarCard。
+        // 同一张卡按优先级只说一件事：调休上班 > 农历生日当天 > 节气节日当天 > 下一个假期，见 LunarCard。
+        // 农历生日和纪念日（`events`，见 `LunarEvents`）在面板里加、改、删，不进设置页，所以不放默认值。
         Entry(kind: .lunar, name: tr("农历与假期"), category: .time,
-              defaults: c(["showTerm": .bool(true), "workAlert": .bool(true),
+              defaults: c([LunarPanel.almanacKey: .bool(true), "showTerm": .bool(true), "workAlert": .bool(true),
                            LunarCard.leadKey: .string("\(LunarCard.defaultLead)")]),
               variants: [], supportsCompact: false, selfContained: true),
 
