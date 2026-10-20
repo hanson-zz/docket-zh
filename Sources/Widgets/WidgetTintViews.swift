@@ -142,8 +142,8 @@ struct PanelTint: Equatable, Sendable {
             return nil
         case .system:
             color = .accentColor
-            // 「自动」照旧白字；手选的字色按此刻系统强调色检查对比度。
-            if textInk != .auto, let code = Self.accentCode() {
+            // 字色按此刻系统强调色解：「自动」白字不到 4.5 换深色，手选的检查对比度。
+            if let code = Self.accentCode() {
                 ink = Color(code: WidgetTint.resolveInk(textInk, accent: code, on: code).color)
             } else {
                 ink = .white

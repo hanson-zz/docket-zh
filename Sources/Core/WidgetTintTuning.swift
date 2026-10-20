@@ -90,7 +90,7 @@ public extension WidgetTint {
 
     /// 压在主题色上的字（主按钮、选中的分段）用什么颜色。
     enum TextInk: String, CaseIterable, Sendable, Identifiable {
-        /// 按亮度和对比度选深色或白色，加这项之前就是这样。
+        /// 按亮度和对比度选深色或白色，对比度总能到 4.5。
         case auto
         case white
         case warmWhite
@@ -129,7 +129,8 @@ public extension WidgetTint {
     /// 暖白：带一点米色的白，不刺眼。
     static let inkWarmWhite = ColorCode(red: 1, green: 0.957, blue: 0.878)
 
-    /// 「自动」：和原来主题色按钮的字一样，按亮度选深色或白色（`labelIsDark`）。
+    /// 「自动」：按亮度选深色或白色（`labelIsDark`），白字不到 4.5 就看黑白谁更清楚，
+    /// 所以「自动」本身总能到 4.5，手选退回它时一定看得清。
     static func autoInk(on fill: ColorCode) -> ColorCode {
         labelIsDark(on: fill) ? inkBlack : inkWhite
     }
@@ -140,11 +141,24 @@ public extension WidgetTint {
         case .auto: autoInk(on: fill)
         case .white: inkWhite
         case .warmWhite: inkWarmWhite
-        case .theme:
-            labelIsDark(on: fill)
-                ? accent.mixed(with: inkBlack, by: 0.72)
-                : accent.mixed(with: inkWhite, by: 0.8)
+        case .theme: themeInk(accent: accent, on: fill)
         }
+    }
+
+    /// 同色系的字：底亮时往黑里压（从 72% 起），底暗时往白里调（从 80% 起），
+    /// 对比度不到 4.5 就再多调一点，最多 92% / 95%，仍保留主题色的色相。
+    /// 到头还不够，`resolveInk` 会退回「自动」。
+    static func themeInk(accent: ColorCode, on fill: ColorCode) -> ColorCode {
+        let dark = labelIsDark(on: fill)
+        let target = dark ? inkBlack : inkWhite
+        var amount = dark ? 0.72 : 0.8
+        let limit = dark ? 0.92 : 0.95
+        var result = accent.mixed(with: target, by: amount)
+        while contrastRatio(result, fill) < minimumTextContrast, amount < limit {
+            amount = min(limit, amount + 0.04)
+            result = accent.mixed(with: target, by: amount)
+        }
+        return result
     }
 
     /// 解出来的字色，和有没有退回「自动」。

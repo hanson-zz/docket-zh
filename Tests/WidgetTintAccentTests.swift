@@ -58,8 +58,12 @@ final class WidgetTintAccentTests: XCTestCase {
         XCTAssertTrue(WidgetTint.labelIsDark(on: ColorCode(hex: WidgetTint.Preset.yellow.hex)!), "黄底深色字")
         XCTAssertTrue(WidgetTint.labelIsDark(on: white))
         XCTAssertFalse(WidgetTint.labelIsDark(on: black))
-        XCTAssertFalse(WidgetTint.labelIsDark(on: ColorCode(hex: WidgetTint.Preset.blue.hex)!), "蓝底白字")
-        XCTAssertFalse(WidgetTint.labelIsDark(on: ColorCode(hex: WidgetTint.Preset.purple.hex)!), "紫底白字")
+        // 蓝、紫白字对比度不到 4.5（3.89、4.25），黑字更清楚，换深色字。
+        XCTAssertTrue(WidgetTint.labelIsDark(on: ColorCode(hex: WidgetTint.Preset.blue.hex)!), "蓝底深色字")
+        XCTAssertTrue(WidgetTint.labelIsDark(on: ColorCode(hex: WidgetTint.Preset.purple.hex)!), "紫底深色字")
+        // 够深的颜色白字到 4.5，照旧白字。
+        XCTAssertFalse(WidgetTint.labelIsDark(on: ColorCode(hex: "#14204A")!), "深蓝底白字")
+        XCTAssertFalse(WidgetTint.labelIsDark(on: ColorCode(hex: "#5B2BB5")!), "深紫底白字")
         // 薄荷绿亮度没过空状态按钮那条线，但白字对比度不够，也换深色字。
         let mint = ColorCode(hex: WidgetTint.Preset.mint.hex)!
         XCTAssertLessThanOrEqual(PandaEmpty.brightness(mint), PandaEmpty.darkLabelThreshold)
@@ -82,7 +86,7 @@ final class WidgetTintAccentTests: XCTestCase {
         }
         for fill in fills {
             let ink = WidgetTint.labelIsDark(on: fill) ? black : white
-            XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(fill, ink), 3, fill.hex)
+            XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(fill, ink), WidgetTint.minimumTextContrast, fill.hex)
         }
     }
 

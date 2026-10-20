@@ -141,6 +141,36 @@ final class WidgetTintTuningTests: XCTestCase {
         XCTAssertEqual(onNavy.color, WidgetTint.inkWarmWhite)
     }
 
+    func testAutoInkAlwaysReachesTextContrast() {
+        // 「自动」本身到 4.5，任何底色都是（黑白里高的那个至少 4.58）。
+        var fills = WidgetTint.Preset.allCases.flatMap { preset in
+            [ColorCode(hex: preset.hex)!,
+             WidgetTint.readable(preset.palette.main, dark: true),
+             WidgetTint.readable(preset.palette.main, dark: false)]
+        }
+        for step in 0...20 {
+            let v = Double(step) / 20
+            fills += [ColorCode(red: v, green: v, blue: v), ColorCode(red: v, green: 0.3, blue: 1 - v)]
+        }
+        for fill in fills {
+            let resolved = WidgetTint.resolveInk(.auto, accent: fill, on: fill)
+            XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(resolved.color, fill),
+                                        WidgetTint.minimumTextContrast, fill.hex)
+        }
+    }
+
+    func testChosenInkOnBlueNoLongerLooksIgnored() {
+        // 蓝底以前「自动」是白字 3.89，手选什么都退回白字，看起来没反应。
+        let blue = ColorCode(hex: WidgetTint.Preset.blue.hex)!
+        XCTAssertEqual(WidgetTint.autoInk(on: blue), black, "蓝底自动换深色字")
+        let theme = WidgetTint.resolveInk(.theme, accent: blue, on: blue)
+        XCTAssertFalse(theme.fellBack, "蓝底压暗的蓝字够清楚")
+        XCTAssertNotEqual(theme.color, black)
+        let white = WidgetTint.resolveInk(.white, accent: blue, on: blue)
+        XCTAssertTrue(white.fellBack)
+        XCTAssertEqual(white.color, black, "退回后和手选的白字不一样")
+    }
+
     func testThemeInkStaysInTheSameHue() {
         let yellow = ColorCode(hex: WidgetTint.Preset.yellow.hex)!
         let resolved = WidgetTint.resolveInk(.theme, accent: yellow, on: yellow)

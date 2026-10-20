@@ -63,9 +63,13 @@ public extension WidgetTint {
 
     /// 主题色按钮上的字用深色（true）还是白色。先看感知亮度，和空状态
     /// 按钮同一条线（`PandaEmpty.brightness`、`darkLabelThreshold`）；
-    /// 亮度没过线但白字对比度不到 3:1（薄荷绿、橙这类）也换深色字。
+    /// 亮度没过线时优先白字，但白字对比度不到 4.5（`minimumTextContrast`，
+    /// 蓝、紫、红、玫红、薄荷绿、橙这类）就看黑白哪个对比度高用哪个。
+    /// 黑白两者中较高的那个对任何底色都至少有 4.58，所以「自动」总能到 4.5。
     static func labelIsDark(on fill: ColorCode) -> Bool {
         if PandaEmpty.brightness(fill) > PandaEmpty.darkLabelThreshold { return true }
-        return contrastRatio(fill, ColorCode(red: 1, green: 1, blue: 1)) < minimumContrast
+        let white = ColorCode(red: 1, green: 1, blue: 1)
+        guard contrastRatio(fill, white) < minimumTextContrast else { return false }
+        return inkIsDark(on: fill)
     }
 }
