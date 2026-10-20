@@ -130,21 +130,28 @@ public enum WallpaperSchedule {
     /// `date` 落在哪一段。三个时刻按先后排；相同的时刻后面的段算数。
     public static func slot(at date: Date, minutes: [Slot: Int], calendar: Calendar = .current) -> Occurrence? {
         let day = calendar.startOfDay(for: date)
-        let sorted = Slot.allCases
-            .map { ($0, min(max(minutes[$0] ?? $0.defaultMinutes, 0), 1_439)) }
-            .sorted { $0.1 == $1.1 ? index($0.0) < index($1.0) : $0.1 < $1.1 }
+        var sorted: [(slot: Slot, minute: Int, rank: Int)] = []
+        for (rank, slot) in Slot.allCases.enumerated() {
+            let minute = min(max(minutes[slot] ?? slot.defaultMinutes, 0), 1_439)
+            sorted.append((slot: slot, minute: minute, rank: rank))
+        }
+        // 同一时刻按早、中、晚的先后，排在后面的段算数。
+        sorted.sort { (a: (slot: Slot, minute: Int, rank: Int), b: (slot: Slot, minute: Int, rank: Int)) -> Bool in
+            if a.minute != b.minute { return a.minute < b.minute }
+            return a.rank < b.rank
+        }
         func at(_ minute: Int, on day: Date) -> Date? {
             calendar.date(byAdding: .minute, value: minute, to: day)
         }
         var found: (Slot, Date)?
-        for (slot, minute) in sorted {
-            guard let start = at(minute, on: day), start <= date else { continue }
-            found = (slot, start)
+        for entry in sorted {
+            guard let start = at(entry.minute, on: day), start <= date else { continue }
+            found = (entry.slot, start)
         }
         if found == nil, let last = sorted.last,
            let yesterday = calendar.date(byAdding: .day, value: -1, to: day),
-           let start = at(last.1, on: yesterday) {
-            found = (last.0, start)
+           let start = at(last.minute, on: yesterday) {
+            found = (last.slot, start)
         }
         guard let found else { return nil }
         let (slot, start) = found
@@ -152,10 +159,6 @@ public enum WallpaperSchedule {
         let stamp = String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
         let key = "\(stamp) \(slot.rawValue)"
         return Occurrence(slot: slot, start: start, key: key)
-    }
-
-    private static func index(_ slot: Slot) -> Int {
-        Slot.allCases.firstIndex(of: slot) ?? 0
     }
 
     /// 到点放哪张。固定这张：这段设的那张（没设就不换）；从收藏随机：收藏里

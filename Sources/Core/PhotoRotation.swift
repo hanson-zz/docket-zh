@@ -160,9 +160,12 @@ public enum PhotoRotation {
 
     /// 按哈希排：每台 Mac、每次重画都一样，加减一张时其余照片的先后不变。
     static func shuffled(_ ids: [String]) -> [String] {
-        ids.map { ($0, hash($0)) }
-            .sorted { $0.1 == $1.1 ? $0.0 < $1.0 : $0.1 < $1.1 }
-            .map(\.0)
+        let keyed: [(id: String, key: UInt64)] = ids.map { id in (id: id, key: hash(id)) }
+        let sorted = keyed.sorted { (a: (id: String, key: UInt64), b: (id: String, key: UInt64)) -> Bool in
+            if a.key != b.key { return a.key < b.key }
+            return a.id < b.id
+        }
+        return sorted.map { $0.id }
     }
 
     /// FNV-1a 64 位，`hashValue` 每次启动都不一样，不能用。
@@ -296,7 +299,11 @@ public enum PhotoRotation {
             let rest = order.filter { $0 != removing }
             guard !rest.isEmpty else { return State(anchor: nil, anchorAt: now, pausedAt: state.pausedAt) }
             // 原来顺序里这张之后第一张还在的。
-            let next = (1...order.count).lazy.map { order[(here + $0) % order.count] }.first { $0 != removing }
+            var next: String?
+            for offset in 1...order.count where order[(here + offset) % order.count] != removing {
+                next = order[(here + offset) % order.count]
+                break
+            }
             return State(anchor: next, anchorAt: now, pausedAt: state.isPaused ? now : nil)
         }
         if state.isPaused {
