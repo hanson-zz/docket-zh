@@ -78,6 +78,10 @@ struct RecorderDetail: View {
             .onChange(of: focus) { old, new in
                 if old == .rename, new != .rename { commitRename() }
             }
+            // 编辑着的录音在访达里被删掉、或 Pro 到期：回到浏览，下次不会误回编辑态。
+            .onChange(of: editingRecording == nil) { _, gone in
+                if gone, mode == .edit { leaveEdit(showing: nil) }
+            }
         }
         .onAppear {
             guard !context.isPreview else { return }
