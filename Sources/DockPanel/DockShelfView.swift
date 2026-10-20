@@ -506,6 +506,10 @@ struct DockShelfView: View {
                   initial: true) { _, kinds in
             WidgetConditionMonitor.shared.watch(kinds)
         }
+        .onChange(of: WidgetConditionMonitor.musicBrowsersAllowed(in: app.customProfile?.items ?? []),
+                  initial: true) { _, allowed in
+            if let allowed { BrowserMedia.shared.enabled = allowed }
+        }
         // Every GitHub widget's repositories, checked on the service's own
         // clock: a widget hidden until there is new feedback has no tile to
         // drive its refresh.

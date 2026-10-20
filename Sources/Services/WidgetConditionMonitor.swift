@@ -27,6 +27,16 @@ final class WidgetConditionMonitor {
         }.map(\.kind))
     }
 
+    /// 按条件显示的「正在播放」卡片允不允许读浏览器标签页（任一张允许就算）；
+    /// 没有这样的卡片是 nil。卡片藏着时没人替它同步这个开关。
+    static func musicBrowsersAllowed(in items: [DockItem]) -> Bool? {
+        let music = items.compactMap(\.widget).filter {
+            $0.kind == .music && WidgetVisibility.mode($0.config) == .conditional
+        }
+        guard !music.isEmpty else { return nil }
+        return music.contains { $0.config.bool("browsers", default: true) }
+    }
+
     func watch(_ kinds: Set<WidgetKind>) {
         watched = kinds
         guard !kinds.isEmpty else {
@@ -36,7 +46,8 @@ final class WidgetConditionMonitor {
         }
         // The services are idempotent and shared with the tiles; starting
         // one the user already has a tile for costs nothing.
-        if kinds.contains(.music) { MusicService.shared.start() }
+        // 浏览器标签页在播也算「正在播放」，卡片藏着时也得有人读它。
+        if kinds.contains(.music) { MusicService.shared.start(); BrowserMedia.shared.start() }
         if kinds.contains(.battery) { BatteryMetrics.shared.start() }
         if kinds.contains(.mail) { MailService.shared.start() }
         if kinds.contains(.microphone) { MicrophoneMonitor.shared.start() }
@@ -57,7 +68,13 @@ final class WidgetConditionMonitor {
             let music = MusicService.shared
             // Waiting on consent is not "nothing playing": the tile has to
             // stay up so its connect button can be pressed.
-            next.musicPlaying = music.needsAutomationPermission ? nil : (music.nowPlaying?.isPlaying ?? false)
+            // 任一播放器或允许的浏览器标签页在播就算，和面板固定在哪个来源无关
+            // （Core `MusicCardChoice.anyPlaying`）。
+            let browser = BrowserMedia.shared.enabled
+                ? BrowserMedia.shared.track.map { MusicCardChoice.Browser(hasTrack: true, isPlaying: $0.isPlaying) }
+                : nil
+            next.musicPlaying = music.needsAutomationPermission
+                ? nil : MusicCardChoice.anyPlaying(players: music.switchPlayers, browser: browser)
         }
         if watched.contains(.battery), let mac = BatteryMetrics.shared.device(.mac), mac.present {
             next.onBattery = !mac.onPower

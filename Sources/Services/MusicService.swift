@@ -102,6 +102,15 @@ public final class MusicService {
     /// 自动切换关着时固定用的来源。
     public private(set) var pinned: MusicSource?
 
+    /// 卡片正在显示的播放器（Core `MusicCardChoice` 挑的，卡片告诉服务）。不是面板的
+    /// 来源时，服务另外给它取封面。
+    public private(set) var cardSource: MusicSource?
+    /// 卡片来源的封面，只在它不是面板来源时用。
+    @ObservationIgnored private var cardArtworkKey: String?
+    private var cardArtwork: (key: String, image: NSImage?, tint: ArtworkTint?)?
+    /// 上次读到的各来源封面怎么取，卡片换来源时用。
+    @ObservationIgnored private var artworkRefs: [MusicSource: Bridge.ArtworkRef] = [:]
+
     /// Spotify「刚才听过」，只存在本机。
     public private(set) var recent = MusicRecent.decode(UserDefaults.standard.data(forKey: MusicRecent.defaultsKey))
 
@@ -261,6 +270,8 @@ public final class MusicService {
         }
         recordRecent(next)
         players = next
+        artworkRefs = Dictionary(result.players.compactMap { reading in reading.artworkRef.map { (reading.source, $0) } },
+                                 uniquingKeysWith: { a, _ in a })
 
         let chosen = MusicSourceSwitch.choose(
             players: next.map { MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true) },
@@ -271,6 +282,52 @@ public final class MusicService {
         let ref = result.players.first(where: { $0.source == chosen })?.artworkRef
         await show(next.first(where: { $0.source == chosen })?.track, artworkRef: ref)
         refreshUpNext()
+        refreshCardArtwork()
+    }
+
+    // MARK: 卡片
+
+    /// 给 Core 挑来源用的样子。面板来源用 `nowPlaying` 的播放状态（刚点过暂停时
+    /// 它先变）。
+    public var switchPlayers: [MusicSourceSwitch.Player] {
+        players.map { player in
+            let track = player.source == current ? (nowPlaying ?? player.track) : player.track
+            return MusicSourceSwitch.Player(source: player.source, hasTrack: track != nil,
+                                            isPlaying: track?.isPlaying == true)
+        }
+    }
+
+    /// 卡片换了来源（Core 挑的）。不是面板来源时去取它的封面。
+    public func setCardSource(_ source: MusicSource?) {
+        guard cardSource != source else { return }
+        cardSource = source
+        refreshCardArtwork()
+    }
+
+    /// 某个来源此刻的曲目：面板来源就是 `nowPlaying`，别的来源用列表里的读数加卡片
+    /// 自己取的封面。
+    public func track(for source: MusicSource) -> NowPlaying? {
+        if source == current { return nowPlaying }
+        guard var track = players.first(where: { $0.source == source })?.track else { return nil }
+        if let art = cardArtwork, art.key == track.trackKey {
+            track.artwork = art.image
+            track.tint = art.tint
+        }
+        return track
+    }
+
+    private func refreshCardArtwork() {
+        guard let source = cardSource, source != current,
+              let track = players.first(where: { $0.source == source })?.track else { return }
+        let key = track.trackKey
+        guard key != cardArtworkKey else { return }
+        cardArtworkKey = key
+        let ref = artworkRefs[source]
+        Task {
+            let found = await withTimeout(seconds: 5) { await Bridge.artwork(for: ref) }
+            guard self.cardArtworkKey == key else { return }
+            self.cardArtwork = (key, found?.image, found?.tint)
+        }
     }
 
     /// 来源变了（用户在面板里点、固定来源改了）就用已有的读数立即换上，不等下一次轮询。
@@ -432,6 +489,59 @@ public final class MusicService {
     }
 
     public func next() { command("next track") }
+
+    // 卡片上的按钮：控制卡片显示的那个来源，不换面板的来源（固定着时也不动它）。
+
+    public func playPause(on source: MusicSource) {
+        guard source != current else { return playPause() }
+        command("playpause", to: source)
+    }
+
+    public func next(on source: MusicSource) {
+        guard source != current else { return next() }
+        command("next track", to: source)
+    }
+
+    public func previous(on source: MusicSource) {
+        guard source != current else { return previous() }
+        guard let track = track(for: source) else { return }
+        if source.canSeek && track.elapsed > 3 {
+            seek(on: source, to: 0)
+        } else {
+            optimistically(source) { $0.elapsed = 0 }
+            Bridge.send("previous track", to: source)
+        }
+    }
+
+    public func seek(on source: MusicSource, to seconds: TimeInterval) {
+        guard source != current else { return seek(to: seconds) }
+        guard let track = track(for: source), source.canSeek else { return }
+        let target = max(0, track.duration > 0 ? min(seconds, track.duration) : seconds)
+        optimistically(source) { $0.elapsed = target }
+        lastCommand = .now
+        Bridge.send("set player position to \(String(format: "%.2f", target))", to: source)
+    }
+
+    public func skip(on source: MusicSource, by seconds: TimeInterval) {
+        guard let track = track(for: source) else { return }
+        seek(on: source, to: track.elapsed + seconds)
+    }
+
+    /// 发给不是面板来源的播放器。
+    private func command(_ body: String, to source: MusicSource) {
+        guard canControl(source) else { return }
+        if body == "playpause" { optimistically(source) { $0.isPlaying.toggle() } }
+        lastCommand = .now
+        Bridge.send(body, to: source)
+    }
+
+    /// 不是面板来源的播放器：先改列表里的读数，下一次轮询换成真的。
+    private func optimistically(_ source: MusicSource, _ change: (inout NowPlaying) -> Void) {
+        guard let index = players.firstIndex(where: { $0.source == source }),
+              var track = players[index].track else { return }
+        change(&track)
+        players[index].track = track
+    }
 
     /// What both apps do natively: restart the track if we are past the first
     /// few seconds, otherwise step back one.

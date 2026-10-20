@@ -38,6 +38,8 @@ struct MusicDetail: View {
     private var sources: [MusicSource] { MusicSource.enabled(in: config) }
     private var browsersEnabled: Bool { config.bool("browsers", default: true) }
     private var autoSwitch: Bool { MusicSourceSwitch.autoSwitch(config) }
+    /// 固定着的来源（关了自动切换并选过来源）。
+    private var pinnedSource: MusicSource? { MusicPin.pinned(config) }
 
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
     private let ink = Color.white
@@ -179,6 +181,18 @@ struct MusicDetail: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(tr("切换来源"))
+            if let pinned = pinnedSource, source == pinned, track?.isBrowser != true {
+                Text("已固定")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 9)
+                    .frame(height: 24)
+                    .background(Capsule().fill(.white.opacity(0.10)))
+                    .padding(.leading, 8)
+                    .help(tr("你固定了这个来源，别的播放器不会顶掉它"))
+            }
             Spacer(minLength: 8)
             if let bundleID {
                 Button {
@@ -708,7 +722,8 @@ struct MusicDetail: View {
         .padding(.top, 14)
     }
 
-    private func section(_ title: String, right: String? = nil, action: (() -> Void)? = nil) -> some View {
+    private func section(_ title: String, right: String? = nil, rightTint: Color = .white.opacity(0.75),
+                         action: (() -> Void)? = nil) -> some View {
         HStack {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
@@ -720,7 +735,7 @@ struct MusicDetail: View {
                     Button(right) { guard !context.isPreview else { return }; action() }
                         .buttonStyle(.plain)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(rightTint)
                 } else {
                     Text(right)
                         .font(.system(size: 13, weight: .semibold))
@@ -981,11 +996,26 @@ struct MusicDetail: View {
         MusicService.shared.configure(updated)
     }
 
+    /// 取消固定：回到「谁开始播放就切到谁」（autoSwitch 开、清掉 pinned）。
+    private func unpin() {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(current) { MusicPin.unpin(&$0) }
+        var updated = config
+        MusicPin.unpin(&updated)
+        MusicService.shared.configure(updated)
+    }
+
     // MARK: 没在播放
 
     private var idle: some View {
         let target = shownSource
-        let others = context.isPreview ? [] : MusicService.shared.players.filter { $0.source != target && $0.track != nil }
+        let pinned = pinnedSource != nil
+        let players = context.isPreview ? [] : MusicService.shared.players
+        // 固定着时只列别的正在播的（「其他正在播的」），否则列别的有曲目的。
+        let otherSources = MusicPin.others(players: players.map {
+            MusicSourceSwitch.Player(source: $0.source, hasTrack: $0.track != nil, isPlaying: $0.track?.isPlaying == true)
+        }, shown: target, pinned: pinned)
+        let others = players.filter { otherSources.contains($0.source) }
         let setup = browserSetupHint
         return VStack(spacing: 0) {
             if let image = PandaArt.image("pet-panda-rest") {
@@ -1023,7 +1053,19 @@ struct MusicDetail: View {
                 .buttonStyle(PressScale())
                 .padding(.top, 18)
             }
-            if !others.isEmpty {
+            if pinned {
+                // 固定着：标题改「其他正在播的」，右边「取消固定」回到谁开始播放就切到谁。
+                section(tr("其他正在播的"), right: tr("取消固定"), rightTint: Color(hex: "#45D483")) { unpin() }
+                if others.isEmpty {
+                    note(tr("别的播放器也没在播"))
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(others, id: \.source) { player in
+                            otherRow(player)
+                        }
+                    }
+                }
+            } else if !others.isEmpty {
                 section(tr("其他开着的"))
                 VStack(spacing: 8) {
                     ForEach(others, id: \.source) { player in

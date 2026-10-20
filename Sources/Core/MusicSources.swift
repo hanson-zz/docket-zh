@@ -137,6 +137,89 @@ public enum MusicSourceSwitch {
     }
 }
 
+/// 卡片显示哪一首。
+///
+/// 卡片只回答「现在在放什么」：任一播放器（包括允许的浏览器标签页）在放就显示它，
+/// 和面板固定在哪个来源无关（固定只管面板打开时停在哪）。全都没在放时，卡片在
+/// 「正在播放时显示」下照旧隐藏（`anyPlaying`），始终显示时停在刚才那首。
+public enum MusicCardChoice {
+    public enum Pick: Equatable, Sendable {
+        case native(MusicSource)
+        case browser
+        case none
+
+        public var source: MusicSource? {
+            if case .native(let source) = self { return source }
+            return nil
+        }
+    }
+
+    /// 浏览器标签页此刻的样子；不允许浏览器时传 nil。
+    public struct Browser: Equatable, Sendable {
+        public var hasTrack: Bool
+        public var isPlaying: Bool
+
+        public init(hasTrack: Bool, isPlaying: Bool) {
+            self.hasTrack = hasTrack
+            self.isPlaying = isPlaying
+        }
+    }
+
+    /// - `players`：开着的播放器，按偏好顺序。
+    /// - `current`：面板正在看的来源（可能是固定的、暂停的）。
+    /// - `last`：卡片上一次显示的，两个同时在放时不来回跳。
+    ///
+    /// 在放的优先：上次显示的还在放就不换，其次面板的来源，再按偏好顺序；播放器
+    /// 在放时浏览器让位（和原来一样）。都没在放：上次显示的还有曲目就留着，否则
+    /// 面板的来源、第一个有曲目的播放器、浏览器。
+    public static func pick(players: [MusicSourceSwitch.Player], current: MusicSource?,
+                            browser: Browser?, last: Pick?) -> Pick {
+        let playing = players.filter(\.isPlaying)
+        if let source = last?.source, playing.contains(where: { $0.source == source }) { return .native(source) }
+        if let current, playing.contains(where: { $0.source == current }) { return .native(current) }
+        if let first = playing.first { return .native(first.source) }
+        if browser?.isPlaying == true { return .browser }
+
+        switch last {
+        case .native(let source) where players.contains(where: { $0.source == source && $0.hasTrack }):
+            return .native(source)
+        case .browser where browser?.hasTrack == true:
+            return .browser
+        default:
+            break
+        }
+        if let current, players.contains(where: { $0.source == current && $0.hasTrack }) { return .native(current) }
+        if let first = players.first(where: \.hasTrack) { return .native(first.source) }
+        if browser?.hasTrack == true { return .browser }
+        return .none
+    }
+
+    /// 「正在播放时显示」：任一播放器或允许的浏览器标签页在放。
+    public static func anyPlaying(players: [MusicSourceSwitch.Player], browser: Browser?) -> Bool {
+        players.contains(where: \.isPlaying) || browser?.isPlaying == true
+    }
+}
+
+/// 面板固定来源的样子：「已固定」小标、「其他正在播的」和「取消固定」。
+public enum MusicPin {
+    /// 固定着的来源：关了自动切换并且选过来源。
+    public static func pinned(_ config: WidgetConfig) -> MusicSource? {
+        MusicSourceSwitch.autoSwitch(config) ? nil : MusicSourceSwitch.pinned(config)
+    }
+
+    /// 取消固定：回到「谁开始播放就切到谁」，清掉固定的来源。
+    public static func unpin(_ config: inout WidgetConfig) {
+        config.set(MusicSourceSwitch.autoKey, .bool(true))
+        config.set(MusicSourceSwitch.pinnedKey, nil)
+    }
+
+    /// 没在播放时下面列哪些播放器：固定着时只列别的正在播的，否则列别的有曲目的。
+    public static func others(players: [MusicSourceSwitch.Player], shown: MusicSource?,
+                              pinned: Bool) -> [MusicSource] {
+        players.filter { $0.source != shown && (pinned ? $0.isPlaying : $0.hasTrack) }.map(\.source)
+    }
+}
+
 /// 循环模式。Apple 音乐有全部和单曲，Spotify 只有开关（开就是全部）。
 public enum MusicRepeat: String, Sendable, Equatable, CaseIterable {
     case off, all, one

@@ -7642,6 +7642,17 @@
         }
       }
     },
+    "你固定了这个来源，别的播放器不会顶掉它" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You pinned this source, so other players will not take over"
+          }
+        }
+      }
+    },
     "你好，世界" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9193,6 +9204,17 @@
         }
       }
     },
+    "其他正在播的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also playing"
+          }
+        }
+      }
+    },
     "内存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10113,6 +10135,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Don't get too busy, take a sip and carry on. %@ to go today."
+          }
+        }
+      }
+    },
+    "别的播放器也没在播" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing else is playing"
           }
         }
       }
@@ -17107,6 +17140,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already rang"
+          }
+        }
+      }
+    },
+    "已固定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned"
           }
         }
       }

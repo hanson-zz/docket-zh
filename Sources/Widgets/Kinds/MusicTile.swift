@@ -16,6 +16,8 @@ struct MusicTile: View {
     @Environment(\.colorScheme) private var scheme
     var instance: WidgetInstance
     var context: WidgetContext
+    /// 卡片上一次显示的，两个来源同时在放时不来回跳（Core `MusicCardChoice`）。
+    @State private var lastPick: MusicCardChoice.Pick?
 
     private var config: WidgetConfig { instance.config }
     private var isMini: Bool { config.bool("mini") }
@@ -63,20 +65,35 @@ struct MusicTile: View {
 
     /// Whichever source has something to show.
     ///
-    /// A native player always wins while it is actually playing; a browser
-    /// only gets a look in once Spotify and Music have nothing going on.
+    /// 卡片只管「现在在放什么」：任一播放器（含允许的浏览器标签页）在放就显示那首，
+    /// 面板固定在哪个来源不影响卡片。挑法在 Core `MusicCardChoice.pick`：播放器在放时
+    /// 浏览器让位，都没在放时停在刚才那首。
+    private var pick: MusicCardChoice.Pick {
+        guard !context.isPreview else { return .none }
+        let service = MusicService.shared
+        let browser = browserTrack.map { MusicCardChoice.Browser(hasTrack: true, isPlaying: $0.isPlaying) }
+        return MusicCardChoice.pick(players: service.switchPlayers, current: service.current,
+                                    browser: browser, last: lastPick)
+    }
+
+    private var browserTrack: Playing? {
+        guard browsersEnabled else { return nil }
+        return BrowserMedia.shared.track.map {
+            Playing(browser: $0, artwork: BrowserMedia.shared.artwork,
+                    icon: BrowserMedia.shared.siteIcon, tint: BrowserMedia.shared.tint)
+        }
+    }
+
     private var playing: Playing? {
         if context.isPreview { return Self.sample }
-        let native = MusicService.shared.nowPlaying.map(Playing.init(native:))
-        let browser = browsersEnabled
-            ? BrowserMedia.shared.track.map {
-                Playing(browser: $0, artwork: BrowserMedia.shared.artwork,
-                        icon: BrowserMedia.shared.siteIcon, tint: BrowserMedia.shared.tint)
-            }
-            : nil
-        if native?.isPlaying == true { return native }
-        if browser?.isPlaying == true { return browser }
-        return native ?? browser
+        switch pick {
+        case .native(let source):
+            return MusicService.shared.track(for: source).map(Playing.init(native:))
+        case .browser:
+            return browserTrack
+        case .none:
+            return MusicService.shared.nowPlaying.map(Playing.init(native:)) ?? browserTrack
+        }
     }
 
     /// Consent is per target app, so a browser can be blocked while Spotify is
@@ -118,6 +135,11 @@ struct MusicTile: View {
         }
         .onChange(of: browsersEnabled) { _, new in
             if !context.isPreview { BrowserMedia.shared.enabled = new }
+        }
+        .onChange(of: pick, initial: true) { _, new in
+            guard !context.isPreview else { return }
+            lastPick = new
+            MusicService.shared.setCardSource(new.source)
         }
     }
 
@@ -185,12 +207,13 @@ struct MusicTile: View {
         // where every other control's preview guard sits.
         guard !context.isPreview else { return }
         if track.isBrowser { BrowserMedia.shared.playPause() }
+        else if let source = track.source { MusicService.shared.playPause(on: source) }
         else { MusicService.shared.playPause() }
     }
 
     private func strip(_ track: Playing) -> some View {
         HStack(spacing: 11) {
-            Artwork(image: track.artwork, fallback: sourceIcon(track), side: 38, corner: 8,
+            Artwork(image: track.artwork, fallback: sourceIcon(track), badge: badge(track), side: 38, corner: 8,
                     isPlaying: track.isPlaying) { toggle(track) }
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
@@ -247,7 +270,7 @@ struct MusicTile: View {
                     guard !context.isPreview, !track.isBrowser, track.canSeek,
                           geo.size.width > 0, track.duration > 0 else { return }
                     let ratio = min(1, max(0, location.x / geo.size.width))
-                    MusicService.shared.seek(to: ratio * track.duration)
+                    if let source = track.source { MusicService.shared.seek(on: source, to: ratio * track.duration) }
                 }
             }
             .frame(height: 4)
@@ -271,7 +294,7 @@ struct MusicTile: View {
     /// bar, so the column spends its height on the track instead.
     private func column(_ track: Playing) -> some View {
         VStack(spacing: 3) {
-            Artwork(image: track.artwork, fallback: sourceIcon(track), side: 32, corner: 7)
+            Artwork(image: track.artwork, fallback: sourceIcon(track), badge: badge(track), side: 32, corner: 7)
             VStack(spacing: 0) {
                 title(track, size: 10)
                 HStack(spacing: 3) {
@@ -328,22 +351,39 @@ struct MusicTile: View {
             let skip = max(1, config.int("skip", default: 15))
             HStack(spacing: spacing) {
                 if config.bool("backward"), track.canSeek {
-                    button(skipSymbol("gobackward", skip), size) { MusicService.shared.skip(by: -Double(skip)) }
+                    button(skipSymbol("gobackward", skip), size) { skipBy(track, -Double(skip)) }
                 }
                 if config.bool("previous", default: true) {
-                    button("backward.end.fill", size) { MusicService.shared.previous() }
+                    button("backward.end.fill", size) {
+                        if let source = track.source { MusicService.shared.previous(on: source) }
+                    }
                 }
                 if playPause {
                     button(track.isPlaying ? "pause.fill" : "play.fill", size) { toggle(track) }
                 }
                 if config.bool("next", default: true) {
-                    button("forward.end.fill", size) { MusicService.shared.next() }
+                    button("forward.end.fill", size) {
+                        if let source = track.source { MusicService.shared.next(on: source) }
+                    }
                 }
                 if config.bool("forward"), track.canSeek {
-                    button(skipSymbol("goforward", skip), size) { MusicService.shared.skip(by: Double(skip)) }
+                    button(skipSymbol("goforward", skip), size) { skipBy(track, Double(skip)) }
                 }
             }
         }
+    }
+
+    /// 卡片按钮控制卡片上这首的来源，不是面板固定的那个。
+    private func skipBy(_ track: Playing, _ seconds: Double) {
+        guard let source = track.source else { return }
+        MusicService.shared.skip(on: source, by: seconds)
+    }
+
+    /// 封面左下角的来源小图标：有封面时才叠，一眼看出是哪个 App 在放。没封面时
+    /// 方块里画的就是这个图标，不再叠一份。
+    private func badge(_ track: Playing) -> NSImage? {
+        guard track.artwork != nil else { return nil }
+        return sourceIcon(track)
     }
 
     /// SF Symbols only ships numbered skip glyphs for a handful of intervals;
@@ -518,6 +558,8 @@ private struct Artwork: View {
     /// Drawn instead of the note when there is no album art: the icon of
     /// whichever app is playing.
     var fallback: NSImage?
+    /// 叠在封面左下角的来源 App 小图标（约 18pt）。
+    var badge: NSImage? = nil
     var side: CGFloat
     var corner: CGFloat
     /// When set, the artwork itself toggles playback.
@@ -594,5 +636,21 @@ private struct Artwork: View {
             .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
             .frame(width: side, height: side)
             .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .overlay(alignment: .bottomLeading) {
+                if let badge {
+                    // 在圆角外裁之后叠，图标自己的圆角和阴影不被封面裁掉；
+                    // 往外探 2pt，压在封面角上而不是盖住画面中间。
+                    let size = min(18, side * 0.5)
+                    Image(nsImage: badge)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size, height: size)
+                        .shadow(color: .black.opacity(0.45), radius: 1.5, y: 0.5)
+                        .offset(x: -2, y: 2)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
     }
 }
