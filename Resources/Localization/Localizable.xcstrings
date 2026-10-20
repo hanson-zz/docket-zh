@@ -232,6 +232,17 @@
         }
       }
     },
+    "%@ · %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ pictures"
+          }
+        }
+      }
+    },
     "%@ · %@ 张 · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -694,6 +705,17 @@
         }
       }
     },
+    "%@ 个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ folders"
+          }
+        }
+      }
+    },
     "%@ 个新单集" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -987,6 +1009,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rings in %@ min"
+          }
+        }
+      }
+    },
+    "%@ 分钟后换下一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next picture in %@ min"
           }
         }
       }
@@ -1427,6 +1460,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ yr ago"
+          }
+        }
+      }
+    },
+    "%@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pictures"
           }
         }
       }
@@ -1882,6 +1926,17 @@
         }
       }
     },
+    "%@ 秒后换下一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next picture in %@ s"
+          }
+        }
+      }
+    },
     "%@ 等 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2164,6 +2219,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Decrease %@"
+          }
+        }
+      }
+    },
+    "%@几点换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: change at"
           }
         }
       }
@@ -5211,6 +5277,17 @@
         }
       }
     },
+    "不再轮到这张，可在设置里恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip this picture from now on. Restore it in Settings"
+          }
+        }
+      }
+    },
     "不到 1 分钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7114,6 +7191,17 @@
         }
       }
     },
+    "今天没有往年的照片，先放文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No photos from this day in past years, so the folders play for now"
+          }
+        }
+      }
+    },
     "今天没有日程" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7583,6 +7671,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove %@ from favorites"
+          }
+        }
+      }
+    },
+    "从收藏随机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Random favorite"
+          }
+        }
+      }
+    },
+    "从文件选择…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose from File…"
           }
         }
       }
@@ -9468,6 +9578,17 @@
         }
       }
     },
+    "全部恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore All"
+          }
+        }
+      }
+    },
     "全部时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11092,6 +11213,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminder sound"
+          }
+        }
+      }
+    },
+    "到点放哪张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Picture to use"
           }
         }
       }
@@ -12896,6 +13028,17 @@
         }
       }
     },
+    "取消收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Favorites"
+          }
+        }
+      }
+    },
     "取消星标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14652,6 +14795,17 @@
         }
       }
     },
+    "固定这张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This picture"
+          }
+        }
+      }
+    },
     "国内" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14736,6 +14890,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Image %@×%@"
+          }
+        }
+      }
+    },
+    "图片 · 248 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pictures · 248 pictures"
           }
         }
       }
@@ -16385,6 +16550,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Conditions"
+          }
+        }
+      }
+    },
+    "天气还没有定位，先按上面的时刻" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather has no location yet, so the times above are used"
           }
         }
       }
@@ -18992,6 +19168,28 @@
         }
       }
     },
+    "已排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped"
+          }
+        }
+      }
+    },
+    "已排除 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ skipped"
+          }
+        }
+      }
+    },
     "已接电源" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20689,6 +20887,17 @@
         }
       }
     },
+    "当前壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current wallpaper"
+          }
+        }
+      }
+    },
     "当前壁纸：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21316,6 +21525,17 @@
         }
       }
     },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset"
+          }
+        }
+      }
+    },
     "快速开始" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21576,6 +21796,17 @@
         }
       }
     },
+    "恢复这张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore this picture"
+          }
+        }
+      }
+    },
     "恢复默认" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21594,6 +21825,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sydney"
+          }
+        }
+      }
+    },
+    "悬停可排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover to skip"
           }
         }
       }
@@ -21979,6 +22221,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All displays"
+          }
+        }
+      }
+    },
+    "所有显示器一起换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change all displays"
           }
         }
       }
@@ -22562,6 +22815,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repo not found (or it's private)"
+          }
+        }
+      }
+    },
+    "找不到这张了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This picture can no longer be found"
           }
         }
       }
@@ -23325,6 +23589,39 @@
         }
       }
     },
+    "按所在城市的日出日落时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses sunrise and sunset where you are"
+          }
+        }
+      }
+    },
+    "按时间自动换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change by time of day"
+          }
+        }
+      }
+    },
+    "按时间自动换是码头 Pro 功能，解锁后到点自己换。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changing by time of day is a Dockling Pro feature. Unlock it and the wallpaper changes on its own."
+          }
+        }
+      }
+    },
     "按法定节假日和调休" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23380,6 +23677,17 @@
         }
       }
     },
+    "换一张的间隔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change every"
+          }
+        }
+      }
+    },
     "换下一种环境音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23409,6 +23717,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Handheld Pixel"
+          }
+        }
+      }
+    },
+    "排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
           }
         }
       }
@@ -23655,6 +23974,17 @@
         }
       }
     },
+    "收藏 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites %@"
+          }
+        }
+      }
+    },
     "收藏 %@ / %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23662,6 +23992,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favorites %@ / %@"
+          }
+        }
+      }
+    },
+    "收藏 %@ 张 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ favorites · %@"
+          }
+        }
+      }
+    },
+    "收藏 8 张 · 所有显示器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8 favorites · All displays"
           }
         }
       }
@@ -23695,6 +24047,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@ favorites. Remove a few first."
+          }
+        }
+      }
+    },
+    "收藏随机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Random favorite"
           }
         }
       }
@@ -23754,6 +24117,17 @@
         }
       }
     },
+    "改时刻" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the time"
+          }
+        }
+      }
+    },
     "放 %@ 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23761,6 +24135,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ days off"
+          }
+        }
+      }
+    },
+    "放哪些照片 · 多久换一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which photos · How often"
+          }
+        }
+      }
+    },
+    "放哪些照片、多久换一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which photos to show and how often"
           }
         }
       }
@@ -23963,6 +24359,39 @@
         }
       }
     },
+    "早上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morning"
+          }
+        }
+      }
+    },
+    "早中晚各一张，到点自己换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One for morning, midday and night, changed on time"
+          }
+        }
+      }
+    },
+    "早中晚各一张，到点自己换（Pro）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One for morning, midday and night, changed on time (Pro)"
+          }
+        }
+      }
+    },
     "时间定在周五晚上七点" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24161,6 +24590,17 @@
         }
       }
     },
+    "最多 %@ 个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ folders"
+          }
+        }
+      }
+    },
     "最多 12 个城市，至少留 1 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24168,6 +24608,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to 12 cities, at least 1"
+          }
+        }
+      }
+    },
+    "最多收藏 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@ favorites"
           }
         }
       }
@@ -24799,6 +25250,17 @@
         }
       }
     },
+    "没有勾选的文件夹。点“设置”勾选一个，或添加文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No folder is ticked. Click \"Settings\" to tick one or add a folder."
+          }
+        }
+      }
+    },
     "没有名字里带“%@”的快捷指令。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24839,6 +25301,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No unread mail. Take a break."
+          }
+        }
+      }
+    },
+    "没有照片图库的权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No access to the Photos library"
           }
         }
       }
@@ -25030,6 +25503,17 @@
         }
       }
     },
+    "浏览时悬停在照片上点“排除”，就不再轮到它" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over a photo while browsing and click \"Skip\" to leave it out"
+          }
+        }
+      }
+    },
     "浓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25114,6 +25598,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Favorite"
+          }
+        }
+      }
+    },
+    "添加文件夹…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Folder…"
           }
         }
       }
@@ -25261,6 +25756,17 @@
         }
       }
     },
+    "点一下撤销排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to undo"
+          }
+        }
+      }
+    },
     "点一下沿用" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25268,6 +25774,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to reuse"
+          }
+        }
+      }
+    },
+    "点一下用现在的壁纸，右键从文件选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to use the current wallpaper, or Control-click to choose a file"
           }
         }
       }
@@ -25290,6 +25807,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the dial to change stations"
+          }
+        }
+      }
+    },
+    "点右上角恢复这张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the corner button to restore a picture"
           }
         }
       }
@@ -33913,6 +34441,28 @@
         }
       }
     },
+    "点星星收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a star to favorite"
+          }
+        }
+      }
+    },
+    "点照片在预览里打开 · 拖出去就能用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to open in Preview · Drag out to use"
+          }
+        }
+      }
+    },
     "点状" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33986,6 +34536,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Melting, take a break"
+          }
+        }
+      }
+    },
+    "照片图库里往年今天拍的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos taken on this day in past years"
           }
         }
       }
@@ -34239,6 +34800,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not now? Click \"Skip\". To see it again later, reopen this guide in \"Settings ▸ General\"."
+          }
+        }
+      }
+    },
+    "现在是每 %@ 换一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currently changes every %@"
           }
         }
       }
@@ -34518,6 +35090,17 @@
         }
       }
     },
+    "用当前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use current"
+          }
+        }
+      }
+    },
     "用得偏快" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34580,6 +35163,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open in Browser"
+          }
+        }
+      }
+    },
+    "用现在的壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Current Wallpaper"
           }
         }
       }
@@ -35185,6 +35779,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Standard Photo Frame"
+          }
+        }
+      }
+    },
+    "相册设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Frame Settings"
           }
         }
       }
@@ -36296,6 +36901,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove All Spacers"
+          }
+        }
+      }
+    },
+    "移除这个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove This Folder"
           }
         }
       }
@@ -37462,6 +38078,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rain in about %@ min"
+          }
+        }
+      }
+    },
+    "约 %@ 小时后换下一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next picture in about %@ h"
           }
         }
       }
@@ -38679,6 +39306,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Automation (Music)"
+          }
+        }
+      }
+    },
+    "自动换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Change"
+          }
+        }
+      }
+    },
+    "自动换壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Change"
           }
         }
       }
@@ -40219,6 +40868,17 @@
         }
       }
     },
+    "设为壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set as Wallpaper"
+          }
+        }
+      }
+    },
     "设为壁纸：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41418,6 +42078,28 @@
         }
       }
     },
+    "跟着日出日落走" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow sunrise and sunset"
+          }
+        }
+      }
+    },
+    "跟着日出日落走时按天气定位的城市算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Worked out for the city Weather is set to"
+          }
+        }
+      }
+    },
     "跟随系统" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41557,6 +42239,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Reminders"
+          }
+        }
+      }
+    },
+    "轮播文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders"
           }
         }
       }
@@ -42562,6 +43255,28 @@
         }
       }
     },
+    "还没有收藏。点小图右上角的星星收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No favorites yet. Click the star on a picture to add it"
+          }
+        }
+      }
+    },
+    "还没有收藏，到点不会换。先在浏览里点星星收藏几张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No favorites yet, so nothing changes on time. Star a few pictures first"
+          }
+        }
+      }
+    },
     "还没有电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43145,6 +43860,17 @@
         }
       }
     },
+    "这里的照片都排除了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every photo here is skipped"
+          }
+        }
+      }
+    },
     "这里还没有小组件。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43519,6 +44245,17 @@
         }
       }
     },
+    "选一张到点放的图片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a picture for this time"
+          }
+        }
+      }
+    },
     "选一种颜色后，色调强度和文字颜色才会生效。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43867,6 +44604,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On this day"
+          }
+        }
+      }
+    },
+    "那年今天优先" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On this day first"
           }
         }
       }

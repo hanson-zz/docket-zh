@@ -565,6 +565,7 @@ struct WidgetSettingsSections: View {
         "folder": tr("文件夹"),
         "interval": tr("切换间隔"),
         "shuffle": tr("随机顺序"),
+        "memoriesFirst": tr("那年今天优先"),
         "emoji": tr("常用表情"),
         "engine": tr("搜索引擎"),
         "allScreens": tr("应用到所有显示器"),
@@ -709,6 +710,10 @@ struct WidgetSettingsSections: View {
         if kind == .posture, key == PostureTrack.goalKey {
             return Double(PostureTrack.goalRange.lowerBound)...Double(PostureTrack.goalRange.upperBound)
         }
+        // 相册的间隔：1 分钟到每天，和面板里的四档一样。
+        if kind == .photos, key == PhotoRotation.intervalKey {
+            return 60...PhotoRotation.maximumInterval
+        }
         return switch key {
         case "duration": 60...14_400
         case "skip": 5...60
@@ -725,6 +730,7 @@ struct WidgetSettingsSections: View {
 
     static func step(_ key: String, kind: WidgetKind? = nil) -> Double {
         if kind == .posture, key == PostureTrack.goalKey { return 1 }
+        if kind == .photos, key == PhotoRotation.intervalKey { return 60 }
         return switch key {
         case "duration": 300
         case "goal": 100
@@ -737,6 +743,7 @@ struct WidgetSettingsSections: View {
 
     static func format(_ key: String, _ value: Double, kind: WidgetKind? = nil) -> String {
         if kind == .posture, key == PostureTrack.goalKey { return tr("每天 \(Int(value)) 次") }
+        if kind == .photos, key == PhotoRotation.intervalKey { return PhotoRotation.intervalTitle(value) }
         if key == "alertAt" || key == "volume" { return "\(Int(value))%" }
         if key == "goal" || key == "cupSize" { return tr("\(Int(value)) 毫升") }
         if key == "payday" { return tr("每月 \(Int(value)) 日") }

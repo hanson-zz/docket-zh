@@ -289,9 +289,12 @@ public enum WidgetCatalog {
 
         // Empty folder: ~/Pictures. Chosen in the panel with an open panel;
         // the Settings field is there for anyone who would rather paste.
+        // 多个文件夹、排除的照片和轮播到哪张存在 folders、excluded、anchor 这些键里，
+        // 都在面板里改（见 PhotoRotation），设置里不列。
         Entry(kind: .photos, name: tr("相册"), category: .media,
               defaults: c(["layout": .string("standard"), "folder": .string(""),
-                           "interval": .number(30), "shuffle": .bool(false)]),
+                           "interval": .number(PhotoRotation.defaultInterval), "shuffle": .bool(false),
+                           PhotoRotation.memoriesFirstKey: .bool(true)]),
               // 卡片名突出是相册，和时钟的“标准”分得开；layout 值不变，
               // 已经放好的卡片不受影响。
               variants: [(tr("相册标准"), ["layout": .string("standard")]),
@@ -353,6 +356,8 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
+        // 收藏和按时间自动换（Pro）在面板里设，存在 favorites、autoChange 这些键里
+        // （见 WallpaperSchedule），设置里不列。
         Entry(kind: .wallpaper, name: tr("壁纸切换"), category: .system,
               defaults: c(["folder": .string(""), "allScreens": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),

@@ -112,6 +112,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 起身休息，离开期间到点不提醒。同样看着每个布局里的久坐卡片。
         PostureAwayMonitor.shared.widgets = { [state] in state.allWidgets }
         PostureAwayMonitor.shared.start()
+        // 壁纸按早中晚自动换（Pro）：同样看着每个布局里的壁纸卡片，卡片不在屏幕上也换。
+        WallpaperAutoDriver.shared.widgets = { [state] in state.allWidgets }
+        WallpaperAutoDriver.shared.start()
         // 点弹出卡片主体、点股票或久坐通知时打开小组件面板：卡片在文件夹里、别的
         // 布局里或扩展栏没开时也打得开。
         WidgetPanelOpener.shared.currentItems = { [state] in state.effectiveItems }

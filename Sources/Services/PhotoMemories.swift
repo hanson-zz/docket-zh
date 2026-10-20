@@ -73,6 +73,20 @@ final class PhotoMemories {
         }
     }
 
+    /// 已经给了权限才读，不弹系统的权限请求。相册标准卡片的“那年今天优先”用它，
+    /// 权限在面板里打开那个开关时、或宽幅卡片第一次出现时才去要。
+    func startIfAllowed(now: Date = .now) {
+        let status = Self.status()
+        if status != access { access = status }
+        guard status != .notDetermined else { return }
+        start(now: now)
+    }
+
+    /// 面板里打开“那年今天优先”：还没问过权限就问一次（问过的不再弹）。
+    func requestIfNeeded(now: Date = .now) {
+        start(now: now)
+    }
+
     func openPrivacySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos") {
             NSWorkspace.shared.open(url)

@@ -9,16 +9,16 @@ final class ProFeaturesTests: XCTestCase {
             .slacker, .ambient, .podcast, .trash,
             .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
             .appVolume, .stock, .watchlist, .crypto,
-            .wallpaper, .fileShelf, .translate,
+            .fileShelf, .translate,
         ])
-        XCTAssertEqual(ProFeatures.proKinds.count, 16)
+        XCTAssertEqual(ProFeatures.proKinds.count, 15)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))
         }
         for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar,
                      .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume,
-                     .progress, .habit, .radio, .recorder] {
+                     .progress, .habit, .radio, .recorder, .wallpaper] {
             XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind) 不是整种 Pro")
             XCTAssertFalse(ProFeatures.isPro(kind, overrides: [:]))
         }
@@ -93,7 +93,7 @@ final class ProFeaturesTests: XCTestCase {
 
     func testWholeKindsAddedInThisRoundAreLocked() {
         for kind in [WidgetKind.appVolume, .stock, .watchlist, .crypto,
-                     .wallpaper, .fileShelf, .translate] {
+                     .fileShelf, .translate] {
             XCTAssertTrue(ProFeatures.isProKind(kind), "\(kind)")
             XCTAssertFalse(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: false), "\(kind)")
             XCTAssertTrue(ProLicenseGate.canAdd(kind, overrides: [:], unlocked: true), "\(kind)")
@@ -106,8 +106,8 @@ final class ProFeaturesTests: XCTestCase {
     func testFreeAndProCountsOfTheLibrary() {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
-        XCTAssertEqual(pro.count, 16)
-        XCTAssertEqual(kinds.count - pro.count, 42, "官网和 README 写的免费小组件数量")
+        XCTAssertEqual(pro.count, 15)
+        XCTAssertEqual(kinds.count - pro.count, 43, "官网和 README 写的免费小组件数量")
     }
 
     func testWeatherCitiesIsPro() {

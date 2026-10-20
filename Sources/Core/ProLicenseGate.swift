@@ -37,6 +37,9 @@ import Foundation
 ///   存着的筛选不改写，解锁或试用时回来。账户开关、显示几封等设置照旧免费。
 /// - 麦克风面板的使用记录：免费只看今天；以前的照旧存在本机（最多 30 天），
 ///   不删不改，解锁或试用时能往前翻。
+/// - 壁纸整种免费，按早中晚自动换、跟日出日落、到点从收藏随机是 Pro：没解锁时
+///   面板照样列出这些设置并带 Pro 标，开关弹付费墙；已经打开的不换壁纸，设置
+///   不改写，解锁或试用时自动恢复。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -254,6 +257,14 @@ public enum ProLicenseGate {
 
     /// 麦克风面板能不能往前看 30 天的使用记录；没解锁只看今天，记录照旧留着。
     public static func micHistoryActive(unlocked: Bool) -> Bool { unlocked }
+
+    // MARK: 壁纸自动换
+
+    /// 壁纸按时间自动换在不在生效：要卡片里打开，且 Pro 已解锁。没解锁时
+    /// 不换，`autoChange` 照旧存着，解锁或试用后自动恢复。
+    public static func wallpaperAutoChangeActive(_ config: WidgetConfig, unlocked: Bool) -> Bool {
+        unlocked && config.bool(WallpaperSchedule.autoChangeKey)
+    }
 
     // MARK: AI 刘海对话和充电上限
 
