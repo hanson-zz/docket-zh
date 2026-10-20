@@ -20,6 +20,14 @@ public enum TimeProgress {
     /// 圆环描边、进度条和水的蓝色渐变，从浅到深。
     public static let gradientHex = ("#6ED3FF", "#2F7BFF")
 
+    /// 时间进度用的日历：系统日历，但一周固定从周一开始，不跟系统设置里的
+    /// 每周第一天。卡片和面板都用它，本周进度、第几周、本周七天对得上。
+    public static var calendar: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        return calendar
+    }
+
     public enum Period: String, CaseIterable, Sendable {
         case day, week, month, year
 
@@ -75,13 +83,13 @@ public enum TimeProgress {
 
     /// 当前周期的日历区间。按真实日历算，夏令时那天和闰年都不会错。
     public static func interval(_ period: Period, now: Date,
-                                calendar: Calendar = .current) -> DateInterval? {
+                                calendar: Calendar = TimeProgress.calendar) -> DateInterval? {
         calendar.dateInterval(of: period.component, for: now)
     }
 
     /// 0...1，这个周期过去了多少。
     public static func fraction(_ period: Period, now: Date,
-                                calendar: Calendar = .current) -> Double {
+                                calendar: Calendar = TimeProgress.calendar) -> Double {
         guard let span = interval(period, now: now, calendar: calendar), span.duration > 0 else { return 0 }
         return min(1, max(0, now.timeIntervalSince(span.start) / span.duration))
     }
@@ -93,7 +101,7 @@ public enum TimeProgress {
     }
 
     /// 周期的名字：2026年、10月、第42周、周六。
-    public static func label(_ period: Period, now: Date, calendar: Calendar = .current) -> String {
+    public static func label(_ period: Period, now: Date, calendar: Calendar = TimeProgress.calendar) -> String {
         switch period {
         case .year: return tr("\(calendar.component(.year, from: now))年")
         case .month: return tr("\(calendar.component(.month, from: now))月")
@@ -108,7 +116,7 @@ public enum TimeProgress {
     /// 还剩多少：一天按小时（不到一小时按分钟），更长的周期按天。
     ///
     /// 天数从今天零点数到周期结束，今天也算一天，夏令时不会少算一天。
-    public static func remaining(_ period: Period, now: Date, calendar: Calendar = .current) -> String {
+    public static func remaining(_ period: Period, now: Date, calendar: Calendar = TimeProgress.calendar) -> String {
         guard let end = interval(period, now: now, calendar: calendar)?.end else { return "" }
         switch period {
         case .day:
@@ -132,7 +140,7 @@ public enum TimeProgress {
     }
 
     /// 四格的四行，从长到短：年、月、周、今天。
-    public static func quadRows(now: Date, calendar: Calendar = .current) -> [QuadRow] {
+    public static func quadRows(now: Date, calendar: Calendar = TimeProgress.calendar) -> [QuadRow] {
         [Period.year, .month, .week, .day].map { period in
             let value = TimeProgress.fraction(period, now: now, calendar: calendar)
             return QuadRow(period: period, title: quadTitle(period), fraction: value,
@@ -151,7 +159,7 @@ public enum TimeProgress {
     }
 
     /// 圆环版的说明：「2026年 · 剩 80 天」。
-    public static func caption(_ period: Period, now: Date, calendar: Calendar = .current) -> String {
+    public static func caption(_ period: Period, now: Date, calendar: Calendar = TimeProgress.calendar) -> String {
         let rest = remaining(period, now: now, calendar: calendar)
         let name = label(period, now: now, calendar: calendar)
         return rest.isEmpty ? name : "\(name) · \(rest)"

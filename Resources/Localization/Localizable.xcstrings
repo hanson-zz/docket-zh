@@ -39150,6 +39150,380 @@
           }
         }
       }
+    },
+    "%@时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@:00"
+          }
+        }
+      }
+    },
+    "年底" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year end"
+          }
+        }
+      }
+    },
+    "还剩 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr %@ min left"
+          }
+        }
+      }
+    },
+    "还剩 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min left"
+          }
+        }
+      }
+    },
+    "剩 %@时%@分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@h %@m left"
+          }
+        }
+      }
+    },
+    "小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hr %@ min"
+          }
+        }
+      }
+    },
+    "今天周末" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekend today"
+          }
+        }
+      }
+    },
+    "第 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@"
+          }
+        }
+      }
+    },
+    "本周第 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@ of the week"
+          }
+        }
+      }
+    },
+    "第 %@ / %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@ of %@"
+          }
+        }
+      }
+    },
+    "%@ 个工作日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ workdays"
+          }
+        }
+      }
+    },
+    "今天是今年第 %@ 天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today is day %@ of the year."
+          }
+        }
+      }
+    },
+    "本周还剩 %@ 天，其中 %@ 个工作日。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days left this week, %@ of them workdays."
+          }
+        }
+      }
+    },
+    "%@还剩 %@ 天，其中 %@ 个工作日。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %@ days left, %@ of them workdays."
+          }
+        }
+      }
+    },
+    "今年还剩 %@ 天，还有 %@ 个周末。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days left this year, with %@ weekends."
+          }
+        }
+      }
+    },
+    "今年第 %@ 周，本周第 %@ 天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %@ of the year, day %@ of the week."
+          }
+        }
+      }
+    },
+    "月底" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month end"
+          }
+        }
+      }
+    },
+    "四个周期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Four spans"
+          }
+        }
+      }
+    },
+    "每段一个单位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One block per unit"
+          }
+        }
+      }
+    },
+    "离周末 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days to the weekend"
+          }
+        }
+      }
+    },
+    "今年 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ days this year"
+          }
+        }
+      }
+    },
+    "假日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holiday"
+          }
+        }
+      }
+    },
+    "放假安排还没公布，按节日当天估算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The holiday schedule is not out yet, so this counts to the festival day itself"
+          }
+        }
+      }
+    },
+    "%@，今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, today"
+          }
+        }
+      }
+    },
+    "%@，还有 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, in %@ days"
+          }
+        }
+      }
+    },
+    "今年第 %@ 天，共 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %@ of %@ this year"
+          }
+        }
+      }
+    },
+    "已过去" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gone"
+          }
+        }
+      }
+    },
+    "还剩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        }
+      }
+    },
+    "%@周" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W%@"
+          }
+        }
+      }
+    },
+    "已过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gone"
+          }
+        }
+      }
+    },
+    "调休上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makeup workday"
+          }
+        }
+      }
+    },
+    "这一小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This hour"
+          }
+        }
+      }
+    },
+    "这一刻钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This quarter hour"
+          }
+        }
+      }
+    },
+    "%@已过去 %@%%，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@%% gone, %@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -595,6 +595,8 @@ enum WidgetDetail {
         // 时钟面板跟着卡片外观分好几套，带今天进度、三座城市的世界时钟、
         // 农历和本周两张小卡，320 才排得下三列城市。
         case .clock: 320
+        // 时间进度面板跟着卡片样式分五套，四个周期、本周七天和 53 列的年度点阵。
+        case .progress: 320
         case .battery: 330
         // 倒计时四列快速开始、秒表四列计次表、闹钟的今天时间轴和重复日。
         case .countdown, .stopwatch, .alarm: 320
