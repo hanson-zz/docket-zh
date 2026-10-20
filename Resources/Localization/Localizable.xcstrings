@@ -254,17 +254,6 @@
         }
       }
     },
-    "%@ · %@ 张图片" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %@ pictures"
-          }
-        }
-      }
-    },
     "%@ · %@ 次计次" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -272,17 +261,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · %@ laps"
-          }
-        }
-      }
-    },
-    "%@ · %@ 结束" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · ends %@"
           }
         }
       }
@@ -551,17 +529,6 @@
         }
       }
     },
-    "%@ · 第 %@/%@ 轮" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · Session %@ of %@"
-          }
-        }
-      }
-    },
     "%@ ▸ 显示 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -727,17 +694,6 @@
         }
       }
     },
-    "%@ 个日程" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ events"
-          }
-        }
-      }
-    },
     "%@ 个星标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -745,17 +701,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ stars"
-          }
-        }
-      }
-    },
-    "%@ 个最近项目" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ recent items"
           }
         }
       }
@@ -811,17 +756,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ pomodoros · No. %@ in progress"
-          }
-        }
-      }
-    },
-    "%@ 个网址 · 用默认浏览器打开" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ links · open in default browser"
           }
         }
       }
@@ -965,17 +899,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ min"
-          }
-        }
-      }
-    },
-    "%@ 分钟专注" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ minute session"
           }
         }
       }
@@ -1416,17 +1339,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move %@ left"
-          }
-        }
-      }
-    },
-    "%@ 已过去" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of %@ gone"
           }
         }
       }
@@ -3422,17 +3334,6 @@
         }
       }
     },
-    "7 天 %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "7d %@"
-          }
-        }
-      }
-    },
     "7 天完成次数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3594,17 +3495,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Music"
-          }
-        }
-      }
-    },
-    "CPU 平均占用" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Average CPU"
           }
         }
       }
@@ -3847,17 +3737,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ko-fi, with PayPal and cards, for users outside China"
-          }
-        }
-      }
-    },
-    "Mac 电池" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mac battery"
           }
         }
       }
@@ -4195,28 +4074,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The \"%@\" prompt is copied. Paste it into %@'s input box and send."
-          }
-        }
-      }
-    },
-    "“下载”文件夹是空的。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your Downloads folder is empty."
-          }
-        }
-      }
-    },
-    "“快捷指令”中还有 %@ 个" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ more in Shortcuts"
           }
         }
       }
@@ -5152,17 +5009,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next reminder %@"
-          }
-        }
-      }
-    },
-    "下次起身时间" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next stand-up"
           }
         }
       }
@@ -7268,17 +7114,6 @@
         }
       }
     },
-    "今天没有日程。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing scheduled today."
-          }
-        }
-      }
-    },
     "今天没有要响的了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7543,17 +7378,6 @@
         }
       }
     },
-    "今日起身" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stands today"
-          }
-        }
-      }
-    },
     "今日运动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7616,17 +7440,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save anyway"
-          }
-        }
-      }
-    },
-    "从今天 %@月%@日 算" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Counted from today, %@/%@"
           }
         }
       }
@@ -8687,17 +8500,6 @@
         }
       }
     },
-    "保存到“下载”" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save to Downloads"
-          }
-        }
-      }
-    },
     "保存后仍在星标里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8716,17 +8518,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Goes back to history after saving, ready to copy"
-          }
-        }
-      }
-    },
-    "保存在“%@”" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved in \"%@\""
           }
         }
       }
@@ -10080,17 +9871,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Also open"
-          }
-        }
-      }
-    },
-    "其他正在播的" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Also playing"
           }
         }
       }
@@ -11459,39 +11239,6 @@
         }
       }
     },
-    "剩余 %@ 分钟" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@m left"
-          }
-        }
-      }
-    },
-    "剩余 %@ 天" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ days left"
-          }
-        }
-      }
-    },
-    "剩余 %@ 小时 %@ 分钟" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@h %@m left"
-          }
-        }
-      }
-    },
     "剩余 %@%@。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11510,17 +11257,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ left, %@"
-          }
-        }
-      }
-    },
-    "剩余 1 天" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 day left"
           }
         }
       }
@@ -12001,17 +11737,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ghana"
-          }
-        }
-      }
-    },
-    "动一动" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move"
           }
         }
       }
@@ -13182,17 +12907,6 @@
         }
       }
     },
-    "取消输入静音" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unmute input"
-          }
-        }
-      }
-    },
     "取消这天的打卡" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13431,17 +13145,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only %@"
-          }
-        }
-      }
-    },
-    "只管今天，每天到点响" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rings at the same time every day"
           }
         }
       }
@@ -14036,17 +13739,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Startup disk"
-          }
-        }
-      }
-    },
-    "启动磁盘可用空间" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Startup disk free"
           }
         }
       }
@@ -15037,17 +14729,6 @@
         }
       }
     },
-    "图片 · 6 张" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pictures · 6"
-          }
-        }
-      }
-    },
     "图片压缩" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15275,28 +14956,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "View in Spotify"
-          }
-        }
-      }
-    },
-    "在 设置 ▸ 小组件 中编辑网址：每项可写成“标题 网址”，用逗号分隔。添加后会自动读取网页的标题和摘要。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit links in Settings ▸ Widgets: write each as \"Title URL\", separated by commas. Page titles and summaries are fetched after adding."
-          }
-        }
-      }
-    },
-    "在%@中播放点什么吧。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start something in %@."
           }
         }
       }
@@ -15726,17 +15385,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Knocking down walls"
-          }
-        }
-      }
-    },
-    "坐了 %@ 分钟 · 今天第 %@ 次" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sat %@ min · break %@ today"
           }
         }
       }
@@ -19124,17 +18772,6 @@
         }
       }
     },
-    "已完成。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finished."
-          }
-        }
-      }
-    },
     "已开启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19465,17 +19102,6 @@
         }
       }
     },
-    "已用内存" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Memory used"
-          }
-        }
-      }
-    },
     "已移到「%@」%@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19527,17 +19153,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already in your favorites."
-          }
-        }
-      }
-    },
-    "已经坐了 %@ 分钟，站起来走动、伸展一下吧。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You've been sitting for %@ minutes. Stand up, walk around and stretch."
           }
         }
       }
@@ -26163,17 +25778,6 @@
         }
       }
     },
-    "换一个城市或时区" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change city or time zone"
-          }
-        }
-      }
-    },
     "换一个显示在单个卡片上" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26324,17 +25928,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sort"
-          }
-        }
-      }
-    },
-    "接上一天，至 %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From the day before, until %@"
           }
         }
       }
@@ -27978,17 +27571,6 @@
         }
       }
     },
-    "无可读取内容" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing to read"
-          }
-        }
-      }
-    },
     "无图片" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29492,17 +29074,6 @@
         }
       }
     },
-    "晨间例程" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morning Routine"
-          }
-        }
-      }
-    },
     "普通" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30654,17 +30225,6 @@
         }
       }
     },
-    "未打开，点按打开" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not open, click to open"
-          }
-        }
-      }
-    },
     "未报告" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30672,50 +30232,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not reported"
-          }
-        }
-      }
-    },
-    "未来 %@ 天" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next %@ days"
-          }
-        }
-      }
-    },
-    "未来 %@ 小时 · 拖动查看" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next %@ hours · drag to see"
-          }
-        }
-      }
-    },
-    "未来 1 天" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next day"
-          }
-        }
-      }
-    },
-    "未来 1 小时" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next hour"
           }
         }
       }
@@ -30852,17 +30368,6 @@
         }
       }
     },
-    "未选择快捷指令" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No shortcut chosen"
-          }
-        }
-      }
-    },
     "本周" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30870,17 +30375,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This week"
-          }
-        }
-      }
-    },
-    "本周 · %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This week · %@"
           }
         }
       }
@@ -31937,17 +31431,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selecting…"
-          }
-        }
-      }
-    },
-    "正在等待获取你的位置。在“设置 ▸ 小组件”中输入城市即可跳过定位。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for your location. Enter a city in \"Settings ▸ Widgets\" to skip it."
           }
         }
       }
@@ -34441,17 +33924,6 @@
         }
       }
     },
-    "点按修改时间和名字" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click to change the time and name"
-          }
-        }
-      }
-    },
     "点按切换日、周、月、年" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34624,17 +34096,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to play or pause"
-          }
-        }
-      }
-    },
-    "点按播放，拖移到其他地方即可使用" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click to play, drag elsewhere to use"
           }
         }
       }
@@ -37510,17 +36971,6 @@
         }
       }
     },
-    "站起来走动、伸展一下" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stand up, walk around and stretch"
-          }
-        }
-      }
-    },
     "站起来走走" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39937,17 +39387,6 @@
         }
       }
     },
-    "色块是 24 小时涨跌，走势线是最近 7 天，虚线是 7 天前的价格；每 5 分钟最多刷新一次。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The chip is the 24-hour change, the line is the last 7 days and the dashed line is the price 7 days ago. Refreshes at most every 5 minutes."
-          }
-        }
-      }
-    },
     "色调" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40494,17 +39933,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hydration time"
-          }
-        }
-      }
-    },
-    "表情与符号" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emoji & Symbols"
           }
         }
       }
@@ -41583,28 +41011,6 @@
         }
       }
     },
-    "该起身了" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time to stand up"
-          }
-        }
-      }
-    },
-    "该起身活动一下了" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time to get up and move"
-          }
-        }
-      }
-    },
     "该起身活动了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41623,28 +41029,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Language"
-          }
-        }
-      }
-    },
-    "请在“设置 ▸ 小组件”中输入城市。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter a city in \"Settings ▸ Widgets\"."
-          }
-        }
-      }
-    },
-    "请在下方选择" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PICK ONE BELOW"
           }
         }
       }
@@ -44729,17 +44113,6 @@
         }
       }
     },
-    "选择城市" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose City"
-          }
-        }
-      }
-    },
     "选择壁纸所在的文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45004,17 +44377,6 @@
         }
       }
     },
-    "那年今天要读取照片图库" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On This Day needs access to your photo library"
-          }
-        }
-      }
-    },
     "那年今天：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45022,28 +44384,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On this day: %@"
-          }
-        }
-      }
-    },
-    "那年今天：宽幅卡片在轮播照片图库里往年今天拍的照片" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On this day: the wide card shows photos from your library taken on this day in earlier years"
-          }
-        }
-      }
-    },
-    "那年今天：照片图库里今天没有往年的照片，先轮播这个文件夹" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On this day: no photos from this day in earlier years, so the card shows this folder for now"
           }
         }
       }
@@ -45858,17 +45198,6 @@
         }
       }
     },
-    "阴影为%@的早 6 点至晚 6 点" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shaded: 6 am to 6 pm in %@"
-          }
-        }
-      }
-    },
     "阴影为当地 6 至 18 点" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46151,17 +45480,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reduce transparency"
-          }
-        }
-      }
-    },
-    "降水 %@ 毫米" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ mm rain"
           }
         }
       }

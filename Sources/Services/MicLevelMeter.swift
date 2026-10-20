@@ -43,6 +43,8 @@ final class MicLevelMeter {
             status = .denied
             return
         }
+        // 等授权弹窗时可能又点了一次，那一次已经开起来了就不再开第二个。
+        guard !isRunning else { return }
         let file = FileManager.default.temporaryDirectory
             .appendingPathComponent("docket-mic-level-\(UUID().uuidString).caf")
         let settings: [String: Any] = [

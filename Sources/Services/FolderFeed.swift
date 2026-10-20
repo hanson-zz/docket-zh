@@ -46,6 +46,12 @@ final class FolderFeed {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var inFlight = false
     @ObservationIgnored private var lastStart: Date = .distantPast
+    /// 上次看这个文件夹还有没有卡片用到的时间。
+    @ObservationIgnored private var lastUseCheck: Date = .now
+
+    /// 现在还有卡片用到的文件夹（每个布局里的相册、壁纸、截图、下载卡片）。
+    /// DocketApp 接上；没接时不清理。
+    static var sourcesInUse: (@MainActor () -> Set<Source>)?
 
     private static var feeds: [Source: FolderFeed] = [:]
 
@@ -100,12 +106,54 @@ final class FolderFeed {
     func start() {
         guard timer == nil else { return }
         refresh(force: true)
+        lastUseCheck = .now
         let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refresh() }
+            MainActor.assumeIsolated { self?.tick() }
         }
         timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
+    }
+
+    /// 每次轮询前，隔一分钟看一次还有没有卡片用到这个文件夹：相册里移除、取消勾选
+    /// 的文件夹，换掉的壁纸文件夹，删掉的截图、下载卡片，都停掉轮询，不再读到退出。
+    private func tick() {
+        let now = Date.now
+        if now.timeIntervalSince(lastUseCheck) >= 60 {
+            lastUseCheck = now
+            if let inUse = Self.sourcesInUse?(), !inUse.contains(source) {
+                stop()
+                return
+            }
+        }
+        refresh()
+    }
+
+    /// 停掉轮询并从共用表里拿掉；之后再有卡片要这个文件夹会新建一个重新开始。
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        if Self.feeds[source] === self { Self.feeds[source] = nil }
+    }
+
+    /// 这些小组件用到的文件夹。
+    static func sources(for widgets: [WidgetInstance]) -> Set<Source> {
+        var result = Set<Source>()
+        for widget in widgets {
+            switch widget.kind {
+            case .photos:
+                for path in PhotoRotation.activeFolders(widget.config) { result.insert(.pictures(path)) }
+            case .wallpaper:
+                result.insert(.pictures(widget.config.string("folder")))
+            case .screenshots:
+                result.insert(.screenshots)
+            case .downloads:
+                result.insert(.downloads)
+            default:
+                break
+            }
+        }
+        return result
     }
 
     /// Re-reads now if allowed. `force` skips the interval (a panel opening,
