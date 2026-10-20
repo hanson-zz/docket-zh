@@ -14570,13 +14570,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格；习惯打卡第 4 个起和近七天报告" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市、电池格、时间进度四格、喝水小熊猫角色；习惯打卡第 4 个起和近七天报告" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style and the Time Progress grid; a fourth habit and beyond, and the 7-day habit report"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather, the Battery Cells style, the Time Progress grid and the red panda Water character; a fourth habit and beyond, and the 7-day habit report"
           }
         }
       }
