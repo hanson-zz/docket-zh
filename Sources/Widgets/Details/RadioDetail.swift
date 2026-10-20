@@ -26,9 +26,6 @@ struct RadioDetail: View {
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporterUnlocked = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// 面板窗口当前的外观（DetailCard 里面总是深色，这里读的是外面的）。新外观的
-    /// 暗色、浅色两版跟着它切换。
-    @Environment(\.colorScheme) private var outerScheme
     @Namespace private var tabSlot
 
     @State private var tab: Tab = .favourites
@@ -84,7 +81,8 @@ struct RadioDetail: View {
     /// 五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺），上半部分画在
     /// RadioSkins/ 下各自的文件里。
     private var modern: Bool { skin.isModern }
-    private var tone: RadioSkinTone { RadioSkinTone(darkContent: outerScheme == .dark) }
+    /// 面板一律用新外观的暗色版（卡片才跟扩展栏深浅），下半截收藏列表也跟着暗色画。
+    private var tone: RadioSkinTone { .dark }
     /// 新外观这一版的配色，经典和复古皮肤是 nil。
     private var palette: RadioSkinPalette? { RadioSkinPalette.palette(skin, tone: tone) }
     /// 面板里的字色：新外观跟调色板（浅色版是深色字），其余照旧白字。
