@@ -64,8 +64,13 @@ struct RadioDetail: View {
 
     /// 复古皮肤用自己的琥珀、红、VFD 绿；经典照旧跟颜色面板走。
     private var accent: Color { retro ? skin.accent : panelTint.accent(or: RadioIcon.glow) }
-    /// 压在深色底上的小字用的强调色：晶体管的红换浅一档，保证 4.5:1。
-    private var accentText: Color { retro ? skin.textAccent : accent }
+    /// 压在深色底上的小字用的强调色：晶体管的红换浅一档；经典跟主题色时
+    /// 按深色面板卡片调亮到 4.5:1，本来就够的颜色原样用。
+    private var accentText: Color {
+        if retro { return skin.textAccent }
+        guard let code = WidgetTintPicker.code(accent) else { return accent }
+        return Color(code: WidgetTint.readable(code, dark: true, minimum: 4.5))
+    }
     /// 收藏/搜索切换选中那一段：复古皮肤是皮肤强调色，经典跟主题色；字深色。
     private var segmentInk: Color { retro ? skin.ink : panelTint.ink(or: RadioRetroInk.inkMetal) }
     private static let needle = Color(hex: "#FF453A")
@@ -237,16 +242,15 @@ struct RadioDetail: View {
     private var header: some View {
         HStack(spacing: 6) {
             Text("网络电台")
-                .font(.system(size: 10, weight: .semibold))
-                .tracking(0.8)
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
             Spacer()
             if playing {
                 RadioBars(active: !context.isPreview, color: accent, barWidth: 2, height: 10)
             }
             Text(statusText)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(playing ? 0.85 : 0.55))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(playing ? 0.88 : 0.62))
         }
     }
 
@@ -270,22 +274,26 @@ struct RadioDetail: View {
                     }
                     .font(.system(size: 54, weight: .bold, design: .rounded))
                     .monospacedDigit()
+                    // CH 和编码是装饰性角标，12pt 等宽，两行叠在大数字旁边。
                     VStack(alignment: .leading, spacing: 1) {
                         Text("CH")
                         Text(codecBadge)
                     }
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(accent)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(accentText)
+                    .fixedSize()
                 }
                 Text(station?.name ?? tr("还没有电台"))
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(13.0 / 19.0)
+                // 第二行 13pt，长的（连接出错、节目名）折到两行，不缩字。
                 Text(subline)
-                    .font(.system(size: 11))
-                    .foregroundStyle(player.problem != nil && playing ? accent : .white.opacity(0.6))
-                    .lineLimit(1)
+                    .font(.system(size: 13))
+                    .foregroundStyle(player.problem != nil && playing ? accentText : .white.opacity(0.65))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             RadioIcon(size: 64, playing: playing, animated: !context.isPreview)
@@ -373,9 +381,11 @@ struct RadioDetail: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.6))
             Text("\(Int(volume.rounded()))%")
-                .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.75))
-                .frame(width: 34, alignment: .trailing)
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.78))
+                .lineLimit(1)
+                .fixedSize()
+                .frame(minWidth: 40, alignment: .trailing)
         }
     }
 
@@ -508,17 +518,17 @@ struct RadioDetail: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(RadioDial.channelText(offset))
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(tuned ? accent : .white.opacity(0.45))
-                        .frame(width: 20, alignment: .leading)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(tuned ? accentText : .white.opacity(0.62))
+                        .frame(width: 24, alignment: .leading)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(item.name)
                             .font(.system(size: 13, weight: tuned ? .semibold : .regular))
                             .foregroundStyle(.white.opacity(0.95))
                             .lineLimit(1)
                         Text(item.detail)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.62))
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
@@ -536,9 +546,9 @@ struct RadioDetail: View {
                 remove(item, at: offset)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .frame(width: 20, height: 20)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(width: 24, height: 24)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)

@@ -62,7 +62,18 @@ struct RadioTile: View {
             } else {
                 HStack(spacing: 9) {
                     RadioIcon(size: 40, playing: playing, animated: !context.isPreview)
-                    TileReading(value: station?.name ?? tr("收音机"), caption: caption, valueSize: 15)
+                    // 不用通用的 TileReading（第二行 11pt、整块可缩到 0.6）：
+                    // 台名 15pt 最多缩到 13pt，第二行 13pt，放不下截断。
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(station?.name ?? tr("收音机"))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(WidgetStyle.primary)
+                            .minimumScaleFactor(13.0 / 15.0)
+                        Text(caption)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(WidgetStyle.secondary)
+                    }
+                    .lineLimit(1)
                     Spacer(minLength: 0)
                     HStack(spacing: 2) {
                         playButton(size: 11)
