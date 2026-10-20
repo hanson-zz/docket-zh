@@ -83,7 +83,7 @@ final class WidgetOptionTests: XCTestCase {
             .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart"],
-            .shortcut: ["name"],
+            .shortcut: [],
             .stock: ["symbol", "symbols", "chart", "alerts", "rotate", "colors", "metalUnit"],
             .watchlist: ["symbols", "groups", "holdings", "sort", "colors", "metalUnit"],
             .weather: ["city", "cities", "fahrenheit", "caption", "days"],

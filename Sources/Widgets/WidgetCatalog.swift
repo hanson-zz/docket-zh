@@ -209,8 +209,11 @@ public enum WidgetCatalog {
                 + wifiVariants,
               supportsCompact: true, selfContained: true),
 
+        // 一张卡放多个快捷指令（`items`，见 `ShortcutDeck`），在面板里勾选、
+        // 排序、改外观，不进设置页，所以不放默认值。旧卡片的单个 `name`
+        // 读成列表第一项，面板第一次写列表时删掉。
         Entry(kind: .shortcut, name: tr("快捷指令"), category: .appsAndFolders,
-              defaults: c(["name": .string("")]),
+              defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         Entry(kind: .airdrop, name: tr("隔空投送"), category: .files, defaults: c([:]),
@@ -904,7 +907,9 @@ public enum WidgetCatalog {
             }
             return cfg.bool("chart") ? CGSize(width: 160, height: 84) : CGSize(width: 100, height: 62)
         case .aiUsage: return CGSize(width: 244, height: 62)
-        case .shortcut: return CGSize(width: 140, height: 76)
+        // 一排圆角图标，按卡片上的个数算宽（最多 4 个）。
+        case .shortcut:
+            return CGSize(width: ShortcutDeck.tileWidth(count: ShortcutDeck.tileItems(cfg).count), height: 62)
         // 横排：左边图标，右边“隔空投送”和一行说明。
         case .airdrop: return CGSize(width: 176, height: 76)
         case .weather:
@@ -1032,6 +1037,7 @@ public enum WidgetCatalog {
         case .aiUsage: return 132
         case .notes: return 96
         case .airdrop: return 76
+        case .shortcut: return ShortcutDeck.columnHeight(count: ShortcutDeck.tileItems(cfg).count)
         case .progress:
             return cfg.string("layout", default: "bars") == "percentage" ? 58 : 80
         case .battery:

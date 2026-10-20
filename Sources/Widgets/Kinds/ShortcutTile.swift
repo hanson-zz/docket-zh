@@ -1,41 +1,34 @@
 import SwiftUI
 
-/// One shortcut, one click.
+/// 一排快捷指令，点一下就跑。
 ///
-/// The card's own click opens the panel, which is where a shortcut is chosen
-/// and where a failure is explained, so the glyph is the only thing on the
-/// tile that acts. Same division as the focus timer: the thing you do
-/// constantly stays on the shelf, the thing you do once lives in the panel.
+/// 卡片放列表前 4 个圆角图标，颜色和图标是面板“外观”里给它挑的；多出来
+/// 的只在面板里。卡片宽度按图标个数算（`ShortcutDeck.tileWidth`），一个都没
+/// 选时画原来的“选择”，点卡片打开面板去勾选。
 ///
-/// A running shortcut shows a stop glyph rather than a spinner. There is no
-/// progress to report and no way to get any, so the honest offer is the one
-/// thing the app can actually do about it.
+/// 正在跑的那个图标换成停止键，再点一下就停。跑不出进度，能做的只有停，
+/// 所以不画转圈。失败的在右上角挂一个红点，原因去面板里看。
 struct ShortcutTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    var body: some View {
-        // A column is narrower, not different: the same glyph over the same
-        // caption, sized for 56pt of usable width.
-        let column = context.position.isVertical
-        let name = resolvedName
-        let running = isRunning(name)
+    private var service: ShortcutsService { ShortcutsService.shared }
 
+    var body: some View {
+        let column = context.position.isVertical
+        let items = shown
         return WidgetSurface {
-            if column {
-                VStack(spacing: 5) {
-                    glyph(running: running, name: name, size: 13)
-                    caption(name, size: 11)
+            if items.isEmpty {
+                empty(column: column)
+            } else if column {
+                LazyVGrid(columns: [GridItem(.fixed(ShortcutDeck.columnIconSize), spacing: 4),
+                                    GridItem(.fixed(ShortcutDeck.columnIconSize), spacing: 4)],
+                          spacing: 4) {
+                    ForEach(items) { item in button(item, size: ShortcutDeck.columnIconSize) }
                 }
             } else {
-                // The glyph is the badge here: it is both the shortcut's mark
-                // and the one thing on the tile that acts.
-                HStack(spacing: 10) {
-                    glyph(running: running, name: name, size: 12)
-                    TileReading(value: name.isEmpty ? tr("选择") : name,
-                                caption: running ? tr("正在运行") : tr("快捷指令"),
-                                valueSize: 15)
-                    Spacer(minLength: 0)
+                HStack(spacing: ShortcutDeck.iconSpacing) {
+                    ForEach(items) { item in button(item, size: ShortcutDeck.iconSize) }
                 }
             }
         }
@@ -43,39 +36,81 @@ struct ShortcutTile: View {
 
     // MARK: Pieces
 
-    /// Only ever as big as itself, so the card's own click still reaches the
-    /// shelf and opens the panel. See StopwatchTile for the same treatment.
-    private func glyph(running: Bool, name: String, size: CGFloat) -> some View {
-        TileGlyph(symbol: running ? "stop.fill" : "play.fill",
-                  size: size,
-                  action: context.isPreview || name.isEmpty ? nil : { act(running: running, name: name) })
-            .accessibilityLabel(running ? tr("停止“\(name)”") : name.isEmpty ? tr("未选择快捷指令") : tr("运行“\(name)”"))
-    }
-
-    private func caption(_ name: String, size: CGFloat) -> some View {
-        Text(name.isEmpty ? tr("选择") : name)
-            .font(WidgetStyle.label(size))
-            .foregroundStyle(name.isEmpty ? WidgetStyle.secondary : WidgetStyle.primary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-    }
-
-    private func act(running: Bool, name: String) {
-        if running {
-            ShortcutsService.shared.stop()
+    /// 原来的“选择”：卡片自己的点击打开面板，在那里勾选。
+    @ViewBuilder private func empty(column: Bool) -> some View {
+        if column {
+            VStack(spacing: 5) {
+                TileGlyph(symbol: "plus", size: 13, action: nil)
+                Text(tr("选择"))
+                    .font(WidgetStyle.label(11))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .lineLimit(1)
+            }
         } else {
-            ShortcutsService.shared.run(name)
+            HStack(spacing: 10) {
+                TileGlyph(symbol: "plus", size: 12, action: nil)
+                TileReading(value: tr("选择"), caption: tr("快捷指令"), valueSize: 15)
+                Spacer(minLength: 0)
+            }
         }
     }
 
-    /// The library has no shortcut to point at and must not run one, so it
-    /// shows a representative name instead of an empty card.
-    private var resolvedName: String {
-        context.isPreview ? tr("晨间例程") : instance.config.string("name")
+    /// 只有图标本身能点，卡片其余地方的点击照样打开面板。
+    private func button(_ item: ShortcutItem, size: CGFloat) -> some View {
+        let running = !context.isPreview && service.isRunning(item.name)
+        var failed = false
+        if !context.isPreview, !running, case .failed = service.record(for: item.name)?.status {
+            failed = true
+        }
+        return Button {
+            guard !context.isPreview else { return }
+            if running { service.stop(item.name) } else { service.run(item.name) }
+        } label: {
+            ShortcutIcon(item: item, size: size, running: running)
+                .overlay(alignment: .topTrailing) {
+                    if failed {
+                        Circle()
+                            .fill(Color(hex: "#FF6B5A"))
+                            .frame(width: size * 0.24, height: size * 0.24)
+                            .overlay { Circle().strokeBorder(.black.opacity(0.35), lineWidth: 1) }
+                            .offset(x: size * 0.06, y: -size * 0.06)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .help(running ? tr("停止“\(item.name)”") : tr("运行“\(item.name)”"))
+        .accessibilityLabel(running ? tr("停止“\(item.name)”") : tr("运行“\(item.name)”"))
     }
 
-    private func isRunning(_ name: String) -> Bool {
-        guard !context.isPreview, !name.isEmpty else { return false }
-        return ShortcutsService.shared.running == name
+    /// 小组件库里没有真的快捷指令可放，画两个示例图标（新卡片 140 宽放得下），不能点。
+    private var shown: [ShortcutItem] {
+        if context.isPreview {
+            return [
+                ShortcutItem(name: tr("专注模式"), color: .indigo, symbol: .moon),
+                ShortcutItem(name: tr("图片压缩"), color: .orange, symbol: .photo),
+            ]
+        }
+        return ShortcutDeck.tileItems(instance.config)
+    }
+}
+
+/// 快捷指令的圆角图标：色块上一枚白色 SF Symbol。卡片、面板和编辑态共用。
+struct ShortcutIcon: View {
+    var item: ShortcutItem
+    var size: CGFloat
+    /// 正在跑时图标换成停止键，色块变暗一点。
+    var running = false
+
+    var body: some View {
+        let colour = Color(hex: item.color.hex)
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                .fill(running ? colour.mix(with: .black, by: 0.35) : colour)
+            Image(systemName: running ? "stop.fill" : item.symbol.systemName)
+                .font(.system(size: size * (running ? 0.36 : 0.46), weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: size, height: size)
+        .contentShape(.rect(cornerRadius: size * 0.28, style: .continuous))
     }
 }

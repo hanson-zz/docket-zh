@@ -30,22 +30,32 @@ final class ShortcutsService {
     /// nothing to report.
     private(set) var loadError: String?
 
-    /// The shortcut currently running, so a tile can offer to stop it rather
-    /// than appear to have frozen.
-    private(set) var running: String?
+    /// The shortcuts running right now. Each runs in its own child, so the
+    /// panel can start a second while the first is still going and stop
+    /// either one without touching the other.
+    private(set) var running: Set<String> = []
 
-    private(set) var lastRun: Outcome?
+    /// The last finished run of each shortcut, kept across launches so the
+    /// panel can still say "yesterday 18:40, done" after a restart.
+    private(set) var records: [String: ShortcutRun.Record] = [:]
 
     @ObservationIgnored private var loading = false
-    @ObservationIgnored private let child = ProcessBox()
+    @ObservationIgnored private var children: [String: ProcessBox] = [:]
 
-    private init() {}
+    private static let recordsKey = "shortcuts.lastRuns"
+    /// Old records for shortcuts long since removed are dropped past this.
+    private static let recordLimit = 60
 
-    enum Outcome: Equatable, Sendable {
-        case ok(String)
-        case failed(String, String)
-        case cancelled(String)
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.recordsKey),
+           let stored = try? JSONDecoder().decode([String: ShortcutRun.Record].self, from: data) {
+            records = stored
+        }
     }
+
+    func isRunning(_ name: String) -> Bool { running.contains(name) }
+
+    func record(for name: String) -> ShortcutRun.Record? { records[name] }
 
     /// Re-reads the shortcut list. Cheap enough to call whenever a panel
     /// opens: the tool answered in 15ms on the machine this was written on.
@@ -56,11 +66,11 @@ final class ShortcutsService {
         loading = false
         loadedAt = .now
         guard result.status == 0 else {
-            loadError = Tool.message(result) ?? tr("“快捷指令”命令行工具没有响应。")
+            loadError = ShortcutRun.reason(fromStderr: result.err) ?? tr("“快捷指令”命令行工具没有响应。")
             return
         }
         loadError = nil
-        names = ShortcutList.parse(result.out)
+        names = ShortcutList.parse(String(decoding: result.out, as: UTF8.self))
     }
 
     /// Fires a shortcut.
@@ -71,30 +81,48 @@ final class ShortcutsService {
     /// would make the shelf feel broken. It gets a long ceiling instead,
     /// because a shortcut that takes a minute is doing its job.
     func run(_ name: String) {
-        guard !name.isEmpty, running == nil else { return }
-        running = name
-        lastRun = nil
-        let box = child
+        guard !name.isEmpty, !running.contains(name) else { return }
+        running.insert(name)
+        let box = ProcessBox()
+        children[name] = box
         Task {
             let result = await Tool.offMain { Tool.capture(["run", name], seconds: 300, box: box) }
-            running = nil
+            running.remove(name)
+            children[name] = nil
+            let status: ShortcutRun.Status
             if result.signalled {
-                lastRun = .cancelled(name)
+                status = .cancelled
             } else if result.status == 0 {
-                lastRun = .ok(name)
+                status = .ok
             } else {
                 // The tool puts its reason on stderr and nowhere else, and a
                 // renamed shortcut is the common case: "Couldn't find
                 // shortcut". Showing it is what makes that recoverable
                 // instead of a tile that quietly stopped working.
-                lastRun = .failed(name, Tool.message(result) ?? tr("快捷指令未能完成。"))
+                status = .failed(ShortcutRun.reason(fromStderr: result.err) ?? tr("快捷指令未能完成。"))
             }
+            // Whatever the shortcut printed to stdout, when it is text. A
+            // shortcut that ends on an image or a file prints bytes, and
+            // those are not shown rather than shown as noise.
+            let output = status == .cancelled ? nil : ShortcutRun.output(from: result.out)
+            remember(name, ShortcutRun.Record(finishedAt: .now, status: status, output: output))
         }
     }
 
-    /// Stops the running shortcut. The tool exits on the signal and `run`
+    /// Stops one running shortcut. The tool exits on the signal and `run`
     /// reports it as cancelled rather than as a failure.
-    func stop() { child.terminate() }
+    func stop(_ name: String) { children[name]?.terminate() }
+
+    private func remember(_ name: String, _ record: ShortcutRun.Record) {
+        records[name] = record
+        if records.count > Self.recordLimit {
+            let keep = records.sorted { $0.value.finishedAt > $1.value.finishedAt }.prefix(Self.recordLimit)
+            records = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
+        }
+        if let data = try? JSONEncoder().encode(records) {
+            UserDefaults.standard.set(data, forKey: Self.recordsKey)
+        }
+    }
 }
 
 /// Everything that touches the process, kept out of the main actor so the
@@ -114,20 +142,8 @@ private enum Tool {
     struct Result: Sendable {
         var status: Int32
         var signalled: Bool
-        var out: String
+        var out: Data
         var err: String
-    }
-
-    /// The first line of stderr, which is where the tool puts its reason.
-    static func message(_ result: Result) -> String? {
-        let line = result.err
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .first?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let line, !line.isEmpty else { return nil }
-        // "Error: The operation couldn't be completed. Couldn't find
-        // shortcut" reads better in a panel without the prefix.
-        return line.hasPrefix("Error: ") ? String(line.dropFirst(7)) : line
     }
 
     static func capture(_ arguments: [String], seconds: Double,
@@ -145,7 +161,7 @@ private enum Tool {
         do {
             try process.run()
         } catch {
-            return Result(status: -1, signalled: false, out: "",
+            return Result(status: -1, signalled: false, out: Data(),
                           err: tr("无法启动 \(path)：\(error.localizedDescription)"))
         }
         box?.hold(process)
@@ -177,7 +193,7 @@ private enum Tool {
 
         return Result(status: process.terminationStatus,
                       signalled: process.terminationReason == .uncaughtSignal,
-                      out: String(decoding: stdout.value, as: UTF8.self),
+                      out: stdout.value,
                       err: String(decoding: stderr.value, as: UTF8.self))
     }
 }

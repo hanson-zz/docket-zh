@@ -188,6 +188,17 @@
         }
       }
     },
+    "%@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
     "%@ · %@ 个小组件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -375,6 +386,28 @@
         }
       }
     },
+    "%@ · 已停止" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Stopped"
+          }
+        }
+      }
+    },
+    "%@ · 已完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Done"
+          }
+        }
+      }
+    },
     "%@ · 已过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -536,6 +569,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ forks"
+          }
+        }
+      }
+    },
+    "%@ 个已选 · 前 %@ 个放在卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ chosen · first %2$@ on the card"
+          }
+        }
+      }
+    },
+    "%@ 个已选 · 都放在卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ chosen · all on the card"
           }
         }
       }
@@ -5046,6 +5101,17 @@
         }
       }
     },
+    "专注模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Mode"
+          }
+        }
+      }
+    },
     "专注模式：打开“系统设置 ▸ 专注模式”，选择一个专注模式，在“专注模式过滤条件”中点按“添加过滤条件”，选择码头并挑选一个布局。该专注模式开启时会切换到这个布局，结束时恢复之前的布局。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6135,6 +6201,17 @@
         }
       }
     },
+    "今天 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %@"
+          }
+        }
+      }
+    },
     "今天 %@ / %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6923,6 +7000,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from Dock"
+          }
+        }
+      }
+    },
+    "从系统的快捷指令里挑几个放到卡片上，点一下就跑。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a few of your shortcuts to put on the card, then run any of them with one click."
           }
         }
       }
@@ -8507,6 +8595,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All"
+          }
+        }
+      }
+    },
+    "全部 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in all"
           }
         }
       }
@@ -10300,6 +10399,17 @@
         }
       }
     },
+    "加入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        }
+      }
+    },
     "加入 Google Meet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10564,6 +10674,17 @@
         }
       }
     },
+    "勾选加入 · 拖动排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tick to add · Drag to reorder"
+          }
+        }
+      }
+    },
     "勾选即完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10571,6 +10692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Check to complete"
+          }
+        }
+      }
+    },
+    "勾选快捷指令、调整顺序、改颜色和图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose shortcuts, reorder them, change colors and icons"
           }
         }
       }
@@ -10883,6 +11015,28 @@
         }
       }
     },
+    "卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On card"
+          }
+        }
+      }
+    },
+    "卡片上就用这个颜色和图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card uses this color and icon"
+          }
+        }
+      }
+    },
     "卡片上的顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10912,6 +11066,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No AI tiles on the card yet."
+          }
+        }
+      }
+    },
+    "卡片放前 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First %@ on the card"
           }
         }
       }
@@ -11385,6 +11550,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ungroup"
+          }
+        }
+      }
+    },
+    "取消勾选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
           }
         }
       }
@@ -13057,6 +13233,17 @@
         }
       }
     },
+    "图片压缩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compress Images"
+          }
+        }
+      }
+    },
     "图片生成失败" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13262,6 +13449,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start something in %@."
+          }
+        }
+      }
+    },
+    "在“快捷指令”里找不到了，可能改了名或删了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found in Shortcuts. It may have been renamed or deleted"
           }
         }
       }
@@ -16198,6 +16396,17 @@
         }
       }
     },
+    "展开输出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show output"
+          }
+        }
+      }
+    },
     "岁" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16436,6 +16645,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alert price reached"
+          }
+        }
+      }
+    },
+    "已加入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added"
+          }
+        }
+      }
+    },
+    "已加入 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added %@"
           }
         }
       }
@@ -17217,6 +17448,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ days overdue"
+          }
+        }
+      }
+    },
+    "已选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chosen"
           }
         }
       }
@@ -19662,6 +19904,17 @@
         }
       }
     },
+    "打开快捷指令 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Shortcuts App"
+          }
+        }
+      }
+    },
     "打开扩展栏后，这里会列出上面的小组件。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19955,6 +20208,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While the shelf is on screen, connected accounts refresh every five minutes."
+          }
+        }
+      }
+    },
+    "找不到了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found"
           }
         }
       }
@@ -20685,6 +20949,17 @@
         }
       }
     },
+    "搜索快捷指令" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search shortcuts"
+          }
+        }
+      }
+    },
     "搜索结果 · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20707,6 +20982,17 @@
         }
       }
     },
+    "收起输出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide output"
+          }
+        }
+      }
+    },
     "数码卡座" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20725,6 +21011,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "文稿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document"
           }
         }
       }
@@ -20971,6 +21268,17 @@
         }
       }
     },
+    "最多选 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@"
+          }
+        }
+      }
+    },
     "最快" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21015,6 +21323,17 @@
         }
       }
     },
+    "月亮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moon"
+          }
+        }
+      }
+    },
     "朝鲜" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21033,6 +21352,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wooden Tube Set"
+          }
+        }
+      }
+    },
+    "未加入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not added"
           }
         }
       }
@@ -21088,6 +21418,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Georgia"
+          }
+        }
+      }
+    },
+    "正在运行…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running…"
           }
         }
       }
@@ -21202,6 +21543,17 @@
         }
       }
     },
+    "水滴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop"
+          }
+        }
+      }
+    },
     "汉堡" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21209,6 +21561,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hamburg"
+          }
+        }
+      }
+    },
+    "没有名字里带“%@”的快捷指令。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shortcut names contain \"%@\"."
           }
         }
       }
@@ -37073,6 +37436,17 @@
         }
       }
     },
+    "输出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output"
+          }
+        }
+      }
+    },
     "输出设备" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37080,6 +37454,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Output device"
+          }
+        }
+      }
+    },
+    "输出：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output: %@"
           }
         }
       }
@@ -37909,6 +38294,28 @@
         }
       }
     },
+    "还没运行过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not run yet"
+          }
+        }
+      }
+    },
+    "还没选快捷指令" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shortcuts chosen yet"
+          }
+        }
+      }
+    },
     "还渴着" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38723,6 +39130,17 @@
         }
       }
     },
+    "选择快捷指令" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Shortcuts"
+          }
+        }
+      }
+    },
     "选择提问的服务，当前是 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39533,6 +39951,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hold 3 seconds to unlock"
+          }
+        }
+      }
+    },
+    "闪电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bolt"
           }
         }
       }
