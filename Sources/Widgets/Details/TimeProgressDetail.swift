@@ -45,21 +45,16 @@ struct TimeProgressDetail: View {
         }
     }
 
-    @ViewBuilder
-    private func layoutBody(_ model: TimeProgressPanelModel) -> some View {
-        let writer: (@MainActor (TimeProgress.Period) -> Void)? = context.isPreview ? nil : { span in pick(span) }
+    /// 按样式挑一套。不用 ViewBuilder 的 switch：五个分支各自是不同的类型，
+    /// 包成 AnyView 让类型检查简单、出错时能指到具体哪一行。
+    private func layoutBody(_ model: TimeProgressPanelModel) -> AnyView {
         let parts = TimeProgressParts(model: model, pick: writer)
         switch layout {
-        case TimeProgress.quadLayout:
-            quadPanel(model, parts)
-        case "percentage":
-            percentagePanel(model, parts)
-        case LiquidMotion.layout:
-            liquidPanel(model, parts)
-        case "ring":
-            ringPanel(model, parts)
-        default:
-            barsPanel(model, parts)
+        case TimeProgress.quadLayout: return AnyView(quadPanel(model, parts))
+        case "percentage": return AnyView(percentagePanel(model, parts))
+        case LiquidMotion.layout: return AnyView(liquidPanel(model, parts))
+        case "ring": return AnyView(ringPanel(model, parts))
+        default: return AnyView(barsPanel(model, parts))
         }
     }
 
@@ -158,11 +153,15 @@ struct TimeProgressDetail: View {
                            contrast: tintStyle.contrast(dark: true))
     }
 
-    /// 写卡片上显示的周期。带动画，和卡片自己切换时一样，数字和进度是滑过去的。
-    private func pick(_ span: TimeProgress.Period) {
-        withAnimation(.snappy(duration: 0.3)) {
-            WidgetWriter.write(instance) { config in
-                config.set(TimeProgress.periodKey, .string(span.rawValue))
+    /// 写卡片上显示的周期；预览里是 nil。带动画，和卡片自己切换时一样，数字和进度是滑过去的。
+    private var writer: (@MainActor (TimeProgress.Period) -> Void)? {
+        guard !context.isPreview else { return nil }
+        let instance = self.instance
+        return { span in
+            withAnimation(.snappy(duration: 0.3)) {
+                WidgetWriter.write(instance) { config in
+                    config.set(TimeProgress.periodKey, .string(span.rawValue))
+                }
             }
         }
     }
