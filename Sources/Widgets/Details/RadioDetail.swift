@@ -40,6 +40,9 @@ struct RadioDetail: View {
     /// The slider's own value while dragging, so the profile is saved once
     /// at the end of the drag rather than sixty times during it.
     @State private var dragging: Double?
+    /// 收藏行实际高度，见 `favouriteRowHeight`。
+    @State private var classicRowHeight: CGFloat?
+    @State private var retroRowHeight: CGFloat?
 
     private var stations: [RadioStation] {
         context.isPreview ? RadioDial.presets : RadioDial.stations(instance.config)
@@ -434,16 +437,39 @@ struct RadioDetail: View {
             if stations.isEmpty {
                 PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) { tab = .search }
             } else {
+                // 高度按行数自适应：最多露 5 行，超过才滚动，少于 5 行不留空白。
+                // 行高量出来的（经典、复古皮肤不同），没量到时先用估计值。
                 ScrollView {
-                    VStack(spacing: 2) {
+                    VStack(spacing: RadioFavouriteList.rowSpacing) {
                         ForEach(Array(stations.enumerated()), id: \.element.id) { offset, item in
                             favouriteRow(item, offset: offset)
+                                .onGeometryChange(for: CGFloat.self) { proxy in
+                                    proxy.size.height
+                                } action: { height in
+                                    noteRowHeight(height)
+                                }
                         }
                     }
                 }
-                .frame(maxHeight: 150)
+                .frame(height: RadioFavouriteList.height(rowCount: stations.count, rowHeight: favouriteRowHeight))
+                .scrollDisabled(!RadioFavouriteList.scrolls(rowCount: stations.count))
                 .scrollIndicators(.never)
             }
+        }
+    }
+
+    /// 量到的收藏行高，经典和复古分开记，换皮肤不会拿错。
+    private var favouriteRowHeight: CGFloat {
+        (retro ? retroRowHeight : classicRowHeight) ?? RadioFavouriteList.fallbackRowHeight(retro: retro)
+    }
+
+    private func noteRowHeight(_ height: CGFloat) {
+        guard height > 1 else { return }
+        let rounded = (height * 2).rounded(.up) / 2
+        if retro {
+            if retroRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { retroRowHeight = rounded }
+        } else {
+            if classicRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { classicRowHeight = rounded }
         }
     }
 
