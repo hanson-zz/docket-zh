@@ -32,8 +32,15 @@ public struct CalcNumberStyle: Equatable, Sendable {
     public static let decimalsKey = "decimals"
     public static let groupingKey = "grouping"
     public static let defaultDecimals = Decimals.auto
-    /// 新放的卡片默认带千分位（效果图的「改后」）。
-    public static let defaultGrouping = true
+    /// 配置里没存过 `grouping` 的老卡片不带千分位，和升级前一样。
+    public static let defaultGrouping = false
+    /// 新放的卡片默认带千分位（效果图的「改后」），在 WidgetCatalog.make 里写进配置。
+    public static let newWidgetGrouping = true
+
+    /// 新放一张「算」时写进配置的值。
+    public static func applyNewWidget(to config: inout WidgetConfig) {
+        config.set(groupingKey, .bool(newWidgetGrouping))
+    }
 
     public var decimals: Decimals
     /// nil = 不动各自规则给的写法（只给测试和旧调用用，卡片配置总有值）。

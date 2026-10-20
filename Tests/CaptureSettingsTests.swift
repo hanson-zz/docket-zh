@@ -7,12 +7,32 @@ import XCTest
 final class CaptureSettingsTests: XCTestCase {
     // MARK: 默认值和读配置
 
-    func testDefaultsAreBothPngNoDelay() {
+    func testOldCardsWithoutTheKeysKeepTheirLook() {
+        // 升级前放的卡片没存过 after、buttons：照旧存文件，第 4 个按钮还是录屏。
         let options = CaptureOptions(config: WidgetConfig())
-        XCTAssertEqual(options.after, .both)
+        XCTAssertEqual(options.after, .save)
         XCTAssertEqual(options.format, .png)
         XCTAssertEqual(options.delay, 0)
-        XCTAssertEqual(CaptureButtons.from(WidgetConfig()), [.region, .window, .text, .recordRegion])
+        XCTAssertEqual(CaptureButtons.from(WidgetConfig()), [.region, .window, .text, .record])
+        // 老卡片显示前会并上目录默认值，并上后也一样。
+        let merged = WidgetConfig().merging(defaults: WidgetCatalog.entry(.capture)!.defaults)
+        XCTAssertEqual(CaptureAfter.from(merged), .save)
+        XCTAssertEqual(CaptureButtons.from(merged), [.region, .window, .text, .record])
+    }
+
+    func testNewCardsAreBothWithRecordRegion() throws {
+        let fresh = try XCTUnwrap(WidgetCatalog.make(.capture))
+        XCTAssertEqual(CaptureAfter.from(fresh.config), .both)
+        XCTAssertEqual(CaptureButtons.from(fresh.config), [.region, .window, .text, .recordRegion])
+        XCTAssertEqual(CaptureOptions(config: fresh.config).summary, "截完：存文件 + 拷贝 · PNG")
+        var config = WidgetConfig()
+        CaptureNewWidget.apply(to: &config)
+        XCTAssertEqual(config.string(CaptureAfter.key), "both")
+        XCTAssertEqual(config.strings(CaptureButtons.key), ["region", "window", "text", "recordRegion"])
+        // 用户改过的值，重启后读回来不被新默认盖掉。
+        var edited = fresh.config
+        edited.set(CaptureAfter.key, .string("copy"))
+        XCTAssertEqual(CaptureAfter.from(edited.merging(defaults: WidgetCatalog.entry(.capture)!.defaults)), .copy)
     }
 
     func testCatalogDefaultsMatchTheReaders() {
@@ -37,7 +57,7 @@ final class CaptureSettingsTests: XCTestCase {
         XCTAssertEqual(options.format, .jpg)
         XCTAssertEqual(options.delay, 10)
         XCTAssertEqual(options.summary, "截完：打开标注 · JPG · 10 秒")
-        XCTAssertEqual(CaptureOptions().summary, "截完：存文件 + 拷贝 · PNG")
+        XCTAssertEqual(CaptureOptions(after: .both).summary, "截完：存文件 + 拷贝 · PNG")
     }
 
     func testWhatEachAfterDoes() {
@@ -85,7 +105,7 @@ final class CaptureSettingsTests: XCTestCase {
     func testTogglingKeepsBetweenOneAndFour() {
         let full = CaptureButtons.defaults
         XCTAssertNil(CaptureButtons.toggling(.record, in: full), "已满 4 个不能再加")
-        XCTAssertEqual(CaptureButtons.toggling(.text, in: full), [.region, .window, .recordRegion])
+        XCTAssertEqual(CaptureButtons.toggling(.text, in: full), [.region, .window, .record])
         XCTAssertNil(CaptureButtons.toggling(.region, in: [.region]), "最后一个不能去掉")
         XCTAssertEqual(CaptureButtons.toggling(.record, in: [.region]), [.region, .record])
     }

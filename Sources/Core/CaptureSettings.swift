@@ -7,13 +7,17 @@ import Foundation
 
 // MARK: - 截完后
 
-/// 截完一张图之后做什么。默认「两者」：存进截图文件夹，同时拷贝到剪贴板
-/// （用户 10-20 定的）。
+/// 截完一张图之后做什么。新放的卡片默认「两者」：存进截图文件夹，同时拷贝到
+/// 剪贴板（用户 10-20 定的，`newWidget`，在 WidgetCatalog.make 里写进配置）。
+/// 配置里没存过这个键的老卡片读成「存文件」，和升级前一样（`fallback`）。
 public enum CaptureAfter: String, CaseIterable, Sendable, Identifiable {
     case save, copy, both, markup
 
     public static let key = "after"
-    public static let fallback: CaptureAfter = .both
+    /// 读不到键（老卡片）或认不出的值：存文件，升级前就是这样。
+    public static let fallback: CaptureAfter = .save
+    /// 新放的卡片写进配置的值。
+    public static let newWidget: CaptureAfter = .both
 
     public var id: String { rawValue }
 
@@ -45,6 +49,17 @@ public enum CaptureAfter: String, CaseIterable, Sendable, Identifiable {
 
     public static func from(_ config: WidgetConfig) -> CaptureAfter {
         CaptureAfter(rawValue: config.string(key, default: fallback.rawValue)) ?? fallback
+    }
+}
+
+// MARK: - 新放的卡片
+
+public enum CaptureNewWidget {
+    /// 新放一张截图工具时写进配置的值（「两者」、第 4 个按钮是录区域）。老卡片没存过
+    /// 这些键，读的时候按升级前的样子，见 `CaptureAfter.fallback`、`CaptureButtons.defaults`。
+    public static func apply(to config: inout WidgetConfig) {
+        config.set(CaptureAfter.key, .string(CaptureAfter.newWidget.rawValue))
+        config.set(CaptureButtons.key, .list(CaptureButtons.newWidget.map { .string($0.rawValue) }))
     }
 }
 
@@ -147,9 +162,11 @@ public struct CaptureOptions: Equatable, Sendable {
 public enum CaptureButtons {
     public static let key = "buttons"
     public static let limit = 4
-    /// 照效果图：截区域、截窗口、识字、录区域。整屏录屏可以在设置或面板里换上来，
+    /// 读不到键（老卡片）时的按钮：截区域、截窗口、识字、录屏，升级前卡片上就是这 4 个。
+    public static let defaults: [CaptureAction] = [.region, .window, .text, .record]
+    /// 新放的卡片照效果图：第 4 个换成录区域。整屏录屏可以在设置或面板里换上来，
     /// 录区域的选框里单击也是录整个屏幕。
-    public static let defaults: [CaptureAction] = [.region, .window, .text, .recordRegion]
+    public static let newWidget: [CaptureAction] = [.region, .window, .text, .recordRegion]
 
     /// 认不出的丢掉、去重、最多 4 个；一个都不剩时用默认。
     public static func resolve(_ raw: [String]) -> [CaptureAction] {

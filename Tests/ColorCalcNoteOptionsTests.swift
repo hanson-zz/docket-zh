@@ -110,8 +110,18 @@ final class ColorCalcNoteOptionsTests: XCTestCase {
         XCTAssertEqual(CalcNumberStyle().text(1234, auto: "1234"), "1234", "没给千分位时不动")
     }
 
-    func testCalcStyleReadsTheCard() {
-        XCTAssertEqual(CalcNumberStyle(WidgetConfig()), CalcNumberStyle(decimals: .auto, grouping: true))
+    func testCalcStyleReadsTheCard() throws {
+        // 没存过 grouping 的老卡片不带千分位（升级前的样子）；新放的写进配置是开。
+        XCTAssertEqual(CalcNumberStyle(WidgetConfig()), CalcNumberStyle(decimals: .auto, grouping: false))
+        let merged = WidgetConfig().merging(defaults: WidgetCatalog.entry(.calculator)!.defaults)
+        XCTAssertEqual(CalcNumberStyle(merged).grouping, false)
+        let fresh = try XCTUnwrap(WidgetCatalog.make(.calculator))
+        XCTAssertEqual(fresh.config[CalcNumberStyle.groupingKey], .bool(true))
+        XCTAssertEqual(CalcNumberStyle(fresh.config), CalcNumberStyle(decimals: .auto, grouping: true))
+        XCTAssertEqual(CalcNumberStyle(fresh.config).text(15000, auto: "15000"), "15,000")
+        var plain = WidgetConfig()
+        CalcNumberStyle.applyNewWidget(to: &plain)
+        XCTAssertEqual(plain.bool(CalcNumberStyle.groupingKey, default: false), true)
         let config = WidgetConfig([CalcNumberStyle.decimalsKey: .string("4"), CalcNumberStyle.groupingKey: .bool(false)])
         XCTAssertEqual(CalcNumberStyle(config), CalcNumberStyle(decimals: .four, grouping: false))
         XCTAssertEqual(CalcNumberStyle(WidgetConfig([CalcNumberStyle.decimalsKey: .string("9")])).decimals, .auto)

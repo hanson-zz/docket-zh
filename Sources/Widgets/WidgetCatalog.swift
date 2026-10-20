@@ -334,6 +334,7 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // 截完后、延时、格式、卡片上的按钮；面板里也能改，见 CaptureSettings。
+        // 这里是老卡片（没存过键）的值：存文件、第 4 个按钮录屏；新放的在 make 里写「两者」和录区域。
         Entry(kind: .capture, name: tr("截图工具"), category: .tools,
               defaults: c([CaptureAfter.key: .string(CaptureAfter.fallback.rawValue),
                            CaptureButtons.key: .list(CaptureButtons.defaults.map { .string($0.rawValue) }),
@@ -421,6 +422,7 @@ public enum WidgetCatalog {
               defaults: c([SmartCalc.currencyFromKey: .string(SmartCalc.defaultCurrencyFrom),
                            SmartCalc.currencyToKey: .string(SmartCalc.defaultCurrencyTo),
                            // 结果的小数位和千分位，卡片和面板一起用（CalcNumberStyle）。
+                           // 千分位这里是老卡片的值（关），新放的在 make 里写成开。
                            CalcNumberStyle.decimalsKey: .string(CalcNumberStyle.defaultDecimals.rawValue),
                            CalcNumberStyle.groupingKey: .bool(CalcNumberStyle.defaultGrouping)]),
               variants: [], supportsCompact: false, selfContained: true),
@@ -877,6 +879,9 @@ public enum WidgetCatalog {
         if kind == .progress { config.set(TimeProgress.layoutKey, .string(TimeProgress.newWidgetLayout)) }
         // 新放的喝水默认圆环（免费）；defaults 里的角色只给没存 layout 的老卡片。
         if kind == .water { config.set(WaterLayout.key, .string(WaterLayout.newWidget.rawValue)) }
+        // 截图工具新卡片「两者」+ 录区域、算新卡片带千分位；defaults 里是老卡片升级前的样子。
+        if kind == .capture { CaptureNewWidget.apply(to: &config) }
+        if kind == .calculator { CalcNumberStyle.applyNewWidget(to: &config) }
         // 摸鱼时钟的货币符号跟地区走，只写给新放的；不放进 defaults，免得设置页多一栏。
         if kind == .slacker {
             config.set(SlackerClock.currencyKey, .string(RegionalDefaults.current.currencySymbol))
