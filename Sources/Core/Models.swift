@@ -923,6 +923,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     public var floatingSpots: [String: FloatingSpot] = [:]
     /// 浮动扩展栏上次停在哪块屏幕。
     public var floatingDisplayID: UInt32?
+    /// 点扩展栏上的文件夹格子：弹出小窗浏览（默认），还是交给访达打开。
+    /// 旧配置里没有这个键时是小窗浏览。废纸篓格子不看它，始终交给访达。
+    public var folderClick: FolderClickAction = .defaultValue
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -977,6 +980,8 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         floating = (try? c.decodeIfPresent(Bool.self, forKey: .floating)) ?? false
         floatingSpots = (try? c.decodeIfPresent([String: FloatingSpot].self, forKey: .floatingSpots)) ?? [:]
         floatingDisplayID = try? c.decodeIfPresent(UInt32.self, forKey: .floatingDisplayID)
+        folderClick = (try? c.decodeIfPresent(FolderClickAction.self, forKey: .folderClick))
+            ?? .defaultValue
     }
 
     /// 只读不写的旧键。

@@ -1033,6 +1033,15 @@ struct SettingsView: View {
                     subtitled(tr("正在运行的应用"),
                               tr("打开了但没固定的 App 运行时出现在扩展栏，和固定的分开。选择它们放在哪，或者关掉。"))
                 }
+                // 点文件夹格子：扩展栏上方弹出小窗浏览，或者照旧交给访达。
+                Picker(selection: $state.customDock.folderClick) {
+                    ForEach(FolderClickAction.allCases, id: \.self) { action in
+                        Text(action.label).tag(action)
+                    }
+                } label: {
+                    subtitled(tr("点文件夹时"),
+                              tr("小窗里可以搜索、排序、进子文件夹、快速查看，点文件直接打开。废纸篓不受影响。"))
+                }
                 Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
                 if state.customDock.showTrash {
                     Toggle("废纸篓图标上显示苍蝇", isOn: $state.customDock.showTrashFlies)

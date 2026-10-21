@@ -1069,6 +1069,19 @@ struct DockShelfView: View {
         if entry.item.widget?.id != WidgetDetailWindow.shared.openWidgetID {
             WidgetDetailWindow.shared.close()
         }
+        if entry.item.id != FolderBrowserWindow.shared.openFolderID {
+            FolderBrowserWindow.shared.close()
+        }
+        // 文件夹格子：设置里选了小窗浏览（默认）就在扩展栏上方弹出小窗。
+        // 废纸篓格子照旧交给访达。
+        if case .folder(let id, let ref, _) = entry.item, id != Self.trashID,
+           settings.folderClick == .browse, let url = ref.resolve() {
+            FolderBrowserWindow.shared.toggle(id: id, folder: url,
+                                              anchor: hoverAnchor ?? .zero,
+                                              edge: position,
+                                              host: shelfWindow?.frame ?? .zero)
+            return
+        }
         if let group = entry.item.group {
             toggleGroup(group, anchor: hoverAnchor ?? .zero)
             return
@@ -1163,6 +1176,7 @@ struct DockShelfView: View {
         TooltipWindow.shared.hide()
         WidgetDetailWindow.shared.close()
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         toggleGroup(group, anchor: anchor)
     }
 
@@ -1195,6 +1209,7 @@ struct DockShelfView: View {
            let anchor = WidgetDetailWindow.shared.lastAnchor(for: id) {
             TooltipWindow.shared.hide()
             GroupWindow.shared.close()
+            FolderBrowserWindow.shared.close()
             WidgetDetailWindow.shared.toggle(
                 widget,
                 context: WidgetContext(position: position, now: app.now),
@@ -1241,6 +1256,7 @@ struct DockShelfView: View {
         }
         TooltipWindow.shared.hide()
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.toggle(widget,
                                          context: WidgetContext(position: position, now: app.now),
                                          anchor: anchor, edge: position, host: frame)

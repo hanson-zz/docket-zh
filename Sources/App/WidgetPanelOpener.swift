@@ -63,6 +63,7 @@ final class WidgetPanelOpener {
         guard let instance = WidgetWriter.current(id), WidgetDetail.exists(for: instance.kind) else { return }
         TooltipWindow.shared.hide()
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.openFloating(instance, now: .now)
     }
 }

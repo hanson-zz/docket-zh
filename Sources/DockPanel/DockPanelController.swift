@@ -126,6 +126,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     func hide() {
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.closeIfAnchored()
         TooltipWindow.shared.hide()
         panel?.orderOut(nil)
@@ -135,6 +136,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     func close() {
         stopPolling()
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.close()
         TooltipWindow.shared.hide()
         panel?.close()
@@ -346,6 +348,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             context.timingFunction = CAMediaTimingFunction(name: Motion.pointer.timing)
             panel.animator().setFrame(CGRect(origin: target, size: panel.frame.size), display: true)
             GroupWindow.shared.shift(by: dy)
+            FolderBrowserWindow.shared.shift(by: dy)
             WidgetDetailWindow.shared.shift(by: dy)
             LayoutToast.shared.shift(by: dy)
         }
@@ -672,7 +675,9 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // shelf just stays put while the panel is up.
         // The widget library pins it for the same reason: what is picked
         // there lands on the shelf, and it should be in view when it does.
-        if WidgetDetailWindow.shared.isAnchoredOpen || LibraryWindow.shared.isOpen {
+        // 文件夹小窗也一样：开着时扩展栏不收，点外面才关。
+        if WidgetDetailWindow.shared.isAnchoredOpen || LibraryWindow.shared.isOpen
+            || FolderBrowserWindow.shared.isOpen {
             hideWorkItem?.cancel()
             hideWorkItem = nil
             if !revealed { setRevealed(true) }
@@ -899,7 +904,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private func swipeDirection() -> MissionControlSwipe? {
         // Anything that pins the shelf out pins it through a swipe too.
         if menuIsOpen || GroupWindow.shared.isOpen || WidgetDetailWindow.shared.isAnchoredOpen
-            || LibraryWindow.shared.isOpen {
+            || LibraryWindow.shared.isOpen || FolderBrowserWindow.shared.isOpen {
             return nil
         }
         if !revealed, !heldForMissionControl { return .opening }
@@ -923,6 +928,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // label was left sitting over the desktop pointing at nothing.
         if !value {
             GroupWindow.shared.close()
+            FolderBrowserWindow.shared.close()
             // 独立浮动的面板（弹出卡片打开的、不挂在扩展栏上的）不跟着收。
             WidgetDetailWindow.shared.closeIfAnchored()
             TooltipWindow.shared.hide()

@@ -9281,6 +9281,17 @@
         }
       }
     },
+    "修改时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Modified"
+          }
+        }
+      }
+    },
     "修造" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11459,6 +11470,28 @@
         }
       }
     },
+    "可以在「系统设置 › 隐私与安全性 › 文件与文件夹」里允许码头访问。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can allow Dockling in System Settings › Privacy & Security › Files & Folders."
+          }
+        }
+      }
+    },
+    "可以在废纸篓里找回。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can get it back from the Trash."
+          }
+        }
+      }
+    },
     "右上角" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11547,6 +11580,17 @@
         }
       }
     },
+    "它可能被移动、删除，或者所在的磁盘没有连接。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It may have been moved or deleted, or its disk is not connected."
+          }
+        }
+      }
+    },
     "对齐" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11554,6 +11598,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alignment"
+          }
+        }
+      }
+    },
+    "小窗浏览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse in a popup"
+          }
+        }
+      }
+    },
+    "小窗里可以搜索、排序、进子文件夹、快速查看，点文件直接打开。废纸篓不受影响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search, sort, open subfolders and Quick Look right in the popup; click a file to open it. The Trash is not affected."
           }
         }
       }
@@ -11657,6 +11723,17 @@
         }
       }
     },
+    "快速查看" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Look"
+          }
+        }
+      }
+    },
     "所有 App" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11668,6 +11745,17 @@
         }
       }
     },
+    "找不到这个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder not found"
+          }
+        }
+      }
+    },
     "把 App 拖进来，或点 ＋ 选择" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11675,6 +11763,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag apps here, or click + to choose"
+          }
+        }
+      }
+    },
+    "把「%@」移到废纸篓？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move \"%@\" to the Trash?"
+          }
+        }
+      }
+    },
+    "把文件拖到这里，就会移进这个文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files here to move them into this folder."
           }
         }
       }
@@ -25873,6 +25983,17 @@
         }
       }
     },
+    "排序方式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        }
+      }
+    },
     "排序（固定和隐藏的 App 在面板「编辑」里改）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25880,6 +26001,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sort (pin and hide apps with Edit in the panel)"
+          }
+        }
+      }
+    },
+    "排序：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort: %@"
           }
         }
       }
@@ -26606,6 +26738,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Organize Emoji"
+          }
+        }
+      }
+    },
+    "文件夹是空的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder is empty"
           }
         }
       }
@@ -28172,6 +28315,17 @@
         }
       }
     },
+    "没有名字含「%@」的项目" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No items match \"%@\""
+          }
+        }
+      }
+    },
     "没有名字里带“%@”的快捷指令。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28256,6 +28410,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No permission to put \"%@\" back. Click Show and use Put Back in Finder."
+          }
+        }
+      }
+    },
+    "没有权限读取这个文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No permission to read this folder"
           }
         }
       }
@@ -37656,6 +37821,17 @@
         }
       }
     },
+    "点文件夹时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When clicking a folder"
+          }
+        }
+      }
+    },
     "点星星加收藏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40105,6 +40281,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Offline, using rates from %@"
+          }
+        }
+      }
+    },
+    "种类" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kind"
           }
         }
       }
@@ -46493,6 +46680,17 @@
       }
     },
     "返回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "返回上一层" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
