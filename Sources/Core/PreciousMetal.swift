@@ -79,6 +79,12 @@ public enum PreciousMetal: String, CaseIterable, Sendable {
         factor(unit, usdToCny: usdToCny) == nil ? .usdPerOunce : unit
     }
 
+    /// 这一只有没有单位切换（元/克、美元/盎司）：只有黄金白银有。持仓的成本价
+    /// 切换单位时不换算，填成本价的地方给这些品种加一行提示。
+    public static func hasUnitSwitch(_ symbol: String) -> Bool {
+        PreciousMetal(symbol: symbol) != nil
+    }
+
     /// 这一串代码里有没有贵金属，有的话要顺带取汇率。
     public static func needsExchangeRate(_ symbols: [String], unit: DisplayUnit) -> Bool {
         unit == .cnyPerGram && symbols.contains { PreciousMetal(symbol: $0) != nil }

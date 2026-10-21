@@ -247,6 +247,8 @@ final class AppVolumeMeetingTests: XCTestCase {
     func testMeetingAppList() {
         XCTAssertTrue(MeetingMode.isMeetingApp("us.zoom.xos"))
         XCTAssertTrue(MeetingMode.isMeetingApp("COM.TENCENT.MEETING"))
+        XCTAssertTrue(MeetingMode.isMeetingApp("com.tencent.xinWeChat"), "微信语音视频通话不降低")
+        XCTAssertFalse(MeetingMode.isMeetingApp("com.tencent.xinWeChat", custom: ["com.tencent.xinWeChat": false]))
         XCTAssertFalse(MeetingMode.isMeetingApp("com.apple.Music"))
         XCTAssertTrue(MeetingMode.isMeetingApp("com.apple.Music", custom: ["com.apple.Music": true]))
         XCTAssertFalse(MeetingMode.isMeetingApp("us.zoom.xos", custom: ["us.zoom.xos": false]))

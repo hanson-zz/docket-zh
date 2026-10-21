@@ -11206,6 +11206,17 @@
         }
       }
     },
+    "切换单位时成本价不会换算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost isn't converted when you switch units"
+          }
+        }
+      }
+    },
     "切换布局" : {
       "extractionState" : "manual",
       "localizations" : {

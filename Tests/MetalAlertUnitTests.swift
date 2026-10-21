@@ -106,6 +106,15 @@ final class MetalAlertUnitTests: XCTestCase {
         XCTAssertNil(PreciousMetal.storedAlertPrice(3000, symbol: "GC=F", config: pending, usdToCny: nil))
     }
 
+    func testCostHintOnlyForUnitSwitchSymbols() {
+        XCTAssertTrue(PreciousMetal.hasUnitSwitch("GC=F"))
+        XCTAssertTrue(PreciousMetal.hasUnitSwitch("si=f"))
+        XCTAssertTrue(PreciousMetal.hasUnitSwitch("XAUUSD=X"))
+        XCTAssertFalse(PreciousMetal.hasUnitSwitch("AAPL"))
+        XCTAssertFalse(PreciousMetal.hasUnitSwitch("600519.SS"))
+        XCTAssertFalse(PreciousMetal.hasUnitSwitch(PreciousMetal.exchangeSymbol))
+    }
+
     func testNotificationRoute() {
         let id = UUID()
         let info: [AnyHashable: Any] = NotificationRoute.userInfo(widget: id)

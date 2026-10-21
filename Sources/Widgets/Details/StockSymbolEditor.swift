@@ -286,6 +286,13 @@ struct StockSymbolEditor: View {
                 field(tr("\(StockBoard.displaySymbol(symbol)) 股数"), text: $sharesText, prompt: "100")
                 field(tr("成本价（可选）"), text: $costText, prompt: "238.00")
             }
+            // 黄金白银切换单位时成本价不换算（用户定的），在这里说一声。
+            if PreciousMetal.hasUnitSwitch(symbol) {
+                Text(tr("切换单位时成本价不会换算"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 6) {
                 if holdings?[symbol] != nil {
                     Button(tr("清除持仓")) {

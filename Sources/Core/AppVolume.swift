@@ -341,6 +341,7 @@ public enum MeetingMode {
         "us.zoom.xos",
         "com.microsoft.teams", "com.microsoft.teams2",
         "com.tencent.meeting", "com.tencent.wemeet",
+        "com.tencent.xinWeChat",
         "com.electron.lark", "com.bytedance.lark", "com.bytedance.feishu",
         "com.alibaba.DingTalkMac",
         "com.cisco.webexmeetingsapp", "Cisco-Systems.Spark",
