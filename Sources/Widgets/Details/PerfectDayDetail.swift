@@ -45,7 +45,7 @@ struct PerfectDayDetail: View {
         let items = today
         let shownMonth = month
         let got = PerfectDay.leavesSoFar(all, month: shownMonth, today: context.now)
-        return DetailCard {
+        return DetailCard(forceDark: true) {
             BasketForestBackdrop(bambooHeight: 92)
         } content: {
             VStack(alignment: .leading, spacing: 12) {

@@ -151,7 +151,7 @@ struct RadioDetail: View {
     }
 
     private func content(now: Date) -> some View {
-        DetailCard {
+        DetailCard(forceDark: true) {
             if let model = skinModel {
                 RadioModernBackdrop(model: model)
             } else {

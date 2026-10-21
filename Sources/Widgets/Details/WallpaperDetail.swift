@@ -51,7 +51,7 @@ struct WallpaperDetail: View {
     private var favorites: [String] { WallpaperSchedule.favorites(config) }
 
     var body: some View {
-        DetailCard {
+        DetailCard(forceDark: true) {
             MeshBackdrop(color: Color(hex: Self.accentHex))
         } content: {
             VStack(alignment: .leading, spacing: 12) {

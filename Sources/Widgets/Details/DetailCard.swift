@@ -8,11 +8,16 @@ import SwiftUI
 /// on it, and this is that card for every panel.
 ///
 /// It reaches past the panel's own padding to 6pt from its edge, where a
-/// 14pt corner sits concentric with the panel's 20. The card is always dark,
-/// so the content inside is forced into the dark scheme and every semantic
-/// colour the panels already use (`WidgetStyle.primary`, `.secondary`, the
-/// system controls) reads white on it without being rewritten.
+/// 14pt corner sits concentric with the panel's 20.
+///
+/// 液态玻璃：卡片底是 macOS 26 的系统 `glassEffect`，跟着设置里的
+/// 「跟随系统 / 浅色 / 深色」走（AppAppearance 设到 NSApp.appearance，环境里的
+/// colorScheme 跟着变），不再强制深色。内容的颜色用 PanelColors.swift 里的语义色。
+/// 收音机、相框、壁纸这类例外传 `forceDark: true`（或外面套 `.panelForceDark()`），
+/// 卡片换回原来的石墨实心底，内容固定深色。系统「降低透明度」时玻璃换成实心底。
 struct DetailCard<Backdrop: View, Content: View>: View {
+    /// 保持原来的暗色石墨卡（例外面板用）。
+    var forceDark = false
     @ViewBuilder var backdrop: () -> Backdrop
     @ViewBuilder var content: () -> Content
 
@@ -22,6 +27,17 @@ struct DetailCard<Backdrop: View, Content: View>: View {
     /// 颜色面板里选了颜色时，卡片顶上一抹淡淡的主题色（不超过 15%），
     /// 天空、封面这类有意思的底也加，只在顶边，盖不住它们。
     @Environment(\.panelTint) private var panelTint
+    @Environment(\.panelForcedDark) private var inheritedDark
+
+    init(forceDark: Bool = false,
+         @ViewBuilder backdrop: @escaping () -> Backdrop,
+         @ViewBuilder content: @escaping () -> Content) {
+        self.forceDark = forceDark
+        self.backdrop = backdrop
+        self.content = content
+    }
+
+    private var dark: Bool { forceDark || inheritedDark }
 
     var body: some View {
         content()
@@ -29,19 +45,47 @@ struct DetailCard<Backdrop: View, Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .background {
                 ZStack {
+                    PanelGlassSurface(cornerRadius: Self.corner, dark: dark)
                     backdrop()
                     if let panelTint {
                         TintGlow(color: panelTint.color, opacity: panelTint.glow, reach: panelTint.reach)
                     }
                 }
             }
-            .environment(\.colorScheme, .dark)
+            .panelForceDark(dark)
             .clipShape(.rect(cornerRadius: Self.corner, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                if dark {
+                    RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
+                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                }
             }
             .padding(-Self.bleed)
+    }
+}
+
+/// 卡片最底下那层：液态玻璃（跟随外观），或例外面板的石墨实心底。
+/// `ClockPanelParts` 里自己画卡的时钟面板也用它。
+struct PanelGlassSurface: View {
+    var cornerRadius: CGFloat
+    var dark: Bool
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
+    var body: some View {
+        if dark {
+            MeshBackdrop.graphite
+        } else if reduceTransparency {
+            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
+        } else {
+            Color.clear
+                .glassEffect(.regular, in: shape)
+        }
     }
 }
 
@@ -61,10 +105,10 @@ struct StatChip: View {
             Text(label.uppercased())
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(Color.panelTertiary)
             Text(value)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(value)
         }
@@ -79,15 +123,28 @@ struct StatChip: View {
 
 extension View {
     /// A pane of the card's own frosted glass: lighter than the card, with a
-    /// hairline catching the light along its top.
+    /// hairline catching the light along its top. 浅色下是一块更白的玻璃，
+    /// 深色下和原来一样。
     func glassPane(cornerRadius: CGFloat = 12) -> some View {
-        background {
+        modifier(GlassPaneModifier(cornerRadius: cornerRadius))
+    }
+}
+
+private struct GlassPaneModifier: ViewModifier {
+    var cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        let light = scheme == .light
+        content.background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(.white.opacity(0.09))
+                .fill(Color.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .strokeBorder(
-                            LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.04)],
+                            LinearGradient(colors: light
+                                           ? [.white.opacity(0.95), .white.opacity(0.4)]
+                                           : [.white.opacity(0.22), .white.opacity(0.04)],
                                            startPoint: .top, endPoint: .bottom),
                             lineWidth: 0.5)
                 }
@@ -97,15 +154,18 @@ extension View {
 
 // MARK: - Backdrops
 
-/// The card's surface: deep graphite with light falling on it from above,
-/// and the widget's own colour only as a faint warmth in one corner.
+/// The card's surface: neutral, with the widget's own colour only as a faint
+/// warmth in one corner.
 ///
 /// It was the widget's colour as a whole-card mesh, and even pulled halfway
 /// to graphite a card of calendar red or AirDrop amber read as a coloured
 /// sticker, not as part of the Mac. Apple's own surfaces are neutral, and
 /// colour is something placed on them: a ring, a mark, a figure. So the card
-/// is the same graphite for every widget, told apart by what is on it, and
+/// is the same surface for every widget, told apart by what is on it, and
 /// the colour is a hint you notice second.
+///
+/// 液态玻璃以后，卡片底由 `DetailCard` 的玻璃负责，这里只在玻璃上加一层很淡的
+/// 光和角上的颜色；例外面板（`panelForcedDark`）还是原来的石墨渐变。
 struct MeshBackdrop: View {
     var color: Color
     /// 颜色本身有意思（电量、涨跌、逾期、隔空投送的模式、取的颜色、事件
@@ -114,6 +174,8 @@ struct MeshBackdrop: View {
     var fixed = false
 
     @Environment(\.panelTint) private var panelTint
+    @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.colorScheme) private var scheme
 
     /// 角上那一抹实际用的颜色。
     private var shown: Color { fixed ? color : panelTint.accent(or: color) }
@@ -129,8 +191,31 @@ struct MeshBackdrop: View {
     }
 
     var body: some View {
+        if forcedDark {
+            graphiteBody
+        } else {
+            glassBody
+        }
+    }
+
+    /// 玻璃上的一层：浅色下顶上更亮一点，深色下往下压暗一点，角上一抹颜色。
+    private var glassBody: some View {
+        let light = scheme == .light
+        return ZStack {
+            LinearGradient(colors: light
+                           ? [.white.opacity(0.22), .white.opacity(0.06)]
+                           : [.black.opacity(0.04), .black.opacity(0.2)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [shown.opacity(light ? Self.hint * 0.8 : Self.hint), .clear],
+                           center: .topLeading, startRadius: 0, endRadius: 280)
+            LinearGradient(colors: [.white.opacity(light ? 0.25 : 0.06), .clear],
+                           startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.18))
+        }
+    }
+
+    private var graphiteBody: some View {
         let base = Self.graphite
-        ZStack {
+        return ZStack {
             LinearGradient(stops: [
                 .init(color: base.mix(with: .white, by: 0.07), location: 0),
                 .init(color: base, location: 0.45),
@@ -152,9 +237,15 @@ struct MeshBackdrop: View {
 /// night, rose at dawn, blue through the day, amber into dusk. A dotted arc
 /// runs across the card as the day's path, with the sun on it at the current
 /// hour between six and six, and the moon and a scatter of stars outside it.
+///
+/// 液态玻璃：天色只是玻璃上一层淡淡的颜色（浅色约 26%，深色约 38%），弧线和
+/// 星星用语义色；例外面板（`panelForcedDark`）还是原来压暗的实心天色。
 struct SkyBackdrop: View {
     var date: Date
     var zone: TimeZone
+
+    @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.colorScheme) private var scheme
 
     private var hour: Double {
         var calendar = Calendar.current
@@ -164,14 +255,17 @@ struct SkyBackdrop: View {
     }
 
     var body: some View {
-        let colors = Self.palette(hour)
+        let colors = forcedDark
+            ? Self.palette(hour)
+            : Self.rawPalette(hour).map { $0.opacity(scheme == .light ? 0.26 : 0.38) }
         GeometryReader { geo in
             let size = geo.size
             ZStack {
                 LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
                 if !isDay { stars(in: size) }
                 path(in: size)
-                    .stroke(.white.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [2, 4]))
+                    .stroke(forcedDark ? Color.white.opacity(0.18) : Color.panelQuaternary,
+                            style: StrokeStyle(lineWidth: 1, dash: [2, 4]))
                 orb(in: size)
             }
         }
@@ -225,9 +319,10 @@ struct SkyBackdrop: View {
             (0.73, 0.15, 1.5), (0.86, 0.38, 1.1), (0.93, 0.1, 1.2), (0.66, 0.55, 0.9),
             (0.2, 0.65, 0.9), (0.48, 0.6, 1.0),
         ]
+        let star: Color = forcedDark ? .white.opacity(0.55) : .panelTertiary
         return ForEach(Array(spots.enumerated()), id: \.offset) { _, spot in
             Circle()
-                .fill(.white.opacity(0.55))
+                .fill(star)
                 .frame(width: spot.2, height: spot.2)
                 .position(x: size.width * spot.0, y: size.height * spot.1)
         }
@@ -236,6 +331,11 @@ struct SkyBackdrop: View {
     /// Top and bottom of the sky for an hour, blended across the edges of
     /// each band so the colour never jumps on the hour.
     static func palette(_ hour: Double) -> [Color] {
+        rawPalette(hour).map { MeshBackdrop.muted($0, by: 0.6) }
+    }
+
+    /// 没压暗的天色，玻璃上用。
+    static func rawPalette(_ hour: Double) -> [Color] {
         let night: [Color] = [Color(red: 0.05, green: 0.07, blue: 0.2), Color(red: 0.1, green: 0.1, blue: 0.3)]
         let dawn: [Color] = [Color(red: 0.22, green: 0.22, blue: 0.42), Color(red: 0.62, green: 0.4, blue: 0.4)]
         let day: [Color] = [Color(red: 0.15, green: 0.33, blue: 0.56), Color(red: 0.3, green: 0.47, blue: 0.66)]
@@ -247,9 +347,9 @@ struct SkyBackdrop: View {
         for i in 1..<stops.count where hour <= stops[i].0 {
             let (h0, c0) = stops[i - 1], (h1, c1) = stops[i]
             let f = h1 == h0 ? 0 : (hour - h0) / (h1 - h0)
-            return zip(c0, c1).map { MeshBackdrop.muted($0.mix(with: $1, by: f), by: 0.6) }
+            return zip(c0, c1).map { $0.mix(with: $1, by: f) }
         }
-        return night.map { MeshBackdrop.muted($0, by: 0.6) }
+        return night
     }
 }
 
@@ -257,16 +357,27 @@ struct SkyBackdrop: View {
 /// for cloud, steel for rain, pale for snow, indigo by night. The condition's
 /// symbol is set large and soft in the corner, as a light source rather than
 /// an icon.
+///
+/// 液态玻璃：天色只是玻璃上一层淡色（浅色约 20%，深色约 32%），角上的大图标用
+/// 主文字色；例外面板（`panelForcedDark`）还是原来压暗的实心天色。
 struct WeatherBackdrop: View {
     var symbol: String
 
+    @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.colorScheme) private var scheme
+
+    private var colors: [Color] {
+        forcedDark
+            ? Self.palette(symbol).map { MeshBackdrop.muted($0, by: 0.6) }
+            : Self.palette(symbol).map { $0.opacity(scheme == .light ? 0.2 : 0.32) }
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            LinearGradient(colors: Self.palette(symbol).map { MeshBackdrop.muted($0, by: 0.6) },
-                           startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
             Image(systemName: symbol)
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(.white)
+                .foregroundStyle(forcedDark ? Color.white : Color.panelPrimary)
                 .font(.system(size: 150))
                 .opacity(0.07)
                 .blur(radius: 3)
