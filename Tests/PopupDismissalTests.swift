@@ -208,6 +208,7 @@ final class PopupDismissalTests: XCTestCase {
         // 中间停了很久没看指针（不再自动隐藏又改回来）：不能一来就收。
         XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(5)))
         XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(5.2)))
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(5.4)))
         XCTAssertTrue(timer.tick(.init(), now: t0.addingTimeInterval(5.5)))
     }
 
