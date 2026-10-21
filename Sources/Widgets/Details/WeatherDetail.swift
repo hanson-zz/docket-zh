@@ -28,6 +28,18 @@ struct WeatherDetail: View {
     @State private var page = 0
     /// 拖动逐小时预报时手指所在的位置（小数下标），松手回到 nil，也就是“现在”。
     @State private var scrub: Double?
+    /// 换城市：左右滑、拖动时内容跟手（到头轻轻回弹）的位移。
+    @State private var dragShift: CGFloat = 0
+    /// 换城市的滑入动画：先往一边滑出、淡掉，再从另一边滑进来。
+    @State private var slideOffset: CGFloat = 0
+    @State private var slideOpacity: Double = 1
+    /// 滑出途中已经定下的下一个城市，连按时从它接着数。
+    @State private var pendingPage: Int?
+    @State private var slideGeneration = 0
+    /// 指针在顶部（城市名和大字）上：两侧出现小箭头。
+    @State private var topHovered = false
+    /// 面板里能横向滚动的区域（逐小时），两指左右滑落在里面时让它滚，不换城市。
+    @State private var swipeZones = CitySwipeZones()
     /// 浏览态记住的分页（今天、指数、逐小时、7 天），见 `BrowsePage`。
     @AppStorage(DetailPanelSections.pageKey(.weather)) private var storedPage = ""
 
@@ -91,7 +103,7 @@ struct WeatherDetail: View {
                 } else if mode == .edit {
                     editor
                 } else {
-                    browse
+                    browseHost
                 }
             }
         }
@@ -227,6 +239,10 @@ struct WeatherDetail: View {
             }
             .contentShape(.rect)
             .gesture(citySwipe)
+            // 伸进两侧留白，指针挪到半截伸出去的箭头上时不算离开。
+            .overlay { HoverCatcher { topHovered = $0 != nil }.padding(.horizontal, -16) }
+            .overlay(alignment: .leading) { cityArrow(step: -1) }
+            .overlay(alignment: .trailing) { cityArrow(step: 1) }
 
             if !city.isEmpty, shownWeather != nil {
                 if isPrimary, offlineNow {
@@ -296,11 +312,15 @@ struct WeatherDetail: View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(verbatim: city.isEmpty ? tr("天气") : city)
+                    // 定位反查回来的常是「中国河北省石家庄市长安区」一整串，顶部只放
+                    // 「石家庄」，完整地名放悬停提示。
+                    Text(verbatim: city.isEmpty ? tr("天气") : PlaceName.short(city))
                         .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .help(PlaceName.tooltip(city) ?? "")
+                        .accessibilityLabel(city.isEmpty ? tr("天气") : city)
                     if selectedEntry.isEmpty, !city.isEmpty {
                         Text(tr("当前位置"))
                             .font(.system(size: 13, weight: .medium))
@@ -327,38 +347,158 @@ struct WeatherDetail: View {
         }
     }
 
-    /// 城市切换圆点，点一下切过去。
+    /// 城市切换圆点，点一下切过去。圆点照旧 6.4pt，点击区域每个 24pt 见方，
+    /// 用负边距收回多出来的高度，版面不变。
     private var dots: some View {
-        HStack(spacing: 6) {
+        let hit = CGFloat(WeatherCitySwipe.dotHitSize)
+        let inset = (hit - 6.4) / 2
+        return HStack(spacing: 0) {
             ForEach(visiblePlaces.indices, id: \.self) { index in
                 Button { show(index) } label: {
                     Circle()
                         .fill(index == selected ? Color.panelPrimary : Color.panelQuaternary)
                         .frame(width: 6.4, height: 6.4)
-                        .padding(2)
+                        .frame(width: hit, height: hit)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .help(displayName(visiblePlaces[index]))
                 .accessibilityLabel(displayName(visiblePlaces[index]))
             }
         }
+        // 第一个圆点的左边缘对齐城市名；点距跟着点击区域变成 24pt。
+        .padding(.horizontal, -inset)
+        .padding(.vertical, -inset)
     }
 
-    /// 在城市名和大字上左右滑换城市；逐小时那一排的拖动不受影响。
-    private var citySwipe: some Gesture {
-        DragGesture(minimumDistance: 24)
-            .onEnded { drag in
-                let dx = drag.translation.width
-                guard abs(dx) > 40, abs(dx) > abs(drag.translation.height) * 1.5 else { return }
-                show(selected + (dx < 0 ? 1 : -1))
+    /// 悬停顶部时两侧的小箭头；到头的那一侧不出现。
+    @ViewBuilder private func cityArrow(step: Int) -> some View {
+        let base = pendingPage ?? selected
+        if topHovered, !context.isPreview,
+           WeatherCitySwipe.target(current: base, step: step, count: visiblePlaces.count) != nil {
+            Button { move(step) } label: {
+                Image(systemName: step < 0 ? "chevron.left" : "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .frame(width: 24, height: 24)
+                    .glassPane(cornerRadius: 12)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help(step < 0 ? tr("上一个城市") : tr("下一个城市"))
+            // 一半伸进面板的留白里，少挡大字。
+            .offset(x: step < 0 ? -14 : 14)
+            .transition(.opacity)
+        }
+    }
+
+    /// 浏览态外面再包一层：换城市时的跟手和滑入动画，两指左右滑和左右方向键。
+    private var browseHost: some View {
+        browse
+            .offset(x: slideOffset + dragShift)
+            .opacity(slideOpacity)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: topHovered)
+            .coordinateSpace(.named(Self.swipeSpace))
+            .background {
+                CitySwipeCatcher(
+                    enabled: !context.isPreview && visiblePlaces.count > 1,
+                    isExcluded: { [swipeZones] point in swipeZones.contains(point) },
+                    onChange: { dx in
+                        dragShift = CGFloat(WeatherCitySwipe.offset(dx: dx, current: pendingPage ?? selected,
+                                                                    count: visiblePlaces.count))
+                    },
+                    onEnd: { step in finishSwipe(step) },
+                    onKey: { step in move(step) })
             }
     }
 
+    private static let swipeSpace = "weatherCitySwipe"
+
+    /// 在城市名和大字上用鼠标左右拖换城市（触控板两指滑走 `CitySwipeCatcher`）；
+    /// 逐小时那一排的拖动不受影响。拖的时候内容跟手，到头轻轻回弹。
+    private var citySwipe: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { drag in
+                let dx = drag.translation.width
+                guard abs(dx) > abs(drag.translation.height) else { return }
+                dragShift = CGFloat(WeatherCitySwipe.offset(dx: Double(dx), current: pendingPage ?? selected,
+                                                            count: visiblePlaces.count))
+            }
+            .onEnded { drag in
+                finishSwipe(WeatherCitySwipe.decision(dx: Double(drag.translation.width),
+                                                      dy: Double(drag.translation.height),
+                                                      velocity: Double(drag.velocity.width)))
+            }
+    }
+
+    /// 一次滑动结束：够了就换，不够或到头就弹回去。
+    private func finishSwipe(_ step: Int?) {
+        if let step, let next = WeatherCitySwipe.target(current: pendingPage ?? selected, step: step,
+                                                        count: visiblePlaces.count) {
+            show(next)
+        } else {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.62)) { dragShift = 0 }
+        }
+    }
+
+    /// 往前或往后一个（箭头、方向键）；到头不循环，轻轻顶一下再弹回。
+    private func move(_ step: Int) {
+        let base = pendingPage ?? selected
+        if let next = WeatherCitySwipe.target(current: base, step: step, count: visiblePlaces.count) {
+            show(next)
+            return
+        }
+        guard !reduceMotion else { return }
+        withAnimation(.easeOut(duration: 0.1)) { dragShift = step > 0 ? -8 : 8 }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(100))
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { dragShift = 0 }
+        }
+    }
+
     private func show(_ index: Int) {
-        guard visiblePlaces.indices.contains(index), index != selected else { return }
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
-            page = index
-            scrub = nil
+        let base = pendingPage ?? selected
+        guard visiblePlaces.indices.contains(index), index != base else {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { dragShift = 0 }
+            return
+        }
+        guard !reduceMotion else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                page = index
+                scrub = nil
+                dragShift = 0
+            }
+            return
+        }
+        // 下一个城市：旧内容往左滑出，新内容从右边滑进来；上一个反过来。
+        let direction: CGFloat = index > base ? -1 : 1
+        let distance: CGFloat = 36
+        pendingPage = index
+        slideGeneration += 1
+        let generation = slideGeneration
+        withAnimation(.easeIn(duration: 0.12)) {
+            slideOffset = direction * distance + dragShift
+            dragShift = 0
+            slideOpacity = 0
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard generation == slideGeneration else { return }
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) {
+                page = index
+                scrub = nil
+                slideOffset = -direction * distance
+            }
+            // 等这一帧画出来再滑回，不然会从滑出的位置直接倒回去。
+            try? await Task.sleep(for: .milliseconds(16))
+            guard generation == slideGeneration else { return }
+            pendingPage = nil
+            withAnimation(.snappy(duration: 0.28)) {
+                slideOffset = 0
+                slideOpacity = 1
+            }
         }
     }
 
@@ -647,6 +787,10 @@ struct WeatherDetail: View {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(index) }
             }
         }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.swipeSpace)) } action: { frame in
+            swipeZones.hourly = frame
+        }
+        .onDisappear { swipeZones.hourly = .zero }
         .accessibilityElement(children: .combine)
         .accessibilityHint(tr("左右拖动查看每小时的天气，双指横扫看后面的小时"))
     }
@@ -1132,9 +1276,10 @@ struct WeatherDetail: View {
                     .accessibilityAction(named: tr("下移")) {
                         save(WeatherPlaces.moving(from: index, to: index + 1, in: list))
                     }
-                Text(verbatim: displayName(entry).isEmpty ? tr("正在定位…") : displayName(entry))
+                Text(verbatim: displayName(entry).isEmpty ? tr("正在定位…") : PlaceName.short(displayName(entry)))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.panelPrimary)
+                    .help(PlaceName.tooltip(displayName(entry)) ?? "")
                 if entry.isEmpty {
                     Text(tr("当前位置"))
                         .font(.system(size: 13, weight: .medium))
@@ -1295,6 +1440,7 @@ struct WeatherDetail: View {
         let before = places.first
         WidgetWriter.write(current) { WeatherPlaces.write(list, to: &$0) }
         page = 0
+        pendingPage = nil
         // 第 1 个城市换了：共用的天气位置跟过去，卡片也会在下次刷新时跟上。
         if let first = list.first, first != before {
             if first.isEmpty { LocationService.shared.start() }

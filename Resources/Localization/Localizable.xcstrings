@@ -4980,6 +4980,17 @@
         }
       }
     },
+    "上一个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous city"
+          }
+        }
+      }
+    },
     "上一个电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5273,6 +5284,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next in %@"
+          }
+        }
+      }
+    },
+    "下一个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next city"
           }
         }
       }
