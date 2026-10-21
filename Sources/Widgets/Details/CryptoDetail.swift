@@ -346,15 +346,31 @@ struct CryptoDetail: View {
             .padding(.bottom, 8)
             myCoins
                 .padding(.bottom, 14)
-            HStack(spacing: 10) {
-                Text(tr("涨跌颜色"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
-                    .fixedSize()
-                segment(ChangeColors.allCases.map { ($0.title, $0.rawValue) }, selection: colors.rawValue) { raw in
-                    write { $0.set("colors", .string(raw)) }
+            // 英文 "Up/down colors" 加 "Red up, green down" 两格一行放不下，
+            // 原来两格被压成 "Red up, gr…"；放不下时分段放到标题下面。
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    colorsTitle
+                    colorsSegment
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    colorsTitle
+                    colorsSegment
                 }
             }
+        }
+    }
+
+    private var colorsTitle: some View {
+        Text(tr("涨跌颜色"))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.62))
+            .fixedSize()
+    }
+
+    private var colorsSegment: some View {
+        segment(ChangeColors.allCases.map { ($0.title, $0.rawValue) }, selection: colors.rawValue) { raw in
+            write { $0.set("colors", .string(raw)) }
         }
     }
 

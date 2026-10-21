@@ -413,13 +413,24 @@ struct AnniversaryDetail: View {
                 .glassPane(cornerRadius: 8)
                 .onSubmit(save)
 
-            Picker("", selection: binding(\.kind)) {
-                Text("倒数日（还有几天）").tag(AnniversaryEvent.Kind.countdown)
-                Text("正数日（已经几天）").tag(AnniversaryEvent.Kind.countup)
+            // 带说明的两格放不下（英文 "Countdown (days to go)" 两格约 290pt，
+            // 编辑框里只有 280 上下）就换成短名，不撑宽也不截断。
+            ViewThatFits(in: .horizontal) {
+                Picker("", selection: binding(\.kind)) {
+                    Text("倒数日（还有几天）").tag(AnniversaryEvent.Kind.countdown)
+                    Text("正数日（已经几天）").tag(AnniversaryEvent.Kind.countup)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                Picker("", selection: binding(\.kind)) {
+                    Text("倒数日").tag(AnniversaryEvent.Kind.countdown)
+                    Text("正数日").tag(AnniversaryEvent.Kind.countup)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.small)
 
             HStack {
                 Text("日期")

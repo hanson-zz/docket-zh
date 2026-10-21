@@ -249,50 +249,74 @@ struct FocusTimerDetail: View {
     /// 环境音一行：选的声音（点一下去设置里换）、音量、“换”轮到下一种。
     private func ambientRow(_ state: TimerState) -> some View {
         let sound = FocusAmbient.sound(state)
-        return HStack(spacing: 10) {
-            Text(tr("环境音"))
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.86))
+        let label = Text(tr("环境音"))
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.86))
+            .fixedSize()
+        let choose = Button {
+            commitDraft()
+            editing = true
+        } label: {
+            Text(sound?.title ?? tr("不播放"))
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(sound == nil ? Color.white.opacity(0.7) : accent)
+                .lineLimit(1)
                 .fixedSize()
-            Button {
-                commitDraft()
-                editing = true
-            } label: {
-                Text(sound?.title ?? tr("不播放"))
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(sound == nil ? Color.white.opacity(0.7) : accent)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .padding(.horizontal, 12)
-                    .frame(height: 28)
-                    .background {
-                        Capsule().fill(sound == nil ? Color.white.opacity(0.08) : accent.opacity(0.2))
-                            .overlay(Capsule().strokeBorder(sound == nil ? Color.white.opacity(0.14) : accent.opacity(0.8),
-                                                            lineWidth: 0.8))
-                    }
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .help(tr("开始专注时自动播放，点一下选别的声音"))
-            Slider(value: volumeBinding(state), in: 0...100)
-                .controlSize(.small)
-                .tint(accent)
-                .disabled(sound == nil || context.isPreview)
-                .accessibilityLabel(tr("环境音音量"))
-            Button {
-                update { $0.ambient = FocusAmbient.next(after: $0.ambient).rawValue }
-            } label: {
-                Text(tr("换"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.86))
-                    .frame(minWidth: 24, minHeight: 28)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help(tr("换下一种环境音"))
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background {
+                    Capsule().fill(sound == nil ? Color.white.opacity(0.08) : accent.opacity(0.2))
+                        .overlay(Capsule().strokeBorder(sound == nil ? Color.white.opacity(0.14) : accent.opacity(0.8),
+                                                        lineWidth: 0.8))
+                }
+                .contentShape(Capsule())
         }
-        .padding(.horizontal, 14)
-        .frame(height: 50)
+        .buttonStyle(.plain)
+        .help(tr("开始专注时自动播放，点一下选别的声音"))
+        // 理想宽度给 44，量一排放不放得下时不按滑块的默认长度算。
+        let volume = Slider(value: volumeBinding(state), in: 0...100)
+            .controlSize(.small)
+            .tint(accent)
+            .disabled(sound == nil || context.isPreview)
+            .accessibilityLabel(tr("环境音音量"))
+            .frame(minWidth: 44, idealWidth: 44, maxWidth: .infinity)
+        let next = Button {
+            update { $0.ambient = FocusAmbient.next(after: $0.ambient).rawValue }
+        } label: {
+            Text(tr("换"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.86))
+                .frame(minWidth: 24, minHeight: 28)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(tr("换下一种环境音"))
+        // 300 宽面板里一行只有 228pt：英文 "Ambient Sound" 加 "Brown noise"
+        // 和 "Next" 已经超过，原来整行被撑宽、右边被面板裁掉。放不下时
+        // 标题和「换」一行，声音和音量一行。
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                label
+                choose
+                volume
+                next
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 50)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    label
+                    Spacer(minLength: 4)
+                    next
+                }
+                HStack(spacing: 10) {
+                    choose
+                    volume
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
         .glassPane(cornerRadius: 12)
     }
 

@@ -1540,17 +1540,31 @@ extension WaterDetail {
     }
 
     private func optionRow<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
-        HStack(spacing: 8) {
-            Text(title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(1)
-                .fixedSize()
-            Spacer(minLength: 4)
-            content()
+        let control = content()
+        // 标题和分段同一行放不下（英文 "Daily activity" 加三格
+        // "Sedentary / Moderate / Heavy labor"）就把分段放到标题下面，
+        // 不再把整块撑宽、在滚动区里被裁掉两边。
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                optionTitle(title)
+                Spacer(minLength: 4)
+                control
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                optionTitle(title)
+                control
+            }
         }
         .controlSize(.small)
         .disabled(context.isPreview)
+    }
+
+    private func optionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(WidgetStyle.label(12))
+            .foregroundStyle(.white.opacity(0.85))
+            .lineLimit(1)
+            .fixedSize()
     }
 
     fileprivate func numberField(_ title: String, text: Binding<String>, unit: String, prompt: String,

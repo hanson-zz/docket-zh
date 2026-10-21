@@ -292,18 +292,39 @@ struct SlackerDetail: View {
 
     private var itemsRow: some View {
         let chosen = Set(settings.items)
-        return row(tr("显示更多")) {
-            HStack(spacing: 4) {
-                ForEach(SlackerClock.Item.allCases) { item in
-                    pill(item.title, on: chosen.contains(item)) {
-                        var next = chosen
-                        if next.contains(item) { next.remove(item) } else if next.count < SlackerClock.maxItems { next.insert(item) }
-                        let ordered = SlackerClock.Item.allCases.filter { next.contains($0) }
-                        write { $0.set(SlackerClock.itemsKey, .list(ordered.map { .string($0.rawValue) })) }
+        let items = SlackerClock.Item.allCases
+        let toggle: (SlackerClock.Item) -> Void = { item in
+            var next = chosen
+            if next.contains(item) { next.remove(item) } else if next.count < SlackerClock.maxItems { next.insert(item) }
+            let ordered = SlackerClock.Item.allCases.filter { next.contains($0) }
+            write { $0.set(SlackerClock.itemsKey, .list(ordered.map { .string($0.rawValue) })) }
+        }
+        // 标题单独一行，4 个标签 13pt：一排放得下就一排，放不下（英文
+        // "Today's earnings" 这类）换成两行两列，不再把整行撑出面板。
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(tr("显示更多"))
+                .font(WidgetStyle.label(12))
+                .foregroundStyle(.white.opacity(0.85))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 4) {
+                    ForEach(items) { item in
+                        pill(item.title, on: chosen.contains(item), size: 13) { toggle(item) }
+                    }
+                }
+                Grid(alignment: .leading, horizontalSpacing: 4, verticalSpacing: 4) {
+                    ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { start in
+                        GridRow {
+                            ForEach(items[start..<min(start + 2, items.count)]) { item in
+                                pill(item.title, on: chosen.contains(item), size: 13) { toggle(item) }
+                            }
+                        }
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .glassPane(cornerRadius: 10)
     }
 
     private var paydayRow: some View {
@@ -370,10 +391,10 @@ struct SlackerDetail: View {
         .glassPane(cornerRadius: 10)
     }
 
-    private func pill(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+    private func pill(_ title: String, on: Bool, size: CGFloat = 10, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: size, weight: .semibold))
                 .lineLimit(1)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 4)
