@@ -126,7 +126,9 @@ struct AppSwitcherDetail: View {
     private var pinnedRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             section(tr("固定", context: "section"), note: tr("没开也在，点了启动"))
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 8), count: 6),
+            // 6 x 40 加 5 个 6pt 间距 = 270，竖排扩展栏（尾巴在侧边，内容区 278）也放得下；
+            // 原来 8pt 间距是 280，侧边时比内容区宽 2pt。
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 6), count: 6),
                       alignment: .leading, spacing: 10) {
                 ForEach(pinned, id: \.self) { id in
                     let app = item(id)

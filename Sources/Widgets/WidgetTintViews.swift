@@ -275,7 +275,7 @@ struct WidgetTintPicker: View {
         VStack(alignment: .leading, spacing: 10) {
             if WidgetTint.offersColor(instance.kind) {
                 Text("颜色")
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.swatchCell), spacing: Self.swatchSpacing),
                                          count: max(1, columns)),
@@ -291,7 +291,7 @@ struct WidgetTintPicker: View {
                     systemSwatch
                 }
                 Text(caption)
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                 // 色调强度和文字颜色：只在选了非默认颜色时生效，默认时灰掉。
                 tuning
@@ -304,7 +304,7 @@ struct WidgetTintPicker: View {
                 HStack(spacing: 5) {
                     ProBadge()
                     Text("自定义颜色和渐变背景为 Pro 专属，预设颜色免费")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -312,7 +312,7 @@ struct WidgetTintPicker: View {
 
             if WidgetTint.offersBackground(instance.kind) {
                 Text("背景")
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     ForEach(WidgetTint.Background.allCases) { option in
@@ -521,7 +521,7 @@ struct WidgetTintPicker: View {
     private var preview: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("预览")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
@@ -664,19 +664,26 @@ struct TintSampleCard: View {
         let reach = style.glowReach(dark: true)
         VStack(alignment: .leading, spacing: 6) {
             Text("实时预览")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 10) {
                 header
                 bar
-                HStack(spacing: 8) {
-                    segmentRow
-                    Spacer(minLength: 4)
-                    stepButton
+                // 窄面板或英文较长时放不下一行，分段和按钮上下两行，不撑宽。
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        segmentRow
+                        Spacer(minLength: 4)
+                        stepButton
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        segmentRow
+                        stepButton
+                    }
                 }
             }
             .padding(12)
-            .frame(maxWidth: 320)
+            .frame(maxWidth: 320, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color(white: 0.14))
@@ -737,7 +744,7 @@ struct TintSampleCard: View {
                     .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.9)
+                    .truncationMode(.tail)
             }
             Spacer(minLength: 4)
             Text(verbatim: "\(Int((progress * 100).rounded()))%")

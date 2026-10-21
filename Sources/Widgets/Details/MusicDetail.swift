@@ -299,36 +299,39 @@ struct MusicDetail: View {
     private func cover(_ track: Playing) -> some View {
         let side: CGFloat = 204
         let glow = track.tint.map { Self.colour($0.glow) } ?? .white
-        return ZStack {
-            // 封面主色的光晕，不超过 15%。
+        return Group {
+            if let image = track.artwork {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                LinearGradient(colors: [glow.opacity(0.55), Color(white: 0.16)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .overlay {
+                        appIcon(track.icon ?? icon(for: track.sourceBundleID), size: 64)
+                            .opacity(0.9)
+                    }
+            }
+        }
+        .frame(width: side, height: side)
+        .clipShape(.rect(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
+        .accessibilityLabel(tr("封面"))
+        // 封面主色的光晕，不超过 15%。画在背景里，只往四周溢出、不参与排版：
+        // 原来它和封面一起放在 ZStack 里，1.64 倍封面宽（约 335pt）比 320 面板
+        // 的内容区（288pt）还宽，把整列内容撑宽，进度条、总时长和底部「外观」
+        // 右边都被面板裁掉（见 Core `DetailPanelWidth`）。
+        .background {
             Circle()
                 .fill(RadialGradient(colors: [glow.opacity(ArtworkTint.glowOpacity), glow.opacity(0)],
                                      center: .center, startRadius: 0, endRadius: side * 0.82))
                 .frame(width: side * 1.64, height: side * 1.64)
                 .allowsHitTesting(false)
-            Group {
-                if let image = track.artwork {
-                    Image(nsImage: image)
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    LinearGradient(colors: [glow.opacity(0.55), Color(white: 0.16)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                        .overlay {
-                            appIcon(track.icon ?? icon(for: track.sourceBundleID), size: 64)
-                                .opacity(0.9)
-                        }
-                }
-            }
-            .frame(width: side, height: side)
-            .clipShape(.rect(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
-            .accessibilityLabel(tr("封面"))
+                .accessibilityHidden(true)
         }
-        .frame(height: side)
     }
 
     private func titles(_ track: Playing) -> some View {

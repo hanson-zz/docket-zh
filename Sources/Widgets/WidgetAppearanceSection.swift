@@ -23,24 +23,27 @@ struct WidgetAppearanceSection: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "paintpalette")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                     Text(tr("外观", context: "appearance"))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                        .layoutPriority(1)
                     Spacer(minLength: 8)
                     Circle()
                         .fill(dotColor)
                         .frame(width: 9, height: 9)
                         .overlay { Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 0.5) }
+                    // 窄面板里先让摘要截断，不把整行撑宽。
                     Text(WidgetAppearance.summary(instance.config, kind: instance.kind))
-                        .font(.system(size: 11.5))
+                        .font(.system(size: 13))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .rotationEffect(.degrees(open ? 90 : 0))
                 }
                 .foregroundStyle(.secondary)
-                .frame(height: 22)
+                .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)

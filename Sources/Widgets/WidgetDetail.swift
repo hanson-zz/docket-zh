@@ -1,5 +1,9 @@
 import AppKit
 import SwiftUI
+import os
+
+/// 面板内容比面板宽时记一条（见 `DetailPanelWidth`），方便在控制台里抓到撑宽的面板。
+private let detailWidthLog = Logger(subsystem: "com.docket-zh.app", category: "detail-width")
 
 /// A widget's detail panel: what opens when its tile is clicked.
 ///
@@ -422,7 +426,7 @@ struct WidgetDetailChrome: View {
             WidgetDetailBody(instance: instance, context: context)
             if showsAppearance {
                 WidgetAppearanceSection(instance: instance, context: context,
-                                        width: WidgetDetail.width(instance.kind) - 32 - PanelShape.arrowDepth)
+                                        width: contentWidth)
                     // 每次打开都从收起开始。
                     .id(session)
                     // 封面这类自己有深色底的面板，入口的字跟着用浅色。
@@ -430,7 +434,17 @@ struct WidgetDetailChrome: View {
                                  WidgetDetailBody.ground(instance, context) != nil ? .dark : scheme)
             }
         }
-        .padding(16)
+        // 内容区左右边距对称的前提是没有哪一块比内容区宽：外框靠左对齐，
+        // 撑宽的部分全落到右边被裁掉。量到超出就记一条，不改排版。
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            let extra = DetailPanelWidth.overflow(content: width, available: contentWidth)
+            guard extra > 0, !measuring else { return }
+            let kind = instance.kind.rawValue
+            detailWidthLog.error("detail content wider than panel by \(Double(extra), privacy: .public)pt: \(kind, privacy: .public)")
+        }
+        .padding(DetailPanelWidth.padding)
         if measuring {
             content
         } else {
@@ -462,6 +476,12 @@ struct WidgetDetailChrome: View {
                 }
             }
         }
+    }
+
+    /// 内容区宽度：面板宽减两侧内边距，尾巴在左右两侧时再让出尾巴。
+    private var contentWidth: CGFloat {
+        DetailPanelWidth.content(panel: WidgetDetail.width(instance.kind),
+                                 tailDepth: PanelShape.arrowDepth, tailOnSide: !edge.isHorizontal)
     }
 
     /// 有颜色或背景可选的卡片，面板底部带“外观”入口（见 `WidgetAppearance`）。
