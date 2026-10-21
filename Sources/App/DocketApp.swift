@@ -260,6 +260,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // A recorded snapshot means a previous run changed Apple's Dock and
         // did not put it back, which is what a crash or a force quit leaves
         // behind. The debt is paid before anything else touches the Dock.
+        // 替换并自动隐藏留下的程序坞自动隐藏也一样：上次没还原又不在这一档了，
+        // 现在还原。仍在这一档就留着，程序坞本来就该藏着。
+        DockHidingMode.repayIfOwed(state: state.state,
+                                   record: { state.state.hiddenDockAutoHide = $0 })
         Task { @MainActor [state] in
             await StrutMode.repayIfOwed(state: state.state,
                                         clear: { state.state.borrowedDockPrefs = nil })
@@ -301,6 +305,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let borrowed = state?.state.borrowedDockPrefs {
             state?.state.borrowedDockPrefs = nil
             DockStrut.releaseNow(borrowed)
+        }
+        // 替换并自动隐藏改过的程序坞自动隐藏，退出时还原成原值。
+        if let state {
+            DockHidingMode.restoreOnQuit(state: state.state,
+                                         record: { state.state.hiddenDockAutoHide = $0 })
         }
         state?.saveNow()
         // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。

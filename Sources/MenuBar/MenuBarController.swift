@@ -198,6 +198,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             entry.target = self
             entry.representedObject = PlacementChoice(mode)
             entry.state = mode == current ? .on : .off
+            if mode == .replaceAutoHide {
+                entry.toolTip = tr("会让系统程序坞自动隐藏，退出码头时恢复。")
+            }
             submenu.addItem(entry)
         }
         submenu.addItem(.separator())

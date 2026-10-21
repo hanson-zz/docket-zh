@@ -8687,6 +8687,17 @@
         }
       }
     },
+    "会让系统程序坞自动隐藏，退出码头时恢复。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides the macOS Dock automatically while on; your Dock setting comes back when Dockling quits."
+          }
+        }
+      }
+    },
     "会议倒计时" : {
       "extractionState" : "manual",
       "localizations" : {

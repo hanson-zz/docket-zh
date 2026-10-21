@@ -112,6 +112,28 @@ public enum DockStrut {
         restartDockNow()
     }
 
+    // MARK: 只改自动隐藏（替换并自动隐藏）
+
+    /// 系统程序坞现在是不是自动隐藏。直接读偏好，不走 `SystemDockSettings`
+    /// 的缓存：码头自己刚写过时那份缓存还是旧的。
+    public static func currentAutoHide() -> Bool {
+        let defaults = UserDefaults.standard.persistentDomain(forName: domain) ?? [:]
+        return defaults["autohide"] as? Bool ?? false
+    }
+
+    /// 只改自动隐藏这一项，大小和位置不动，然后重启程序坞让它读到。
+    ///
+    /// 同步，和 `releaseNow` 一样：退出时没有时间等，而且离开“替换并自动隐藏”
+    /// 马上进入普通替换时，借保留区要读到的是已经还原的原值。
+    public static func setAutoHideNow(_ autoHide: Bool) {
+        let defaults = UserDefaults.standard
+        var domainValues = defaults.persistentDomain(forName: domain) ?? [:]
+        domainValues["autohide"] = autoHide
+        defaults.setPersistentDomain(domainValues, forName: domain)
+        CFPreferencesAppSynchronize(domain as CFString)
+        restartDockNow()
+    }
+
     private static func write(autoHide: Bool, tileSize: Double, orientation: String) {
         let defaults = UserDefaults.standard
         var domainValues = defaults.persistentDomain(forName: domain) ?? [:]

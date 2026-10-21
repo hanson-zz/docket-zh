@@ -167,6 +167,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             hide()
             // Still: leaving "Shelf only" for "Apple Dock" has to hand the
             // Dock's strip back.
+            syncDockHiding()
             syncStrut()
             return
         }
@@ -180,10 +181,20 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             stopPolling()
             revealed = true
         }
+        syncDockHiding()
         applyPlacement(animated: false)
         syncStrut()
         publishVisibility()
         LayoutLabelWindow.shared.settingsChanged()
+    }
+
+    /// 替换并自动隐藏：进入时让系统程序坞也自动隐藏，离开时还原（见
+    /// `SystemDockHiding`）。放在 `syncStrut` 前面并且同步完成：离开这一档
+    /// 进入普通替换时，借保留区记下的必须是已经还原的原值。借着保留区时
+    /// 这里不动，等 `syncStrut` 还完后的那次 `refresh()` 再来。
+    private func syncDockHiding() {
+        DockHidingMode.sync(state: app.state,
+                            record: { [weak self] value in self?.app.state.hiddenDockAutoHide = value })
     }
 
     /// Takes or gives back Apple's Dock reserved strip as the setup changes.
@@ -409,6 +420,9 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private var systemDockClearance: CGFloat {
         let system = SystemDockSettings.shared
         guard app.effectivePosition == system.position, system.autoHide else { return 0 }
+        // 替换并自动隐藏：程序坞是码头让它藏的，扩展栏就站在它的位置上。
+        if SystemDockHiding.shelfIgnoresSystemDock(setup: app.state.setup,
+                                                   settings: app.state.customDock) { return 0 }
         return system.tileSize + 22
     }
 
@@ -812,6 +826,9 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         let system = SystemDockSettings.shared
         let edge = app.effectivePosition
         guard edge == system.position else { return false }
+        // 替换并自动隐藏：扩展栏顶替程序坞，碰到边时出来的是扩展栏，不让位。
+        if SystemDockHiding.shelfIgnoresSystemDock(setup: app.state.setup,
+                                                   settings: app.state.customDock) { return false }
 
         if !system.autoHide { return DockStrut.thickness(on: edge) > 0 }
 
