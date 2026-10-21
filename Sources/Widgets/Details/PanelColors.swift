@@ -23,7 +23,7 @@ import AppKit
 // 底色、填充（fill / background，白色低透明度当「玻璃小块」）：
 //   .white.opacity(0.04 ... 0.12) 当底  → .panelFill        （薄玻璃填充、分组底、chip 底）
 //   .white.opacity(0.13 ... 0.3) 当底   → 按用途二选一：
-//       列表行、格子的选中，悬停、拖起，小标签、图标占位 → .panelSelected（浅色加深一档的灰）
+//       列表行、格子的选中，悬停、拖起，小标签、图标占位 → .panelSelected（浅色灰，黑 0.12）
 //       分段控件、选项胶囊的选中项，独立按钮底 → .panelRaised + 形状上挂 .panelLift()
 //       （浅色实心白加柔和阴影浮在淡灰上；深色两者都是白 0.18，和以前一样）
 //   .panelFillStrong 是旧名字，等于 .panelSelected
@@ -90,10 +90,10 @@ extension ShapeStyle where Self == Color {
                            light: NSColor.black.withAlphaComponent(0.05))
     }
     /// 选中、悬停、拖起的那一块（列表行、格子、悬停卡片），以及小标签、图标占位这类
-    /// 「比 panelFill 重一档」的底。浅色下是加深一档的灰（黑 0.10），深色白 0.18。
+    /// 「比 panelFill 重一档」的底。浅色下是加深一档的灰（黑 0.12），深色白 0.18。
     static var panelSelected: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
-                           light: NSColor.black.withAlphaComponent(0.10))
+                           light: NSColor.black.withAlphaComponent(0.12))
     }
     /// 浮起的选中块：分段控件、选项胶囊里选中的那一项，和独立的按钮底。浅色下是
     /// 实心白（0.95），配 `.panelLift()` 的柔和阴影浮在 panelFill 的淡灰轨道上
