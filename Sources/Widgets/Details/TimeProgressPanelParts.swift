@@ -178,7 +178,7 @@ struct TimeProgressParts {
         return VStack(spacing: 3) {
             Text(span.spoken)
                 .font(selected ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-                .foregroundStyle(selected ? (tinted ? colors.light.panelReadable : .panelPrimary) : .panelSecondary)
+                .foregroundStyle(selected ? (tinted ? colors.lightText : .panelPrimary) : .panelSecondary)
                 .lineLimit(1)
             if dot {
                 Circle()
@@ -195,7 +195,7 @@ struct TimeProgressParts {
     private func weekdayLabel(_ day: TimeProgress.WeekDay, colors: TimeProgressColors) -> some View {
         Text(TimeProgress.weekdayShort(day.index))
             .font(day.isToday ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-            .foregroundStyle(day.isToday ? colors.light.panelReadable
+            .foregroundStyle(day.isToday ? colors.lightText
                              : (day.isWeekend ? colors.contrast.panelReadable.opacity(0.85) : .panelSecondary))
     }
 
@@ -357,11 +357,11 @@ struct TimeProgressParts {
                                 if item.days == 0 {
                                     Text(tr("今天"))
                                         .font(TimeProgressType.figure(16))
-                                        .foregroundStyle(index == 0 ? colors.light.panelReadable : .panelPrimary)
+                                        .foregroundStyle(index == 0 ? colors.lightText : .panelPrimary)
                                 } else {
                                     Text(verbatim: "\(item.days)")
                                         .font(TimeProgressType.figure(18))
-                                        .foregroundStyle(index == 0 ? colors.light.panelReadable : .panelPrimary)
+                                        .foregroundStyle(index == 0 ? colors.lightText : .panelPrimary)
                                     Text(tr("天"))
                                         .font(TimeProgressType.smallMedium)
                                         .foregroundStyle(.panelSecondary)

@@ -70,7 +70,7 @@ struct WaterCupGlass: View {
             let cup = WaterCupShape()
             let amplitude = max(1, height * (detailed ? 0.02 : 0.03))
             ZStack {
-                cup.fill(detailed ? Color.black.opacity(0.28) : WidgetStyle.primary.opacity(0.06))
+                cup.fill(detailed ? Self.bigBody : WidgetStyle.primary.opacity(0.06))
                 WaterWave(level: level, phase: phase, amplitude: amplitude)
                     .fill(LinearGradient(colors: [WaterStyle.water.opacity(detailed ? 0.55 : 0.7),
                                                   WaterStyle.water.opacity(detailed ? 0.8 : 0.9)],
@@ -84,23 +84,39 @@ struct WaterCupGlass: View {
                     // 25% / 50% / 75% 的刻度。
                     ForEach([0.25, 0.5, 0.75], id: \.self) { mark in
                         Capsule()
-                            .fill(Color.white.opacity(0.4))
+                            .fill(Self.bigTick)
                             .frame(width: width * 0.12, height: 1.2)
                             .position(x: width * 0.2, y: height * (1 - mark))
                     }
                     // 杯壁一道淡高光。
                     Capsule()
-                        .fill(Color.white.opacity(0.12))
+                        .fill(Self.bigHighlight)
                         .frame(width: 3.5, height: height * 0.7)
                         .rotationEffect(.degrees(-2))
                         .position(x: width * 0.84, y: height * 0.45)
                 }
-                cup.stroke(detailed ? Color.white.opacity(0.6) : WidgetStyle.primary.opacity(0.55),
+                cup.stroke(detailed ? Self.bigRim : WidgetStyle.primary.opacity(0.55),
                            style: StrokeStyle(lineWidth: max(1.2, height / (detailed ? 70 : 30)), lineJoin: .round))
             }
             .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: level)
         }
     }
+}
+
+extension WaterCupGlass {
+    // 面板大杯的杯身：深色下还是原来的深色杯身 + 白描边（杯里的百分比白字）；
+    // 浅色玻璃上换成浅玻璃杯身 + 淡深色描边，杯里的百分比跟着用深字
+    // （`percentInk`）。扩展栏小杯不走这里。
+    static let bigBody = Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.28),
+                                            light: NSColor.white.withAlphaComponent(0.55))
+    static let bigRim = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.6),
+                                           light: NSColor.black.withAlphaComponent(0.28))
+    static let bigTick = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.4),
+                                            light: NSColor.black.withAlphaComponent(0.25))
+    static let bigHighlight = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.12),
+                                                 light: NSColor.white.withAlphaComponent(0.9))
+    /// 杯里百分比的字色：深色下白，浅色下主文字色。
+    static let percentInk = Color.panelPrimary
 }
 
 /// 上宽下窄、底角圆一点的玻璃杯轮廓。

@@ -112,7 +112,7 @@ struct GaugesDetail: View {
         let line = GaugeAlert.value(ring, current.config)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                GaugeRing(reading: reading, diameter: 36)
+                GaugeRing(reading: reading, diameter: 36, inPanel: true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: headline(ring, reading))
                         .font(.system(size: 14, weight: .bold))
@@ -183,7 +183,7 @@ struct GaugesDetail: View {
                     HStack(spacing: 2) {
                         ForEach(parts, id: \.name) { part in
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(Color(hex: Self.partColors[part.name] ?? "#8E6CE0"))
+                                .fill(Color(hex: Self.partColors[part.name] ?? "#8E6CE0").panelGraphic)
                                 .frame(width: max(2, geo.size.width * min(part.fraction, 1) - 2))
                         }
                         Spacer(minLength: 0)

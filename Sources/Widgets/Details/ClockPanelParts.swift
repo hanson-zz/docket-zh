@@ -584,7 +584,7 @@ struct ClockPanelAlmanac: View {
                 } sub: {
                     if let term = daily.lunar.term {
                         Text(term)
-                            .foregroundStyle(theme.accentTerm ? theme.accent : theme.dim)
+                            .foregroundStyle(theme.accentTerm ? theme.accent.panelReadable : theme.dim)
                     }
                 }
             }

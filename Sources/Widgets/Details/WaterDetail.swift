@@ -177,10 +177,10 @@ struct WaterDetail: View {
                               phase: context.isPreview || reduceMotion ? nil : tick.date.timeIntervalSinceReferenceDate,
                               characterScale: 0.66, overlap: 0.14, detailed: true)
                     .overlay(alignment: .topLeading) {
-                        // 百分比压在杯子里：大杯子自己画深色杯身（插画，不跟外观），字保持白色。
+                        // 百分比压在杯子里：深色下杯身是深色，字白；浅色下杯身是浅玻璃，字用主文字色。
                         Text(verbatim: "\(WaterIntake.percent(total: today.total, goal: today.goal))%")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(WaterCupGlass.percentInk)
                             .monospacedDigit()
                             .padding(.leading, cupHeight * 0.64 * 0.22)
                             .padding(.top, cupHeight * 0.1)

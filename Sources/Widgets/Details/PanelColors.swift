@@ -42,7 +42,8 @@ import AppKit
 //
 // 主题色当文字（主题色、强调色、红绿涨跌写成字或细图标时）：
 //   .foregroundStyle(accent)            → .foregroundStyle(accent.panelReadable)
-//   或 Color.panelText(accent)           （同一个东西，浅色下加深一档，深色下不变）
+//   或 Color.panelText(accent)           （同一个东西，浅色下加深到近白上对比度 4.5，深色下不变）
+//   圆环、色条这类图形要在浅色下加深：accent.panelGraphic（不到 3:1 才压）
 //   主题色当底色、圆点、色块时不用换。
 //
 // 不要换的：
@@ -78,14 +79,17 @@ extension ShapeStyle where Self == Color {
     }
 
     /// 薄玻璃填充：分组底、chip 底。替换当底的 `.white.opacity(0.04...0.12)`。
+    /// 浅色下 0.4（原 0.45），和 `panelFillStrong` 拉开。
     static var panelFill: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.09),
-                           light: NSColor.white.withAlphaComponent(0.45))
+                           light: NSColor.white.withAlphaComponent(0.4))
     }
     /// 加重一点的玻璃填充：选中、按下、悬停。替换当底的 `.white.opacity(0.13...0.3)`。
+    /// 浅色下 0.95（原 0.75）：浅玻璃本来就偏白，0.45 对 0.75 开关两态几乎看不出，
+    /// 拉到 0.4 对 0.95，选中那块是一块明显更白的玻璃。深色不变。
     static var panelFillStrong: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
-                           light: NSColor.white.withAlphaComponent(0.75))
+                           light: NSColor.white.withAlphaComponent(0.95))
     }
     /// 进度条、圆环的空轨道：浅色玻璃上白轨道看不见，换成淡淡的深色。
     static var panelTrack: Color {
@@ -121,22 +125,49 @@ extension ShapeStyle where Self == Color {
 }
 
 extension Color {
-    /// 主题色当文字：深色下原样，浅色下往黑里调 30%，在浅玻璃上读得出来。
-    static func panelText(_ accent: Color) -> Color {
+    /// 主题色当文字：深色下原样，浅色下往黑里压，至少 30%，压到在近白玻璃
+    /// （#F4F4F6）上对比度够 `minContrast` 为止（默认 4.5，正文）。算法在
+    /// Core 的 `PanelContrast`（有测试）：紫、蓝这类深主题色还是压 30%，
+    /// 计算器黄、天气浅蓝这类高亮度色多压一些。透明度保持原样。
+    static func panelText(_ accent: Color, minContrast: Double = PanelContrast.textContrast,
+                          atLeast: Double = PanelContrast.minimumFraction) -> Color {
         let base = NSColor(accent)
         return Color(nsColor: NSColor(name: nil) { appearance in
             let resolved = base.usingColorSpace(.sRGB) ?? base
             guard !appearance.panelIsDark else { return resolved }
-            return resolved.blended(withFraction: 0.3, of: .black) ?? resolved
+            return NSColor.panelDeepened(resolved, minContrast: minContrast, atLeast: atLeast)
         })
     }
 
     /// 同 `Color.panelText(self)`：`.foregroundStyle(accent.panelReadable)`。
     var panelReadable: Color { Color.panelText(self) }
 
+    /// 按指定对比度加深（至少 30%，同 `panelReadable`）。
+    func panelReadable(minContrast: Double) -> Color { Color.panelText(self, minContrast: minContrast) }
+
+    /// 主题色当图形（圆环、色条、细图标）：深色下原样；浅色下只在近白玻璃上
+    /// 不到 3:1 时往黑里压，压到刚好够，本来够深的（紫、蓝）不动。
+    var panelGraphic: Color {
+        Color.panelText(self, minContrast: PanelContrast.graphicContrast, atLeast: 0)
+    }
+
     /// 一个深色、浅色各一份的动态色，跟着环境里的 colorScheme 解析。
     static func panelDynamic(dark: NSColor, light: NSColor) -> Color {
         Color(nsColor: NSColor(name: nil) { $0.panelIsDark ? dark : light })
+    }
+}
+
+extension NSColor {
+    /// 浅色外观下的加深版（不是动态色）：按 `PanelContrast` 算比例往黑里压，透明度不变。
+    static func panelDeepened(_ color: NSColor, minContrast: Double = PanelContrast.textContrast,
+                              atLeast: Double = PanelContrast.minimumFraction) -> NSColor {
+        guard let rgb = color.usingColorSpace(.sRGB) else { return color }
+        let code = ColorCode(red: Double(rgb.redComponent), green: Double(rgb.greenComponent),
+                             blue: Double(rgb.blueComponent))
+        let fraction = PanelContrast.fraction(for: code, minContrast: minContrast, atLeast: atLeast)
+        let dark = PanelContrast.darkened(code, by: fraction)
+        return NSColor(srgbRed: CGFloat(dark.red), green: CGFloat(dark.green), blue: CGFloat(dark.blue),
+                       alpha: rgb.alphaComponent)
     }
 }
 

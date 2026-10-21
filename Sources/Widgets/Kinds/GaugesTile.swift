@@ -75,15 +75,19 @@ struct GaugesTile: View {
     }
 }
 
-/// 一个圆环，卡片和面板共用。
+/// 一个圆环，卡片和面板共用。面板里（`inPanel`）浅色玻璃上浅蓝、绿、橙这类
+/// 高亮度色偏淡，圆环和图标换成 `panelGraphic`（不到 3:1 才往黑里压）；
+/// 深色下和扩展栏卡片上颜色不变。
 struct GaugeRing: View {
     var reading: GaugeLive.Reading
     var diameter: CGFloat
+    var inPanel: Bool = false
 
     var body: some View {
         let r = reading
+        let tint = inPanel ? r.tint.panelGraphic : r.tint
         MetricProgressRing(progress: r.progress,
-                           tint: r.tint,
+                           tint: tint,
                            track: r.known ? r.tint.opacity(0.16) : Color.primary.opacity(0.10),
                            diameter: diameter,
                            lineWidth: diameter > 36 ? 4.5 : 4,
@@ -91,7 +95,7 @@ struct GaugeRing: View {
                            laps: true) {
             Image(systemName: r.symbol)
                 .font(.system(size: diameter * 0.32, weight: .regular))
-                .foregroundStyle(r.known ? r.tint : WidgetStyle.secondary)
+                .foregroundStyle(r.known ? tint : WidgetStyle.secondary)
         }
     }
 }

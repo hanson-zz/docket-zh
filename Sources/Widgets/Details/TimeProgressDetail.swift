@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -208,6 +209,18 @@ struct TimeProgressColors: Equatable, Sendable {
 
     static let fallback = TimeProgressColors(accent: Color(hex: "#8E5CF0"), light: Color(hex: "#B9A6FF"),
                                              contrast: Color(hex: "#3DDBB0"))
+
+    /// 浅主题色当文字（百分号、当前项、今天）：深色下就是 `light`；浅色玻璃上
+    /// 浅紫压完还发灰，改用主题色本身加深（`NSColor.panelDeepened`，近白上对比度
+    /// 够 4.5）。只给文字用，填充、色块还用 `light`。
+    var lightText: Color {
+        let onDark = NSColor(light)
+        let onLight = NSColor(accent)
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            if appearance.panelIsDark { return onDark.usingColorSpace(.sRGB) ?? onDark }
+            return NSColor.panelDeepened(onLight.usingColorSpace(.sRGB) ?? onLight)
+        })
+    }
 
     /// 年度点阵和进度条里一天的颜色和不透明度。
     func day(_ day: TimeProgress.YearDay) -> (Color, Double) {

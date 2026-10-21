@@ -25,7 +25,7 @@ struct TimeProgressRingHero: View {
                 GradientRing(progress: model.fraction(period), lineWidth: 13)
                     .frame(width: Self.ring, height: Self.ring)
                 VStack(spacing: 2) {
-                    TimeProgressPercent(value: model.percent(period), size: 38, signSize: 19, signColor: colors.light.panelReadable)
+                    TimeProgressPercent(value: model.percent(period), size: 38, signSize: 19, signColor: colors.lightText)
                     Text(tr("已过去"))
                         .font(TimeProgressType.smallMedium)
                         .foregroundStyle(.panelSecondary)
@@ -98,7 +98,7 @@ struct TimeProgressPercentageHero: View {
         let period = model.period
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
-                TimeProgressPercent(value: model.percent(period), size: 72, signSize: 32, signColor: colors.light.panelReadable)
+                TimeProgressPercent(value: model.percent(period), size: 72, signSize: 32, signColor: colors.lightText)
                     .padding(.leading, -3)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 5) {
@@ -276,7 +276,7 @@ struct TimeProgressBarsHero: View {
                 let on = month == current
                 context.draw(Text(tr("\(month)月"))
                                 .font(on ? TimeProgressType.smallBold : TimeProgressType.small)
-                                .foregroundStyle(on ? colors.light.panelReadable : .panelTertiary),
+                                .foregroundStyle(on ? colors.lightText : .panelTertiary),
                              at: CGPoint(x: 0, y: y + rowHeight / 2), anchor: .leading)
             }
             for day in days {
@@ -349,7 +349,7 @@ struct TimeProgressBarsHero: View {
                 let y = CGFloat(day.index) * rowHeight
                 context.draw(Text(TimeProgress.weekdayShort(day.index))
                                 .font(day.isToday ? TimeProgressType.smallBold : TimeProgressType.small)
-                                .foregroundStyle(day.isToday ? colors.light.panelReadable
+                                .foregroundStyle(day.isToday ? colors.lightText
                                                  : (day.isWeekend ? colors.contrast.panelReadable.opacity(0.85) : .panelTertiary)),
                              at: CGPoint(x: 0, y: y + rowHeight / 2), anchor: .leading)
                 let off: Bool = {
@@ -475,7 +475,7 @@ struct TimeProgressQuadHero: View {
             }
             HStack(alignment: .firstTextBaseline) {
                 TimeProgressPercent(value: model.percent(span), size: 30, signSize: 15,
-                                    signColor: bright ? colors.light.panelReadable : .panelPrimary)
+                                    signColor: bright ? colors.lightText : .panelPrimary)
                 Spacer(minLength: 4)
                 Text(TimeProgress.label(span, now: model.now))
                     .font(TimeProgressType.small)

@@ -39,6 +39,8 @@ struct WeeklyReportSection<Accessory: View>: View {
     var foldKey: String? = nil
     @ViewBuilder var accessory: () -> Accessory
 
+    @Environment(\.colorScheme) private var scheme
+
     private let chartHeight: CGFloat = 84
     /// 七根柱子之间的空隙。13pt 的「周三」「Wed」要放得下，比原来窄一点。
     private let barSpacing: CGFloat = 4
@@ -236,7 +238,7 @@ struct WeeklyReportSection<Accessory: View>: View {
         let shape = RoundedRectangle(cornerRadius: 4, style: .continuous)
         return shape
             .fill(day.isMet ? accent.opacity(day.isToday ? 1 : 0.85)
-                            : accent.mix(with: .white, by: 0.55).opacity(day.value > 0 ? 0.35 : 0.12))
+                            : unmetFill(day))
             .overlay {
                 if day.isToday { shape.strokeBorder(.panelPrimary, lineWidth: 1.2) }
             }
@@ -245,6 +247,15 @@ struct WeeklyReportSection<Accessory: View>: View {
             .help("\(day.axisLabel)：\(valueText(day))\(day.isMet ? tr("，达标") : "")")
             .accessibilityElement()
             .accessibilityLabel("\(day.isToday ? tr("今天，") : "")\(day.axisLabel)，\(valueText(day))\(day.isMet ? tr("，达标") : "")")
+    }
+
+    /// 没达标的柱子：深色下主题色混白 35% 透明（原样）；浅色玻璃上混白会发灰看不清，
+    /// 改成往黑里压一点的主题色，透明度也提一点，和达标的实心柱子仍然拉得开。
+    private func unmetFill(_ day: WeeklyReportDay) -> Color {
+        if scheme == .light {
+            return accent.mix(with: .black, by: 0.2).opacity(day.value > 0 ? 0.45 : 0.16)
+        }
+        return accent.mix(with: .white, by: 0.55).opacity(day.value > 0 ? 0.35 : 0.12)
     }
 
     /// 只画虚线；说明在柱子下面的 `goalLegend`。
