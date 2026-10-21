@@ -549,12 +549,30 @@ struct DockShelfView: View {
         screenSize = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.size ?? .zero
     }
 
+    /// 贴边的一侧，再加上沿边靠哪一头：固定在角上时底板贴着窗口靠角的那头，
+    /// 放大的图标往屏幕中间那头长，不会被窗口两端的预留空间隔开一截。
     private var edgeAlignment: Alignment {
+        let along = app.effectiveAlignment
         switch position {
-        case .bottom: .bottom
-        case .top: .top
-        case .left: .leading
-        case .right: .trailing
+        case .bottom: return along == .leading ? .bottomLeading : along == .trailing ? .bottomTrailing : .bottom
+        case .top: return along == .leading ? .topLeading : along == .trailing ? .topTrailing : .top
+        case .left: return along == .leading ? .topLeading : along == .trailing ? .bottomLeading : .leading
+        case .right: return along == .leading ? .topTrailing : along == .trailing ? .bottomTrailing : .trailing
+        }
+    }
+
+    /// 浮动时按住底板空白处拖动整条扩展栏。只铺在底板上、图标和小组件下面，
+    /// 点在格子上照旧是打开和拖动排序。
+    @ViewBuilder private var floatingDragLayer: some View {
+        if settings.floating {
+            Color.white.opacity(0.001)
+                .contentShape(.rect)
+                .gesture(
+                    DragGesture(minimumDistance: 3)
+                        .onChanged { _ in FloatingShelfDrag.shared.changed() }
+                        .onEnded { _ in FloatingShelfDrag.shared.ended() }
+                )
+                .accessibilityLabel(tr("拖动扩展栏"))
         }
     }
 
@@ -636,6 +654,7 @@ struct DockShelfView: View {
                                tint: settings.glassTint,
                                opaque: settings.reduceTransparency,
                                color: ProAccess.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
+                .overlay { floatingDragLayer }
         }
         .overlay {
             // allowsHitTesting(false) is essential: an overlay takes part in

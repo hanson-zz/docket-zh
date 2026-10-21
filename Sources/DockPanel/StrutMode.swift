@@ -14,8 +14,12 @@ import AppKit
 @MainActor
 public enum StrutMode {
 
-    /// Whether the shelf should be borrowing the strip right now.
-    public static func wanted(for setup: DockSetup) -> Bool { setup == .customReplacement }
+    /// Whether the shelf should be borrowing the strip right now: the
+    /// replacement setup, unless the shelf floats or hides itself (see
+    /// `ShelfPlacement.wantsStrut`).
+    public static func wanted(for state: PersistedState) -> Bool {
+        ShelfPlacement.wantsStrut(setup: state.setup, settings: state.customDock)
+    }
 
     // MARK: Entering
 
@@ -64,7 +68,7 @@ public enum StrutMode {
     /// switched away from the replacement setup, the debt is still owed.
     public static func repayIfOwed(state: PersistedState,
                                    clear: @escaping () -> Void) async {
-        guard state.borrowedDockPrefs != nil, !wanted(for: state.setup) else { return }
+        guard state.borrowedDockPrefs != nil, !wanted(for: state) else { return }
         await leave(state: state, clear: clear)
     }
 

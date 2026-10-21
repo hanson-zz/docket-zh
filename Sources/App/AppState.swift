@@ -556,7 +556,14 @@ public final class AppState {
     /// so they uncover each other and stack - the shelf is far more useful
     /// beside the Dock than on top of it. Everything else about the look
     /// (size, magnification, material, apps) is still mirrored.
+    /// 浮动扩展栏的中心在屏幕上半时为真。扩展栏控制器摆完位置写进来；浮动时
+    /// `effectivePosition` 据此当作顶部或底部扩展栏，组窗口、面板和标签就朝
+    /// 屏幕中间弹出。不存盘，每次摆放都重新算。
+    public var floatingFacesDown = false
+
     public var effectivePosition: DockPosition {
+        // 浮动不贴边，按在屏幕上半还是下半当作顶部或底部的横条。
+        if state.customDock.floating { return floatingFacesDown ? .top : .bottom }
         // Following means taking the edge Apple's Dock is *not* on, so the
         // two surfaces do not stack. That is right while both are on screen
         // and exactly wrong once the shelf has replaced the Dock.
@@ -586,7 +593,16 @@ public final class AppState {
     }
 
     public var effectiveAutoHide: Bool {
-        following ? system.autoHide : state.customDock.autoHide
+        ShelfPlacement.autoHides(setup: state.setup, settings: state.customDock,
+                                 systemAutoHide: system.autoHide)
+    }
+
+    /// 扩展栏在边上靠哪一头。浮动没有边；借了系统程序坞保留区时扩展栏盖在
+    /// 程序坞正上方，程序坞是居中的，所以也居中。
+    public var effectiveAlignment: ShelfAlignment {
+        ShelfPlacement.effectiveAlignment(
+            setup: state.setup, settings: state.customDock,
+            borrowingStrut: state.borrowedDockPrefs != nil && effectivePosition.isSystemDockEdge)
     }
 
     public var magnificationEnabled: Bool {

@@ -92,6 +92,29 @@ struct SettingsView: View {
     }
 
     /// 小组件间距滑杆：读的时候先夹到 2 到 16，写坏的配置也能拖。
+    /// 打开浮动时一并回到“两者都显示”，不再借系统程序坞的保留区；一次写回。
+    private var floatingBinding: Binding<Bool> {
+        Binding(get: { state.customDock.floating },
+                set: { on in
+                    var next = state
+                    next.customDock.floating = on
+                    next.customDock.pinned = false
+                    if on, next.setup == .customReplacement { next.setup = .both }
+                    state = next
+                })
+    }
+
+    /// 在设置里改对齐不算从菜单“固定”选的；对齐不是居中时菜单照样勾固定。
+    private var alignmentBinding: Binding<ShelfAlignment> {
+        Binding(get: { state.customDock.alignment },
+                set: { value in
+                    var dock = state.customDock
+                    dock.alignment = value
+                    dock.pinned = false
+                    state.customDock = dock
+                })
+    }
+
     private var itemGapBinding: Binding<Double> {
         Binding(get: { Geometry.itemGap(state.customDock.itemGap) },
                 set: { state.customDock.itemGap = Geometry.itemGap($0) })
@@ -180,7 +203,13 @@ struct SettingsView: View {
                     ForEach(DockSetup.allCases, id: \.self) { setup in
                         ChoiceCard(title: title(setup), caption: detail(setup),
                                    selected: state.setup == setup) {
-                            withAnimation(.smooth(duration: 0.2)) { state.setup = setup }
+                            withAnimation(.smooth(duration: 0.2)) {
+                                // 选了一种布置就不再浮动：浮动只和“两者都显示”搭配。
+                                var next = state
+                                next.setup = setup
+                                next.customDock.floating = false
+                                state = next
+                            }
                         } picture: {
                             SetupSketch(setup: setup).frame(height: 58)
                         }
@@ -674,10 +703,15 @@ struct SettingsView: View {
                           : tr("自行设置扩展栏的位置和大小。"))
             }
 
+            // 浮动和菜单栏 ▸ 位置 ▸ 浮动是同一个设置。
+            Toggle(isOn: floatingBinding) {
+                subtitled(tr("浮动"), tr("不贴边，按住扩展栏空白处可拖到屏幕任意位置。"))
+            }
+
             // Hidden while the Dock dictates them, not greyed: following is
             // the default, so greyed controls here were permanently dead for
             // anyone who never turned it off.
-            if !state.customDock.followSystemDock {
+            if !state.customDock.followSystemDock && !state.customDock.floating {
                 HStack(spacing: 10) {
                     ForEach(DockPosition.allCases, id: \.self) { edge in
                         ChoiceCard(title: title(edge), selected: state.customDock.position == edge) {
@@ -688,6 +722,14 @@ struct SettingsView: View {
                     }
                 }
                 .padding(.vertical, 2)
+
+                // 沿边靠哪一头，和菜单栏 ▸ 位置 ▸ 固定 是同一个设置。
+                Picker(tr("对齐"), selection: alignmentBinding) {
+                    ForEach(ShelfAlignment.allCases, id: \.self) { option in
+                        Text(option.label(vertical: state.customDock.position.isVertical)).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
 
                 Picker("显示器", selection: $state.customDock.displayID) {
                     Text("指针所在的显示器").tag(UInt32?.none)
@@ -791,7 +833,7 @@ struct SettingsView: View {
             .pickerStyle(.segmented)
 
             // While following, hiding comes from the Dock's own setting.
-            if !state.customDock.followSystemDock {
+            if !state.customDock.followSystemDock && !state.customDock.floating {
                 Toggle("隐藏，直到指针移到屏幕边缘", isOn: $state.customDock.autoHide)
             }
             // Only means anything while something is hiding.

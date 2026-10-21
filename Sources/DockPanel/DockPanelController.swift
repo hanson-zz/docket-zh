@@ -61,6 +61,12 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         IslandOccupancy.shared.displaces = { [weak self] footprint in
             self?.wouldMove(for: footprint) ?? false
         }
+        FloatingShelfDrag.shared.onChange = { [weak self] in
+            guard let self else { return }
+            if self.floatDrag == nil { self.beginFloatingDrag() }
+            self.moveFloatingDrag()
+        }
+        FloatingShelfDrag.shared.onEnd = { [weak self] in self?.endFloatingDrag() }
         ShelfPresence.shared.isShown = { [weak self] in self?.panel?.isVisible == true }
         ShelfPresence.shared.isTuckedAway = { [weak self] in self?.revealed == false }
         ShelfPresence.shared.reveal = { [weak self] in
@@ -179,7 +185,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // strip back, since Apple's Dock cannot follow it there. Asking for
         // the strip while already at the top still goes through `enter`,
         // which explains why it cannot be done and puts the setup back.
-        let wanted = StrutMode.wanted(for: app.state.setup)
+        let wanted = StrutMode.wanted(for: app.state)
             && (app.effectivePosition.isSystemDockEdge || !borrowed)
         guard wanted != borrowed else { return }
 
@@ -273,6 +279,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // band showing the Dock underneath.
         // Apple's Dock cannot reserve the top edge, so a top shelf never
         // borrows a strip there and is placed the ordinary way.
+        // 浮动不贴边，也不躲灵动提示：它停在用户拖到的地方。
+        if app.state.customDock.floating { return floatingOrigin(for: size) }
         if app.state.borrowedDockPrefs != nil, app.effectivePosition.isSystemDockEdge {
             return borrowedOrigin(for: size)
         }
@@ -296,8 +304,10 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
         // Never lets the shelf hang off-screen at large scales on small
         // displays; see Geometry.shelfOrigin.
-        let origin = Geometry.shelfOrigin(edge: app.effectivePosition, size: size,
-                                          bounds: bounds, inset: inset)
+        // 沿边靠左、居中或靠右（菜单栏 ▸ 位置 ▸ 固定，或设置里的对齐）。
+        let origin = ShelfPlacement.alignedOrigin(edge: app.effectivePosition,
+                                                  alignment: app.effectiveAlignment,
+                                                  size: size, bounds: bounds, inset: inset)
         // A top shelf steps down under 灵动提示 while the capsule is up on
         // the same display; every other edge comes back unchanged.
         return Geometry.avoidingIsland(edge: app.effectivePosition, origin: origin, size: size,
@@ -307,7 +317,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// Whether the island at `footprint` would push the shelf aside right
     /// now, which is when the capsule waits for it before drawing.
     private func wouldMove(for footprint: CGRect) -> Bool {
-        guard let panel, panel.isVisible, revealed, app.effectivePosition == .top else { return false }
+        guard let panel, panel.isVisible, revealed, app.effectivePosition == .top,
+              !app.state.customDock.floating else { return false }
         let size = panel.frame.size
         let ordinary = CGRect(origin: revealedOrigin(for: size, island: nil), size: size)
         return Geometry.islandDisplaces(edge: .top, shelf: ordinary, island: footprint,
@@ -322,7 +333,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// rather than being left where the capsule or the old shelf position
     /// is. The hover label is simply hidden; the next hover places it again.
     private func islandMoved() {
-        guard let panel, app.effectivePosition == .top, !swiping, swipe == nil else { return }
+        guard let panel, app.effectivePosition == .top, !swiping, swipe == nil,
+              !app.state.customDock.floating else { return }
         guard panel.frame.width > 1, panel.frame.height > 1 else { return }
         guard revealed else { return }
         let target = revealedOrigin
@@ -445,6 +457,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private func applyPlacement(animated: Bool, motion: Motion = .pointer) {
         guard let panel, panel.frame.width > 1, panel.frame.height > 1 else { return }
         let origin = revealed ? revealedOrigin : hiddenOrigin
+        updateFloatingFacing(origin: origin, size: panel.frame.size)
         guard panel.frame.origin != origin else { return }
         if animated {
             // NSWindow's animator proxy only animates `setFrame(_:display:)`.
@@ -472,6 +485,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         guard let panel, size.width > 1, size.height > 1 else { return }
         let origin = revealed ? revealedOrigin(for: size) : hiddenOrigin(for: size)
         let frame = CGRect(origin: origin, size: size)
+        updateFloatingFacing(origin: origin, size: size)
         guard panel.frame != frame else { return }
 
         // The very first layout has nothing to animate from, and a grip drag
@@ -490,6 +504,93 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().setFrame(frame, display: false)
         }
+    }
+
+    // MARK: Floating
+
+    /// 拖动中：窗口跟着指针走，摆放计算不来抢位置。
+    private var floatDrag: (mouse: CGPoint, origin: CGPoint)?
+    /// 拖动期间看鼠标的拖动和松开。窗口跟着指针走，手势在窗口里的坐标几乎
+    /// 不变，SwiftUI 不一定每步都报，所以移动和松手以这里为准。
+    private var floatDragMonitor: Any?
+
+    /// 浮动扩展栏所在的屏幕：上次拖到的那块，拔掉了退回设置里的显示器或指针
+    /// 所在的那块。见 ShelfPlacement.floatingDisplay。
+    private var floatingScreen: NSScreen {
+        let screens = NSScreen.screens
+        let id = ShelfPlacement.floatingDisplay(last: app.state.customDock.floatingDisplayID,
+                                                connected: screens.compactMap(\.displayID),
+                                                fallback: targetScreen.displayID)
+        return screens.first { $0.displayID == id && id != nil } ?? targetScreen
+    }
+
+    private func floatingOrigin(for size: CGSize) -> CGPoint {
+        if floatDrag != nil, let panel { return panel.frame.origin }
+        let screen = floatingScreen
+        let spot = screen.displayID.flatMap {
+            app.state.customDock.floatingSpots[ShelfPlacement.spotKey($0)]
+        }
+        return ShelfPlacement.floatingOrigin(saved: spot, size: size, visible: screen.visibleFrame)
+    }
+
+    /// 浮动时按扩展栏在屏幕上半还是下半决定弹出方向。拖动中不改，免得经过
+    /// 中线时整条扩展栏来回翻。
+    private func updateFloatingFacing(origin: CGPoint, size: CGSize) {
+        guard app.state.customDock.floating, floatDrag == nil else { return }
+        let down = ShelfPlacement.floatingFacesDown(origin: origin, size: size,
+                                                    visible: floatingScreen.visibleFrame)
+        guard app.floatingFacesDown != down else { return }
+        // 下一轮再写：这里常在扩展栏布局途中被调用，当场改会让视图在这一轮
+        // 布局里又要重排。
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated { self?.app.floatingFacesDown = down }
+        }
+    }
+
+    private func beginFloatingDrag() {
+        guard let panel, app.state.customDock.floating else { return }
+        GroupWindow.shared.close()
+        WidgetDetailWindow.shared.closeIfAnchored()
+        TooltipWindow.shared.hide()
+        floatDrag = (NSEvent.mouseLocation, panel.frame.origin)
+        floatDragMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDragged, .leftMouseUp]) {
+            [weak self] event in
+            if event.type == .leftMouseUp { self?.endFloatingDrag() } else { self?.moveFloatingDrag() }
+            return event
+        }
+    }
+
+    private func moveFloatingDrag() {
+        guard let panel, let floatDrag else { return }
+        let mouse = NSEvent.mouseLocation
+        let wanted = CGPoint(x: floatDrag.origin.x + mouse.x - floatDrag.mouse.x,
+                             y: floatDrag.origin.y + mouse.y - floatDrag.mouse.y)
+        // 夹在指针所在那块屏幕的可见区里：可以拖到另一块屏幕，但不会拖进
+        // 菜单栏或挂出屏幕。
+        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? floatingScreen
+        panel.setFrameOrigin(ShelfPlacement.clamped(wanted, size: panel.frame.size,
+                                                    in: screen.visibleFrame))
+    }
+
+    /// 松手：记下停在哪块屏幕、在那块屏幕上的哪里。
+    private func endFloatingDrag() {
+        if let monitor = floatDragMonitor {
+            NSEvent.removeMonitor(monitor)
+            floatDragMonitor = nil
+        }
+        guard let panel, floatDrag != nil else { return }
+        floatDrag = nil
+        let frame = panel.frame
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        let screen = NSScreen.screens.first { $0.frame.contains(center) } ?? floatingScreen
+        guard let id = screen.displayID else { return applyPlacement(animated: false) }
+        var dock = app.state.customDock
+        dock.floatingSpots[ShelfPlacement.spotKey(id)] =
+            ShelfPlacement.floatingSpot(origin: frame.origin, size: frame.size,
+                                        visible: screen.visibleFrame)
+        dock.floatingDisplayID = id
+        app.state.customDock = dock
+        applyPlacement(animated: false)
     }
 
     // MARK: Auto-hide
@@ -858,4 +959,17 @@ extension NSScreen {
     var displayID: UInt32? {
         deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? UInt32
     }
+}
+
+/// 浮动扩展栏的拖动：扩展栏空白处的手势报开始、移动、结束，扩展栏控制器
+/// 按指针的屏幕位置移窗口。用屏幕坐标而不是手势自己的坐标，因为窗口在动，
+/// 手势坐标跟着窗口一起变。
+@MainActor
+final class FloatingShelfDrag {
+    static let shared = FloatingShelfDrag()
+    var onChange: (() -> Void)?
+    var onEnd: (() -> Void)?
+
+    func changed() { onChange?() }
+    func ended() { onEnd?() }
 }

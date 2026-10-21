@@ -77,6 +77,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             menu.addItem(layoutMenu(.customDock, title: tr("扩展栏布局")))
         }
         menu.addItem(layoutMenu(.macOSDock, title: tr("系统程序坞布局")))
+        if hasShelf, let mode = app.placementMode {
+            menu.addItem(positionMenu(current: mode))
+        }
         menu.addItem(.separator())
 
         // Only when there is one. An always-present "you are up to date" line
@@ -170,6 +173,80 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         return parent
     }
 
+    /// 扩展栏放在哪：五种方式、固定的八个位置、贴哪条边和重置。和设置页
+    /// 改的是同一份设置，当前方式由设置推出来打勾，所以两边永远一致。
+    private func positionMenu(current: ShelfPlacementMode) -> NSMenuItem {
+        let title = tr("位置")
+        let parent = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+
+        let modes: [(String, ShelfPlacementMode)] = [
+            (tr("和程序坞并排"), .beside),
+            (tr("置顶显示"), .top),
+            (tr("替换系统程序坞"), .replace),
+            (tr("替换并自动隐藏"), .replaceAutoHide),
+            (tr("浮动"), .floating),
+        ]
+        for (name, mode) in modes {
+            let entry = NSMenuItem(title: name, action: #selector(selectPlacement(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = PlacementChoice(mode)
+            entry.state = mode == current ? .on : .off
+            submenu.addItem(entry)
+        }
+        submenu.addItem(.separator())
+
+        let pinned = NSMenuItem(title: tr("固定", context: "section"), action: nil, keyEquivalent: "")
+        let pins = NSMenu()
+        for pin in ShelfPin.allCases {
+            let entry = NSMenuItem(title: pin.title, action: #selector(selectPlacement(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = PlacementChoice(.pinned(pin))
+            entry.state = current == .pinned(pin) ? .on : .off
+            pins.addItem(entry)
+        }
+        pinned.submenu = pins
+        if case .pinned = current { pinned.state = .on }
+        submenu.addItem(pinned)
+        submenu.addItem(.separator())
+
+        // 只在并排和替换里有意义：置顶、固定、浮动各有各的位置，选一条边就是
+        // 回到并排（替换里仍是替换）。
+        let edgeItem = NSMenuItem(title: tr("贴哪条边"), action: nil, keyEquivalent: "")
+        let edges = NSMenu()
+        let edgeMatters = ([.beside, .replace, .replaceAutoHide] as [ShelfPlacementMode]).contains(current)
+        for (name, edge) in [(tr("底部"), DockPosition.bottom), (tr("左边"), .left), (tr("右边"), .right)] {
+            let entry = NSMenuItem(title: name, action: #selector(selectEdge(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = edge.rawValue
+            entry.state = edgeMatters && app.effectivePosition == edge ? .on : .off
+            edges.addItem(entry)
+        }
+        edgeItem.submenu = edges
+        submenu.addItem(edgeItem)
+        submenu.addItem(item(tr("重置位置"), #selector(resetPlacement)))
+        parent.submenu = submenu
+
+        // 和布局菜单一样，当前方式灰字放在右侧；并排、替换再带上边。
+        var summary = current.summary
+        if edgeMatters { summary += " · " + edgeName(app.effectivePosition) }
+        let label = NSMutableAttributedString(string: title + "  ")
+        label.append(NSAttributedString(string: summary, attributes: [
+            .foregroundColor: NSColor.secondaryLabelColor,
+        ]))
+        parent.attributedTitle = label
+        return parent
+    }
+
+    private func edgeName(_ edge: DockPosition) -> String {
+        switch edge {
+        case .bottom: tr("底部")
+        case .top: tr("顶部")
+        case .left: tr("左边")
+        case .right: tr("右边")
+        }
+    }
+
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = self
@@ -187,6 +264,24 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         if profile.kind == .macOSDock {
             Task { await app.applyMacOSProfile() }
         }
+    }
+
+    @objc private func selectPlacement(_ sender: NSMenuItem) {
+        guard let choice = sender.representedObject as? PlacementChoice else { return }
+        app.applyPlacement(choice.mode)
+        onShelfSettingsChanged?()
+    }
+
+    @objc private func selectEdge(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let edge = DockPosition(rawValue: raw) else { return }
+        app.applyPlacementEdge(edge)
+        onShelfSettingsChanged?()
+    }
+
+    @objc private func resetPlacement() {
+        app.resetPlacement()
+        onShelfSettingsChanged?()
     }
 
     @objc private func restoreDock() {
@@ -213,4 +308,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         app.saveNow()
         NSApp.terminate(nil)
     }
+}
+
+/// 菜单项的 representedObject 要是对象，方式是带关联值的枚举，包一层。
+private final class PlacementChoice: NSObject {
+    let mode: ShelfPlacementMode
+    init(_ mode: ShelfPlacementMode) { self.mode = mode }
 }

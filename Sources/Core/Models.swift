@@ -912,6 +912,17 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// sit at the bezel and draw over the Dock, which is what people asking
     /// for "flush" usually mean when they keep Apple's Dock on that edge.
     public var reserveSystemDockSpace: Bool = true
+    /// 扩展栏在所贴的边上靠哪一头，默认居中。见 `ShelfAlignment`。
+    public var alignment: ShelfAlignment = .center
+    /// 是从菜单栏 ▸ 位置 ▸ 固定 选的。只决定“底部居中”这类和并排一样的位置
+    /// 在菜单里勾哪一项，摆放只看边和对齐。
+    public var pinned: Bool = false
+    /// 浮动：不贴边、不占保留区，可以拖到屏幕任意位置。
+    public var floating: Bool = false
+    /// 每块屏幕上记住的浮动位置，键是显示器编号（`ShelfPlacement.spotKey`）。
+    public var floatingSpots: [String: FloatingSpot] = [:]
+    /// 浮动扩展栏上次停在哪块屏幕。
+    public var floatingDisplayID: UInt32?
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -961,6 +972,11 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         edgeGap = try c.decodeIfPresent(Double.self, forKey: .edgeGap) ?? 6
         itemGap = (try? c.decodeIfPresent(Double.self, forKey: .itemGap)) ?? Geometry.defaultItemGap
         reserveSystemDockSpace = try c.decodeIfPresent(Bool.self, forKey: .reserveSystemDockSpace) ?? true
+        alignment = (try? c.decodeIfPresent(ShelfAlignment.self, forKey: .alignment)) ?? .center
+        pinned = (try? c.decodeIfPresent(Bool.self, forKey: .pinned)) ?? false
+        floating = (try? c.decodeIfPresent(Bool.self, forKey: .floating)) ?? false
+        floatingSpots = (try? c.decodeIfPresent([String: FloatingSpot].self, forKey: .floatingSpots)) ?? [:]
+        floatingDisplayID = try? c.decodeIfPresent(UInt32.self, forKey: .floatingDisplayID)
     }
 
     /// 只读不写的旧键。

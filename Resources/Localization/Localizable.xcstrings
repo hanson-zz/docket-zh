@@ -5904,6 +5904,17 @@
         }
       }
     },
+    "不贴边，按住扩展栏空白处可拖到屏幕任意位置。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not docked to an edge. Hold an empty part of the shelf to drag it anywhere on the screen."
+          }
+        }
+      }
+    },
     "不限地区和语言" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8698,6 +8709,17 @@
         }
       }
     },
+    "位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position"
+          }
+        }
+      }
+    },
     "低" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11437,6 +11459,50 @@
         }
       }
     },
+    "右上角" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top right"
+          }
+        }
+      }
+    },
+    "右下角" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom right"
+          }
+        }
+      }
+    },
+    "右侧居中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right center"
+          }
+        }
+      }
+    },
+    "右边" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right"
+          }
+        }
+      }
+    },
     "周一到周五" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11444,6 +11510,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mon-Fri"
+          }
+        }
+      }
+    },
+    "和程序坞并排" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beside the Dock"
           }
         }
       }
@@ -11470,6 +11547,72 @@
         }
       }
     },
+    "对齐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alignment"
+          }
+        }
+      }
+    },
+    "居中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Center"
+          }
+        }
+      }
+    },
+    "左上角" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top left"
+          }
+        }
+      }
+    },
+    "左下角" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom left"
+          }
+        }
+      }
+    },
+    "左侧居中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left center"
+          }
+        }
+      }
+    },
+    "左边" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        }
+      }
+    },
     "已在分组中" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11481,6 +11624,17 @@
         }
       }
     },
+    "并排" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beside"
+          }
+        }
+      }
+    },
     "应用分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11488,6 +11642,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App Group"
+          }
+        }
+      }
+    },
+    "底部居中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom center"
           }
         }
       }
@@ -11510,6 +11675,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag apps here, or click + to choose"
+          }
+        }
+      }
+    },
+    "拖动扩展栏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the shelf"
           }
         }
       }
@@ -26863,6 +27039,50 @@
         }
       }
     },
+    "替换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace"
+          }
+        }
+      }
+    },
+    "替换并自动隐藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace and auto-hide"
+          }
+        }
+      }
+    },
+    "替换并隐藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace, hidden"
+          }
+        }
+      }
+    },
+    "替换系统程序坞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace the Dock"
+          }
+        }
+      }
+    },
     "最多 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28289,6 +28509,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Strong"
+          }
+        }
+      }
+    },
+    "浮动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Floating"
           }
         }
       }
@@ -42166,6 +42397,28 @@
         }
       }
     },
+    "置顶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top"
+          }
+        }
+      }
+    },
+    "置顶显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top of screen"
+          }
+        }
+      }
+    },
     "美元" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45223,6 +45476,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to the note"
+          }
+        }
+      }
+    },
+    "贴哪条边" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge"
           }
         }
       }
@@ -48571,6 +48835,17 @@
         }
       }
     },
+    "重置位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset position"
+          }
+        }
+      }
+    },
     "重置秒表" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50059,6 +50334,50 @@
         }
       }
     },
+    "靠上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top"
+          }
+        }
+      }
+    },
+    "靠下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom"
+          }
+        }
+      }
+    },
+    "靠右" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right"
+          }
+        }
+      }
+    },
+    "靠左" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left"
+          }
+        }
+      }
+    },
     "面板打开时统计应用、下载和废纸篓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50253,6 +50572,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Top"
+          }
+        }
+      }
+    },
+    "顶部居中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top center"
           }
         }
       }
