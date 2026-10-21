@@ -926,6 +926,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// 点扩展栏上的文件夹格子：弹出小窗浏览（默认），还是交给访达打开。
     /// 旧配置里没有这个键时是小窗浏览。废纸篓格子不看它，始终交给访达。
     public var folderClick: FolderClickAction = .defaultValue
+    /// 指针停在扩展栏上时，外侧浮出布局名和页码点的小标签，切换布局时也闪现
+    /// 一下。只在扩展栏布局多于一个时出现。旧配置里没有这个键时是开。
+    public var showLayoutLabelOnHover: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -982,6 +985,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         floatingDisplayID = try? c.decodeIfPresent(UInt32.self, forKey: .floatingDisplayID)
         folderClick = (try? c.decodeIfPresent(FolderClickAction.self, forKey: .folderClick))
             ?? .defaultValue
+        showLayoutLabelOnHover = (try? c.decodeIfPresent(Bool.self, forKey: .showLayoutLabelOnHover)) ?? true
     }
 
     /// 只读不写的旧键。

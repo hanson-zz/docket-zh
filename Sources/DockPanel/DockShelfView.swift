@@ -661,6 +661,7 @@ struct DockShelfView: View {
             // SwiftUI hit testing whatever the underlying NSView's hitTest
             // returns, and without it this pane swallowed every click.
             HoverCatcher { point in
+                LayoutLabelWindow.shared.pointerOnShelf(point != nil)
                 if point == nil {
                     withAnimation(.easeOut(duration: 0.14)) { cursor = nil }
                 } else {

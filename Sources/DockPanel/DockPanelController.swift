@@ -77,6 +77,12 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             guard let self, self.panel != nil else { return nil }
             return self.shelfFrame
         }
+        LayoutLabelWindow.shared.app = app
+        LayoutLabelWindow.shared.shelfFrame = { [weak self] in
+            guard let self, self.panel != nil else { return nil }
+            return self.shelfFrame
+        }
+        LayoutLabelWindow.shared.edge = { [weak self] in self?.app.effectivePosition ?? .bottom }
     }
 
     // MARK: Lifecycle
@@ -121,10 +127,13 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// layouts can look alike at a glance.
     private func stepLayout(_ step: Int) {
         guard let profile = app.stepCustomLayout(by: step), let panel else { return }
+        // 布局名小标签开着时由它闪现新名字（refresh 里看到布局变了），不再叠一个。
+        guard !LayoutLabelWindow.shared.isAvailable else { return }
         LayoutToast.shared.show(profile.name, beside: panel.frame, edge: app.effectivePosition)
     }
 
     func hide() {
+        LayoutLabelWindow.shared.dismiss()
         GroupWindow.shared.close()
         FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.closeIfAnchored()
@@ -135,6 +144,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     func close() {
         stopPolling()
+        LayoutLabelWindow.shared.dismiss()
         GroupWindow.shared.close()
         FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.close()
@@ -173,6 +183,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         applyPlacement(animated: false)
         syncStrut()
         publishVisibility()
+        LayoutLabelWindow.shared.settingsChanged()
     }
 
     /// Takes or gives back Apple's Dock reserved strip as the setup changes.
@@ -351,6 +362,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             FolderBrowserWindow.shared.shift(by: dy)
             WidgetDetailWindow.shared.shift(by: dy)
             LayoutToast.shared.shift(by: dy)
+            LayoutLabelWindow.shared.shift(by: dy)
         }
     }
 
@@ -552,6 +564,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     private func beginFloatingDrag() {
         guard let panel, app.state.customDock.floating else { return }
+        LayoutLabelWindow.shared.dismiss()
         GroupWindow.shared.close()
         FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.closeIfAnchored()
@@ -765,7 +778,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         if revealed {
             // A generous margin: the shelf must not vanish the instant the
             // pointer crosses its border on the way to a tile at the far end.
-            if withinShelf(mouse) {
+            // 指针挪到布局名小标签上去点它，也算还在扩展栏上。
+            if withinShelf(mouse) || LayoutLabelWindow.shared.contains(mouse) {
                 hideWorkItem?.cancel()
                 hideWorkItem = nil
             } else if hideWorkItem == nil {
@@ -933,6 +947,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
             // 独立浮动的面板（弹出卡片打开的、不挂在扩展栏上的）不跟着收。
             WidgetDetailWindow.shared.closeIfAnchored()
             TooltipWindow.shared.hide()
+            LayoutLabelWindow.shared.dismiss()
         }
         revealed = value
         hideWorkItem?.cancel()

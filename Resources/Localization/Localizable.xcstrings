@@ -4925,6 +4925,17 @@
         }
       }
     },
+    "上一个布局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous layout"
+          }
+        }
+      }
+    },
     "上一个电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5229,6 +5240,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next · %@"
+          }
+        }
+      }
+    },
+    "下一个布局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next layout"
           }
         }
       }
@@ -11349,6 +11371,17 @@
         }
       }
     },
+    "切换到第 %@ 个布局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to layout %@"
+          }
+        }
+      }
+    },
     "切换单位时成本价不会换算" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11734,6 +11767,17 @@
         }
       }
     },
+    "悬停显示布局名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show layout name on hover"
+          }
+        }
+      }
+    },
     "所有 App" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11796,6 +11840,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag the shelf"
+          }
+        }
+      }
+    },
+    "指针停在扩展栏上时，在外侧浮出当前布局名和页码点，点点或两边的小箭头直接切换；切换布局时也会闪现一下。只有一个布局时不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the pointer rests on the shelf, a small label with the current layout's name and page dots appears beside it. Click a dot or an arrow to switch. It also flashes briefly when you change layouts, and stays hidden when there is only one layout."
           }
         }
       }

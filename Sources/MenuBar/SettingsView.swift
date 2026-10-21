@@ -864,6 +864,11 @@ struct SettingsView: View {
             Toggle(isOn: $state.customDock.useAsDesktopWidget) {
                 subtitled(tr("置于窗口之后"), tr("像桌面小组件一样停留在桌面上。"))
             }
+            // 悬停扩展栏时外侧浮出布局名小标签，见 LayoutLabelWindow。
+            Toggle(isOn: $state.customDock.showLayoutLabelOnHover) {
+                subtitled(tr("悬停显示布局名"),
+                          tr("指针停在扩展栏上时，在外侧浮出当前布局名和页码点，点点或两边的小箭头直接切换；切换布局时也会闪现一下。只有一个布局时不显示。"))
+            }
         }
 
         soundSection
