@@ -11,7 +11,7 @@ final class WidgetTintTuningTests: XCTestCase {
 
     func testOldConfigsReadAsDefaults() {
         let old = WidgetConfig([WidgetTint.key: .string("blue")])
-        XCTAssertEqual(WidgetTint.strength(old), .medium)
+        XCTAssertEqual(WidgetTint.strength(old), .strong)
         XCTAssertEqual(WidgetTint.textInk(old), .auto)
         XCTAssertEqual(WidgetTint.strength(WidgetConfig()), WidgetTint.Strength.standard)
         XCTAssertEqual(WidgetTint.textInk(WidgetConfig()), WidgetTint.TextInk.standard)
@@ -20,8 +20,20 @@ final class WidgetTintTuningTests: XCTestCase {
     func testUnknownValuesFallBackToDefaults() {
         let config = WidgetConfig([WidgetTint.strengthKey: .string("extra"),
                                    WidgetTint.inkKey: .string("neon")])
-        XCTAssertEqual(WidgetTint.strength(config), .medium)
+        XCTAssertEqual(WidgetTint.strength(config), .strong)
         XCTAssertEqual(WidgetTint.textInk(config), .auto)
+    }
+
+    func testRetiredLevelsMergeIntoTheTwoLeft() {
+        // 10-21 精简成两档：旧的「中」读成「浓」，旧的白、暖白读成「自动」。
+        XCTAssertEqual(WidgetTint.strength(WidgetConfig([WidgetTint.strengthKey: .string("medium")])), .strong)
+        XCTAssertEqual(WidgetTint.strength(WidgetConfig([WidgetTint.strengthKey: .string("strong")])), .strong)
+        XCTAssertEqual(WidgetTint.strength(WidgetConfig([WidgetTint.strengthKey: .string("soft")])), .soft)
+        XCTAssertEqual(WidgetTint.textInk(WidgetConfig([WidgetTint.inkKey: .string("white")])), .auto)
+        XCTAssertEqual(WidgetTint.textInk(WidgetConfig([WidgetTint.inkKey: .string("warmWhite")])), .auto)
+        XCTAssertEqual(WidgetTint.textInk(WidgetConfig([WidgetTint.inkKey: .string("theme")])), .theme)
+        XCTAssertEqual(WidgetTint.Strength.allCases.count, 2)
+        XCTAssertEqual(WidgetTint.TextInk.allCases.count, 2)
     }
 
     func testRoundTripThroughConfig() {
@@ -36,37 +48,34 @@ final class WidgetTintTuningTests: XCTestCase {
             XCTAssertEqual(WidgetTint.textInk(config), ink)
         }
         // 默认值写回时是空串（删掉键），不在旧卡片里多留一个键。
-        XCTAssertEqual(WidgetTint.Strength.medium.raw, "")
+        XCTAssertEqual(WidgetTint.Strength.strong.raw, "")
         XCTAssertEqual(WidgetTint.TextInk.auto.raw, "")
     }
 
     // MARK: 强度
 
-    func testMediumMatchesThePreviousLook() {
-        let darkMedium = WidgetTint.glowLevels(.medium, dark: true)
+    func testStrongMatchesThePreviousLook() {
+        let darkMedium = WidgetTint.glowLevels(.strong, dark: true)
         XCTAssertEqual(darkMedium.glow, 0.15, accuracy: 1e-9)
         XCTAssertEqual(darkMedium.edge, 0.14, accuracy: 1e-9)
         XCTAssertEqual(darkMedium.reach, WidgetTint.glowReach, accuracy: 1e-9)
-        let lightMedium = WidgetTint.glowLevels(.medium, dark: false)
+        let lightMedium = WidgetTint.glowLevels(.strong, dark: false)
         XCTAssertEqual(lightMedium.glow, 0.12, accuracy: 1e-9)
         XCTAssertEqual(lightMedium.edge, 0.12, accuracy: 1e-9)
-        // 不传强度的老接口就是「中」。
+        // 不传强度的老接口就是「浓」。
         XCTAssertEqual(WidgetTint.glowOpacity(.preset(.blue), kind: .countdown, dark: true),
-                       WidgetTint.glowOpacity(.preset(.blue), kind: .countdown, dark: true, strength: .medium))
+                       WidgetTint.glowOpacity(.preset(.blue), kind: .countdown, dark: true, strength: .strong))
     }
 
     func testStrengthIsOrderedAndCapped() {
         for dark in [true, false] {
             let soft = WidgetTint.glowLevels(.soft, dark: dark)
-            let medium = WidgetTint.glowLevels(.medium, dark: dark)
             let strong = WidgetTint.glowLevels(.strong, dark: dark)
-            XCTAssertLessThan(soft.glow, medium.glow)
-            XCTAssertLessThan(soft.edge, medium.edge)
-            XCTAssertLessThanOrEqual(medium.glow, strong.glow)
-            XCTAssertLessThanOrEqual(medium.edge, strong.edge)
-            XCTAssertLessThan(soft.reach, medium.reach)
-            XCTAssertLessThan(medium.reach, strong.reach)
-            for level in [soft, medium, strong] {
+            // 两档拉开：淡的光晕不到浓的一半，铺得也更浅。
+            XCTAssertLessThanOrEqual(soft.glow * 2, strong.glow + 1e-9)
+            XCTAssertLessThan(soft.edge, strong.edge)
+            XCTAssertLessThan(soft.reach, strong.reach)
+            for level in [soft, strong] {
                 XCTAssertLessThanOrEqual(level.glow, 0.15)
                 XCTAssertLessThanOrEqual(level.edge, 0.15)
                 XCTAssertGreaterThan(level.glow, 0)
@@ -108,7 +117,7 @@ final class WidgetTintTuningTests: XCTestCase {
     }
 
     func testChosenInkIsKeptOrFallsBack() {
-        let inks: [WidgetTint.TextInk] = [.white, .warmWhite, .theme]
+        let inks: [WidgetTint.TextInk] = [.theme]
         let fills = WidgetTint.Preset.allCases.map { WidgetTint.readable($0.palette.main, dark: true) }
             + [ColorCode(hex: "#101030")!, ColorCode(hex: "#FFFFFF")!, ColorCode(hex: "#7F7F7F")!]
         for fill in fills {
@@ -127,18 +136,6 @@ final class WidgetTintTuningTests: XCTestCase {
                               || WidgetTint.contrastRatio(resolved.color, fill) >= WidgetTint.minimumTextContrast)
             }
         }
-    }
-
-    func testWhiteOnYellowFallsBackAndWhiteOnNavyStays() {
-        let yellow = ColorCode(hex: WidgetTint.Preset.yellow.hex)!
-        let onYellow = WidgetTint.resolveInk(.white, accent: yellow, on: yellow)
-        XCTAssertTrue(onYellow.fellBack, "黄底白字对比度不够")
-        XCTAssertEqual(onYellow.color, black)
-
-        let navy = ColorCode(hex: "#14204A")!
-        let onNavy = WidgetTint.resolveInk(.warmWhite, accent: navy, on: navy)
-        XCTAssertFalse(onNavy.fellBack, "深蓝底暖白字够清楚")
-        XCTAssertEqual(onNavy.color, WidgetTint.inkWarmWhite)
     }
 
     func testAutoInkAlwaysReachesTextContrast() {
@@ -166,9 +163,6 @@ final class WidgetTintTuningTests: XCTestCase {
         let theme = WidgetTint.resolveInk(.theme, accent: blue, on: blue)
         XCTAssertFalse(theme.fellBack, "蓝底压暗的蓝字够清楚")
         XCTAssertNotEqual(theme.color, black)
-        let white = WidgetTint.resolveInk(.white, accent: blue, on: blue)
-        XCTAssertTrue(white.fellBack)
-        XCTAssertEqual(white.color, black, "退回后和手选的白字不一样")
     }
 
     func testThemeInkStaysInTheSameHue() {
@@ -178,11 +172,5 @@ final class WidgetTintTuningTests: XCTestCase {
         XCTAssertNotEqual(resolved.color, black)
         XCTAssertEqual(resolved.color.hslComponents.h, yellow.hslComponents.h, accuracy: 2)
         XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(resolved.color, yellow), 4.5)
-    }
-
-    func testWarmWhiteIsWarm() {
-        let warm = WidgetTint.inkWarmWhite
-        XCTAssertGreaterThan(warm.red, warm.blue)
-        XCTAssertGreaterThan(WidgetTint.luminance(warm), 0.85)
     }
 }

@@ -345,7 +345,7 @@ struct WidgetTintPicker: View {
 
     // MARK: 强度和文字颜色
 
-    /// 两行分段：色调强度（淡 / 中 / 浓）和文字颜色（自动 / 白 / 暖白 / 主题色）。
+    /// 两行分段：色调强度（淡 / 浓）和文字颜色（自动 / 主题色）。
     /// 默认颜色时也能点：点了自动改用「跟随系统强调色」再生效，避免灰掉被当成坏了。
     private var tuning: some View {
         let active = choice.isChosen
@@ -363,7 +363,7 @@ struct WidgetTintPicker: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 200, alignment: .leading)
+                .frame(maxWidth: 140, alignment: .leading)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("文字颜色")
@@ -378,7 +378,7 @@ struct WidgetTintPicker: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 260, alignment: .leading)
+                .frame(maxWidth: 180, alignment: .leading)
             }
             if !active {
                 Text("现在是默认颜色。调这两项会自动改用系统强调色。")

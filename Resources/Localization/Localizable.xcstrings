@@ -26742,17 +26742,6 @@
         }
       }
     },
-    "暖白" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warm white"
-          }
-        }
-      }
-    },
     "更多表情：打开系统表情面板" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38404,17 +38393,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Climbing"
-          }
-        }
-      }
-    },
-    "白" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "White"
           }
         }
       }
