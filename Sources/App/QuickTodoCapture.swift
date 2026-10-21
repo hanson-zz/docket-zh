@@ -133,7 +133,8 @@ final class QuickTodoCaptureModel {
     var session = UUID()
 }
 
-/// 小框本身：一个圆圈、一行字、右边“回车记下”。深色玻璃，和刘海对话一个调子。
+/// 小框本身：一个圆圈、一行字、右边“回车记下”。液态玻璃，跟着设置里的浅色/深色外观走；
+/// 降低透明度时换实心底。
 struct QuickTodoCaptureView: View {
     static let size = CGSize(width: 460, height: 58)
 
@@ -141,43 +142,43 @@ struct QuickTodoCaptureView: View {
     var submit: (String) -> Void
 
     @FocusState private var focused: Bool
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+    }
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "circle")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(Color.panelSecondary)
             TextField("", text: $model.text,
                       prompt: Text(model.hasTarget ? tr("记一条待办") : tr("先在扩展栏上添加一个快速待办"))
-                        .foregroundStyle(.white.opacity(0.4)))
+                        .foregroundStyle(Color.panelTertiary))
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.panelPrimary)
                 .focused($focused)
                 .disabled(!model.hasTarget)
                 .onSubmit { submit(model.text) }
             Text(model.hasTarget ? tr("回车记下") : tr("按 Esc 关闭"))
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 13))
+                .foregroundStyle(Color.panelTertiary)
                 .lineLimit(1)
                 .fixedSize()
         }
         .padding(.horizontal, 18)
         .frame(width: Self.size.width, height: Self.size.height)
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(.black.opacity(0.45))
-                }
+            if reduceTransparency {
+                shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
+            } else {
+                Color.clear.glassEffect(.regular, in: shape)
+            }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .environment(\.colorScheme, .dark)
+        .clipShape(shape)
         .onAppear { focused = true }
         .onChange(of: model.session) { focused = true }
         .accessibilityElement(children: .contain)

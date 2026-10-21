@@ -32,6 +32,14 @@ import AppKit
 //   .black.opacity(低于 0.2)             → .panelShadeSoft
 //   阴影 .shadow(color: .black.opacity(x)) 可以不改
 //
+// 白底黑字的选中胶囊（反色）：
+//   .fill(Color.white) + .foregroundStyle(.black)  → .fill(.panelPrimary) + .foregroundStyle(.panelOnPrimary)
+//   按钮、胶囊的白色描边 .white.opacity(0.2...0.4) → .panelQuaternary（浅色下是淡灰线）
+//
+// 写法：都挂在 `ShapeStyle where Self == Color` 上，所以
+//   .foregroundStyle(.panelPrimary)、.fill(.panelFill)、Color.panelSecondary、
+//   colors: [.panelPrimary, .panelTertiary]、.panelPrimary.opacity(0.5) 都能直接写。
+//
 // 主题色当文字（主题色、强调色、红绿涨跌写成字或细图标时）：
 //   .foregroundStyle(accent)            → .foregroundStyle(accent.panelReadable)
 //   或 Color.panelText(accent)           （同一个东西，浅色下加深一档，深色下不变）
@@ -47,42 +55,72 @@ import AppKit
 //
 // 判断当前是不是浅色：@Environment(\.colorScheme) private var scheme，scheme == .light。
 
-extension Color {
+extension ShapeStyle where Self == Color {
     /// 主文字：深色下白，浅色下近黑（#18161C）。替换 `.white`。
-    static let panelPrimary = Color.panelDynamic(dark: NSColor.white,
-                                                 light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 1))
+    static var panelPrimary: Color {
+        Color.panelDynamic(dark: NSColor.white,
+                           light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 1))
+    }
     /// 次级文字：说明、单位、副标题。替换 `.white.opacity(0.6...0.79)`。
-    static let panelSecondary = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.68),
-                                                   light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.68))
+    static var panelSecondary: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.68),
+                           light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.68))
+    }
     /// 三级文字：小标签、时间戳。替换 `.white.opacity(0.4...0.59)`。
-    static let panelTertiary = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.5),
-                                                  light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.54))
+    static var panelTertiary: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.5),
+                           light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.54))
+    }
     /// 四级：占位、装饰、禁用。替换当文字用的 `.white.opacity(<0.4)`。
-    static let panelQuaternary = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.3),
-                                                    light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.3))
+    static var panelQuaternary: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.3),
+                           light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.3))
+    }
 
     /// 薄玻璃填充：分组底、chip 底。替换当底的 `.white.opacity(0.04...0.12)`。
-    static let panelFill = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.09),
-                                              light: NSColor.white.withAlphaComponent(0.45))
+    static var panelFill: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.09),
+                           light: NSColor.white.withAlphaComponent(0.45))
+    }
     /// 加重一点的玻璃填充：选中、按下、悬停。替换当底的 `.white.opacity(0.13...0.3)`。
-    static let panelFillStrong = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
-                                                    light: NSColor.white.withAlphaComponent(0.75))
+    static var panelFillStrong: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
+                           light: NSColor.white.withAlphaComponent(0.75))
+    }
     /// 进度条、圆环的空轨道：浅色玻璃上白轨道看不见，换成淡淡的深色。
-    static let panelTrack = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.15),
-                                               light: NSColor.black.withAlphaComponent(0.08))
+    static var panelTrack: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.15),
+                           light: NSColor.black.withAlphaComponent(0.08))
+    }
     /// 玻璃小块的描边（亮边）。
-    static let panelStroke = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.14),
-                                                light: NSColor.white.withAlphaComponent(0.8))
+    static var panelStroke: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.14),
+                           light: NSColor.white.withAlphaComponent(0.8))
+    }
     /// 分隔线。
-    static let panelSeparator = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.12),
-                                                   light: NSColor.black.withAlphaComponent(0.1))
+    static var panelSeparator: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.12),
+                           light: NSColor.black.withAlphaComponent(0.1))
+    }
     /// 压暗：替换 `.black.opacity(0.2...0.5)`，浅色下只压一点。
-    static let panelShade = Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.3),
-                                               light: NSColor.black.withAlphaComponent(0.08))
+    static var panelShade: Color {
+        Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.3),
+                           light: NSColor.black.withAlphaComponent(0.08))
+    }
     /// 轻压暗：替换 `.black.opacity(<0.2)`。
-    static let panelShadeSoft = Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.15),
-                                                   light: NSColor.black.withAlphaComponent(0.05))
+    static var panelShadeSoft: Color {
+        Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.15),
+                           light: NSColor.black.withAlphaComponent(0.05))
+    }
 
+    /// 实心主文字色块上的字（选中的胶囊：底 .panelPrimary，字用这个）。
+    /// 替换「白底黑字」里的 `.black`。
+    static var panelOnPrimary: Color {
+        Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.88), light: NSColor.white)
+    }
+}
+
+extension Color {
     /// 主题色当文字：深色下原样，浅色下往黑里调 30%，在浅玻璃上读得出来。
     static func panelText(_ accent: Color) -> Color {
         let base = NSColor(accent)

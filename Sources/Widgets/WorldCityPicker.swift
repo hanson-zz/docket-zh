@@ -267,26 +267,35 @@ struct CityLandmarkBadge: View {
     /// 地标的不透明度：列表里 70%，卡片小图标 85%。
     var inkOpacity: Double = 0.7
 
+    /// 跟着外观：深色下是压暗的天色、白色地标，浅色下是淡天色、深色地标。
+    @Environment(\.colorScheme) private var scheme
+
+    private func sky(_ hour: Double) -> Color {
+        if scheme == .light {
+            return (SkyBackdrop.rawPalette(hour).first ?? .gray).mix(with: .white, by: 0.6)
+        }
+        return SkyBackdrop.palette(hour).first ?? .gray
+    }
+
     var body: some View {
         let zone = city.timeZone ?? .current
         let corner = size * 0.25
         ZStack {
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .fill(SkyBackdrop.palette(Self.hour(now, zone: zone)).first ?? .gray)
+                .fill(sky(Self.hour(now, zone: zone)))
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
+                .strokeBorder(Color.panelSeparator, lineWidth: 0.5)
             if city.isBuiltIn {
-                CityLandmarkMark(landmark: city.landmark, color: .white.opacity(inkOpacity),
+                CityLandmarkMark(landmark: city.landmark, color: Color.panelPrimary.opacity(inkOpacity),
                                  lineWidth: size < 26 ? 0.8 : 0.9)
                     .padding(size * 0.07)
             } else {
                 Image(systemName: "globe")
                     .font(.system(size: size * 0.55, weight: .light))
-                    .foregroundStyle(.white.opacity(inkOpacity))
+                    .foregroundStyle(Color.panelPrimary.opacity(inkOpacity))
             }
         }
         .frame(width: size, height: size)
-        .environment(\.colorScheme, .dark)
     }
 
     static func hour(_ now: Date, zone: TimeZone) -> Double {

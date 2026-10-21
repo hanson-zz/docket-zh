@@ -12,6 +12,7 @@ import SwiftUI
 struct StocksDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
+    @Environment(\.colorScheme) private var scheme
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -71,7 +72,7 @@ struct StocksDetail: View {
     }
 
     private func ink(_ percent: Double?) -> Color {
-        StockInk.color(percent, colors: colors, scheme: .dark)
+        StockInk.color(percent, colors: colors, scheme: scheme)
     }
 
     private func update(_ change: (inout WidgetConfig) -> Void) {
@@ -145,14 +146,14 @@ struct StocksDetail: View {
         } label: {
             Text(editingList ? tr("完成") : tr("编辑"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(editingList ? Color.black.opacity(0.85) : .white)
+                .foregroundStyle(editingList ? Color.panelOnPrimary : Color.panelPrimary)
                 .padding(.horizontal, 12)
                 .frame(height: 26)
                 .background {
                     if editingList {
-                        Capsule().fill(Color.white.opacity(0.92))
+                        Capsule().fill(Color.panelPrimary.opacity(0.92))
                     } else {
-                        Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
+                        Capsule().strokeBorder(Color.panelQuaternary, lineWidth: 0.8)
                     }
                 }
                 .contentShape(Capsule())
@@ -215,10 +216,10 @@ struct StocksDetail: View {
                     } label: {
                         Text(StockBoard.displaySymbol(item))
                             .font(WidgetStyle.label(11))
-                            .foregroundStyle(item == symbol ? Color.black : .white)
+                            .foregroundStyle(item == symbol ? Color.panelOnPrimary : Color.panelPrimary)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 3)
-                            .background(Capsule().fill(item == symbol ? Color.white : Color.white.opacity(0.14)))
+                            .background(Capsule().fill(item == symbol ? Color.panelPrimary : Color.panelFillStrong))
                     }
                     .buttonStyle(.plain)
                 }
@@ -233,17 +234,17 @@ struct StocksDetail: View {
         return HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(StockBoard.displaySymbol(symbol))
                 .font(WidgetStyle.label(15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .font(WidgetStyle.caption(12))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 0)
             if session != .unknown {
                 Text(session.title)
                     .font(WidgetStyle.caption(11))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
             }
         }
         .lineLimit(1)
@@ -253,13 +254,13 @@ struct StocksDetail: View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text(StockBoard.priceText(quote.price))
                 .font(WidgetStyle.value(44))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(quote.price)
             // 卡片上没地方写币种，海外上市的会被当成美元；面板写出来。
             Text(StockDisplay.unitLabel(symbol, preview: context.isPreview, unit: unit) ?? quote.currency)
                 .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.6)
@@ -275,7 +276,7 @@ struct StocksDetail: View {
                 .rollingValue(quote.changePercent)
         }
         .font(WidgetStyle.label(12))
-        .foregroundStyle(.white)
+        .foregroundStyle(.panelPrimary)
         .lineLimit(1)
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
@@ -290,10 +291,10 @@ struct StocksDetail: View {
                           tint: ink(quote.changePercent),
                           alert: alert?.price,
                           showsVolume: true,
-                          upInk: StockInk.color(rising: true, colors: colors, scheme: .dark),
-                          downInk: StockInk.color(rising: false, colors: colors, scheme: .dark),
+                          upInk: StockInk.color(rising: true, colors: colors, scheme: scheme),
+                          downInk: StockInk.color(rising: false, colors: colors, scheme: scheme),
                           lineWidth: 1.8,
-                          guide: .white)
+                          guide: .panelPrimary)
                 .frame(height: 120)
                 .padding(.top, 4)
         }
@@ -311,10 +312,10 @@ struct StocksDetail: View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(title)
                 .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(.panelSecondary)
             Text(value)
                 .font(WidgetStyle.label(12))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
         }
     }
@@ -338,7 +339,7 @@ struct StocksDetail: View {
             Text("到价提醒")
                 .font(.system(size: 10, weight: .semibold))
                 .tracking(0.8)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             NotificationsOffNote(active: NotificationAccess.stockUsesNotifications(
                 alertCount: StockBoard.alerts(config).count), preview: context.isPreview)
             ForEach(mine, id: \.self) { alert in
@@ -348,7 +349,7 @@ struct StocksDetail: View {
                          ? tr("涨到 \(StockBoard.priceText(alert.price))")
                          : tr("跌到 \(StockBoard.priceText(alert.price))"))
                         .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                     Text(StockBoard.distanceText(alert, price: checkable.contains(alert) ? current : nil))
                         .font(WidgetStyle.caption(11))
@@ -358,7 +359,7 @@ struct StocksDetail: View {
                         removeAlert(alert)
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .buttonStyle(.plain)
                     .help(tr("删除这条提醒"))
@@ -379,7 +380,7 @@ struct StocksDetail: View {
             }
             Text("高于现价是涨到提醒，低于现价是跌到提醒；到价时发一次系统通知，卡片闪一下橙边。黄金白银按面板上显示的单位。")
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 4)
@@ -425,7 +426,7 @@ struct StocksDetail: View {
         HStack {
             Text("黄金白银")
                 .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             Picker("", selection: Binding(
                 get: { unit },
                 // 提醒价跟着换算过去，见 `PreciousMetal.switching`。
@@ -509,10 +510,10 @@ struct StocksDetail: View {
                     } label: {
                         Text(item.name)
                             .font(WidgetStyle.label(12))
-                            .foregroundStyle(item.name == current.name ? Color.black : .white)
+                            .foregroundStyle(item.name == current.name ? Color.panelOnPrimary : Color.panelPrimary)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 3)
-                            .background(Capsule().fill(item.name == current.name ? Color.white : Color.white.opacity(0.14)))
+                            .background(Capsule().fill(item.name == current.name ? Color.panelPrimary : Color.panelFillStrong))
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -532,10 +533,10 @@ struct StocksDetail: View {
                 } label: {
                     Label("分组", systemImage: "plus")
                         .font(WidgetStyle.label(11))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 3)
-                        .background(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 0.8))
+                        .background(Capsule().strokeBorder(Color.panelQuaternary, lineWidth: 0.8))
                 }
                 .buttonStyle(.plain)
                 .disabled(context.isPreview)
@@ -607,24 +608,23 @@ struct StocksDetail: View {
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
                     Text(tr("涨 \(breadth.up)"))
-                        .foregroundStyle(StockInk.color(rising: true, colors: colors, scheme: .dark))
+                        .foregroundStyle(StockInk.color(rising: true, colors: colors, scheme: scheme))
                     Text(tr("跌 \(breadth.down)"))
-                        .foregroundStyle(StockInk.color(rising: false, colors: colors, scheme: .dark))
+                        .foregroundStyle(StockInk.color(rising: false, colors: colors, scheme: scheme))
                     if breadth.flat > 0 {
                         Text(tr("平 \(breadth.flat)"))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                     }
                 }
                 .font(WidgetStyle.label(13))
                 .monospacedDigit()
                 BreadthBar(breadth: breadth, colors: colors, height: 4)
-                    .environment(\.colorScheme, .dark)
             }
             ForEach(profits, id: \.currency) { profit in
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("今日盈亏")
                         .font(WidgetStyle.caption(12))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                     Text(StockBoard.profitText(profit))
                         .font(WidgetStyle.value(22))
                         .foregroundStyle(ink(profit.amount))
@@ -642,7 +642,7 @@ struct StocksDetail: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(tr("持仓盈亏"))
                         .font(WidgetStyle.caption(13))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                     Text(StockBoard.profitText(profit))
                         .font(WidgetStyle.label(15))
                         .foregroundStyle(ink(profit.amount))
@@ -658,7 +658,7 @@ struct StocksDetail: View {
             if holdings.isEmpty {
                 Text(tr("点右上角「编辑」给每只填上持仓，这里会算这一组的今日盈亏。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -670,28 +670,27 @@ struct StocksDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(StockBoard.displaySymbol(symbol))
                     .font(WidgetStyle.label(14))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 if !subtitle.isEmpty {
                     Text(subtitle)
                         .font(WidgetStyle.caption(11))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(.panelSecondary)
                         .minimumScaleFactor(0.6)
                 }
             }
             .frame(width: 92, alignment: .leading)
 
             MiniTrend(samples: quote?.history ?? [], tint: ink(quote?.changePercent),
-                      baseline: quote?.previousClose, lineWidth: 1.4, guide: .white)
+                      baseline: quote?.previousClose, lineWidth: 1.4, guide: .panelPrimary)
                 .frame(height: 26)
                 .frame(maxWidth: .infinity)
 
             Text(StockBoard.priceText(quote?.price))
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(quote?.price ?? 0)
             ChangeChip(percent: quote?.changePercent, colors: colors, size: 11, minWidth: 64)
-                .environment(\.colorScheme, .dark)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.75)
@@ -709,10 +708,10 @@ struct StocksDetail: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(StockBoard.displaySymbol(symbol))
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             Text("暂无报价。")
                 .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
         }
     }
 

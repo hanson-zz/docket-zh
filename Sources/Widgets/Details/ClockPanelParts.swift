@@ -118,12 +118,29 @@ extension View {
 
 /// 和 `DetailCard` 一样的位置、圆角和描边，多一个开关：液晶面板保持单色，
 /// 顶上不加颜色面板的那一抹光晕。
+///
+/// 液态玻璃：`forceDark` 为 false 时卡片底是系统玻璃、跟随浅色/深色，内容用
+/// PanelColors 语义色。点阵、液晶、翻页、霓虹、辉光管这些「设备」表盘自己画深色底、
+/// 字色写死成亮色，所以默认还是保持暗色（true）；表盘换成语义色以后再逐个传 false。
 struct ClockPanelCard<Backdrop: View, Content: View>: View {
     var glows = true
+    /// 保持暗色（默认，见上）。
+    var forceDark = true
     @ViewBuilder var backdrop: () -> Backdrop
     @ViewBuilder var content: () -> Content
 
     @Environment(\.panelTint) private var panelTint
+
+    init(glows: Bool = true, forceDark: Bool = true,
+         @ViewBuilder backdrop: @escaping () -> Backdrop,
+         @ViewBuilder content: @escaping () -> Content) {
+        self.glows = glows
+        self.forceDark = forceDark
+        self.backdrop = backdrop
+        self.content = content
+    }
+
+    private var corner: CGFloat { DetailCard<EmptyView, EmptyView>.corner }
 
     var body: some View {
         content()
@@ -131,17 +148,20 @@ struct ClockPanelCard<Backdrop: View, Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .background {
                 ZStack {
+                    PanelGlassSurface(cornerRadius: corner, dark: forceDark)
                     backdrop()
                     if glows, let panelTint {
                         TintGlow(color: panelTint.color, opacity: panelTint.glow, reach: panelTint.reach)
                     }
                 }
             }
-            .environment(\.colorScheme, .dark)
-            .clipShape(.rect(cornerRadius: DetailCard<EmptyView, EmptyView>.corner, style: .continuous))
+            .panelForceDark(forceDark)
+            .clipShape(.rect(cornerRadius: corner, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: DetailCard<EmptyView, EmptyView>.corner, style: .continuous)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                if forceDark {
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                }
             }
             .padding(-DetailCard<EmptyView, EmptyView>.bleed)
     }
