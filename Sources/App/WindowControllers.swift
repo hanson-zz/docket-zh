@@ -164,7 +164,8 @@ final class SettingsWindow: HostedWindow {
                 lastError: app.lastError,
                 onClearError: { app.clearError() },
                 onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } },
-                onShowOnboarding: { OnboardingWindow.shared.show(app: app) }
+                onShowOnboarding: { OnboardingWindow.shared.show(app: app) },
+                onAddWidget: { app.addItem(.widget($0)) }
             ),
             title: tr("码头设置"),
             // Taller and resizable, because the Widgets tab is not a fixed

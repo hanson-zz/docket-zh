@@ -419,6 +419,17 @@
         }
       }
     },
+    "%@ · 在扩展栏上 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ on the shelf"
+          }
+        }
+      }
+    },
     "%@ · 就是今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3099,6 +3110,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, shown on card"
+          }
+        }
+      }
+    },
+    "%@，未添加 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@ not added"
           }
         }
       }
@@ -10513,6 +10535,17 @@
         }
       }
     },
+    "关掉只是从扩展栏隐藏，设置保留。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turning one off only hides it from the shelf. Its settings are kept."
+          }
+        }
+      }
+    },
     "关掉后停在你选的来源" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11734,6 +11767,17 @@
         }
       }
     },
+    "小组件库里的都已经放上去了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every widget in the library is already on the shelf."
+          }
+        }
+      }
+    },
     "居中" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11844,6 +11888,17 @@
         }
       }
     },
+    "当前布局里还没有小组件，在下面打开开关添加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No widgets in this layout yet. Turn one on below to add it."
+          }
+        }
+      }
+    },
     "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11899,6 +11954,17 @@
         }
       }
     },
+    "打开即放到扩展栏末尾" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on to add to the end of the shelf"
+          }
+        }
+      }
+    },
     "打开屏幕录制权限后可看缩略图" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11917,6 +11983,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow Accessibility to list windows"
+          }
+        }
+      }
+    },
+    "扩展栏上没有匹配的小组件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching widgets on the shelf."
           }
         }
       }
@@ -26401,6 +26478,17 @@
         }
       }
     },
+    "搜索小组件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search widgets"
+          }
+        }
+      }
+    },
     "搜索快捷指令" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27787,6 +27875,17 @@
         }
       }
     },
+    "未添加 · %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not added · %@"
+          }
+        }
+      }
+    },
     "未知发件人" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28520,6 +28619,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No matching apps"
+          }
+        }
+      }
+    },
+    "没有匹配的未添加小组件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching widgets to add."
           }
         }
       }
@@ -47104,6 +47214,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "还有 %@ 个 ›" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more ›"
           }
         }
       }

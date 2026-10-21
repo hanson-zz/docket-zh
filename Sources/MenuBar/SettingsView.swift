@@ -54,6 +54,8 @@ struct SettingsView: View {
     var onRestoreOriginalDock: () -> Void
     /// 重新打开首次启动时的新手引导。
     var onShowOnboarding: () -> Void = {}
+    /// 小组件管理里打开“未添加”的开关：和小组件库的“添加”一样放到当前扩展栏末尾。
+    var onAddWidget: (WidgetInstance) -> Void = { _ in }
 
     /// Which tab is showing, held outside the view.
     ///
@@ -474,81 +476,10 @@ struct SettingsView: View {
 
     // MARK: - Widget manager
 
-    /// 当前扩展栏布局里的小组件：开关显示、拖动排序。
-    ///
-    /// 用的都是已有的数据：开关就是小组件配置里的“隐藏”（扩展栏右键菜单
-    /// “已隐藏的小组件”里也能放回来），顺序就是布局本身的顺序。应用、文件夹
-    /// 和分组不在这里，挪动小组件时它们留在原位。
-    @ViewBuilder private var widgetManager: some View {
-        let widgets = WidgetManagement.widgets(activeItems)
-        if state.setup == .macOSDockOnly {
-            ContentUnavailableView("扩展栏已关闭", systemImage: "rectangle.bottomthird.inset.filled",
-                                   description: Text("打开扩展栏后，这里会列出上面的小组件。"))
-        } else if widgets.isEmpty {
-            ContentUnavailableView("当前布局里还没有小组件", systemImage: "square.grid.2x2",
-                                   description: Text("点按扩展栏末端的 + 添加小组件。"))
-        } else {
-            List {
-                Section {
-                    ForEach(widgets) { widget in
-                        widgetManagerRow(widget)
-                    }
-                    .onMove { source, destination in
-                        guard let index = activeProfileIndex else { return }
-                        withAnimation(.smooth(duration: 0.2)) {
-                            state.profiles[index].items = WidgetManagement.move(
-                                widgetsAt: source, to: destination, in: state.profiles[index].items)
-                        }
-                    }
-                } header: {
-                    Text(tr("\(state.activeCustomProfile?.name ?? tr("扩展栏")) · \(widgets.count) 个小组件"))
-                } footer: {
-                    Text("拖动排序，关掉开关会把小组件从扩展栏上隐藏，设置保留，随时可以再打开。应用、文件夹和分组的位置不受影响。")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .listStyle(.inset)
-        }
-    }
-
-    private func widgetManagerRow(_ widget: WidgetInstance) -> some View {
-        let item = DockItem.widget(widget)
-        let mode = WidgetVisibility.mode(widget.config)
-        return HStack(spacing: 9) {
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .help("拖动排序")
-            icon(for: item)
-                .frame(width: 20, height: 20)
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 5) {
-                    Text(item.displayName)
-                        .lineLimit(1)
-                    // 整种是 Pro，或现在用的外观是 Pro（液态、Pro 表盘等）。
-                    if ProFeatures.isPro(widget) { ProBadge() }
-                }
-                if mode == .conditional, let condition = WidgetVisibility.conditionTitle(widget.kind, config: widget.config) {
-                    Text(condition)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer(minLength: 8)
-            Toggle("显示", isOn: Binding(
-                get: { WidgetManagement.isShown(widget) },
-                set: { on in
-                    guard let index = activeProfileIndex else { return }
-                    state.profiles[index].items = WidgetManagement.setShown(
-                        on, id: widget.id, in: state.profiles[index].items)
-                }))
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .labelsHidden()
-        }
-        .padding(.vertical, 2)
+    /// 小组件管理：上半是当前布局里的小组件（开关显示、拖动排序），下半是还没
+    /// 放上去的（打开开关加到扩展栏末尾）。见 `WidgetManagerPane`。
+    private var widgetManager: some View {
+        WidgetManagerPane(state: $state, onAdd: onAddWidget)
     }
 
     // MARK: - General
