@@ -473,6 +473,7 @@ struct MusicDetail: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 64)
+            controlHint(track)
         }
     }
 
@@ -1204,6 +1205,37 @@ struct MusicDetail: View {
 
     private static func colour(_ rgb: (red: Double, green: Double, blue: Double)) -> Color {
         Color(.sRGB, red: rgb.red, green: rgb.green, blue: rgb.blue, opacity: 1)
+    }
+}
+
+extension MusicDetail {
+    /// 网易云、QQ 音乐、小宇宙的按钮退到菜单项或媒体键才能用、却没有辅助功能权限时，
+    /// 按钮下面一行说明和「去授权」（和应用切换器窗口列表同一个做法）。
+    @ViewBuilder
+    fileprivate func controlHint(_ track: Playing) -> some View {
+        if !context.isPreview, let source = track.source, source.readsNowPlaying,
+           MusicService.shared.controlNeedsAccessibility(source) {
+            HStack(spacing: 8) {
+                Text(tr("按钮控制需要辅助功能权限"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Button {
+                    AppWindows.requestAccess()
+                } label: {
+                    Text(tr("去授权"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Self.base)
+                        .padding(.horizontal, 10)
+                        .frame(height: 24)
+                        .background(Capsule().fill(.white))
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 30)
+        }
     }
 }
 

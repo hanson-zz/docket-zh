@@ -64,11 +64,34 @@ enum NowPlayingReader {
         return Data(base64Encoded: output.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
+    /// 给系统「正在播放」的 App 发一个 MRMediaRemoteCommand（2 播放暂停、4 下一首、
+    /// 5 上一首）。和读数一样经 osascript：它是系统自带的平台程序，macOS 15.4 起
+    /// 普通 App 直接调 MediaRemote 会被拒，它不会。返回系统收没收下这条命令，
+    /// 不代表播放器照做了（`NowPlayingCommander` 再核对读数）。
+    static func sendCommand(_ code: Int) -> Bool {
+        guard let output = run([String(code)], source: commandScript, timeout: 1.5) else { return false }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines) == "ok"
+    }
+
+    private static let commandScript = """
+    function run(argv) {
+      ObjC.import('Foundation');
+      try {
+        const bundle = $.NSBundle.bundleWithPath('/System/Library/PrivateFrameworks/MediaRemote.framework/');
+        if (!bundle || bundle.isNil() || !bundle.load) return 'fail';
+        ObjC.bindFunction('MRMediaRemoteSendCommand', ['bool', ['int', 'id']]);
+        return $.MRMediaRemoteSendCommand(parseInt(argv[0], 10), $.NSDictionary.dictionary) ? 'ok' : 'fail';
+      } catch (e) {
+        return 'fail';
+      }
+    }
+    """
+
     /// `osascript -l JavaScript`, killed after `timeout` seconds.
-    private static func run(_ arguments: [String], timeout: TimeInterval = 1.5) -> String? {
+    private static func run(_ arguments: [String], source: String = script, timeout: TimeInterval = 1.5) -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-l", "JavaScript", "-e", script] + arguments
+        process.arguments = ["-l", "JavaScript", "-e", source] + arguments
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
@@ -93,22 +116,19 @@ private final class ProcessBox: @unchecked Sendable {
 
 /// The keyboard's play/pause, next and previous keys, posted as if pressed.
 /// They go to whichever app owns Now Playing, which is the one just read.
-/// Posting needs Accessibility; the first press asks for it.
+/// 发出去要辅助功能权限；没有时什么都不做，也不在按键时弹系统提示（面板的
+/// 「去授权」才弹）。是 `NowPlayingCommander` 的最后一条退路。
 enum MediaKeys {
-    enum Key: Int {
-        case playPause = 16, next = 17, previous = 18
-    }
-
-    static func press(_ key: Key) {
+    static func press(_ key: Int) {
         DispatchQueue.main.async {
-            guard AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary) else { return }
+            guard AXIsProcessTrusted() else { return }
             for down in [true, false] {
                 let state = down ? 0xA : 0xB
                 let event = NSEvent.otherEvent(
                     with: .systemDefined, location: .zero,
                     modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(state << 8)),
                     timestamp: 0, windowNumber: 0, context: nil, subtype: 8,
-                    data1: (key.rawValue << 16) | (state << 8), data2: -1)
+                    data1: (key << 16) | (state << 8), data2: -1)
                 event?.cgEvent?.post(tap: .cghidEventTap)
             }
         }

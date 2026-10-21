@@ -85,6 +85,10 @@ public final class MusicService {
     /// this instead of us triggering a prompt at launch.
     public private(set) var needsAutomationPermission = false
 
+    /// 网易云、QQ 音乐、小宇宙：系统「正在播放」命令核对过不灵，又没有辅助功能权限，
+    /// 按钮退不到菜单项和媒体键。面板在按钮下写一行说明和「去授权」。
+    public private(set) var controlBlocked: Set<MusicSource> = []
+
     /// Whether a *supported* player is open at all.
     public private(set) var hasPlayer = false
 
@@ -479,6 +483,15 @@ public final class MusicService {
         return !source.readsNowPlaying || player.track != nil
     }
 
+    /// 面板要不要为这个来源提示去开辅助功能（授权后立刻不提示）。
+    public func controlNeedsAccessibility(_ source: MusicSource) -> Bool {
+        controlBlocked.contains(source) && !AXIsProcessTrusted()
+    }
+
+    func setControlNeedsAccessibility(_ on: Bool, for source: MusicSource) {
+        if on { controlBlocked.insert(source) } else { controlBlocked.remove(source) }
+    }
+
     /// 打开或切到这个播放器（「在 App 中打开」「打开 X」）。不播放任何东西。
     public func open(_ source: MusicSource) {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: source.bundleID) else { return }
@@ -852,12 +865,8 @@ enum Bridge {
     static func send(_ body: String, to source: MusicSource, cache: Bool = true) {
         guard isRunning(source) else { return }
         if source.readsNowPlaying {
-            switch body {
-            case "playpause": MediaKeys.press(.playPause)
-            case "next track": MediaKeys.press(.next)
-            case "previous track": MediaKeys.press(.previous)
-            default: break
-            }
+            // 网易云、QQ 音乐、小宇宙：系统「正在播放」命令优先，不灵再退到菜单项和媒体键。
+            if let command = NowPlayingControl.Command(body: body) { NowPlayingCommander.send(command, to: source) }
             return
         }
         let id = source.bundleID

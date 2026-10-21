@@ -11437,6 +11437,17 @@
         }
       }
     },
+    "按钮控制需要辅助功能权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player buttons need Accessibility"
+          }
+        }
+      }
+    },
     "列表" : {
       "extractionState" : "manual",
       "localizations" : {
