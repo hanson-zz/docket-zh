@@ -24366,6 +24366,17 @@
         }
       }
     },
+    "打开后不能拖动图标和小组件，避免误碰。拖出移除、拖进添加也一并停用。右键菜单里也能临时解锁。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icons and widgets can't be dragged, so nothing moves by accident. Dragging out to remove and dropping in to add are turned off too. You can also unlock it from the right-click menu."
+          }
+        }
+      }
+    },
     "打开地址" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49282,6 +49293,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sales"
+          }
+        }
+      }
+    },
+    "锁定扩展栏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lock the Shelf"
           }
         }
       }

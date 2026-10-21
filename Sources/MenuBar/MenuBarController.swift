@@ -80,6 +80,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         if hasShelf, let mode = app.placementMode {
             menu.addItem(positionMenu(current: mode))
         }
+        // 紧跟「位置」：锁住的就是位置和排列。扩展栏右键、设置页是同一个设置。
+        if hasShelf {
+            let lock = item(tr("锁定扩展栏"), #selector(toggleShelfLock))
+            lock.state = app.shelfLocked ? .on : .off
+            menu.addItem(lock)
+        }
         menu.addItem(.separator())
 
         // Only when there is one. An always-present "you are up to date" line
@@ -277,6 +283,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
               let edge = DockPosition(rawValue: raw) else { return }
         app.applyPlacementEdge(edge)
         onShelfSettingsChanged?()
+    }
+
+    @objc private func toggleShelfLock() {
+        app.setShelfLocked(!app.shelfLocked)
     }
 
     @objc private func resetPlacement() {

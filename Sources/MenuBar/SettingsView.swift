@@ -708,6 +708,12 @@ struct SettingsView: View {
                 subtitled(tr("浮动"), tr("不贴边，按住扩展栏空白处可拖到屏幕任意位置。"))
             }
 
+            // 和菜单栏、扩展栏空白处右键的「锁定扩展栏」是同一个设置。
+            Toggle(isOn: $state.customDock.locked) {
+                subtitled(tr("锁定扩展栏"),
+                          tr("打开后不能拖动图标和小组件，避免误碰。拖出移除、拖进添加也一并停用。右键菜单里也能临时解锁。"))
+            }
+
             // Hidden while the Dock dictates them, not greyed: following is
             // the default, so greyed controls here were permanently dead for
             // anyone who never turned it off.

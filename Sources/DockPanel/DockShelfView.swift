@@ -26,6 +26,12 @@ struct DockShelfView: View {
     @State private var hoverIconCentre: CGPoint?
     /// Tiles the poof is standing in for, which therefore leave instantly.
     @State private var poofing: Set<UUID> = []
+    /// 锁定时试图拖动的格子：每抖一次加一。见 `ShelfLock`。
+    @State private var lockShakeTick: [UUID: Int] = [:]
+    /// 锁定时试图拖动浮动扩展栏：整条抖一下。
+    @State private var shelfShakeTick = 0
+    /// 这次拖动已经抖过了，松手前不再抖。
+    @State private var lockNudged = false
     /// Arms `groupTarget` once the dragged tile has rested over another.
     @State private var dwell: Task<Void, Never>?
     /// What that timer is currently counting down for.
@@ -517,6 +523,11 @@ struct DockShelfView: View {
         .onReceive(NotificationCenter.default.publisher(for: GroupWindow.openRequest)) { note in
             openRequestedGroup(note, solved)
         }
+        // 组窗口是另一个窗口，锁定扩展栏的设置从这里递过去。
+        .onChange(of: settings.locked, initial: true) { _, locked in
+            GroupWindow.shared.locked = locked
+            lockNudged = false
+        }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
         .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
         .onChange(of: WidgetConditionMonitor.conditionalKinds(in: app.customProfile?.items ?? []),
@@ -561,19 +572,49 @@ struct DockShelfView: View {
         }
     }
 
-    /// 浮动时按住底板空白处拖动整条扩展栏。只铺在底板上、图标和小组件下面，
-    /// 点在格子上照旧是打开和拖动排序。
-    @ViewBuilder private var floatingDragLayer: some View {
-        if settings.floating {
-            Color.white.opacity(0.001)
-                .contentShape(.rect)
-                .gesture(
-                    DragGesture(minimumDistance: 3)
-                        .onChanged { _ in FloatingShelfDrag.shared.changed() }
-                        .onEnded { _ in FloatingShelfDrag.shared.ended() }
-                )
-                .accessibilityLabel(tr("拖动扩展栏"))
-        }
+    /// 底板空白处：右键菜单（锁定扩展栏等）；浮动时按住拖动整条扩展栏。只铺在
+    /// 底板上、图标和小组件下面，点在格子上照旧是打开和拖动排序。
+    private var blankAreaLayer: some View {
+        Color.white.opacity(0.001)
+            .contentShape(.rect)
+            .gesture(
+                DragGesture(minimumDistance: 3)
+                    .onChanged { _ in
+                        guard settings.floating else { return }
+                        guard app.shelfAllows(.moveFloatingShelf) else {
+                            if ShelfLock.shouldShake(locked: true, alreadyNudged: lockNudged) {
+                                lockNudged = true
+                                shelfShakeTick += 1
+                            }
+                            return
+                        }
+                        FloatingShelfDrag.shared.changed()
+                    }
+                    .onEnded { _ in
+                        let nudged = lockNudged
+                        lockNudged = false
+                        guard settings.floating, !nudged, app.shelfAllows(.moveFloatingShelf) else { return }
+                        FloatingShelfDrag.shared.ended()
+                    }
+            )
+            .contextMenu { blankAreaMenu }
+            .accessibilityLabel(settings.floating ? tr("拖动扩展栏") : tr("扩展栏"))
+    }
+
+    /// 空白处的右键菜单。
+    @ViewBuilder private var blankAreaMenu: some View {
+        lockToggle
+        Divider()
+        hiddenWidgetsMenu
+        Button("添加小组件…") { LibraryWindow.shared.show(app: app) }
+        Button("程序坞设置…") { SettingsWindow.shared.show(app: app) }
+    }
+
+    /// 锁定扩展栏的勾选项：空白处和格子的右键菜单里都有，和菜单栏、设置页是同一个设置。
+    private var lockToggle: some View {
+        Toggle(tr("锁定扩展栏"), isOn: Binding(
+            get: { app.shelfLocked },
+            set: { app.setShelfLocked($0) }))
     }
 
     /// Pins the row to the start of the long axis. Centring splits any overflow
@@ -654,7 +695,7 @@ struct DockShelfView: View {
                                tint: settings.glassTint,
                                opaque: settings.reduceTransparency,
                                color: ProAccess.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
-                .overlay { floatingDragLayer }
+                .overlay { blankAreaLayer }
         }
         .overlay {
             // allowsHitTesting(false) is essential: an overlay takes part in
@@ -677,6 +718,8 @@ struct DockShelfView: View {
         // end says nothing about which way the content runs.
         .overlay(alignment: vertical ? .top : .leading) { overflowChevron(back: true, solved) }
         .overlay(alignment: vertical ? .bottom : .trailing) { overflowChevron(back: false, solved) }
+        // 锁定时试图拖动浮动扩展栏：整条轻轻抖一下。
+        .lockShake(shelfShakeTick, vertical: vertical)
     }
 
     private func row(_ solved: Solved) -> some View {
@@ -785,6 +828,14 @@ struct DockShelfView: View {
         DragGesture(minimumDistance: 6, coordinateSpace: .named("shelf"))
             .onChanged { value in
                 guard entry.isDraggable else { return }
+                // 锁定时不动，只在刚开始拖时轻轻抖一下。
+                guard app.shelfAllows(.reorder) else {
+                    if ShelfLock.shouldShake(locked: true, alreadyNudged: lockNudged) {
+                        lockNudged = true
+                        lockShakeTick[entry.id, default: 0] += 1
+                    }
+                    return
+                }
                 let movable = solved.entries.filter(\.isDraggable)
                 guard let from = movable.firstIndex(where: { $0.id == entry.id }) else { return }
 
@@ -827,6 +878,7 @@ struct DockShelfView: View {
                 }
             }
             .onEnded { _ in
+                lockNudged = false
                 guard let current = drag else { return }
                 dwell?.cancel()
                 dwell = nil
@@ -965,7 +1017,8 @@ struct DockShelfView: View {
                            now: app.now,
                            isPreview: app.showsSampleData,
                            monochrome: settings.widgetColor == .monochrome,
-                           itemGap: settings.itemGap) { menu(for: entry) }
+                           itemGap: settings.itemGap,
+                           locked: settings.locked) { menu(for: entry) }
             .equatable()
             // Only widgets read this. An icon already answers the pointer by
             // magnifying, and a second affordance on top would be noise.
@@ -1017,6 +1070,7 @@ struct DockShelfView: View {
                     LinearKeyframe(0, duration: Bounce.arc / 2, timingCurve: Bounce.fall)
                 }
             }
+            .lockShake(lockShakeTick[entry.id] ?? 0, vertical: vertical)
             .zIndex(drag?.id == entry.id ? 2 : 0)
             // Grows out of the plate and shrinks back into it, anchored on the
             // docked edge - the same anchor magnification uses, so a tile
@@ -1037,6 +1091,7 @@ struct DockShelfView: View {
                                  label: entry.actionLabel) { open(entry) })
             // 从访达把 .app 拖到分组格子上就收进组里，像系统程序坞的文件夹。
             .modifier(GroupAppDrop(groupID: entry.item.group?.id,
+                                   enabled: app.shelfAllows(.dropIn),
                                    receive: { addApps($0, toGroup: $1) }))
             .gesture(reorderGesture(entry, solved))
             // Collapsing children puts the label on the tile, but it also
@@ -1564,9 +1619,11 @@ struct DockShelfView: View {
     private func menu(for entry: Entry) -> some View {
         if case .spacer = entry.item {
             Button("移除间隔", role: .destructive) { remove(entry) }
+                .disabled(!app.shelfAllows(.remove))
             Button("移除所有间隔", role: .destructive) {
                 withAnimation(.snappy(duration: 0.24)) { app.removeAllSpacers() }
             }
+            .disabled(!app.shelfAllows(.remove))
             Divider()
         }
         Menu("选项") {
@@ -1574,8 +1631,10 @@ struct DockShelfView: View {
                 Button("在程序坞中保留") {
                     withAnimation(.snappy(duration: 0.2)) { app.addItem(entry.item) }
                 }
+                .disabled(!app.shelfAllows(.keepInDock))
             } else {
                 Button("从程序坞中移除", role: .destructive) { remove(entry) }
+                    .disabled(!app.shelfAllows(.remove))
             }
             if let group = entry.item.group {
                 Button("重命名分组…") { rename(group) }
@@ -1591,6 +1650,7 @@ struct DockShelfView: View {
                 Button("取消分组") {
                     withAnimation(.snappy(duration: 0.22)) { app.ungroup(group.id) }
                 }
+                .disabled(!app.shelfAllows(.ungroup))
             }
             if entry.item.isWidget {
                 Button("小组件设置…") {
@@ -1687,6 +1747,7 @@ struct DockShelfView: View {
                     }
                 }
             }
+            .disabled(!app.shelfAllows(.addToGroup))
         }
         if !entry.item.isWidget {
             Divider()
@@ -1707,7 +1768,9 @@ struct DockShelfView: View {
             Button("小") { addSpacer(.small, after: entry) }
             Button("常规") { addSpacer(.regular, after: entry) }
         }
+        .disabled(!app.shelfAllows(.addSpacer))
         Divider()
+        lockToggle
         hiddenWidgetsMenu
         Button("添加小组件…") { LibraryWindow.shared.show(app: app) }
         Button("程序坞设置…") { SettingsWindow.shared.show(app: app) }
@@ -1905,6 +1968,8 @@ private struct TileContent<Menu: View>: View, Equatable {
     var monochrome = false
     /// 小组件间距；小间隔的长度跟着它，改了要重画。
     var itemGap: Double = Geometry.defaultItemGap
+    /// 锁定扩展栏：右键菜单里改布局的项变灰，切换时菜单要重建。
+    var locked = false
     /// Deliberately absent from `==`: a closure cannot be compared, and its
     /// captures are either value-stable (the entry) or references that stay
     /// current (AppState).
@@ -1916,7 +1981,7 @@ private struct TileContent<Menu: View>: View, Equatable {
         if MenuTracking.isOpen { return true }
         guard a.scale == b.scale, a.position == b.position,
               a.isRunning == b.isRunning, a.monochrome == b.monochrome,
-              a.itemGap == b.itemGap, a.item == b.item else { return false }
+              a.itemGap == b.itemGap, a.locked == b.locked, a.item == b.item else { return false }
         // Only time-dependent tiles care about the tick; app icons must not
         // redraw once a second for nothing.
         return a.item.isWidget ? a.now == b.now : true
@@ -1989,6 +2054,8 @@ private struct TapToOpen: ViewModifier {
 /// 分组格子收从访达拖来的 .app。不是分组的格子什么都不加。
 private struct GroupAppDrop: ViewModifier {
     var groupID: UUID?
+    /// 锁定扩展栏时不接。
+    var enabled = true
     var receive: ([URL], UUID) -> Void
 
     @State private var targeted = false
@@ -1997,7 +2064,7 @@ private struct GroupAppDrop: ViewModifier {
         if let groupID {
             content
                 .onDrop(of: FileDropDelegate.types,
-                        delegate: FileDropDelegate(enabled: true,
+                        delegate: FileDropDelegate(enabled: enabled,
                                                    update: { over, _ in targeted = over },
                                                    receive: { urls in
                                                        let apps = urls.filter(AppGroups.isAppBundle)

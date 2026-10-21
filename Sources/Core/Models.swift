@@ -929,6 +929,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// 指针停在扩展栏上时，外侧浮出布局名和页码点的小标签，切换布局时也闪现
     /// 一下。只在扩展栏布局多于一个时出现。旧配置里没有这个键时是开。
     public var showLayoutLabelOnHover: Bool = true
+    /// 锁定扩展栏：不能拖动排序、拖出、拖入、拖动浮动扩展栏，右键里改布局的项
+    /// 变灰；打开和悬停照常。见 `ShelfLock`。旧配置里没有这个键时是不锁。
+    public var locked: Bool = false
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -986,6 +989,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         folderClick = (try? c.decodeIfPresent(FolderClickAction.self, forKey: .folderClick))
             ?? .defaultValue
         showLayoutLabelOnHover = (try? c.decodeIfPresent(Bool.self, forKey: .showLayoutLabelOnHover)) ?? true
+        locked = (try? c.decodeIfPresent(Bool.self, forKey: .locked)) ?? false
     }
 
     /// 只读不写的旧键。

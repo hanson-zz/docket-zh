@@ -19,6 +19,14 @@ final class GroupWindow {
     /// 这次打开时的位置和回调，组里加了东西以后原地重画、重新算大小要用。
     private var placement: (anchor: CGPoint, edge: DockPosition, iconSide: CGFloat)?
     private var actions: Actions?
+    /// 锁定扩展栏：组里的图标不能拖出、不能从访达拖进来，「从分组中移除」变灰。
+    /// 扩展栏在设置变化时写进来；开着的窗口原地换成新的一份。
+    var locked = false {
+        didSet {
+            guard locked != oldValue, isOpen, let current = hosting?.rootView.group else { return }
+            hosting?.rootView = sheet(for: current)
+        }
+    }
 
     private struct Actions {
         var open: (DockItem) -> Void
@@ -106,7 +114,7 @@ final class GroupWindow {
         let actions = self.actions
         let placement = self.placement
         return GroupSheet(group: group, edge: placement?.edge ?? .bottom, session: session,
-                          iconSide: placement?.iconSide ?? 48,
+                          iconSide: placement?.iconSide ?? 48, locked: locked,
                           open: { [weak self] item in
             actions?.open(item)
             self?.close()
@@ -213,6 +221,8 @@ struct GroupSheet: View {
     var session: UUID
     /// The shelf's icon size, so a dragged icon becomes what it is about to be.
     var iconSide: CGFloat
+    /// 锁定扩展栏时不能拖出、拖进。
+    var locked = false
     var open: (DockItem) -> Void
     var remove: (DockItem) -> Void
     var rename: (String) -> Void
@@ -285,6 +295,7 @@ struct GroupSheet: View {
                             ForEach(row) { item in
                                 GroupSheetItem(item: item, side: side, sheet: bounds,
                                                dockSide: iconSide, group: group.id,
+                                               locked: locked,
                                                open: { open(item) },
                                                remove: { remove(item) })
                             }
@@ -302,7 +313,7 @@ struct GroupSheet: View {
         .padding(14)
         // 从访达拖 .app 进来就加进组；别的东西不接。
         .onDrop(of: FileDropDelegate.types,
-                delegate: FileDropDelegate(enabled: !picking,
+                delegate: FileDropDelegate(enabled: !picking && ShelfLock.allows(.dropIn, locked: locked),
                                            update: { over, _ in dropTargeted = over },
                                            receive: { urls in
                                                let apps = urls.filter(AppGroups.isAppBundle)
@@ -441,10 +452,14 @@ private struct GroupSheetItem: View {
     var dockSide: CGFloat
     /// The group it would be leaving.
     var group: UUID
+    /// 锁定扩展栏：拖动时只抖一下，不离开分组；右键移除变灰。
+    var locked = false
     var open: () -> Void
     var remove: () -> Void
 
     @State private var hovering = false
+    @State private var shakeTick = 0
+    @State private var nudged = false
     @State private var offset: CGSize = .zero
     @State private var leaving = false
     /// This icon's own centre in the sheet, so a drag can pin to the pointer.
@@ -506,6 +521,13 @@ private struct GroupSheetItem: View {
         .gesture(
             DragGesture(minimumDistance: 8, coordinateSpace: .named(GroupSheet.space))
                 .onChanged { value in
+                    guard ShelfLock.allows(.dragOutOfGroup, locked: locked) else {
+                        if ShelfLock.shouldShake(locked: true, alreadyNudged: nudged) {
+                            nudged = true
+                            shakeTick += 1
+                        }
+                        return
+                    }
                     // Pinned to the pointer, not displaced by it. Offsetting
                     // by the translation leaves the icon wherever the cursor
                     // happened to grab it - press near an edge and the icon
@@ -524,6 +546,9 @@ private struct GroupSheetItem: View {
                     }
                 }
                 .onEnded { value in
+                    let wasNudged = nudged
+                    nudged = false
+                    if wasNudged { return }
                     defer { DragOut.shared.end() }
                     if outside(value.location) {
                         withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
@@ -544,8 +569,10 @@ private struct GroupSheetItem: View {
                     }
                 }
         )
+        .lockShake(shakeTick)
         .contextMenu {
             Button("从分组中移除") { remove() }
+                .disabled(!ShelfLock.allows(.remove, locked: locked))
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(name)
