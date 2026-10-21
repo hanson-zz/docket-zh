@@ -70,7 +70,7 @@ final class PanelSwipeTests: XCTestCase {
 
     func testSwipeUpOnBottomShelfOpensOnce() {
         var gesture = PanelSwipeGesture()
-        let events = [up(0, at: 0, began: true)] + (1...10).map { up(8, at: Double($0) * 0.01) }
+        let events: [PanelSwipe.Event] = [up(0, at: 0, began: true)] + (1...10).map { up(8, at: Double($0) * 0.01) }
         let outcomes = run(events, gesture: &gesture)
         XCTAssertEqual(fires(outcomes), [.open])
         // 开头没判断归属之前交回去，判断以后全吞。
@@ -80,20 +80,20 @@ final class PanelSwipeTests: XCTestCase {
 
     func testSwipeDownOnBottomShelfCloses() {
         var gesture = PanelSwipeGesture()
-        let events = [down(0, at: 0, began: true)] + (1...6).map { down(8, at: Double($0) * 0.01) }
+        let events: [PanelSwipe.Event] = [down(0, at: 0, began: true)] + (1...6).map { down(8, at: Double($0) * 0.01) }
         XCTAssertEqual(fires(run(events, gesture: &gesture)), [.close])
     }
 
     func testTopShelfIsReversed() {
         var gesture = PanelSwipeGesture()
-        let events = [down(0, at: 0, began: true)] + (1...6).map { down(8, at: Double($0) * 0.01) }
+        let events: [PanelSwipe.Event] = [down(0, at: 0, began: true)] + (1...6).map { down(8, at: Double($0) * 0.01) }
         XCTAssertEqual(fires(run(events, edge: .top, gesture: &gesture)), [.open])
     }
 
     func testSideShelvesUseTheHorizontalAxis() {
         var gesture = PanelSwipeGesture()
         // 自然滚动下手指往右：dx 为正。左边扩展栏往右是打开。
-        var events = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0)]
+        var events: [PanelSwipe.Event] = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0)]
             + (1...6).map { PanelSwipe.Event(dx: 8, dy: 0, time: Double($0) * 0.01) }
         XCTAssertEqual(fires(run(events, edge: .left, gesture: &gesture)), [.open])
         gesture = PanelSwipeGesture()
@@ -108,7 +108,7 @@ final class PanelSwipeTests: XCTestCase {
     func testWithoutNaturalScrollingFingersStillMeanTheSame() {
         var gesture = PanelSwipeGesture()
         // 关着自然滚动时手指往上 dy 为正。
-        let events = [PanelSwipe.Event(dx: 0, dy: 0, inverted: false, began: true, time: 0)]
+        let events: [PanelSwipe.Event] = [PanelSwipe.Event(dx: 0, dy: 0, inverted: false, began: true, time: 0)]
             + (1...6).map { PanelSwipe.Event(dx: 0, dy: 8, inverted: false, time: Double($0) * 0.01) }
         XCTAssertEqual(fires(run(events, gesture: &gesture)), [.open])
     }
@@ -126,7 +126,7 @@ final class PanelSwipeTests: XCTestCase {
     /// 短轴要至少是长轴的两倍，斜着滑整个手势交回去。
     func testDiagonalSwipeIsNotClaimed() {
         var gesture = PanelSwipeGesture()
-        let events = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0)]
+        let events: [PanelSwipe.Event] = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0)]
             + (1...10).map { PanelSwipe.Event(dx: 6, dy: -8, time: Double($0) * 0.01) }
         let outcomes = run(events, gesture: &gesture)
         XCTAssertTrue(outcomes.allSatisfy { $0 == .pass })
@@ -135,7 +135,7 @@ final class PanelSwipeTests: XCTestCase {
     /// 一开始左右滑，中途转成上下：归属在开头定了，不会半路被抢走。
     func testClaimIsDecidedAtTheStart() {
         var gesture = PanelSwipeGesture()
-        let events = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0),
+        let events: [PanelSwipe.Event] = [PanelSwipe.Event(dx: 0, dy: 0, began: true, time: 0),
                       PanelSwipe.Event(dx: 8, dy: 0, time: 0.01)]
             + (2...10).map { up(10, at: Double($0) * 0.01) }
         XCTAssertTrue(run(events, gesture: &gesture).allSatisfy { $0 == .pass })
@@ -144,10 +144,10 @@ final class PanelSwipeTests: XCTestCase {
     /// 惯性尾巴吞掉但不再触发，下一次手势重新算。
     func testMomentumIsSwallowedButNeverFires() {
         var gesture = PanelSwipeGesture()
-        var outcomes = run([up(0, at: 0, began: true)] + (1...6).map { up(8, at: Double($0) * 0.01) },
-                           gesture: &gesture)
+        let opening: [PanelSwipe.Event] = [up(0, at: 0, began: true)] + (1...6).map { up(8, at: Double($0) * 0.01) }
+        var outcomes = run(opening, gesture: &gesture)
         XCTAssertEqual(fires(outcomes), [.open])
-        let tail = (1...20).map {
+        let tail: [PanelSwipe.Event] = (1...20).map {
             PanelSwipe.Event(dx: 0, dy: -30, momentum: true, phased: false, time: 0.06 + Double($0) * 0.01)
         }
         outcomes = run(tail, gesture: &gesture)
@@ -157,37 +157,39 @@ final class PanelSwipeTests: XCTestCase {
                        gesture: &gesture)
         XCTAssertEqual(outcomes, [.consume])
         // 新的手势可以收起。
-        outcomes = run([down(0, at: 1, began: true)] + (1...6).map { down(8, at: 1 + Double($0) * 0.01) },
-                       gesture: &gesture)
+        let closing: [PanelSwipe.Event] = [down(0, at: 1, began: true)]
+            + (1...6).map { down(8, at: 1 + Double($0) * 0.01) }
+        outcomes = run(closing, gesture: &gesture)
         XCTAssertEqual(fires(outcomes), [.close])
     }
 
     /// 同一次手势来回滑也只触发一次。
     func testOneGestureFiresOnlyOnce() {
         var gesture = PanelSwipeGesture()
-        let events = [up(0, at: 0, began: true)]
-            + (1...6).map { up(8, at: Double($0) * 0.01) }
-            + (7...20).map { down(8, at: Double($0) * 0.01) }
-            + (21...40).map { up(8, at: Double($0) * 0.01) }
+        var events: [PanelSwipe.Event] = [up(0, at: 0, began: true)]
+        for step in 1...40 {
+            let time = Double(step) * 0.01
+            events.append(step <= 6 || step > 20 ? up(8, at: time) : down(8, at: time))
+        }
         XCTAssertEqual(fires(run(events, gesture: &gesture)), [.open])
     }
 
     /// 普通滚轮：不精确、没有阶段，从来不归这里。
     func testMouseWheelNeverFires() {
         var gesture = PanelSwipeGesture()
-        let events = (0..<10).map {
+        let events: [PanelSwipe.Event] = (0..<10).map {
             PanelSwipe.Event(dx: 0, dy: -10, precise: false, phased: false, time: Double($0) * 0.05)
         }
         XCTAssertTrue(run(events, gesture: &gesture).allSatisfy { $0 == .pass })
         // 精确但没有阶段也不算（有的鼠标驱动这样报）。
-        let unphased = (0..<10).map {
+        let unphased: [PanelSwipe.Event] = (0..<10).map {
             PanelSwipe.Event(dx: 0, dy: -10, phased: false, time: 1 + Double($0) * 0.05)
         }
         XCTAssertTrue(run(unphased, gesture: &gesture).allSatisfy { $0 == .pass })
     }
 
     func testNothingHappensWithoutATargetOrWhenOff() {
-        let events = [up(0, at: 0, began: true)] + (1...10).map { up(8, at: Double($0) * 0.01) }
+        let events: [PanelSwipe.Event] = [up(0, at: 0, began: true)] + (1...10).map { up(8, at: Double($0) * 0.01) }
         var gesture = PanelSwipeGesture()
         XCTAssertTrue(run(events, target: false, gesture: &gesture).allSatisfy { $0 == .pass })
         gesture = PanelSwipeGesture()
@@ -197,7 +199,7 @@ final class PanelSwipeTests: XCTestCase {
     /// 按着 Command 是切换布局，不归这里。
     func testCommandScrollIsLeftForLayouts() {
         var gesture = PanelSwipeGesture()
-        let events = [PanelSwipe.Event(dx: 0, dy: 0, began: true, command: true, time: 0)]
+        let events: [PanelSwipe.Event] = [PanelSwipe.Event(dx: 0, dy: 0, began: true, command: true, time: 0)]
             + (1...10).map { PanelSwipe.Event(dx: 0, dy: -8, command: true, time: Double($0) * 0.01) }
         XCTAssertTrue(run(events, gesture: &gesture).allSatisfy { $0 == .pass })
     }
@@ -205,9 +207,11 @@ final class PanelSwipeTests: XCTestCase {
     /// 没收到 began 也能靠停顿分开两次手势。
     func testPauseStartsANewGesture() {
         var gesture = PanelSwipeGesture()
-        var outcomes = run((0...6).map { up(8, at: Double($0) * 0.01) }, gesture: &gesture)
+        let first: [PanelSwipe.Event] = (0...6).map { up(8, at: Double($0) * 0.01) }
+        var outcomes = run(first, gesture: &gesture)
         XCTAssertEqual(fires(outcomes), [.open])
-        outcomes = run((0...6).map { down(8, at: 1 + Double($0) * 0.01) }, gesture: &gesture)
+        let second: [PanelSwipe.Event] = (0...6).map { down(8, at: 1 + Double($0) * 0.01) }
+        outcomes = run(second, gesture: &gesture)
         XCTAssertEqual(fires(outcomes), [.close])
     }
 
