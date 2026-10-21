@@ -25,7 +25,8 @@ final class GroupWindow {
     private var backable = false
     /// Esc 先退一步：每按一次加一，GroupSheet 看到变化就撤销改名或收起选择列表。
     private var backOutTick = 0
-    /// 锁定扩展栏：组里的图标不能拖出、不能从访达拖进来，「从分组中移除」变灰。
+    /// 锁定扩展栏：组里的图标不能拖出到扩展栏（拖动只抖一下）。锁只管扩展栏
+    /// 本身，组里的「从分组中移除」、从访达拖进组窗口照常。
     /// 扩展栏在设置变化时写进来；开着的窗口原地换成新的一份。
     var locked = false {
         didSet {
@@ -50,6 +51,12 @@ final class GroupWindow {
             // 窗口四周那圈透明的拖拽余量看不见，点在上面算外面。
             let room = GroupSheet.dragRoom
             return panel.frame.insetBy(dx: room, dy: room)
+        }
+        dismisser.hoverFrame = { [weak self] in
+            guard let self, self.isOpen, let panel = self.panel else { return nil }
+            // 和 contains 一样：看得见的那块再放宽一点。
+            let slack = GroupSheet.dragRoom - 14
+            return panel.frame.insetBy(dx: slack, dy: slack)
         }
         dismisser.window = { [weak self] in self?.panel }
         dismisser.currentID = { [weak self] in self?.openGroupID }
@@ -92,6 +99,13 @@ final class GroupWindow {
 
     /// Whether a group is showing, so the shelf can stay put while it is.
     var isOpen: Bool { openGroupID != nil && panel?.isVisible == true }
+
+    /// 扩展栏自动隐藏时每次看指针调用，离开窗口和扩展栏 0.5 秒收起。见
+    /// PopupDismisser.pointerTick。
+    func pointerTick(_ point: CGPoint, overShelf: Bool, holding: Bool) {
+        guard isOpen else { return }
+        dismisser.pointerTick(point, overShelf: overShelf, holding: holding)
+    }
 
     /// The sheet's area in screen coordinates, for hit-free pointer tests.
     func contains(_ point: CGPoint) -> Bool {
@@ -258,7 +272,7 @@ struct GroupSheet: View {
     var session: UUID
     /// The shelf's icon size, so a dragged icon becomes what it is about to be.
     var iconSide: CGFloat
-    /// 锁定扩展栏时不能拖出、拖进。
+    /// 锁定扩展栏时不能把图标拖出到扩展栏；拖进组窗口、组里移除照常。
     var locked = false
     /// Esc 先退一步的计数，变了就撤销改名或交给选择列表退一步。
     var backOut = 0
@@ -360,7 +374,8 @@ struct GroupSheet: View {
         .padding(14)
         // 从访达拖 .app 进来就加进组；别的东西不接。
         .onDrop(of: FileDropDelegate.types,
-                delegate: FileDropDelegate(enabled: !picking && ShelfLock.allows(.dropIn, locked: locked),
+                delegate: FileDropDelegate(enabled: !picking
+                                               && ShelfLock.allows(.dropIntoGroupWindow, locked: locked),
                                            update: { over, _ in dropTargeted = over },
                                            receive: { urls in
                                                let apps = urls.filter(AppGroups.isAppBundle)
@@ -509,7 +524,8 @@ private struct GroupSheetItem: View {
     var dockSide: CGFloat
     /// The group it would be leaving.
     var group: UUID
-    /// 锁定扩展栏：拖动时只抖一下，不离开分组；右键移除变灰。
+    /// 锁定扩展栏：拖动时只抖一下，不离开分组（拖出会落到扩展栏上，是扩展栏
+    /// 的布局）；右键「从分组中移除」照常。
     var locked = false
     var open: () -> Void
     var remove: () -> Void
@@ -629,7 +645,7 @@ private struct GroupSheetItem: View {
         .lockShake(shakeTick)
         .contextMenu {
             Button("从分组中移除") { remove() }
-                .disabled(!ShelfLock.allows(.remove, locked: locked))
+                .disabled(!ShelfLock.allows(.removeInGroup, locked: locked))
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(name)

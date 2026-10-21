@@ -679,6 +679,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         guard panel != nil else { return }
         let mouse = NSEvent.mouseLocation
 
+        // 扩展栏自动隐藏时（只有这时才轮询指针），分组窗口和文件夹小窗在指针
+        // 离开它们和扩展栏 0.5 秒后收起；按着鼠标拖东西、快速查看、菜单、
+        // 提示框、输入法组字时不算。放在菜单判断前面，菜单开着也照样喂，
+        // 计时才不会在菜单关上那一刻接着旧的算。见 PopupDismisser.pointerTick。
+        if GroupWindow.shared.isOpen || FolderBrowserWindow.shared.isOpen {
+            let overShelf = withinShelf(mouse)
+            GroupWindow.shared.pointerTick(mouse, overShelf: overShelf, holding: menuIsOpen)
+            FolderBrowserWindow.shared.pointerTick(mouse, overShelf: overShelf, holding: menuIsOpen)
+        }
+
         // Never while a menu of ours is up - see `menuIsOpen`.
         if menuIsOpen {
             hideWorkItem?.cancel()
@@ -700,9 +710,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // shelf just stays put while the panel is up.
         // The widget library pins it for the same reason: what is picked
         // there lands on the shelf, and it should be in view when it does.
-        // 文件夹小窗、分组窗口也一样：开着时扩展栏不收。它们点窗口外面或按
-        // Esc 才关（见 PopupDismisser），不再因为指针离开就关：从访达把东西
-        // 拖进分组时指针本来就要离开。
+        // 文件夹小窗、分组窗口也一样：开着时扩展栏不收。它们点窗口外面、按
+        // Esc，或（上面）指针离开 0.5 秒时关，见 PopupDismisser。
         if WidgetDetailWindow.shared.isAnchoredOpen || LibraryWindow.shared.isOpen
             || FolderBrowserWindow.shared.isOpen || GroupWindow.shared.isOpen {
             hideWorkItem?.cancel()

@@ -9,6 +9,7 @@ final class ShelfLockTests: XCTestCase {
     ]
     private let useActions: [ShelfLockAction] = [
         .open, .hover, .magnify, .contextOpen, .widgetSettings,
+        .removeInGroup, .reorderInGroup, .dropIntoGroupWindow,
     ]
 
     func testEveryActionIsClassified() {
@@ -33,6 +34,17 @@ final class ShelfLockTests: XCTestCase {
         for action in useActions {
             XCTAssertTrue(ShelfLock.allows(action, locked: true), action.rawValue)
         }
+    }
+
+    /// 锁只管扩展栏本身：分组窗口里的移除、排序、从访达拖进来照常，
+    /// 拖到扩展栏上的分组格子、把图标拖出组窗口仍拦。
+    func testLockLeavesGroupContentsAlone() {
+        for action in [ShelfLockAction.removeInGroup, .reorderInGroup, .dropIntoGroupWindow] {
+            XCTAssertTrue(ShelfLock.allows(action, locked: true), action.rawValue)
+        }
+        XCTAssertFalse(ShelfLock.allows(.dropIn, locked: true))
+        XCTAssertFalse(ShelfLock.allows(.dragOutOfGroup, locked: true))
+        XCTAssertFalse(ShelfLock.allows(.remove, locked: true))
     }
 
     func testReadsTheSetting() {

@@ -131,4 +131,94 @@ final class PopupDismissalTests: XCTestCase {
         guardian.noteDismissed(id: nil, at: t0, point: .zero)
         XCTAssertFalse(guardian.swallowsOpen(id: UUID(), at: t0, point: .zero))
     }
+
+    // MARK: 指针离开（扩展栏自动隐藏时）
+
+    /// 从 t0 起每 1/30 秒喂一次，喂到 `seconds`，返回第几秒收起（没收起是 nil）。
+    private func run(_ timer: inout PopupDismissal.LeaveTimer, from start: TimeInterval = 0,
+                     to seconds: TimeInterval,
+                     away: (TimeInterval) -> PopupDismissal.Away) -> TimeInterval? {
+        var t = start
+        while t <= seconds + 1e-9 {
+            if timer.tick(away(t), now: t0.addingTimeInterval(t)) { return t }
+            t += 1.0 / 30
+        }
+        return nil
+    }
+
+    func testLeavingDismissesAfterHalfSecond() {
+        var timer = PopupDismissal.LeaveTimer()
+        let fired = run(&timer, to: 1) { _ in .init() }
+        XCTAssertNotNil(fired)
+        XCTAssertEqual(fired!, PopupDismissal.LeaveTimer.delay, accuracy: 1.0 / 30 + 1e-6)
+    }
+
+    func testInsideNeverDismisses() {
+        var timer = PopupDismissal.LeaveTimer()
+        XCTAssertNil(run(&timer, to: 3) { _ in .init(pointerInside: true) })
+    }
+
+    func testReturningCancelsTheCount() {
+        var timer = PopupDismissal.LeaveTimer()
+        // 出去 0.4 秒，回来，再出去：从再出去那一刻重新算 0.5 秒。
+        let fired = run(&timer, to: 2) { t in .init(pointerInside: t >= 0.4 && t < 0.6) }
+        XCTAssertNotNil(fired)
+        XCTAssertGreaterThanOrEqual(fired!, 0.6 + PopupDismissal.LeaveTimer.delay - 1e-6)
+    }
+
+    func testBlockersHoldOpenWhileAway() {
+        let blockers: [PopupDismissal.Away] = [
+            .init(buttonDown: true),
+            .init(dragging: true),
+            .init(quickLookOpen: true),
+            .init(holdOpen: true),
+            .init(composing: true),
+        ]
+        for away in blockers {
+            var timer = PopupDismissal.LeaveTimer()
+            XCTAssertNil(run(&timer, to: 3) { _ in away }, "\(away)")
+        }
+    }
+
+    func testCountRestartsWhenBlockerClears() {
+        var timer = PopupDismissal.LeaveTimer()
+        // 指针一直在外面，前 1 秒按着鼠标（从访达拖文件）：松开后再等 0.5 秒才收。
+        let fired = run(&timer, to: 3) { t in .init(buttonDown: t < 1) }
+        XCTAssertNotNil(fired)
+        XCTAssertGreaterThanOrEqual(fired!, 1 + PopupDismissal.LeaveTimer.delay - 1e-6)
+        XCTAssertLessThan(fired!, 1 + PopupDismissal.LeaveTimer.delay + 0.1)
+    }
+
+    func testQuickLookClosingRestartsCount() {
+        var timer = PopupDismissal.LeaveTimer()
+        let fired = run(&timer, to: 3) { t in .init(quickLookOpen: t < 2) }
+        XCTAssertGreaterThanOrEqual(fired ?? 0, 2 + PopupDismissal.LeaveTimer.delay - 1e-6)
+    }
+
+    func testFiresOnlyOnce() {
+        var timer = PopupDismissal.LeaveTimer()
+        XCTAssertNotNil(run(&timer, to: 1) { _ in .init() })
+        // 清零后下一次喂只是重新开始计时。
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(1.05)))
+    }
+
+    func testLongGapRestartsCount() {
+        var timer = PopupDismissal.LeaveTimer()
+        XCTAssertFalse(timer.tick(.init(), now: t0))
+        // 中间停了很久没看指针（不再自动隐藏又改回来）：不能一来就收。
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(5)))
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(5.2)))
+        XCTAssertTrue(timer.tick(.init(), now: t0.addingTimeInterval(5.5)))
+    }
+
+    func testResetClearsCount() {
+        var timer = PopupDismissal.LeaveTimer()
+        XCTAssertFalse(timer.tick(.init(), now: t0))
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(0.2)))
+        timer.reset()
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(0.4)))
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(0.6)))
+        XCTAssertFalse(timer.tick(.init(), now: t0.addingTimeInterval(0.8)))
+        XCTAssertTrue(timer.tick(.init(), now: t0.addingTimeInterval(0.95)))
+    }
 }

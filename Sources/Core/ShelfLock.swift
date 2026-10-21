@@ -5,6 +5,9 @@ import Foundation
 /// 锁的是布局，不是使用。改动“有什么、放在哪”的操作（拖动排序、拖出分组、
 /// 拖进来加入、合成分组、拖动浮动扩展栏、右键里的移除、取消分组、加间隔这类）
 /// 一律停用；打开、悬停、放大、右键打开、小组件自己的设置照常。
+///
+/// 只管扩展栏本身。分组窗口（应用分组、文件夹分组）里面的增删和排序不算：
+/// 组里的移除、拖动排序、右键左移右移、从访达拖进组窗口都照常。
 public enum ShelfLockAction: String, CaseIterable, Sendable {
     // 改布局：锁定时停用。
     /// 在扩展栏上拖动格子换位置。
@@ -13,7 +16,7 @@ public enum ShelfLockAction: String, CaseIterable, Sendable {
     case combine
     /// 从分组窗口里把图标拖出来（离开分组、落回扩展栏）。
     case dragOutOfGroup
-    /// 从访达拖 App 或文件进扩展栏、分组格子或分组窗口。
+    /// 从访达拖 App 或文件进扩展栏，或拖到扩展栏上的分组格子。
     case dropIn
     /// 按住空白处拖动浮动扩展栏。
     case moveFloatingShelf
@@ -39,6 +42,12 @@ public enum ShelfLockAction: String, CaseIterable, Sendable {
     case contextOpen
     /// 小组件自己的设置、样式、显示条件、分组改名和色调。
     case widgetSettings
+    /// 分组窗口里的移除（右键「从分组中移除」）。
+    case removeInGroup
+    /// 分组窗口里的排序：拖动标签或图标、右键左移右移。
+    case reorderInGroup
+    /// 从访达把 App 或文件夹拖进打开的分组窗口。
+    case dropIntoGroupWindow
 
     /// 这项操作会不会改动扩展栏的布局。
     public var changesLayout: Bool {
@@ -46,7 +55,8 @@ public enum ShelfLockAction: String, CaseIterable, Sendable {
         case .reorder, .combine, .dragOutOfGroup, .dropIn, .moveFloatingShelf,
              .remove, .ungroup, .addToGroup, .addSpacer, .keepInDock:
             true
-        case .open, .hover, .magnify, .contextOpen, .widgetSettings:
+        case .open, .hover, .magnify, .contextOpen, .widgetSettings,
+             .removeInGroup, .reorderInGroup, .dropIntoGroupWindow:
             false
         }
     }

@@ -3,7 +3,9 @@ import Quartz
 
 /// 扩展栏弹出小窗（分组窗口、文件夹小窗，以及复用文件夹小窗的其他弹窗）
 /// 通用的收起方式：点窗口外任意地方（别的 App、桌面、扩展栏其他位置）、
-/// 按 Esc 收起；再点一次格子仍是收起，不会收起后立刻又打开。
+/// 按 Esc 收起；再点一次格子仍是收起，不会收起后立刻又打开。扩展栏自动隐藏时，
+/// 指针离开小窗和扩展栏 0.5 秒也收起（按着鼠标、快速查看、菜单或提示框、
+/// 输入法组字时不算，见 `pointerTick`）。
 ///
 /// 拖拽进出、快速查看开着、菜单或提示框开着时不收。点外面的那一下照常
 /// 交给被点的东西：这里只看不拦。什么时候收、什么时候忽略的判断在 Core 的
@@ -20,6 +22,9 @@ final class PopupDismisser {
     var holdOpen: () -> Bool = { false }
     /// 小窗里有能先退一步的东西（搜索有字、改名改了一半、展开的选择列表）。
     var inner: () -> Bool = { false }
+    /// 指针算在小窗里的范围（屏幕坐标），比看得见的那块宽一点，从格子过去的
+    /// 空隙不算离开。不给就用 `visibleFrame` 四周放宽 12 点。
+    var hoverFrame: () -> CGRect? = { nil }
     /// Esc 先退一步时做什么。
     var backOut: () -> Void = {}
     /// 收起。
@@ -28,6 +33,7 @@ final class PopupDismisser {
     private var monitors: [Any] = []
     private var pending: (start: CGPoint, timer: Timer)?
     private var reopen = PopupDismissal.ReopenGuard()
+    private var leave = PopupDismissal.LeaveTimer()
 
     /// 小窗打开时调用：开始看点击。重复调用会先清掉上一轮。
     func start() {
@@ -51,6 +57,36 @@ final class PopupDismisser {
         monitors.forEach(NSEvent.removeMonitor)
         monitors.removeAll()
         cancelPending()
+        leave.reset()
+    }
+
+    // MARK: 指针离开
+
+    /// 扩展栏自动隐藏时，扩展栏每次看指针（约 30 次每秒）调用一次：`overShelf`
+    /// 是指针在扩展栏上，`holding` 是扩展栏自己的菜单开着。指针离开小窗和扩展栏
+    /// 连续 0.5 秒就收起；鼠标键按着（拖拽，含从访达或别的 App 拖进来）、
+    /// 快速查看、菜单、提示框、选择面板、输入法组字时不算，条件解除后从头计时。
+    /// 扩展栏固定显示时不调用，只靠点外面和 Esc。判断在 Core 的
+    /// `PopupDismissal.LeaveTimer`。
+    func pointerTick(_ point: CGPoint, overShelf: Bool, holding: Bool = false) {
+        guard let panel = window(), panel.isVisible else { return leave.reset() }
+        let away = PopupDismissal.Away(
+            pointerInside: overShelf || hovering(point, panel: panel),
+            buttonDown: NSEvent.pressedMouseButtons != 0,
+            dragging: Self.dragging,
+            quickLookOpen: Self.quickLook?.isVisible == true,
+            holdOpen: holding || MenuTracking.isOpen || blockedByModal,
+            composing: (panel.firstResponder as? NSTextView)?.hasMarkedText() == true)
+        guard leave.tick(away, now: Date()) else { return }
+        cancelPending()
+        dismiss()
+    }
+
+    private func hovering(_ point: CGPoint, panel: NSWindow) -> Bool {
+        let frame = hoverFrame() ?? visibleFrame()?.insetBy(dx: -12, dy: -12)
+        if frame?.contains(point) == true { return true }
+        // 小窗弹出的子窗口（比如附着的小面板）上也算在里面。
+        return panel.childWindows?.contains { $0.isVisible && $0.frame.contains(point) } == true
     }
 
     /// 格子要打开 `id`：是刚才点外面收起它的那一下带出来的，就吞掉。

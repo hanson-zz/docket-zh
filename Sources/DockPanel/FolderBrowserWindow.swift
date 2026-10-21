@@ -50,6 +50,13 @@ final class FolderBrowserWindow {
 
     var isOpen: Bool { openFolderID != nil && panel?.isVisible == true }
 
+    /// 扩展栏自动隐藏时每次看指针调用，离开小窗和扩展栏 0.5 秒收起，和分组
+    /// 窗口一样。见 PopupDismisser.pointerTick。
+    func pointerTick(_ point: CGPoint, overShelf: Bool, holding: Bool) {
+        guard isOpen else { return }
+        dismisser.pointerTick(point, overShelf: overShelf, holding: holding)
+    }
+
     /// 小窗的范围（屏幕坐标）。
     func contains(_ point: CGPoint) -> Bool {
         guard isOpen, let panel else { return false }
@@ -636,7 +643,7 @@ struct FolderGroupActions {
     var select: (UUID) -> Void
     /// 「＋」选好的。
     var add: ([URL]) -> Void
-    /// 从访达拖进来的（锁定扩展栏时不收）。
+    /// 从访达拖进来的（属于组里的事，锁定扩展栏时也收）。
     var drop: ([URL]) -> Void
     var remove: (UUID) -> Void
     var move: (UUID, Int) -> Void

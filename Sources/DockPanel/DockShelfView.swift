@@ -1196,20 +1196,21 @@ struct DockShelfView: View {
                 actions: FolderGroupActions(
                     select: { id in app.selectFolder(id, inFolderGroup: groupID) },
                     add: { urls in addFolders(urls, toGroup: groupID) },
-                    // 从访达拖进小窗：锁定扩展栏时不收，和拖到格子上一样。
+                    // 从访达拖进小窗：属于组里的事，锁定扩展栏时也收（拖到扩展栏上
+                    // 的分组格子仍按锁拦，见 GroupAppDrop）。
                     drop: { urls in
-                        guard app.shelfAllows(.dropIn) else { return }
+                        guard app.shelfAllows(.dropIntoGroupWindow) else { return }
                         addFolders(urls, toGroup: groupID)
                     },
                     remove: { id in
-                        guard app.shelfAllows(.remove) else { return }
+                        guard app.shelfAllows(.removeInGroup) else { return }
                         withAnimation(.snappy(duration: 0.24)) {
                             app.removeFolder(id, fromFolderGroup: groupID)
                         }
                         refreshFolderGroup(groupID)
                     },
                     move: { id, index in
-                        guard app.shelfAllows(.reorder) else { return }
+                        guard app.shelfAllows(.reorderInGroup) else { return }
                         withAnimation(.snappy(duration: 0.2)) {
                             app.moveFolder(id, to: index, inFolderGroup: groupID)
                         }

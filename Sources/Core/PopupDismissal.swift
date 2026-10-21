@@ -129,6 +129,82 @@ public enum PopupDismissal {
         return .dismiss
     }
 
+    // MARK: 指针离开
+
+    /// 扩展栏自动隐藏时，指针离开小窗和扩展栏一会儿就收起（固定显示的扩展栏
+    /// 不这样，只靠点外面和 Esc）。这一刻的情况：
+    public struct Away: Sendable, Equatable {
+        /// 指针在小窗（含一点余量和它的子窗口）或扩展栏上。
+        public var pointerInside: Bool
+        /// 有鼠标键按着：拖拽中（含从访达或别的 App 拖文件、App 进来）、拖图标、
+        /// 拖手柄改大小，都不算离开。
+        public var buttonDown: Bool
+        /// 本 App 正在拖图标进出（松了键也还在收尾的拖拽会话）。
+        public var dragging: Bool
+        /// 快速查看面板开着。
+        public var quickLookOpen: Bool
+        /// 本 App 的菜单、右键菜单、提示框、子弹窗、选择面板开着。
+        public var holdOpen: Bool
+        /// 小窗里的输入框正在用输入法组字。
+        public var composing: Bool
+
+        public init(pointerInside: Bool = false, buttonDown: Bool = false, dragging: Bool = false,
+                    quickLookOpen: Bool = false, holdOpen: Bool = false, composing: Bool = false) {
+            self.pointerInside = pointerInside
+            self.buttonDown = buttonDown
+            self.dragging = dragging
+            self.quickLookOpen = quickLookOpen
+            self.holdOpen = holdOpen
+            self.composing = composing
+        }
+
+        /// 现在这一刻要不要计时：在里面或有不该收的情况就不计。
+        public var counts: Bool {
+            !(pointerInside || buttonDown || dragging || quickLookOpen || holdOpen || composing)
+        }
+    }
+
+    /// 离开计时：每次看指针（扩展栏约 30 次每秒）喂一次，连续离开满 `delay`
+    /// 才收起。中途回到里面或出现不该收的情况就清零，条件解除后指针仍在外面，
+    /// 从那一刻重新计时。
+    public struct LeaveTimer: Sendable, Equatable {
+        /// 离开多久收起。
+        public static let delay: TimeInterval = 0.5
+        /// 两次喂之间隔太久（不再看指针了，比如扩展栏改成固定显示又改回来），
+        /// 之前的计时作废，从头算。
+        public static let maxGap: TimeInterval = 0.25
+
+        public private(set) var since: Date?
+        private var lastTick: Date?
+
+        public init() {}
+
+        /// 喂一次。返回 true 表示该收起了（同时清零，不会连着报两次）。
+        public mutating func tick(_ away: Away, now: Date) -> Bool {
+            defer { lastTick = now }
+            if let lastTick, now.timeIntervalSince(lastTick) > Self.maxGap || now < lastTick {
+                since = nil
+            }
+            guard away.counts else {
+                since = nil
+                return false
+            }
+            guard let since else {
+                self.since = now
+                return false
+            }
+            guard now.timeIntervalSince(since) >= Self.delay else { return false }
+            reset()
+            return true
+        }
+
+        /// 小窗关上、重新打开时清零。
+        public mutating func reset() {
+            since = nil
+            lastTick = nil
+        }
+    }
+
     // MARK: 再点一次格子
 
     /// 点外面收起和格子自己的「再点一次就关」撞在一起时的保护。
