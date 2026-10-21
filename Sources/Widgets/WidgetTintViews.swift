@@ -329,7 +329,7 @@ struct WidgetTintPicker: View {
                                     }
                             }
                             Text(option.title)
-                                .font(.system(size: 9))
+                                .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -346,7 +346,7 @@ struct WidgetTintPicker: View {
     // MARK: 强度和文字颜色
 
     /// 两行分段：色调强度（淡 / 中 / 浓）和文字颜色（自动 / 白 / 暖白 / 主题色）。
-    /// 默认颜色时不起作用，整块灰掉并说一句为什么。
+    /// 默认颜色时也能点：点了自动改用「跟随系统强调色」再生效，避免灰掉被当成坏了。
     private var tuning: some View {
         let active = choice.isChosen
         return VStack(alignment: .leading, spacing: 8) {
@@ -381,14 +381,19 @@ struct WidgetTintPicker: View {
                 .frame(maxWidth: 260, alignment: .leading)
             }
             if !active {
-                Text("选一种颜色后，色调强度和文字颜色才会生效。")
+                Text("现在是默认颜色。调这两项会自动改用系统强调色。")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .disabled(!active)
-        .opacity(active ? 1 : 0.55)
+    }
+
+    /// 默认颜色下调强度或文字颜色时，先切到免费的「跟随系统强调色」，让改动马上看得见。
+    private func adoptSystemTintIfDefault(_ config: inout WidgetConfig) {
+        if !WidgetTint.choice(config).isChosen {
+            config.set(WidgetTint.key, .string(WidgetTint.Choice.system.raw))
+        }
     }
 
     private var caption: String {
@@ -574,6 +579,7 @@ struct WidgetTintPicker: View {
     /// 默认的「中」写回时删掉键，读回来一样是「中」。
     private func pickStrength(_ value: WidgetTint.Strength) {
         write { config in
+            adoptSystemTintIfDefault(&config)
             config.set(WidgetTint.strengthKey, value.raw.isEmpty ? nil : .string(value.raw))
         }
     }
@@ -581,6 +587,7 @@ struct WidgetTintPicker: View {
     /// 默认的「自动」写回时删掉键。
     private func pickInk(_ value: WidgetTint.TextInk) {
         write { config in
+            adoptSystemTintIfDefault(&config)
             config.set(WidgetTint.inkKey, value.raw.isEmpty ? nil : .string(value.raw))
         }
     }

@@ -47563,13 +47563,13 @@
         }
       }
     },
-    "选一种颜色后，色调强度和文字颜色才会生效。" : {
+    "现在是默认颜色。调这两项会自动改用系统强调色。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick a color first. Tint strength and text color apply only then."
+            "value" : "Using the default color. Changing these switches to the system accent color."
           }
         }
       }
