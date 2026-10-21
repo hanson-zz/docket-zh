@@ -47,7 +47,7 @@ struct StickyNoteDetail: View {
             stackRow
             Text(tr("行首打 [ ] 变成可勾的清单"))
                 .font(WidgetStyle.caption(13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -219,7 +219,7 @@ struct StickyNoteDetail: View {
         HStack(spacing: 10) {
             Text(title)
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 44, alignment: .leading)
             control()
         }
@@ -239,7 +239,7 @@ struct StickyNoteDetail: View {
         return VStack(alignment: .leading, spacing: 6) {
             Text(tr("这张纸的颜色"))
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(22), spacing: 6), count: 8),
                       alignment: .leading, spacing: 6) {
                 ForEach(PaperColor.picker, id: \.self) { color in
@@ -259,11 +259,11 @@ struct StickyNoteDetail: View {
         } label: {
             Circle()
                 .fill(Color(hex: color.hex))
-                .overlay { Circle().strokeBorder(.white.opacity(0.25), lineWidth: 0.5) }
+                .overlay { Circle().strokeBorder(.panelQuaternary, lineWidth: 0.5) }
                 .frame(width: 18, height: 18)
                 .padding(2)
                 .overlay {
-                    if selected { Circle().strokeBorder(.white, lineWidth: 1.5) }
+                    if selected { Circle().strokeBorder(.panelPrimary, lineWidth: 1.5) }
                 }
                 .overlay(alignment: .topTrailing) {
                     if locked {
@@ -292,10 +292,10 @@ struct StickyNoteDetail: View {
                 Text(marker)
                     .font(.system(size: 13, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(Capsule().fill(.white.opacity(0.1)))
+                    .background(Capsule().fill(.panelFill))
                 PanelButton(title: tr("下一张"), symbol: "arrow.turn.up.right") {
                     act { $0.flipped() }
                 }

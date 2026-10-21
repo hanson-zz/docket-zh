@@ -84,21 +84,21 @@ struct DownloadingStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("正在下载")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             HStack(alignment: .top, spacing: 8) {
                 ForEach(downloads.prefix(4)) { download in
                     VStack(spacing: 3) {
                         DownloadProgressIcon(download: download, size: 44)
                         Text(download.finalName)
-                            .font(WidgetStyle.caption(10))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Text(DownloadProgress.caption(download.fraction))
-                            .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(.white.opacity(0.6))
+                            .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(.panelSecondary)
                             .rollingValue(download.fraction)
                     }
                     .frame(maxWidth: .infinity)

@@ -111,7 +111,7 @@ struct RecorderDetail: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(error)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 pill(tr("打开隐私设置")) { recorder.openPrivacySettings() }
             }
@@ -132,7 +132,7 @@ struct RecorderDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tr("录音"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 HStack(spacing: 5) {
                     if tools {
                         Image(systemName: "lock.fill")
@@ -144,7 +144,7 @@ struct RecorderDetail: View {
                     }
                 }
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -155,11 +155,11 @@ struct RecorderDetail: View {
                         if !tools { ProBadge() }
                     }
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -188,10 +188,10 @@ struct RecorderDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(recording ? tr("停止录音") : tr("开始录音"))
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(recordCaption)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -199,7 +199,7 @@ struct RecorderDetail: View {
                 if recording, let started = recorder.startedAt {
                     Text(RecorderClock.text(context.now.timeIntervalSince(started)))
                         .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(accent)
+                        .foregroundStyle(accent.panelReadable)
                         .monospacedDigit()
                 }
             }
@@ -247,7 +247,7 @@ struct RecorderDetail: View {
                 }
                 Text(tr("还没有录音。录音以 .m4a 格式保存，文件名以“录音”开头。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
@@ -258,7 +258,7 @@ struct RecorderDetail: View {
             ForEach(RecorderDay.groups(items, date: \.date, now: context.now), id: \.day) { group in
                 Text(RecorderDay.header(group.day, count: group.items.count))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .padding(.top, 2)
                 VStack(spacing: 8) {
                     ForEach(group.items) { item in
@@ -300,13 +300,13 @@ struct RecorderDetail: View {
                     } else {
                         Text(verbatim: RecorderTitle.display(fileName: item.url.lastPathComponent))
                             .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                     Text(RecorderClock.caption(date: item.date, duration: item.duration, now: context.now))
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -329,10 +329,10 @@ struct RecorderDetail: View {
         .padding(.vertical, 12)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.white.opacity(0.10))
+                .fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(.white.opacity(0.18), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
     }
@@ -368,10 +368,10 @@ struct RecorderDetail: View {
                 .accessibilityValue(RecorderClock.text(fraction * duration))
                 HStack {
                     Text(RecorderClock.text(fraction * duration))
-                        .foregroundStyle(.white.opacity(0.86))
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 0)
                     Text(RecorderClock.text(duration))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
@@ -406,7 +406,7 @@ struct RecorderDetail: View {
                 if Transcript.hasText(segments) {
                     Text(verbatim: Transcript.preview(segments))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
@@ -438,18 +438,18 @@ struct RecorderDetail: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.black.opacity(0.22)))
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelShade))
     }
 
     private func statusLine(_ title: String, detail: String?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.panelPrimary)
             if let detail {
                 Text(verbatim: detail)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -460,7 +460,7 @@ struct RecorderDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(accent)
+                .foregroundStyle(accent.panelReadable)
                 .monospacedDigit()
             progressBar(fraction ?? 0)
         }
@@ -469,7 +469,7 @@ struct RecorderDetail: View {
     private func progressBar(_ fraction: Double) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.15))
+                Capsule().fill(.panelTrack)
                 Capsule().fill(accent).frame(width: geo.size.width * min(1, max(0, fraction)))
             }
         }
@@ -480,13 +480,13 @@ struct RecorderDetail: View {
         TextField(RecorderTitle.display(fileName: item.url.lastPathComponent), text: $renameText)
             .textFieldStyle(.plain)
             .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
             .focused($focus, equals: .rename)
             .onSubmit { commitRename() }
             .onExitCommand { renaming = nil }
             .padding(.horizontal, 8)
             .frame(height: 26)
-            .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(0.12)))
+            .background(RoundedRectangle(cornerRadius: 7).fill(.panelFill))
             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(accent.opacity(0.9), lineWidth: 1.2))
     }
 
@@ -500,21 +500,21 @@ struct RecorderDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: RecorderTitle.display(fileName: item.url.lastPathComponent))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(verbatim: preview.isEmpty
                      ? RecorderClock.caption(date: item.date, duration: nil, now: context.now)
                      : preview)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
             if let duration = item.duration {
                 Text(RecorderClock.text(duration))
                     .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         }
         .padding(.horizontal, 14)
@@ -544,12 +544,12 @@ struct RecorderDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(verbatim: RecorderTitle.display(fileName: item.url.lastPathComponent))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(label)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
                     .monospacedDigit()
                 progressBar(fraction)
             }
@@ -565,10 +565,10 @@ struct RecorderDetail: View {
 
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(.white.opacity(0.06))
+            .fill(.panelFill)
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(.white.opacity(0.10), lineWidth: 0.6)
+                    .strokeBorder(.panelStroke, lineWidth: 0.6)
             }
     }
 
@@ -580,10 +580,10 @@ struct RecorderDetail: View {
             recorder.togglePlay(item.url)
         } label: {
             ZStack {
-                Circle().fill(solid ? accent : .white)
+                Circle().fill(solid ? accent : .panelPrimary)
                 Image(systemName: playing ? "pause.fill" : "play.fill")
                     .font(.system(size: size * 0.4, weight: .bold))
-                    .foregroundStyle(solid ? accentInk : Color(hex: "#1d1d21"))
+                    .foregroundStyle(solid ? accentInk : .panelOnPrimary)
                     .offset(x: playing ? 0 : size * 0.04)
             }
             .frame(width: size, height: size)
@@ -602,10 +602,10 @@ struct RecorderDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tr("编辑录音"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("改名 · 裁剪 · 改文字"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
@@ -647,8 +647,8 @@ struct RecorderDetail: View {
                 .foregroundStyle(Self.red)
                 .frame(maxWidth: .infinity)
                 .frame(height: 32)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -659,18 +659,18 @@ struct RecorderDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "pencil")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
             TextField(RecorderTitle.display(fileName: item.url.lastPathComponent), text: $draftTitle)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($focus, equals: .title)
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
-        .background(RoundedRectangle(cornerRadius: 11).fill(.white.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: 11).fill(.panelFill))
         .overlay(RoundedRectangle(cornerRadius: 11)
-            .strokeBorder(focus == .title ? accent.opacity(0.9) : .white.opacity(0.14), lineWidth: focus == .title ? 1.2 : 0.6))
+            .strokeBorder(focus == .title ? accent.opacity(0.9) : .panelStroke, lineWidth: focus == .title ? 1.2 : 0.6))
     }
 
     private func sectionLabel(_ title: String, right: String) -> some View {
@@ -680,7 +680,7 @@ struct RecorderDetail: View {
             Text(right)
         }
         .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.62))
+        .foregroundStyle(.panelSecondary)
     }
 
     private func trimBox(_ item: VoiceRecorder.Recording) -> some View {
@@ -718,11 +718,11 @@ struct RecorderDetail: View {
             HStack {
                 Text(trim.rangeLabel)
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 0)
                 Text(trim.remainingLabel)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .monospacedDigit()
             .lineLimit(1)
@@ -730,7 +730,7 @@ struct RecorderDetail: View {
         .padding(.horizontal, 10)
         .padding(.top, 6)
         .padding(.bottom, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.black.opacity(0.22)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelShade))
         .onAppear { syncTrim(item) }
         .onChange(of: item.duration) { syncTrim(item) }
     }
@@ -775,12 +775,12 @@ struct RecorderDetail: View {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text(RecorderClock.text(segments[index].start))
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                             .frame(width: 46, alignment: .leading)
                         TextField("", text: segmentBinding(item, index), axis: .vertical)
                             .textFieldStyle(.plain)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.panelPrimary)
                             .lineLimit(1...8)
                     }
                 }
@@ -788,7 +788,7 @@ struct RecorderDetail: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(accent.opacity(0.6), lineWidth: 1))
     }
 
@@ -937,7 +937,7 @@ struct RecorderDetail: View {
                 if pro { ProBadge() }
             }
             .font(.system(size: 13, weight: solid ? .bold : .semibold))
-            .foregroundStyle(solid ? accentInk : .white.opacity(0.92))
+            .foregroundStyle(solid ? accentInk : .panelPrimary)
             .padding(.horizontal, 8)
             .frame(maxWidth: .infinity)
             .frame(height: height)
@@ -945,8 +945,8 @@ struct RecorderDetail: View {
                 if solid {
                     Capsule().fill(accent)
                 } else {
-                    Capsule().fill(.white.opacity(0.12))
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    Capsule().fill(.panelFill)
+                        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 }
             }
             .contentShape(.capsule)
@@ -971,10 +971,10 @@ struct WaveformBarsView: View {
             let barWidth = max(1, step * 0.58)
             for (i, v) in bars.enumerated() {
                 let f = n > 1 ? Double(i) / Double(n - 1) : 0
-                var color = Color.white.opacity(0.4)
+                var color = Color.panelTertiary
                 if let progress, f <= progress { color = accent }
                 if let trim {
-                    color = (f >= trim.0 && f <= trim.1) ? accent.opacity(0.95) : .white.opacity(0.22)
+                    color = (f >= trim.0 && f <= trim.1) ? accent.opacity(0.95) : .panelQuaternary
                 }
                 let h = max(2, size.height * CGFloat(v))
                 let rect = CGRect(x: CGFloat(i) * step + (step - barWidth) / 2,

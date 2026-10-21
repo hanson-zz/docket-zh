@@ -42,13 +42,16 @@ struct MusicDetail: View {
     private var pinnedSource: MusicSource? { MusicPin.pinned(config) }
 
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
-    private let ink = Color.white
+    private let ink = Color.panelPrimary
 
     /// 面板外框画的底色：封面主色做顶部光晕。没有封面时给一个没有颜色的，外框
-    /// 照样画深色底（白字在浅色系统外观下也看得见）。
+    /// 照样画深色底。
+    /// 液态玻璃：只在深色外观下画这层深色底；浅色外观返回 nil，面板和其他面板一样
+    /// 是浅色玻璃，文字是语义色（封面自己的光晕还在封面背后）。
     @MainActor
     static func ground(instance: WidgetInstance, context: WidgetContext) -> ArtworkTint? {
-        MusicDetail(instance: instance, context: context).playing?.tint
+        guard NSApp.effectiveAppearance.panelIsDark else { return nil }
+        return MusicDetail(instance: instance, context: context).playing?.tint
             ?? ArtworkTint(hue: 0, saturation: 0)
     }
 
@@ -191,13 +194,13 @@ struct MusicDetail: View {
                     }
                     Image(systemName: page == .sources ? "chevron.up" : "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .padding(.leading, 6)
                 .padding(.trailing, 12)
                 .frame(height: 32)
-                .background(Capsule().fill(.white.opacity(0.10)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -205,12 +208,12 @@ struct MusicDetail: View {
             if let pinned = pinnedSource, idlePin == nil, source == pinned, track?.isBrowser != true {
                 Text("已固定")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .fixedSize()
                     .padding(.horizontal, 9)
                     .frame(height: 24)
-                    .background(Capsule().fill(.white.opacity(0.10)))
+                    .background(Capsule().fill(.panelFill))
                     .padding(.leading, 8)
                     .help(tr("你固定了这个来源，别的播放器不会顶掉它"))
             }
@@ -223,8 +226,8 @@ struct MusicDetail: View {
                     Image(systemName: "arrow.up.forward.square")
                         .font(.system(size: 14, weight: .semibold))
                         .frame(width: 32, height: 32)
-                        .background(Circle().fill(.white.opacity(0.10)))
-                        .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                        .background(Circle().fill(.panelFill))
+                        .overlay(Circle().strokeBorder(.panelStroke, lineWidth: 0.6))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -237,7 +240,7 @@ struct MusicDetail: View {
             HStack(spacing: 8) {
                 Text(tr("固定的 \(idlePin.displayName) 没在播"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 8)
@@ -270,7 +273,7 @@ struct MusicDetail: View {
                 .frame(width: size, height: size)
         } else {
             RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                .fill(.white.opacity(0.16))
+                .fill(.panelFillStrong)
                 .frame(width: size, height: size)
                 .overlay(Image(systemName: "music.note").font(.system(size: size * 0.5, weight: .semibold)))
         }
@@ -317,7 +320,7 @@ struct MusicDetail: View {
         .frame(width: side, height: side)
         .clipShape(.rect(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+            .strokeBorder(.panelStroke, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
         .accessibilityLabel(tr("封面"))
         // 封面主色的光晕，不超过 15%。画在背景里，只往四周溢出、不参与排版：
@@ -341,7 +344,7 @@ struct MusicDetail: View {
                     .font(.system(size: 20, weight: .bold))
                 Text(subtitle(track))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .truncationMode(.tail)
@@ -363,10 +366,10 @@ struct MusicDetail: View {
         } label: {
             Image(systemName: on ? "heart.fill" : "heart")
                 .font(.system(size: size * 0.47, weight: .semibold))
-                .foregroundStyle(on ? accent(source) : .white.opacity(0.75))
+                .foregroundStyle(on ? accent(source).panelReadable : .panelSecondary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(.white.opacity(0.08)))
-                .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                .background(Circle().fill(.panelFill))
+                .overlay(Circle().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -383,8 +386,8 @@ struct MusicDetail: View {
                 let width = geo.size.width
                 let height: CGFloat = seekable ? 5 : 4
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.22)).frame(height: height)
-                    Capsule().fill(.white.opacity(0.95))
+                    Capsule().fill(.panelTrack).frame(height: height)
+                    Capsule().fill(.panelPrimary)
                         .frame(width: max(0, width * ratio), height: height)
                         .animation(track.isPlaying && scrubbing == nil
                                    ? .linear(duration: MusicTile.pollInterval) : nil, value: ratio)
@@ -434,7 +437,7 @@ struct MusicDetail: View {
             .font(.system(size: 13, weight: .medium))
             .monospacedDigit()
             .rollingValue(text)
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .lineLimit(1)
             .fixedSize()
     }
@@ -487,9 +490,9 @@ struct MusicDetail: View {
                 .font(.system(size: size * 0.36, weight: .bold))
                 .offset(x: playing ? 0 : size * 0.03)
                 .playPauseMorph(playing ? "pause.fill" : "play.fill")
-                .foregroundStyle(Self.base)
+                .foregroundStyle(.panelOnPrimary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(.white))
+                .background(Circle().fill(.panelPrimary))
                 .contentShape(Circle())
         }
         .buttonStyle(PressScale())
@@ -504,7 +507,7 @@ struct MusicDetail: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 40, height: 40)
                 .contentShape(Circle())
         }
@@ -521,7 +524,7 @@ struct MusicDetail: View {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(on ? accent(source) : .white.opacity(0.62))
+                    .foregroundStyle(on ? accent(source).panelReadable : .panelSecondary)
                 Circle().fill(on ? accent(source) : .clear).frame(width: 4, height: 4)
             }
             .frame(width: 32, height: 40)
@@ -562,12 +565,12 @@ struct MusicDetail: View {
         HStack(spacing: 10) {
             Image(systemName: "speaker.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             GeometryReader { geo in
                 let width = geo.size.width
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.22)).frame(height: 5)
-                    Capsule().fill(.white.opacity(0.85)).frame(width: max(0, width * value), height: 5)
+                    Capsule().fill(.panelTrack).frame(height: 5)
+                    Capsule().fill(.panelPrimary).frame(width: max(0, width * value), height: 5)
                     Circle().fill(.white)
                         .frame(width: 14, height: 14)
                         .shadow(color: .black.opacity(0.25), radius: 1)
@@ -588,7 +591,7 @@ struct MusicDetail: View {
             .frame(height: 14)
             Image(systemName: "speaker.wave.2.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
         .padding(.top, 14)
         .accessibilityElement(children: .ignore)
@@ -617,17 +620,17 @@ struct MusicDetail: View {
             HStack {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
             }
             .padding(.horizontal, 14)
             .frame(height: 40)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.10), lineWidth: 0.6))
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -657,7 +660,7 @@ struct MusicDetail: View {
                 Text(track.title).font(.system(size: 15, weight: .bold))
                 Text(track.isBrowser ? track.artist : subtitle(track))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -669,8 +672,8 @@ struct MusicDetail: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .contentShape(Rectangle())
         .onTapGesture { withAnimation(.snappy(duration: 0.2)) { page = .player } }
         .accessibilityAddTraits(.isButton)
@@ -698,7 +701,7 @@ struct MusicDetail: View {
             }
             Text("点一下从这首开始放")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)
         } else {
@@ -732,7 +735,7 @@ struct MusicDetail: View {
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
             }
@@ -742,7 +745,7 @@ struct MusicDetail: View {
             Text("接下来的队列").font(.system(size: 15, weight: .bold))
             Text("Spotify 不开放给小工具读取")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Button {
                 guard !context.isPreview else { return }
                 MusicService.shared.open(.spotify)
@@ -751,8 +754,8 @@ struct MusicDetail: View {
                     .font(.system(size: 13, weight: .semibold))
                     .padding(.horizontal, 14)
                     .frame(height: 32)
-                    .background(Capsule().fill(.white.opacity(0.10)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -760,17 +763,17 @@ struct MusicDetail: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .padding(.top, 14)
     }
 
-    private func section(_ title: String, right: String? = nil, rightTint: Color = .white.opacity(0.75),
+    private func section(_ title: String, right: String? = nil, rightTint: Color = .panelSecondary,
                          action: (() -> Void)? = nil) -> some View {
         HStack {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Spacer(minLength: 8)
             if let right {
@@ -782,7 +785,7 @@ struct MusicDetail: View {
                 } else {
                     Text(right)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
         }
@@ -793,17 +796,17 @@ struct MusicDetail: View {
     private func note(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
     }
 
     private func rows<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(spacing: 0) { content() }
             .padding(2)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     private func trackRow(id: String, title: String, artist: String, duration: Double,
@@ -828,27 +831,27 @@ struct MusicDetail: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.95))
-                    Text(artist).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.panelPrimary)
+                    Text(artist).font(.system(size: 13, weight: .medium)).foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if hover {
                     Image(systemName: "play.fill")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Self.base)
+                        .foregroundStyle(.panelOnPrimary)
                         .frame(width: 28, height: 28)
-                        .background(Circle().fill(.white))
+                        .background(Circle().fill(.panelPrimary))
                 } else if duration > 0 {
                     Text(MusicTime.clock(duration))
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
             .padding(.horizontal, 8)
             .frame(height: 50)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(hover ? 0.07 : 0)))
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(hover ? Color.panelFill : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -865,7 +868,7 @@ struct MusicDetail: View {
                                startPoint: .topLeading, endPoint: .bottomTrailing)
                     .overlay(Image(systemName: "music.note")
                         .font(.system(size: size * 0.38, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7)))
+                        .foregroundStyle(.panelSecondary))
             }
         }
         .frame(width: size, height: size)
@@ -884,7 +887,7 @@ struct MusicDetail: View {
                 if players.isEmpty && browser == nil {
                     Text("没有开着的播放器")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
                 }
@@ -898,8 +901,8 @@ struct MusicDetail: View {
                 }
             }
             .padding(2)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.07)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
             .padding(.top, 12)
 
             switchCard
@@ -913,7 +916,7 @@ struct MusicDetail: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(.white.opacity(0.10)).frame(height: 0.6).padding(.leading, 56).padding(.trailing, 10)
+        Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.leading, 56).padding(.trailing, 10)
     }
 
     private func sourceRow(_ player: MusicService.Player, selected: Bool) -> some View {
@@ -930,7 +933,7 @@ struct MusicDetail: View {
             appIcon(icon(for: source.bundleID), size: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(source.displayName).font(.system(size: 15, weight: .bold))
-                Text(detail).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+                Text(detail).font(.system(size: 13, weight: .medium)).foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -946,8 +949,8 @@ struct MusicDetail: View {
                     .font(.system(size: 13, weight: .semibold))
                     .padding(.horizontal, 14)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.10)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
             }
         }
         .padding(.horizontal, 10)
@@ -964,7 +967,7 @@ struct MusicDetail: View {
             appIcon(track.icon ?? icon(for: track.sourceBundleID), size: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(tr("\(track.artist) 标签页")).font(.system(size: 15, weight: .bold))
-                Text(tr("视频 · 只能播放暂停")).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.62))
+                Text(tr("视频 · 只能播放暂停")).font(.system(size: 13, weight: .medium)).foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -984,7 +987,7 @@ struct MusicDetail: View {
             Image(systemName: playing ? "pause.fill" : "play.fill")
                 .font(.system(size: 11, weight: .bold))
                 .frame(width: 28, height: 28)
-                .background(Circle().fill(.white.opacity(0.12)))
+                .background(Circle().fill(.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(PressScale())
@@ -1010,7 +1013,7 @@ struct MusicDetail: View {
                 Text("谁开始播放就切到谁").font(.system(size: 14, weight: .semibold))
                 Text("关掉后停在你选的来源")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Toggle("", isOn: Binding(get: { autoSwitch }, set: { setAutoSwitch($0) }))
@@ -1021,8 +1024,8 @@ struct MusicDetail: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 56)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.05)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     /// 关掉时把现在显示的来源记成固定来源，之后谁开始播放都不换。
@@ -1077,7 +1080,7 @@ struct MusicDetail: View {
                 .padding(.top, 12)
             Text(setup ?? (closed != nil ? tr("打开它就能在这里控制") : idleLine(target)))
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
@@ -1147,7 +1150,7 @@ struct MusicDetail: View {
                 Text(track?.isPlaying == true ? tr("\(player.source.displayName) · 播放中")
                                               : tr("\(player.source.displayName) · 已暂停"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1157,8 +1160,8 @@ struct MusicDetail: View {
         .padding(10)
         .contentShape(Rectangle())
         .onTapGesture { playOther(player.source) }
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     /// 「其他开着的」里点一行：卡片和面板都切到它并播放，固定不动。
@@ -1184,10 +1187,10 @@ struct MusicDetail: View {
             } label: {
                 Text("连接")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Self.base)
+                    .foregroundStyle(.panelOnPrimary)
                     .padding(.horizontal, 26)
                     .frame(height: 36)
-                    .background(Capsule().fill(.white))
+                    .background(Capsule().fill(.panelPrimary))
                     .contentShape(Capsule())
             }
             .buttonStyle(PressScale())
@@ -1218,7 +1221,7 @@ extension MusicDetail {
             HStack(spacing: 8) {
                 Text(tr("按钮控制需要辅助功能权限"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Button {
@@ -1226,10 +1229,10 @@ extension MusicDetail {
                 } label: {
                     Text(tr("去授权"))
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Self.base)
+                        .foregroundStyle(.panelOnPrimary)
                         .padding(.horizontal, 10)
                         .frame(height: 24)
-                        .background(Capsule().fill(.white))
+                        .background(Capsule().fill(.panelPrimary))
                 }
                 .buttonStyle(.plain)
             }

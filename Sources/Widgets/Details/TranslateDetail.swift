@@ -155,9 +155,9 @@ struct TranslateDetail: View {
             Button(action: swap) {
                 Image(systemName: "arrow.left.arrow.right")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .frame(width: 26, height: 26)
-                    .background(Color.white.opacity(0.14), in: .circle)
+                    .background(Color.panelFillStrong, in: .circle)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("交换语言")
@@ -194,11 +194,11 @@ struct TranslateDetail: View {
             Text(title).lineLimit(1)
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold)).opacity(0.7)
         }
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(.white)
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(.panelPrimary)
         .padding(.horizontal, 10)
         .frame(height: 24)
-        .background(Color.white.opacity(0.16), in: .capsule)
+        .background(Color.panelFillStrong, in: .capsule)
     }
 
     // MARK: Panes
@@ -209,14 +209,14 @@ struct TranslateDetail: View {
                 if draft.isEmpty {
                     Text("输入或粘贴要翻译的文字")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.panelTertiary)
                         .padding(.top, 1)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $draft)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .scrollContentBackground(.hidden)
                     .scrollIndicators(.never)
                     .focused($editing)
@@ -225,8 +225,8 @@ struct TranslateDetail: View {
             .frame(height: 78)
             HStack(spacing: 6) {
                 Text("\(draft.count) / \(Translate.maxCharacters)")
-                    .font(WidgetStyle.caption(10).monospacedDigit())
-                    .foregroundStyle(.white.opacity(draft.count >= Translate.maxCharacters ? 0.9 : 0.5))
+                    .font(WidgetStyle.caption(13).monospacedDigit())
+                    .foregroundStyle(.panelPrimary.opacity(draft.count >= Translate.maxCharacters ? 0.9 : 0.5))
                 Spacer(minLength: 0)
                 paneButton("speaker.wave.2", label: tr("朗读原文"), disabled: draft.isEmpty) {
                     TranslateSpeaker.shared.toggle(draft, language: detectedSource ?? Translate.chinese)
@@ -251,7 +251,7 @@ struct TranslateDetail: View {
             ScrollView {
                 Text(text.isEmpty ? (working ? tr("正在翻译…") : tr("译文会显示在这里")) : text)
                     .font(.system(size: 14, weight: text.isEmpty ? .regular : .medium))
-                    .foregroundStyle(.white.opacity(text.isEmpty ? 0.4 : 1))
+                    .foregroundStyle(.panelPrimary.opacity(text.isEmpty ? 0.4 : 1))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, 5)
@@ -260,8 +260,8 @@ struct TranslateDetail: View {
             .frame(height: 78)
             HStack(spacing: 6) {
                 Text(result.map { Translate.pairText(source: $0.source, target: $0.target) } ?? " ")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelTertiary)
                 Spacer(minLength: 0)
                 paneButton("speaker.wave.2", label: tr("朗读译文"), disabled: text.isEmpty) {
                     TranslateSpeaker.shared.toggle(text, language: result?.target ?? currentTarget)
@@ -290,9 +290,9 @@ struct TranslateDetail: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(disabled ? 0.3 : 0.85))
+                .foregroundStyle(.panelPrimary.opacity(disabled ? 0.3 : 0.85))
                 .frame(width: 24, height: 22)
-                .background(Color.white.opacity(0.1), in: .rect(cornerRadius: 6, style: .continuous))
+                .background(Color.panelFill, in: .rect(cornerRadius: 6, style: .continuous))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -311,9 +311,9 @@ struct TranslateDetail: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .font(WidgetStyle.caption(10))
-        .foregroundStyle(.white.opacity(message == nil ? 0.5 : 0.8))
-        .frame(height: 26, alignment: .leading)
+        .font(WidgetStyle.caption(13))
+        .foregroundStyle(.panelPrimary.opacity(message == nil ? 0.5 : 0.8))
+        .frame(minHeight: 26, alignment: .leading)
     }
 
     // MARK: History
@@ -322,9 +322,9 @@ struct TranslateDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("最近翻译")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                 Spacer(minLength: 0)
                 if !history.isEmpty {
                     Button("清除") {
@@ -332,8 +332,8 @@ struct TranslateDetail: View {
                         WidgetWriter.write(instance) { Translate.store([], in: &$0) }
                     }
                     .buttonStyle(.plain)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
                 }
             }
             .padding(.horizontal, 4)
@@ -357,20 +357,20 @@ struct TranslateDetail: View {
     private func historyRow(_ record: TranslateRecord, index: Int) -> some View {
         HStack(spacing: 8) {
             Text(Translate.pairText(source: record.source, target: record.target))
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, 6)
                 .frame(height: 16)
-                .background(Color.white.opacity(0.12), in: .capsule)
+                .background(Color.panelFill, in: .capsule)
             VStack(alignment: .leading, spacing: 1) {
                 Text(Translate.snippet(record.resultText))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Text(Translate.snippet(record.sourceText))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)

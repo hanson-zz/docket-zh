@@ -75,14 +75,14 @@ struct HabitDetail: View {
             HStack(spacing: 8) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex).panelReadable)
                 Text("近七天报告")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 4)
                 Text(ProLicenseGate.lockTitle)
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex).panelReadable)
             }
             .padding(10)
             .contentShape(.rect)
@@ -110,9 +110,9 @@ struct HabitDetail: View {
                 }
             } else {
                 Text("本月记录")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .padding(.top, 4)
                 ForEach(all) { habit in card(habit, locked: isLocked(habit, in: all)) }
             }
@@ -123,7 +123,7 @@ struct HabitDetail: View {
     private func editorLayer(_ all: [Habit]) -> some View {
         if let target = editor {
             ZStack {
-                Color.black.opacity(0.35)
+                Color.panelShade
                     .padding(-16)
                     .contentShape(.rect)
                     .onTapGesture { editor = nil }
@@ -150,18 +150,18 @@ struct HabitDetail: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
                 Text("习惯打卡")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 Text(HabitTracker.caption(done: done, total: total))
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             Spacer()
             Text(context.now.formatted(.dateTime.year().month(.wide)))
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -176,7 +176,7 @@ struct HabitDetail: View {
                 HabitIconBadge(icon: habit.iconName, color: color, size: 22)
                 Text(habit.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .contentShape(.rect)
                     .onTapGesture {
@@ -188,7 +188,7 @@ struct HabitDetail: View {
                 if locked {
                     Button { PaywallWindow.shared.show() } label: {
                         Label(ProLicenseGate.lockTitle, systemImage: "lock.fill")
-                            .font(WidgetStyle.label(11))
+                            .font(WidgetStyle.label(13))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 4)
@@ -203,12 +203,12 @@ struct HabitDetail: View {
                     } label: {
                         Label(todayLabel(habit, done: todayDone),
                               systemImage: todayDone ? "checkmark.circle.fill" : (habit.goal > 1 ? "plus.circle" : "circle"))
-                            .font(WidgetStyle.label(11))
+                            .font(WidgetStyle.label(13))
                             .monospacedDigit()
-                            .foregroundStyle(todayDone ? Color.white : Color.white.opacity(0.85))
+                            .foregroundStyle(todayDone ? Color.white : Color.panelPrimary)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 4)
-                            .background(Capsule().fill(todayDone ? color.opacity(0.75) : Color.white.opacity(0.12)))
+                            .background(Capsule().fill(todayDone ? color.opacity(0.75) : Color.panelFill))
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -238,8 +238,8 @@ struct HabitDetail: View {
             HStack(spacing: 3) {
                 ForEach(Self.weekdays, id: \.self) { name in
                     Text(name)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelTertiary)
                         .frame(width: cell)
                 }
             }
@@ -265,18 +265,18 @@ struct HabitDetail: View {
             }
         } label: {
             Text("\(day.day)")
-                .font(.system(size: 9, weight: day.isToday ? .bold : .medium))
+                .font(.system(size: 13, weight: day.isToday ? .bold : .medium))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(day.done ? 1 : (day.isFuture ? 0.25 : 0.6)))
+                .foregroundStyle(day.done ? Color.white : .panelPrimary.opacity(day.isFuture ? 0.25 : 0.6))
                 .frame(width: size, height: size)
                 .background {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(day.done ? HabitStyle.color(habit).opacity(0.85) : Color.white.opacity(day.isFuture ? 0.03 : 0.08))
+                        .fill(day.done ? HabitStyle.color(habit).opacity(0.85) : Color.panelFill.opacity(day.isFuture ? 0.4 : 1))
                 }
                 .overlay {
                     if day.isToday {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .strokeBorder(.white.opacity(0.85), lineWidth: 1.2)
+                            .strokeBorder(.panelPrimary, lineWidth: 1.2)
                     }
                 }
                 .contentShape(.rect)

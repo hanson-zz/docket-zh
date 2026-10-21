@@ -59,11 +59,11 @@ struct QuickTogglesDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: tr("快速开关"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: editing ? tr("勾选 + 拖动排序 · \(QuickToggle.allCases.count) 个可选")
                      : tr("\(chosen.count) 个开关 · 点一下就生效"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -74,11 +74,11 @@ struct QuickTogglesDetail: View {
                 } label: {
                     Text(verbatim: editing ? tr("完成") : tr("编辑"))
                         .font(.system(size: 13, weight: editing ? .bold : .semibold))
-                        .foregroundStyle(editing ? ink : .white.opacity(0.92))
+                        .foregroundStyle(editing ? ink : .panelPrimary)
                         .padding(.horizontal, editing ? 15 : 13)
                         .frame(height: 28)
-                        .background(Capsule().fill(editing ? accent : .white.opacity(0.12)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(editing ? 0 : 0.18), lineWidth: 0.6))
+                        .background(Capsule().fill(editing ? accent : .panelFill))
+                        .overlay(Capsule().strokeBorder(.panelStroke.opacity(editing ? 0 : 1), lineWidth: 0.6))
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -103,7 +103,7 @@ struct QuickTogglesDetail: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: tr("保持唤醒多久"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 HStack(spacing: 6) {
                     ForEach(KeepAwakeTimer.choices, id: \.self) { minutes in durationChip(minutes) }
                 }
@@ -131,22 +131,22 @@ struct QuickTogglesDetail: View {
                 HStack(alignment: .top) {
                     Image(systemName: toggle.symbol)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(on ? ink : .white.opacity(locked ? 0.5 : 0.95))
+                        .foregroundStyle(on ? ink : .panelPrimary.opacity(locked ? 0.5 : 0.95))
                         .frame(width: 26, height: 26)
-                        .background(Circle().fill(on ? accent : .white.opacity(0.14)))
+                        .background(Circle().fill(on ? accent : .panelFillStrong))
                     Spacer(minLength: 0)
                     if ProFeatures.isProTool(toggle.rawValue) { ProBadge() }
                 }
                 Spacer(minLength: 6)
                 Text(verbatim: toggle.panelTitle)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(locked ? 0.6 : 1))
+                    .foregroundStyle(.panelPrimary.opacity(locked ? 0.6 : 1))
                     .lineLimit(1)
                     // 中文在 13pt 下放得下（见 `panelTitle`），英文名字长时才缩一点。
                     .minimumScaleFactor(0.85)
                 Text(verbatim: state)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(on ? accent : .white.opacity(0.62))
+                    .foregroundStyle(on ? accent.panelReadable : .panelSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
@@ -154,9 +154,9 @@ struct QuickTogglesDetail: View {
             .padding(10)
             .frame(maxWidth: .infinity, minHeight: 82, maxHeight: 82, alignment: .topLeading)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(on ? accent.opacity(0.2) : .white.opacity(0.07)))
+                .fill(on ? accent.opacity(0.2) : .panelFill))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(on ? accent.opacity(0.75) : .white.opacity(0.14), lineWidth: on ? 1 : 0.6))
+                .strokeBorder(on ? accent.opacity(0.75) : .panelStroke, lineWidth: on ? 1 : 0.6))
             .contentShape(.rect(cornerRadius: 14))
         }
         .buttonStyle(.plain)
@@ -174,13 +174,13 @@ struct QuickTogglesDetail: View {
         } label: {
             Text(verbatim: KeepAwakeTimer.title(minutes))
                 .font(.system(size: 13, weight: selected ? .bold : .semibold))
-                .foregroundStyle(selected ? ink : .white.opacity(0.88))
+                .foregroundStyle(selected ? ink : .panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .frame(height: 30)
-                .background(Capsule().fill(selected ? accent : .white.opacity(0.08)))
-                .overlay(Capsule().strokeBorder(.white.opacity(selected ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(selected ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke.opacity(selected ? 0 : 1), lineWidth: 0.6))
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -217,13 +217,13 @@ struct QuickTogglesDetail: View {
                 set: { on in WidgetWriter.write(current) { $0.set(QuickToggle.showNamesKey, .bool(on)) } })) {
                 Text(verbatim: tr("卡片圆钮下显示名字"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.94))
+                    .foregroundStyle(.panelPrimary)
             }
             .toggleStyle(.switch)
             .tint(accent)
             .padding(.horizontal, 14)
             .frame(height: 40)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
         }
     }
 }

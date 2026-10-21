@@ -101,10 +101,10 @@ struct MailDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(mode == .browse ? tr("邮件") : tr("邮件设置"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -131,11 +131,11 @@ struct MailDetail: View {
             Button { switchTo(.settings) } label: {
                 Text(tr("设置"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -182,7 +182,7 @@ struct MailDetail: View {
                 ProgressView().controlSize(.small)
                 Text(tr("正在读取未读邮件…"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .frame(maxWidth: .infinity, minHeight: 80)
         case .loaded:
@@ -198,7 +198,7 @@ struct MailDetail: View {
         if MailInbox.allAccountsHidden(snapshot.accounts, hidden: hidden) {
             Text(tr("账户都关掉了，在「设置」里打开要看的账户。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.vertical, 6)
         } else if visible.isEmpty {
@@ -213,7 +213,7 @@ struct MailDetail: View {
         if let notice {
             Text(notice)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
         }
         footer
@@ -251,11 +251,11 @@ struct MailDetail: View {
                     .monospacedDigit()
                     .lineLimit(1)
             }
-            .foregroundStyle(on ? accentInk : .white.opacity(0.88))
+            .foregroundStyle(on ? accentInk : .panelPrimary)
             .padding(.horizontal, 12)
             .frame(height: 30)
-            .background(Capsule().fill(on ? accent : .white.opacity(0.08)))
-            .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+            .background(Capsule().fill(on ? accent : .panelFill))
+            .overlay(Capsule().strokeBorder(.panelStroke.opacity(on ? 0 : 1), lineWidth: 0.6))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -296,7 +296,7 @@ struct MailDetail: View {
                 HStack(spacing: 6) {
                     Text(verbatim: name)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     Circle()
                         .fill(Color(hex: MailInbox.accountHex(message.account, in: snapshot.accounts)))
@@ -308,7 +308,7 @@ struct MailDetail: View {
                     } else {
                         Text(MailInbox.timeLabel(message.received, now: context.now))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                             .monospacedDigit()
                             .lineLimit(1)
                             .fixedSize()
@@ -317,13 +317,13 @@ struct MailDetail: View {
                 .frame(height: 26)
                 Text(verbatim: message.subject.isEmpty ? tr("（无主题）") : message.subject)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if showsSummary, !message.summary.isEmpty {
                     Text(verbatim: message.summary)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -337,10 +337,10 @@ struct MailDetail: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(hover ? 0.12 : 0.06))
+                .fill(hover ? Color.panelFillStrong : .panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(hover ? 0.22 : 0.10), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
         .contentShape(.rect(cornerRadius: 12))
@@ -405,12 +405,12 @@ struct MailDetail: View {
             } label: {
                 Text(confirmAll ? tr("再点一次：\(unread) 封") : tr("全部标为已读"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(targets.isEmpty ? 0.4 : 0.95))
+                    .foregroundStyle(.panelPrimary.opacity(targets.isEmpty ? 0.4 : 0.95))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
-                    .background(Capsule().fill(.white.opacity(confirmAll ? 0.2 : 0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(confirmAll ? Color.panelFillStrong : .panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -455,10 +455,10 @@ struct MailDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tr("读完了！"))
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("没有未读邮件，歇会儿"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -474,22 +474,22 @@ struct MailDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(tr("第一次要允许码头"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.86))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("读取和控制「邮件」"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
             Button { mail.openAutomationSettings() } label: {
                 Text(tr("去允许"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .fixedSize()
                     .padding(.horizontal, 14)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -507,10 +507,10 @@ struct MailDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(detail)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if primary {
@@ -519,11 +519,11 @@ struct MailDetail: View {
                 Button(action: perform) {
                     Text(action)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(Capsule().fill(.white.opacity(0.12)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                        .background(Capsule().fill(.panelFill))
+                        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -542,7 +542,7 @@ struct MailDetail: View {
         if snapshot.accounts.isEmpty {
             Text(listState == .notRunning ? tr("打开「邮件」后这里列出账户") : tr("还没有读到账户"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.vertical, 4)
         } else {
             VStack(spacing: 6) {
@@ -570,7 +570,7 @@ struct MailDetail: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
     }
 
     private func accountRow(_ account: MailAccount) -> some View {
@@ -583,18 +583,18 @@ struct MailDetail: View {
                 HStack(spacing: 8) {
                     Text(verbatim: account.name)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white.opacity(on ? 1 : 0.7))
+                        .foregroundStyle(.panelPrimary.opacity(on ? 1 : 0.7))
                         .lineLimit(1)
                     Text(tr("\(account.unread) 封"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                         .fixedSize()
                 }
                 if !account.address.isEmpty {
                     Text(verbatim: account.address)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -624,7 +624,7 @@ struct MailDetail: View {
                 } label: {
                     Text(tr("\(value) 封"))
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(on ? accentInk : .white.opacity(0.82))
+                        .foregroundStyle(on ? accentInk : .panelPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 26)
@@ -636,8 +636,8 @@ struct MailDetail: View {
             }
         }
         .padding(3)
-        .background(Capsule().fill(.white.opacity(0.07)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .background(Capsule().fill(.panelFill))
+        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     private func toggleRow(_ title: String, sub: String?, on: Bool, change: @escaping (Bool) -> Void) -> some View {
@@ -645,11 +645,11 @@ struct MailDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.94))
+                    .foregroundStyle(.panelPrimary)
                 if let sub {
                     Text(sub)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
             .lineLimit(1)
@@ -703,7 +703,7 @@ private struct MailSwitch: View {
     var body: some View {
         Button(action: toggle) {
             ZStack(alignment: on ? .trailing : .leading) {
-                Capsule().fill(on ? accent : .white.opacity(0.18))
+                Capsule().fill(on ? accent : .panelTrack)
                 Circle().fill(.white).frame(width: 19, height: 19).padding(2.5)
             }
             .frame(width: 40, height: 24)

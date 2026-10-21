@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 习惯面板顶部的两列卡片：每个习惯一张，末尾一张“新建习惯”。
@@ -65,16 +66,16 @@ struct HabitGrid: View {
             VStack(spacing: 6) {
                 Image(systemName: canAdd ? "plus" : "lock.fill")
                     .font(.system(size: canAdd ? 18 : 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
                     .frame(width: 30, height: 30)
-                    .background(Circle().fill(.white.opacity(0.12)))
+                    .background(Circle().fill(.panelFill))
                 Text("新建习惯")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                 if !canAdd {
                     Text(tr("免费版 \(ProFeatures.freeHabitLimit) 个 · 解锁 Pro"))
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color(hex: ShelfColor.redPanda.hex).panelReadable)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
@@ -83,7 +84,7 @@ struct HabitGrid: View {
             .frame(height: HabitCard.height)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(.white.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             }
             .contentShape(.rect(cornerRadius: 14))
         }
@@ -137,7 +138,7 @@ struct HabitCard: View {
                 if locked {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white)
                         .frame(width: 26, height: 26)
                         .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex).opacity(0.85)))
                         .accessibilityLabel(ProLicenseGate.lockTitle)
@@ -147,12 +148,12 @@ struct HabitCard: View {
             }
             Text(habit.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .padding(.top, 4)
             Text(HabitTracker.todayText(habit, today: now))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(done ? color.mix(with: .white, by: 0.35) : .white.opacity(0.55))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(done ? color.mix(with: .white, by: 0.35).panelReadable : .panelTertiary)
                 .monospacedDigit()
                 .lineLimit(1)
             Spacer(minLength: 0)
@@ -160,11 +161,11 @@ struct HabitCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("\(habit.goal)")
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                     Text(tr("\(habit.unitName)/天"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -188,7 +189,7 @@ struct HabitCard: View {
             onTap()
         } label: {
             ZStack {
-                Circle().stroke(.white.opacity(0.18), lineWidth: 2.5)
+                Circle().stroke(.panelStroke, lineWidth: 2.5)
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
@@ -200,8 +201,8 @@ struct HabitCard: View {
                         .foregroundStyle(.white)
                 } else if habit.goal > 1 {
                     Text("\(HabitTracker.count(habit, on: now))")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                 }
             }
@@ -264,14 +265,14 @@ struct HabitEditor: View {
             HStack {
                 Text(isNew ? tr("新建习惯") : tr("编辑习惯"))
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 22, height: 22)
-                        .background(Circle().fill(.white.opacity(0.1)))
+                        .background(Circle().fill(.panelFill))
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
@@ -306,8 +307,8 @@ struct HabitEditor: View {
                         onDelete(original)
                     } label: {
                         Label("删除", systemImage: "trash")
-                            .font(WidgetStyle.label(12))
-                            .foregroundStyle(Color.red.mix(with: .white, by: 0.25))
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(Color.red.mix(with: .white, by: 0.25).panelReadable)
                     }
                     .buttonStyle(.plain)
                 }
@@ -316,7 +317,7 @@ struct HabitEditor: View {
                     save()
                 } label: {
                     Text(isNew ? tr("添加") : tr("完成"))
-                        .font(WidgetStyle.label(12))
+                        .font(WidgetStyle.label(13))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .frame(height: 28)
@@ -330,10 +331,11 @@ struct HabitEditor: View {
         .padding(14)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(white: 0.13).opacity(0.97))
+                .fill(Color.panelDynamic(dark: NSColor(white: 0.13, alpha: 0.97),
+                                         light: NSColor(white: 0.97, alpha: 0.97)))
                 .overlay {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
+                        .strokeBorder(.panelStroke, lineWidth: 0.5)
                 }
                 .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
         }
@@ -352,8 +354,8 @@ struct HabitEditor: View {
                         VStack(spacing: 4) {
                             HabitIconBadge(icon: template.icon, color: Color(hex: template.color.hex), size: 24)
                             Text(template.name)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.85))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.panelPrimary)
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity)
@@ -375,7 +377,7 @@ struct HabitEditor: View {
             TextField("", text: $name, prompt: Text(isNew ? tr("自己起个名字，比如“晚饭后散步”") : tr("名称")))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($nameFocused)
                 .onSubmit(save)
                 .padding(.horizontal, 10)
@@ -392,12 +394,12 @@ struct HabitEditor: View {
                 } label: {
                     Image(systemName: symbol)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(symbol == icon ? .white : .white.opacity(0.7))
+                        .foregroundStyle(symbol == icon ? Color.white : .panelSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                         .background {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(symbol == icon ? Color(hex: color.hex).opacity(0.85) : .white.opacity(0.07))
+                                .fill(symbol == icon ? Color(hex: color.hex).opacity(0.85) : .panelFill)
                         }
                         .contentShape(.rect)
                 }
@@ -419,7 +421,7 @@ struct HabitEditor: View {
                         .frame(width: 22, height: 22)
                         .overlay {
                             if swatch == color {
-                                Circle().strokeBorder(.white, lineWidth: 2)
+                                Circle().strokeBorder(.panelPrimary, lineWidth: 2)
                                     .padding(-4)
                             }
                         }
@@ -438,19 +440,19 @@ struct HabitEditor: View {
     private var goalRow: some View {
         HStack(spacing: 8) {
             Text("每天")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
             Stepper(value: $goal, in: 1...HabitTracker.maxGoal) {
                 Text("\(goal)")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .frame(minWidth: 24, alignment: .trailing)
             }
             TextField("", text: $unit, prompt: Text(Habit.defaultUnit))
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .foregroundStyle(.white)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary)
                 .multilineTextAlignment(.center)
                 .frame(width: 48, height: 26)
                 .glassPane(cornerRadius: 7)
@@ -462,8 +464,8 @@ struct HabitEditor: View {
                 .help("单位，比如杯、页、公里，空着就是“次”")
             Spacer(minLength: 0)
             Text(goal == 1 ? tr("勾选即完成") : tr("点 \(goal) 下完成"))
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .lineLimit(1)
         }
     }
@@ -471,9 +473,9 @@ struct HabitEditor: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
             content()
         }
     }

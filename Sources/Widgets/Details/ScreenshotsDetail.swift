@@ -120,7 +120,7 @@ struct ScreenshotsDetail: View {
             } else {
                 Text(verbatim: tr("没有符合的截图"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 80)
             }
         }
@@ -134,13 +134,13 @@ struct ScreenshotsDetail: View {
             FileThumb(url: file.url, pixels: 720, fill: false)
                 .frame(height: 180)
                 .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.25))
+                .background(Color.panelShade)
                 .clipShape(.rect(cornerRadius: 10, style: .continuous))
                 .overlay(alignment: .center) {
                     if recording {
                         Image(systemName: "play.circle.fill")
                             .font(.system(size: 34))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(.white)
                             .shadow(radius: 4)
                     }
                 }
@@ -151,7 +151,7 @@ struct ScreenshotsDetail: View {
                 .help(tr("点按打开，拖移到其他地方即可使用"))
             Text(verbatim: caption(file))
                 .font(.system(size: 13, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
             HStack(spacing: 6) {
@@ -192,17 +192,17 @@ struct ScreenshotsDetail: View {
         return text
     }
 
-    private func pill(_ title: String, solid: Bool = false, tint: Color = .white,
+    private func pill(_ title: String, solid: Bool = false, tint: Color = .panelPrimary,
                       disabled: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 14, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? palette.ink : tint)
+                .foregroundStyle(solid ? palette.ink : tint.panelReadable)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
-                .background(Capsule().fill(solid ? palette.accent : .white.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(solid ? palette.accent : .panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -223,14 +223,14 @@ struct ScreenshotsDetail: View {
                 Text(verbatim: tr("拖出去就能用"))
             }
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             ScrollView {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                     ForEach(files) { file in
                         FileThumb(url: file.url, pixels: 240, fill: file.isImage)
                             .frame(height: 44)
                             .frame(maxWidth: .infinity)
-                            .background(Color.white.opacity(0.06))
+                            .background(Color.panelFill)
                             .clipShape(.rect(cornerRadius: 6, style: .continuous))
                             .overlay(alignment: .bottomTrailing) {
                                 if ShotFilter.isRecording(file) {

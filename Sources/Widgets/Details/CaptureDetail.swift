@@ -103,8 +103,8 @@ struct CaptureDetail: View {
     private func bigButton(_ action: CaptureAction, solid: Bool) -> some View {
         let live = isLive(action)
         let locked = isLocked(action)
-        let fill: Color = live ? Color(hex: "#FF6B5A") : (solid ? palette.accent : .white.opacity(0.08))
-        let ink: Color = live || !solid ? .white : palette.ink
+        let fill: Color = live ? Color(hex: "#FF6B5A") : (solid ? palette.accent : .panelFill)
+        let ink: Color = live ? .white : (solid ? palette.ink : .panelPrimary)
         return Button {
             run(action, locked: locked, live: live)
         } label: {
@@ -128,7 +128,7 @@ struct CaptureDetail: View {
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(fill))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(solid || live ? 0 : 0.14), lineWidth: 0.6)
+                    .strokeBorder(.panelStroke.opacity(solid || live ? 0 : 1), lineWidth: 0.6)
             }
             .overlay(alignment: .topTrailing) {
                 if action.quickToggle != nil {
@@ -175,13 +175,13 @@ struct CaptureDetail: View {
         HStack {
             Text(verbatim: text)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 0)
             if let trailing, let action {
                 Button(action: action) {
                     Text(verbatim: trailing)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.panelPrimary)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -239,7 +239,7 @@ struct CaptureDetail: View {
             } else if shots.isEmpty {
                 Text(verbatim: feed.error == nil ? tr("还没有截图，截一张就会出现在这里") : tr("读不到截图文件夹"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
             } else {
                 HStack(spacing: 6) {
@@ -253,7 +253,7 @@ struct CaptureDetail: View {
                 }
                 Text(verbatim: tr("点缩略图直接进标注"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         }
     }
@@ -263,11 +263,11 @@ struct CaptureDetail: View {
             .id(file.url)
             .frame(height: 56)
             .frame(maxWidth: .infinity)
-            .background(Color.white.opacity(0.06))
+            .background(Color.panelFill)
             .clipShape(.rect(cornerRadius: 7, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(.white.opacity(0.12), lineWidth: 0.6)
+                    .strokeBorder(.panelStroke, lineWidth: 0.6)
             }
             .contentShape(.rect(cornerRadius: 7))
             .onTapGesture {
@@ -291,7 +291,7 @@ struct CaptureDetail: View {
         DetailFold(key: DetailPanelSections.foldKey(.capture, "buttons")) {
             Text(verbatim: tr("卡片上的按钮"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         } content: {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(CaptureAction.allCases) { action in
@@ -299,7 +299,7 @@ struct CaptureDetail: View {
                 }
                 Text(verbatim: buttonsNote ?? tr("最多放 \(CaptureButtons.limit) 个，箭头调整左右顺序"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(buttonsNote == nil ? 0.55 : 0.85))
+                    .foregroundStyle(.panelPrimary.opacity(buttonsNote == nil ? 0.55 : 0.85))
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 2)
             }
@@ -322,14 +322,14 @@ struct CaptureDetail: View {
                 HStack(spacing: 10) {
                     Image(systemName: on ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 16))
-                        .foregroundStyle(on ? palette.accent : .white.opacity(0.45))
+                        .foregroundStyle(on ? palette.accent : .panelTertiary)
                     Image(systemName: action.symbol)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.panelPrimary)
                         .frame(width: 18)
                     Text(verbatim: action.title)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.panelPrimary)
                     if action.quickToggle != nil {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 13))
@@ -357,9 +357,9 @@ struct CaptureDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.25))
+                .foregroundStyle(.panelPrimary.opacity(enabled ? 0.85 : 0.25))
                 .frame(width: 26, height: 24)
-                .background(Capsule().fill(.white.opacity(enabled ? 0.1 : 0.04)))
+                .background(Capsule().fill(.panelFill.opacity(enabled ? 1 : 0.45)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -393,7 +393,7 @@ private struct CaptureSegments<Item: Hashable>: View {
                 } label: {
                     Text(verbatim: title(item))
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(on ? palette.ink : .white.opacity(0.85))
+                        .foregroundStyle(on ? palette.ink : .panelPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -403,7 +403,7 @@ private struct CaptureSegments<Item: Hashable>: View {
                                     .fill(palette.accent)
                                     .padding(gap > 0 ? 0 : 2)
                             } else if gap > 0 {
-                                Capsule().fill(.white.opacity(0.08))
+                                Capsule().fill(.panelFill)
                             }
                         }
                         .contentShape(.rect)
@@ -415,13 +415,13 @@ private struct CaptureSegments<Item: Hashable>: View {
         .frame(height: height)
         .background {
             if gap == 0 {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.07))
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill)
             }
         }
         .overlay {
             if gap == 0 {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
+                    .strokeBorder(.panelStroke, lineWidth: 0.8)
             }
         }
     }

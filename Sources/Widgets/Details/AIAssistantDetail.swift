@@ -45,17 +45,17 @@ struct AIAssistantDetail: View {
             AIPandaAvatar(size: 28)
             Text(state.mode == .manage ? tr("管理字牌") : tr("问问 AI"))
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 0)
             Button(state.mode == .manage ? tr("完成") : tr("管理字牌")) {
                 state.mode = state.mode == .manage ? .ask : .manage
             }
             .buttonStyle(.plain)
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.white.opacity(0.85))
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.panelPrimary)
             .padding(.horizontal, 10)
             .frame(height: 24)
-            .background(Capsule().fill(.white.opacity(0.12)))
+            .background(Capsule().fill(.panelFill))
             .accessibilityLabel(state.mode == .manage ? tr("完成管理，回到提问") : tr("管理字牌"))
         }
     }
@@ -100,7 +100,7 @@ private struct AIAskView: View {
                     Spacer(minLength: 0)
                     Button(action: submitFromButton) {
                         Text(buttonTitle)
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(panelTint.ink(or: .white))
                             .padding(.horizontal, 12)
                             .frame(height: 28)
@@ -117,16 +117,16 @@ private struct AIAskView: View {
                 }
                 if let hint = state.hint(instance.id) {
                     Text(hint)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.updatesFrequently)
                 } else {
                     Text(target?.supportsAsk == true
                          ? tr("Enter 提交，Shift+Enter 换行。会在浏览器打开 \(target?.title ?? "")。")
                          : tr("Enter 提交，Shift+Enter 换行。\(target?.title ?? tr("这个服务"))不支持带问题打开，会先复制问题。"))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -142,7 +142,7 @@ private struct AIAskView: View {
             if state.draft(instance.id).isEmpty {
                 Text("想问点什么？")
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.panelTertiary)
                     .padding(.leading, 5)
                     .padding(.top, 1)
                     .allowsHitTesting(false)
@@ -240,12 +240,12 @@ private struct AIAskView: View {
                 if let target {
                     AIGlyph(initial: target.initial, size: 20, style: .panel)
                     Text(tr("发给 \(target.title)"))
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelPrimary)
                 }
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
             }
         }
         .menuStyle(.borderlessButton)
@@ -353,8 +353,8 @@ private struct AIManageView: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(tr("勾选的显示在卡片上，最多 \(AIServices.maxCount) 个。点“设为默认”改蓝点。"))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if !enabled.isEmpty {
                     section(tr("卡片上的顺序")) {
@@ -386,8 +386,8 @@ private struct AIManageView: View {
                         formOpen = true
                     } label: {
                         Label("自定义…", systemImage: "plus")
-                            .font(.system(size: 12.5, weight: .medium))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.panelPrimary)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("添加自定义服务")
@@ -410,8 +410,8 @@ private struct AIManageView: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelTertiary)
                 .padding(.bottom, 2)
                 .accessibilityAddTraits(.isHeader)
             content()
@@ -427,8 +427,8 @@ private struct AIManageView: View {
                 HStack(spacing: 8) {
                     AIGlyph(initial: service.initial, size: 20, style: .panel)
                     Text(service.title)
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelPrimary)
                 }
             }
             .toggleStyle(.checkbox)
@@ -437,14 +437,14 @@ private struct AIManageView: View {
             Spacer(minLength: 0)
             if service.supportsAsk {
                 Text("可带问题")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
             }
             if removable {
                 Button("删除") { change { AIServices.removeCustom(service.id, in: &$0) } }
                     .buttonStyle(.plain)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color(hex: PaletteColor.red.hex))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: PaletteColor.red.hex).panelReadable)
                     .accessibilityLabel(tr("删除 \(service.title)"))
             }
         }
@@ -455,12 +455,12 @@ private struct AIManageView: View {
         HStack(spacing: 8) {
             AIGlyph(initial: service.initial, size: 20, isDefault: isDefault, style: .panel)
             Text(service.title)
-                .font(.system(size: 12.5))
-                .foregroundStyle(.white)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary)
             if isDefault {
                 Text("默认")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(Color(hex: AIGlyph.dotHex))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: AIGlyph.dotHex).panelReadable)
             }
             Spacer(minLength: 0)
             if !isDefault {
@@ -484,8 +484,8 @@ private struct AIManageView: View {
     private func smallButton(_ title: String, label: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action)
             .buttonStyle(.plain)
-            .font(.system(size: 11.5))
-            .foregroundStyle(.white.opacity(0.8))
+            .font(.system(size: 13))
+            .foregroundStyle(.panelPrimary)
             .accessibilityLabel(label)
     }
 
@@ -494,9 +494,9 @@ private struct AIManageView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(disabled ? 0.25 : 0.8))
+                .foregroundStyle(.panelPrimary.opacity(disabled ? 0.25 : 0.8))
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(.white.opacity(0.08)))
+                .background(Circle().fill(.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -529,8 +529,8 @@ private struct AICustomForm: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("自定义服务")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelTertiary)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 8) {
                 field(tr("名字"), text: Binding(get: { state.form.name }, set: { state.form.name = $0 }),
@@ -544,15 +544,15 @@ private struct AICustomForm: View {
                     .accessibilityLabel("从应用程序文件夹选一个 App")
                 if let path = state.form.appPath {
                     Text((path as NSString).lastPathComponent)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Button {
                         state.form.appPath = nil
                         state.form.appBundleID = nil
                     } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.5))
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.panelTertiary)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("不用这个 App")
@@ -568,13 +568,13 @@ private struct AICustomForm: View {
             }
             if let error {
                 Text(error)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text("网址和 App 填一个就行；两个都填时装了 App 就开 App。")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -585,8 +585,8 @@ private struct AICustomForm: View {
     private func field(_ title: String, text: Binding<String>, prompt: String, focus: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
             AIFormField(text: text, placeholder: prompt, label: title, focusOnAppear: focus,
                         onSubmit: add, onCancel: cancel)
                 .frame(height: 22)
@@ -694,8 +694,8 @@ struct AskTextEditor: NSViewRepresentable {
         view.allowsUndo = true
         view.drawsBackground = false
         view.font = .systemFont(ofSize: 14)
-        view.textColor = .white
-        view.insertionPointColor = .white
+        view.textColor = .labelColor
+        view.insertionPointColor = .labelColor
         view.isAutomaticQuoteSubstitutionEnabled = false
         view.isAutomaticDashSubstitutionEnabled = false
         view.isAutomaticTextReplacementEnabled = false

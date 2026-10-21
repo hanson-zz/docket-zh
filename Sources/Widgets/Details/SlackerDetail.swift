@@ -70,7 +70,7 @@ struct SlackerDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.15))
+                    Capsule().fill(.panelTrack)
                     Capsule().fill(accent)
                         .frame(width: max(6, proxy.size.width * progress.fraction))
                 }
@@ -78,7 +78,7 @@ struct SlackerDetail: View {
             .frame(height: 8)
             Text(SlackerClock.progressLine(done: progress.done, left: progress.left))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -115,6 +115,7 @@ struct SlackerDetail: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
                 }
+                // 表盘画在自己的底色或图片上，不跟面板外观：保持浅色环境，字和水波的颜色才和底色对得上。
                 .environment(\.colorScheme, .light)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(SlackerLook.spoken(reading))
@@ -126,8 +127,8 @@ struct SlackerDetail: View {
         let chosen = settings.workdays
         return VStack(alignment: .leading, spacing: 6) {
             Text("工作日")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 4) {
                 ForEach(SlackerClock.weekdayChoices, id: \.value) { choice in
                     let day = Int(choice.value) ?? 0
@@ -153,20 +154,20 @@ struct SlackerDetail: View {
             row(tr("工作时间")) {
                 HStack(spacing: 6) {
                     timePicker(s.start) { setHours(start: $0, end: s.end) }
-                    Text("至").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
+                    Text("至").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                     timePicker(s.end) { setHours(start: s.start, end: $0) }
                 }
             }
             if timeWarning {
                 Text("上班和下班不能是同一时间。")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.35))
+                    .foregroundStyle(Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.35).panelReadable)
                     .padding(.horizontal, 10)
             } else if s.isOvernight {
                 // 下班早于上班按第二天算。
                 Text(SlackerClock.hoursLine(s))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .padding(.horizontal, 10)
             }
@@ -179,8 +180,8 @@ struct SlackerDetail: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("背景")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Picker("", selection: Binding(get: { tab }, set: { backgroundTab = $0 })) {
                     Text("颜色").tag(BackgroundTab.color)
                     Text("图片").tag(BackgroundTab.image)
@@ -207,8 +208,8 @@ struct SlackerDetail: View {
                 get: { tinted },
                 set: { on in write { $0.set(SlackerClock.tintKey, .bool(on)) } })) {
                 Text("随状态变色（上班橙、下班绿、周末蓝）")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelPrimary)
             }
             .toggleStyle(.switch)
             .tint(panelTint.control)
@@ -245,8 +246,8 @@ struct SlackerDetail: View {
     private var textColorRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("字体颜色")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             swatches(SlackerClock.textSwatches,
                      selected: SlackerClock.textHex(config),
                      custom: Binding(
@@ -330,7 +331,7 @@ struct SlackerDetail: View {
     private var paydayRow: some View {
         row(tr("发薪日")) {
             HStack(spacing: 4) {
-                Text("每月").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
+                Text("每月").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                 Picker("", selection: Binding(
                     get: { settings.payday },
                     set: { day in write { $0.set(SlackerClock.paydayKey, .number(Double(day))) } })) {
@@ -338,7 +339,7 @@ struct SlackerDetail: View {
                 }
                 .labelsHidden()
                 .fixedSize()
-                Text("日").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
+                Text("日").font(.system(size: 13)).foregroundStyle(.panelSecondary)
             }
         }
     }
@@ -353,7 +354,7 @@ struct SlackerDetail: View {
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 72)
-                Text("元").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
+                Text("元").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                 Stepper("", value: Binding(get: { income }, set: { setIncome($0) }),
                         in: SlackerClock.incomeRange, step: SlackerClock.incomeStep)
                     .labelsHidden()
@@ -378,8 +379,8 @@ struct SlackerDetail: View {
     private func row<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 8) {
             Text(title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .layoutPriority(1)
             Spacer(minLength: 4)
@@ -398,14 +399,14 @@ struct SlackerDetail: View {
                 .lineLimit(1)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 4)
-                .foregroundStyle(on ? Color.white : Color.white.opacity(0.6))
+                .foregroundStyle(on ? Color.white : Color.panelSecondary)
                 .background {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(on ? accent.opacity(0.85) : Color.white.opacity(0.06))
+                        .fill(on ? accent.opacity(0.85) : Color.panelFill)
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(.white.opacity(on ? 0.35 : 0.18), lineWidth: 0.5)
+                        .strokeBorder(on ? Color.white.opacity(0.35) : .panelStroke, lineWidth: 0.5)
                 }
                 .contentShape(.rect)
         }
@@ -424,9 +425,9 @@ struct SlackerDetail: View {
                         Circle()
                             .fill(Color(hex: hex))
                             .frame(width: 18, height: 18)
-                            .overlay { Circle().strokeBorder(.white.opacity(0.35), lineWidth: 0.5) }
+                            .overlay { Circle().strokeBorder(.panelQuaternary, lineWidth: 0.5) }
                             .padding(2)
-                            .overlay { Circle().strokeBorder(.white, lineWidth: 1.5).opacity(on ? 1 : 0) }
+                            .overlay { Circle().strokeBorder(.panelPrimary, lineWidth: 1.5).opacity(on ? 1 : 0) }
                             .contentShape(.circle)
                     }
                     .buttonStyle(.plain)
@@ -437,10 +438,10 @@ struct SlackerDetail: View {
                     .help("自定义颜色")
             }
             HStack(spacing: 6) {
-                Text("自定义").font(.system(size: 10)).foregroundStyle(.white.opacity(0.6))
+                Text("自定义").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                 TextField("#RRGGBB", text: draft)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(size: 13, design: .monospaced))
                     .frame(width: 90)
                     .onSubmit {
                         if let code = ColorCode(hex: draft.wrappedValue) { pick(code.hex) }

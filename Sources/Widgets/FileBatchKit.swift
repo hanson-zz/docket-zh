@@ -28,10 +28,10 @@ struct FilePanelHeader: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: title)
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
                     .truncationMode(.middle)
             }
@@ -41,11 +41,11 @@ struct FilePanelHeader: View {
                 Button(action: action) {
                     Text(verbatim: button)
                         .font(.system(size: 13, weight: prominent ? .bold : .semibold))
-                        .foregroundStyle(prominent ? palette.ink : .white.opacity(0.92))
+                        .foregroundStyle(prominent ? palette.ink : .panelPrimary)
                         .padding(.horizontal, prominent ? 15 : 13)
                         .frame(height: 28)
-                        .background(Capsule().fill(prominent ? palette.accent : .white.opacity(0.12)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(prominent ? 0 : 0.18), lineWidth: 0.6))
+                        .background(Capsule().fill(prominent ? palette.accent : .panelFill))
+                        .overlay(Capsule().strokeBorder(.panelStroke.opacity(prominent ? 0 : 1), lineWidth: 0.6))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -65,18 +65,18 @@ struct FileSearchField: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
-            TextField("", text: $text, prompt: Text(verbatim: prompt).foregroundStyle(.white.opacity(0.45)))
+                .foregroundStyle(.panelSecondary)
+            TextField("", text: $text, prompt: Text(verbatim: prompt).foregroundStyle(.panelTertiary))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($focused)
                 .onExitCommand { text = "" }
             if !text.isEmpty {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                 }
                 .buttonStyle(.plain)
                 .help(tr("清空搜索"))
@@ -85,10 +85,10 @@ struct FileSearchField: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(focused || !text.isEmpty ? palette.accent.opacity(0.9) : .white.opacity(0.14),
+                .strokeBorder(focused || !text.isEmpty ? palette.accent.opacity(0.9) : .panelStroke,
                               lineWidth: focused || !text.isEmpty ? 1.2 : 0.6)
         }
         .contentShape(.rect)
@@ -113,12 +113,12 @@ struct FileFilterChips<Item: Hashable>: View {
                     } label: {
                         Text(verbatim: title(item))
                             .font(.system(size: 13, weight: on ? .bold : .semibold))
-                            .foregroundStyle(on ? palette.ink : .white.opacity(0.88))
+                            .foregroundStyle(on ? palette.ink : .panelPrimary)
                             .lineLimit(1)
                             .padding(.horizontal, 9)
                             .frame(height: 30)
-                            .background(Capsule().fill(on ? palette.accent : .white.opacity(0.08)))
-                            .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+                            .background(Capsule().fill(on ? palette.accent : .panelFill))
+                            .overlay(Capsule().strokeBorder(.panelStroke.opacity(on ? 0 : 1), lineWidth: 0.6))
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -242,7 +242,7 @@ struct FileSelectList: View {
             HStack {
                 Text(verbatim: tr("\(files.count) 个"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 if !files.isEmpty {
                     Button(selection.allSelected(files.map(\.url)) ? tr("全不选") : tr("全选")) {
@@ -250,13 +250,13 @@ struct FileSelectList: View {
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(palette.accent)
+                    .foregroundStyle(palette.accent.panelReadable)
                 }
             }
             if files.isEmpty {
                 Text(verbatim: emptyText)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 80)
             } else {
                 list
@@ -265,7 +265,7 @@ struct FileSelectList: View {
             if let notice {
                 Text(verbatim: notice)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -319,7 +319,7 @@ struct FileSelectList: View {
             ZStack {
                 Circle()
                     .fill(on ? palette.accent : .clear)
-                    .overlay(Circle().strokeBorder(on ? .clear : .white.opacity(0.45), lineWidth: 1.4))
+                    .overlay(Circle().strokeBorder(on ? .clear : .panelTertiary, lineWidth: 1.4))
                 if on {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .heavy))
@@ -333,24 +333,24 @@ struct FileSelectList: View {
                     TextField("", text: $renameText)
                         .textFieldStyle(.plain)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .focused($renameFocused)
                         .onSubmit { commitRename() }
                         .onExitCommand { cancelRename() }
                         .padding(.horizontal, 6)
                         .frame(height: 24)
-                        .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(0.12)))
+                        .background(RoundedRectangle(cornerRadius: 7).fill(.panelFill))
                         .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(palette.accent.opacity(0.9), lineWidth: 1.2))
                 } else {
                     Text(verbatim: file.name)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
                 Text(verbatim: FileRowCaption.text(file, now: now))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -359,9 +359,9 @@ struct FileSelectList: View {
         .frame(height: Self.rowHeight)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(on ? 0.12 : 0.06))
+                .fill(on ? Color.panelFillStrong : .panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(on ? 0.2 : 0.1), lineWidth: 0.6))
+                    .strokeBorder(.panelStroke, lineWidth: 0.6))
         }
         .contentShape(.rect(cornerRadius: 12))
         // 双击在前、单击在后，SwiftUI 才分得清。
@@ -388,7 +388,7 @@ struct FileSelectList: View {
         case .thumbnail:
             FileThumb(url: file.url, pixels: 96, fill: file.isImage)
                 .frame(width: 40, height: 30)
-                .background(Color.white.opacity(0.06))
+                .background(Color.panelFill)
                 .clipShape(.rect(cornerRadius: 6, style: .continuous))
         }
     }
@@ -440,17 +440,17 @@ struct FileSelectList: View {
         }
     }
 
-    private func barButton(_ title: String, solid: Bool = false, tint: Color = .white,
+    private func barButton(_ title: String, solid: Bool = false, tint: Color = .panelPrimary,
                            disabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 14, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? palette.ink : tint)
+                .foregroundStyle(solid ? palette.ink : tint.panelReadable)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)
-                .background(Capsule().fill(solid ? palette.accent : .white.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(solid ? palette.accent : .panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -462,7 +462,7 @@ struct FileSelectList: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(verbatim: tr("移到"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 2)
             ForEach(FileBatch.destinations(excluding: feed.folder)) { place in
@@ -477,7 +477,7 @@ struct FileSelectList: View {
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(hex: "#34343A")))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
     }
 
@@ -548,10 +548,10 @@ private struct MenuRow: View {
             HStack(spacing: 10) {
                 Image(systemName: "folder.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(hovered ? palette.accent : .white.opacity(0.6))
+                    .foregroundStyle(hovered ? palette.accent.panelReadable : .panelSecondary)
                 Text(verbatim: title)
                     .font(.system(size: 14, weight: hovered ? .semibold : .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
