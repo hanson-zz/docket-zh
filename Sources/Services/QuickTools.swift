@@ -331,7 +331,7 @@ private struct KeyboardLockView: View {
 
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(KeyboardLockTiming.remainingText(ends.timeIntervalSince(context.date)))
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -467,7 +467,7 @@ private struct QRCodeView: View {
                     .padding(10)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: 10))
                 Text(RecognizedText.preview(text, limit: 60))
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -493,7 +493,7 @@ private struct QRCodeView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.tertiary)
             Text(text)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("重新读取剪贴板") { model.readClipboard() }
@@ -506,10 +506,10 @@ private struct QRCodeView: View {
         if let text = model.scanned {
             VStack(alignment: .leading, spacing: 6) {
                 Label("已拷贝识别结果", systemImage: "checkmark.circle.fill")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.green)
                 Text(text)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .lineLimit(4)
                     .textSelection(.enabled)
                 if let url = QRText.webURL(text) {
@@ -519,7 +519,7 @@ private struct QRCodeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if let message = model.scanMessage {
             Text(message)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }

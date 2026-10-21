@@ -110,11 +110,11 @@ struct PhotoFrameTile: View {
             VStack(alignment: .leading, spacing: 0) {
                 if let headline {
                     Text(headline)
-                        .font(.system(size: 9.5, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 Text(line)
-                    .font(.system(size: 12.5, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

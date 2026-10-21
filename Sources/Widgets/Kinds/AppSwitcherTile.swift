@@ -80,7 +80,7 @@ struct AppSwitcherTile: View {
     /// The rest are in the panel, which the card opens.
     private func more(_ count: Int, size: CGFloat) -> some View {
         Text("+\(count)")
-            .font(.system(size: 11, weight: .semibold).monospacedDigit())
+            .font(.system(size: 13, weight: .semibold).monospacedDigit())
             .foregroundStyle(WidgetStyle.secondary)
             .frame(width: size, height: size)
             .background(Circle().fill(WidgetStyle.primary.opacity(0.08)))

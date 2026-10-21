@@ -97,12 +97,12 @@ struct CountdownTile: View {
                         .font(.system(size: 9.5, weight: .semibold))
                         .foregroundStyle(accent)
                     Text(nearest.date.title)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     Text(CountdownList.daysText(nearest.days))
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
@@ -112,12 +112,12 @@ struct CountdownTile: View {
             } else {
                 HStack(spacing: 4) {
                     Text(title)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     Text(tr("上次 \(CountdownRun.lengthText(CountdownRun.duration(instance.config)))"))
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary.opacity(0.8))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -125,7 +125,7 @@ struct CountdownTile: View {
             }
             HStack(spacing: 5) {
                 ForEach(Array(presets.enumerated()), id: \.offset) { index, minutes in
-                    TimerPill(title: CountdownRun.presetLabel(minutes), size: 12, height: 22,
+                    TimerPill(title: CountdownRun.presetLabel(minutes), size: 13, height: 22,
                               tint: index == last ? accent : nil, minWidth: 40,
                               action: context.isPreview ? nil : { start(minutes: minutes) })
                         .accessibilityLabel(tr("开始 \(minutes) 分钟倒计时"))
@@ -142,7 +142,7 @@ struct CountdownTile: View {
                 VStack(alignment: .leading, spacing: 0) {
                     reading(left, size: 21, maxWidth: 96)
                     Text(runningCaption(paused: paused))
-                        .font(.system(size: 10))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -184,7 +184,7 @@ struct CountdownTile: View {
                                 .font(.system(size: 18, weight: .heavy))
                                 .foregroundStyle(WidgetStyle.primary)
                             Text(tr("\(title) \(CountdownRun.lengthText(timer.duration))"))
-                                .font(.system(size: 10))
+                                .font(.system(size: 13))
                                 .foregroundStyle(WidgetStyle.primary.opacity(0.75))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
@@ -195,7 +195,7 @@ struct CountdownTile: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(WidgetStyle.primary.opacity(0.9))
                                 .symbolEffect(.variableColor.iterative, isActive: shakes)
-                            TimerPill(title: tr("点一下停"), size: 9.5, height: 16, action: nil)
+                            TimerPill(title: tr("点一下停"), size: 13, height: 20, action: nil)
                         }
                     }
                 }

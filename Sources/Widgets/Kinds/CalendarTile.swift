@@ -75,10 +75,10 @@ struct CalendarTile: View {
     private var wide: some View {
         switch layout {
         case "date":
-            dateBlock(weekday: 12, day: 28, dots: true)
+            dateBlock(weekday: 13, day: 28, dots: true)
         case "dateAndEvent":
             HStack(spacing: 12) {
-                dateBlock(weekday: 10, day: 24, dots: true)
+                dateBlock(weekday: 13, day: 24, dots: true)
                 nextEvent
             }
         case CalendarDay.timelineLayout:
@@ -99,12 +99,12 @@ struct CalendarTile: View {
                 HStack(spacing: 5) {
                     dot(accent, size: 6)
                     Text(CalendarDay.countdown(start: event.start, end: event.end, now: now))
-                        .font(.system(size: 12.5, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(accent)
                         .monospacedDigit()
                     Spacer(minLength: 2)
                     Text(CalendarDay.clock(event.start))
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(WidgetStyle.secondary)
                         .monospacedDigit()
                 }
@@ -113,7 +113,7 @@ struct CalendarTile: View {
                     .foregroundStyle(WidgetStyle.primary)
                     .padding(.top, 1)
                 Text(event.whereLine)
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .monospacedDigit()
                 Spacer(minLength: 2)
@@ -126,7 +126,7 @@ struct CalendarTile: View {
                         .frame(height: 0.5)
                         .padding(.top, 2)
                     Text(tr("之后 \(CalendarDay.clock(after.start)) \(after.title)"))
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .monospacedDigit()
                 }
@@ -145,7 +145,7 @@ struct CalendarTile: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                     Text(allDay.detail)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
                 Spacer(minLength: 0)
@@ -166,7 +166,7 @@ struct CalendarTile: View {
                 Image(systemName: "video.fill")
                     .font(.system(size: 10, weight: .semibold))
                 Text(link.provider.joinTitle)
-                    .font(.system(size: 11.5, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
             }
             .foregroundStyle(Color.black.opacity(0.82))
             .frame(maxWidth: .infinity)
@@ -239,12 +239,12 @@ struct CalendarTile: View {
             Text(remaining.isEmpty
                  ? (timedEvents.isEmpty ? tr("今天没有日程") : tr("今天的日程都结束了"))
                  : tr("今天还剩 \(remaining.count) 个"))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
             Spacer(minLength: 4)
             if let next = remaining.first {
                 Text(CalendarDay.nextLine(start: next.start, now: now))
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(accent)
                     .monospacedDigit()
             }
@@ -463,7 +463,7 @@ struct CalendarTile: View {
                 .font(.system(size: 14))
                 .foregroundStyle(WidgetStyle.secondary)
             Text(text)
-                .font(WidgetStyle.caption(12))
+                .font(WidgetStyle.caption(13))
                 .foregroundStyle(WidgetStyle.secondary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)

@@ -130,7 +130,7 @@ struct WidgetDetailBody: View {
             // panel. Better an honest line than a panel that explains its
             // own absence.
             Text("此小组件没有更多详情。")
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

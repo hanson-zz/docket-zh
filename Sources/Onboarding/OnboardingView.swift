@@ -517,7 +517,7 @@ private struct UseCard: View {
                     Text(use.title)
                         .font(.system(size: 15, weight: .semibold))
                     Text(use.caption)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -703,7 +703,7 @@ private struct PermissionRow: View {
                 Text(trKey(permission))
                     .font(.system(size: 14, weight: .semibold))
                 Text(usedBy.isEmpty ? status.caption : tr("\(usedBy)用到 · \(status.caption)"))
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(status == .granted ? Color.green : .secondary)
                     .lineLimit(2)
             }
@@ -711,7 +711,7 @@ private struct PermissionRow: View {
             if status == .granted {
                 Label("已授权", systemImage: "checkmark.circle.fill")
                     .labelStyle(.titleAndIcon)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.green)
             } else {
                 Button("去授权") {

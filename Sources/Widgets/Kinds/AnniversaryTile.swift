@@ -95,7 +95,7 @@ struct AnniversaryTile: View {
                     panda(height: 50)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(reading.event.title)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(tint)
                             .lineLimit(1)
                         Text(reading.anniversaryNote.map { tr("\($0)啦") } ?? tr("就是今天"))
@@ -104,7 +104,7 @@ struct AnniversaryTile: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                         Text("点开生成分享图")
-                            .font(WidgetStyle.caption(9))
+                            .font(WidgetStyle.caption(13))
                             .foregroundStyle(WidgetStyle.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
@@ -116,7 +116,7 @@ struct AnniversaryTile: View {
                     if showsLeaf { flippingLeaf(reading, width: 40, height: 48) }
                     VStack(alignment: .leading, spacing: 0) {
                         Text(verbatim: showsLeaf ? reading.word : "\(reading.event.title) · \(reading.word)")
-                            .font(.system(size: 9.5, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(showsLeaf ? WidgetStyle.secondary : tint)
                             .lineLimit(1)
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
@@ -126,13 +126,13 @@ struct AnniversaryTile: View {
                                 .monospacedDigit()
                                 .rollingValue(reading.days)
                             Text("天")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(WidgetStyle.secondary)
                         }
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                         Text(Anniversary.tileLine(reading, today: context.now))
-                            .font(WidgetStyle.caption(9))
+                            .font(WidgetStyle.caption(13))
                             .foregroundStyle(WidgetStyle.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)

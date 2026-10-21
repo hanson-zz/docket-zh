@@ -65,12 +65,12 @@ struct ColorPickerTile: View {
             HStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(recent.first.map { style.hexStyle.apply($0.hex) } ?? tr("还没有取色"))
-                        .font(.system(size: 12, weight: .bold).monospacedDigit())
+                        .font(.system(size: 13, weight: .bold).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(copied.map { tr("已拷贝 \($0)") } ?? tr("点色块拷贝"))
-                        .font(.system(size: 8.5, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)

@@ -94,7 +94,7 @@ struct SupportSections: View {
             Text("联系我们")
         } footer: {
             Text("右键点击链接可以拷贝。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
 
@@ -173,12 +173,12 @@ struct SponsorView: View {
                         Label("已解锁 Pro 专属配色、表盘和角色，谢谢你！", systemImage: "heart.fill")
                             .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
                         Text("配色在 设置 ▸ 扩展栏 ▸ 外观；表盘在时钟小组件的样式里：霓虹、实景、液晶，翻页样式的卡片可选“大号带时分秒”；角色在喝水和电子宠物的面板或设置里选：柴犬、橘猫、企鹅、水獭、章鱼。")
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     } else {
                         // “我已赞助”凭诚信解锁已停用，老赞助者改领兑换码；按过的照旧算解锁。
                         Label("老赞助者请联系作者领取码头 Pro 兑换码，在 设置 ▸ 码头 Pro 输入即可解锁。", systemImage: "gift")
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -194,7 +194,7 @@ struct SponsorView: View {
                                 Image(systemName: m.symbol)
                                 Text(m.title)
                             }
-                            .font(.callout.weight(.semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(method == m ? Color.white : m.color)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -233,11 +233,11 @@ struct SponsorView: View {
                     .tint(method.color)
                     .contextMenu { Button("拷贝链接") { Support.copy(Support.kofiURL.absoluteString) } }
                     Text("支持 PayPal 和信用卡，适合海外用户")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 } else {
                     Text(tr("用\(method.title)扫一扫，金额随意"))
-                        .font(.callout)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
             }

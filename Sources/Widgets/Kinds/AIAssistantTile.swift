@@ -220,7 +220,7 @@ struct AIAssistantTile: View {
         } label: {
             HStack(spacing: 3) {
                 Image(systemName: "plus").font(.system(size: 10, weight: .bold))
-                Text("添加").font(WidgetStyle.label(11))
+                Text("添加").font(WidgetStyle.label(13))
             }
             .foregroundStyle(WidgetStyle.primary)
             .frame(width: 52, height: 26)

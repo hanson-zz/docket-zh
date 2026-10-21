@@ -201,7 +201,7 @@ struct GroupSheet: View {
             TextField("名称", text: $draft)
                 .textFieldStyle(.plain)
                 .multilineTextAlignment(.center)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(editing ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .focused($editing)
                 .lineLimit(1)
@@ -331,7 +331,7 @@ private struct GroupSheetItem: View {
             icon
                 .frame(width: carriedSide, height: carriedSide)
             Text(name)
-                .font(.system(size: 10))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)

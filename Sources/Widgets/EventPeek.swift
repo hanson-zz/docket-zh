@@ -223,10 +223,10 @@ struct EventPeekCard: View {
             if !peek.heading.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(peek.heading)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                     if !peek.subheading.isEmpty {
                         Text(peek.subheading)
-                            .font(.system(size: 11))
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -234,7 +234,7 @@ struct EventPeekCard: View {
             }
             if peek.items.isEmpty, !peek.heading.isEmpty {
                 Text(tr("没有日程"))
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
             ForEach(peek.items) { item in
@@ -242,7 +242,7 @@ struct EventPeekCard: View {
             }
             if peek.more > 0 {
                 Text(EventPeekText.moreLine(peek.more))
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
         }
@@ -271,7 +271,7 @@ struct EventPeekCard: View {
                         Circle().fill(color).frame(width: 7, height: 7)
                             .frame(width: 12)
                         Text(item.calendar)
-                            .font(.system(size: 11))
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -282,7 +282,7 @@ struct EventPeekCard: View {
                             Image(systemName: "video.fill")
                                 .font(.system(size: 10, weight: .semibold))
                             Text(link.provider.joinTitle)
-                                .font(.system(size: 11.5, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                         }
                         .foregroundStyle(Color.black.opacity(0.82))
                         .padding(.horizontal, 12)
@@ -308,7 +308,7 @@ struct EventPeekCard: View {
                 .font(.system(size: 10))
                 .frame(width: 12)
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 13))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }

@@ -23,7 +23,7 @@ struct AINotchSettingsSection: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Label(tr("刘海对话是码头 Pro 功能。没有解锁时点刘海或按快捷键只会打开付费墙；AI 卡片跳转到网页或 App 照旧免费。"),
                           systemImage: "lock.fill")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
@@ -55,7 +55,7 @@ struct AINotchSettingsSection: View {
             if shiduoRunning {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Label(AIShiduo.explanation, systemImage: "rectangle.on.rectangle")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if state.aiNotch.hotKey == nil {
@@ -69,7 +69,7 @@ struct AINotchSettingsSection: View {
             ProLabel(title: tr("AI 助手"), isPro: true)
         } footer: {
             Text("入口就是刘海本身，不占菜单栏的地方：指针移到刘海上，刘海下面会长出一小条显示小熊猫，点一下刘海或按快捷键才展开；回答生成中那一小条里是三个跳动的小点。外接屏的入口是菜单栏下方正中的小胶囊，平时半透明。「拾掇」在运行时刘海让给拾掇，码头不在刘海上放入口，请用快捷键或货架上 AI 卡片的小熊猫。灵动提示出现时入口暂时让位。货架上 AI 卡片的小熊猫打开的是同一个对话。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -88,7 +88,7 @@ struct AINotchSettingsSection: View {
             Text("AI 助手的打开方式")
         } footer: {
             Text("网页：在面板里打开官方网页，用你自己的账号，登录一次会记住。API：填了密钥后可选，兼容 OpenAI 的 /chat/completions 流式接口，密钥存在钥匙串里。跳转：打开 Mac App 或浏览器，和以前一样。豆包的 API 要填火山方舟的接入点 ID 作为模型名。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -125,7 +125,7 @@ private struct AIServiceModeRow: View {
                 Text(service.title)
                 if hasKey {
                     Text("已填密钥")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
@@ -137,7 +137,7 @@ private struct AIServiceModeRow: View {
                             settings.modes[service.id] = mode
                         } label: {
                             Text(mode.title)
-                                .font(.system(size: 12, weight: on ? .semibold : .regular))
+                                .font(.system(size: 13, weight: on ? .semibold : .regular))
                                 .frame(width: 42, height: 22)
                                 .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
                                     .fill(on ? Color.accentColor.opacity(0.85) : Color.clear))
@@ -216,7 +216,7 @@ private struct AIServiceModeRow: View {
                     .accessibilityLabel(tr("\(service.title) 的模型名"))
             }
             Text(note ?? detailHint(fallback))
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

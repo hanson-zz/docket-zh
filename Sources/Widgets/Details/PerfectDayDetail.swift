@@ -79,7 +79,7 @@ struct PerfectDayDetail: View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("小熊猫的竹篮")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(.white.opacity(0.7))
                 HStack(spacing: 4) {
@@ -110,7 +110,7 @@ struct PerfectDayDetail: View {
                     if monthsBack != 0 {
                         Button { monthsBack = 0 } label: {
                             Text("回到本月")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
                                 .background(Capsule().fill(.white.opacity(0.14)))
@@ -143,7 +143,7 @@ struct PerfectDayDetail: View {
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 Text("今天")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
                 HStack(spacing: 8) {
                     ForEach(items) { item in todayCard(item) }
@@ -157,12 +157,12 @@ struct PerfectDayDetail: View {
         return VStack(spacing: 5) {
             PerfectItemRing(progress: item, size: 28, track: .white)
             Text(item.item.title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
             if let fix = PerfectDay.fix(for: item) {
                 Button { open(fix, for: item.item) } label: {
                     Text(fix.title)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(tint)
                         .lineLimit(1)
                         .padding(.horizontal, 9)
@@ -174,7 +174,7 @@ struct PerfectDayDetail: View {
                 .help(item.detail)
             } else {
                 Text(item.detail)
-                    .font(.system(size: 10))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.6))
                     .monospacedDigit()
                     .lineLimit(1)
@@ -229,7 +229,7 @@ struct PerfectDayDetail: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.95))
                         Text(line.condition)
-                            .font(.system(size: 10))
+                            .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.55))
                     }
                     .lineLimit(1)
@@ -252,7 +252,7 @@ struct PerfectDayDetail: View {
                 .fill(.white.opacity(0.08))
                 .frame(height: 1)
             Text(PerfectDay.shareStatus(all, month: month, today: context.now))
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.72))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -277,7 +277,7 @@ struct PerfectDayDetail: View {
         return VStack(spacing: 6) {
             if let notice {
                 Text(notice)
-                    .font(.system(size: 10))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.65))
                     .frame(maxWidth: .infinity)
                     .transition(.opacity)
@@ -342,7 +342,7 @@ struct PerfectDayDetail: View {
                 ForEach(PerfectBadges.grouped(statuses)) { group in
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(group.category.title) \(group.statuses.filter(\.unlocked).count)/\(group.statuses.count)")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.6))
                         badgeGrid(group.statuses)
                     }
@@ -365,12 +365,12 @@ struct PerfectDayDetail: View {
                 VStack(spacing: 4) {
                     PerfectBadgeMedal(status: status, size: 54)
                     Text(status.shownTitle)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white.opacity(status.isLit ? 1 : 0.6))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(badgeLine(status))
-                        .font(.system(size: 9))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.5))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -398,10 +398,10 @@ struct PerfectDayDetail: View {
     private var rules: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("怎么算")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.75))
             Text(PerfectDay.rules(focusGoal: context.isPreview ? FocusLog.defaultGoal : center.focusGoal()))
-                .font(.system(size: 10))
+                .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -477,7 +477,7 @@ private struct BasketBarButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5, weight: .semibold))
+            .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(ink.opacity(dimmed ? 0.45 : 1))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -595,7 +595,7 @@ struct PerfectDayShareCard: View {
                 Text("码头 Dockling")
                     .fontWeight(.semibold)
             }
-            .font(.system(size: 11))
+            .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.5))
         }
         .padding(28)
@@ -616,7 +616,7 @@ struct PerfectDayShareCard: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                         Text(tier.leafName)
-                            .font(.system(size: 10))
+                            .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.55))
                     }
                     Spacer(minLength: 8)
@@ -637,7 +637,7 @@ struct PerfectDayShareCard: View {
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white.opacity(0.95))
             Text("看喝水、习惯、专注达标几项")
-                .font(.system(size: 10.5))
+                .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.55))
                 .padding(.top, 3)
             VStack(alignment: .leading, spacing: 12) {
@@ -649,7 +649,7 @@ struct PerfectDayShareCard: View {
                                 .font(.system(size: 13.5, weight: .semibold))
                                 .foregroundStyle(.white.opacity(0.95))
                             Text(line.tier.leafName)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(Color(hex: line.tier.hexes.light).opacity(0.9))
                         }
                     }
@@ -661,7 +661,7 @@ struct PerfectDayShareCard: View {
                     Text(note)
                 }
             }
-            .font(.system(size: 10.5))
+            .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.55))
             .padding(.top, 12)
         }

@@ -109,7 +109,7 @@ struct WifiSignalTile: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary)
                         Text(reading.rssi.map { "\($0) dBm" } ?? "Wi-Fi")
-                            .font(WidgetStyle.caption(10))
+                            .font(WidgetStyle.caption(13))
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.secondary)
                     }

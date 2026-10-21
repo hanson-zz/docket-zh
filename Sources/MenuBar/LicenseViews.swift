@@ -13,7 +13,7 @@ struct LicenseSection: View {
             Text("许可")
         } footer: {
             Text("码头基于 Naman Parashar 的开源项目 Docket（MIT 许可）开发。")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundStyle(.secondary)
         }
     }
@@ -35,7 +35,7 @@ struct CreditsView: View {
                             Spacer()
                             if let url = URL(string: credit.link) {
                                 Link(credit.link, destination: url)
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                             }
                         }
                         Text(credit.usage)
@@ -76,7 +76,7 @@ private struct LicenseText: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 11, design: .monospaced))
+            .font(.system(size: 12, design: .monospaced))
             .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

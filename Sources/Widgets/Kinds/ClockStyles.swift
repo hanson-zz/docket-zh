@@ -60,7 +60,7 @@ struct ClockStyleReadout: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary)
                         Text(ClockPanelWeekday.monthDay(now, zone: zone))
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                     .lineLimit(1)
@@ -90,7 +90,7 @@ struct ClockStyleReadout: View {
                     if seconds { FlipCard(text: secondText, size: 22) }
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
-                            .font(WidgetStyle.label(10))
+                            .font(WidgetStyle.label(13))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                 }
@@ -121,7 +121,7 @@ struct ClockStyleReadout: View {
                                  size: seconds ? 22 : 28, maxWidth: parts.meridiem == nil ? 146 : 120)
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
-                            .font(WidgetStyle.label(10))
+                            .font(WidgetStyle.label(13))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                 }
@@ -165,7 +165,7 @@ struct ClockStyleReadout: View {
                         }
                         if let meridiem = parts.meridiem {
                             Text(meridiem)
-                                .font(WidgetStyle.label(10))
+                                .font(WidgetStyle.label(13))
                                 .foregroundStyle(WidgetStyle.secondary)
                         }
                     }
@@ -227,7 +227,7 @@ struct ClockStyleReadout: View {
         let said = ChineseTimeText.say(hour: c.hour ?? 0, minute: c.minute ?? 0)
         return VStack(alignment: .center, spacing: 1) {
             Text(said.period + " · " + ClockPanelWeekday.of(now, zone: zone))
-                .font(WidgetStyle.caption(vertical ? 9 : 11))
+                .font(WidgetStyle.caption(vertical ? 9 : 13))
                 .foregroundStyle(WidgetStyle.secondary)
             Text(said.time)
                 .font(.system(size: vertical ? 13 : 20, weight: .semibold, design: .serif))
@@ -254,7 +254,7 @@ struct ClockStyleReadout: View {
                     PixelText(text: text, dot: seconds ? 2.7 : 3.3)
                     if let meridiem = parts.meridiem {
                         Text(meridiem)
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                 }

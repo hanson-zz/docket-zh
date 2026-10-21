@@ -75,7 +75,7 @@ struct SystemActivityTile: View {
                             .fill(tint(metric))
                             .frame(width: 6, height: 6)
                         Text(metric.label)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                 }
@@ -146,8 +146,9 @@ struct SystemActivityTile: View {
         VStack(spacing: 6) {
             ForEach(metrics, id: \.self) { metric in
                 HStack(spacing: 8) {
+                    // 条形样式三四行叠在 58pt 里、名字列 44pt 宽，13pt 放不下（英文 Memory 也会被截），保留 11pt。
                     Text(metric.label)
-                        .font(WidgetStyle.note)
+                        .font(WidgetStyle.caption(11))
                         .foregroundStyle(WidgetStyle.secondary)
                         .frame(width: 44, alignment: .leading)
                     GeometryReader { geo in

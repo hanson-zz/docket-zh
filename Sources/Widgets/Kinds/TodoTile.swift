@@ -216,7 +216,7 @@ struct TodoTile: View {
                             .foregroundStyle(WidgetStyle.secondary)
                     }
                 }
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             }

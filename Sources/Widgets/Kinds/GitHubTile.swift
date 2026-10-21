@@ -61,7 +61,7 @@ struct GitHubTile: View {
                     badge(size: WidgetStyle.badge)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(GitHubWatch.tileTitle(repos))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(WidgetStyle.secondary)
                         HStack(spacing: 3) {
                             Image(systemName: "star.fill")

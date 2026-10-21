@@ -11437,6 +11437,17 @@
         }
       }
     },
+    "周一到周五" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mon-Fri"
+          }
+        }
+      }
+    },
     "按钮控制需要辅助功能权限" : {
       "extractionState" : "manual",
       "localizations" : {

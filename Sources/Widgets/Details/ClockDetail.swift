@@ -137,11 +137,11 @@ struct ClockPanelRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(label)
-                .font(WidgetStyle.caption(11))
+                .font(WidgetStyle.caption(13))
                 .foregroundStyle(WidgetStyle.secondary)
             Spacer(minLength: 0)
             Text(value)
-                .font(WidgetStyle.label(11))
+                .font(WidgetStyle.label(13))
                 .monospacedDigit()
                 .foregroundStyle(WidgetStyle.primary)
                 .rollingValue(value)

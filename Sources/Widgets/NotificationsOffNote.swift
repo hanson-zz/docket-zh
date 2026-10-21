@@ -107,7 +107,7 @@ struct NotificationsOffNote: View {
                         Image(systemName: "bell.slash.fill")
                             .font(.system(size: 10, weight: .semibold))
                         Text(tr("系统通知已关闭 · 去开启"))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }

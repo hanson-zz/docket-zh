@@ -295,7 +295,7 @@ struct WidgetLibraryView: View {
                 Spacer(minLength: 0)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 11).monospacedDigit())
+                        .font(.system(size: 13).monospacedDigit())
                         .foregroundStyle(selected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
                 }
             }
@@ -330,7 +330,7 @@ struct WidgetLibraryView: View {
                     .foregroundStyle(.secondary)
                 Text("添加小组件").font(.system(size: 14, weight: .semibold))
                 Text("\(widgetCount(libraryCards))")
-                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 1.5)
@@ -363,7 +363,7 @@ struct WidgetLibraryView: View {
             Image(systemName: "magnifyingglass").font(.system(size: 22))
             Text("没有匹配的小组件").font(.system(size: 13))
             Text("也可以试试拼音、首字母或英文，比如 tianqi、tq、weather")
-                .font(.system(size: 11))
+                .font(.system(size: 13))
         }
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -379,7 +379,7 @@ struct WidgetLibraryView: View {
                     ForEach(sections, id: \.title) { section in
                         VStack(alignment: .leading, spacing: 10) {
                             Text(section.title)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
                             // 分类里每种小组件一组：小标题是种类名，组与组之间一条细线，
@@ -420,19 +420,19 @@ struct WidgetLibraryView: View {
         let name = WidgetCatalog.entry(kind)?.name ?? kind.rawValue
         return HStack(spacing: 5) {
             Text(name)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.85))
             if ProFeatures.isProKind(kind) {
                 ProBadge()
             }
             if styles > 1 {
                 Text(tr("\(styles) 种样式"))
-                    .font(.system(size: 11).monospacedDigit())
+                    .font(.system(size: 13).monospacedDigit())
                     .foregroundStyle(.tertiary)
             }
             if let note = WidgetLibraryGroups.note(kind) {
                 Text(note)
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .foregroundStyle(.tertiary)
             }
         }
@@ -443,7 +443,7 @@ struct WidgetLibraryView: View {
     private var shortcutsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("应用和文件夹")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 76, maximum: 84), spacing: 8)],
                       alignment: .leading, spacing: 10) {
@@ -473,7 +473,7 @@ struct WidgetLibraryView: View {
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(shortcut.url == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear)))
                 Text(shortcut.title)
-                    .font(.system(size: 11))
+                    .font(.system(size: 13))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -518,7 +518,7 @@ struct WidgetLibraryView: View {
             LibraryPreview(instance: card.preview)
             HStack(spacing: 4) {
                 Text(card.title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 // Pro 标识固定显示，不随解锁状态变；判断统一在 ProFeatures。
@@ -554,7 +554,7 @@ struct WidgetLibraryView: View {
                     .accessibilityLabel(tr("移除“\(card.title)”"))
                     if onShelf.count > 1 {
                         Text("\(onShelf.count)")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }

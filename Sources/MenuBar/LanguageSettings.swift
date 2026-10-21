@@ -24,13 +24,13 @@ struct LanguageSection: View {
                     Button("立即重启") { AppRelauncher.relaunch() }
                 } label: {
                     Text("切换语言后需要重启码头才能生效。")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
             }
         } footer: {
             Text("默认跟随系统语言；系统语言不是中文或英文时显示英文。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }

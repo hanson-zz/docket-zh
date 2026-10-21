@@ -104,19 +104,19 @@ struct PostureTile: View {
                 .frame(width: 38)
             VStack(alignment: .leading, spacing: due ? 1 : 2) {
                 if due {
-                    // 卡片只有 58pt 高，三行已塞满：标题 15pt，副标题和按钮 11pt。
+                    // 卡片只有 58pt 高，三行已塞满：标题 15pt，副标题和按钮 13pt（约 55pt）。
                     Text(tr("该起来走走了"))
                         .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                     Text(SitFocus.satText(max(60, sat)))
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(WidgetStyle.primary.opacity(0.8))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                    TimerPill(title: tr("起来了"), size: 11, height: 18, tint: .timerPink,
+                    TimerPill(title: tr("起来了"), size: 13, height: 20, tint: .timerPink,
                               solidInk: .timerPinkInk,
                               action: context.isPreview ? nil : { logBreak() })
                 } else if yields {
@@ -124,18 +124,18 @@ struct PostureTile: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(WidgetStyle.primary)
                     Text(tr("休息时再起身"))
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 } else if !active {
                     Text(tr("不在提醒时段"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(tr("今日已起身 \(breaksToday) 次"))
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                 } else {
                     Text(SitFocus.satText(sat))
@@ -145,7 +145,7 @@ struct PostureTile: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(SitFocus.dueText(schedule.interval))
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)

@@ -211,7 +211,7 @@ struct WeatherTile: View {
                 if let weather {
                     VStack(spacing: 1) {
                         Text("现在")
-                            .font(WidgetStyle.caption(10))
+                            .font(WidgetStyle.caption(13))
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                         Image(systemName: weather.symbolName)
@@ -219,7 +219,7 @@ struct WeatherTile: View {
                             .foregroundStyle(WidgetStyle.primary)
                             .font(.system(size: 15))
                         Text(degrees(weather.temperatureC))
-                            .font(WidgetStyle.label(12))
+                            .font(WidgetStyle.label(13))
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                         // An empty gutter rather than none, so the row of
@@ -233,7 +233,7 @@ struct WeatherTile: View {
                 ForEach(shown, id: \.date) { hour in
                     VStack(spacing: 1) {
                         Text(hour.date.formatted(.dateTime.hour()))
-                            .font(WidgetStyle.caption(10))
+                            .font(WidgetStyle.caption(13))
                             .foregroundStyle(WidgetStyle.secondary)
                             .monospacedDigit()
                         Image(systemName: hour.symbolName)
@@ -241,7 +241,7 @@ struct WeatherTile: View {
                             .foregroundStyle(WidgetStyle.primary)
                             .font(.system(size: 15))
                         Text(degrees(hour.temperatureC))
-                            .font(WidgetStyle.label(12))
+                            .font(WidgetStyle.label(13))
                             .foregroundStyle(WidgetStyle.primary)
                             .monospacedDigit()
                         if wet { rain(hour.precipitationMM, peak: peak) }
@@ -348,7 +348,7 @@ struct WeatherTile: View {
                 ForEach(shown, id: \.key) { day in
                     VStack(spacing: 2) {
                         Text(DailyForecast.weekdayLabel(day.key, today: today))
-                            .font(WidgetStyle.caption(10))
+                            .font(WidgetStyle.caption(13))
                             .foregroundStyle(day.key == today ? WidgetStyle.primary : WidgetStyle.secondary)
                         Image(systemName: WMOWeather.symbol(day.code))
                             .symbolRenderingMode(.hierarchical)
@@ -434,14 +434,14 @@ struct WeatherTile: View {
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 0) {
                 Text(city)
-                    .font(WidgetStyle.caption(10))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
                 Text(now.map { degrees($0.temperatureC) } ?? "--°")
                     .font(WidgetStyle.value(16))
                     .foregroundStyle(WidgetStyle.primary)
                     .monospacedDigit()
                 Text(today.map { "\(degrees($0.highC))/\(degrees($0.lowC))" } ?? " ")
-                    .font(WidgetStyle.caption(10))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .monospacedDigit()
             }

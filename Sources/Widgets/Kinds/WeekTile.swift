@@ -103,14 +103,14 @@ struct WeekTile: View {
     private func header(_ days: [WeekDay], free: FreeAfternoon?, todayIndex: Int?) -> some View {
         HStack(spacing: 4) {
             Text(tr("本周已排 \(WeekBusy.hoursText(WeekBusy.totalHours(days))) 小时"))
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
             Spacer(minLength: 2)
             if let free {
                 Circle().fill(freeGreen).frame(width: 5, height: 5)
                 Text(WeekBusy.freeTitle(free, todayIndex: todayIndex))
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(freeGreen)
             }
         }

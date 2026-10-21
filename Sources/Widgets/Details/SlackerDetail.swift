@@ -123,24 +123,31 @@ struct SlackerDetail: View {
 
     // MARK: Rows
 
+    /// 一排 7 个星期加「工作日」用 13pt 放不下：星期写单字（一二三四五六日，英文
+    /// M T W T F S S）平分一整行，「周一到周五」快捷挪到标题行右边。
     private var workdaysRow: some View {
         let chosen = settings.workdays
+        let short = [tr("一"), tr("二"), tr("三"), tr("四"), tr("五"), tr("六"), tr("日")]
         return VStack(alignment: .leading, spacing: 6) {
-            Text("工作日")
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(.panelPrimary)
+            HStack {
+                Text("工作日")
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
+                Spacer(minLength: 4)
+                pill(tr("周一到周五"), on: chosen == Set(SlackerClock.weekdays)) {
+                    writeWorkdays(Set(SlackerClock.weekdays))
+                }
+            }
             HStack(spacing: 4) {
-                ForEach(SlackerClock.weekdayChoices, id: \.value) { choice in
+                ForEach(Array(SlackerClock.weekdayChoices.enumerated()), id: \.element.value) { index, choice in
                     let day = Int(choice.value) ?? 0
-                    pill(choice.title, on: chosen.contains(day)) {
+                    pill(index < short.count ? short[index] : choice.title, on: chosen.contains(day), fill: true) {
                         var next = chosen
                         if next.contains(day) { next.remove(day) } else { next.insert(day) }
                         writeWorkdays(next)
                     }
-                }
-                Spacer(minLength: 4)
-                pill(tr("工作日"), on: chosen == Set(SlackerClock.weekdays)) {
-                    writeWorkdays(Set(SlackerClock.weekdays))
+                    .help(choice.title)
+                    .accessibilityLabel(choice.title)
                 }
             }
         }
@@ -304,7 +311,7 @@ struct SlackerDetail: View {
         // "Today's earnings" 这类）换成两行两列，不再把整行撑出面板。
         return VStack(alignment: .leading, spacing: 6) {
             Text(tr("显示更多"))
-                .font(WidgetStyle.label(12))
+                .font(WidgetStyle.label(13))
                 .foregroundStyle(.white.opacity(0.85))
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 4) {
@@ -392,13 +399,15 @@ struct SlackerDetail: View {
         .glassPane(cornerRadius: 10)
     }
 
-    private func pill(_ title: String, on: Bool, size: CGFloat = 10, action: @escaping () -> Void) -> some View {
+    private func pill(_ title: String, on: Bool, size: CGFloat = 13, fill: Bool = false,
+                      action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: size, weight: .semibold))
                 .lineLimit(1)
-                .padding(.horizontal, 5)
+                .padding(.horizontal, fill ? 0 : 5)
                 .padding(.vertical, 4)
+                .frame(maxWidth: fill ? .infinity : nil)
                 .foregroundStyle(on ? Color.white : Color.panelSecondary)
                 .background {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)

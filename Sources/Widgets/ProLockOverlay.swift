@@ -26,7 +26,7 @@ struct ProLockOverlay: ViewModifier {
                             Image(systemName: "lock.fill")
                                 .font(.system(size: 13, weight: .semibold))
                             Text(ProLicenseGate.lockTitle)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.6)
                         }

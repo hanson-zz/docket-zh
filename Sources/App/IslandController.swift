@@ -354,7 +354,7 @@ private struct IslandCapsule: View {
             SegmentBar(lit: IslandLevel.lit(level))
                 .frame(width: 128, height: 6)
             Text(label)
-                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.85))
                 .frame(width: 36, alignment: .trailing)
                 .contentTransition(.numericText())

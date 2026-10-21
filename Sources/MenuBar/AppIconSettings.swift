@@ -37,7 +37,7 @@ struct AppIconSection: View {
                         .foregroundStyle(.orange)
                 }
             }
-            .font(.caption)
+            .font(.system(size: 13))
             .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -62,7 +62,7 @@ private struct AppIconCard: View {
                         Image(systemName: "lock.fill").font(.caption2)
                     }
                     Text(option.title)
-                        .font(.callout.weight(.semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                 }
             }

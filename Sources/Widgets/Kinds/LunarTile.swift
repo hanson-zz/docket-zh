@@ -39,7 +39,7 @@ struct LunarTile: View {
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(reading.isAlert ? LunarReading.red : WidgetStyle.primary)
                         Text(reading.caption)
-                            .font(.system(size: 12, weight: reading.isCountdown ? .semibold : .regular))
+                            .font(.system(size: 13, weight: reading.isCountdown ? .semibold : .regular))
                             .foregroundStyle(reading.isCountdown ? LunarReading.red : WidgetStyle.secondary)
                             .monospacedDigit()
                     }

@@ -68,18 +68,18 @@ struct AlarmTile: View {
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.primary)
                         Text(headline.title)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary.opacity(0.92))
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                     }
                     Text(enabled ? AlarmBook.untilText(at, now: context.now) : tr("已关闭"))
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(enabled ? accent : WidgetStyle.secondary)
                         .lineLimit(1)
                     if let later = AlarmBook.laterLine(config, now: context.now) {
                         Text(later)
-                            .font(.system(size: 9.5))
+                            .font(.system(size: 13))
                             .foregroundStyle(WidgetStyle.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
@@ -92,7 +92,7 @@ struct AlarmTile: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                     Text(tr("点开卡片添加"))
-                        .font(.system(size: 10))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
             }
@@ -171,19 +171,19 @@ struct AlarmTile: View {
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.primary)
                         Text(item.title)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(WidgetStyle.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                         Spacer(minLength: 4)
                         Text(tr("正在响"))
-                            .font(.system(size: 9.5, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(accent)
                     }
                     HStack(spacing: 6) {
-                        TimerPill(title: tr("稍后 \(AlarmBook.snoozeMinutes) 分钟"), size: 10.5, height: 20,
+                        TimerPill(title: tr("稍后 \(AlarmBook.snoozeMinutes) 分钟"), size: 13, height: 20,
                                   minWidth: 92, action: { snooze(item) })
-                        TimerPill(title: tr("关掉"), size: 10.5, height: 20, tint: accent, minWidth: 92,
+                        TimerPill(title: tr("关掉"), size: 13, height: 20, tint: accent, minWidth: 92,
                                   action: { dismiss(item) })
                     }
                 }

@@ -198,7 +198,7 @@ struct AIChatPanelView: View {
             Spacer(minLength: 8)
             if let service = center.current {
                 Text(center.modeLabel(for: service))
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -233,7 +233,7 @@ struct AIChatPanelView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text(service.title)
-                                .font(.system(size: 12.5, weight: selected ? .semibold : .regular))
+                                .font(.system(size: 13, weight: selected ? .semibold : .regular))
                             if center.isGenerating(service.id) {
                                 Circle().fill(Color(hex: AIGlyph.dotHex)).frame(width: 5, height: 5)
                             }
@@ -315,7 +315,7 @@ private struct AIAPIChatPane: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.9))
                     Text("回答会一个字一个字流出来，可以停、重试、复制、接着问。")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.5))
                         .multilineTextAlignment(.center)
                 }
@@ -380,12 +380,12 @@ private struct AIAPIChatPane: View {
                 switch message.status {
                 case .failed(let reason):
                     Label(reason, systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(Color(hex: PaletteColor.orange.hex))
                         .fixedSize(horizontal: false, vertical: true)
                 case .stopped:
                     Text(message.text.isEmpty ? tr("（已停止）") : tr("（已停止生成）"))
-                        .font(.system(size: 11.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.45))
                 default:
                     EmptyView()
@@ -416,7 +416,7 @@ private struct AIAPIChatPane: View {
         Button(action: run) {
             Label(title, systemImage: symbol)
                 .labelStyle(.titleAndIcon)
-                .font(.system(size: 11.5))
+                .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.6))
         }
         .buttonStyle(.plain)
@@ -447,12 +447,12 @@ struct AIAnswerText: View {
                     VStack(alignment: .leading, spacing: 4) {
                         if !language.isEmpty {
                             Text(language)
-                                .font(.system(size: 10.5, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.45))
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
                             Text(body + (streaming && isLast ? "▍" : ""))
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(.system(size: 13, design: .monospaced))
                                 .foregroundStyle(.white.opacity(0.9))
                                 .textSelection(.enabled)
                                 .fixedSize()
@@ -545,7 +545,7 @@ private struct AIWebPane: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Text(service.title)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.9))
                 if center.isLoading(service.id) {
                     ProgressView().controlSize(.mini)
@@ -565,7 +565,7 @@ private struct AIWebPane: View {
                     center.openInBrowser(service)
                 } label: {
                     Text("在浏览器打开 ↗")
-                        .font(.system(size: 11.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .buttonStyle(.plain)
@@ -582,7 +582,7 @@ private struct AIWebPane: View {
                         .buttonStyle(.plain)
                         .underline()
                 }
-                .font(.system(size: 11.5))
+                .font(.system(size: 13))
                 .foregroundStyle(Color(hex: PaletteColor.orange.hex))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -598,7 +598,7 @@ private struct AIWebPane: View {
         .overlay(alignment: .bottom) {
             if let credit = AIWeb.credit(service.homeURL) {
                 Text(credit)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.35))
                     .padding(.bottom, 4)
             }
@@ -666,7 +666,7 @@ private struct AIJumpPane: View {
             HStack(spacing: 10) {
                 Button(tr("只打开 \(service.title)")) { center.openService() }
                     .buttonStyle(.plain)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.65))
                 Spacer(minLength: 0)
                 Button {
@@ -674,7 +674,7 @@ private struct AIJumpPane: View {
                     center.jump()
                 } label: {
                     Text(AIAsk.buttonTitle(for: service))
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .frame(height: 28)
@@ -687,12 +687,12 @@ private struct AIJumpPane: View {
             Text(center.jumpHint ?? (service.supportsAsk
                  ? tr("跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
                  : tr("跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
-                .font(.system(size: 11.5))
+                .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(center.jumpHint == nil ? 0.5 : 0.8))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Text("想直接在这里对话：到“设置 ▸ AI”把它改成网页或 API。")
-                .font(.system(size: 11))
+                .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)
         }

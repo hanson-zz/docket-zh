@@ -110,7 +110,7 @@ struct RemindersTile: View {
             }
             if hidden > 0 {
                 Text(tr("还有 \(hidden) 项"))
-                    .font(WidgetStyle.caption(10))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
             }
         }
@@ -123,11 +123,11 @@ struct RemindersTile: View {
         return HStack(spacing: 6) {
             checkCircle(item, late: late, size: 11)
             Text(item.title)
-                .font(WidgetStyle.label(11))
+                .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
             Spacer(minLength: 6)
             Text(stamp(item))
-                .font(WidgetStyle.caption(10))
+                .font(WidgetStyle.caption(13))
                 .foregroundStyle(late ? Self.overdue : WidgetStyle.secondary)
                 .monospacedDigit()
         }
@@ -150,7 +150,7 @@ struct RemindersTile: View {
             if acting {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
-                        .font(WidgetStyle.label(12))
+                        .font(WidgetStyle.label(13))
                         .foregroundStyle(WidgetStyle.primary)
                     HStack(spacing: 5) {
                         pill(tr("完成"), filled: true) { complete(item) }
@@ -178,7 +178,7 @@ struct RemindersTile: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
                 Text(nextLine(item))
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(late ? Self.overdue : Self.accent)
                     .monospacedDigit()
             }
@@ -235,7 +235,7 @@ struct RemindersTile: View {
                 .monospacedDigit()
                 .rollingValue(value)
             Text(label)
-                .font(WidgetStyle.caption(9))
+                .font(WidgetStyle.caption(size >= 26 ? 13 : 9))
                 .foregroundStyle(WidgetStyle.secondary)
         }
         .lineLimit(1)
@@ -317,7 +317,7 @@ struct RemindersTile: View {
                     .font(.system(size: 17))
                     .foregroundStyle(tint)
                 Text(text)
-                    .font(WidgetStyle.caption(10))
+                    .font(WidgetStyle.caption(context.position.isVertical ? 10 : 13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -331,7 +331,7 @@ struct RemindersTile: View {
                     .foregroundStyle(tint)
                     .frame(height: 20)
                 Text(text)
-                    .font(WidgetStyle.caption(12))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)

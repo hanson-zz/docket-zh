@@ -51,11 +51,11 @@ public enum WidgetStyle {
     }
 
     /// The small caption under or beside a value.
-    public static func caption(_ size: CGFloat = 12) -> Font {
+    public static func caption(_ size: CGFloat = 13) -> Font {
         .system(size: size, weight: .regular)
     }
 
-    public static func label(_ size: CGFloat = 12) -> Font {
+    public static func label(_ size: CGFloat = 13) -> Font {
         .system(size: size, weight: .semibold)
     }
 

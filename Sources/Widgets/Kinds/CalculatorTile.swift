@@ -126,7 +126,7 @@ struct CalculatorTile: View {
                                     .rollingValue(resultText)
                                 if !unitText.isEmpty {
                                     Text(unitText)
-                                        .font(.system(size: 10, weight: .semibold))
+                                        .font(.system(size: 13, weight: .semibold))
                                         .foregroundStyle(WidgetStyle.secondary)
                                 }
                             }

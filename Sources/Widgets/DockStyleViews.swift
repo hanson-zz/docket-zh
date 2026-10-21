@@ -10,7 +10,7 @@ extension WidgetStyle {
     static var figure: Font { value(DockMetrics.figureSize) }
     /// 标题：13pt 半粗。
     static var title: Font { label(DockMetrics.titleSize) }
-    /// 说明：11pt 常规。
+    /// 说明：13pt 常规。
     static var note: Font { caption(DockMetrics.captionSize) }
 
     /// 拖入态的系统蓝，浅色外观用深一点的那档。
@@ -364,9 +364,9 @@ struct PandaEmptyState: View {
     private var button: some View {
         Button(action: action) { Text(title).lineLimit(1).fixedSize() }
             .buttonStyle(.plain)
-            .font(.system(size: panel ? 13 : 11, weight: .semibold))
+            .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(labelColor)
-            .padding(.horizontal, panel ? 14 : 7)
+            .padding(.horizontal, panel ? 14 : 8)
             .padding(.vertical, panel ? 6 : 3)
             .background {
                 if let theme {
@@ -403,7 +403,7 @@ struct PandaEmptyState: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if message == nil, let hint = empty.hint {
                     Text(hint)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.68))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -489,7 +489,7 @@ struct PandaEmptyState: View {
                 VStack(spacing: 3) {
                     badge
                     Text(message ?? empty.line(compact: true))
-                        .font(.system(size: 11))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .fixedSize()
                     button
@@ -499,7 +499,7 @@ struct PandaEmptyState: View {
                 HStack(spacing: 8) {
                     badge
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(message ?? empty.line()).font(.system(size: 11)).fixedSize()
+                        Text(message ?? empty.line()).font(.system(size: 13)).fixedSize()
                         button
                     }
                 }

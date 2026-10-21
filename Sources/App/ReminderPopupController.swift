@@ -528,7 +528,7 @@ struct ReminderPopupCardView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(detail(now: now))
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.8))
                         // 英文的“last drink 2 h 5 min ago”更长，允许折成两行。
                         .lineLimit(2)
@@ -571,7 +571,7 @@ struct ReminderPopupCardView: View {
         HStack(spacing: 6) {
             Circle().fill(accent).frame(width: 6, height: 6)
             Text(ReminderPopupText.header(card.kind, due: primary.due, now: now))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.7))
                 .lineLimit(1)
             Spacer(minLength: 6)
@@ -584,7 +584,7 @@ struct ReminderPopupCardView: View {
             Image(systemName: model.chip.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 .font(.system(size: 9, weight: .semibold))
             Text(model.chip.label)
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .strikethrough(model.chip.muted, color: accent)
         }
         .foregroundStyle(accent.opacity(model.chip.muted ? 0.6 : 0.95))
@@ -639,25 +639,25 @@ struct ReminderPopupCardView: View {
         return VStack(alignment: .leading, spacing: 5) {
             divider
             Text(ReminderPopupText.moreLine(card.others.count))
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
             ForEach(shown) { alert in
                 HStack(spacing: 7) {
                     Circle().strokeBorder(accent.opacity(0.8), lineWidth: 1.2).frame(width: 10, height: 10)
                     Text(alert.title)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.92))
                         .lineLimit(1)
                     Spacer(minLength: 6)
                     Text(ReminderPopupText.listStamp(due: alert.due, list: alert.list))
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
             if more > 0 {
                 Text(tr("还有 \(more) 项"))
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.5))
             }
         }
@@ -692,7 +692,7 @@ struct ReminderPopupCardView: View {
                     .frame(width: 10, height: 15)
             }
             Text(ReminderPopupText.waterTally(info))
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.white.opacity(0.95))
                 .monospacedDigit()
                 .padding(.leading, 6)
@@ -703,7 +703,7 @@ struct ReminderPopupCardView: View {
 
     private func cupsLeftText(_ info: WaterPopupInfo) -> some View {
         Text(ReminderPopupText.cupsLeft(info))
-            .font(.system(size: 10.5))
+            .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.55))
             .fixedSize()
     }
@@ -717,14 +717,14 @@ struct ReminderPopupCardView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(row.done ? accent : .white.opacity(0.6))
                     Text(row.text)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(row.done ? 0.5 : 0.9))
                         .strikethrough(row.done, color: .white.opacity(0.5))
                         .lineLimit(1)
                     Spacer(minLength: 6)
                     if index == 0 {
                         Text(ReminderPopupText.todoProgress(done: info.todayDone, total: info.todayTotal))
-                            .font(.system(size: 10.5))
+                            .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.55))
                             .monospacedDigit()
                     }
@@ -775,7 +775,7 @@ struct ReminderPopupCardView: View {
 
     private func hintText(_ hint: String) -> some View {
         Text(hint)
-            .font(.system(size: 10))
+            .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.5))
     }
 
@@ -903,7 +903,7 @@ private struct PopupButton: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Text(title)
-                    .font(.system(size: 12, weight: primary ? .bold : .semibold))
+                    .font(.system(size: 13, weight: primary ? .bold : .semibold))
                     .lineLimit(1)
                 if chevron {
                     Image(systemName: "chevron.down")

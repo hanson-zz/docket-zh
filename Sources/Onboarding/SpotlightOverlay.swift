@@ -98,30 +98,30 @@ struct SpotlightOverlay: View {
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
                 Text(SpotlightTour.counter(index: current, total: stops.count))
-                    .font(.system(size: 11, weight: .medium).monospacedDigit())
+                    .font(.system(size: 13, weight: .medium).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
             Text(stop.message)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Button("跳过导览") { close() }
                     .buttonStyle(.plain)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .keyboardShortcut(.cancelAction)
                 Spacer()
                 if current > 0 {
                     Button("上一步") { move(to: current - 1) }
                         .buttonStyle(.plain)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                 }
                 Button {
                     advance()
                 } label: {
                     Text(SpotlightTour.next(after: current, total: stops.count) == nil ? tr("知道了") : tr("下一步"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .frame(height: 26)

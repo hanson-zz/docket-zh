@@ -645,7 +645,7 @@ struct BatteryDayChart: View {
                     if label != tr("24 时") { Spacer(minLength: 0) }
                 }
             }
-            .font(.system(size: 9))
+            .font(.system(size: 13))
             .foregroundStyle(.white.opacity(0.55))
         }
         .accessibilityElement(children: .ignore)

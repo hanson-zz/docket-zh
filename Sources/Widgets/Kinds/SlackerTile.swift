@@ -111,7 +111,7 @@ struct SlackerMetrics {
                                       cellLabel: 8.5, cellValue: 11.5, cellSpacing: CGFloat(SlackerClock.cellSpacing),
                                       panda: 60, pandaDrop: 0)
     static let panel = SlackerMetrics(title: 24, cellWidth: 54, cellHeight: 42,
-                                      cellLabel: 10.5, cellValue: 16, cellSpacing: 6,
+                                      cellLabel: 13, cellValue: 16, cellSpacing: 6,
                                       panda: 92, pandaDrop: 8)
     static let column = SlackerMetrics(title: 11, cellWidth: 56, cellHeight: 24,
                                        cellLabel: 8, cellValue: 10, cellSpacing: 4,

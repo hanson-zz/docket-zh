@@ -422,7 +422,7 @@ private struct ProStatusLine: View {
             Image(systemName: unlocked ? "checkmark.seal.fill" : "info.circle")
                 .foregroundStyle(unlocked ? proAccent : Color.secondary)
             Text(supporter && !state.isUnlocked ? tr("已按赞助者解锁 Pro，谢谢你的支持") : state.statusText)
-                .font(fontSize.map { Font.system(size: $0, weight: .medium) } ?? Font.callout.weight(.medium))
+                .font(fontSize.map { Font.system(size: $0, weight: .medium) } ?? Font.system(size: 13, weight: .medium))
         }
     }
 }
@@ -438,7 +438,7 @@ struct ProKeyField: View {
         VStack(alignment: .leading, spacing: 6) {
             if !inPaywall {
                 Text("已经购买或收到兑换码？在这里输入")
-                    .font(.callout.weight(.medium))
+                    .font(.system(size: 13, weight: .medium))
             }
             HStack(spacing: 8) {
                 TextField(ProLicenseText.inputPlaceholder, text: $key)
@@ -455,7 +455,7 @@ struct ProKeyField: View {
             }
             if let message = license.errorMessage {
                 Text(message)
-                    .font(inPaywall ? Font.system(size: 13) : Font.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(proAccent)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -528,7 +528,7 @@ struct ProSettingsPane: View {
                 }
             } footer: {
                 Text(ProLicenseText.priceLine + tr("。离线时最多保留 \(ProLicenseConfig.offlineGraceDays) 天，联网后自动重新校验。"))
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
 
@@ -557,13 +557,13 @@ struct ProSettingsPane: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("解绑本机")
                             Text("换新 Mac 前先解绑，激活名额会留给下一台。兑换码同样一码一机，解绑后可以换机。")
-                                .font(.caption)
+                                .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                         }
                     }
                     if let message = license.errorMessage {
                         Text(message)
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(proAccent)
                     }
                 } header: {
@@ -581,7 +581,7 @@ struct ProSettingsPane: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("解锁动画")
                         Text("第一次激活成功时自动播放一次，之后可以在这里重看。")
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -595,7 +595,7 @@ struct ProSettingsPane: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(perk.title)
                             Text(perk.detail)
-                                .font(.caption)
+                                .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                         }
                     } icon: {

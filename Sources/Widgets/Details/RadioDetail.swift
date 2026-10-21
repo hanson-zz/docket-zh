@@ -407,12 +407,12 @@ struct RadioDetail: View {
                     }
                     .font(.system(size: 54, weight: .bold, design: .rounded))
                     .monospacedDigit()
-                    // CH 和编码是装饰性角标，12pt 等宽，两行叠在大数字旁边。
+                    // CH 和编码是装饰性角标，13pt 等宽，两行叠在大数字旁边。
                     VStack(alignment: .leading, spacing: 1) {
                         Text("CH")
                         Text(codecBadge)
                     }
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundStyle(accentText)
                     .fixedSize()
                 }

@@ -120,7 +120,7 @@ struct UnavailableTile: View {
                     .font(.system(size: 16))
                     .foregroundStyle(WidgetStyle.secondary)
                 Text(WidgetCatalog.entry(kind)?.name ?? kind.rawValue)
-                    .font(WidgetStyle.caption(11))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
             }

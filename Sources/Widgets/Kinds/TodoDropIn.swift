@@ -99,7 +99,7 @@ struct TodoDropHint: View {
                 .minimumScaleFactor(0.7)
             if !compact {
                 Text(DropPrompt.todo.caption)
-                    .font(WidgetStyle.caption(10))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

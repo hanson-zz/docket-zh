@@ -242,7 +242,7 @@ struct SettingsView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
                         Text(failure)
-                            .font(.callout)
+                            .font(.system(size: 13))
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 8)
                         Button("忽略", action: onClearError)
@@ -263,7 +263,7 @@ struct SettingsView: View {
                 Text("备份")
             } footer: {
                 Text("备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
         }
@@ -287,7 +287,7 @@ struct SettingsView: View {
                 Text("快捷键：点按布局右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
                 Text("专注模式：打开“系统设置 ▸ 专注模式”，选择一个专注模式，在“专注模式过滤条件”中点按“添加过滤条件”，选择码头并挑选一个布局。该专注模式开启时会切换到这个布局，结束时恢复之前的布局。")
             }
-            .font(.callout)
+            .font(.system(size: 13))
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         } header: {
@@ -349,7 +349,7 @@ struct SettingsView: View {
             }
             if items.count > 7 {
                 Text("+\(items.count - 7)")
-                    .font(.caption2)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -386,7 +386,7 @@ struct SettingsView: View {
                 }
                 if let warning = AIHotKeyAdvice.warning(for: state.aiNotch.hotKey) {
                     Label(warning, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -417,7 +417,7 @@ struct SettingsView: View {
 
             Section {
                 Text("点按右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")
-                    .font(.callout)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -475,7 +475,7 @@ struct SettingsView: View {
                     Text(tr("\(state.activeCustomProfile?.name ?? tr("扩展栏")) · \(widgets.count) 个小组件"))
                 } footer: {
                     Text("拖动排序，关掉开关会把小组件从扩展栏上隐藏，设置保留，随时可以再打开。应用、文件夹和分组的位置不受影响。")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -502,7 +502,7 @@ struct SettingsView: View {
                 }
                 if mode == .conditional, let condition = WidgetVisibility.conditionTitle(widget.kind, config: widget.config) {
                     Text(condition)
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -591,7 +591,7 @@ struct SettingsView: View {
                             .font(.headline)
                             .monospacedDigit()
                         Text("所有数据都保存在这台 Mac 上 Application Support 中的一个文件里，不会同步。")
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -643,7 +643,7 @@ struct SettingsView: View {
             Text("灵动提示")
         } footer: {
             Text("在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -911,7 +911,7 @@ struct SettingsView: View {
             }
             if kind == .todo {
                 Text(tr("在快速待办面板里给一条设上提醒时间，到点就用这个音色。"))
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
         }
@@ -923,7 +923,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
             Text(detail)
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }
@@ -1007,7 +1007,7 @@ struct SettingsView: View {
                             .lineLimit(1)
                         Spacer(minLength: 8)
                         Text(item.kindName)
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                         Button {
                             remove(item.id)
@@ -1025,7 +1025,7 @@ struct SettingsView: View {
             Text("扩展栏上的项目")
         } footer: {
             Text("在扩展栏上直接拖动即可重新排序，点按末端的 + 可添加项目。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }
@@ -1095,7 +1095,7 @@ struct SettingsView: View {
                     Text("专注计时")
                 } footer: {
                     Text("所有专注计时小组件共用这些设置，码头将它们视为同一个计时器。")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -1198,10 +1198,10 @@ private struct ChoiceCard<Picture: View>: View {
                     .clipShape(.rect(cornerRadius: 6))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.callout.weight(.semibold))
+                        .font(.system(size: 13, weight: .semibold))
                     if let caption {
                         Text(caption)
-                            .font(.caption)
+                            .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1480,7 +1480,7 @@ struct ShortcutRecorder: View {
             }
         } label: {
             Text(title)
-                .font(.callout)
+                .font(.system(size: 13))
                 .monospacedDigit()
                 .foregroundStyle(recorder.isRecording || combo != nil ? Color.primary : Color.secondary)
                 .frame(minWidth: 72)
@@ -1608,7 +1608,7 @@ private struct SupporterColorPicker: View {
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.45)
             Text(unlocked ? tr("给扩展栏底板染一层颜色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。"))
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }

@@ -140,7 +140,7 @@ struct FocusTimerTile: View {
                             .minimumScaleFactor(0.6)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(FocusCycle.caption(state))
-                                .font(.system(size: 10, weight: standUp ? .semibold : .regular))
+                                .font(.system(size: 13, weight: standUp ? .semibold : .regular))
                                 .foregroundStyle(standUp ? Color.timerGreen : WidgetStyle.secondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)

@@ -50,7 +50,7 @@ struct StopwatchTile: View {
                 VStack(alignment: .leading, spacing: 2) {
                     figure(elapsed, size: 19)
                     Text(StopwatchLaps.caption(running: running, elapsed: elapsed, lapCount: laps.count))
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)

@@ -167,7 +167,7 @@ struct ClockReadout: View {
 
     private func text(_ string: String) -> some View {
         Text(string)
-            .font(WidgetStyle.caption(12))
+            .font(WidgetStyle.caption(13))
             .foregroundStyle(WidgetStyle.secondary)
             .lineLimit(1)
             .minimumScaleFactor(0.7)

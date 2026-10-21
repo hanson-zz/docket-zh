@@ -103,11 +103,11 @@ struct StatChip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased())
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(0.6)
+                .font(.system(size: 13, weight: .semibold))
+                .tracking(0.3)
                 .foregroundStyle(Color.panelTertiary)
             Text(value)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(value)

@@ -46,7 +46,7 @@ struct AIPromptsSection: View {
             Text("AI 助手的常用提示词")
         } footer: {
             Text(tr("在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，跳转复制或带着问题打开。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 \(AIPrompts.maxCount) 条。"))
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -57,7 +57,7 @@ struct AIPromptsSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(prompt.name)
                 Text(AIPrompts.preview(prompt.content, limit: 48))
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -105,13 +105,13 @@ struct AIPromptsSection: View {
                     .accessibilityLabel("提示词的名字")
                 TextEditor(text: Binding(get: { editing?.content ?? "" },
                                          set: { editing?.content = $0; editing?.error = nil }))
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .frame(height: 90)
                     .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.15)))
                     .accessibilityLabel("提示词的内容")
                 HStack(spacing: 8) {
                     Text(current.error ?? tr("例如：把下面的会议记录整理成周报：{文本}"))
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(current.error == nil ? Color.secondary : Color.orange)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)

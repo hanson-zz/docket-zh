@@ -87,7 +87,7 @@ struct PetTile: View {
                 .help(petName)
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: "\(petName) · \(VirtualPet.statusLine(s, now: context.now, dried: dried, melted: melted))")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(PetStyle.headline(look: look, health: s.health))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

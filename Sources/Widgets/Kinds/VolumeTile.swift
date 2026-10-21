@@ -58,12 +58,12 @@ struct VolumeTile: View {
                 if picked.overflow > 0 { moreButton(height: 22) }
                 VStack(alignment: .leading, spacing: 0) {
                     Text(name.isEmpty ? tr("无输出设备") : name)
-                        .font(WidgetStyle.label(12))
+                        .font(WidgetStyle.label(13))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                     Text(devices.count > 1 ? tr("点图标换输出") : tr("只有一个输出"))
-                        .font(WidgetStyle.caption(9.5))
+                        .font(WidgetStyle.caption(13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -76,7 +76,7 @@ struct VolumeTile: View {
                 slider
                 if let level {
                     Text(OutputDevices.percentText(muted ? 0 : level))
-                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
                         .foregroundStyle(WidgetStyle.primary)
                         .frame(minWidth: 30, alignment: .trailing)
                 }
@@ -130,7 +130,7 @@ struct VolumeTile: View {
                 .accessibilityLabel(tr("总音量"))
         } else {
             Text("此设备不支持调节音量")
-                .font(WidgetStyle.caption(10))
+                .font(WidgetStyle.caption(13))
                 .foregroundStyle(WidgetStyle.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

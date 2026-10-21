@@ -19,9 +19,11 @@ final class DockStyleTests: XCTestCase {
     func testTypeScaleHasThreeLevels() {
         XCTAssertEqual(DockMetrics.figureSize, 24)
         XCTAssertEqual(DockMetrics.titleSize, 13)
-        XCTAssertEqual(DockMetrics.captionSize, 11)
+        XCTAssertEqual(DockMetrics.captionSize, 13)
         XCTAssertGreaterThan(DockMetrics.figureSize, DockMetrics.titleSize)
-        XCTAssertGreaterThan(DockMetrics.titleSize, DockMetrics.captionSize)
+        // 界面字最小 13pt：标题和说明同号，靠粗细（半粗 / 常规）和颜色分级。
+        XCTAssertGreaterThanOrEqual(DockMetrics.titleSize, DockMetrics.captionSize)
+        XCTAssertGreaterThanOrEqual(DockMetrics.captionSize, 13)
     }
 
     func testBadgesFitInsideTheSmallestCardHeight() {

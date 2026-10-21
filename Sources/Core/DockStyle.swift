@@ -49,8 +49,8 @@ public enum DockMetrics {
     public static let figureSize: Double = 24
     /// 标题：卡片名、正在做的事，半粗。
     public static let titleSize: Double = 13
-    /// 说明：值下面的一行小字。
-    public static let captionSize: Double = 11
+    /// 说明：值下面的一行小字。全仓界面字最小 13pt（2026-10），原来是 11。
+    public static let captionSize: Double = 13
 
     // MARK: 状态
 

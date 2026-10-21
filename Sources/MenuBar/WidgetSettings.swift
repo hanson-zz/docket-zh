@@ -180,7 +180,7 @@ struct WidgetSettingsSections: View {
                     levels: settings.charge.count + settings.low.count,
                     extras: [settings.accessory, settings.full, settings.hot]))
                 Text("每一档每次充电或放电只提醒一次，发通知时电池卡片会闪一下。蓝牙设备包括 AirPods、妙控键盘、鼠标和触控板。")
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
         }
@@ -225,7 +225,7 @@ struct WidgetSettingsSections: View {
             }
             if WidgetVisibility.mode(instance.config) != .always {
                 Text("被隐藏的小组件可以在扩展栏的右键菜单或菜单栏的“已隐藏的小组件”中恢复。")
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
             Toggle(isOn: Binding(
@@ -234,7 +234,7 @@ struct WidgetSettingsSections: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("隐藏背景和边框")
                     Text("只去掉小组件自己的卡片，便签纸色和封面等内容保留。")
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -449,7 +449,7 @@ struct WidgetSettingsSections: View {
                 // readings off as choosing which to show.
                 Text(OrderedChecklist.keys.contains(key)
                      ? tr("\(Self.groupLabel(key))（拖动排序，卡片跟着变）") : Self.groupLabel(key))
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                 if OrderedChecklist.keys.contains(key) {
                     // 卡片上的先后就是这里的先后：拖柄拖动排序，勾选决定显示哪些

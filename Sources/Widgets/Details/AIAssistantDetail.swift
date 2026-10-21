@@ -811,7 +811,7 @@ struct AIFormField: NSViewRepresentable {
         field.placeholderString = placeholder
         field.isBezeled = true
         field.bezelStyle = .roundedBezel
-        field.font = .systemFont(ofSize: 12)
+        field.font = .systemFont(ofSize: 13)
         field.lineBreakMode = .byTruncatingTail
         field.usesSingleLineMode = true
         field.cell?.isScrollable = true

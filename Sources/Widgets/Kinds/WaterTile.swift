@@ -141,7 +141,7 @@ struct WaterTile: View {
                     .rollingValue(day.total)
                 Text(done ? tr("今天达标啦")
                      : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(done ? WaterStyle.water : WidgetStyle.secondary)
             }
             .lineLimit(1)
@@ -188,7 +188,7 @@ struct WaterTile: View {
                         .monospacedDigit()
                         .rollingValue(day.total)
                     Text("/\(WaterIntake.figure(day.goal, ounces: ounces))")
-                        .font(.system(size: 11))
+                        .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .monospacedDigit()
                 }
@@ -196,7 +196,7 @@ struct WaterTile: View {
                           slots: WaterPose.bambooSlots, segment: 6.5, spacing: 2.5)
                     .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: day.total)
                 Text(WaterPose.caption(pose, stage: stage))
-                    .font(.system(size: 11, weight: pose == .stage(.done) ? .semibold : .regular))
+                    .font(.system(size: 13, weight: pose == .stage(.done) ? .semibold : .regular))
                     .foregroundStyle(captionColor(pose))
                     .contentTransition(.opacity)
             }
@@ -274,7 +274,7 @@ struct WaterTile: View {
                             .rollingValue(day.total)
                             .liquidInk()
                         Text(done ? tr("今天达标啦") : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .liquidInk(0.85)
                     }
                     .lineLimit(1)
@@ -326,7 +326,7 @@ struct WaterTile: View {
         .overlay(alignment: .top) {
             if let gulp {
                 Text("+\(gulp)")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .monospacedDigit()
                     .foregroundStyle(.white)
                     .padding(.horizontal, 5)
