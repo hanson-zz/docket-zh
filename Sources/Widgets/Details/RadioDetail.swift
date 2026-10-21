@@ -8,7 +8,7 @@ import SwiftUI
 /// The favourites and the tuned channel are written to the widget's config,
 /// so the tile and this panel always show the same station.
 ///
-/// 下半截“我的收藏”“搜索电台”“定时关闭”三页用一条分段切换，同时只开一页。
+/// 下半截“收藏”“搜索”“世界”“定时”四页用一条分段切换，同时只开一页。
 /// 没记过时（新用户）默认打开“我的收藏”，其余收起；再点一下打开的那页就收起，
 /// 打开哪页（或都收起）记住。
 ///
@@ -21,9 +21,10 @@ struct RadioDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    /// 下半截的三页。面板统一限高后可以全部收起：再点一下打开的那页就收起，
+    /// 下半截的四页。面板统一限高后可以全部收起：再点一下打开的那页就收起，
     /// 打开哪页（或都收起）记住；没记过时打开收藏，见 `DetailPanelSections.openPage`。
-    private enum Tab: String, CaseIterable { case favourites, search, timer }
+    /// 原来记的 favourites / search / timer 照旧认。
+    private enum Tab: String, CaseIterable { case favourites, search, world, timer }
 
     private var player: RadioPlayer { RadioPlayer.shared }
     private var addFlow: RadioAddFlow { RadioAddFlow.shared }
@@ -42,15 +43,23 @@ struct RadioDetail: View {
     }
     @State private var query = ""
     @State private var customName = ""
-    @State private var results: [RadioStation] = []
+    @State private var results: [RadioListing] = []
     @State private var searching = false
     @State private var searchFailed = false
     @State private var searched = false
     /// What the shown results answer, so the list can say what it is.
-    @State private var shownQuery: RadioDirectory.Query?
+    @State private var shownSearch: RadioSearch?
     /// Bumped for every request; an answer that comes back after a newer
     /// request was made is dropped.
     @State private var requestID = 0
+    /// 选中的流派标签，nil 是“热门”。只在这次打开面板时记着。
+    @State private var genre: RadioGenre?
+    /// 已经取到第几页（从 0 数）、还有没有下一页、正在取下一页。
+    @State private var page = 0
+    @State private var hasMore = false
+    @State private var loadingMore = false
+    /// 正在跑的搜索请求，面板关掉时取消。
+    @State private var searchTask: Task<Void, Never>?
     /// The region picked in this panel, until the config written for it
     /// comes back.
     @State private var pickedRegion: RadioRegion?
@@ -131,6 +140,14 @@ struct RadioDetail: View {
             // 每天最多自动检查一次，在后台跑，不挡操作。
             healthCheck.checkIfDue(instance)
         }
+        .onDisappear {
+            // 找台的请求只在面板开着时发，关掉就取消。
+            searchTask?.cancel()
+            searchTask = nil
+            searching = false
+            loadingMore = false
+            RadioWorldStore.shared.cancel()
+        }
     }
 
     private func content(now: Date) -> some View {
@@ -162,6 +179,7 @@ struct RadioDetail: View {
                 switch tab {
                 case .favourites?: favourites
                 case .search?: search
+                case .world?: world
                 case .timer?: timerRow(now: now)
                 case nil: EmptyView()
                 }
@@ -226,8 +244,9 @@ struct RadioDetail: View {
     /// 一段都没选时下半截收起；定时关闭在走时那一段写剩下的时间。
     private func tabSwitch(now: Date) -> some View {
         HStack(spacing: 2) {
-            tabSegment(.favourites, title: tr("我的收藏 \(stations.count)"))
-            tabSegment(.search, title: tr("搜索电台"))
+            tabSegment(.favourites, title: tr("收藏 \(stations.count)"))
+            tabSegment(.search, title: tr("搜索"))
+            tabSegment(.world, title: tr("世界"))
             tabSegment(.timer, title: timerTitle(now: now))
         }
         .padding(2)
@@ -265,7 +284,7 @@ struct RadioDetail: View {
         if let end = player.stopAt, player.isPlaying, !context.isPreview {
             return tr("定时 \(RadioSleep.remaining(until: end, now: now))")
         }
-        return tr("定时关闭")
+        return tr("定时")
     }
 
     /// 一排小胶囊：一行放得下就一行等宽，放不下就按 `columns` 列折行，字不缩。
@@ -1159,19 +1178,23 @@ struct RadioDetail: View {
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    private var browseStyle: RadioBrowseStyle {
+        RadioBrowseStyle(fg: fg, accent: accent, accentText: accentText, ink: segmentInk)
+    }
+
     private var search: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13))
                     .foregroundStyle(fg.opacity(0.65))
-                TextField("", text: $query, prompt: Text("电台名称，或粘贴 http(s) 串流地址"))
+                TextField("", text: $query, prompt: Text("台名，或贴 http(s) 串流地址"))
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .foregroundStyle(fg)
                     .onSubmit { typedAddress ? addCustom() : run() }
                     .disabled(context.isPreview)
-                if searching { ProgressView().controlSize(.mini) }
+                if searching && !loadingMore { ProgressView().controlSize(.mini) }
                 if !query.isEmpty, !context.isPreview {
                     Button {
                         query = ""
@@ -1185,83 +1208,189 @@ struct RadioDetail: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("清空搜索")
                 }
+                if !typedAddress {
+                    Rectangle()
+                        .fill(fg.opacity(0.18))
+                        .frame(width: 0.8, height: 16)
+                    regionMenu
+                }
             }
             .padding(.horizontal, 10)
-            .frame(height: 32)
+            .frame(height: 34)
             .glassPane(cornerRadius: 10)
 
             if typedAddress {
                 customRow
             } else {
-                regionRow
+                genreRow
                 HStack(spacing: 6) {
                     Text(listTitle)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(fg.opacity(0.65))
+                        .foregroundStyle(fg.opacity(0.68))
                         .lineLimit(1)
                     Spacer()
-                    if !trimmedQuery.isEmpty { chip(tr("搜索")) { run() } }
+                    if !trimmedQuery.isEmpty, trimmedQuery != shownSearch?.name {
+                        chip(tr("搜索")) { run() }
+                    } else {
+                        Text("按收听量")
+                            .font(.system(size: 13))
+                            .foregroundStyle(fg.opacity(0.5))
+                    }
                 }
             }
 
-            if searchFailed {
-                note(tr("连不上电台目录，请检查网络后再试。"))
-            } else if searched, results.isEmpty, !searching {
-                note(shownQuery?.name.isEmpty == false
-                     ? tr("\((shownQuery?.region ?? region).title)里没有找到这个电台，换个关键词或地区试试。")
-                     : tr("\((shownQuery?.region ?? region).title)暂时没有可收听的电台。"))
-            } else if !results.isEmpty {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(results) { result in resultRow(result) }
+            if !typedAddress {
+                if searchFailed && results.isEmpty {
+                    note(tr("连不上电台目录，请检查网络后再试。"))
+                } else if searched, results.isEmpty, !searching {
+                    RadioPandaNote(title: tr("没有找到电台"), line: emptyLine, style: browseStyle,
+                                   button: genre != nil ? tr("看热门") : nil) {
+                        genre = nil
+                        run()
                     }
+                } else if !results.isEmpty {
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            ForEach(results) { result in resultRow(result) }
+                            if hasMore {
+                                RadioLoadMoreButton(shown: results.count,
+                                                    total: shownSearch.flatMap {
+                                                        RadioBrowse.knownTotal($0, counts: RadioWorldStore.shared.counts)
+                                                    },
+                                                    loading: loadingMore, style: browseStyle) { loadMore() }
+                                    .padding(.top, 2)
+                            } else if searchFailed {
+                                note(tr("连不上电台目录，请检查网络后再试。"))
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 230)
+                    .scrollIndicators(.never)
                 }
-                .frame(maxHeight: 170)
-                .scrollIndicators(.never)
             }
         }
         .onAppear {
+            guard !context.isPreview else { return }
+            RadioWorldStore.shared.refreshIfStale()
             if !searched, !searching, trimmedQuery.isEmpty { run() }
+        }
+        .onDisappear {
+            // 切到别的页或关掉面板：取消还没回来的请求，下次打开重新取。
+            if searching {
+                searchTask?.cancel()
+                searchTask = nil
+                searching = false
+                loadingMore = false
+            }
         }
         .onChange(of: trimmedQuery) { _, words in
             // Clearing the field goes back to the region's top stations.
-            if words.isEmpty, shownQuery?.name.isEmpty == false { run() }
+            if words.isEmpty, shownSearch?.name.isEmpty == false { run() }
         }
     }
 
-    /// "中文电台 · 热门电台" for the top list, "“音乐” · 香港" for a search.
-    private var listTitle: String {
-        let shown = shownQuery ?? RadioDirectory.Query(name: "", region: region)
-        if shown.name.isEmpty { return tr("\(shown.region.title) · 热门电台") }
-        return "“\(shown.name)” · \(shown.region.title)"
-    }
-
-    private var regionRow: some View {
-        chipRow(RadioRegion.allCases, columns: 3) { option in regionChip(option) }
-    }
-
-    private func regionChip(_ option: RadioRegion) -> some View {
-        let on = option == region
-        return Button {
-            guard !context.isPreview, option != region else { return }
-            pickedRegion = option
-            save { RadioRegion.store(option, in: &$0) }
-            run(in: option)
+    /// 搜索框右边的“范围”小菜单：原来的 6 个地区（中文电台、大陆、香港、台湾、澳门、全球），
+    /// 默认值和记住的值不变（配置里的 searchRegion）。
+    private var regionMenu: some View {
+        Menu {
+            ForEach(RadioRegion.allCases) { option in
+                Button {
+                    pickRegion(option)
+                } label: {
+                    if option == region {
+                        Label(option.title, systemImage: "checkmark")
+                    } else {
+                        Text(option.title)
+                    }
+                }
+            }
         } label: {
-            Text(option.title)
-                .font(.system(size: 13, weight: .semibold))
+            HStack(spacing: 4) {
+                Text(region.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(fg.opacity(0.9))
+            .contentShape(.rect)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(context.isPreview)
+        .help(tr("范围"))
+        .accessibilityLabel(tr("范围：\(region.title)"))
+    }
+
+    private func pickRegion(_ option: RadioRegion) {
+        guard !context.isPreview, option != region else { return }
+        pickedRegion = option
+        save { RadioRegion.store(option, in: &$0) }
+        run(in: option)
+    }
+
+    /// 一排可横滑的流派标签，右边渐隐；再点一下选中的回到“热门”。
+    private var genreRow: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                genreChip(nil, title: tr("热门"))
+                ForEach(RadioGenre.allCases) { option in genreChip(option, title: option.title) }
+            }
+            .padding(.trailing, 24)
+        }
+        .scrollIndicators(.never)
+        .mask {
+            LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.86),
+                                   .init(color: .clear, location: 1)],
+                           startPoint: .leading, endPoint: .trailing)
+        }
+    }
+
+    private func genreChip(_ option: RadioGenre?, title: String) -> some View {
+        let on = option == genre
+        return Button {
+            guard !context.isPreview else { return }
+            let next = RadioGenre.toggled(option, current: genre)
+            guard next != genre else { return }
+            genre = next
+            run()
+        } label: {
+            Text(verbatim: title)
+                .font(.system(size: 13, weight: on ? .bold : .semibold))
                 .lineLimit(1)
                 .fixedSize()
-                .foregroundStyle(on ? fg : fg.opacity(0.7))
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity)
+                .foregroundStyle(on ? segmentInk : fg.opacity(0.8))
+                .padding(.horizontal, 11)
                 .frame(height: 28)
-                .background(Capsule().fill(on ? accent.opacity(0.4) : fg.opacity(0.08)))
+                .background(Capsule().fill(on ? accent : fg.opacity(0.08)))
+                .overlay(Capsule().strokeBorder(fg.opacity(on ? 0 : 0.1), lineWidth: 0.5))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help(option == .global ? tr("不限地区和语言") : tr("只看\(option.title)"))
+        .help(option != nil && on ? tr("再点一下取消") : "")
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// “新闻 · 中文电台 · 约 426 台”；搜名字时“‘音乐’ · 香港”。
+    private var listTitle: String {
+        let shown = shownSearch ?? RadioSearch(region: region, genre: genre)
+        var parts: [String] = []
+        if !shown.name.isEmpty { parts.append("“\(shown.name)”") }
+        parts.append(shown.genre?.title ?? tr("热门"))
+        parts.append(shown.region.title)
+        if let total = RadioBrowse.knownTotal(shown, counts: RadioWorldStore.shared.counts) {
+            parts.append(tr("约 \(RadioBrowseStyle.number(total)) 台"))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private var emptyLine: String {
+        let shown = shownSearch ?? RadioSearch(region: region, genre: genre)
+        if !shown.name.isEmpty { return tr("\(shown.region.title)里没有找到这个电台，换个关键词或地区试试。") }
+        if let genre = shown.genre { return tr("\(shown.region.title)还没有\(genre.title)台，换个范围试试。") }
+        return tr("\(shown.region.title)暂时没有可收听的电台。")
     }
 
     private var customRow: some View {
@@ -1278,48 +1407,20 @@ struct RadioDetail: View {
         }
     }
 
-    private func resultRow(_ result: RadioStation) -> some View {
-        let saved = stations.contains { $0.matches(result) }
-        return HStack(spacing: 8) {
-            Button {
-                guard !context.isPreview else { return }
-                addAndListen(result)
-            } label: {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(result.name)
-                        .font(.system(size: 13))
-                        .foregroundStyle(fg.opacity(0.95))
-                        .lineLimit(1)
-                    Text(result.detail)
-                        .font(.system(size: 13))
-                        .foregroundStyle(fg.opacity(0.62))
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help("添加并收听")
+    private func resultRow(_ result: RadioListing) -> some View {
+        RadioListingRow(listing: result, saved: stations.contains { $0.matches(result.station) }, style: browseStyle,
+                        onListen: {
+                            guard !context.isPreview else { return }
+                            addAndListen(result.station)
+                        },
+                        onFavourite: { favourite(result.station) })
+    }
 
-            Button {
-                guard !context.isPreview, !saved else { return }
-                withAnimation(.snappy(duration: 0.3)) {
-                    RadioRemote.edit(instance) { list, _ in list = RadioDial.adding(result, to: list) }
-                }
-            } label: {
-                Image(systemName: saved ? "checkmark" : "plus")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(saved ? accentText : fg.opacity(0.75))
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(fg.opacity(saved ? 0 : 0.1)))
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(saved ? tr("已在收藏中") : tr("加入收藏"))
+    private func favourite(_ station: RadioStation) {
+        guard !context.isPreview, !stations.contains(where: { $0.matches(station) }) else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            RadioRemote.edit(instance) { list, _ in list = RadioDial.adding(station, to: list) }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fg.opacity(0.05)))
     }
 
     private func chip(_ title: String, action: @escaping () -> Void) -> some View {
@@ -1348,25 +1449,59 @@ struct RadioDetail: View {
             .padding(.vertical, 4)
     }
 
-    /// Lists the region's top stations when the field is empty, otherwise
-    /// searches names inside the region. A newer request wins over one still
-    /// on its way.
+    /// 没写名字时列范围里（和流派里）的热门台，写了名字就在范围里搜。从第一页重新开始；
+    /// 新的请求盖过还在路上的旧请求。
     private func run(in chosen: RadioRegion? = nil) {
         guard !context.isPreview, !typedAddress else { return }
-        let request = RadioDirectory.Query(name: trimmedQuery, region: chosen ?? region)
+        let request = RadioSearch(name: trimmedQuery, region: chosen ?? region, genre: genre)
+        fetch(request, page: 0, shown: [])
+    }
+
+    /// 拉到底“加载更多”：同一个搜索取下一页，接在后面。
+    private func loadMore() {
+        guard !context.isPreview, let shown = shownSearch, hasMore, !loadingMore else { return }
+        fetch(shown, page: page + 1, shown: results)
+    }
+
+    private func fetch(_ request: RadioSearch, page next: Int, shown: [RadioListing]) {
+        searchTask?.cancel()
         requestID += 1
         let id = requestID
         searching = true
+        loadingMore = next > 0
         searchFailed = false
-        Task {
-            let found = await RadioDirectory.fetch(request)
-            guard id == requestID else { return }
+        if next == 0 { hasMore = false }
+        searchTask = Task {
+            let found = await RadioBrowseService.page(request, page: next, shown: shown)
+            guard id == requestID, !Task.isCancelled else { return }
             searching = false
+            loadingMore = false
             searched = true
-            searchFailed = found == nil
-            results = found ?? []
-            shownQuery = request
+            searchTask = nil
+            if let found {
+                results = found.listings
+                hasMore = found.more
+                page = next
+                shownSearch = request
+            } else {
+                searchFailed = true
+                if next == 0 {
+                    results = []
+                    shownSearch = request
+                }
+            }
         }
+    }
+
+    // MARK: World
+
+    private var world: some View {
+        RadioWorldPage(favourites: stations, style: browseStyle, isPreview: context.isPreview,
+                       onListen: { station in
+                           guard !context.isPreview else { return }
+                           addAndListen(station)
+                       },
+                       onFavourite: { station in favourite(station) })
     }
 
     /// 搜索框里贴的地址交给“添加电台”：试连、标“自定义”，结果在收藏页上方显示。

@@ -298,6 +298,28 @@
         }
       }
     },
+    "%@ · 0 个中文台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 0 Chinese stations"
+          }
+        }
+      }
+    },
+    "%@ · 0 台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 0 stations"
+          }
+        }
+      }
+    },
     "%@ · 上一杯在 %@前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -551,6 +573,17 @@
         }
       }
     },
+    "%@ · 约 %@ 台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · about %@ stations"
+          }
+        }
+      }
+    },
     "%@ ▸ 显示 ▸ 开发者 ▸ 允许来自 Apple 事件的 JavaScript" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -613,6 +646,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ rings · reorder in Edit"
+          }
+        }
+      }
+    },
+    "%@ 个地区 · 约 %@ 台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ regions · about %@ stations"
           }
         }
       }
@@ -2828,6 +2872,17 @@
         }
       }
     },
+    "%@还没有%@台，换个范围试试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ has no %@ stations yet. Try another scope."
+          }
+        }
+      }
+    },
     "%@里没有找到这个电台，换个关键词或地区试试。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3561,6 +3616,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "5-hour limit"
+          }
+        }
+      }
+    },
+    "500 台以上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500+"
           }
         }
       }
@@ -6102,6 +6168,17 @@
         }
       }
     },
+    "世界" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "World"
+          }
+        }
+      }
+    },
     "世界时钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6120,6 +6197,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "World Water Day"
+          }
+        }
+      }
+    },
+    "世界电台地图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "World station map"
           }
         }
       }
@@ -8698,6 +8786,17 @@
         }
       }
     },
+    "体育" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sports"
+          }
+        }
+      }
+    },
     "体重" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10575,6 +10674,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Again: runs %@ once more"
+          }
+        }
+      }
+    },
+    "再点一下取消" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to clear"
           }
         }
       }
@@ -12467,6 +12577,28 @@
         }
       }
     },
+    "加载更多（已显示 %@ / 约 %@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load more (%@ of about %@ shown)"
+          }
+        }
+      }
+    },
+    "加载更多（已显示 %@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load more (%@ shown)"
+          }
+        }
+      }
+    },
     "动土" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13842,6 +13974,17 @@
         }
       }
     },
+    "古典" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classical"
+          }
+        }
+      }
+    },
     "古巴" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14025,6 +14168,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only %@"
+          }
+        }
+      }
+    },
+    "只看中文台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chinese only"
           }
         }
       }
@@ -14223,6 +14377,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Taipei"
+          }
+        }
+      }
+    },
+    "台名，或贴 http(s) 串流地址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Station name, or paste an http(s) stream URL"
           }
         }
       }
@@ -16342,6 +16507,17 @@
         }
       }
     },
+    "地图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map"
+          }
+        }
+      }
+    },
     "地址和模型留空就用默认值。密钥只存在这台 Mac 的钥匙串里。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18108,6 +18284,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stable day"
+          }
+        }
+      }
+    },
+    "定时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer"
           }
         }
       }
@@ -25169,6 +25356,28 @@
         }
       }
     },
+    "按台数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By stations"
+          }
+        }
+      }
+    },
+    "按名称" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By name"
+          }
+        }
+      }
+    },
     "按填写顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25242,6 +25451,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Uses sunrise and sunset where you are"
+          }
+        }
+      }
+    },
+    "按收听量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By listeners"
           }
         }
       }
@@ -25341,6 +25561,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next ambient sound"
+          }
+        }
+      }
+    },
+    "换个国名试试，比如“日本”或“Japan”。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another name, like \"Japan\"."
           }
         }
       }
@@ -25521,6 +25752,17 @@
         }
       }
     },
+    "搜国家或地区" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search countries or regions"
+          }
+        }
+      }
+    },
     "搜索、整理收藏、更多表情" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25660,6 +25902,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moving house"
+          }
+        }
+      }
+    },
+    "摇滚" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rock"
           }
         }
       }
@@ -26181,6 +26434,17 @@
         }
       }
     },
+    "新闻" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News"
+          }
+        }
+      }
+    },
     "无标题窗口" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26463,6 +26727,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chile"
+          }
+        }
+      }
+    },
+    "暂无" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
           }
         }
       }
@@ -27589,6 +27864,17 @@
         }
       }
     },
+    "没有找到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing found"
+          }
+        }
+      }
+    },
     "没有找到「%@」。换个说法，或打开系统表情面板。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27596,6 +27882,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing found for \"%@\". Try another word, or open the Character Viewer."
+          }
+        }
+      }
+    },
+    "没有找到电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stations found"
           }
         }
       }
@@ -27827,6 +28124,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Puerto Rico"
+          }
+        }
+      }
+    },
+    "流行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop"
           }
         }
       }
@@ -28249,6 +28557,17 @@
         }
       }
     },
+    "点亮着的国家看它的热门电台；列表里也能找" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a lit country to see its top stations, or find it in the list"
+          }
+        }
+      }
+    },
     "点刻度换台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28300,6 +28619,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click an icon to turn that sound off"
+          }
+        }
+      }
+    },
+    "点地图上亮着的点，看看那里在播什么。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a lit dot on the map to see what's playing there."
           }
         }
       }
@@ -36967,6 +37297,17 @@
         }
       }
     },
+    "热门" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popular"
+          }
+        }
+      }
+    },
     "照一照" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37007,6 +37348,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ireland"
+          }
+        }
+      }
+    },
+    "爵士" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jazz"
           }
         }
       }
@@ -37792,6 +38144,17 @@
         }
       }
     },
+    "电子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Electronic"
+          }
+        }
+      }
+    },
     "电子宠物" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38331,6 +38694,28 @@
         }
       }
     },
+    "相声评书" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comedy & Storytelling"
+          }
+        }
+      }
+    },
+    "看全部台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all stations"
+          }
+        }
+      }
+    },
     "看喝水、习惯、专注达标几项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38338,6 +38723,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "By how many of water, habits and focus you meet"
+          }
+        }
+      }
+    },
+    "看热门" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show popular"
           }
         }
       }
@@ -40652,6 +41048,17 @@
         }
       }
     },
+    "约 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@"
+          }
+        }
+      }
+    },
     "约 %@ 分钟后有雨" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40659,6 +41066,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rain in about %@ min"
+          }
+        }
+      }
+    },
+    "约 %@ 台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "about %@ stations"
           }
         }
       }
@@ -42492,6 +42910,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple"
+          }
+        }
+      }
+    },
+    "范围" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scope"
+          }
+        }
+      }
+    },
+    "范围：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scope: %@"
           }
         }
       }
@@ -46316,6 +46756,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "That name is already taken"
+          }
+        }
+      }
+    },
+    "这个国家还没有中文台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Chinese stations in this country yet"
+          }
+        }
+      }
+    },
+    "这个国家还没有台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stations in this country yet"
           }
         }
       }
