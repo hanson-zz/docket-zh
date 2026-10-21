@@ -230,7 +230,7 @@ struct ReorderableChecklist: View {
     private func rowFill(_ dragging: Bool) -> Color {
         switch look {
         case .settings: dragging ? Color.primary.opacity(0.12) : Color.primary.opacity(0.05)
-        case .panel: dragging ? Color.panelFillStrong : Color.panelFill
+        case .panel: dragging ? Color.panelSelected : Color.panelFill
         }
     }
 }

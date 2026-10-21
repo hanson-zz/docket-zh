@@ -154,7 +154,7 @@ struct PodcastDetail: View {
         .padding(.leading, 4)
         .padding(.trailing, 8)
         .padding(.vertical, 4)
-        .background(Capsule().fill(selected ? Color.panelFillStrong : Color.panelFill))
+        .background(Capsule().fill(selected ? Color.panelRaised : Color.panelFill).panelLift(selected))
         .contentShape(Capsule())
         .onTapGesture {
             guard !context.isPreview else { return }
@@ -281,7 +281,7 @@ struct PodcastDetail: View {
                 .font(.system(size: size * 0.4, weight: .semibold))
                 .foregroundStyle(.panelPrimary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(filled ? Color.panelFillStrong : Color.panelFill))
+                .background(Circle().fill(filled ? Color.panelRaised : Color.panelFill).panelLift(filled))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

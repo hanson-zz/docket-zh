@@ -308,7 +308,7 @@ struct MicrophoneDetail: View {
         } label: {
             HStack(spacing: 14) {
                 Circle()
-                    .fill(muted ? redInk.opacity(0.18) : .panelFillStrong)
+                    .fill(muted ? redInk.opacity(0.18) : .panelRaised).panelLift(!muted)
                     .frame(width: 48, height: 48)
                     .overlay {
                         Image(systemName: muted ? "mic.slash.fill" : "mic.fill")

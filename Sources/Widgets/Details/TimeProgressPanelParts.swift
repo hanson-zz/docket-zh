@@ -436,7 +436,7 @@ struct TimeProgressSegmented: View {
                     .background {
                         if on {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(.panelFillStrong)
+                                .fill(.panelRaised).panelLift()
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                                         .strokeBorder(.panelStroke, lineWidth: 0.8)

@@ -201,7 +201,7 @@ struct AppSwitcherDetail: View {
                     .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 7)
                     .frame(height: 20)
-                    .background(Capsule().fill(.panelFillStrong))
+                    .background(Capsule().fill(.panelSelected))
                     .help(tr("\(count) 个窗口"))
             }
             Button {
@@ -222,7 +222,7 @@ struct AppSwitcherDetail: View {
         .padding(.trailing, 4)
         .frame(height: 38)
         .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(app.isActive ? Color.panelFillStrong : Color.panelFill))
+            .fill(app.isActive ? Color.panelSelected : Color.panelFill))
         .contentShape(.rect(cornerRadius: 11))
         .onTapGesture { self.open(app) }
         .contextMenu { menu(app) }

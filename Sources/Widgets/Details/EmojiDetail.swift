@@ -751,7 +751,7 @@ struct EmojiDetail: View {
                                 .background {
                                     if tone == currentTone {
                                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(.panelFillStrong)
+                                            .fill(.panelRaised).panelLift()
                                             .overlay {
                                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                                     .strokeBorder(.panelQuaternary, lineWidth: 1)

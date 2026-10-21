@@ -275,7 +275,7 @@ struct ShortcutDetail: View {
             if running { service.stop(item.name) } else { service.run(item.name) }
         } label: {
             ZStack {
-                Circle().fill(running ? Color.panelFillStrong : accent)
+                Circle().fill(running ? Color.panelSelected : accent)
                 Image(systemName: running ? "stop.fill" : "play.fill")
                     .font(.system(size: running ? 12 : 13, weight: .bold))
                     .foregroundStyle(running ? Color.panelPrimary : accentInk)
@@ -646,7 +646,7 @@ struct ShortcutDetail: View {
                                 .frame(width: 30, height: 30)
                                 .background {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(selected ? Color.panelFillStrong : Color.panelFill)
+                                        .fill(selected ? Color.panelSelected : Color.panelFill)
                                         .overlay {
                                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                                 .strokeBorder(selected ? Color.panelPrimary : Color.panelStroke,

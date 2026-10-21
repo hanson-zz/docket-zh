@@ -95,7 +95,7 @@ struct BreathPacerView: View {
                                 .foregroundStyle(.panelPrimary)
                                 .padding(.horizontal, 12)
                                 .frame(height: 26)
-                                .background(Capsule().fill(running ? Color.panelFillStrong : Color.panelFill))
+                                .background(Capsule().fill(running ? Color.panelRaised : Color.panelFill).panelLift(running))
                                 .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)

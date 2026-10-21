@@ -80,7 +80,7 @@ struct RevenueDetail: View {
                 .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.panelFillStrong))
+                .background(Capsule().fill(.panelSelected))
                 .fixedSize()
         }
     }

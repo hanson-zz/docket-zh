@@ -359,7 +359,7 @@ struct FileSelectList: View {
         .frame(height: Self.rowHeight)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(on ? Color.panelFillStrong : .panelFill)
+                .fill(on ? Color.panelSelected : .panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(.panelStroke, lineWidth: 0.6))
         }

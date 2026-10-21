@@ -22,7 +22,11 @@ import AppKit
 //
 // 底色、填充（fill / background，白色低透明度当「玻璃小块」）：
 //   .white.opacity(0.04 ... 0.12) 当底  → .panelFill        （薄玻璃填充、分组底、chip 底）
-//   .white.opacity(0.13 ... 0.3) 当底   → .panelFillStrong  （选中、按下、悬停的那一块）
+//   .white.opacity(0.13 ... 0.3) 当底   → 按用途二选一：
+//       列表行、格子的选中，悬停、拖起，小标签、图标占位 → .panelSelected（浅色加深一档的灰）
+//       分段控件、选项胶囊的选中项，独立按钮底 → .panelRaised + 形状上挂 .panelLift()
+//       （浅色实心白加柔和阴影浮在淡灰上；深色两者都是白 0.18，和以前一样）
+//   .panelFillStrong 是旧名字，等于 .panelSelected
 //   进度条、圆环的空轨道 .white.opacity(x) → .panelTrack
 //   .white.opacity(x) 当描边 / 细线       → .panelStroke（玻璃块边）或 .panelSeparator（分隔线）
 //   Divider().overlay(.white.opacity(x)) → Divider().overlay(.panelSeparator)
@@ -78,19 +82,28 @@ extension ShapeStyle where Self == Color {
                            light: NSColor(srgbRed: 0.094, green: 0.086, blue: 0.11, alpha: 0.3))
     }
 
-    /// 薄玻璃填充：分组底、chip 底。替换当底的 `.white.opacity(0.04...0.12)`。
-    /// 浅色下 0.4（原 0.45），和 `panelFillStrong` 拉开。
+    /// 薄玻璃填充：分组底、chip 底、未选中的格子和按钮。替换当底的 `.white.opacity(0.04...0.12)`。
+    /// 浅色下是很淡的灰（黑 0.05，同 macOS 浅色里控件的轨道和未选中底）：近白玻璃上
+    /// 再叠白几乎看不出，灰一点才能和浮起的白色选中块、加深的灰色选中行分开。深色不变。
     static var panelFill: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.09),
-                           light: NSColor.white.withAlphaComponent(0.4))
+                           light: NSColor.black.withAlphaComponent(0.05))
     }
-    /// 加重一点的玻璃填充：选中、按下、悬停。替换当底的 `.white.opacity(0.13...0.3)`。
-    /// 浅色下 0.95（原 0.75）：浅玻璃本来就偏白，0.45 对 0.75 开关两态几乎看不出，
-    /// 拉到 0.4 对 0.95，选中那块是一块明显更白的玻璃。深色不变。
-    static var panelFillStrong: Color {
+    /// 选中、悬停、拖起的那一块（列表行、格子、悬停卡片），以及小标签、图标占位这类
+    /// 「比 panelFill 重一档」的底。浅色下是加深一档的灰（黑 0.10），深色白 0.18。
+    static var panelSelected: Color {
+        Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
+                           light: NSColor.black.withAlphaComponent(0.10))
+    }
+    /// 浮起的选中块：分段控件、选项胶囊里选中的那一项，和独立的按钮底。浅色下是
+    /// 实心白（0.95），配 `.panelLift()` 的柔和阴影浮在 panelFill 的淡灰轨道上
+    /// （同 macOS 浅色分段控件和按钮）；深色白 0.18，不加阴影，和以前一样。
+    static var panelRaised: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.18),
                            light: NSColor.white.withAlphaComponent(0.95))
     }
+    /// 旧名字，等于 `panelSelected`。新代码按用途选 `panelSelected` 或 `panelRaised`。
+    static var panelFillStrong: Color { panelSelected }
     /// 进度条、圆环的空轨道：浅色玻璃上白轨道看不见，换成淡淡的深色。
     static var panelTrack: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.15),
@@ -178,6 +191,26 @@ extension NSAppearance {
                          .accessibilityHighContrastDarkAqua]).map {
             $0 == .darkAqua || $0 == .accessibilityHighContrastDarkAqua
         } ?? false
+    }
+}
+
+// MARK: - 浮起的选中块
+
+extension View {
+    /// 浅色下给浮起的选中块加一道柔和阴影（黑 0.10，半径 2，下移 1），深色和保持暗色
+    /// 的例外不加。挂在填充形状上（`Capsule().fill(.panelRaised).panelLift()`），
+    /// 不挂在带字的整块上，免得字也带阴影。
+    func panelLift(_ on: Bool = true) -> some View {
+        modifier(PanelLiftModifier(on: on))
+    }
+}
+
+private struct PanelLiftModifier: ViewModifier {
+    var on: Bool
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        content.shadow(color: .black.opacity(on && scheme == .light ? 0.10 : 0), radius: 2, y: 1)
     }
 }
 

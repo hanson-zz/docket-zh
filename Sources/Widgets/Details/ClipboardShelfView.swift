@@ -4,7 +4,7 @@ import SwiftUI
 struct ShelfLedge: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 3, style: .continuous)
-            .fill(LinearGradient(colors: [.panelFillStrong, .panelFill],
+            .fill(LinearGradient(colors: [.panelSelected, .panelFill],
                                  startPoint: .top, endPoint: .bottom))
             .frame(height: 6)
             .overlay(alignment: .top) {
@@ -55,7 +55,7 @@ struct ShelfClipCard<Thumb: View, Accessory: View>: View {
         .frame(height: 110)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(hovering ? Color.panelFillStrong : Color.panelFill)
+                .fill(hovering ? Color.panelSelected : Color.panelFill)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)

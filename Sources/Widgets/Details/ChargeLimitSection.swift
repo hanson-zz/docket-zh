@@ -174,7 +174,7 @@ struct ChargeLimitSection: View {
         .foregroundStyle(.panelPrimary)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Capsule().fill(.panelFillStrong))
+        .background(Capsule().fill(.panelRaised).panelLift())
         .disabled(service.working)
     }
 }

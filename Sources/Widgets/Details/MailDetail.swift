@@ -337,7 +337,7 @@ struct MailDetail: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(hover ? Color.panelFillStrong : .panelFill)
+                .fill(hover ? Color.panelSelected : .panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(.panelStroke, lineWidth: 0.6)
@@ -409,7 +409,7 @@ struct MailDetail: View {
                     .lineLimit(1)
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
-                    .background(Capsule().fill(confirmAll ? Color.panelFillStrong : .panelFill))
+                    .background(Capsule().fill(confirmAll ? Color.panelRaised : .panelFill).panelLift(confirmAll))
                     .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }

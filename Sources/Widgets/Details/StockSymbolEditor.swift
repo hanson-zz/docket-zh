@@ -266,7 +266,7 @@ struct StockSymbolEditor: View {
                     if holding == nil {
                         Capsule().strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
                     } else {
-                        Capsule().fill(open ? Color.panelFillStrong : Color.panelFill)
+                        Capsule().fill(open ? Color.panelRaised : Color.panelFill).panelLift(open)
                     }
                 }
                 .contentShape(Capsule())

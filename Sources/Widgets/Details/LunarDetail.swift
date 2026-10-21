@@ -206,7 +206,7 @@ struct LunarDetail: View {
             .frame(width: 26, height: 24)
             .background {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(filled ? accent : Color.panelFillStrong)
+                    .fill(filled ? accent : Color.panelSelected)
             }
     }
 

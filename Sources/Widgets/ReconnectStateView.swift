@@ -87,7 +87,7 @@ struct ReconnectStateView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.panelPrimary)
                         .frame(width: 24, height: 24)
-                        .background(Color.panelFillStrong, in: .circle)
+                        .background(Circle().fill(.panelRaised).panelLift())
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
@@ -170,7 +170,7 @@ private struct PlugArt: View {
 
     private var socket: some View {
         RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(phase == .reconnecting ? Color.panelFillStrong : Color.panelFill)
+            .fill(phase == .reconnecting ? Color.panelSelected : Color.panelFill)
             .overlay {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .strokeBorder(.panelQuaternary, lineWidth: 1)

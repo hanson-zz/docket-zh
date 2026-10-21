@@ -283,7 +283,7 @@ struct SystemActivityDetail: View {
                             .foregroundStyle(.panelPrimary.opacity(chartMetric == metric ? 1 : 0.7))
                             .padding(.horizontal, 10)
                             .frame(height: 26)
-                            .background(Capsule().fill(chartMetric == metric ? Color.panelFillStrong : Color.clear))
+                            .background(Capsule().fill(chartMetric == metric ? Color.panelRaised : Color.clear).panelLift(chartMetric == metric))
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -492,7 +492,7 @@ struct SystemActivityDetail: View {
                 .frame(width: size, height: size)
         } else {
             RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(.panelFillStrong)
+                .fill(.panelSelected)
                 .frame(width: size, height: size)
                 .overlay {
                     Image(systemName: "gearshape.fill")
@@ -790,7 +790,7 @@ struct SystemActivityDetail: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, minHeight: 34)
-                    .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
+                    .background(Capsule().fill(on ? Color.panelRaised : Color.panelFill).panelLift(on))
                     .overlay(Capsule().strokeBorder(on ? Color.panelTertiary : Color.panelStroke, lineWidth: 0.8))
                     .contentShape(.capsule)
                 }

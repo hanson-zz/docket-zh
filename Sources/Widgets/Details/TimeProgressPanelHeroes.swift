@@ -487,7 +487,7 @@ struct TimeProgressQuadHero: View {
         .lineLimit(1)
         .minimumScaleFactor(0.8)
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(bright ? Color.panelFillStrong : Color.panelFill))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(bright ? Color.panelRaised : Color.panelFill).panelLift(bright))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(bright ? colors.light.opacity(0.9) : .panelStroke, lineWidth: 1)

@@ -219,7 +219,7 @@ struct StocksDetail: View {
                             .foregroundStyle(item == symbol ? Color.panelOnPrimary : Color.panelPrimary)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 3)
-                            .background(Capsule().fill(item == symbol ? Color.panelPrimary : Color.panelFillStrong))
+                            .background(Capsule().fill(item == symbol ? Color.panelPrimary : Color.panelSelected))
                     }
                     .buttonStyle(.plain)
                 }
@@ -513,7 +513,7 @@ struct StocksDetail: View {
                             .foregroundStyle(item.name == current.name ? Color.panelOnPrimary : Color.panelPrimary)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 3)
-                            .background(Capsule().fill(item.name == current.name ? Color.panelPrimary : Color.panelFillStrong))
+                            .background(Capsule().fill(item.name == current.name ? Color.panelPrimary : Color.panelSelected))
                     }
                     .buttonStyle(.plain)
                     .contextMenu {

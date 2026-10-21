@@ -215,7 +215,7 @@ struct CalendarPlannerPanel: View {
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.panelFillStrong)
+                                .fill(.panelRaised).panelLift()
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .strokeBorder(.panelQuaternary, lineWidth: 0.6)
@@ -662,7 +662,7 @@ struct CalendarPlannerPanel: View {
                             }
                             .padding(.horizontal, 10)
                             .frame(height: 30)
-                            .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
+                            .background(Capsule().fill(on ? Color.panelRaised : Color.panelFill).panelLift(on))
                             .overlay { Capsule().strokeBorder(on ? Color.panelSecondary : Color.panelStroke, lineWidth: on ? 0.9 : 0.6) }
                             .contentShape(Capsule())
                         }
@@ -740,7 +740,7 @@ struct CalendarPlannerPanel: View {
                             .foregroundStyle(Self.warnRed.panelReadable)
                             .frame(maxWidth: .infinity)
                             .frame(height: 30)
-                            .background(Capsule().fill(confirmDelete ? Color.panelFillStrong : Color.panelFill))
+                            .background(Capsule().fill(confirmDelete ? Color.panelRaised : Color.panelFill).panelLift(confirmDelete))
                             .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                             .contentShape(Capsule())
                     }
@@ -792,7 +792,7 @@ struct CalendarPlannerPanel: View {
             ZStack(alignment: .topLeading) {
                 ForEach(labels, id: \.self) { hour in
                     let lx = inset + CGFloat(hour - hours.lowerBound) / span * width
-                    Rectangle().fill(.panelFillStrong).frame(width: 0.6, height: 22).offset(x: lx, y: 8)
+                    Rectangle().fill(.panelSelected).frame(width: 0.6, height: 22).offset(x: lx, y: 8)
                     Text("\(hour):00")
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
@@ -856,7 +856,7 @@ struct CalendarPlannerPanel: View {
                     .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 14)
                     .frame(height: 30)
-                    .background(Capsule().fill(.panelFillStrong))
+                    .background(Capsule().fill(.panelRaised).panelLift())
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)

@@ -165,8 +165,8 @@ struct GitHubDetail: View {
                         .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 10)
                         .frame(height: 24)
-                        .background(on ? panelTint.fill(0.45, or: Color.panelFillStrong) : Color.panelFill,
-                                    in: .capsule)
+                        .background(Capsule().fill(on ? panelTint.fill(0.45, or: Color.panelRaised) : Color.panelFill)
+                                    .panelLift(on && panelTint == nil))
                     }
                     .buttonStyle(.plain)
                     .help(slug)
@@ -314,7 +314,7 @@ struct GitHubDetail: View {
                         Text(label)
                             .lineLimit(1)
                             .padding(.horizontal, 5)
-                            .background(Color.panelFillStrong, in: .capsule)
+                            .background(Color.panelSelected, in: .capsule)
                     }
                 }
                 .font(WidgetStyle.caption(13))

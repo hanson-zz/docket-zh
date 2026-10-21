@@ -585,7 +585,7 @@ struct RemindersDetail: View {
                 .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(Capsule().fill(.panelFillStrong))
+                .background(Capsule().fill(.panelRaised).panelLift())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

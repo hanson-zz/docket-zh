@@ -412,7 +412,7 @@ struct AmbientDetail: View {
                 .foregroundStyle(on ? .panelPrimary : .panelSecondary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
-                .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
+                .background(Capsule().fill(on ? Color.panelRaised : Color.panelFill).panelLift(on))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -430,7 +430,7 @@ struct AmbientDetail: View {
                 .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)
-                .background(Capsule().fill(.panelFillStrong))
+                .background(Capsule().fill(.panelRaised).panelLift())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

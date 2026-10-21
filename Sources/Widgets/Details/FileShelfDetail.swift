@@ -205,7 +205,7 @@ struct FileShelfDetail: View {
         .frame(height: Self.rowHeight)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(on ? Color.panelFillStrong : Color.panelFill)
+                .fill(on ? Color.panelSelected : Color.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(.panelStroke, lineWidth: 0.6))
         }

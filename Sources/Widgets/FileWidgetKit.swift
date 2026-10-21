@@ -75,7 +75,7 @@ struct PanelButton: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 30)
-            .background(prominent ? Color.panelFillStrong : Color.panelFill, in: .capsule)
+            .background(Capsule().fill(prominent ? Color.panelRaised : Color.panelFill).panelLift(prominent))
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -92,7 +92,7 @@ struct PanelHeader: View {
     var body: some View {
         HStack(spacing: 10) {
             Circle()
-                .fill(.panelFillStrong)
+                .fill(.panelSelected)
                 .frame(width: 38, height: 38)
                 .overlay {
                     Image(systemName: symbol)

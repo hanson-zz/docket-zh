@@ -612,7 +612,7 @@ struct TodoDetail: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 26)
                         .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(panelTint.accent(or: .panelFillStrong)))
+                            .fill(panelTint.accent(or: .panelRaised)).panelLift(panelTint == nil))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)

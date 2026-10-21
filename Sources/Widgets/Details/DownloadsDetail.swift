@@ -309,7 +309,7 @@ private struct DownloadRow: View {
         .frame(height: 50)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(hovered ? Color.panelFillStrong : Color.panelFill)
+                .fill(hovered ? Color.panelSelected : Color.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(.panelStroke, lineWidth: 0.6))
         }

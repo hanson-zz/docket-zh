@@ -568,7 +568,7 @@ struct CryptoDetail: View {
         .padding(.trailing, 10)
         .frame(height: Self.rowHeight)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(lifted ? Color.panelFillStrong : Color.panelFill))
+            .fill(lifted ? Color.panelSelected : Color.panelFill))
         .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.5) }
         .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 8, y: 3)
     }

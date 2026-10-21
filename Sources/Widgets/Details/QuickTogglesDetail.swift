@@ -133,7 +133,7 @@ struct QuickTogglesDetail: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(on ? ink : .panelPrimary.opacity(locked ? 0.5 : 0.95))
                         .frame(width: 26, height: 26)
-                        .background(Circle().fill(on ? accent : .panelFillStrong))
+                        .background(Circle().fill(on ? accent : .panelSelected))
                     Spacer(minLength: 0)
                     if ProFeatures.isProTool(toggle.rawValue) { ProBadge(compact: true) }
                 }

@@ -339,7 +339,7 @@ struct ClipboardDetail: View {
                 .foregroundStyle(on ? Color.panelPrimary : Color.panelTertiary)
                 .frame(width: 26, height: 22)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(on ? panelTint.fill(0.45, or: .panelFillStrong) : .clear))
+                    .fill(on ? panelTint.fill(0.45, or: .panelRaised) : .clear).panelLift(on && panelTint == nil))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)

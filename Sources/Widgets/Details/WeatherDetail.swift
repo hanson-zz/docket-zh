@@ -702,7 +702,7 @@ struct WeatherDetail: View {
     @ViewBuilder private func scrubMarker(column: CGFloat) -> some View {
         if let scrub, hours.count > 1 {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.panelFillStrong)
+                .fill(.panelSelected)
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(.panelStroke, lineWidth: 0.5)

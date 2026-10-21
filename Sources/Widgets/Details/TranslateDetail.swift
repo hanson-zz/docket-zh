@@ -157,7 +157,7 @@ struct TranslateDetail: View {
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(.panelPrimary)
                     .frame(width: 26, height: 26)
-                    .background(Color.panelFillStrong, in: .circle)
+                    .background(Circle().fill(.panelRaised).panelLift())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("交换语言")
@@ -198,7 +198,7 @@ struct TranslateDetail: View {
         .foregroundStyle(.panelPrimary)
         .padding(.horizontal, 10)
         .frame(height: 24)
-        .background(Color.panelFillStrong, in: .capsule)
+        .background(Capsule().fill(.panelRaised).panelLift())
     }
 
     // MARK: Panes

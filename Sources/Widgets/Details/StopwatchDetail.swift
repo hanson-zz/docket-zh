@@ -326,7 +326,7 @@ struct ClockPanelButton: View {
                 .frame(height: height)
                 .background {
                     Capsule()
-                        .fill(fill ?? Color.panelFillStrong)
+                        .fill(fill ?? Color.panelRaised).panelLift(fill == nil)
                         .overlay {
                             Capsule().strokeBorder(Color.panelStroke.opacity(fill == nil ? 1 : 0), lineWidth: 0.5)
                         }

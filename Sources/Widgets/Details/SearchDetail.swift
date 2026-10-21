@@ -52,7 +52,7 @@ struct SearchDetail: View {
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.panelPrimary)
                             .frame(width: 26, height: 26)
-                            .background(Color.panelFillStrong, in: .circle)
+                            .background(Circle().fill(.panelRaised).panelLift())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("搜索")
@@ -120,7 +120,7 @@ struct SearchDetail: View {
             icon()
                 .padding(5)
                 .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(selected ? Color.panelFillStrong : Color.panelFill))
+                    .fill(selected ? Color.panelSelected : Color.panelFill))
                 .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .strokeBorder(selected ? Color.panelTertiary : Color.clear, lineWidth: 1))
             Text(title)

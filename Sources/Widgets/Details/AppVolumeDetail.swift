@@ -216,7 +216,7 @@ struct AppVolumeDetail: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(row.setting.muted ? Color.panelTertiary : Color.panelPrimary)
                 .frame(width: 22, height: 22)
-                .background(Circle().fill(row.setting.muted ? Color.panelFill : Color.panelFillStrong))
+                .background(Circle().fill(row.setting.muted ? Color.panelFill : Color.panelRaised).panelLift(!row.setting.muted))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -349,7 +349,7 @@ struct AppVolumeDetail: View {
                 .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 10)
                 .frame(height: 26)
-                .background(Capsule().fill(.panelFillStrong))
+                .background(Capsule().fill(.panelRaised).panelLift())
         }
         .padding(10)
         .background(pane(0.1))

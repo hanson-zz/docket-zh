@@ -331,7 +331,7 @@ struct WaterDetail: View {
             .frame(height: 38)
             // 选中只是亮一点加一圈白描边，不用大块的蓝。
             .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(selected ? Color.panelFillStrong : Color.panelFill))
+                .fill(selected ? Color.panelRaised : Color.panelFill).panelLift(selected))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
             .contentShape(.rect)
@@ -396,7 +396,7 @@ struct WaterDetail: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 26)
                             .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(selected ? Color.panelFillStrong : Color.panelFill))
+                                .fill(selected ? Color.panelRaised : Color.panelFill).panelLift(selected))
                             .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
                             .contentShape(.rect)
@@ -502,7 +502,7 @@ struct WaterDetail: View {
             .foregroundStyle(.panelPrimary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(.panelFillStrong))
+            .background(Capsule().fill(.panelRaised).panelLift())
             Button {
                 WidgetWriter.write(instance) { config in dropNotice(character, in: &config) }
             } label: {
@@ -614,7 +614,7 @@ struct WaterDetail: View {
             .frame(maxWidth: .infinity)
             .frame(height: 40)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(highlighted ? Color.panelFillStrong : Color.panelFill))
+                .fill(highlighted ? Color.panelRaised : Color.panelFill).panelLift(highlighted))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder((highlighted ? Color.panelQuaternary : Color.clear), lineWidth: 1))
             .contentShape(.rect)
@@ -768,7 +768,7 @@ struct WaterDetail: View {
                         .foregroundStyle(entry.type == .water ? Color.white : Color.panelPrimary)
                         .frame(width: 14, height: 14)
                         .background(Circle().fill(entry.type == .water ? WaterStyle.water.opacity(0.85)
-                                                  : Color.panelFillStrong))
+                                                  : Color.panelSelected))
                         .position(x: x(entry.minute), y: lineY)
                         .help("\(entry.clock) \(CustomDrinks.title(of: entry, in: namedDrinks)) \(WaterIntake.amount(entry.amount, ounces: ounces))")
                 }
@@ -1149,7 +1149,7 @@ struct WaterDetail: View {
                 .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(Color.panelFillStrong))
+                .background(Capsule().fill(Color.panelRaised).panelLift())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -1206,7 +1206,7 @@ struct WaterDetail: View {
                                             .foregroundStyle(proLocked ? Color.white : Color.panelPrimary)
                                             .padding(2.5)
                                             .background(Circle().fill(proLocked ? Color(hex: ShelfColor.redPanda.hex)
-                                                                                : Color.panelFillStrong))
+                                                                                : Color.panelSelected))
                                     }
                                 }
                             Text(character.title)
@@ -1218,7 +1218,7 @@ struct WaterDetail: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(selected ? Color.panelFillStrong : Color.panelFill))
+                            .fill(selected ? Color.panelSelected : Color.panelFill))
                         .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                             .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
                         .contentShape(.rect)
