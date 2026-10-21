@@ -412,7 +412,7 @@ struct WeatherDetail: View {
             }
     }
 
-    private static let swipeSpace = "weatherCitySwipe"
+    private nonisolated static let swipeSpace = "weatherCitySwipe"
 
     /// 在城市名和大字上用鼠标左右拖换城市（触控板两指滑走 `CitySwipeCatcher`）；
     /// 逐小时那一排的拖动不受影响。拖的时候内容跟手，到头轻轻回弹。
