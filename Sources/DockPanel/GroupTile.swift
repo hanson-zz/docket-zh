@@ -41,8 +41,9 @@ struct GroupTile: View {
                                                       dash: [max(2, side * 0.09), max(2, side * 0.06)]))
             }
             .overlay {
-                Image(systemName: "plus")
-                    .font(.system(size: side * 0.36, weight: .medium))
+                // 文件夹分组画文件夹加号，一眼和应用分组分开。
+                Image(systemName: group.isFolderGroup ? "folder.badge.plus" : "plus")
+                    .font(.system(size: side * (group.isFolderGroup ? 0.30 : 0.36), weight: .medium))
                     .foregroundStyle(ink.opacity(scheme == .dark ? 0.70 : 0.55))
             }
             .frame(width: side, height: side)

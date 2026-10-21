@@ -512,6 +512,11 @@ public enum GroupTint: String, Codable, Hashable, Sendable, CaseIterable {
     case none, red, orange, yellow, green, teal, blue, purple, pink, graphite
 }
 
+/// 分组装的是什么，见 `DockGroup.kind`。
+public enum GroupKind: String, Codable, Hashable, Sendable {
+    case apps, folders
+}
+
 /// A folder of dock items, shown as one tile with a grid of its contents.
 public struct DockGroup: Codable, Hashable, Sendable, Identifiable {
     public var id: UUID
@@ -522,15 +527,27 @@ public struct DockGroup: Codable, Hashable, Sendable, Identifiable {
     /// 它是用户特意放的容器。拖一个图标到另一个上合成的组是 nil，照旧在只剩一个时
     /// 让位给那个图标。可选，旧版本存下的组照常解码。
     public var keepsEmpty: Bool?
+    /// 组里装什么：nil 或 `.apps` 是原来的应用分组（什么都能放），`.folders` 是
+    /// 小组件库「文件夹分组」新建的组，只收文件夹，点开是文件夹浏览小窗。
+    /// 可选，旧版本存下的组照常解码成应用分组。
+    public var kind: GroupKind?
+    /// 文件夹分组上次看的是哪个文件夹（组里那一项的 id），下次打开接着看它。
+    public var selectedFolder: UUID?
 
     public init(id: UUID = UUID(), name: String, tint: GroupTint = .none,
-                items: [DockItem] = [], keepsEmpty: Bool? = nil) {
+                items: [DockItem] = [], keepsEmpty: Bool? = nil,
+                kind: GroupKind? = nil, selectedFolder: UUID? = nil) {
         self.id = id
         self.name = name
         self.tint = tint
         self.items = items
         self.keepsEmpty = keepsEmpty
+        self.kind = kind
+        self.selectedFolder = selectedFolder
     }
+
+    /// 是不是文件夹分组，见 `kind`。
+    public var isFolderGroup: Bool { kind == .folders }
 
     /// 少于两个时要不要留着，见 `keepsEmpty`。
     public var keepsWhenSmall: Bool { keepsEmpty == true }
@@ -754,6 +771,8 @@ public enum ShelfItems {
 
         var result = items
         let item = result[slot]
+        // 文件夹分组只收文件夹，拖 App、小组件过去不合进去。
+        guard FolderGroups.canCombine(item, into: result[targetSlot]) else { return items }
         if var group = result[targetSlot].group {
             group.items.append(item)
             result[targetSlot] = .group(group)

@@ -300,4 +300,12 @@ public enum ProLicenseGate {
     public static func windowPreviewActive(_ settings: CustomDockSettings, unlocked: Bool) -> Bool {
         settings.hoverWindowPreview && canUse(.windowPreview, unlocked: unlocked)
     }
+
+    // MARK: 从小组件库新建分组
+
+    /// 小组件库「应用分组」「文件夹分组」能不能点（Pro）。没解锁时弹付费墙、不新建；
+    /// 已经在扩展栏上的分组不受影响，照常打开、加东西、移除、重排。
+    public static func canCreateShelfGroup(unlocked: Bool) -> Bool {
+        canUse(.shelfGroups, unlocked: unlocked)
+    }
 }

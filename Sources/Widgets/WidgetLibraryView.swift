@@ -173,6 +173,8 @@ struct WidgetLibraryView: View {
     var onAddItem: (DockItem) -> Void
     /// 「应用分组」：在扩展栏上放一个空组并打开它。
     var onAddGroup: () -> Void
+    /// 「文件夹分组」：在扩展栏上放一个空的文件夹分组并打开它。
+    var onAddFolderGroup: () -> Void
     /// Widgets sitting directly on the active shelf, read in `body` so the
     /// library's minus buttons follow additions and removals as they happen.
     var placed: () -> [WidgetInstance]
@@ -185,6 +187,7 @@ struct WidgetLibraryView: View {
     init(onAdd: @escaping (WidgetInstance) -> Void,
          onAddItem: @escaping (DockItem) -> Void = { _ in },
          onAddGroup: @escaping () -> Void = {},
+         onAddFolderGroup: @escaping () -> Void = {},
          placed: @escaping () -> [WidgetInstance] = { [] },
          onRemove: @escaping (UUID) -> Void = { _ in },
          onClose: @escaping () -> Void,
@@ -192,6 +195,7 @@ struct WidgetLibraryView: View {
         self.onAdd = onAdd
         self.onAddItem = onAddItem
         self.onAddGroup = onAddGroup
+        self.onAddFolderGroup = onAddFolderGroup
         self.placed = placed
         self.onRemove = onRemove
         self.onClose = onClose
@@ -236,7 +240,7 @@ struct WidgetLibraryView: View {
                     }
                     row(.appsAndFolders, symbol: WidgetCategory.appsAndFolders.symbol,
                         title: WidgetCategory.appsAndFolders.displayName,
-                        count: LibraryShortcut.all.filter { $0.url != nil }.count + 1
+                        count: LibraryShortcut.all.filter { $0.url != nil }.count + 2
                             + widgetCount(libraryCards.filter { $0.category == .appsAndFolders }),
                         enabled: true)
                     // A category with nothing in it is not listed at all.
@@ -353,7 +357,7 @@ struct WidgetLibraryView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
             Divider()
-            if flatCards.isEmpty && visibleShortcuts.isEmpty && !showsGroupShortcut {
+            if flatCards.isEmpty && visibleShortcuts.isEmpty && !showsGroupShortcut && !showsFolderGroupShortcut {
                 empty
             } else {
                 grid
@@ -377,7 +381,7 @@ struct WidgetLibraryView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
-                    if !visibleShortcuts.isEmpty || showsGroupShortcut {
+                    if !visibleShortcuts.isEmpty || showsGroupShortcut || showsFolderGroupShortcut {
                         shortcutsSection
                     }
                     ForEach(sections, id: \.title) { section in
@@ -454,6 +458,9 @@ struct WidgetLibraryView: View {
                 if showsGroupShortcut {
                     groupShortcutView
                 }
+                if showsFolderGroupShortcut {
+                    folderGroupShortcutView
+                }
                 ForEach(visibleShortcuts) { shortcut in
                     shortcutView(shortcut)
                 }
@@ -493,13 +500,43 @@ struct WidgetLibraryView: View {
     }
 
     /// 「应用分组」：一个空组的样子（虚线框加「＋」），点一下在扩展栏上放一个
-    /// 空组并打开它，再往里加 App。
+    /// 空组并打开它，再往里加 App。Pro：没解锁时弹付费墙，不新建。
     private var groupShortcutView: some View {
-        Button(action: onAddGroup) {
+        groupShortcut(group: DockGroup(name: "", keepsEmpty: true),
+                      title: tr("应用分组"),
+                      help: tr("在扩展栏上放一个空分组，再把几个 App 收进去"),
+                      label: tr("添加应用分组"),
+                      action: onAddGroup)
+    }
+
+    /// 「文件夹分组」：空的文件夹分组（虚线框加文件夹＋），点一下在扩展栏上放一个，
+    /// 再往里加几个常用文件夹，点开在浏览小窗里切换着看。Pro，同上。
+    private var folderGroupShortcutView: some View {
+        groupShortcut(group: DockGroup(name: "", keepsEmpty: true, kind: .folders),
+                      title: tr("文件夹分组"),
+                      help: tr("在扩展栏上放一个文件夹分组，收几个常用文件夹，点开切换着看"),
+                      label: tr("添加文件夹分组"),
+                      action: onAddFolderGroup)
+    }
+
+    /// 两种分组入口共用的样子：空组格子、右上角 Pro 角标（固定显示，不随解锁变）、名字。
+    private func groupShortcut(group: DockGroup, title: String, help: String, label: String,
+                               action: @escaping () -> Void) -> some View {
+        Button {
+            guard ProLicenseGate.canCreateShelfGroup(unlocked: ProAccess.isUnlocked) else {
+                PaywallWindow.shared.show()
+                return
+            }
+            action()
+        } label: {
             VStack(spacing: 5) {
-                GroupTile(group: DockGroup(name: "", keepsEmpty: true), side: 40)
+                GroupTile(group: group, side: 40)
                     .frame(width: 52, height: 52)
-                Text(tr("应用分组"))
+                    .overlay(alignment: .topTrailing) {
+                        ProBadge()
+                            .offset(x: 10, y: -4)
+                    }
+                Text(title)
                     .font(.system(size: 13))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -508,8 +545,22 @@ struct WidgetLibraryView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help(tr("在扩展栏上放一个空分组，再把几个 App 收进去"))
-        .accessibilityLabel(tr("添加应用分组"))
+        .help(help)
+        .accessibilityLabel(label)
+        .accessibilityHint(ProFeatures.label)
+    }
+
+    /// 搜「文件夹分组」「folder group」也能找到它。
+    private var showsFolderGroupShortcut: Bool {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        if !query.isEmpty {
+            return WidgetSearch.matches(query, names: [tr("文件夹分组"), "Folder Group", "folders", "tabs"],
+                                        kind: "")
+        }
+        switch selection {
+        case .all, .appsAndFolders: return true
+        case .category, .recommended: return false
+        }
     }
 
     /// 搜「分组」「group」「fenzu」也能找到它。

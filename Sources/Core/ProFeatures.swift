@@ -35,6 +35,9 @@ import Foundation
 ///   `ProLicenseGate.wallpaperAutoChangeActive`。壁纸本身 2026-10-20 起免费。
 /// - 扩展栏悬停正在运行的 App 弹出窗口预览（`CustomDockSettings.hoverWindowPreview`），
 ///   见 `ProLicenseGate.windowPreviewActive`。
+/// - 从小组件库新建应用分组和文件夹分组（`Setting.shelfGroups`），见
+///   `ProLicenseGate.canCreateShelfGroup`。拖一个图标到另一个上叠成分组仍免费，
+///   已经放好的分组没解锁时照常显示、打开、增删，只是不能再从库里新建。
 /// - 加密货币面板的到价提醒（高于、低于，存在卡片的 `alerts`），见
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 public enum ProFeatures {
@@ -122,6 +125,9 @@ public enum ProFeatures {
         case chargeLimit
         /// 设置 ▸ 扩展栏的「悬停显示窗口预览」。
         case windowPreview
+        /// 从小组件库新建「应用分组」和「文件夹分组」。拖图标叠成的分组不算，
+        /// 已经放好的分组没解锁时也照常显示和使用，见 `ProLicenseGate.canCreateShelfGroup`。
+        case shelfGroups
     }
 
     // MARK: 判断

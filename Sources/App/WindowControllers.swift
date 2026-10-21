@@ -110,6 +110,17 @@ final class LibraryWindow: HostedWindow {
                                                         userInfo: ["id": id.uuidString])
                     }
                 },
+                onAddFolderGroup: {
+                    let made = withAnimation(.snappy(duration: 0.25)) {
+                        app.addEmptyFolderGroup(named: tr("文件夹分组"))
+                    }
+                    guard let id = made else { return }
+                    // 同应用分组：格子长出来以后从它那里打开（扩展栏按组的种类开文件夹小窗）。
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        NotificationCenter.default.post(name: GroupWindow.openRequest, object: nil,
+                                                        userInfo: ["id": id.uuidString])
+                    }
+                },
                 placed: { app.effectiveItems.compactMap(\.widget) },
                 onRemove: { id in
                     withAnimation(.snappy(duration: 0.25)) { app.removeItem(id) }

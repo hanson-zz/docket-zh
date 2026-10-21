@@ -463,6 +463,46 @@ public final class AppState {
         mutateItems { AppGroups.renaming(groupID, to: name, in: $0) }
     }
 
+    /// 小组件库「文件夹分组」：在扩展栏末尾放一个空的文件夹分组，名字避开重名。
+    /// 返回新组的 id，没有扩展栏配置时为 nil。
+    @discardableResult
+    public func addEmptyFolderGroup(named base: String) -> UUID? {
+        guard state.customDock.profileID.flatMap({ index(of: $0) }) != nil else { return nil }
+        var made: UUID?
+        mutateItems { items in
+            let result = FolderGroups.addingEmptyGroup(named: base, in: items)
+            made = result.id
+            return result.items
+        }
+        return made
+    }
+
+    /// 往文件夹分组里加文件夹（标签栏的「＋」、从访达拖到格子或标签栏上），重复跳过。
+    public func addFolders(_ urls: [URL], toFolderGroup groupID: UUID) {
+        let items = urls.filter(FolderGroups.isFolder).map { FolderGroups.folderItem(for: $0) }
+        guard !items.isEmpty else { return }
+        mutateItems { FolderGroups.adding(items, toGroup: groupID, in: $0) }
+    }
+
+    /// 从文件夹分组里移除一个文件夹，组空了也留着。
+    public func removeFolder(_ folderID: UUID, fromFolderGroup groupID: UUID) {
+        mutateItems { FolderGroups.removing(folderID, fromGroup: groupID, in: $0) }
+    }
+
+    /// 把文件夹分组里的一个文件夹挪到 `index`。
+    public func moveFolder(_ folderID: UUID, to index: Int, inFolderGroup groupID: UUID) {
+        mutateItems { FolderGroups.moving(folderID, to: index, inGroup: groupID, in: $0) }
+    }
+
+    /// 记下文件夹分组现在看的是哪个文件夹。只改这个组自己（组只存在扩展栏配置里），
+    /// 不像其他编辑那样先接管镜像的程序坞 App：切个标签不该改变扩展栏跟随程序坞的方式。
+    public func selectFolder(_ folderID: UUID, inFolderGroup groupID: UUID) {
+        guard let profile = state.customDock.profileID, let index = index(of: profile) else { return }
+        let before = state.profiles[index].items
+        let after = FolderGroups.selecting(folderID, inGroup: groupID, in: before)
+        if after != before { state.profiles[index].items = after }
+    }
+
     /// 扩展栏上当前的这个组（组窗口加了东西以后拿新的来重画）。
     public func group(_ groupID: UUID) -> DockGroup? {
         effectiveItems.first { $0.id == groupID }?.group

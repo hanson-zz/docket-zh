@@ -226,14 +226,16 @@ public enum FolderBrowse {
 
     /// 小窗的列数和大小：约 6 列宽、2.5 行高（露出半行提示能滚），
     /// 屏幕放不下时少几列、矮一点，最少 3 列。
-    public static func layout(visible: CGSize) -> (columns: Int, size: CGSize) {
+    /// - Parameter extra: 顶栏下面多出来的一排（文件夹分组的标签，见
+    ///   `FolderGroups.tabRowHeight`），加在自然高度上。
+    public static func layout(visible: CGSize, extra: CGFloat = 0) -> (columns: Int, size: CGSize) {
         let step = cellWidth + spacing
         let room = visible.width * 0.92 - padding * 2 + spacing
         let columns = max(3, min(6, Int(room / step)))
         let width = padding * 2 + CGFloat(columns) * cellWidth + CGFloat(columns - 1) * spacing
         let rows: CGFloat = 2.5
-        let natural = headerHeight + padding + rows * cellHeight + 2 * spacing + padding
-        let height = max(220, min(natural, visible.height * 0.6))
+        let natural = headerHeight + extra + padding + rows * cellHeight + 2 * spacing + padding
+        let height = max(220 + extra, min(natural, visible.height * 0.6))
         return (columns, CGSize(width: width, height: height.rounded()))
     }
 }

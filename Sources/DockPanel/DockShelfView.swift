@@ -922,6 +922,8 @@ struct DockShelfView: View {
                             centers: [Double], solved: Solved) -> UUID? {
         for (index, candidate) in movable.enumerated() where index != from {
             guard candidate.canReceiveDrop else { continue }
+            // 文件夹分组只收文件夹：拖 App 停在它上面不亮、不合。
+            guard FolderGroups.canCombine(movable[from].item, into: candidate.item) else { continue }
             let reach = Double(longLength(candidate.item)) * 0.35
             if abs(centers[index] - carried) <= reach { return candidate.id }
         }
@@ -1091,8 +1093,15 @@ struct DockShelfView: View {
                                  label: entry.actionLabel) { open(entry) })
             // 从访达把 .app 拖到分组格子上就收进组里，像系统程序坞的文件夹。
             .modifier(GroupAppDrop(groupID: entry.item.group?.id,
+                                   folders: entry.item.group?.isFolderGroup == true,
                                    enabled: app.shelfAllows(.dropIn),
-                                   receive: { addApps($0, toGroup: $1) }))
+                                   receive: { urls, id in
+                                       if entry.item.group?.isFolderGroup == true {
+                                           addFolders(urls, toGroup: id)
+                                       } else {
+                                           addApps(urls, toGroup: id)
+                                       }
+                                   }))
             .gesture(reorderGesture(entry, solved))
             // Collapsing children puts the label on the tile, but it also
             // hides a widget's own controls from assistive tech, so only do it
@@ -1177,6 +1186,37 @@ struct DockShelfView: View {
     /// 窗口手里的旧副本不会把刚加进去的 App 盖掉。
     private func toggleGroup(_ group: DockGroup, anchor: CGPoint) {
         let groupID = group.id
+        // 文件夹分组：弹文件夹浏览小窗，顶部一排标签切换。
+        if group.isFolderGroup {
+            FolderBrowserWindow.shared.toggleGroup(
+                group,
+                anchor: anchor,
+                edge: position,
+                host: shelfWindow?.frame ?? .zero,
+                actions: FolderGroupActions(
+                    select: { id in app.selectFolder(id, inFolderGroup: groupID) },
+                    add: { urls in addFolders(urls, toGroup: groupID) },
+                    // 从访达拖进小窗：锁定扩展栏时不收，和拖到格子上一样。
+                    drop: { urls in
+                        guard app.shelfAllows(.dropIn) else { return }
+                        addFolders(urls, toGroup: groupID)
+                    },
+                    remove: { id in
+                        guard app.shelfAllows(.remove) else { return }
+                        withAnimation(.snappy(duration: 0.24)) {
+                            app.removeFolder(id, fromFolderGroup: groupID)
+                        }
+                        refreshFolderGroup(groupID)
+                    },
+                    move: { id, index in
+                        guard app.shelfAllows(.reorder) else { return }
+                        withAnimation(.snappy(duration: 0.2)) {
+                            app.moveFolder(id, to: index, inFolderGroup: groupID)
+                        }
+                        refreshFolderGroup(groupID)
+                    }))
+            return
+        }
         GroupWindow.shared.toggle(
             group,
             anchor: anchor,
@@ -1205,11 +1245,27 @@ struct DockShelfView: View {
         if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
     }
 
+    /// 右键「添加到分组」能选的组：文件夹分组只收文件夹。
+    private func groupTargets(for entry: Entry) -> [DockGroup] {
+        app.groups.filter { FolderGroups.canCombine(entry.item, into: .group($0)) }
+    }
+
+    /// 选好的、拖进来的文件夹加进文件夹分组（不是文件夹的跳过），小窗开着就原地刷新。
+    private func addFolders(_ urls: [URL], toGroup groupID: UUID) {
+        withAnimation(.snappy(duration: 0.24)) { app.addFolders(urls, toFolderGroup: groupID) }
+        refreshFolderGroup(groupID)
+    }
+
+    private func refreshFolderGroup(_ groupID: UUID) {
+        if let fresh = app.group(groupID) { FolderBrowserWindow.shared.refreshGroup(fresh) }
+    }
+
     /// 小组件库新建了一个空组：等它出现在这条扩展栏上，从它的格子长出组窗口。
     /// 几条扩展栏都有它时只开一次。
     private func openRequestedGroup(_ note: Notification, _ solved: Solved) {
         guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
               GroupWindow.shared.openGroupID != id,
+              FolderBrowserWindow.shared.openFolderID != id,
               let window = shelfWindow, window.isVisible,
               let index = solved.slots.indices.first(where: { index in
                   if case .item(let entry) = solved.slots[index] { return entry.item.id == id }
@@ -1653,6 +1709,12 @@ struct DockShelfView: View {
                 Button("从程序坞中移除", role: .destructive) { remove(entry) }
                     .disabled(!app.shelfAllows(.remove))
             }
+            if let group = entry.item.group, group.isFolderGroup {
+                Button(tr("添加文件夹…")) {
+                    let urls = FolderBrowserWindow.chooseFolders()
+                    if !urls.isEmpty { addFolders(urls, toGroup: group.id) }
+                }
+            }
             if let group = entry.item.group {
                 Button("重命名分组…") { rename(group) }
                 Menu("色调") {
@@ -1752,10 +1814,11 @@ struct DockShelfView: View {
                 }
             }
         }
-        if entry.canBeGrouped, !app.groups.isEmpty {
+        // 文件夹分组只收文件夹，App 的「添加到分组」里不列它。
+        if entry.canBeGrouped, !groupTargets(for: entry).isEmpty {
             Divider()
             Menu("添加到分组") {
-                ForEach(app.groups) { target in
+                ForEach(groupTargets(for: entry)) { target in
                     Button(target.name) {
                         withAnimation(.snappy(duration: 0.22)) {
                             // Same path as dropping it there by hand.
@@ -2071,6 +2134,8 @@ private struct TapToOpen: ViewModifier {
 /// 分组格子收从访达拖来的 .app。不是分组的格子什么都不加。
 private struct GroupAppDrop: ViewModifier {
     var groupID: UUID?
+    /// 文件夹分组收文件夹，应用分组收 .app。
+    var folders = false
     /// 锁定扩展栏时不接。
     var enabled = true
     var receive: ([URL], UUID) -> Void
@@ -2084,8 +2149,9 @@ private struct GroupAppDrop: ViewModifier {
                         delegate: FileDropDelegate(enabled: enabled,
                                                    update: { over, _ in targeted = over },
                                                    receive: { urls in
-                                                       let apps = urls.filter(AppGroups.isAppBundle)
-                                                       if !apps.isEmpty { receive(apps, groupID) }
+                                                       let kept = urls.filter(folders ? FolderGroups.isFolder
+                                                                                       : AppGroups.isAppBundle)
+                                                       if !kept.isEmpty { receive(kept, groupID) }
                                                    }))
                 .scaleEffect(targeted ? 1.12 : 1)
                 .animation(.snappy(duration: 0.18), value: targeted)

@@ -11613,6 +11613,28 @@
         }
       }
     },
+    "向右移" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Right"
+          }
+        }
+      }
+    },
+    "向左移" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Left"
+          }
+        }
+      }
+    },
     "周一到周五" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11642,6 +11664,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No apps found in your Applications folders."
+          }
+        }
+      }
+    },
+    "在扩展栏上放一个文件夹分组，收几个常用文件夹，点开切换着看" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put a folder group on the shelf, keep a few folders you use often in it, and switch between them when it opens"
           }
         }
       }
@@ -11807,6 +11840,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bottom center"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library"
           }
         }
       }
@@ -26896,6 +26940,17 @@
         }
       }
     },
+    "文件夹分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder Group"
+          }
+        }
+      }
+    },
     "文件夹是空的" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28986,6 +29041,17 @@
         }
       }
     },
+    "添加文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Folder"
+          }
+        }
+      }
+    },
     "添加文件夹…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28993,6 +29059,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Folder…"
+          }
+        }
+      }
+    },
+    "添加文件夹分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Folder Group"
           }
         }
       }
@@ -29136,6 +29213,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LED Matrix"
+          }
+        }
+      }
+    },
+    "点「添加文件夹」选择，或从访达把文件夹拖到这里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Add Folder to choose some, or drag folders here from Finder."
           }
         }
       }
@@ -47658,6 +47746,17 @@
         }
       }
     },
+    "这个分组还没有文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This group has no folders yet"
+          }
+        }
+      }
+    },
     "这个名字已经有了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48677,6 +48776,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose apps to add to the group"
+          }
+        }
+      }
+    },
+    "选择要放进文件夹分组的文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose folders to put in the folder group"
           }
         }
       }
@@ -51866,6 +51976,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dragon Head Raising"
+          }
+        }
+      }
+    },
+    "（%@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " (%@)"
           }
         }
       }
