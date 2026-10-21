@@ -26,14 +26,14 @@ struct ChargeLimitSection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("充电上限")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelSecondary)
                 ProBadge()
                 Spacer()
                 if !unlocked {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                         .accessibilityHidden(true)
                 }
                 // 没解锁时开关显示为关（上限此时不生效），拨它弹付费墙。
@@ -61,7 +61,7 @@ struct ChargeLimitSection: View {
                                           set: { v in service.update { $0.limit = Int(v) } }),
                            in: 50...100, step: 5)
                         .controlSize(.mini)
-                        .tint(panelTint.accent(or: .white))
+                        .tint(panelTint.accent(or: .panelPrimary))
                 }
                 HStack(spacing: 6) {
                     Text("低于")
@@ -75,19 +75,19 @@ struct ChargeLimitSection: View {
                     Text("再恢复充电")
                     Spacer()
                 }
-                .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
             }
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.5)
             Text(unlocked ? caption(state, config: config) : lockedCaption(config))
-                .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.65))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let problem = service.problem {
                 Text(problem)
-                    .font(WidgetStyle.caption(11))
-                    .foregroundStyle(Color(hex: "#FF9F0A"))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 8) {
@@ -170,11 +170,11 @@ struct ChargeLimitSection: View {
             }
         }
         .buttonStyle(.plain)
-        .font(WidgetStyle.label(12))
-        .foregroundStyle(.white)
+        .font(WidgetStyle.label(13))
+        .foregroundStyle(.panelPrimary)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Capsule().fill(.white.opacity(0.18)))
+        .background(Capsule().fill(.panelFillStrong))
         .disabled(service.working)
     }
 }

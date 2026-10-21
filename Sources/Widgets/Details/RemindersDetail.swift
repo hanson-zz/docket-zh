@@ -140,8 +140,8 @@ struct RemindersDetail: View {
                     }
                     if let notice {
                         Text(notice)
-                            .font(WidgetStyle.caption(11))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .transition(.opacity)
                     }
@@ -170,14 +170,14 @@ struct RemindersDetail: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(total == 0 ? tr("今天没有到期事项") : tr("项今晚前到期"))
                         .font(WidgetStyle.label(14))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.panelPrimary)
                     // Which list this is a view of, when it is not all of them
                     // - otherwise the count reads as the whole account and is
                     // not.
                     if !listFilter.isEmpty {
                         Text(listFilter)
-                            .font(WidgetStyle.caption(11))
-                            .foregroundStyle(.white.opacity(0.65))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
                     }
                 }
                 Spacer(minLength: 4)
@@ -185,8 +185,8 @@ struct RemindersDetail: View {
                     startNew()
                 } label: {
                     Text(tr("＋ 新提醒"))
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(panelTint.accent(or: Self.fallbackTint))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(panelTint.accent(or: Self.fallbackTint).panelReadable)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -234,12 +234,12 @@ struct RemindersDetail: View {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(ReminderTiming.PanelSection.allCases, id: \.self) { part in
                     section(part.title, cut[part] ?? [],
-                            tint: part == .overdue ? .white : .white.opacity(part == .today ? 0.7 : 0.55),
+                            tint: part == .overdue ? .panelPrimary : (part == .today ? .panelSecondary : .panelTertiary),
                             now: now)
                 }
                 if hidden > 0 {
                     Text(tr("“提醒事项”中还有 \(hidden) 项"))
-                        .font(WidgetStyle.caption(11))
+                        .font(WidgetStyle.caption(13))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
             }
@@ -266,7 +266,7 @@ struct RemindersDetail: View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title.uppercased())
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
                     .foregroundStyle(tint)
                 ForEach(items) { item in
@@ -303,15 +303,15 @@ struct RemindersDetail: View {
                     if item.priority != .none {
                         Text(item.priority.marks)
                             .font(WidgetStyle.label(13))
-                            .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                            .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                     }
                     Text(item.title)
                         .font(WidgetStyle.label(13))
                         .foregroundStyle(WidgetStyle.primary)
                 }
                 Text(detail(item, now: now))
-                    .font(WidgetStyle.caption(11))
-                    .foregroundStyle(late ? Self.red : WidgetStyle.secondary)
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(late ? Self.red.panelReadable : WidgetStyle.secondary)
             }
             Spacer(minLength: 0)
         }
@@ -373,12 +373,12 @@ struct RemindersDetail: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 9) {
                 Circle()
-                    .strokeBorder(.white.opacity(0.45), lineWidth: 1.5)
+                    .strokeBorder(.panelTertiary, lineWidth: 1.5)
                     .frame(width: 15, height: 15)
                 TextField("", text: draft.title, prompt: Text(tr("新提醒事项")))
                     .textFieldStyle(.plain)
                     .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .focused($titleFocused)
                     .onSubmit(save)
             }
@@ -435,16 +435,16 @@ struct RemindersDetail: View {
 
             HStack(spacing: 8) {
                 Text(tr("回车保存"))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelTertiary)
                 if let id = current.id {
                     Text("·")
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelTertiary)
                     Button(tr("删除"), role: .destructive) { remove(id) }
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(Self.red)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(Self.red.panelReadable)
                 }
                 Spacer()
                 Button(tr("取消")) { editing = nil }
@@ -465,8 +465,8 @@ struct RemindersDetail: View {
     private func field<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.65))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .frame(width: 52, alignment: .leading)
                 .padding(.leading, 24)
             content()
@@ -560,7 +560,7 @@ struct RemindersDetail: View {
             Text(access == .notDetermined
                  ? tr("码头尚未获得访问你提醒事项的权限。")
                  : tr("码头的提醒事项访问权限已关闭。"))
-                .font(WidgetStyle.caption(12))
+                .font(WidgetStyle.caption(13))
                 .foregroundStyle(WidgetStyle.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             // Once the answer is no, asking again returns it unchanged with no
@@ -582,10 +582,10 @@ struct RemindersDetail: View {
         } label: {
             Text(title)
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(Capsule().fill(.white.opacity(0.14)))
+                .background(Capsule().fill(.panelFillStrong))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

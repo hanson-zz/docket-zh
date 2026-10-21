@@ -45,7 +45,7 @@ struct MicrophoneDetail: View {
     var body: some View {
         DetailCard {
             ZStack {
-                Color(hex: MicPanelStyle.base)
+                // 液态玻璃：原来这里先铺一层实心石墨底（#1D1D21），去掉，只留角上一抹主题色。
                 RadialGradient(colors: [(muted ? red : accent).opacity(0.13), .clear],
                                center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
             }
@@ -77,10 +77,10 @@ struct MicrophoneDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: mode == .browse ? tr("麦克风与摄像头") : tr("麦克风设置"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
@@ -95,11 +95,11 @@ struct MicrophoneDetail: View {
             Button { switchTo(.settings) } label: {
                 Text(verbatim: tr("设置"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.capsule)
             }
             .buttonStyle(.plain)
@@ -156,7 +156,7 @@ struct MicrophoneDetail: View {
             }
         }
         .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.62))
+        .foregroundStyle(.panelSecondary)
         .lineLimit(1)
         .padding(.top, 2)
     }
@@ -208,10 +208,10 @@ struct MicrophoneDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: tr("没有 App 在用麦克风和摄像头"))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.94))
+                        .foregroundStyle(.panelPrimary)
                     Text(verbatim: tr("有人开始用时会出现在这里"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 0)
@@ -236,7 +236,7 @@ struct MicrophoneDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(verbatim: row.name)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if row.isCamera {
@@ -248,7 +248,7 @@ struct MicrophoneDetail: View {
             Spacer(minLength: 6)
             Text(verbatim: MicPrivacyText.clock(elapsed(since: row.since)))
                 .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .fixedSize()
         }
@@ -270,7 +270,7 @@ struct MicrophoneDetail: View {
             Text(verbatim: text)
                 .font(.system(size: 13, weight: .semibold))
         }
-        .foregroundStyle(color)
+        .foregroundStyle(color.panelReadable)
         .padding(.horizontal, 8)
         .frame(height: 20)
         .background(Capsule().fill(color.opacity(0.18)))
@@ -284,15 +284,15 @@ struct MicrophoneDetail: View {
             .overlay {
                 Image(systemName: symbol)
                     .font(.system(size: size * 0.42, weight: .semibold))
-                    .foregroundStyle(color)
+                    .foregroundStyle(color.panelReadable)
             }
     }
 
     private func pane(_ opacity: Double, radius: CGFloat = 12) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(.white.opacity(opacity))
+            .fill(.panelFill) // 原来 0.06 到 0.07 的白底都落在薄玻璃填充档
             .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(.white.opacity(0.11), lineWidth: 0.6))
+                .strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     // MARK: 全局静音
@@ -308,20 +308,20 @@ struct MicrophoneDetail: View {
         } label: {
             HStack(spacing: 14) {
                 Circle()
-                    .fill(muted ? redInk.opacity(0.18) : .white.opacity(0.16))
+                    .fill(muted ? redInk.opacity(0.18) : .panelFillStrong)
                     .frame(width: 48, height: 48)
                     .overlay {
                         Image(systemName: muted ? "mic.slash.fill" : "mic.fill")
                             .font(.system(size: 21, weight: .semibold))
-                            .foregroundStyle(muted ? redInk : .white)
+                            .foregroundStyle(muted ? redInk : .panelPrimary)
                     }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(verbatim: muted ? tr("已静音") : tr("静音麦克风"))
                         .font(.system(size: 18, weight: muted ? .heavy : .bold))
-                        .foregroundStyle(muted ? redInk : .white)
+                        .foregroundStyle(muted ? redInk : .panelPrimary)
                     Text(verbatim: muteCaption)
                         .font(.system(size: 13, weight: muted ? .semibold : .medium))
-                        .foregroundStyle(muted ? redInk.opacity(0.85) : .white.opacity(0.62))
+                        .foregroundStyle(muted ? redInk.opacity(0.85) : .panelSecondary)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 0)
@@ -330,9 +330,9 @@ struct MicrophoneDetail: View {
             .frame(maxWidth: .infinity, minHeight: 76)
             .background {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(muted ? red : .white.opacity(0.10))
+                    .fill(muted ? red : .panelFill)
                     .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(.white.opacity(muted ? 0 : 0.2), lineWidth: 0.8))
+                        .strokeBorder(muted ? Color.clear : Color.panelQuaternary, lineWidth: 0.8))
             }
             .contentShape(.rect(cornerRadius: 18))
             .opacity(canMute ? 1 : 0.5)
@@ -358,7 +358,7 @@ struct MicrophoneDetail: View {
                 AppIconSquare(name: first.name, url: first.bundleURL, bundleID: first.id, size: 24)
                 Text(verbatim: note)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.86))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
@@ -374,7 +374,7 @@ struct MicrophoneDetail: View {
     private var noDevice: some View {
         Text(verbatim: tr("没有输入设备。接上麦克风或耳机后会出现在这里。"))
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(.panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -416,7 +416,7 @@ struct MicrophoneDetail: View {
                     HStack(spacing: 10) {
                         Text(verbatim: row.name)
                             .font(.system(size: 14, weight: row.selected ? .semibold : .medium))
-                            .foregroundStyle(.white.opacity(row.selected ? 1 : 0.86))
+                            .foregroundStyle(.panelPrimary.opacity(row.selected ? 1 : 0.86))
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer(minLength: 6)
@@ -429,7 +429,7 @@ struct MicrophoneDetail: View {
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(row.selected ? .isSelected : [])
                 if index < rows.count - 1 {
-                    Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6).padding(.horizontal, 14)
+                    Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.horizontal, 14)
                 }
             }
         }
@@ -445,7 +445,7 @@ struct MicrophoneDetail: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(accentInk)
             } else {
-                Circle().strokeBorder(.white.opacity(0.45), lineWidth: 1.4).frame(width: 20, height: 20)
+                Circle().strokeBorder(.panelTertiary, lineWidth: 1.4).frame(width: 20, height: 20)
             }
         }
     }
@@ -467,7 +467,7 @@ struct MicrophoneDetail: View {
         } else {
             Text(verbatim: tr("这个设备不能在这里调输入音量"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -478,7 +478,7 @@ struct MicrophoneDetail: View {
             HStack(spacing: 4) {
                 ForEach(0..<MicLevel.segments, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                        .fill(index < lit ? (index < MicLevel.greenSegments ? green : accent) : .white.opacity(0.12))
+                        .fill(index < lit ? (index < MicLevel.greenSegments ? green : accent) : .panelTrack)
                         .frame(height: 14)
                         .frame(maxWidth: .infinity)
                 }
@@ -496,18 +496,18 @@ struct MicrophoneDetail: View {
             Button { meter.toggle() } label: {
                 Text(verbatim: meter.isRunning ? tr("停止测电平") : tr("测电平"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 12)
                     .frame(height: 26)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.capsule)
             }
             .buttonStyle(.plain)
             .help(tr("测电平要用麦克风取声音，最多一分钟，面板关上就停，什么都不录下"))
             Text(verbatim: meterNote)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Spacer(minLength: 0)
         }
@@ -545,7 +545,7 @@ struct MicrophoneDetail: View {
         HStack(spacing: 10) {
             Text(verbatim: title)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(13.0 / 14.0)
             Spacer(minLength: 6)
@@ -569,13 +569,13 @@ struct MicrophoneDetail: View {
             if recorder.isRecording {
                 Text(verbatim: recorder.rejected ? tr("须含 ⌃⌥⌘") : tr("请按快捷键…"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
             } else if let combo = settings.muteKey {
                 ForEach(Array(keyCaps(combo).enumerated()), id: \.offset) { _, cap in keyCap(cap) }
             } else {
                 Text(verbatim: tr("未设置"))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 6)
             Button {
@@ -593,11 +593,11 @@ struct MicrophoneDetail: View {
             } label: {
                 Text(verbatim: recorder.isRecording ? tr("取消") : tr("录新快捷键"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 30)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.capsule)
             }
             .buttonStyle(.plain)
@@ -614,12 +614,12 @@ struct MicrophoneDetail: View {
     private func keyCap(_ text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
             .lineLimit(1)
             .padding(.horizontal, 8)
             .frame(minWidth: 36, minHeight: 34)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.12)))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.25), lineWidth: 0.8))
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.panelQuaternary, lineWidth: 0.8))
             .fixedSize()
     }
 
@@ -673,10 +673,10 @@ struct MicrophoneDetail: View {
                     Button { day = item } label: {
                         Text(verbatim: MicPrivacyText.dayTitle(item, now: now))
                             .font(.system(size: 13, weight: selected ? .bold : .semibold))
-                            .foregroundStyle(selected ? accentInk : .white.opacity(0.88))
+                            .foregroundStyle(selected ? accentInk : .panelPrimary)
                             .padding(.horizontal, 12)
                             .frame(height: 28)
-                            .background(Capsule().fill(selected ? accent : .white.opacity(0.08)))
+                            .background(Capsule().fill(selected ? accent : .panelFill))
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -692,7 +692,7 @@ struct MicrophoneDetail: View {
             Text(verbatim: Calendar.current.isDate(shownDay, inSameDayAs: now)
                  ? tr("今天还没有 App 用过麦克风或摄像头") : tr("这天没有记录"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(pane(0.06))
@@ -701,7 +701,7 @@ struct MicrophoneDetail: View {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     historyRow(row)
                     if index < rows.count - 1 {
-                        Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6)
+                        Rectangle().fill(.panelSeparator).frame(height: 0.6)
                             .padding(.leading, 46).padding(.trailing, 14)
                     }
                 }
@@ -720,17 +720,17 @@ struct MicrophoneDetail: View {
             }
             Text(verbatim: row.name)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .layoutPriority(1)
             Image(systemName: row.source == .camera ? "video.fill" : "mic.fill")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(row.source == .camera ? camera : accent)
+                .foregroundStyle(row.source == .camera ? camera.panelReadable : accent.panelReadable)
             Spacer(minLength: 6)
             Text(verbatim: "\(MicPrivacyText.time(row.lastStart)) · \(MicPrivacyText.duration(row.total))")
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(row.active ? 0.95 : 0.72))
+                .foregroundStyle(.panelPrimary.opacity(row.active ? 0.95 : 0.72))
                 .lineLimit(1)
                 .fixedSize()
         }
@@ -745,7 +745,7 @@ struct MicrophoneDetail: View {
                 ProBadge()
                 Text(verbatim: tr("使用记录保留 30 天，可以往前翻"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
@@ -788,7 +788,7 @@ struct AppIconSquare: View {
                 .overlay {
                     Text(verbatim: MicPrivacyText.initial(name))
                         .font(.system(size: size * 0.5, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 }
                 .accessibilityHidden(true)
         }

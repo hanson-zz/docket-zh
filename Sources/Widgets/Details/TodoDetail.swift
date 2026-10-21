@@ -84,8 +84,8 @@ struct TodoDetail: View {
                 }
                 if shown.isEmpty {
                     Text(all.isEmpty ? tr("清单是空的。输入一件事，按回车添加。") : tr("都做完了。"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 6)
                 } else {
@@ -110,8 +110,8 @@ struct TodoDetail: View {
                     HStack {
                         if !showDone {
                             Text(tr("已完成 \(done.count) 项（已隐藏）"))
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.55))
+                                .font(.system(size: 13))
+                                .foregroundStyle(.panelTertiary)
                         }
                         Spacer()
                         Button("清除已完成") {
@@ -121,8 +121,8 @@ struct TodoDetail: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                     }
                 }
                 let shelved = context.isPreview ? [] : QuickTodo.archive(instance.config)
@@ -182,12 +182,12 @@ struct TodoDetail: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
                 Text("随手记，不同步")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 Text(open == 0 ? tr("全部完成") : tr("\(open) 项未完成"))
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             Spacer()
@@ -211,13 +211,13 @@ struct TodoDetail: View {
                         .font(.system(size: 9, weight: .bold))
                         .rotationEffect(.degrees(archiveOpen ? 90 : 0))
                     Text(tr("已收起 \(shelved.count) 项"))
-                        .font(WidgetStyle.label(12))
+                        .font(WidgetStyle.label(13))
                     Spacer()
                     Text(tr("做完 \(QuickTodo.archiveDays) 天后清掉"))
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
                 }
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -241,23 +241,23 @@ struct TodoDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(panelTint.accent(or: Color(hex: PaletteColor.orange.hex)).opacity(0.6))
+                .foregroundStyle(panelTint.accent(or: Color(hex: PaletteColor.orange.hex)).panelReadable.opacity(0.6))
             Text(item.text)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .strikethrough()
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text(QuickTodo.archivedDayLabel(item, today: today))
-                .font(.system(size: 10))
+                .font(.system(size: 13))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(.panelTertiary)
             Button {
                 withAnimation(listAnimation) { TodoLog.restore(item.id, in: instance) }
             } label: {
                 Image(systemName: "arrow.uturn.backward.circle")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
             }
             .buttonStyle(.plain)
             .help(tr("恢复成未完成"))
@@ -267,7 +267,7 @@ struct TodoDetail: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
             }
             .buttonStyle(.plain)
             .help(tr("删除"))
@@ -275,18 +275,18 @@ struct TodoDetail: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.04)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill))
     }
 
     private var addField: some View {
         HStack(spacing: 8) {
             Image(systemName: "plus.circle.fill")
                 .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             TextField("", text: $draft, prompt: Text("添加待办，按回车"))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($focus, equals: .add)
                 .onSubmit(add)
                 .disabled(context.isPreview)
@@ -310,7 +310,7 @@ struct TodoDetail: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(.white.opacity(item.today && !item.done ? 0.09 : 0.05)))
+            .fill(Color.panelFill.opacity(item.today && !item.done ? 1 : 0.55)))
         .contextMenu { menu(item, canMark: canMark) }
     }
 
@@ -321,7 +321,7 @@ struct TodoDetail: View {
             } label: {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 16))
-                    .foregroundStyle(item.done ? panelTint.accent(or: Color(hex: PaletteColor.orange.hex)) : .white.opacity(0.7))
+                    .foregroundStyle(item.done ? panelTint.accent(or: Color(hex: PaletteColor.orange.hex)).panelReadable : .panelSecondary)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -331,7 +331,7 @@ struct TodoDetail: View {
                 TextField("", text: $editDraft)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .focused($focus, equals: .edit(item.id))
                     .onSubmit { finishEditing(item.id) }
                     .onChange(of: focus) { _, now in
@@ -340,8 +340,8 @@ struct TodoDetail: View {
             } else {
                 Text(item.text)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(item.done ? 0.45 : 0.95))
-                    .strikethrough(item.done, color: .white.opacity(0.45))
+                    .foregroundStyle(.panelPrimary.opacity(item.done ? 0.45 : 0.95))
+                    .strikethrough(item.done, color: .panelTertiary)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(.rect)
@@ -355,7 +355,7 @@ struct TodoDetail: View {
                 } label: {
                     Image(systemName: TodoLinkOpener.symbol(item))
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 20, height: 20)
                         .contentShape(.rect)
                 }
@@ -373,7 +373,7 @@ struct TodoDetail: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.panelTertiary)
                     .frame(width: 20, height: 20)
                     .contentShape(.rect)
             }
@@ -392,7 +392,7 @@ struct TodoDetail: View {
         } label: {
             Image(systemName: item.today ? "star.fill" : "star")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(item.today ? Color(hex: "#FFCC00") : .white.opacity(available ? 0.45 : 0.2))
+                .foregroundStyle(item.today ? Color(hex: "#FFCC00").panelReadable : .panelPrimary.opacity(available ? 0.45 : 0.2))
                 .frame(width: 20, height: 20)
                 .contentShape(.rect)
         }
@@ -454,8 +454,8 @@ struct TodoDetail: View {
                         .monospacedDigit()
                 }
             }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(item.remindAt == nil ? .white.opacity(0.45) : accent)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(item.remindAt == nil ? .panelTertiary : accent.panelReadable)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -484,11 +484,11 @@ struct TodoDetail: View {
     private func reminderPicker(_ item: TodoItem) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "alarm")
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
             Text("提醒时间")
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
             DatePicker("", selection: $remindDate, displayedComponents: [.date, .hourAndMinute])
                 .labelsHidden()
                 .datePickerStyle(.field)
@@ -496,12 +496,12 @@ struct TodoDetail: View {
             Spacer(minLength: 0)
             Button("取消") { withAnimation(listAnimation) { reminding = nil } }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelSecondary)
             Button("设定") { setReminder(item, at: remindDate) }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
         }
         .padding(.leading, 24)
     }
@@ -519,11 +519,11 @@ struct TodoDetail: View {
     private func convertPicker(_ item: TodoItem) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "bell")
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
             Text("提醒日期")
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
             DatePicker("", selection: $convertDate, displayedComponents: .date)
                 .labelsHidden()
                 .datePickerStyle(.field)
@@ -531,12 +531,12 @@ struct TodoDetail: View {
             Spacer(minLength: 0)
             Button("取消") { withAnimation(listAnimation) { converting = nil } }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelSecondary)
             Button("转成提醒事项") { convert(item, due: convertDate) }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
         }
         .padding(.leading, 24)
     }
@@ -566,16 +566,16 @@ struct TodoDetail: View {
     private func noticeLine(_ text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 11))
+                .font(.system(size: 13))
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 13))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             if noticeNeedsSettings {
                 Button("去开启") { TodoReminderExport.openPrivacySettings() }
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
             }
             Button {
                 withAnimation(listAnimation) { notice = nil }
@@ -586,7 +586,7 @@ struct TodoDetail: View {
             .buttonStyle(.plain)
             .accessibilityLabel(tr("关闭"))
         }
-        .foregroundStyle(.white.opacity(0.75))
+        .foregroundStyle(.panelSecondary)
     }
 
     // MARK: 当天清
@@ -598,7 +598,7 @@ struct TodoDetail: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(tr("昨天还有 \(count) 件没做完"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 8) {
                 Button {
                     let day = today
@@ -607,12 +607,12 @@ struct TodoDetail: View {
                     }
                 } label: {
                     Text("顺延到今天")
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(panelTint.ink(or: .white))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(panelTint.ink(or: .panelPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 26)
                         .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(panelTint.accent(or: .white.opacity(0.16))))
+                            .fill(panelTint.accent(or: .panelFillStrong)))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -623,11 +623,11 @@ struct TodoDetail: View {
                     }
                 } label: {
                     Text("放弃")
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 26)
-                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.white.opacity(0.08)))
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.panelFill))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)

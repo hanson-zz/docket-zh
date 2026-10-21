@@ -154,17 +154,18 @@ struct GitHubDetail: View {
                             Text(RepoSlug.parse(slug)?.repo ?? slug).lineLimit(1)
                             if let badge = GitHubWatch.badgeText(newCount(slug)) {
                                 Text(badge)
-                                    .font(.system(size: 9, weight: .bold).monospacedDigit())
+                                    .font(.system(size: 13, weight: .bold).monospacedDigit())
                                     .padding(.horizontal, 4)
                                     .frame(minWidth: 15, minHeight: 15)
+                                    .foregroundStyle(.white)
                                     .background(Capsule().fill(Color.red))
                             }
                         }
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 10)
                         .frame(height: 24)
-                        .background(on ? panelTint.fill(0.45, or: Color.white.opacity(0.28)) : Color.white.opacity(0.1),
+                        .background(on ? panelTint.fill(0.45, or: Color.panelFillStrong) : Color.panelFill,
                                     in: .capsule)
                     }
                     .buttonStyle(.plain)
@@ -178,12 +179,12 @@ struct GitHubDetail: View {
     private func limitNote(_ until: Date) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Label(GitHubRateLimit.waitText(until: until, now: context.now), systemImage: "hourglass")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             if !service.hasToken {
                 Text("未使用令牌时 GitHub 每小时只允许 60 次请求。在下方添加个人访问令牌即可提高上限。")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -230,11 +231,11 @@ struct GitHubDetail: View {
             ContributionGridView(columns: leveled, color: green, cell: 11, spacing: 3, unit: tr("条"))
             VStack(alignment: .leading, spacing: 4) {
                 Text("近 5 周动静")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Text(total == 0 ? tr("这几周没有新的议题、拉取请求或评论。") : tr("共 \(total) 条议题、拉取请求和评论"))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 ContributionLegend(color: green)
                     .padding(.top, 2)
@@ -251,23 +252,23 @@ struct GitHubDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("新反馈")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 Button("全部标为已读") {
                     guard !context.isPreview else { return }
                     service.markAllRead(repos)
                 }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(totalNew > 0 ? 0.9 : 0.4))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary.opacity(totalNew > 0 ? 0.9 : 0.4))
                 .disabled(context.isPreview || totalNew == 0)
             }
             let shown = items
             if shown.isEmpty {
                 Text("最近 30 天没有新的议题、拉取请求或评论。")
-                    .font(WidgetStyle.caption(11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .padding(.vertical, 6)
             } else {
                 ScrollView {
@@ -287,9 +288,9 @@ struct GitHubDetail: View {
 
     private func tint(_ kind: GitHubFeedItem.Kind) -> Color {
         switch kind {
-        case .issue: .green
-        case .pull: .purple
-        case .comment: .white.opacity(0.75)
+        case .issue: Color.green.panelReadable
+        case .pull: Color.purple.panelReadable
+        case .comment: .panelSecondary
         }
     }
 
@@ -297,14 +298,14 @@ struct GitHubDetail: View {
         let unread = isUnread(item)
         return HStack(alignment: .top, spacing: 8) {
             Image(systemName: item.kind.symbol)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint(item.kind))
                 .frame(width: 16)
                 .padding(.top, 1)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(.system(size: 12, weight: unread ? .semibold : .regular))
-                    .foregroundStyle(.white.opacity(unread ? 1 : 0.8))
+                    .font(.system(size: 13, weight: unread ? .semibold : .regular))
+                    .foregroundStyle(.panelPrimary.opacity(unread ? 1 : 0.8))
                     .lineLimit(1)
                 HStack(spacing: 4) {
                     Text("\(item.kind.title) · \(item.author) · \(GitHubFeed.relativeText(item.createdAt, now: context.now))")
@@ -313,11 +314,11 @@ struct GitHubDetail: View {
                         Text(label)
                             .lineLimit(1)
                             .padding(.horizontal, 5)
-                            .background(Color.white.opacity(0.14), in: .capsule)
+                            .background(Color.panelFillStrong, in: .capsule)
                     }
                 }
-                .font(WidgetStyle.caption(10))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 0)
             if unread {
@@ -341,28 +342,28 @@ struct GitHubDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Image(systemName: "shippingbox")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("最新版本 \(release.tag)"))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                 Spacer()
                 Text(tr("共 \(release.downloads) 次下载"))
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             if let date = release.publishedAt {
                 Text("发布于 " + date.formatted(.dateTime.year().month().day())
                      + " · " + GitHubFeed.relativeText(date, now: context.now))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
             }
             if release.assets.isEmpty {
                 Text("这个版本没有附带安装文件。")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
             } else {
                 ForEach(Array(release.assets.prefix(5).enumerated()), id: \.offset) { _, asset in
                     HStack {
@@ -373,8 +374,8 @@ struct GitHubDetail: View {
                         Text("\(asset.downloads)")
                             .monospacedDigit()
                     }
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                 }
             }
         }
@@ -400,16 +401,16 @@ struct GitHubDetail: View {
                     Image(systemName: managing ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             }
             .buttonStyle(.plain)
             if managing {
                 ForEach(Array(repos.enumerated()), id: \.element) { index, slug in
                     HStack(spacing: 6) {
                         Text(slug)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer(minLength: 0)
@@ -430,23 +431,23 @@ struct GitHubDetail: View {
                 HStack(spacing: 6) {
                     TextField("", text: $addText, prompt: Text("用户/仓库 或 GitHub 链接"))
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 8)
                         .frame(height: 26)
                         .glassPane(cornerRadius: 7)
                         .onSubmit(add)
                     Button(adding ? tr("检查中…") : tr("添加"), action: add)
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(.white)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                         .disabled(context.isPreview || adding || addText.isEmpty
                                   || repos.count >= GitHubWatch.maxRepos)
                 }
                 if let addError {
                     Text(addError)
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(.red.opacity(0.9))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(Color.red.panelReadable.opacity(0.9))
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -458,7 +459,7 @@ struct GitHubDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.white.opacity(disabled ? 0.25 : 0.8))
+                .foregroundStyle(.panelPrimary.opacity(disabled ? 0.25 : 0.8))
                 .frame(width: 18, height: 18)
                 .contentShape(.rect)
         }
@@ -521,13 +522,13 @@ struct GitHubDetail: View {
     private var tokenSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("个人访问令牌（可选）")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 6) {
                 SecureField("", text: $token, prompt: Text(service.hasToken ? tr("已保存在钥匙串中") : tr("ghp_… 或 github_pat_…")))
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 8)
                     .frame(height: 26)
                     .glassPane(cornerRadius: 7)
@@ -536,15 +537,15 @@ struct GitHubDetail: View {
                     if token.isEmpty { service.setToken(nil) } else { saveToken() }
                 }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .disabled(context.isPreview || (token.isEmpty && !service.hasToken))
             }
             Text(service.hasToken
                  ? tr("令牌只保存在这台 Mac 的钥匙串中，用于提高请求上限并显示未读通知数。读取通知需要令牌具有 notifications 权限。")
                  : tr("令牌只保存在这台 Mac 的钥匙串中。未使用令牌时每小时只能请求 60 次，关注的项目较多时会自动放慢检查；添加令牌后上限提高到每小时 5000 次，并显示未读通知数。"))
-                .font(WidgetStyle.caption(10))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

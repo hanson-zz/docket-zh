@@ -30,7 +30,7 @@ struct NetworkDetail: View {
     var body: some View {
         DetailCard {
             ZStack {
-                Color(hex: NetPanelStyle.base)
+                // 液态玻璃：原来这里先铺一层实心石墨底（#1D1D21），去掉，只留角上一抹主题色。
                 RadialGradient(colors: [accent.opacity(0.13), .clear],
                                center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
             }
@@ -63,7 +63,7 @@ struct NetworkDetail: View {
             HStack(alignment: .center, spacing: 8) {
                 Text(verbatim: tr("网络活动"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 unitSwitch
@@ -72,7 +72,7 @@ struct NetworkDetail: View {
                 Button { copy(placeName, tag: "name") } label: {
                     Text(verbatim: copied == "name" ? tr("已拷贝名称") : placeLine)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .contentShape(.rect)
@@ -85,7 +85,7 @@ struct NetworkDetail: View {
                     Button { copy(ip, tag: "ip") } label: {
                         Text(verbatim: copied == "ip" ? tr("已拷贝") : tr("拷贝 IP"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                             .lineLimit(1)
                             .fixedSize()
                             .contentShape(.rect)
@@ -105,7 +105,7 @@ struct NetworkDetail: View {
                 Button { setUnit(option) } label: {
                     Text(verbatim: option.label)
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(on ? accentInk : .white.opacity(0.82))
+                        .foregroundStyle(on ? accentInk : .panelPrimary)
                         .frame(width: 58, height: 22)
                         .background(Capsule().fill(on ? accent : .clear))
                         .contentShape(.capsule)
@@ -115,8 +115,8 @@ struct NetworkDetail: View {
             }
         }
         .padding(3)
-        .background(Capsule().fill(.white.opacity(0.07)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .background(Capsule().fill(.panelFill))
+        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
         .help(tr("网速单位，卡片也跟着变"))
     }
 
@@ -169,10 +169,10 @@ struct NetworkDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: reading.label)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: wifiDetail(rssi: rssi, rate: rate, reading: reading))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -204,15 +204,15 @@ struct NetworkDetail: View {
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(tint)
+                .foregroundStyle(tint.panelReadable)
             Text(verbatim: value.value)
                 .font(.system(size: 28, weight: .bold))
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .contentTransition(.numericText())
             Text(verbatim: value.unit)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -239,7 +239,7 @@ struct NetworkDetail: View {
             .frame(maxWidth: .infinity)
             Text(verbatim: historyCaption)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
@@ -282,7 +282,7 @@ struct NetworkDetail: View {
             if rows.isEmpty {
                 Text(verbatim: preview || top.loaded ? tr("这会儿没有 App 在用网") : tr("正在读取…"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
                     .padding(.horizontal, 10)
                     .background(pane(0.06, radius: 11))
@@ -301,13 +301,13 @@ struct NetworkDetail: View {
             AppIconSquare(name: row.name, url: nil, bundleID: preview ? nil : row.bundleID, size: 24)
             Text(verbatim: row.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 6)
             Text(verbatim: rowRates(row))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
@@ -349,10 +349,10 @@ struct NetworkDetail: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(verbatim: label)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Text(verbatim: value)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -372,16 +372,16 @@ struct NetworkDetail: View {
             if let trailing { Text(verbatim: trailing) }
         }
         .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.62))
+        .foregroundStyle(.panelSecondary)
         .lineLimit(1)
         .padding(.top, 2)
     }
 
     private func pane(_ opacity: Double, radius: CGFloat = 12) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(.white.opacity(opacity))
+            .fill(.panelFill) // 原来 0.06 到 0.07 的白底都落在薄玻璃填充档
             .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(.white.opacity(0.11), lineWidth: 0.6))
+                .strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     // MARK: 配置和数据（和卡片同一套键）

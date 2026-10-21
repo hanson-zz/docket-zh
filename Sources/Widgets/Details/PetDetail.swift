@@ -48,8 +48,8 @@ struct PetDetail: View {
                 if VirtualPet.isSick(state) { healButton }
                 actions(state)
                 Text("喝一杯水、完成一项习惯打卡或一轮专注，都会喂它一点；有几只宠物就每只都喂。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
                 notifyToggle
                 dryToggle
@@ -67,18 +67,18 @@ struct PetDetail: View {
                       effect: VirtualPet.effect(state, now: now))
             VStack(alignment: .leading, spacing: 3) {
                 Text("电子宠物")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 nameView
                 Text(VirtualPet.statusLine(state, now: now, dried: dried, melted: melted))
-                    .font(WidgetStyle.label(12))
+                    .font(WidgetStyle.label(13))
                     .foregroundStyle(look == .sick || look == .hungry || look == .dried || look == .melted
-                                     ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
-                                     : .white.opacity(0.85))
+                                     ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25).panelReadable
+                                     : .panelPrimary)
                 Text(tr("整体 \(Int(state.health.rounded()))%"))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -87,8 +87,8 @@ struct PetDetail: View {
         }
         .overlay(alignment: .topTrailing) {
             Label(tr("\(streak) 天"), systemImage: "flame.fill")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.45))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex).panelReadable : .panelTertiary)
                 .monospacedDigit()
                 .help(tr("连续照顾 \(streak) 天"))
         }
@@ -103,13 +103,13 @@ struct PetDetail: View {
                 TextField("", text: $nameDraft, prompt: Text(character.title))
                     .textFieldStyle(.plain)
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .focused($nameFocused)
                     .onSubmit { commitName() }
                     .onExitCommand { editingName = false }
                     .padding(.horizontal, 8)
                     .frame(width: 130, height: 32)
-                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.1)))
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
                     .overlay {
                         RoundedRectangle(cornerRadius: 9, style: .continuous)
                             .strokeBorder(accent, lineWidth: 1.2)
@@ -121,8 +121,8 @@ struct PetDetail: View {
                     .font(.system(size: 13))
                     .foregroundStyle(nameDraft.trimmingCharacters(in: .whitespacesAndNewlines).count
                                      > VirtualPet.maxNameLength
-                                     ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25)
-                                     : .white.opacity(0.6))
+                                     ? Color(hex: PaletteColor.red.hex).mix(with: .white, by: 0.25).panelReadable
+                                     : .panelSecondary)
             }
         } else {
             Button {
@@ -134,11 +134,11 @@ struct PetDetail: View {
                 HStack(spacing: 5) {
                     Text(verbatim: petName)
                         .font(.system(size: 26, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     if !context.isPreview {
                         Image(systemName: "pencil")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.panelTertiary)
                     }
                 }
                 .contentShape(.rect)
@@ -169,16 +169,16 @@ struct PetDetail: View {
                 HStack(spacing: 8) {
                     Image(systemName: need.symbol)
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 14)
                     Text(need.title)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .frame(width: 30, alignment: .leading)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelPrimary)
+                        .frame(width: 44, alignment: .leading)
                     PetBar(value: state[need], height: 6)
                     Text("\(Int(state[need].rounded()))")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                         .frame(width: 26, alignment: .trailing)
                 }
@@ -205,9 +205,9 @@ struct PetDetail: View {
                         Image(systemName: symbol)
                             .font(.system(size: 15, weight: .semibold))
                         Text(title)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -257,11 +257,11 @@ struct PetDetail: View {
             })) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("喝水不达标会渴成骷髅")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("喝水小组件连续 \(VirtualPet.dryDays) 天没喝够，它就变成骷髅；喝够一天马上复活。"))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
             }
         }
         .toggleStyle(.switch)
@@ -280,11 +280,11 @@ struct PetDetail: View {
             })) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("需要照顾时通知")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Text("饿了、脏了、困了或生病时发一条通知，夜里不打扰。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                 NotificationsOffNote(active: instance.config.bool("notify"), preview: context.isPreview)
             }
         }
@@ -302,8 +302,8 @@ struct PetDetail: View {
         let chosen = character
         return VStack(alignment: .leading, spacing: 6) {
             Text("角色")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { option in
                     let selected = option == chosen
@@ -328,15 +328,15 @@ struct PetDetail: View {
                                     }
                                 }
                             Text(option.title)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
-                        .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
+                        .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(selected ? accent.opacity(0.75) : Color.white.opacity(0.08)))
+                            .fill(selected ? accent.opacity(0.75) : Color.panelFill))
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)

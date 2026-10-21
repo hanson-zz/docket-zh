@@ -69,16 +69,16 @@ struct AmbientDetail: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(playing ? tr("正在播放") : tr("环境音"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             Text(currentMix?.name ?? AmbientSound.summary(sounds))
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if let end = player.stopAt, player.isPlaying {
                 Text(tr("\(AmbientTimer.remaining(until: end, now: now)) 后自动停止"))
                     .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
         }
@@ -88,11 +88,11 @@ struct AmbientDetail: View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             if let note {
                 Text(note)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -125,10 +125,10 @@ struct AmbientDetail: View {
             Text(mix.name)
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(on ? Color.black.opacity(0.85) : .white)
+                .foregroundStyle(on ? Color.panelOnPrimary : .panelPrimary)
                 .padding(.horizontal, 12)
                 .frame(height: 28)
-                .background(Capsule().fill(on ? Color.white.opacity(0.92) : Color.white.opacity(0.12)))
+                .background(Capsule().fill(on ? Color.panelPrimary : Color.panelFill))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -158,10 +158,10 @@ struct AmbientDetail: View {
             Text(full ? tr("已满 \(AmbientMixes.limit) 个") : tr("＋ 存为组合"))
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(.white.opacity(blocked ? 0.45 : 0.85))
+                .foregroundStyle(.panelPrimary.opacity(blocked ? 0.45 : 0.85))
                 .padding(.horizontal, 12)
                 .frame(height: 28)
-                .background(Capsule().strokeBorder(.white.opacity(0.3), style: StrokeStyle(lineWidth: 0.8, dash: [4, 3])))
+                .background(Capsule().strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 0.8, dash: [4, 3])))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -251,7 +251,7 @@ struct AmbientDetail: View {
             } label: {
                 Image(systemName: sound.symbol)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .frame(width: 26, height: 26)
                     .background(Circle().fill(accent.opacity(0.55)))
                     .contentShape(Circle())
@@ -261,7 +261,7 @@ struct AmbientDetail: View {
             .help(tr("关掉\(sound.title)"))
             Text(sound.title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(width: 58, alignment: .leading)
@@ -283,7 +283,7 @@ struct AmbientDetail: View {
                 .accessibilityLabel(tr("\(sound.title)音量"))
             Text("\(level)%")
                 .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 40, alignment: .trailing)
         }
         .padding(.horizontal, 8)
@@ -297,13 +297,13 @@ struct AmbientDetail: View {
         } label: {
             Image(systemName: sound.symbol)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
                 .frame(maxWidth: 38)
                 .frame(height: 30)
-                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.07)))
+                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
                 .overlay {
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        .strokeBorder(.panelStroke, lineWidth: 0.5)
                 }
                 .contentShape(.rect(cornerRadius: 9))
         }
@@ -336,7 +336,7 @@ struct AmbientDetail: View {
         HStack(spacing: 8) {
             Text(tr("总音量"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             Slider(value: Binding(
                 get: { volume },
                 set: { value in
@@ -353,7 +353,7 @@ struct AmbientDetail: View {
                 .disabled(context.isPreview)
             Text("\(Int(volume.rounded()))%")
                 .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
                 .frame(width: 40, alignment: .trailing)
         }
     }
@@ -372,7 +372,7 @@ struct AmbientDetail: View {
                     Stepper(value: $customMinutes, in: AmbientCustomTimer.range, step: AmbientCustomTimer.step) {
                         Text(AmbientTimer.title(customMinutes))
                             .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                     }
                     Spacer(minLength: 0)
                     Button(tr("开始计时")) {
@@ -409,10 +409,10 @@ struct AmbientDetail: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .foregroundStyle(on ? .white : .white.opacity(0.65))
+                .foregroundStyle(on ? .panelPrimary : .panelSecondary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
-                .background(Capsule().fill(.white.opacity(on ? 0.26 : 0.08)))
+                .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -427,10 +427,10 @@ struct AmbientDetail: View {
         } label: {
             Label(playing ? tr("暂停") : tr("播放"), systemImage: playing ? "pause.fill" : "play.fill")
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)
-                .background(Capsule().fill(.white.opacity(0.24)))
+                .background(Capsule().fill(.panelFillStrong))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

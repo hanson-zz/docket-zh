@@ -96,7 +96,7 @@ struct LunarDetail: View {
         }
         Text(HolidayService.attribution)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.5))
+            .foregroundStyle(.panelTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -135,10 +135,10 @@ struct LunarDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(dateLine(now))
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("农历\(lunar.short) · \(lunar.ganzhiYear)\(lunar.zodiac)年"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
@@ -146,11 +146,11 @@ struct LunarDetail: View {
                 Button { beginNew(now) } label: {
                     Text(tr("添加"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 13)
                         .frame(height: 28)
-                        .background(Capsule().fill(.white.opacity(0.12)))
-                        .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                        .background(Capsule().fill(.panelFill))
+                        .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -171,28 +171,28 @@ struct LunarDetail: View {
                 almanacMark(tr("宜"), filled: true)
                 Text(good.joined(separator: "  "))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 4)
                 Text(tr("\(LunarAlmanac.dayGanzhi(now))日 · \(trKey(LunarAlmanac.officerName(now)))"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize()
             }
             HStack(spacing: 10) {
                 almanacMark(tr("忌"), filled: false)
                 Text(bad.joined(separator: "  "))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
             }
         }
         .lineLimit(1)
         .padding(12)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06))
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
         .help(tr("按建除十二值日简化排出的宜忌，仅供参考"))
@@ -202,11 +202,11 @@ struct LunarDetail: View {
     private func almanacMark(_ text: String, filled: Bool) -> some View {
         Text(text)
             .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(filled ? accentInk : .white)
+            .foregroundStyle(filled ? accentInk : .panelPrimary)
             .frame(width: 26, height: 24)
             .background {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(filled ? accent : Color.white.opacity(0.16))
+                    .fill(filled ? accent : Color.panelFillStrong)
             }
     }
 
@@ -216,12 +216,12 @@ struct LunarDetail: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 4)
             if let trailing {
                 Text(trailing)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         }
         .lineLimit(1)
@@ -244,7 +244,7 @@ struct LunarDetail: View {
                     } label: {
                         Text(showAllEvents ? tr("收起") : tr("展开全部 \(rows.count) 条"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                             .frame(maxWidth: .infinity, minHeight: 28)
                             .contentShape(.rect)
                     }
@@ -253,7 +253,7 @@ struct LunarDetail: View {
                 if let first = rows.first {
                     Text(LunarEvents.reminderText(first.event))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
@@ -268,14 +268,14 @@ struct LunarDetail: View {
             HStack(spacing: 10) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("记一个农历生日"))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.94))
+                        .foregroundStyle(.panelPrimary)
                     Text(tr("每年自动换成公历，提前提醒"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Spacer(minLength: 0)
             }
@@ -283,7 +283,7 @@ struct LunarDetail: View {
             .frame(height: 60)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             }
             .contentShape(.rect)
         }
@@ -298,10 +298,10 @@ struct LunarDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(row.event.name)
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(LunarEvents.subtitle(row))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                     if let note {
                         Text(note)
                             .font(.system(size: 13))
@@ -323,17 +323,17 @@ struct LunarDetail: View {
                         }
                         Text(tr("今天"))
                             .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                     }
                     .fixedSize()
                 } else {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(verbatim: "\(row.days)")
                             .font(.system(size: 22, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(highlighted ? accent : .white)
+                            .foregroundStyle(highlighted ? accent.panelReadable : .panelPrimary)
                         Text(tr("天"))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .fixedSize()
                 }
@@ -343,10 +343,10 @@ struct LunarDetail: View {
             .frame(minHeight: 60)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.white.opacity(highlighted ? 0.10 : 0.06))
+                    .fill(Color.panelFill.opacity(highlighted ? 1 : 0.66))
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(.white.opacity(highlighted ? 0.2 : 0.1), lineWidth: 0.6)
+                            .strokeBorder(highlighted ? Color.panelQuaternary : Color.panelStroke, lineWidth: 0.6)
                     }
             }
             .overlay(alignment: .leading) {
@@ -371,29 +371,29 @@ struct LunarDetail: View {
                 if items.isEmpty {
                     Text(tr("近期没有节日节气"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     agendaRow(item)
                     if index < items.count - 1 {
-                        Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6).padding(.horizontal, 14)
+                        Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.horizontal, 14)
                     }
                 }
             }
             .padding(.vertical, 2)
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06))
+                RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(.white.opacity(0.1), lineWidth: 0.6)
+                            .strokeBorder(.panelStroke, lineWidth: 0.6)
                     }
             }
         }
     }
 
     private func agendaRow(_ item: LunarCard.AgendaItem) -> some View {
-        let tint: Color = item.isAlert ? LunarReading.red : .white
+        let tint: Color = item.isAlert ? LunarReading.red.panelReadable : .panelPrimary
         return HStack(spacing: 8) {
             Text(trKey(item.name))
                 .font(.system(size: 15, weight: .bold))
@@ -401,15 +401,15 @@ struct LunarDetail: View {
                 .layoutPriority(1)
             Text(item.kindText)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(item.isAlert ? LunarReading.red.opacity(0.85) : .white.opacity(0.62))
+                .foregroundStyle(item.isAlert ? LunarReading.red.panelReadable.opacity(0.85) : .panelSecondary)
             Spacer(minLength: 4)
             Text(LunarEvents.dateText(item.date))
                 .font(.system(size: 13, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .fixedSize()
             Text(item.countdownText)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(item.isAlert ? LunarReading.red : .white.opacity(0.9))
+                .foregroundStyle(item.isAlert ? LunarReading.red.panelReadable : .panelPrimary)
                 .frame(minWidth: 48, alignment: .trailing)
                 .fixedSize()
         }
@@ -425,7 +425,7 @@ struct LunarDetail: View {
     private var workAlertNote: some View {
         Text(tr("调休补班会提前 \(LunarCard.leadDays(config)) 天出现在卡片上，前一天晚上再提醒一次。"))
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.55))
+            .foregroundStyle(.panelTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -444,11 +444,11 @@ struct LunarDetail: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(tr("\(String(year)) 年 \(monthNumber) 月"))
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 4)
                 Text(tr("农历\(lunarMonths.joined(separator: " · "))"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .padding(.horizontal, 4)
@@ -456,7 +456,7 @@ struct LunarDetail: View {
                 ForEach(0..<7, id: \.self) { index in
                     Text(WeekAgenda.weekdayNames[index])
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -489,11 +489,11 @@ struct LunarDetail: View {
         case .work: tr("班")
         case .none: cell.subIsSpecial ? LunarPanel.cellName(trKey(cell.sub)) : LunarPanel.cellName(cell.sub)
         }
-        let subColor: Color = tint ?? (cell.subIsSpecial ? Color(hex: "#FFD36B") : Color.white.opacity(0.5))
+        let subColor: Color = tint.map { $0.panelReadable } ?? (cell.subIsSpecial ? Color(hex: "#FFD36B").panelReadable : Color.panelTertiary)
         return VStack(spacing: 0) {
             Text(verbatim: "\(cell.day)")
                 .font(.system(size: 13, weight: .bold).monospacedDigit())
-                .foregroundStyle(.white.opacity(tint == nil && cell.isWeekend ? 0.7 : 1))
+                .foregroundStyle(.panelPrimary.opacity(tint == nil && cell.isWeekend ? 0.7 : 1))
             Text(sub)
                 .font(.system(size: 13, weight: cell.subIsSpecial || tint != nil ? .semibold : .regular))
                 .foregroundStyle(subColor)
@@ -509,7 +509,7 @@ struct LunarDetail: View {
         .overlay {
             if cell.isToday {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(.white.opacity(0.7), lineWidth: 1)
+                    .strokeBorder(.panelSecondary, lineWidth: 1)
             }
         }
         .help(helpText(cell))
@@ -596,17 +596,17 @@ struct LunarDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(value.isNew ? tr("添加生日 / 纪念日") : tr("编辑生日 / 纪念日"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("按农历记，每年自动换成公历"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
             Button { close() } label: {
                 Text(tr("取消"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 10)
                     .frame(height: 28)
                     .contentShape(.capsule)
@@ -636,7 +636,7 @@ struct LunarDetail: View {
             Spacer(minLength: 4)
             Text(tr("闰月"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
             Toggle(isOn: Binding(get: { value.leap }, set: { on in edit { $0.leap = on } })) { EmptyView() }
                 .toggleStyle(.switch)
                 .labelsHidden()
@@ -669,7 +669,7 @@ struct LunarDetail: View {
             HStack(spacing: 10) {
                 Text(tr("提醒时间"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Menu {
                     ForEach(LunarEvents.minuteChoices, id: \.self) { minute in
                         Button(LunarEvents.timeText(minute)) { edit { $0.minute = minute } }
@@ -677,14 +677,14 @@ struct LunarDetail: View {
                 } label: {
                     Text(LunarEvents.timeText(value.minute))
                         .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 10)
                         .frame(height: 26)
                         .background {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.10))
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .strokeBorder(.white.opacity(0.2), lineWidth: 0.6)
+                                        .strokeBorder(.panelQuaternary, lineWidth: 0.6)
                                 }
                         }
                 }
@@ -714,7 +714,7 @@ struct LunarDetail: View {
             } label: {
                 Text(confirmDelete ? tr("再点一次删除") : tr("删除这一条"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(LunarReading.red)
+                    .foregroundStyle(LunarReading.red.panelReadable)
                     .frame(maxWidth: .infinity, minHeight: 32)
                     .background {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -730,23 +730,23 @@ struct LunarDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "pencil")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             TextField(tr("名字，比如妈妈生日"),
                       text: Binding(get: { value.name },
                                     set: { text in edit { $0.name = String(text.prefix(LunarEvents.nameLimit)) } }))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($nameFocused)
                 .onSubmit { save() }
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.08))
+            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(nameFocused ? accent : .white.opacity(0.18), lineWidth: nameFocused ? 1.2 : 0.6)
+                        .strokeBorder(nameFocused ? accent : .panelStroke, lineWidth: nameFocused ? 1.2 : 0.6)
                 }
         }
     }
@@ -755,14 +755,14 @@ struct LunarDetail: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: selected ? .bold : .semibold))
-                .foregroundStyle(selected ? accentInk : .white.opacity(0.9))
+                .foregroundStyle(selected ? accentInk : .panelPrimary)
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, 12)
                 .frame(height: 30)
-                .background(Capsule().fill(selected ? accent : Color.white.opacity(0.10)))
+                .background(Capsule().fill(selected ? accent : Color.panelFill))
                 .overlay {
-                    if !selected { Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.6) }
+                    if !selected { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                 }
                 .contentShape(.capsule)
         }
@@ -791,14 +791,14 @@ struct LunarDetail: View {
                     Text(days == 0 ? tr("就是今天，\(LunarEvents.dateText(first.date))")
                                    : tr("\(yearWord(first.date, now: now))是 \(LunarEvents.dateText(first.date))"))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     if found.count > 1 {
                         let second = found[1]
                         Text(days == 0
                              ? tr("\(yearWord(second.date, now: now))是 \(shortDate(second.date))")
                              : tr("还有 \(days) 天 · \(yearWord(second.date, now: now))是 \(shortDate(second.date))"))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                     if let note = LunarEvents.note(event, first) {
                         Text(note)
@@ -809,7 +809,7 @@ struct LunarDetail: View {
                 } else {
                     Text(tr("这个日子算不出来"))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 }
             }
             .lineLimit(2)
@@ -817,10 +817,10 @@ struct LunarDetail: View {
         }
         .padding(12)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.08))
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.14), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
     }
@@ -861,7 +861,7 @@ struct LunarDetail: View {
                 )) {
                     Text(row.0)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.94))
+                        .foregroundStyle(.panelPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .toggleStyle(.switch)
@@ -869,15 +869,15 @@ struct LunarDetail: View {
                 .padding(.horizontal, 14)
                 .frame(height: 44)
                 if index < rows.count - 1 {
-                    Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6).padding(.horizontal, 14)
+                    Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.horizontal, 14)
                 }
             }
         }
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06))
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
     }
@@ -895,17 +895,17 @@ struct LunarDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(tr("生日那天卡片上"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.94))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("小熊猫会来送祝福"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
         }
     }
 
@@ -945,7 +945,7 @@ private struct LunarWheel: View {
                     let distance = abs(index - centre)
                     Text(items[index])
                         .font(.system(size: distance == 0 ? 15 : 14, weight: distance == 0 ? .bold : .medium))
-                        .foregroundStyle(.white.opacity(distance == 0 ? 1 : (distance == 1 ? 0.55 : 0.3)))
+                        .foregroundStyle(.panelPrimary.opacity(distance == 0 ? 1 : (distance == 1 ? 0.55 : 0.3)))
                         .frame(maxWidth: .infinity)
                         .frame(height: Self.row)
                         .contentShape(.rect)
@@ -963,7 +963,7 @@ private struct LunarWheel: View {
         .frame(maxWidth: .infinity)
         .background {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.black.opacity(0.22))
+                RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelShade)
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(accent.opacity(0.2))
                     .overlay {

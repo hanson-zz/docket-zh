@@ -34,7 +34,7 @@ struct GaugesDetail: View {
     var body: some View {
         DetailCard {
             ZStack {
-                Color(hex: SystemActivityStyle.base)
+                // 液态玻璃：原来这里先铺一层实心石墨底（#1D1D21），去掉，只留角上一抹主题色。
                 RadialGradient(colors: [accent.opacity(0.13), .clear],
                                center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
             }
@@ -58,11 +58,11 @@ struct GaugesDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: tr("圆环仪表"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: editing ? tr("勾选显示哪些 · 拖动排序 · 警戒线")
                      : tr("\(rings.count) 个圆环 · 编辑里拖动排序"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -73,11 +73,11 @@ struct GaugesDetail: View {
                 } label: {
                     Text(verbatim: editing ? tr("完成") : tr("编辑"))
                         .font(.system(size: 13, weight: editing ? .bold : .semibold))
-                        .foregroundStyle(editing ? ink : .white.opacity(0.92))
+                        .foregroundStyle(editing ? ink : .panelPrimary)
                         .padding(.horizontal, editing ? 15 : 13)
                         .frame(height: 28)
-                        .background(Capsule().fill(editing ? accent : .white.opacity(0.12)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(editing ? 0 : 0.18), lineWidth: 0.6))
+                        .background(Capsule().fill(editing ? accent : .panelFill))
+                        .overlay(Capsule().strokeBorder(editing ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -116,21 +116,21 @@ struct GaugesDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: headline(ring, reading))
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(reading.alert ? GaugeLive.red : .white)
+                        .foregroundStyle(reading.alert ? GaugeLive.red.panelReadable : .panelPrimary)
                         .monospacedDigit()
                     Text(verbatim: GaugeAlert.caption(ring, line))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 Button { jump(ring) } label: {
                     Image(systemName: "arrow.up.right")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 28, height: 28)
-                        .background(Circle().fill(.white.opacity(0.1)))
+                        .background(Circle().fill(.panelFill))
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
@@ -146,9 +146,9 @@ struct GaugesDetail: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(reading.alert ? GaugeLive.red.opacity(0.6) : .white.opacity(0.14), lineWidth: 0.6))
+            .strokeBorder(reading.alert ? GaugeLive.red.opacity(0.6) : .panelStroke, lineWidth: 0.6))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(GaugeAlert.title(ring))
     }
@@ -190,19 +190,19 @@ struct GaugesDetail: View {
                     }
                 }
                 .frame(height: 8)
-                .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(.white.opacity(0.12)))
+                .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(.panelTrack))
                 Text(verbatim: parts.filter { $0.name != tr("其他") }
                     .map { "\($0.name) \(GaugeReading.bytes($0.bytes))" }
                     .joined(separator: " · "))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         } else if total > 0 {
             Text(verbatim: storageReader.measuring ? tr("正在统计应用、下载和废纸篓…") : tr("面板打开时统计应用、下载和废纸篓"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -214,11 +214,11 @@ struct GaugesDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(verbatim: tr("占用最高"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             if rows.isEmpty {
                 Text(verbatim: tr("正在读取…"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             ForEach(rows) { row in
                 HStack {
@@ -230,7 +230,7 @@ struct GaugesDetail: View {
                         .monospacedDigit()
                 }
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.88))
+                .foregroundStyle(.panelPrimary)
             }
         }
     }
@@ -275,7 +275,7 @@ struct GaugesDetail: View {
                 })
             Text(verbatim: tr("警戒线（过了线圆环变红）"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.top, 4)
             ForEach(rings, id: \.self) { ring in alertRow(ring) }
         }
@@ -287,13 +287,13 @@ struct GaugesDetail: View {
         return HStack {
             Text(verbatim: GaugeAlert.title(ring))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 8)
             HStack(spacing: 0) {
                 stepButton("minus", enabled: line != choices.first) { setLine(ring, GaugeAlert.stepped(ring, from: line, by: -1)) }
                 Text(verbatim: GaugeAlert.short(ring, line))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -301,12 +301,12 @@ struct GaugesDetail: View {
                 stepButton("plus", enabled: line != choices.last) { setLine(ring, GaugeAlert.stepped(ring, from: line, by: 1)) }
             }
             .frame(height: 30)
-            .background(Capsule().fill(.white.opacity(0.08)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+            .background(Capsule().fill(.panelFill))
+            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
         }
         .padding(.horizontal, 12)
         .frame(height: 42)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tr("\(GaugeAlert.title(ring))警戒线"))
         .accessibilityValue(GaugeAlert.short(ring, line))
@@ -323,7 +323,7 @@ struct GaugesDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.3))
+                .foregroundStyle(.panelPrimary.opacity(enabled ? 0.85 : 0.3))
                 .frame(width: 30, height: 30)
                 .contentShape(.rect)
         }

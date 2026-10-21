@@ -13,6 +13,7 @@ struct ContributionGridView: View {
     var unit: String = tr("次")
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
     @State private var shown = false
 
     var body: some View {
@@ -42,7 +43,7 @@ struct ContributionGridView: View {
             .overlay {
                 if day.isToday {
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .strokeBorder(.white.opacity(0.9), lineWidth: cell >= 8 ? 1 : 0.75)
+                        .strokeBorder(.panelPrimary, lineWidth: cell >= 8 ? 1 : 0.75)
                 }
             }
             .frame(width: cell, height: cell)
@@ -64,14 +65,8 @@ struct ContributionGridView: View {
     }
 
     private func fill(_ day: ContributionGrid.Cell) -> Color {
-        if day.isFuture { return .white.opacity(0.03) }
-        switch day.level {
-        case 0: return .white.opacity(0.09)
-        case 1: return color.opacity(0.35)
-        case 2: return color.opacity(0.55)
-        case 3: return color.opacity(0.75)
-        default: return color
-        }
+        if day.isFuture { return Color.panelTrack.opacity(0.35) }
+        return contributionShade(day.level, color: color, light: scheme == .light)
     }
 
     private var summary: String {
@@ -86,18 +81,33 @@ struct ContributionLegend: View {
     var color: Color
     var cell: CGFloat = 7
 
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         HStack(spacing: 2) {
             Text("少").padding(.trailing, 2)
             ForEach(0...ContributionGrid.maxLevel, id: \.self) { level in
                 RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                    .fill(level == 0 ? Color.white.opacity(0.09) : color.opacity([0, 0.35, 0.55, 0.75, 1][level]))
+                    .fill(contributionShade(level, color: color, light: scheme == .light))
                     .frame(width: cell, height: cell)
             }
             Text("多").padding(.leading, 2)
         }
-        .font(.system(size: 9, weight: .medium))
-        .foregroundStyle(.white.opacity(0.5))
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(.panelSecondary)
         .accessibilityHidden(true)
+    }
+}
+
+/// 格子按档位上色。空格子用 `.panelTrack`（浅色玻璃上是淡淡的深色，深色下是原来的淡白）。
+/// 深色外观沿用原来的透明度梯度；浅色外观下淡档在浅玻璃上发白看不清，
+/// 改成像 GitHub 浅色主题那样越多越深：淡、中、原色、再加深一档。
+private func contributionShade(_ level: Int, color: Color, light: Bool) -> Color {
+    switch level {
+    case ...0: return .panelTrack
+    case 1: return color.opacity(light ? 0.42 : 0.35)
+    case 2: return color.opacity(light ? 0.7 : 0.55)
+    case 3: return light ? color : color.opacity(0.75)
+    default: return light ? color.panelReadable : color
     }
 }

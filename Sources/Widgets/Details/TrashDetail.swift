@@ -68,7 +68,7 @@ struct TrashDetail: View {
                 }
                 Text(verbatim: tr("把文件拖到卡片上即可移到废纸篓。苍蝇的灵感来自 BananaBin。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -102,7 +102,7 @@ struct TrashDetail: View {
                 SwallowingBin(startedAt: swallowAt, binSize: 40) {
                     Image(systemName: items > 0 ? "trash.fill" : "trash")
                         .font(.system(size: 40, weight: .regular))
-                        .foregroundStyle(targeted ? Color.red : .white)
+                        .foregroundStyle(targeted ? Color.red.panelReadable : .panelPrimary)
                 }
                 FlySwarm(count: flies, scaredAt: scaredAt, hovering: hovering,
                          animated: !context.isPreview, flySize: 1.5)
@@ -119,16 +119,16 @@ struct TrashDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: needsAccess ? tr("需要权限") : TrashFlies.format(bytes: bytes))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(verbatim: items == 0 ? tr("废纸篓是空的") : tr("\(items) 个项目"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                 Text(verbatim: fliesLine)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -140,7 +140,7 @@ struct TrashDetail: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(verbatim: tr("macOS 要求“完全磁盘访问权限”才能读取废纸篓的大小和最近扔的东西。打开设置后把“码头”加入列表并打开开关。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             pill(tr("打开隐私设置"), solid: true) { monitor.openAccessSettings() }
         }
@@ -152,7 +152,7 @@ struct TrashDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: tr("最近扔的"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.bottom, 2)
             ForEach(recent) { item in
                 row(item)
@@ -164,10 +164,10 @@ struct TrashDetail: View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: notice.ok ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .font(.system(size: 13))
-                .foregroundStyle(notice.ok ? accent : Color(hex: "#FFB547"))
+                .foregroundStyle(notice.ok ? accent.panelReadable : Color(hex: "#FFB547").panelReadable)
             Text(verbatim: notice.text)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .transition(.opacity)
@@ -180,12 +180,12 @@ struct TrashDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: item.displayName)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(verbatim: caption(item))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -196,9 +196,9 @@ struct TrashDetail: View {
             } label: {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
                     .frame(width: 28, height: 26)
-                    .background(Capsule().fill(.white.opacity(0.08)))
+                    .background(Capsule().fill(.panelFill))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -209,11 +209,11 @@ struct TrashDetail: View {
             } label: {
                 Text(verbatim: tr("放回"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 12)
                     .frame(height: 26)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -222,7 +222,7 @@ struct TrashDetail: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 42)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill))
         .contextMenu {
             Button(tr("放回原处")) { putBack(item) }
             Button(tr("在访达中显示")) { if !context.isPreview { monitor.reveal(item) } }
@@ -234,7 +234,7 @@ struct TrashDetail: View {
         if context.isPreview {
             Image(systemName: "doc.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
         } else {
             Image(nsImage: NSWorkspace.shared.icon(forFile: monitor.location(of: item).path))
                 .resizable()
@@ -261,12 +261,12 @@ struct TrashDetail: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 14, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? ink : .white.opacity(0.92))
+                .foregroundStyle(solid ? ink : .panelPrimary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
-                .background(Capsule().fill(solid ? accent : .white.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(solid ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(solid ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

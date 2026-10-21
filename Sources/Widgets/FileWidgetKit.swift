@@ -68,14 +68,14 @@ struct PanelButton: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 if let symbol { Image(systemName: symbol).font(.system(size: 11, weight: .semibold)) }
-                Text(title).font(WidgetStyle.label(12))
+                Text(title).font(WidgetStyle.label(13))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 30)
-            .background(Color.white.opacity(prominent ? 0.24 : 0.12), in: .capsule)
+            .background(prominent ? Color.panelFillStrong : Color.panelFill, in: .capsule)
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -92,20 +92,20 @@ struct PanelHeader: View {
     var body: some View {
         HStack(spacing: 10) {
             Circle()
-                .fill(.white.opacity(0.14))
+                .fill(.panelFillStrong)
                 .frame(width: 38, height: 38)
                 .overlay {
                     Image(systemName: symbol)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 }
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(WidgetStyle.label(16))
                     .foregroundStyle(WidgetStyle.primary)
                 Text(subtitle)
-                    .font(WidgetStyle.caption(11))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -124,10 +124,10 @@ struct PanelNote: View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
             Text(text)
-                .font(WidgetStyle.caption(12))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -171,8 +171,8 @@ struct FeedErrorNote: View {
             if denied {
                 Button(tr("打开隐私设置")) { FolderFeed.openPrivacySettings() }
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.caption(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelPrimary)
                     .underline()
             }
         }
@@ -199,7 +199,7 @@ struct FileGrid: View {
                 ForEach(files) { file in
                     FileThumb(url: file.url, pixels: 240, fill: isImage)
                         .aspectRatio(1, contentMode: .fit)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.panelFill)
                         .clipShape(.rect(cornerRadius: 8, style: .continuous))
                         .contentShape(.rect(cornerRadius: 8))
                         .onTapGesture { FileActions.open(file.url) }
@@ -232,13 +232,13 @@ struct FileRows: View {
                             .clipShape(.rect(cornerRadius: 6, style: .continuous))
                         VStack(alignment: .leading, spacing: 1) {
                             Text(file.name)
-                                .font(WidgetStyle.label(12))
-                                .foregroundStyle(.white)
+                                .font(WidgetStyle.label(13))
+                                .foregroundStyle(.panelPrimary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             Text(detail(file))
-                                .font(WidgetStyle.caption(10))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .font(WidgetStyle.caption(13))
+                                .foregroundStyle(.panelSecondary)
                                 .lineLimit(1)
                         }
                         Spacer(minLength: 0)

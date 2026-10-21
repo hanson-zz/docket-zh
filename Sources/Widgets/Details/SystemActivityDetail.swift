@@ -60,7 +60,7 @@ struct SystemActivityDetail: View {
     var body: some View {
         DetailCard {
             ZStack {
-                Color(hex: SystemActivityStyle.base)
+                // 液态玻璃：原来这里先铺一层实心石墨底（#1D1D21），去掉，只留角上一抹主题色。
                 // 右上角一抹很淡的绿，不做大面积发光。
                 RadialGradient(colors: [accent.opacity(0.13), .clear],
                                center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
@@ -84,10 +84,10 @@ struct SystemActivityDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: mode == .browse ? tr("系统活动") : tr("提醒与管理"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -99,11 +99,11 @@ struct SystemActivityDetail: View {
                     Button { switchTo(.manage) } label: {
                         Text(verbatim: tr("提醒"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 13)
                             .frame(height: 28)
-                            .background(Capsule().fill(.white.opacity(0.12)))
-                            .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                            .background(Capsule().fill(.panelFill))
+                            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct SystemActivityDetail: View {
             HStack(spacing: 5) {
                 Text(verbatim: metric.title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.66))
+                    .foregroundStyle(.panelSecondary)
                 if firing {
                     Circle().fill(red).frame(width: 6, height: 6)
                 }
@@ -192,11 +192,11 @@ struct SystemActivityDetail: View {
                 Text(verbatim: reading.value)
                     .font(.system(size: 24, weight: .semibold))
                     .monospacedDigit()
-                    .foregroundStyle(firing ? red : .white)
+                    .foregroundStyle(firing ? red.panelReadable : .panelPrimary)
                     .rollingValue(reading.value)
                 Text(verbatim: reading.unit)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.7)
@@ -207,8 +207,8 @@ struct SystemActivityDetail: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.07)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(metric.title)
         .accessibilityValue("\(reading.value) \(reading.unit)")
@@ -280,10 +280,10 @@ struct SystemActivityDetail: View {
                     } label: {
                         Text(verbatim: metric.title)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(chartMetric == metric ? 1 : 0.7))
+                            .foregroundStyle(.panelPrimary.opacity(chartMetric == metric ? 1 : 0.7))
                             .padding(.horizontal, 10)
                             .frame(height: 26)
-                            .background(Capsule().fill(.white.opacity(chartMetric == metric ? 0.2 : 0)))
+                            .background(Capsule().fill(chartMetric == metric ? Color.panelFillStrong : Color.clear))
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -300,11 +300,11 @@ struct SystemActivityDetail: View {
                             path.addLine(to: CGPoint(x: size.width, y: y))
                         }
                     }
-                    .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                    .stroke(.panelSeparator, lineWidth: 0.5)
                     if segments.isEmpty {
                         Text(verbatim: tr("每分钟记一次，记满 24 小时就是完整的一天"))
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                             .frame(width: size.width, height: size.height)
                     } else {
                         ForEach(segments.indices, id: \.self) { index in
@@ -319,12 +319,12 @@ struct SystemActivityDetail: View {
                             let px = CGFloat(point.x) * size.width
                             let py = (1 - CGFloat(point.y)) * size.height
                             Circle()
-                                .fill(.white)
+                                .fill(.panelPrimary)
                                 .frame(width: 7, height: 7)
                                 .position(x: px, y: py)
                             Text(verbatim: SystemReadout.peakLabel(chartMetric, sample: peak))
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(.panelPrimary)
                                 .monospacedDigit()
                                 .fixedSize()
                                 .alignmentGuide(.leading) { d in
@@ -345,14 +345,14 @@ struct SystemActivityDetail: View {
                 Text(verbatim: tr("现在"))
             }
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .padding(.top, 10)
         }
         .padding(.horizontal, 10)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(tr("最近 24 小时"))
     }
@@ -388,7 +388,7 @@ struct SystemActivityDetail: View {
             HStack {
                 Text(verbatim: tr("占用最高"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Menu {
                     ForEach(ProcessSort.allCases, id: \.self) { sort in
@@ -401,7 +401,7 @@ struct SystemActivityDetail: View {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .bold))
                     }
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
                 }
                 .menuStyle(.button)
                 .buttonStyle(.plain)
@@ -419,21 +419,21 @@ struct SystemActivityDetail: View {
             if let quitFailed {
                 Text(verbatim: quitFailed)
                     .font(.system(size: 13))
-                    .foregroundStyle(red)
+                    .foregroundStyle(red.panelReadable)
                     .padding(.vertical, 4)
             }
 
             if rows.isEmpty {
                 Text(verbatim: tr("正在读取进程…"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 34)
             } else {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     processRow(row)
                     if index < rows.count - 1 {
                         Rectangle()
-                            .fill(.white.opacity(0.1))
+                            .fill(.panelSeparator)
                             .frame(height: 0.6)
                             .padding(.leading, 34)
                     }
@@ -449,7 +449,7 @@ struct SystemActivityDetail: View {
             processIcon(row, size: 24)
             Text(verbatim: name)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 6)
@@ -457,7 +457,7 @@ struct SystemActivityDetail: View {
                                                 : ProcessRanking.memoryText(row.memory))
                 .font(.system(size: 14, weight: .semibold))
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             if canQuit {
                 Button {
                     quitFailed = nil
@@ -465,10 +465,10 @@ struct SystemActivityDetail: View {
                 } label: {
                     Text(verbatim: tr("退出"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(width: 50, height: 24)
-                        .background(Capsule().fill(.white.opacity(0.12)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                        .background(Capsule().fill(.panelFill))
+                        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -492,12 +492,12 @@ struct SystemActivityDetail: View {
                 .frame(width: size, height: size)
         } else {
             RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(.white.opacity(0.14))
+                .fill(.panelFillStrong)
                 .frame(width: size, height: size)
                 .overlay {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: size * 0.5))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 }
         }
     }
@@ -511,26 +511,26 @@ struct SystemActivityDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: tr("退出「\(name)」？"))
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     Text(verbatim: tr("CPU \(ProcessRanking.cpuText(row.cpuPercent)) · 内存 \(ProcessRanking.memoryText(row.memory))"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.66))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                 }
             }
             Text(verbatim: tr("没保存的内容可能会丢失"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.86))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 8) {
                 Button {
                     withAnimation(.easeOut(duration: 0.18)) { pendingQuit = nil }
                 } label: {
                     Text(verbatim: tr("取消"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(maxWidth: .infinity, minHeight: 32)
-                        .background(Capsule().fill(.white.opacity(0.12)))
+                        .background(Capsule().fill(.panelFill))
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -565,14 +565,14 @@ struct SystemActivityDetail: View {
             HStack(spacing: 8) {
                 Text(verbatim: tr("超阈值提醒"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 ProCrown()
                 Spacer(minLength: 0)
                 if list.count < SystemAlertRules.maxCount {
                     Button(action: addRule) {
                         Text(verbatim: tr("＋ 添加规则"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
@@ -581,13 +581,13 @@ struct SystemActivityDetail: View {
             if !unlocked {
                 Text(verbatim: tr("超阈值提醒是码头 Pro 功能。解锁后按下面的规则发系统通知，卡片上的读数变红。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if list.isEmpty {
                 Text(verbatim: tr("还没有规则，点“添加规则”加一条"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 46)
             }
             ForEach(list) { rule in
@@ -599,7 +599,7 @@ struct SystemActivityDetail: View {
             }
             Text(verbatim: tr("卡片上显示"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.top, 8)
             cardMetrics
         }
@@ -623,7 +623,7 @@ struct SystemActivityDetail: View {
         HStack(spacing: 10) {
             Text(verbatim: rule.summary)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(rule.enabled ? 1 : 0.7))
+                .foregroundStyle(.panelPrimary.opacity(rule.enabled ? 1 : 0.7))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
@@ -631,8 +631,8 @@ struct SystemActivityDetail: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 46)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.1), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .contentShape(.rect)
         .onTapGesture {
             draggingThreshold = nil
@@ -651,7 +651,7 @@ struct SystemActivityDetail: View {
             HStack(spacing: 10) {
                 Text(verbatim: preview.summary)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
@@ -669,10 +669,10 @@ struct SystemActivityDetail: View {
                     } label: {
                         Text(verbatim: metric.title)
                             .font(.system(size: 13, weight: selected ? .bold : .medium))
-                            .foregroundStyle(selected ? accentInk : .white)
+                            .foregroundStyle(selected ? accentInk : .panelPrimary)
                             .padding(.horizontal, 10)
                             .frame(height: 26)
-                            .background(Capsule().fill(selected ? accent : .white.opacity(0.1)))
+                            .background(Capsule().fill(selected ? accent : .panelFill))
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -697,7 +697,7 @@ struct SystemActivityDetail: View {
                 Text(verbatim: preview.thresholdText)
                     .font(.system(size: 15, weight: .semibold))
                     .monospacedDigit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .frame(minWidth: 62, alignment: .trailing)
             }
 
@@ -710,26 +710,26 @@ struct SystemActivityDetail: View {
                     Text(verbatim: tr("\(rule.minutes) 分钟"))
                         .font(.system(size: 14, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(minWidth: 64)
                     stepButton("plus", enabled: rule.minutes < SystemAlertRule.minuteRange.upperBound) {
                         update(rule.id) { $0.minutes = min($0.minutes + Self.minuteStep($0.minutes, down: false), 60) }
                     }
                 }
                 .frame(height: 28)
-                .background(Capsule().fill(.white.opacity(0.1)))
+                .background(Capsule().fill(.panelFill))
                 Spacer(minLength: 0)
             }
 
             HStack(alignment: .firstTextBaseline) {
                 Text(verbatim: tr("到了发系统通知，卡片读数变红"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Button { removeRule(rule.id) } label: {
                     Text(verbatim: tr("删除"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(red)
+                        .foregroundStyle(red.panelReadable)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -737,8 +737,8 @@ struct SystemActivityDetail: View {
             }
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.1)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     /// 1 到 5 分钟一分钟一档，往上五分钟一档。
@@ -749,7 +749,7 @@ struct SystemActivityDetail: View {
     private func fieldLabel(_ text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .frame(width: 34, alignment: .leading)
     }
 
@@ -757,7 +757,7 @@ struct SystemActivityDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 0.9 : 0.3))
+                .foregroundStyle(.panelPrimary.opacity(enabled ? 0.9 : 0.3))
                 .frame(width: 32, height: 28)
                 .contentShape(.rect)
         }
@@ -781,17 +781,17 @@ struct SystemActivityDetail: View {
                         if on {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 10, weight: .heavy))
-                                .foregroundStyle(accent)
+                                .foregroundStyle(accent.panelReadable)
                         }
                         Text(verbatim: Self.metricTitle(key))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(on ? 1 : 0.7))
+                            .foregroundStyle(.panelPrimary.opacity(on ? 1 : 0.7))
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, minHeight: 34)
-                    .background(Capsule().fill(.white.opacity(on ? 0.16 : 0.06)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(on ? 0.5 : 0.14), lineWidth: 0.8))
+                    .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
+                    .overlay(Capsule().strokeBorder(on ? Color.panelTertiary : Color.panelStroke, lineWidth: 0.8))
                     .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -897,7 +897,7 @@ private struct ProCrown: View {
             Text(verbatim: ProFeatures.badgeTitle)
                 .font(.system(size: 13, weight: .bold))
         }
-        .foregroundStyle(gold)
+        .foregroundStyle(gold.panelReadable)
         .padding(.horizontal, 7)
         .frame(height: 20)
         .background(Capsule().fill(gold.opacity(0.16)))
