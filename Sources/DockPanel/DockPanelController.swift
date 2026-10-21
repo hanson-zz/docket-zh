@@ -553,6 +553,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     private func beginFloatingDrag() {
         guard let panel, app.state.customDock.floating else { return }
         GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
         WidgetDetailWindow.shared.closeIfAnchored()
         TooltipWindow.shared.hide()
         floatDrag = (NSEvent.mouseLocation, panel.frame.origin)
