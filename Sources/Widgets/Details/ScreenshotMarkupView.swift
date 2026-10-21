@@ -44,7 +44,7 @@ struct ScreenshotMarkupView: View {
             if let notice {
                 Text(verbatim: notice)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -77,6 +77,7 @@ struct ScreenshotMarkupView: View {
             let imageSize = base.map { CGSize(width: $0.width, height: $0.height) } ?? .zero
             let rect = MarkupGeometry.fit(image: imageSize, in: box)
             ZStack(alignment: .topLeading) {
+                // 截图四周的留边：看图的底，保持压暗、不跟随外观。
                 Color.black.opacity(0.25)
                 if let shown = preview ?? base {
                     Image(decorative: shown, scale: 1)
@@ -99,7 +100,7 @@ struct ScreenshotMarkupView: View {
         }
         .frame(height: Self.canvasHeight)
         .clipShape(.rect(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.6))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .accessibilityLabel(tr("标注画布"))
     }
 
@@ -153,6 +154,7 @@ struct ScreenshotMarkupView: View {
                 Path(roundedRect: MarkupGeometry.rect(from: p, to: q), cornerRadius: width * 1.5)
                     .stroke(shade, lineWidth: width)
             case .mosaic:
+                // 画在截图上，和图片一样不跟随外观：保持白色半透明。
                 Path(MarkupGeometry.rect(from: p, to: q))
                     .fill(.white.opacity(0.18))
                     .overlay(Path(MarkupGeometry.rect(from: p, to: q))
@@ -176,6 +178,7 @@ struct ScreenshotMarkupView: View {
             .onExitCommand { textAt = nil; textDraft = "" }
             .padding(.horizontal, 3)
             .frame(width: width, alignment: .leading)
+            // 输入框浮在截图上：保持暗底白提示字，不跟随外观。
             .background(RoundedRectangle(cornerRadius: 4).fill(.black.opacity(0.35)))
             .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(palette.accent.opacity(0.9), lineWidth: 1))
             .offset(x: min(point.x, max(0, rect.maxX - width)), y: max(0, point.y - 2))
@@ -195,13 +198,13 @@ struct ScreenshotMarkupView: View {
                             .font(.system(size: 13, weight: on ? .bold : .semibold))
                             .lineLimit(1)
                     }
-                    .foregroundStyle(on ? palette.ink : .white)
+                    .foregroundStyle(on ? palette.ink : .panelPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(on ? palette.accent : .white.opacity(0.08)))
+                        .fill(on ? palette.accent : .panelFill))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+                        .strokeBorder(Color.panelStroke.opacity(on ? 0 : 1), lineWidth: 0.6))
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -224,14 +227,14 @@ struct ScreenshotMarkupView: View {
         HStack(spacing: 10) {
             Text(verbatim: tr("颜色"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.86))
+                .foregroundStyle(.panelPrimary)
             ForEach(MarkupColor.allCases, id: \.self) { item in
                 Button { color = item } label: {
                     Circle()
                         .fill(Color(hex: item.hex))
                         .frame(width: 19, height: 19)
                         .padding(3.5)
-                        .overlay(Circle().strokeBorder(.white.opacity(item == color ? 1 : 0), lineWidth: 1.6))
+                        .overlay(Circle().strokeBorder(Color.panelPrimary.opacity(item == color ? 1 : 0), lineWidth: 1.6))
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -245,11 +248,11 @@ struct ScreenshotMarkupView: View {
             } label: {
                 Text(verbatim: tr("撤销"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 14)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.1)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -266,11 +269,11 @@ struct ScreenshotMarkupView: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 15, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? palette.ink : .white)
+                .foregroundStyle(solid ? palette.ink : .panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-                .background(Capsule().fill(solid ? palette.accent : .white.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(solid ? palette.accent : .panelFill))
+                .overlay(Capsule().strokeBorder(Color.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -280,18 +283,18 @@ struct ScreenshotMarkupView: View {
         HStack(spacing: 8) {
             Text(verbatim: tr("还没拷贝或保存，放弃这次标注？"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Button(tr("放弃")) { askDiscard = false; onDone() }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(FilePanelPalette.red)
+                .foregroundStyle(FilePanelPalette.red.panelReadable)
             Button(tr("继续标注")) { askDiscard = false }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

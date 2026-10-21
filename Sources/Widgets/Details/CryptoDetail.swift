@@ -120,10 +120,10 @@ struct CryptoDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(editing ? tr("编辑币种") : tr("加密货币"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(editing ? tr("搜索添加 · 拖动排序") : subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -144,11 +144,11 @@ struct CryptoDetail: View {
                     Button { switchEditing(true) } label: {
                         Text(tr("编辑"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 13)
                             .frame(height: 28)
-                            .background(Capsule().fill(.white.opacity(0.12)))
-                            .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                            .background(Capsule().fill(.panelFill))
+                            .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -215,41 +215,41 @@ struct CryptoDetail: View {
                 HStack(spacing: 5) {
                     Text(name(id))
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(13.0 / 15.0)
                     if watched {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Self.gold)
+                            .foregroundStyle(Self.gold.panelReadable)
                             .accessibilityLabel(tr("已设到价提醒"))
                     }
                 }
                 Text(symbol(id))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             MiniTrend(samples: quote?.sparkline ?? [], tint: weekInk(quote), baseline: nil, lineWidth: 1.6,
-                      guide: .white)
+                      guide: .panelPrimary)
                 .frame(width: 56, height: 28)
                 .help(tr("最近 7 天 \(CryptoMarket.changeText(quote?.change7d))"))
             VStack(alignment: .trailing, spacing: 4) {
                 Text(quote.map { CryptoMarket.priceText($0.price, currency: currency) } ?? "-")
                     .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(13.0 / 15.0)
                     .rollingValue(quote?.price)
                 Text(CryptoWatch.chipText(quote?.change24h))
                     .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .foregroundStyle(tone == .neutral ? Color.white.opacity(0.7) : ink(tone))
+                    .foregroundStyle(tone == .neutral ? Color.panelSecondary : ink(tone))
                     .lineLimit(1)
                     .frame(minWidth: 54, minHeight: 20)
                     .padding(.horizontal, 4)
                     .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(tone == .neutral ? Color.white.opacity(0.10) : ink(tone).opacity(0.2)))
+                        .fill(tone == .neutral ? Color.panelFill : ink(tone).opacity(0.2)))
                     .rollingValue(quote?.change24h)
             }
             .frame(width: 92, alignment: .trailing)
@@ -287,16 +287,16 @@ struct CryptoDetail: View {
             HStack(spacing: 12) {
                 Image(systemName: "bell.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Self.gold.opacity(alertsOn && featured != nil ? 1 : 0.7))
+                    .foregroundStyle(Self.gold.panelReadable.opacity(alertsOn && featured != nil ? 1 : 0.7))
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                     Text(detail)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 4)
@@ -315,11 +315,11 @@ struct CryptoDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(tr("24 小时涨跌 · 线是最近 7 天 · \(colors.title)"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Link(CryptoMarket.attribution, destination: CryptoMarket.attributionURL)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
                 .help(tr("每 5 分钟最多刷新一次"))
         }
     }
@@ -338,10 +338,10 @@ struct CryptoDetail: View {
                 Text(tr("我的币种 \(ids.count)"))
                 Spacer()
                 Text(fullNote ? tr("最多 \(CryptoMarket.maxCoins) 个") : tr("卡片放前 \(CryptoMarket.tileCoins) 个"))
-                    .foregroundStyle(fullNote ? Self.red : Color.white.opacity(0.62))
+                    .foregroundStyle(fullNote ? Self.red.panelReadable : Color.panelSecondary)
             }
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .padding(.top, 8)
             .padding(.bottom, 8)
             myCoins
@@ -364,7 +364,7 @@ struct CryptoDetail: View {
     private var colorsTitle: some View {
         Text(tr("涨跌颜色"))
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .fixedSize()
     }
 
@@ -381,18 +381,18 @@ struct CryptoDetail: View {
         return HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
-            TextField("", text: $query, prompt: Text(tr("搜索：比特币、BTC、sol")).foregroundStyle(.white.opacity(0.5)))
+                .foregroundStyle(.panelSecondary)
+            TextField("", text: $query, prompt: Text(tr("搜索：比特币、BTC、sol")).foregroundStyle(.panelTertiary))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($focus, equals: .search)
                 .onSubmit { if let first = shownResults.first { add(first) } }
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .frame(width: 20, height: 20)
                         .contentShape(.rect)
                 }
@@ -402,10 +402,10 @@ struct CryptoDetail: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 40)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(active ? accent.opacity(0.9) : Color.white.opacity(0.14), lineWidth: active ? 1.2 : 0.6)
+                .strokeBorder(active ? accent.opacity(0.9) : Color.panelStroke, lineWidth: active ? 1.2 : 0.6)
         }
         .contentShape(.rect)
         .onTapGesture { WidgetDetailWindow.shared.focusField { focus = .search } }
@@ -422,7 +422,7 @@ struct CryptoDetail: View {
             if hits.isEmpty {
                 Text(searching ? tr("正在搜索…") : searchFailed ? tr("搜索失败，稍后再试") : tr("没找到「\(trimmedQuery)」"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14)
                     .frame(height: 44)
@@ -430,13 +430,13 @@ struct CryptoDetail: View {
                 ForEach(Array(hits.enumerated()), id: \.element.id) { index, hit in
                     resultRow(hit)
                     if index < hits.count - 1 {
-                        Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6).padding(.leading, 46)
+                        Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.leading, 46)
                     }
                 }
                 if searchFailed {
                     Text(tr("联网搜索失败，只列出常见币种"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
@@ -444,8 +444,8 @@ struct CryptoDetail: View {
             }
         }
         .padding(.vertical, 3)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
-        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.1), lineWidth: 0.5) }
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.5) }
     }
 
     private func resultRow(_ hit: CryptoSearchHit) -> some View {
@@ -454,27 +454,27 @@ struct CryptoDetail: View {
             letterBadge(hit.symbol, size: 26)
             Text(CryptoWatch.displayName(id: hit.id, fallback: hit.name))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .layoutPriority(1)
             Text(hit.symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Spacer(minLength: 6)
             if added {
                 Text(tr("已添加"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize()
             } else {
                 Button { add(hit) } label: {
                     Text(tr("添加"))
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(CryptoWatch.canAdd(count: ids.count) ? accentInk : Color.white.opacity(0.5))
+                        .foregroundStyle(CryptoWatch.canAdd(count: ids.count) ? accentInk : Color.panelTertiary)
                         .padding(.horizontal, 14)
                         .frame(height: 28)
-                        .background(Capsule().fill(CryptoWatch.canAdd(count: ids.count) ? accent : Color.white.opacity(0.12)))
+                        .background(Capsule().fill(CryptoWatch.canAdd(count: ids.count) ? accent : Color.panelFill))
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
@@ -524,7 +524,7 @@ struct CryptoDetail: View {
         return HStack(spacing: 10) {
             Image(systemName: "line.3.horizontal")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(count > 1 ? 0.55 : 0.2))
+                .foregroundStyle(.panelPrimary.opacity(count > 1 ? 0.55 : 0.2))
                 .frame(width: 24, height: Self.rowHeight)
                 .contentShape(.rect)
                 .gesture(reorder(index: index, count: count))
@@ -533,18 +533,18 @@ struct CryptoDetail: View {
             badge(id, size: 26)
             Text(name(id))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .layoutPriority(1)
             Text(symbol(id))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Button { toggleExpanded(id) } label: {
                 Image(systemName: watched && alertsOn ? "bell.fill" : "bell")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(watched && alertsOn ? Self.gold : Color.white.opacity(expanded == id ? 0.9 : 0.5))
+                    .foregroundStyle(watched && alertsOn ? Self.gold.panelReadable : Color.panelPrimary.opacity(expanded == id ? 0.9 : 0.5))
                     .frame(width: 28, height: 28)
                     .contentShape(.rect)
             }
@@ -554,7 +554,7 @@ struct CryptoDetail: View {
             Button { remove(id) } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 12, weight: .heavy))
-                    .foregroundStyle(Self.red.opacity(CryptoWatch.canRemove(count: count) ? 1 : 0.35))
+                    .foregroundStyle(Self.red.panelReadable.opacity(CryptoWatch.canRemove(count: count) ? 1 : 0.35))
                     .frame(width: 26, height: 26)
                     .background(Circle().fill(Self.red.opacity(CryptoWatch.canRemove(count: count) ? 0.22 : 0.08)))
                     .contentShape(.circle)
@@ -568,8 +568,8 @@ struct CryptoDetail: View {
         .padding(.trailing, 10)
         .frame(height: Self.rowHeight)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(.white.opacity(lifted ? 0.16 : 0.06)))
-        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.1), lineWidth: 0.5) }
+            .fill(lifted ? Color.panelFillStrong : Color.panelFill))
+        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.5) }
         .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 8, y: 3)
     }
 
@@ -603,7 +603,7 @@ struct CryptoDetail: View {
             HStack(spacing: 8) {
                 Text(tr("到价提醒"))
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 ProCrown()
                 Spacer(minLength: 0)
             }
@@ -611,12 +611,12 @@ struct CryptoDetail: View {
             alertLine(id, above: false)
             Text(note(id))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.10)))
-        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.16), lineWidth: 0.5) }
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
+        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.5) }
     }
 
     /// 提醒下面那行小字：现价已经过了线的说一声，免得打开就响；没解锁的说清楚。
@@ -643,15 +643,15 @@ struct CryptoDetail: View {
         return HStack(spacing: 10) {
             Text(above ? tr("高于") : tr("低于"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize()
             HStack(spacing: 2) {
                 Text(shownCurrency == "usd" ? "$" : "¥")
-                    .foregroundStyle(.white.opacity(isOn || focused ? 1 : 0.6))
+                    .foregroundStyle(.panelPrimary.opacity(isOn || focused ? 1 : 0.6))
                 TextField("", text: Binding(get: { drafts[key] ?? "" }, set: { drafts[key] = $0 }),
-                          prompt: Text(suggestion).foregroundStyle(.white.opacity(0.4)))
+                          prompt: Text(suggestion).foregroundStyle(.panelTertiary))
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.white.opacity(isOn || focused ? 1 : 0.6))
+                    .foregroundStyle(.panelPrimary.opacity(isOn || focused ? 1 : 0.6))
                     .focused($focus, equals: .price(key))
                     .onSubmit { focus = nil }
                     .disabled(!alertsOn)
@@ -659,10 +659,10 @@ struct CryptoDetail: View {
             .font(.system(size: 14, weight: .semibold, design: .monospaced))
             .padding(.horizontal, 10)
             .frame(height: 28)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.10)))
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill))
             .overlay {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(focused || isOn ? accent.opacity(0.9) : Color.white.opacity(0.2), lineWidth: focused || isOn ? 1.2 : 0.6)
+                    .strokeBorder(focused || isOn ? accent.opacity(0.9) : Color.panelStroke, lineWidth: focused || isOn ? 1.2 : 0.6)
             }
             .contentShape(.rect)
             .onTapGesture {
@@ -820,15 +820,15 @@ struct CryptoDetail: View {
 
     private func ink(_ tone: ChangeTone) -> Color {
         switch tone {
-        case .red: Self.upRed
-        case .green: Self.downGreen
-        case .neutral: .white.opacity(0.7)
+        case .red: Self.upRed.panelReadable
+        case .green: Self.downGreen.panelReadable
+        case .neutral: .panelSecondary
         }
     }
 
     private func weekInk(_ quote: CryptoQuote?) -> Color {
         let tone = CryptoMarket.tone(quote?.change7d, colors: colors)
-        return tone == .neutral ? .white.opacity(0.6) : ink(tone)
+        return tone == .neutral ? .panelSecondary : ink(tone)
     }
 
     private func badge(_ id: String, size: CGFloat) -> some View {
@@ -854,7 +854,7 @@ struct CryptoDetail: View {
                 Button { choose(value) } label: {
                     Text(title)
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(on ? accentInk : Color.white.opacity(0.82))
+                        .foregroundStyle(on ? accentInk : Color.panelPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
@@ -866,8 +866,8 @@ struct CryptoDetail: View {
             }
         }
         .padding(3)
-        .background(Capsule().fill(.white.opacity(0.08)))
-        .overlay { Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6) }
+        .background(Capsule().fill(.panelFill))
+        .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
     }
 }
 
@@ -881,7 +881,7 @@ private struct ProCrown: View {
             Text(verbatim: ProFeatures.badgeTitle)
                 .font(.system(size: 13, weight: .bold))
         }
-        .foregroundStyle(gold)
+        .foregroundStyle(gold.panelReadable)
         .padding(.horizontal, 7)
         .frame(height: 22)
         .background(Capsule().fill(gold.opacity(0.16)))
@@ -901,7 +901,7 @@ private struct PillToggle: View {
     var body: some View {
         Button(action: action) {
             ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule().fill(isOn ? accent : Color.white.opacity(0.18))
+                Capsule().fill(isOn ? accent : Color.panelTrack)
                 Circle()
                     .fill(.white)
                     .frame(width: 20, height: 20)

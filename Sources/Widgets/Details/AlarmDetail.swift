@@ -17,6 +17,10 @@ struct AlarmDetail: View {
     private var accent: Color { panelTint.accent(or: Color.timerOrange) }
     /// 橙色实心按钮上的深字。
     private var ink: Color { panelTint.ink(or: CountdownDetail.orangeInk) }
+    /// 时间轴上圆点的「挖空」底色，贴近卡片底：深色下石墨，浅色下近白。
+    private static let cutout = Color.panelDynamic(
+        dark: NSColor(srgbRed: 0.114, green: 0.114, blue: 0.129, alpha: 1),
+        light: NSColor(srgbRed: 0.965, green: 0.96, blue: 0.97, alpha: 1))
     var instance: WidgetInstance
     var context: WidgetContext
 
@@ -91,20 +95,20 @@ struct AlarmDetail: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                 if let headline {
                     let at = AlarmBook.nextRing(headline, config: config, now: now)
                     Text(live ? AlarmBook.clockText(at) : headline.time)
                         .font(.system(size: 56, weight: .light, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .opacity(live ? 1 : 0.5)
                     if live {
                         Text(AlarmBook.ringsInText(at, now: now))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accent.panelReadable)
                             .lineLimit(1)
                     }
                 }
@@ -126,10 +130,10 @@ struct AlarmDetail: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "alarm.waves.left.and.right.fill")
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
                 Text(tr("\(item.time) \(item.title) 正在响"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
             }
             HStack(spacing: 8) {
@@ -161,35 +165,35 @@ struct AlarmDetail: View {
             HStack {
                 Text(tr("今天"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 Spacer()
                 Text(left > 0 ? tr("还有 \(left) 个要响") : tr("今天没有要响的了"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
             }
             GeometryReader { proxy in
                 let width = proxy.size.width
                 let x = { (minutes: Int) -> CGFloat in width * CGFloat(minutes) / 1440 }
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.12)).frame(height: 5)
-                    Capsule().fill(.white.opacity(0.28)).frame(width: max(5, x(nowMinutes)), height: 5)
+                    Capsule().fill(.panelTrack).frame(height: 5)
+                    Capsule().fill(.panelQuaternary).frame(width: max(5, x(nowMinutes)), height: 5)
                     ForEach(Array(off.enumerated()), id: \.offset) { _, minutes in
                         Circle()
-                            .strokeBorder(.white.opacity(0.5), lineWidth: 1.2)
-                            .background(Circle().fill(MeshBackdrop.graphite))
+                            .strokeBorder(.panelTertiary, lineWidth: 1.2)
+                            .background(Circle().fill(Self.cutout))
                             .frame(width: 8, height: 8)
                             .offset(x: x(minutes) - 4)
                     }
                     ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
                         Circle()
                             .fill(accent.opacity(mark.minutes < nowMinutes ? 0.45 : 1))
-                            .overlay(Circle().strokeBorder(MeshBackdrop.graphite, lineWidth: 1.5))
+                            .overlay(Circle().strokeBorder(Self.cutout, lineWidth: 1.5))
                             .frame(width: 11, height: 11)
                             .offset(x: x(mark.minutes) - 5.5)
                             .help("\(PostureSchedule.clock(mark.minutes)) \(mark.item.title)")
                     }
                     RoundedRectangle(cornerRadius: 1)
-                        .fill(.white.opacity(0.95))
+                        .fill(.panelPrimary)
                         .frame(width: 2, height: 16)
                         .offset(x: x(nowMinutes) - 1)
                 }
@@ -202,7 +206,7 @@ struct AlarmDetail: View {
                     Text(verbatim: "\(hour)")
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.panelTertiary)
                 }
             }
         }
@@ -239,11 +243,11 @@ struct AlarmDetail: View {
                     Text(item.time)
                         .font(.system(size: 28, weight: .medium, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(live ? 1 : 0.42))
+                        .foregroundStyle(.panelPrimary.opacity(live ? 1 : 0.42))
                     VStack(alignment: .leading, spacing: 3) {
                         Text(item.title)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(live ? 0.95 : 0.42))
+                            .foregroundStyle(.panelPrimary.opacity(live ? 0.95 : 0.42))
                             .lineLimit(1)
                         repeatLine(item, live: live, now: now)
                     }
@@ -275,7 +279,7 @@ struct AlarmDetail: View {
         if item.repeats.isOnce {
             Text(text)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(live ? accent : .white.opacity(0.4))
+                .foregroundStyle(live ? accent.panelReadable : .panelTertiary)
                 .lineLimit(1)
         } else {
             HStack(spacing: 7) {
@@ -283,14 +287,14 @@ struct AlarmDetail: View {
                     ForEach(1...7, id: \.self) { day in
                         let on = item.repeats.days.contains(day)
                         Circle()
-                            .fill(on && live ? accent : .white.opacity(on ? 0.45 : 0.16))
+                            .fill(on && live ? accent : Color.panelPrimary.opacity(on ? 0.45 : 0.16))
                             .frame(width: 5, height: 5)
                     }
                 }
                 .accessibilityHidden(true)
                 Text(text)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(live ? 0.6 : 0.36))
+                    .foregroundStyle(.panelPrimary.opacity(live ? 0.6 : 0.36))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -318,9 +322,9 @@ struct AlarmDetail: View {
                     Button { toggleDay(day) } label: {
                         Text(AlarmBook.weekdayShort(day))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(on ? ink : .white.opacity(draftOnce ? 0.35 : 0.85))
+                            .foregroundStyle(on ? ink : .panelPrimary.opacity(draftOnce ? 0.35 : 0.85))
                             .frame(width: 30, height: 30)
-                            .background(Circle().fill(on ? accent : .white.opacity(0.1)))
+                            .background(Circle().fill(on ? accent : .panelFill))
                             .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
@@ -350,7 +354,7 @@ struct AlarmDetail: View {
                 .frame(width: 104)
                 Text(tr("跳过法定节假日，调休上班照响"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(draftLegal && !draftOnce ? 0.8 : 0.5))
+                    .foregroundStyle(.panelPrimary.opacity(draftLegal && !draftOnce ? 0.8 : 0.5))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -369,15 +373,15 @@ struct AlarmDetail: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
                 .background {
-                    Capsule().fill(selected ? accent.opacity(0.22) : .white.opacity(0.08))
+                    Capsule().fill(selected ? accent.opacity(0.22) : .panelFill)
                         .overlay {
-                            Capsule().strokeBorder(selected ? accent.opacity(0.6) : .white.opacity(0.12), lineWidth: 0.6)
+                            Capsule().strokeBorder(selected ? accent.opacity(0.6) : .panelStroke, lineWidth: 0.6)
                         }
                 }
                 .contentShape(Capsule())

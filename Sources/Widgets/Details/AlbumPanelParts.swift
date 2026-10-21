@@ -17,13 +17,13 @@ struct AlbumHeader<Trailing: View>: View {
                 HStack(spacing: 10) {
                     Text(verbatim: title)
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.97))
+                        .foregroundStyle(.panelPrimary)
                     if titlePro { AlbumProTag() }
                 }
                 if let subtitle {
                     Text(verbatim: subtitle)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                         .truncationMode(.middle)
                 }
@@ -39,20 +39,20 @@ struct AlbumHeader<Trailing: View>: View {
 struct AlbumHeaderButton: View {
     var title: String
     var solid = false
-    var accent: Color = .white
-    var ink: Color = .black
+    var accent: Color = .panelPrimary
+    var ink: Color = .panelOnPrimary
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? ink : .white.opacity(0.92))
+                .foregroundStyle(solid ? ink : .panelPrimary)
                 .lineLimit(1)
                 .padding(.horizontal, solid ? 15 : 13)
                 .frame(height: 28)
-                .background(Capsule().fill(solid ? accent : .white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.18), lineWidth: 0.6))
+                .background(Capsule().fill(solid ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(Color.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -82,11 +82,11 @@ struct AlbumControlButton: View {
                     .lineLimit(1)
                     .minimumScaleFactor(13.0 / 14.0)
             }
-            .foregroundStyle(prominent ? ink : .white.opacity(0.94))
+            .foregroundStyle(prominent ? ink : .panelPrimary)
             .frame(maxWidth: .infinity)
             .frame(height: 36)
-            .background(Capsule().fill(prominent ? accent : .white.opacity(0.12)))
-            .overlay(Capsule().strokeBorder(.white.opacity(prominent ? 0 : 0.18), lineWidth: 0.6))
+            .background(Capsule().fill(prominent ? accent : .panelFill))
+            .overlay(Capsule().strokeBorder(Color.panelStroke.opacity(prominent ? 0 : 1), lineWidth: 0.6))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -107,7 +107,7 @@ struct AlbumSection: View {
         HStack(spacing: 8) {
             Text(verbatim: label)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
             Spacer(minLength: 0)
             if let right {
@@ -115,14 +115,14 @@ struct AlbumSection: View {
                     Button(action: rightAction) {
                         Text(verbatim: right)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(rightColor ?? .white.opacity(0.62))
+                            .foregroundStyle(rightColor ?? .panelSecondary)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                 } else {
                     Text(verbatim: right)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(rightColor ?? .white.opacity(0.62))
+                        .foregroundStyle(rightColor ?? .panelSecondary)
                 }
             }
         }
@@ -145,7 +145,7 @@ struct AlbumSegmented: View {
                 Button { onSelect(index) } label: {
                     Text(verbatim: labels[index])
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(on ? ink : .white.opacity(0.82))
+                        .foregroundStyle(on ? ink : .panelPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
@@ -157,8 +157,8 @@ struct AlbumSegmented: View {
         }
         .padding(3)
         .frame(height: 34)
-        .background(Capsule().fill(.white.opacity(0.07)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+        .background(Capsule().fill(.panelFill))
+        .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 }
 
@@ -177,11 +177,11 @@ struct AlbumToggleRow<Note: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: label)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.94))
+                    .foregroundStyle(.panelPrimary)
                 if let sub {
                     Text(verbatim: sub)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 note()
@@ -221,7 +221,7 @@ struct AlbumCheck: View {
                     .font(.system(size: 10, weight: .heavy))
                     .foregroundStyle(ink)
             } else {
-                Circle().strokeBorder(.white.opacity(0.45), lineWidth: 1.4)
+                Circle().strokeBorder(.panelTertiary, lineWidth: 1.4)
             }
         }
         .frame(width: 20, height: 20)
@@ -239,7 +239,7 @@ struct AlbumProTag: View {
             Text(verbatim: ProFeatures.badgeTitle)
                 .font(.system(size: 13, weight: .bold))
         }
-        .foregroundStyle(Self.gold)
+        .foregroundStyle(Self.gold.panelReadable)
         .padding(.horizontal, 7)
         .frame(height: 20)
         .background(Capsule().fill(Self.gold.opacity(0.16)))
@@ -260,7 +260,7 @@ struct AlbumThumb: View {
         case .file(let file):
             FileThumb(url: file.url, pixels: pixels)
         case .memory(let memory):
-            Color.black.opacity(0.25)
+            Color.panelShade
                 .overlay {
                     if let image = PhotoMemories.shared.image(for: memory) {
                         Image(nsImage: image)
@@ -271,11 +271,11 @@ struct AlbumThumb: View {
                 }
                 .clipped()
         case nil:
-            Color.white.opacity(0.06)
+            Color.panelFill
                 .overlay {
                     Image(systemName: "photo")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.panelTertiary)
                 }
         }
     }
@@ -291,17 +291,17 @@ struct AlbumNote: View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
             Text(verbatim: text)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if privacy {
                 Button(tr("打开隐私设置")) { FolderFeed.openPrivacySettings() }
                     .buttonStyle(.plain)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .underline()
             }
         }

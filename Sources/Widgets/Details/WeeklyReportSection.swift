@@ -63,7 +63,7 @@ struct WeeklyReportSection<Accessory: View>: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("近七天")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 4)
                     accessory()
                 }
@@ -85,18 +85,18 @@ struct WeeklyReportSection<Accessory: View>: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("近七天")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     if !expanded.wrappedValue, let first = headline.first {
                         Spacer(minLength: 4)
                         Text(verbatim: "\(first.label) \(first.value)\(first.unit)")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                             .monospacedDigit()
                             .lineLimit(1)
                     }
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .rotationEffect(.degrees(expanded.wrappedValue ? 180 : 0))
                 }
                 .frame(minHeight: 20)
@@ -115,7 +115,7 @@ struct WeeklyReportSection<Accessory: View>: View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(Array(headline.enumerated()), id: \.offset) { index, stat in
                 if index > 0 {
-                    Rectangle().fill(.white.opacity(0.18)).frame(width: 0.5, height: 40)
+                    Rectangle().fill(.panelSeparator).frame(width: 0.5, height: 40)
                         .padding(.horizontal, 10)
                 }
                 big(stat)
@@ -139,7 +139,7 @@ struct WeeklyReportSection<Accessory: View>: View {
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(stat.value)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .rollingValue(stat.value)
                     .lineLimit(1)
@@ -148,14 +148,14 @@ struct WeeklyReportSection<Accessory: View>: View {
                 if !stat.unit.isEmpty {
                     Text(stat.unit)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .fixedSize()
                 }
             }
             Text(stat.label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -167,12 +167,12 @@ struct WeeklyReportSection<Accessory: View>: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(stat.label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Text(verbatim: "\(stat.value)\(stat.unit)")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -188,11 +188,11 @@ struct WeeklyReportSection<Accessory: View>: View {
     private func goalLegend(_ text: String) -> some View {
         HStack(spacing: 6) {
             GoalRule()
-                .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                .stroke(.panelTertiary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 .frame(width: 16, height: 1)
             Text(verbatim: text)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
@@ -222,7 +222,7 @@ struct WeeklyReportSection<Accessory: View>: View {
                         Text(day.weekdayLabel)
                             .font(.system(size: 13, weight: day.isToday ? .bold : .medium))
                     }
-                    .foregroundStyle(.white.opacity(day.isToday ? 0.95 : 0.5))
+                    .foregroundStyle(.panelPrimary.opacity(day.isToday ? 0.95 : 0.5))
                     .lineLimit(1)
                     // 放不下时让出柱子间的空隙，不缩字。
                     .fixedSize()
@@ -238,7 +238,7 @@ struct WeeklyReportSection<Accessory: View>: View {
             .fill(day.isMet ? accent.opacity(day.isToday ? 1 : 0.85)
                             : accent.mix(with: .white, by: 0.55).opacity(day.value > 0 ? 0.35 : 0.12))
             .overlay {
-                if day.isToday { shape.strokeBorder(.white.opacity(0.9), lineWidth: 1.2) }
+                if day.isToday { shape.strokeBorder(.panelPrimary, lineWidth: 1.2) }
             }
             .frame(height: max(3, chartHeight * report.fraction(day)))
             .frame(maxWidth: .infinity, maxHeight: chartHeight, alignment: .bottom)
@@ -251,7 +251,7 @@ struct WeeklyReportSection<Accessory: View>: View {
     private func goalLine(at fraction: Double) -> some View {
         let y = chartHeight * (1 - fraction)
         return GoalRule()
-            .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .stroke(.panelTertiary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
             .frame(maxWidth: .infinity)
             .frame(height: 1)
             .offset(y: y)
@@ -366,7 +366,7 @@ struct FocusWeeklyReport: View {
                 in: FocusLog.goalRange, step: FocusLog.goalStep) {
                     Text(tr("每日目标 \(goal) 分钟"))
                         .font(WidgetStyle.label(13))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                 }
                 .controlSize(.mini)

@@ -1,6 +1,7 @@
 import SwiftUI
+import AppKit
 
-/// 天气面板，320pt 宽、深色玻璃。两个状态：
+/// 天气面板，320pt 宽、液态玻璃（跟随浅色/深色）。两个状态：
 ///
 /// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；当前温度大字、
 ///   天气和今天最高最低；下面分页（顶部分段，记住切到的那页）：今天是 2 小时
@@ -44,12 +45,17 @@ struct WeatherDetail: View {
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
 
     private static let accent = Color(hex: "#7CC8F2")
     private static let accentInk = Color(hex: "#05263A")
     private static let rangeFill = Color(hex: "#F2C46B")
     private static let deleteRed = Color(hex: "#FF6B5A")
     private static let deleteInk = Color(hex: "#330B05")
+    /// 拖起、左滑时那一行要盖住下面的删除按钮，用实心底：深色下原来的 #34343a，浅色下近白。
+    private static let liftedRow = Color.panelDynamic(
+        dark: NSColor(srgbRed: 0.204, green: 0.204, blue: 0.227, alpha: 1),
+        light: NSColor(srgbRed: 0.972, green: 0.972, blue: 0.98, alpha: 1))
     private static let rowHeight: CGFloat = 52
     private static let rowSpacing: CGFloat = 6
     private static let deleteWidth: CGFloat = 76
@@ -66,13 +72,12 @@ struct WeatherDetail: View {
 
     var body: some View {
         DetailCard {
-            // 深色玻璃打底，天气的天空只淡淡透一点；拖动逐小时时换成那个小时的天气，
-            // 并按离日出日落多远变暗或泛暖色。
+            // 液态玻璃打底（跟随浅色/深色），天气的天空只淡淡透一点；拖动逐小时时换成
+            // 那个小时的天气，并按离日出日落多远变暗或泛暖色。
             let symbol = scrubbedHour?.symbolName ?? shownWeather?.symbolName ?? "cloud.fill"
             ZStack {
-                Color(hex: "#1d1d21")
                 WeatherBackdrop(symbol: symbol)
-                    .opacity(0.38)
+                    .opacity(0.65)
                     .id(symbol)
                     .transition(.opacity)
                 skyTint
@@ -293,13 +298,13 @@ struct WeatherDetail: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(verbatim: city.isEmpty ? tr("天气") : city)
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     if selectedEntry.isEmpty, !city.isEmpty {
                         Text(tr("当前位置"))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                             .lineLimit(1)
                     }
                 }
@@ -310,7 +315,7 @@ struct WeatherDetail: View {
                 Button { switchTo(.edit) } label: {
                     Text(tr("城市"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 14)
                         .frame(height: 28)
                         .glassPane(cornerRadius: 14)
@@ -328,7 +333,7 @@ struct WeatherDetail: View {
             ForEach(visiblePlaces.indices, id: \.self) { index in
                 Button { show(index) } label: {
                     Circle()
-                        .fill(.white.opacity(index == selected ? 0.9 : 0.3))
+                        .fill(index == selected ? Color.panelPrimary : Color.panelQuaternary)
                         .frame(width: 6.4, height: 6.4)
                         .padding(2)
                         .contentShape(.rect)
@@ -367,16 +372,16 @@ struct WeatherDetail: View {
                 if let hour = scrubbedHour {
                     Text(tr("\(hourLabel(hour.date)) 的预报"))
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 } else {
                     Text(weather.condition)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 }
                 if let today = forecast?.today(now: context.now) {
                     Text(tr("最高 \(degrees(today.highC)) 最低 \(degrees(today.lowC))"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.66))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                 }
             }
@@ -396,12 +401,12 @@ struct WeatherDetail: View {
         return HStack(alignment: .top, spacing: 0) {
             Text("\(reading)")
                 .font(.system(size: 64, weight: .light))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(reading)
             Text("°")
                 .font(.system(size: 44, weight: .ultraLight))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
         }
         .lineLimit(1)
         .fixedSize()
@@ -418,32 +423,32 @@ struct WeatherDetail: View {
                 HStack(spacing: 8) {
                     Image(systemName: status == .dry ? "cloud.fill" : "cloud.rain.fill")
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(Color.white.opacity(0.92), Self.accent)
+                        .foregroundStyle(Color.panelPrimary, Self.accent)
                         .font(.system(size: 15))
                     Text(RainOutlook.headline(status))
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 4)
                     Text(RainOutlook.detail(status))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
                 ZStack(alignment: .bottomLeading) {
-                    Rectangle().fill(.white.opacity(0.2)).frame(height: 0.8)
+                    Rectangle().fill(.panelSeparator).frame(height: 0.8)
                     HStack(alignment: .bottom, spacing: 3) {
                         ForEach(Array(bars.enumerated()), id: \.offset) { _, slot in
                             let level = RainOutlook.level(slot.mm)
                             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(level > 0 ? Self.accent : .white.opacity(0.18))
+                                .fill(level > 0 ? Self.accent.panelReadable : .panelTrack)
                                 .frame(height: max(2, level * 36))
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     // 现在的位置。
-                    Rectangle().fill(.white.opacity(0.9)).frame(width: 1.4, height: 42)
+                    Rectangle().fill(.panelPrimary).frame(width: 1.4, height: 42)
                 }
                 .frame(height: 42)
                 .accessibilityHidden(true)
@@ -453,7 +458,7 @@ struct WeatherDetail: View {
                         if index > 0 { Spacer(minLength: 0) }
                         Text(label)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                 }
                 .lineLimit(1)
@@ -493,17 +498,17 @@ struct WeatherDetail: View {
             // 标签和小字固定 13pt 不缩；只有档位大字放不下时才缩一点。
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(value)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(warm ? Color(hex: "#FFB35C") : .white)
+                    .foregroundStyle(warm ? Color(hex: "#FFB35C").panelReadable : .panelPrimary)
                     .minimumScaleFactor(0.82)
                 Spacer(minLength: 0)
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                         .fixedSize()
                 }
@@ -554,10 +559,10 @@ struct WeatherDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Text(value)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .rollingValue(value)
         }
@@ -590,7 +595,7 @@ struct WeatherDetail: View {
                             let current = index == nowIndex && hour.date <= now
                             Text(current ? tr("现在") : hourShort(hour.date))
                                 .font(.system(size: 13, weight: current ? .semibold : .medium))
-                                .foregroundStyle(current ? .white : .white.opacity(0.62))
+                                .foregroundStyle(current ? .panelPrimary : .panelSecondary)
                                 .frame(width: column)
                                 .id(index)
                         }
@@ -610,7 +615,7 @@ struct WeatherDetail: View {
                             let rain = rainText(shown[index])
                             Text(rain.text)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(rain.wet ? Self.accent : .white.opacity(0.62))
+                                .foregroundStyle(rain.wet ? Self.accent.panelReadable : .panelSecondary)
                                 .frame(width: column)
                         }
                     }
@@ -669,12 +674,12 @@ struct WeatherDetail: View {
                     path.move(to: first)
                     for point in points.dropFirst() { path.addLine(to: point) }
                 }
-                .stroke(.white.opacity(0.5), lineWidth: 1.6)
+                .stroke(.panelTertiary, lineWidth: 1.6)
                 ForEach(Array(points.enumerated()), id: \.offset) { index, point in
-                    Circle().fill(.white).frame(width: 6, height: 6).position(point)
+                    Circle().fill(.panelPrimary).frame(width: 6, height: 6).position(point)
                     Text(degrees(shown[index].temperatureC))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                         .fixedSize()
                         .position(x: point.x, y: point.y - 14)
@@ -697,10 +702,10 @@ struct WeatherDetail: View {
     @ViewBuilder private func scrubMarker(column: CGFloat) -> some View {
         if let scrub, hours.count > 1 {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.white.opacity(0.14))
+                .fill(.panelFillStrong)
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(.white.opacity(0.22), lineWidth: 0.5)
+                        .strokeBorder(.panelStroke, lineWidth: 0.5)
                 }
                 .frame(width: column)
                 .offset(x: column * CGFloat(scrub))
@@ -733,8 +738,9 @@ struct WeatherDetail: View {
     @ViewBuilder private var skyTint: some View {
         let shade = scrubbedDate.flatMap(skyShade) ?? (night: 0, glow: 0)
         ZStack {
+            // 浅色玻璃上深字，夜色只压一点，免得字看不清。
             Color(red: 0.03, green: 0.04, blue: 0.14)
-                .opacity(shade.night * 0.45)
+                .opacity(shade.night * (scheme == .light ? 0.12 : 0.45))
             LinearGradient(colors: [.clear, Color(red: 1, green: 0.55, blue: 0.25)],
                            startPoint: .top, endPoint: .bottom)
                 .opacity(shade.glow * 0.25)
@@ -782,7 +788,7 @@ struct WeatherDetail: View {
                 HStack(spacing: 8) {
                     Text(DailyForecast.weekdayLabel(day.key, today: today))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(width: 38, alignment: .leading)
                     Image(systemName: WMOWeather.symbol(day.code))
                         .symbolRenderingMode(.multicolor)
@@ -790,18 +796,18 @@ struct WeatherDetail: View {
                         .frame(width: 22)
                     Text(rainChance(day))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Self.accent)
+                        .foregroundStyle(Self.accent.panelReadable)
                         .monospacedDigit()
                         .frame(width: 36, alignment: .leading)
                     Text(degrees(day.lowC))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                         .frame(width: 32, alignment: .trailing)
                     rangeBar(day, scale: scale)
                     Text(degrees(day.highC))
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                         .frame(width: 32, alignment: .trailing)
                 }
@@ -830,7 +836,7 @@ struct WeatherDetail: View {
             let width = proxy.size.width
             let length = max(5, width * (fractions.end - fractions.start))
             Capsule()
-                .fill(.white.opacity(0.14))
+                .fill(.panelTrack)
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(Self.rangeFill)
@@ -855,7 +861,7 @@ struct WeatherDetail: View {
             Text(WeatherService.forecastAttribution)
         }
         .font(.system(size: 13))
-        .foregroundStyle(.white.opacity(0.5))
+        .foregroundStyle(.panelTertiary)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -883,10 +889,10 @@ struct WeatherDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tr("城市"))
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(tr("拖动排序 · 左滑删除"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Spacer(minLength: 0)
                 Button { switchTo(.browse) } label: {
@@ -908,7 +914,7 @@ struct WeatherDetail: View {
             cityRows
             Text(tr("第 2 个城市起需要 Pro；面板上左右滑切换"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             sectionTitle(tr("面板显示"))
@@ -919,7 +925,7 @@ struct WeatherDetail: View {
     private func sectionTitle(_ text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .padding(.top, 2)
     }
 
@@ -931,11 +937,11 @@ struct WeatherDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             TextField(tr("搜索城市"), text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($searching)
                 .onSubmit { lookUp(trimmedQuery) }
                 .onChange(of: query) { lookupFailed = false }
@@ -943,7 +949,7 @@ struct WeatherDetail: View {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                 }
                 .buttonStyle(.plain)
                 .help(tr("清除"))
@@ -953,11 +959,11 @@ struct WeatherDetail: View {
         .frame(height: 40)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.07))
+                .fill(.panelFill)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(searching ? Self.accent.opacity(0.85) : .white.opacity(0.12), lineWidth: 1)
+                .strokeBorder(searching ? Self.accent.opacity(0.85) : .panelStroke, lineWidth: 1)
         }
         .onAppear { DispatchQueue.main.async { searching = true } }
     }
@@ -983,10 +989,10 @@ struct WeatherDetail: View {
         .padding(.vertical, 4)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.10))
+                .fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.16), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
     }
@@ -997,23 +1003,23 @@ struct WeatherDetail: View {
         return HStack(spacing: 8) {
             Text(verbatim: name)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             Text(verbatim: detail)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 4)
             Button(action: action) {
                 Text(added ? tr("已添加") : tr("添加"))
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(primary && !added ? Self.accentInk : .white.opacity(added ? 0.5 : 0.92))
+                    .foregroundStyle(primary && !added ? Self.accentInk : .panelPrimary.opacity(added ? 0.5 : 0.92))
                     .padding(.horizontal, 14)
                     .frame(height: 30)
                     .background {
                         if primary, !added {
                             Capsule().fill(Self.accent)
                         } else {
-                            Capsule().fill(.white.opacity(0.10))
-                                .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 0.6))
+                            Capsule().fill(.panelFill)
+                                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                         }
                     }
                     .contentShape(Capsule())
@@ -1114,7 +1120,7 @@ struct WeatherDetail: View {
             HStack(spacing: 10) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(lifted ? 0.9 : 0.55))
+                    .foregroundStyle(.panelPrimary.opacity(lifted ? 0.9 : 0.55))
                     .frame(width: 24, height: Self.rowHeight)
                     .contentShape(.rect)
                     .gesture(reorder(entry, index: index, list: list))
@@ -1128,20 +1134,20 @@ struct WeatherDetail: View {
                     }
                 Text(verbatim: displayName(entry).isEmpty ? tr("正在定位…") : displayName(entry))
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 if entry.isEmpty {
                     Text(tr("当前位置"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.86))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 9)
                         .frame(height: 22)
-                        .background(Capsule().fill(.white.opacity(0.12)))
+                        .background(Capsule().fill(.panelFill))
                 }
                 if locked { ProBadge() }
                 Spacer(minLength: 4)
                 Text(rowReading(entry, index: index))
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white.opacity(locked ? 0.5 : 1))
+                    .foregroundStyle(.panelPrimary.opacity(locked ? 0.5 : 1))
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -1151,10 +1157,10 @@ struct WeatherDetail: View {
             .frame(height: Self.rowHeight)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(lifted || offset < 0 ? Color(hex: "#34343a") : .white.opacity(0.07))
+                    .fill(lifted || offset < 0 ? Self.liftedRow : .panelFill)
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(lifted ? Self.accent.opacity(0.6) : .white.opacity(0.11), lineWidth: 0.6)
+                            .strokeBorder(lifted ? Self.accent.opacity(0.6) : .panelStroke, lineWidth: 0.6)
                     }
                     .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 6, y: 4)
             }
@@ -1261,23 +1267,23 @@ struct WeatherDetail: View {
                 )) {
                     Text(row.0)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 }
                 .toggleStyle(.switch)
                 .tint(Self.accent)
                 .padding(.horizontal, 14)
                 .frame(height: 46)
                 if index < rows.count - 1 {
-                    Rectangle().fill(.white.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 14)
+                    Rectangle().fill(.panelSeparator).frame(height: 0.5).padding(.horizontal, 14)
                 }
             }
         }
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.06))
+                .fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        .strokeBorder(.panelStroke, lineWidth: 0.5)
                 }
         }
     }
@@ -1321,20 +1327,20 @@ struct WeatherDetail: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(city)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                         Text(place?.current.map { WMOWeather.condition($0.code) } ?? tr("暂无数据"))
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                     Spacer(minLength: 0)
                     VStack(alignment: .trailing, spacing: 1) {
                         Text(place?.current.map { degrees($0.temperatureC) } ?? "--°")
                             .font(.system(size: 22, weight: .light))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .monospacedDigit()
                         Text(today.map { tr("最高 \(degrees($0.highC)) 最低 \(degrees($0.lowC))") } ?? " ")
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                             .monospacedDigit()
                     }
                 }
@@ -1354,12 +1360,12 @@ struct WeatherDetail: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(locating ? tr("正在定位…") : tr("未设置城市"))
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             Text(locating
                  ? tr("正在等待获取你的位置。点右上角“城市”添加一个城市即可跳过定位。")
                  : tr("点右上角“城市”搜索添加一个城市。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1382,7 +1388,7 @@ struct WeatherDetail: View {
         } else {
             Text(tr("暂无数据。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 

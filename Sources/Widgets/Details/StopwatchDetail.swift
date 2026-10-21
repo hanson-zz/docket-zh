@@ -48,11 +48,11 @@ struct StopwatchDetail: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text(tr("秒表"))
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 6)
                     Text(caption)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                 }
 
@@ -94,13 +94,13 @@ struct StopwatchDetail: View {
                 HStack(alignment: .firstTextBaseline, spacing: 0) {
                     Text(StopwatchLaps.main(elapsed))
                         .font(.system(size: 40, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         // Only the seconds roll: a hundredth that animated
                         // would still be mid-transition when the next landed.
                         .rollingValue(Int(elapsed))
                     Text(StopwatchLaps.hundredths(elapsed))
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundStyle(accent)
+                        .foregroundStyle(accent.panelReadable)
                 }
                 .monospacedDigit()
                 .lineLimit(1)
@@ -111,7 +111,7 @@ struct StopwatchDetail: View {
                          + StopwatchLaps.lapText(StopwatchLaps.currentLap(laps, elapsed: elapsed)))
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.66))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                 }
             }
@@ -128,13 +128,13 @@ struct StopwatchDetail: View {
             HStack {
                 Text(tr("计次 \(laps.count)"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                 Spacer()
                 Button { copy(laps, elapsed: elapsed) } label: {
                     Label(copied ? tr("已复制") : tr("复制计次"),
                           systemImage: copied ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(accent)
+                        .foregroundStyle(accent.panelReadable)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -162,7 +162,7 @@ struct StopwatchDetail: View {
             ForEach(rows, id: \.number) { row in
                 let mark: Color? = row.fastest ? .timerGreen : row.slowest ? .timerTomato : nil
                 VStack(spacing: 0) {
-                    Rectangle().fill(.white.opacity(0.07)).frame(height: 0.5)
+                    Rectangle().fill(.panelSeparator).frame(height: 0.5)
                     lapColumns(
                         first: tr("第 \(row.number) 圈"),
                         lap: StopwatchLaps.lapText(row.seconds),
@@ -185,18 +185,18 @@ struct StopwatchDetail: View {
             HStack(spacing: 5) {
                 Circle().fill(mark ?? .clear).frame(width: 6, height: 6)
                 Text(first)
-                    .foregroundStyle(isRow ? Color.white.opacity(0.7) : .white.opacity(0.45))
+                    .foregroundStyle(isRow ? Color.panelSecondary : .panelTertiary)
             }
             .frame(width: 76, alignment: .leading)
             Text(lap)
                 .font(isRow ? Font.system(size: 14, weight: .semibold, design: .rounded) : nil)
-                .foregroundStyle(isRow ? (mark ?? Color.white) : Color.white.opacity(0.45))
+                .foregroundStyle(isRow ? (mark?.panelReadable ?? Color.panelPrimary) : Color.panelTertiary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             Text(delta)
-                .foregroundStyle(isRow ? Color.white.opacity(0.55) : .white.opacity(0.45))
+                .foregroundStyle(Color.panelTertiary)
                 .frame(width: 56, alignment: .trailing)
             Text(total)
-                .foregroundStyle(isRow ? Color.white.opacity(0.7) : .white.opacity(0.45))
+                .foregroundStyle(isRow ? Color.panelSecondary : .panelTertiary)
                 .frame(width: 66, alignment: .trailing)
         }
         .font(.system(size: 13, weight: .medium, design: .rounded))
@@ -273,7 +273,7 @@ private struct SweepDial: View {
             ZStack {
                 ForEach(0..<60, id: \.self) { tick in
                     Capsule()
-                        .fill(.white.opacity(tick % 5 == 0 ? 0.30 : 0.13))
+                        .fill(tick % 5 == 0 ? Color.panelQuaternary : Color.panelTrack)
                         .frame(width: tick % 5 == 0 ? 1.6 : 1, height: tick % 5 == 0 ? 9 : 5)
                         .offset(y: -radius + (tick % 5 == 0 ? 4.5 : 2.5))
                         .rotationEffect(.degrees(Double(tick) * 6))
@@ -319,16 +319,16 @@ struct ClockPanelButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(fill == nil ? Color.white : ink)
+                .foregroundStyle(fill == nil ? Color.panelPrimary : ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .background {
                     Capsule()
-                        .fill(fill ?? Color.white.opacity(0.14))
+                        .fill(fill ?? Color.panelFillStrong)
                         .overlay {
-                            Capsule().strokeBorder(.white.opacity(fill == nil ? 0.18 : 0), lineWidth: 0.5)
+                            Capsule().strokeBorder(Color.panelStroke.opacity(fill == nil ? 1 : 0), lineWidth: 0.5)
                         }
                 }
                 .contentShape(Capsule())

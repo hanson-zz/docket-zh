@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// 环境音面板里的呼吸引导。
 ///
@@ -18,6 +19,10 @@ struct BreathPacerView: View {
     @AppStorage("ambient.breathOpen") private var open = false
     @State private var startedAt: Date?
 
+    /// 呼吸圆的亮芯：深色下白光，浅色玻璃上白色看不出来，换成淡淡的深色。
+    private static let orbCore = Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.55),
+                                                    light: NSColor.black.withAlphaComponent(0.12))
+
     private var pattern: BreathPacer.Pattern { BreathPacer.Pattern.parse(patternRaw) }
     private var running: Bool { startedAt != nil }
 
@@ -35,15 +40,15 @@ struct BreathPacerView: View {
                                 .font(.system(size: 11, weight: .semibold))
                         }
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(open ? tr("收起呼吸引导") : tr("展开呼吸引导"))
                 } else {
                     Text("呼吸引导")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Spacer()
                 Menu {
@@ -61,8 +66,8 @@ struct BreathPacerView: View {
                     }
                 } label: {
                     Text(pattern.title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -78,19 +83,19 @@ struct BreathPacerView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text(running ? tr("跟着圆圈呼吸，肩膀放松。") : tr("选一个节奏，跟着圆圈慢慢呼吸。"))
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                         Button {
                             guard !isPreview else { return }
                             startedAt = running ? nil : .now
                         } label: {
                             Label(running ? tr("结束") : tr("开始"), systemImage: running ? "stop.fill" : "wind")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.panelPrimary)
                                 .padding(.horizontal, 12)
                                 .frame(height: 26)
-                                .background(Capsule().fill(.white.opacity(running ? 0.26 : 0.14)))
+                                .background(Capsule().fill(running ? Color.panelFillStrong : Color.panelFill))
                                 .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -114,30 +119,30 @@ struct BreathPacerView: View {
         let holding = state?.phase == .holdIn || state?.phase == .holdOut
         ZStack {
             Circle()
-                .stroke(.white.opacity(0.12), lineWidth: 2)
+                .stroke(.panelStroke, lineWidth: 2)
             if let state {
                 Circle()
                     .trim(from: 0, to: state.progress)
-                    .stroke(panelTint.accent(or: .white.opacity(0.75)), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .stroke(panelTint.accent(or: .panelSecondary), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             Circle()
-                .fill(RadialGradient(colors: [.white.opacity(0.55), .white.opacity(0.12)],
+                .fill(RadialGradient(colors: [Self.orbCore, .panelFill],
                                      center: .center, startRadius: 2, endRadius: 40))
                 .overlay {
-                    Circle().strokeBorder(.white.opacity(holding ? 0.6 : 0.2), lineWidth: holding ? 1.5 : 0.5)
+                    Circle().strokeBorder(Color.panelPrimary.opacity(holding ? 0.6 : 0.2), lineWidth: holding ? 1.5 : 0.5)
                 }
                 .scaleEffect(0.45 + 0.45 * fullness)
             VStack(spacing: 0) {
                 Text(state?.phase.title ?? tr("准备"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                 if let state {
                     Text("\(state.secondsLeft)")
-                        .font(.system(size: 11, weight: .medium, design: .rounded).monospacedDigit())
+                        .font(.system(size: 13, weight: .medium, design: .rounded).monospacedDigit())
                         .opacity(0.8)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(state.map { tr("\($0.phase.title)，还剩 \($0.secondsLeft) 秒") } ?? tr("呼吸引导未开始"))

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AppKit
 
 /// 久坐提醒的面板：头图说现在该不该起身，三格是今天的起身、最长连坐和平均每次
 /// 坐多久，下面是今天的时间轴和近 7 天的柱状图（默认收起），再是提醒时段、间隔
@@ -115,9 +116,9 @@ struct PostureDetail: View {
 
     private func content(_ m: Model) -> some View {
         DetailCard {
-            LinearGradient(stops: [.init(color: Color(hex: "#2D242B"), location: 0),
-                                   .init(color: Self.base, location: 0.35),
-                                   .init(color: Color(hex: "#18181C"), location: 1)],
+            // 液态玻璃上顶边一抹淡粉，跟随浅色/深色（原来是整块深色渐变）。
+            LinearGradient(stops: [.init(color: Color.timerPink.opacity(0.14), location: 0),
+                                   .init(color: .clear, location: 0.4)],
                            startPoint: .top, endPoint: .bottom)
         } content: {
             VStack(alignment: .leading, spacing: 14) {
@@ -133,7 +134,7 @@ struct PostureDetail: View {
                 if !instance.config.bool("notify", default: true) {
                     Text(tr("通知已关闭，可在小组件设置中打开。"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
         }
@@ -146,19 +147,19 @@ struct PostureDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(headerLabel(m))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(m.due ? Self.pinkLight : .white.opacity(0.7))
+                    .foregroundStyle(m.due ? Self.pinkLight : .panelSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(headerTitle(m))
                     .font(.system(size: 28, weight: .heavy))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text(headerCaption(m))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -224,16 +225,16 @@ struct PostureDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(number)
                     .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(unit)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
             }
             .monospacedDigit()
             .lineLimit(1)
@@ -253,7 +254,7 @@ struct PostureDetail: View {
             HStack(alignment: .center) {
                 Text(tr("今天"))
                     .font(.system(size: 15, weight: .heavy))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 8)
                 legend
             }
@@ -282,7 +283,7 @@ struct PostureDetail: View {
             Text(tr("自动"))
         }
         .font(.system(size: 13, weight: .medium))
-        .foregroundStyle(.white.opacity(0.62))
+        .foregroundStyle(.panelSecondary)
         .accessibilityHidden(true)
     }
 
@@ -290,7 +291,7 @@ struct PostureDetail: View {
     private var awayDot: some View {
         Circle()
             .fill(Self.base)
-            .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1.6))
+            .overlay(Circle().strokeBorder(.panelSecondary, lineWidth: 1.6))
     }
 
     private static let labelRow: CGFloat = 20
@@ -320,10 +321,10 @@ struct PostureDetail: View {
             // 现在之后：虚线框。
             if futureFrom < width {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(.white.opacity(0.05))
+                    .fill(.panelFill)
                     .overlay {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(.white.opacity(0.18), style: StrokeStyle(lineWidth: 0.6, dash: [2, 2]))
+                            .strokeBorder(.panelStroke, style: StrokeStyle(lineWidth: 0.6, dash: [2, 2]))
                     }
                     .frame(width: width - futureFrom, height: Self.barHeight)
                     .offset(x: futureFrom, y: barTop)
@@ -347,12 +348,12 @@ struct PostureDetail: View {
             if showsNow {
                 Text(nowText)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .fixedSize()
                     .position(x: nowCenter, y: Self.labelRow / 2)
                 Rectangle()
-                    .fill(.white)
+                    .fill(.panelPrimary)
                     .frame(width: 1.2, height: Self.barHeight + 6)
                     .offset(x: nowX - 0.6, y: barTop - 3)
             }
@@ -361,17 +362,17 @@ struct PostureDetail: View {
                 let left = x(rest.start), right = x(rest.end)
                 let span = right - left
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(.white.opacity(0.1))
+                    .fill(.panelFill)
                     .overlay {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .strokeBorder(.white.opacity(0.22), lineWidth: 0.6)
+                            .strokeBorder(.panelStroke, lineWidth: 0.6)
                     }
                     .frame(width: max(1, span - 1.6), height: Self.barHeight)
                     .offset(x: left + 0.8, y: barTop)
                 if span >= Self.estimate(tr("自动"), size: 13) + 6 {
                     Text(tr("自动"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize()
                         .position(x: (left + right) / 2, y: barTop + Self.barHeight / 2)
                 } else {
@@ -383,7 +384,7 @@ struct PostureDetail: View {
             // 起身：每段之间一个白点（自动休息之后开始的段不画，那段自己有标记）。
             ForEach(Array(m.stretches.dropFirst().filter { !$0.afterAway }.enumerated()), id: \.offset) { _, stretch in
                 Circle()
-                    .fill(.white)
+                    .fill(.panelPrimary)
                     .overlay(Circle().strokeBorder(Self.base, lineWidth: 1.4))
                     .frame(width: 8, height: 8)
                     .position(x: x(stretch.start), y: barTop + Self.barHeight / 2)
@@ -396,7 +397,7 @@ struct PostureDetail: View {
                 let raw = CGFloat(minute - ticks[0]) / CGFloat(max(1, ticks.last! - ticks[0])) * width
                 Text(text)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .monospacedDigit()
                     .fixedSize()
                     .position(x: index == 0 ? half : (index == ticks.count - 1 ? width - half : raw),
@@ -418,11 +419,11 @@ struct PostureDetail: View {
             HStack {
                 Text(tr("近 7 天起身"))
                     .font(.system(size: 15, weight: .heavy))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 8)
                 Text(tr("目标 \(m.goal) 次"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         } content: {
             GeometryReader { geo in
@@ -445,27 +446,27 @@ struct PostureDetail: View {
                 path.move(to: CGPoint(x: 0, y: goalY))
                 path.addLine(to: CGPoint(x: width, y: goalY))
             }
-            .stroke(.white.opacity(0.4), style: StrokeStyle(lineWidth: 0.9, dash: [3, 2.5]))
+            .stroke(.panelTertiary, style: StrokeStyle(lineWidth: 0.9, dash: [3, 2.5]))
             ForEach(Array(m.week.enumerated()), id: \.offset) { index, day in
                 let center = slot * (CGFloat(index) + 0.5)
                 let height = max(3, CGFloat(day.count) / ceiling * Self.chartHeight)
                 let reached = day.count >= m.goal
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(day.isToday ? Color.timerPink.opacity(reached ? 1 : 0.72)
-                                      : Color.white.opacity(reached ? 0.5 : 0.2))
+                                      : Color.panelPrimary.opacity(reached ? 0.4 : 0.14))
                     .frame(width: 22, height: height)
                     .position(x: center, y: bottom - height / 2)
                 Text(verbatim: "\(day.count)")
                     .font(.system(size: 13, weight: day.isToday ? .heavy : .semibold))
-                    .foregroundStyle(.white.opacity(day.isToday ? 1 : 0.62))
+                    .foregroundStyle(.panelPrimary.opacity(day.isToday ? 1 : 0.62))
                     .monospacedDigit()
                     .padding(.horizontal, 3)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: "#1C1C20")))
+                    .background(RoundedRectangle(cornerRadius: 4).fill(Self.base))
                     .fixedSize()
                     .position(x: center, y: bottom - height - 10)
                 Text(day.isToday ? tr("今天") : weekday(day.date))
                     .font(.system(size: 13, weight: day.isToday ? .bold : .medium))
-                    .foregroundStyle(.white.opacity(day.isToday ? 1 : 0.55))
+                    .foregroundStyle(.panelPrimary.opacity(day.isToday ? 1 : 0.55))
                     .fixedSize()
                     .position(x: center, y: bottom + 14)
             }
@@ -487,10 +488,10 @@ struct PostureDetail: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Text(value)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -521,25 +522,33 @@ struct PostureDetail: View {
 
     // MARK: 小工具
 
-    private static let base = Color(hex: "#1D1D21")
-    /// 深底上的粉色小字。
-    private static let pinkLight = Color(hex: "#FFA8C6")
+    /// 「挖空」用的底色（白点描边、柱顶数字底）：贴近卡片底，深色下原来的 #1D1D21，浅色下近白。
+    private static let base = Color.panelDynamic(
+        dark: NSColor(srgbRed: 0.114, green: 0.114, blue: 0.129, alpha: 1),
+        light: NSColor(srgbRed: 0.965, green: 0.96, blue: 0.97, alpha: 1))
+    /// 粉色小字：深色下浅粉 #FFA8C6，浅色下深粉 #C8336B（浅粉在浅玻璃上读不出来）。
+    private static let pinkLight = Color.panelDynamic(
+        dark: NSColor(srgbRed: 1, green: 0.659, blue: 0.776, alpha: 1),
+        light: NSColor(srgbRed: 0.784, green: 0.2, blue: 0.42, alpha: 1))
 
-    /// 时间轴一段的颜色：从淡粉（粉色 30% 叠在深底上）到深粉 #C8336B。
+    /// 时间轴一段的颜色：从淡粉（粉色 30% 叠在卡片底上：深色下偏暗、浅色下偏亮）到深粉 #C8336B。
     private static func segment(_ heat: Double) -> Color {
         let t = min(1, max(0, heat))
-        let pale = (r: 98.0, g: 59.0, b: 76.0), deep = (r: 200.0, g: 51.0, b: 107.0)
-        return Color(red: (pale.r + (deep.r - pale.r) * t) / 255,
-                     green: (pale.g + (deep.g - pale.g) * t) / 255,
-                     blue: (pale.b + (deep.b - pale.b) * t) / 255)
+        let deep = (r: 200.0, g: 51.0, b: 107.0)
+        func mix(_ pale: (r: Double, g: Double, b: Double)) -> NSColor {
+            NSColor(srgbRed: (pale.r + (deep.r - pale.r) * t) / 255,
+                    green: (pale.g + (deep.g - pale.g) * t) / 255,
+                    blue: (pale.b + (deep.b - pale.b) * t) / 255, alpha: 1)
+        }
+        return Color.panelDynamic(dark: mix((r: 98, g: 59, b: 76)), light: mix((r: 246, g: 196, b: 214)))
     }
 
     private func glass(_ corner: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: corner, style: .continuous)
-            .fill(.white.opacity(0.07))
+            .fill(.panelFill)
             .overlay {
                 RoundedRectangle(cornerRadius: corner, style: .continuous)
-                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    .strokeBorder(.panelStroke, lineWidth: 0.5)
             }
     }
 

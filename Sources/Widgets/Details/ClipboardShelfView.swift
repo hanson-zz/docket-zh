@@ -4,11 +4,11 @@ import SwiftUI
 struct ShelfLedge: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 3, style: .continuous)
-            .fill(LinearGradient(colors: [.white.opacity(0.32), .white.opacity(0.12)],
+            .fill(LinearGradient(colors: [.panelFillStrong, .panelFill],
                                  startPoint: .top, endPoint: .bottom))
             .frame(height: 6)
             .overlay(alignment: .top) {
-                Rectangle().fill(.white.opacity(0.45)).frame(height: 0.5)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5)
             }
             .shadow(color: .black.opacity(0.35), radius: 4, y: 3)
             .accessibilityHidden(true)
@@ -39,26 +39,27 @@ struct ShelfClipCard<Thumb: View, Accessory: View>: View {
                 .frame(height: 40)
                 .clipShape(.rect(cornerRadius: 6, style: .continuous))
             Text(title)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Spacer(minLength: 0)
             Text(flashed ? flashText : caption)
-                .font(.system(size: 9))
-                .foregroundStyle(.white.opacity(flashed ? 0.95 : 0.55))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary.opacity(flashed ? 0.95 : 0.55))
                 .lineLimit(1)
         }
         .padding(6)
         .frame(maxWidth: .infinity)
-        .frame(height: 100)
+        // 字提到 13pt 后两行标题加说明要多 8pt 左右，卡片 100 → 110。
+        .frame(height: 110)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(hovering ? 0.18 : 0.12))
+                .fill(hovering ? Color.panelFillStrong : Color.panelFill)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 0.5)
+                .strokeBorder(.panelStroke, lineWidth: 0.5)
         }
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 0) { accessory() }

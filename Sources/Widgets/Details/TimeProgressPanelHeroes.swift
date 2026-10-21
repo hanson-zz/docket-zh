@@ -25,10 +25,10 @@ struct TimeProgressRingHero: View {
                 GradientRing(progress: model.fraction(period), lineWidth: 13)
                     .frame(width: Self.ring, height: Self.ring)
                 VStack(spacing: 2) {
-                    TimeProgressPercent(value: model.percent(period), size: 38, signSize: 19, signColor: colors.light)
+                    TimeProgressPercent(value: model.percent(period), size: 38, signSize: 19, signColor: colors.light.panelReadable)
                     Text(tr("已过去"))
                         .font(TimeProgressType.smallMedium)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
             .frame(width: Self.frame, height: Self.frame)
@@ -36,25 +36,25 @@ struct TimeProgressRingHero: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(TimeProgress.label(period, now: model.now))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("还剩"))
                     .font(TimeProgressType.smallMedium)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .padding(.top, 6)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(verbatim: rest.value)
                         .font(TimeProgressType.figure(26))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .rollingValue(rest.value)
                     Text(rest.unit)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .monospacedDigit()
                 ForEach(facts, id: \.self) { line in
                     Text(line)
                         .font(TimeProgressType.small)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                 }
                 .padding(.top, 2)
@@ -80,7 +80,7 @@ struct TimeProgressRingHero: View {
                 var line = Path()
                 line.move(to: CGPoint(x: center.x + inner * sin(angle), y: center.y - inner * cos(angle)))
                 line.addLine(to: CGPoint(x: center.x + outer * sin(angle), y: center.y - outer * cos(angle)))
-                context.stroke(line, with: .color(.white.opacity(major ? 0.5 : 0.22)), lineWidth: count > 24 ? 1 : 1.2)
+                context.stroke(line, with: .color(major ? Color.panelTertiary : Color.panelQuaternary), lineWidth: count > 24 ? 1 : 1.2)
             }
         }
         .accessibilityHidden(true)
@@ -98,19 +98,19 @@ struct TimeProgressPercentageHero: View {
         let period = model.period
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
-                TimeProgressPercent(value: model.percent(period), size: 72, signSize: 32, signColor: colors.light)
+                TimeProgressPercent(value: model.percent(period), size: 72, signSize: 32, signColor: colors.light.panelReadable)
                     .padding(.leading, -3)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 5) {
                     Text(TimeProgress.label(period, now: model.now))
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(.panelPrimary)
                     Text(TimeProgress.remainingDetail(period, now: model.now))
                         .font(TimeProgressType.smallMedium)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                     Text(thirdLine)
                         .font(TimeProgressType.small)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .monospacedDigit()
                 .lineLimit(1)
@@ -138,10 +138,10 @@ struct TimeProgressPercentageHero: View {
                 let x = CGFloat(tick.position) * size.width
                 if period != .week {
                     context.fill(Path(CGRect(x: min(max(0, x - 0.5), size.width - 1), y: 0, width: 1, height: 4)),
-                                 with: .color(.white.opacity(0.3)))
+                                 with: .color(.panelQuaternary))
                 }
                 let anchor: UnitPoint = tick.position <= 0.001 ? .leading : (tick.position >= 0.999 ? .trailing : .center)
-                context.draw(Text(tick.label).font(TimeProgressType.small).foregroundStyle(.white.opacity(0.55)),
+                context.draw(Text(tick.label).font(TimeProgressType.small).foregroundStyle(.panelTertiary),
                              at: CGPoint(x: x, y: 15), anchor: anchor)
             }
         }
@@ -167,17 +167,17 @@ struct TimeProgressLiquidHero: View {
         let period = model.period
         let fraction = model.fraction(period)
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: Self.corner, style: .continuous).fill(.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: Self.corner, style: .continuous).fill(.panelFill)
             LiquidWater(level: fraction, tint: colors.accent, visible: visible, still: still,
                         shine: true, bubbles: 5)
                 .clipShape(.rect(cornerRadius: Self.corner, style: .continuous))
             ticks(period, fraction: fraction)
             VStack(alignment: .leading, spacing: 4) {
                 TimeProgressPercent(value: model.percent(period), size: 48, signSize: 22,
-                                    signColor: .white.opacity(0.85))
+                                    signColor: .panelPrimary)
                 Text(verbatim: "\(TimeProgress.label(period, now: model.now)) · \(TimeProgress.remainingDetail(period, now: model.now))")
                     .font(TimeProgressType.smallMedium)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -189,7 +189,7 @@ struct TimeProgressLiquidHero: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
-                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+                .strokeBorder(.panelStroke, lineWidth: 1)
         }
         .frame(height: Self.height)
         .accessibilityElement(children: .combine)
@@ -205,10 +205,10 @@ struct TimeProgressLiquidHero: View {
             for tick in ticks {
                 let y = size.height * CGFloat(1 - tick.position)
                 context.fill(Path(CGRect(x: size.width - 14, y: y - 0.5, width: 8, height: 1)),
-                             with: .color(.white.opacity(0.45)))
+                             with: .color(.panelTertiary))
                 let under = tick.position <= fraction
                 context.draw(Text(tick.label).font(TimeProgressType.smallMedium)
-                                .foregroundStyle(.white.opacity(under ? 0.9 : 0.7)),
+                                .foregroundStyle(.panelPrimary.opacity(under ? 0.9 : 0.7)),
                              at: CGPoint(x: size.width - 18, y: y), anchor: .trailing)
             }
         }
@@ -234,15 +234,15 @@ struct TimeProgressBarsHero: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 1) {
                     Text(verbatim: "\(model.percent(period))")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .rollingValue(model.percent(period))
-                    Text(verbatim: "%").foregroundStyle(.white.opacity(0.6))
+                    Text(verbatim: "%").foregroundStyle(.panelSecondary)
                 }
                 .font(.system(size: 34, weight: .semibold))
                 .monospacedDigit()
                 Text(TimeProgress.caption(period, now: model.now))
                     .font(TimeProgressType.smallMedium)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -276,7 +276,7 @@ struct TimeProgressBarsHero: View {
                 let on = month == current
                 context.draw(Text(tr("\(month)月"))
                                 .font(on ? TimeProgressType.smallBold : TimeProgressType.small)
-                                .foregroundStyle(on ? colors.light : .white.opacity(0.55)),
+                                .foregroundStyle(on ? colors.light.panelReadable : .panelTertiary),
                              at: CGPoint(x: 0, y: y + rowHeight / 2), anchor: .leading)
             }
             for day in days {
@@ -307,12 +307,12 @@ struct TimeProgressBarsHero: View {
             let pitch = (size.width - left) / 7
             for index in 0..<7 {
                 context.draw(Text(TimeProgress.weekdayShort(index)).font(TimeProgressType.small)
-                                .foregroundStyle(index >= 5 ? colors.contrast.opacity(0.85) : .white.opacity(0.55)),
+                                .foregroundStyle(index >= 5 ? colors.contrast.panelReadable.opacity(0.85) : .panelTertiary),
                              at: CGPoint(x: left + (CGFloat(index) + 0.5) * pitch, y: header / 2 - 2), anchor: .center)
             }
             for row in 0..<rows {
                 context.draw(Text(tr("\(weekStart + row)周")).font(TimeProgressType.small)
-                                .foregroundStyle(.white.opacity(0.5)),
+                                .foregroundStyle(.panelTertiary),
                              at: CGPoint(x: 0, y: header + CGFloat(row) * rowHeight + rowHeight / 2), anchor: .leading)
             }
             for day in days {
@@ -324,11 +324,11 @@ struct TimeProgressBarsHero: View {
                 let path = Path(roundedRect: rect, cornerRadius: 4)
                 context.fill(path, with: .color(color.opacity(day.mark == .future ? 0.08 : opacity * 0.9)))
                 if day.mark == .today {
-                    context.stroke(path, with: .color(.white), lineWidth: 1)
+                    context.stroke(path, with: .color(.panelPrimary), lineWidth: 1)
                 }
                 context.draw(Text(verbatim: "\(day.day)").font(TimeProgressType.small)
-                                .foregroundStyle(day.mark == .today ? Color.black.opacity(0.8)
-                                                 : .white.opacity(day.isPast ? 0.9 : 0.6)),
+                                .foregroundStyle(day.mark == .today ? Color.panelOnPrimary
+                                                 : Color.panelPrimary.opacity(day.isPast ? 0.9 : 0.6)),
                              at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
             }
         }
@@ -349,8 +349,8 @@ struct TimeProgressBarsHero: View {
                 let y = CGFloat(day.index) * rowHeight
                 context.draw(Text(TimeProgress.weekdayShort(day.index))
                                 .font(day.isToday ? TimeProgressType.smallBold : TimeProgressType.small)
-                                .foregroundStyle(day.isToday ? colors.light
-                                                 : (day.isWeekend ? colors.contrast.opacity(0.85) : .white.opacity(0.55))),
+                                .foregroundStyle(day.isToday ? colors.light.panelReadable
+                                                 : (day.isWeekend ? colors.contrast.panelReadable.opacity(0.85) : .panelTertiary)),
                              at: CGPoint(x: 0, y: y + rowHeight / 2), anchor: .leading)
                 let off: Bool = {
                     if case .holiday = kinds[day.index] { return true }
@@ -361,7 +361,7 @@ struct TimeProgressBarsHero: View {
                     let lit = start.addingTimeInterval(3600) <= now
                     let current = !lit && start <= now
                     let color: Color = lit ? (off ? colors.contrast : colors.accent).opacity(0.85)
-                        : (current ? colors.light.opacity(0.95) : .white.opacity(0.12))
+                        : (current ? colors.light.opacity(0.95) : .panelPrimary.opacity(0.12))
                     let rect = CGRect(x: left + CGFloat(hour) * pitch, y: y + 3, width: pitch * 0.55, height: rowHeight - 6)
                     context.fill(Path(roundedRect: rect, cornerRadius: 0.8), with: .color(color))
                 }
@@ -383,7 +383,7 @@ struct TimeProgressBarsHero: View {
             let pitch = hourWidth / 4
             for row in 0..<4 {
                 let y = CGFloat(row) * rowHeight
-                context.draw(Text(tr("\(row * 6)时")).font(TimeProgressType.small).foregroundStyle(.white.opacity(0.55)),
+                context.draw(Text(tr("\(row * 6)时")).font(TimeProgressType.small).foregroundStyle(.panelTertiary),
                              at: CGPoint(x: 0, y: y + rowHeight / 2), anchor: .leading)
                 for hour in 0..<6 {
                     for quarter in 0..<4 {
@@ -392,7 +392,7 @@ struct TimeProgressBarsHero: View {
                         let lit = begin.addingTimeInterval(900) <= now
                         let current = !lit && begin <= now
                         let color: Color = lit ? colors.accent.opacity(0.85)
-                            : (current ? colors.light.opacity(0.95) : .white.opacity(0.12))
+                            : (current ? colors.light.opacity(0.95) : .panelPrimary.opacity(0.12))
                         let x = left + CGFloat(hour) * (hourWidth + hourGap) + CGFloat(quarter) * pitch
                         let rect = CGRect(x: x, y: y + 4, width: pitch * 0.6, height: rowHeight - 8)
                         context.fill(Path(roundedRect: rect, cornerRadius: 0.8), with: .color(color))
@@ -424,7 +424,7 @@ struct TimeProgressBarsHero: View {
                     RoundedRectangle(cornerRadius: 0.8).fill(item.1).frame(width: 3.5, height: 10)
                     Text(item.0)
                         .font(TimeProgressType.small)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
         }
@@ -445,11 +445,11 @@ struct TimeProgressQuadHero: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(TimeProgress.dateTitle(model.now))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 6)
                 Text(tr("第 \(TimeProgress.weekOfYear(model.now)) 周"))
                     .font(TimeProgressType.small)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -467,19 +467,19 @@ struct TimeProgressQuadHero: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(span.spoken)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(bright ? 0.95 : 0.65))
+                    .foregroundStyle(.panelPrimary.opacity(bright ? 0.95 : 0.65))
                 Spacer(minLength: 4)
                 Text(TimeProgress.remainingShort(span, now: model.now))
                     .font(TimeProgressType.small)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
             }
             HStack(alignment: .firstTextBaseline) {
                 TimeProgressPercent(value: model.percent(span), size: 30, signSize: 15,
-                                    signColor: bright ? colors.light : .white)
+                                    signColor: bright ? colors.light.panelReadable : .panelPrimary)
                 Spacer(minLength: 4)
                 Text(TimeProgress.label(span, now: model.now))
                     .font(TimeProgressType.small)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
             }
             TimeProgressThinBar(progress: model.fraction(span), color: colors.accent, bright: bright, height: 4)
         }
@@ -487,10 +487,10 @@ struct TimeProgressQuadHero: View {
         .lineLimit(1)
         .minimumScaleFactor(0.8)
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(bright ? 0.08 : 0.05)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(bright ? Color.panelFillStrong : Color.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(bright ? colors.light.opacity(0.9) : .white.opacity(0.08), lineWidth: 1)
+                .strokeBorder(bright ? colors.light.opacity(0.9) : .panelStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tr("\(span.spoken)已过去 \(model.percent(span))%，\(TimeProgress.remainingShort(span, now: model.now))"))

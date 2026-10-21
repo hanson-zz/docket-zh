@@ -21,17 +21,17 @@ struct DetailSegmented<Page: Hashable>: View {
                 } label: {
                     Text(verbatim: title(page))
                         .font(.system(size: 13, weight: on ? .bold : .semibold))
-                        .foregroundStyle(.white.opacity(on ? 1 : 0.66))
+                        .foregroundStyle(.panelPrimary.opacity(on ? 1 : 0.66))
                         .lineLimit(1)
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background {
                             if on {
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(.white.opacity(0.16))
+                                    .fill(.panelFillStrong)
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                            .strokeBorder(.white.opacity(0.14), lineWidth: 0.8)
+                                            .strokeBorder(.panelStroke, lineWidth: 0.8)
                                     }
                                     .padding(2)
                             }
@@ -43,10 +43,10 @@ struct DetailSegmented<Page: Hashable>: View {
             }
         }
         .frame(height: 28)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
+                .strokeBorder(.panelStroke, lineWidth: 0.8)
         }
     }
 }
@@ -77,7 +77,7 @@ struct DetailFold<Label: View, Content: View>: View {
                     Spacer(minLength: 4)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .rotationEffect(.degrees(expanded ? 180 : 0))
                 }
                 .frame(minHeight: 24)

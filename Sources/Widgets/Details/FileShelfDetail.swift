@@ -71,7 +71,7 @@ struct FileShelfDetail: View {
                 if let notice {
                     Text(verbatim: notice)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -128,10 +128,10 @@ struct FileShelfDetail: View {
         VStack(spacing: 10) {
             Image(systemName: "tray.and.arrow.down")
                 .font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
             Text(verbatim: tr("把文件从访达或其他应用拖到这里或扩展栏上的卡片，稍后再拖出。只记住文件的位置，不会复制、移动或删除文件。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -140,7 +140,7 @@ struct FileShelfDetail: View {
         .frame(height: 180)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.white.opacity(targeted ? 0 : 0.2), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                .strokeBorder(Color.panelQuaternary.opacity(targeted ? 0 : 1), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
         }
         .dropTargetOutline(targeted, tint: .teal, corner: 12)
     }
@@ -174,14 +174,15 @@ struct FileShelfDetail: View {
             .opacity(entry.missing ? 0.4 : 1)
             Text(verbatim: entry.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(entry.missing ? 0.5 : 0.95))
+                .foregroundStyle(.panelPrimary.opacity(entry.missing ? 0.5 : 0.95))
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 0)
             if entry.missing {
                 Text(verbatim: tr("找不到了"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#FFB3AA"))
+                    .foregroundStyle(Color.panelDynamic(dark: NSColor(srgbRed: 1, green: 0.702, blue: 0.667, alpha: 1),
+                                                       light: NSColor(srgbRed: 0.702, green: 0.149, blue: 0.118, alpha: 1)))
                     .lineLimit(1)
                     .fixedSize()
             }
@@ -191,7 +192,7 @@ struct FileShelfDetail: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 24, height: 24)
                         .contentShape(.rect)
                 }
@@ -204,9 +205,9 @@ struct FileShelfDetail: View {
         .frame(height: Self.rowHeight)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(on ? 0.12 : 0.06))
+                .fill(on ? Color.panelFillStrong : Color.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(.white.opacity(on ? 0.2 : 0.1), lineWidth: 0.6))
+                    .strokeBorder(.panelStroke, lineWidth: 0.6))
         }
         .contentShape(.rect(cornerRadius: 10))
         .onTapGesture {
@@ -244,7 +245,7 @@ struct FileShelfDetail: View {
         ZStack {
             Circle()
                 .fill(on ? palette.accent : .clear)
-                .overlay(Circle().strokeBorder(on ? .clear : .white.opacity(0.45), lineWidth: 1.4))
+                .overlay(Circle().strokeBorder(on ? .clear : Color.panelTertiary, lineWidth: 1.4))
             if on {
                 Image(systemName: "checkmark")
                     .font(.system(size: 10, weight: .heavy))
@@ -269,14 +270,14 @@ struct FileShelfDetail: View {
         HStack {
             Text(verbatim: tr("\(present.count) 个可选"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 0)
             Button(selection.allSelected(present) ? tr("全不选") : tr("全选")) {
                 selection.toggleAll(present)
             }
             .buttonStyle(.plain)
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(palette.accent)
+            .foregroundStyle(palette.accent.panelReadable)
         }
         if menuOpen { moveMenu(urls).transition(.opacity.combined(with: .move(edge: .bottom))) }
         HStack(spacing: 6) {
@@ -301,14 +302,14 @@ struct FileShelfDetail: View {
     private func barLabel(_ title: String, solid: Bool = false, disabled: Bool) -> some View {
         Text(verbatim: title)
             .font(.system(size: 13, weight: solid ? .bold : .semibold))
-            .foregroundStyle(solid ? palette.ink : .white)
+            .foregroundStyle(solid ? palette.ink : .panelPrimary)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
             .frame(height: 34)
-            .background(Capsule().fill(solid ? palette.accent : .white.opacity(0.1)))
-            .overlay(Capsule().strokeBorder(.white.opacity(solid ? 0 : 0.14), lineWidth: 0.6))
+            .background(Capsule().fill(solid ? palette.accent : .panelFill))
+            .overlay(Capsule().strokeBorder(Color.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
             .contentShape(Capsule())
             .opacity(disabled ? 0.45 : 1)
     }
@@ -323,13 +324,13 @@ struct FileShelfDetail: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .frame(height: 32)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -339,7 +340,7 @@ struct FileShelfDetail: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(verbatim: tr("移到"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 2)
             ForEach(FileBatch.destinations(excluding: URL(fileURLWithPath: "/", isDirectory: true))) { place in
@@ -353,8 +354,10 @@ struct FileShelfDetail: View {
             }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(hex: "#34343A")))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelDynamic(
+            dark: NSColor(srgbRed: 0.204, green: 0.204, blue: 0.227, alpha: 1),
+            light: NSColor(srgbRed: 0.972, green: 0.972, blue: 0.98, alpha: 1))))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6))
         .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
     }
 
@@ -363,10 +366,10 @@ struct FileShelfDetail: View {
             HStack(spacing: 10) {
                 Image(systemName: "folder.fill")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                 Text(verbatim: title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
@@ -423,7 +426,7 @@ struct FileShelfDetail: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: tr("放进来多久后自动移出"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             HStack(spacing: 0) {
                 ForEach(FileShelfList.Expiry.allCases, id: \.self) { choice in
                     let on = choice == expiry
@@ -433,7 +436,7 @@ struct FileShelfDetail: View {
                     } label: {
                         Text(verbatim: choice.title)
                             .font(.system(size: 13, weight: on ? .bold : .semibold))
-                            .foregroundStyle(on ? palette.ink : .white.opacity(0.82))
+                            .foregroundStyle(on ? palette.ink : .panelPrimary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
@@ -446,11 +449,11 @@ struct FileShelfDetail: View {
                 }
             }
             .padding(3)
-            .background(Capsule().fill(.white.opacity(0.07)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+            .background(Capsule().fill(.panelFill))
+            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
             Text(verbatim: tr("只移出列表，不删文件"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 

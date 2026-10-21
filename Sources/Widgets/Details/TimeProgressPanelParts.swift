@@ -27,12 +27,12 @@ struct TimeProgressParts {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(TimeProgressType.smallMedium)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 6)
             if let trailing {
                 Text(trailing)
                     .font(TimeProgressType.small)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
         }
@@ -78,7 +78,7 @@ struct TimeProgressParts {
                                 GradientRing(progress: model.fraction(span), lineWidth: 5)
                                 Text(verbatim: "\(model.percent(span))%")
                                     .font(TimeProgressType.smallBold)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.panelPrimary)
                                     .monospacedDigit()
                                     .minimumScaleFactor(0.8)
                             }
@@ -105,11 +105,11 @@ struct TimeProgressParts {
                                                 bright: span == model.period)
                             Text(verbatim: "\(model.percent(span))%")
                                 .font(TimeProgressType.smallBold)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                                 .frame(width: 40, alignment: .trailing)
                             Text(TimeProgress.remainingShort(span, now: model.now))
                                 .font(TimeProgressType.small)
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(.panelSecondary)
                                 .frame(width: 78, alignment: .trailing)
                         }
                         .monospacedDigit()
@@ -133,7 +133,7 @@ struct TimeProgressParts {
                                 .frame(width: 26, height: 62)
                             Text(verbatim: "\(model.percent(span))%")
                                 .font(TimeProgressType.smallBold)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                                 .monospacedDigit()
                                 .padding(.top, 4)
                             name(span, colors: colors, dot: false, tinted: true)
@@ -159,7 +159,7 @@ struct TimeProgressParts {
                                 .frame(height: 12)
                             Text(verbatim: "\(model.percent(span))%")
                                 .font(TimeProgressType.smallBold)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                                 .monospacedDigit()
                                 .frame(width: 40, alignment: .trailing)
                         }
@@ -178,7 +178,7 @@ struct TimeProgressParts {
         return VStack(spacing: 3) {
             Text(span.spoken)
                 .font(selected ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-                .foregroundStyle(selected ? (tinted ? colors.light : .white) : .white.opacity(0.6))
+                .foregroundStyle(selected ? (tinted ? colors.light.panelReadable : .panelPrimary) : .panelSecondary)
                 .lineLimit(1)
             if dot {
                 Circle()
@@ -195,8 +195,8 @@ struct TimeProgressParts {
     private func weekdayLabel(_ day: TimeProgress.WeekDay, colors: TimeProgressColors) -> some View {
         Text(TimeProgress.weekdayShort(day.index))
             .font(day.isToday ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-            .foregroundStyle(day.isToday ? colors.light
-                             : (day.isWeekend ? colors.contrast.opacity(0.85) : .white.opacity(0.6)))
+            .foregroundStyle(day.isToday ? colors.light.panelReadable
+                             : (day.isWeekend ? colors.contrast.panelReadable.opacity(0.85) : .panelSecondary))
     }
 
     /// 圆环：七个小环，过去的打钩。
@@ -210,7 +210,7 @@ struct TimeProgressParts {
                             if day.fraction >= 1 {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(.white.opacity(0.85))
+                                    .foregroundStyle(.panelPrimary)
                             }
                         }
                         .frame(width: 30, height: 30)
@@ -232,7 +232,7 @@ struct TimeProgressParts {
                     VStack(spacing: 8) {
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(.white.opacity(0.12))
+                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(.panelTrack)
                                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                                     .fill(day.isToday ? colors.light : colors.accent.opacity(0.9))
                                     .frame(width: geo.size.width * day.fraction)
@@ -273,7 +273,7 @@ struct TimeProgressParts {
             HStack(spacing: 4) {
                 ForEach(model.weekDays, id: \.index) { day in
                     ZStack {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.white.opacity(0.07))
+                        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.panelFill)
                         GeometryReader { geo in
                             VStack(spacing: 0) {
                                 Spacer(minLength: 0)
@@ -285,11 +285,11 @@ struct TimeProgressParts {
                         .clipShape(.rect(cornerRadius: 6, style: .continuous))
                         Text(TimeProgress.weekdayShort(day.index))
                             .font(day.isToday ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-                            .foregroundStyle(day.isWeekend ? colors.contrast : .white.opacity(day.fraction > 0 ? 1 : 0.6))
+                            .foregroundStyle(day.isWeekend ? colors.contrast.panelReadable : .panelPrimary.opacity(day.fraction > 0 ? 1 : 0.6))
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(day.isToday ? colors.light.opacity(0.9) : .white.opacity(0.06), lineWidth: 1)
+                            .strokeBorder(day.isToday ? colors.light.opacity(0.9) : .panelStroke, lineWidth: 1)
                     }
                     .frame(height: 30)
                     .frame(maxWidth: .infinity)
@@ -309,7 +309,7 @@ struct TimeProgressParts {
                 HStack(alignment: .firstTextBaseline) {
                     Text(tr("今年 \(model.days.count) 天"))
                         .font(TimeProgressType.smallMedium)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                     Spacer(minLength: 6)
                     legend(colors)
                 }
@@ -325,7 +325,7 @@ struct TimeProgressParts {
             if model.hasAnniversaries {
                 legendItem(tr("纪念日"), Circle().fill(colors.amber))
             }
-            legendItem(tr("今天"), Circle().strokeBorder(.white, lineWidth: 1))
+            legendItem(tr("今天"), Circle().strokeBorder(.panelPrimary, lineWidth: 1))
         }
     }
 
@@ -334,7 +334,7 @@ struct TimeProgressParts {
             mark.frame(width: 6, height: 6)
             Text(title)
                 .font(TimeProgressType.small)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -352,19 +352,19 @@ struct TimeProgressParts {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(item.title)
                                 .font(TimeProgressType.smallMedium)
-                                .foregroundStyle(.white.opacity(0.7))
+                                .foregroundStyle(.panelSecondary)
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 if item.days == 0 {
                                     Text(tr("今天"))
                                         .font(TimeProgressType.figure(16))
-                                        .foregroundStyle(index == 0 ? colors.light : .white)
+                                        .foregroundStyle(index == 0 ? colors.light.panelReadable : .panelPrimary)
                                 } else {
                                     Text(verbatim: "\(item.days)")
                                         .font(TimeProgressType.figure(18))
-                                        .foregroundStyle(index == 0 ? colors.light : .white)
+                                        .foregroundStyle(index == 0 ? colors.light.panelReadable : .panelPrimary)
                                     Text(tr("天"))
                                         .font(TimeProgressType.smallMedium)
-                                        .foregroundStyle(.white.opacity(0.7))
+                                        .foregroundStyle(.panelSecondary)
                                 }
                             }
                             .monospacedDigit()
@@ -379,10 +379,10 @@ struct TimeProgressParts {
                         .padding(.horizontal, 9)
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: corner, style: .continuous).fill(.white.opacity(0.06)))
+                        .background(RoundedRectangle(cornerRadius: corner, style: .continuous).fill(.panelFill))
                         .overlay {
                             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                                .strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
+                                .strokeBorder(.panelStroke, lineWidth: 0.8)
                         }
                         .help(item.estimated ? tr("放假安排还没公布，按节日当天估算") : "")
                         .accessibilityElement(children: .combine)
@@ -401,7 +401,7 @@ struct TimeProgressParts {
             BasketPanda(cheer: false, height: 30)
             Text(model.note)
                 .font(TimeProgressType.smallMedium)
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -431,15 +431,15 @@ struct TimeProgressSegmented: View {
                 let on = span == selected
                 let label = Text(span.title)
                     .font(on ? TimeProgressType.smallBold : TimeProgressType.smallMedium)
-                    .foregroundStyle(.white.opacity(on ? 1 : 0.62))
+                    .foregroundStyle(.panelPrimary.opacity(on ? 1 : 0.62))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background {
                         if on {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(.white.opacity(0.16))
+                                .fill(.panelFillStrong)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .strokeBorder(.white.opacity(0.14), lineWidth: 0.8)
+                                        .strokeBorder(.panelStroke, lineWidth: 0.8)
                                 }
                                 .padding(2)
                         }
@@ -456,9 +456,9 @@ struct TimeProgressSegmented: View {
             }
         }
         .frame(height: 28)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
         .overlay {
-            RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.8)
         }
         .animation(.snappy(duration: 0.25), value: selected)
     }
@@ -474,7 +474,7 @@ struct TimeProgressThinBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.12))
+                Capsule().fill(.panelTrack)
                 Capsule()
                     .fill(color.opacity(bright ? 0.95 : 0.65))
                     .frame(width: max(height, geo.size.width * min(1, max(0, progress))))
@@ -505,7 +505,7 @@ struct TimeProgressUnitBar: View {
                 } else if index == Int(lit) {
                     color = colors.light.opacity(0.95)
                 } else {
-                    color = .white.opacity(0.12)
+                    color = .panelPrimary.opacity(0.12)
                 }
                 context.fill(Path(roundedRect: rect, cornerRadius: 0.8), with: .color(color))
             }
@@ -522,13 +522,13 @@ struct TimeProgressGlass: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: corner, style: .continuous).fill(.white.opacity(0.06))
+            RoundedRectangle(cornerRadius: corner, style: .continuous).fill(.panelFill)
             LiquidWater(level: level, tint: color, visible: false, still: true)
                 .clipShape(.rect(cornerRadius: corner, style: .continuous))
         }
         .overlay {
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 0.9)
+                .strokeBorder(.panelStroke, lineWidth: 0.9)
         }
         .accessibilityHidden(true)
     }
@@ -562,7 +562,7 @@ struct TimeProgressYearGrid: View {
                     }
                     if day.mark == .today {
                         let ring = Path(ellipseIn: rect.insetBy(dx: -side * 0.45, dy: -side * 0.45))
-                        context.stroke(ring, with: .color(.white), lineWidth: 0.9)
+                        context.stroke(ring, with: .color(.panelPrimary), lineWidth: 0.9)
                     }
                 }
                 let labelY = 7 * pitch + 12
@@ -574,12 +574,12 @@ struct TimeProgressYearGrid: View {
                     // 和「第几天」挤在一起的月份不写。
                     if let todayX, abs(column * pitch - todayX) < 56 { continue }
                     context.draw(Text(tr("\(day.month)月")).font(TimeProgressType.small)
-                                    .foregroundStyle(.white.opacity(0.55)),
+                                    .foregroundStyle(.panelTertiary),
                                  at: CGPoint(x: column * pitch, y: labelY), anchor: .leading)
                 }
                 if let todayX, let today = days.first(where: { $0.mark == .today }) {
                     let text = Text(tr("第 \(today.ordinal) 天")).font(TimeProgressType.smallBold)
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.panelPrimary)
                     // 靠右时右对齐，不出边。
                     let anchor: UnitPoint = todayX > size.width - 40 ? .trailing : (todayX < 40 ? .leading : .center)
                     context.draw(text, at: CGPoint(x: anchor == .trailing ? size.width : (anchor == .leading ? 0 : todayX),
