@@ -527,10 +527,10 @@ struct WidgetLibraryView: View {
                 }
                 if WidgetCatalog.isNew(card.kind) {
                     Text("新")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.system(size: ProBadge.fontSize(compact: false), weight: .semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1.5)
+                        .padding(.horizontal, ProBadge.horizontalPadding(compact: false))
+                        .padding(.vertical, ProBadge.verticalPadding(compact: false))
                         .background(Capsule().fill(Color.accentColor))
                         .fixedSize()
                         .help("近期新增的小组件")

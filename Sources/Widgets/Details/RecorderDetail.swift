@@ -152,7 +152,7 @@ struct RecorderDetail: View {
                 Button { startEdit(shownExpanded ?? items[0]) } label: {
                     HStack(spacing: 5) {
                         Text(tr("编辑"))
-                        if !tools { ProBadge() }
+                        if !tools { ProBadge(compact: true) }
                     }
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.panelPrimary)
@@ -934,7 +934,7 @@ struct RecorderDetail: View {
             HStack(spacing: 4) {
                 Text(title)
                     .lineLimit(1)
-                if pro { ProBadge() }
+                if pro { ProBadge(compact: true) }
             }
             .font(.system(size: 13, weight: solid ? .bold : .semibold))
             .foregroundStyle(solid ? accentInk : .panelPrimary)

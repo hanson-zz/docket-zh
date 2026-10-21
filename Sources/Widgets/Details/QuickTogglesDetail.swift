@@ -135,7 +135,7 @@ struct QuickTogglesDetail: View {
                         .frame(width: 26, height: 26)
                         .background(Circle().fill(on ? accent : .panelFillStrong))
                     Spacer(minLength: 0)
-                    if ProFeatures.isProTool(toggle.rawValue) { ProBadge() }
+                    if ProFeatures.isProTool(toggle.rawValue) { ProBadge(compact: true) }
                 }
                 Spacer(minLength: 6)
                 Text(verbatim: toggle.panelTitle)
