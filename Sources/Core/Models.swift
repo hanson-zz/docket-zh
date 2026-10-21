@@ -954,6 +954,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// 悬停正在运行的 App 格子时弹出窗口预览（码头 Pro）。默认关，旧配置里没有这个键
     /// 时也是关。没解锁时开关照旧存着，只是不弹，见 `ProLicenseGate.windowPreviewActive`。
     public var hoverWindowPreview: Bool = false
+    /// 指针停在小组件（或分组、文件夹）上，触控板两指沿面板弹出方向滑动打开面板，
+    /// 反方向收起，见 `PanelSwipe`。默认开，旧配置里没有这个键时也是开。
+    public var swipeOpensPanels: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1013,6 +1016,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         showLayoutLabelOnHover = (try? c.decodeIfPresent(Bool.self, forKey: .showLayoutLabelOnHover)) ?? true
         locked = (try? c.decodeIfPresent(Bool.self, forKey: .locked)) ?? false
         hoverWindowPreview = (try? c.decodeIfPresent(Bool.self, forKey: .hoverWindowPreview)) ?? false
+        swipeOpensPanels = (try? c.decodeIfPresent(Bool.self, forKey: .swipeOpensPanels)) ?? true
     }
 
     /// 只读不写的旧键。

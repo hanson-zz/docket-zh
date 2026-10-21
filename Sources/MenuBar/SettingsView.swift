@@ -814,6 +814,11 @@ struct SettingsView: View {
                 subtitled(tr("悬停显示布局名"),
                           tr("指针停在扩展栏上时，在外侧浮出当前布局名和页码点，点点或两边的小箭头直接切换；切换布局时也会闪现一下。只有一个布局时不显示。"))
             }
+            // 指针停在小组件上两指沿面板弹出方向滑开面板，见 PanelSwipe。
+            Toggle(isOn: $state.customDock.swipeOpensPanels) {
+                subtitled(tr("两指滑动打开面板"),
+                          tr("指针停在小组件、分组或文件夹上时，用触控板两指朝面板弹出的方向滑一下就打开，反方向滑收起。卡片里能滚动的小组件（比如便签）不受影响，点按照旧。"))
+            }
         }
 
         soundSection

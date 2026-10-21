@@ -6355,6 +6355,17 @@
         }
       }
     },
+    "两指滑动打开面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe with two fingers to open panels"
+          }
+        }
+      }
+    },
     "两百小时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12071,6 +12082,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag the shelf"
+          }
+        }
+      }
+    },
+    "指针停在小组件、分组或文件夹上时，用触控板两指朝面板弹出的方向滑一下就打开，反方向滑收起。卡片里能滚动的小组件（比如便签）不受影响，点按照旧。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With the pointer on a widget, group or folder, swipe two fingers on the trackpad toward where its panel opens to open it, and the other way to close it. Widgets that scroll inside their card, such as Sticky Note, are left alone, and clicking works as before."
           }
         }
       }

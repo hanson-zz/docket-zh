@@ -504,7 +504,13 @@ struct DockShelfView: View {
             // is not allowed, which is the same reason `centre` is carried on
             // the target itself.
             hoveredID = new?.id
+            updateSwipeTarget(new?.id, solved)
         }
+        // 两指沿面板弹出方向滑：等同点一下指针下的格子；反方向收起开着的面板。
+        .onReceive(NotificationCenter.default.publisher(for: ScrollRelay.panelSwipeRequest)) { note in
+            panelSwipe(note, solved)
+        }
+        .onChange(of: position, initial: true) { _, edge in ScrollRelay.shared.swipeEdge = edge }
         .onDisappear { TooltipWindow.shared.hide() }
         .onAppear { measureScreen() }
         .onReceive(NotificationCenter.default.publisher(
@@ -1180,6 +1186,60 @@ struct DockShelfView: View {
         // moment the launch settles - whether it succeeded or never started.
         if !isRunning(entry.item) { bounce(entry) }
         AppCatalog.shared.open(entry.item) { _ in stopBounce(entry.id) }
+    }
+
+    /// 指针下这一格能不能用两指滑动打开：有详情面板、卡片自己不用滚动的小组件，
+    /// 分组，以及设置成小窗浏览的文件夹（废纸篓不算）。和 `open(_:)` 的分支一致。
+    private func opensBySwipe(_ entry: Entry) -> Bool {
+        if let widget = entry.item.widget {
+            return WidgetDetail.exists(for: widget.kind) && !PanelSwipe.contentScrolls(widget.kind)
+        }
+        if entry.item.group != nil { return true }
+        if case .folder = entry.item {
+            return !entry.isTrash && settings.folderClick == .browse
+        }
+        return false
+    }
+
+    /// 悬停变了：告诉滚动那边指针下是不是能滑开的格子。
+    private func updateSwipeTarget(_ id: UUID?, _ solved: Solved) {
+        let relay = ScrollRelay.shared
+        relay.swipeEdge = position
+        guard let id, let entry = solved.entries.first(where: { $0.id == id }),
+              opensBySwipe(entry) else {
+            // 只清自己写的：几条扩展栏时别把另一条刚写的抹掉。
+            if let current = relay.swipeTargetID,
+               solved.entries.contains(where: { $0.id == current }) {
+                relay.swipeTargetID = nil
+            }
+            return
+        }
+        relay.swipeTargetID = id
+    }
+
+    /// 两指滑动的请求。打开等同点一下（已经开着就不动，免得点一下的切换把它关了）；
+    /// 收起关掉开着的面板、分组窗口或文件夹小窗。
+    private func panelSwipe(_ note: Notification, _ solved: Solved) {
+        guard let id = note.userInfo?["id"] as? UUID, let opens = note.userInfo?["open"] as? Bool,
+              hoveredID == id,
+              let entry = solved.entries.first(where: { $0.id == id }),
+              opensBySwipe(entry) else { return }
+        guard opens else {
+            WidgetDetailWindow.shared.close()
+            GroupWindow.shared.close()
+            FolderBrowserWindow.shared.close()
+            return
+        }
+        if let widget = entry.item.widget, WidgetDetailWindow.shared.openWidgetID == widget.id,
+           WidgetDetailWindow.shared.isOpen { return }
+        if let group = entry.item.group,
+           GroupWindow.shared.openGroupID == group.id || FolderBrowserWindow.shared.openFolderID == group.id {
+            return
+        }
+        if case .folder(let folderID, _, _) = entry.item, FolderBrowserWindow.shared.openFolderID == folderID {
+            return
+        }
+        open(entry)
     }
 
     /// 打开（或收起）一个分组的窗口。改名、加 App 都按 id 改扩展栏上的那份，

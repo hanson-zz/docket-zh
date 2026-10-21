@@ -29,7 +29,39 @@ final class ScrollRelay {
     @ObservationIgnored var onLayoutStep: (@MainActor (Int) -> Void)?
     @ObservationIgnored private var layoutGesture = LayoutGesture()
 
+    /// 设置里的「两指滑动打开面板」，和 `switchesLayouts` 一样由面板的主人写。
+    @ObservationIgnored var swipeOpensPanels = true
+    /// 指针下那一格能用滑动打开面板时是它的 id，否则 nil。扩展栏视图在悬停
+    /// 变化时写：只有它知道指针下是什么、那一格有没有面板。
+    @ObservationIgnored var swipeTargetID: UUID?
+    /// 扩展栏贴的边（浮动时是当作的顶部或底部），决定面板往哪边弹。
+    @ObservationIgnored var swipeEdge: DockPosition = .bottom
+    @ObservationIgnored private var panelSwipe = PanelSwipeGesture()
+
+    /// 两指滑动要打开或收起面板时发出，userInfo 里 `id` 是指针下那一格的 id，
+    /// `open` 是 true 打开、false 收起。扩展栏视图接，那里才有锚点和面板。
+    nonisolated static let panelSwipeRequest = Notification.Name("DocketPanelSwipeRequest")
+
     private init() {}
+
+    /// 喂一次滚动事件给开面板的手势。返回这次事件是否归它（归它就吞掉）。
+    func feedPanelSwipe(_ event: PanelSwipe.Event) -> Bool {
+        let target = swipeTargetID
+        let outcome = panelSwipe.feed(event, edge: swipeEdge, target: target != nil,
+                                      enabled: swipeOpensPanels)
+        switch outcome {
+        case .pass:
+            return false
+        case .consume:
+            return true
+        case .fire(let action):
+            if let target {
+                NotificationCenter.default.post(name: Self.panelSwipeRequest, object: nil,
+                                                userInfo: ["id": target, "open": action == .open])
+            }
+            return true
+        }
+    }
 
     func push(_ value: CGFloat) {
         delta = value
@@ -76,6 +108,7 @@ final class ScrollRelay {
 final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
 
     override func scrollWheel(with event: NSEvent) {
+        if swipedPanel(event) { return }
         if switchedLayout(event) { return }
         let step = ScrollRelay.step(dx: event.scrollingDeltaX,
                                     dy: event.scrollingDeltaY,
@@ -85,6 +118,23 @@ final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
             return
         }
         ScrollRelay.shared.push(step)
+    }
+
+    /// 指针在小组件（或分组、文件夹）上，两指沿面板弹出方向滑：打开它的面板，
+    /// 反方向收起。只看扩展栏的短轴，判断和门槛在 Core（`PanelSwipeGesture`）。
+    /// 返回事件是否被它拿走；不归它的手势原样往下走，切换布局和滚动照旧。
+    private func swipedPanel(_ event: NSEvent) -> Bool {
+        let swipe = PanelSwipe.Event(
+            dx: Double(event.scrollingDeltaX),
+            dy: Double(event.scrollingDeltaY),
+            precise: event.hasPreciseScrollingDeltas,
+            inverted: event.isDirectionInvertedFromDevice,
+            began: event.phase.contains(.began) || event.phase.contains(.mayBegin),
+            momentum: !event.momentumPhase.isEmpty,
+            phased: !event.phase.isEmpty,
+            command: event.modifierFlags.contains(.command),
+            time: event.timestamp)
+        return ScrollRelay.shared.feedPanelSwipe(swipe)
     }
 
     /// Command-scroll, or a sideways swipe over a shelf with nothing to

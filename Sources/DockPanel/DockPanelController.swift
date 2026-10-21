@@ -174,6 +174,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         if !panel.isVisible { panel.orderFrontRegardless() }
         panel.level = level
         ScrollRelay.shared.switchesLayouts = app.state.customDock.switchLayoutsByGesture
+        ScrollRelay.shared.swipeOpensPanels = app.state.customDock.swipeOpensPanels
         if app.effectiveAutoHide {
             startPolling()
         } else {
