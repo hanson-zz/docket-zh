@@ -122,7 +122,7 @@ struct DownloadsDetail: View {
         } else if shown.isEmpty {
             Text(verbatim: tr("没有符合的文件"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
         } else {
             sections
@@ -138,13 +138,13 @@ struct DownloadsDetail: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(verbatim: download.finalName)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 ProgressTrack(fraction: download.fraction, accent: palette.accent)
                 Text(verbatim: busy ? tr("正在取消…") : feed.progressLine(download, now: context.now))
                     .font(.system(size: 13, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -158,13 +158,13 @@ struct DownloadsDetail: View {
                             .foregroundStyle(FilePanelPalette.red)
                             .padding(.horizontal, 10)
                             .frame(height: 26)
-                            .background(Capsule().fill(.white.opacity(0.12)))
+                            .background(Capsule().fill(.panelFill))
                     } else {
                         Image(systemName: "xmark")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(.panelPrimary)
                             .frame(width: 26, height: 26)
-                            .background(Circle().fill(.white.opacity(0.12)))
+                            .background(Circle().fill(.panelFill))
                     }
                 }
                 .contentShape(.rect)
@@ -201,7 +201,7 @@ struct DownloadsDetail: View {
                 ForEach(groups) { group in
                     Text(verbatim: group.group.title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .padding(.top, group.group == groups.first?.group ? 0 : 6)
                     ForEach(group.files) { file in
                         DownloadRow(file: file, now: context.now,
@@ -222,11 +222,11 @@ struct DownloadsDetail: View {
         } label: {
             Text(verbatim: tr("打开“下载”文件夹"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
-                .background(Capsule().fill(.white.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -256,7 +256,7 @@ private struct ProgressTrack: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.15))
+                Capsule().fill(.panelTrack)
                 if let fraction {
                     Capsule().fill(accent)
                         .frame(width: max(5, proxy.size.width * min(max(fraction, 0), 1)))
@@ -291,12 +291,12 @@ private struct DownloadRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: file.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(verbatim: FileRowCaption.text(file, now: now))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -309,9 +309,9 @@ private struct DownloadRow: View {
         .frame(height: 50)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(hovered ? 0.12 : 0.06))
+                .fill(hovered ? Color.panelFillStrong : Color.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(hovered ? 0.2 : 0.1), lineWidth: 0.6))
+                    .strokeBorder(.panelStroke, lineWidth: 0.6))
         }
         .contentShape(.rect(cornerRadius: 12))
         .onHover { hovered = $0 }
@@ -336,9 +336,9 @@ private struct DownloadRow: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 26, height: 26)
-                .background(Circle().fill(.white.opacity(0.12)))
+                .background(Circle().fill(.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

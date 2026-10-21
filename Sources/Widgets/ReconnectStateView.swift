@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 断网时天气和 GitHub 面板共用的状态：一个拔出来的插头对着插座，电线轻轻晃。
@@ -42,7 +43,7 @@ struct ReconnectStateView: View {
                     .foregroundStyle(WidgetStyle.primary)
                 if let detail {
                     Text(detail)
-                        .font(WidgetStyle.caption(11))
+                        .font(WidgetStyle.caption(13))
                         .foregroundStyle(WidgetStyle.secondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -69,11 +70,11 @@ struct ReconnectStateView: View {
                 .frame(width: 68, height: 23)
             VStack(alignment: .leading, spacing: 1) {
                 Text(phase == .reconnecting ? tr("正在重新连接…") : title)
-                    .font(WidgetStyle.label(12))
+                    .font(WidgetStyle.label(13))
                     .foregroundStyle(WidgetStyle.primary)
                 if let detail {
                     Text(detail)
-                        .font(WidgetStyle.caption(10))
+                        .font(WidgetStyle.caption(13))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
             }
@@ -84,9 +85,9 @@ struct ReconnectStateView: View {
                 Button { press() } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .frame(width: 24, height: 24)
-                        .background(Color.white.opacity(0.14), in: .circle)
+                        .background(Color.panelFillStrong, in: .circle)
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
@@ -132,7 +133,7 @@ private struct PlugArt: View {
 
                 ZStack(alignment: .topLeading) {
                     Cord(end: left, sag: 14 * sag)
-                        .stroke(.white.opacity(0.55), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .stroke(.panelTertiary, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
 
                     plug
                         .offset(x: left, y: mid - 9)
@@ -143,7 +144,7 @@ private struct PlugArt: View {
                     if phase == .reconnecting {
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color(hex: "#FFD60A"))
+                            .foregroundStyle(Color(hex: "#FFD60A").panelReadable)
                             .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
                             .offset(x: socketX - 4, y: mid - 26)
                             .transition(.scale.combined(with: .opacity))
@@ -158,26 +159,29 @@ private struct PlugArt: View {
     private var plug: some View {
         HStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(.white.opacity(0.85))
+                .fill(.panelPrimary.opacity(0.85))
                 .frame(width: 24, height: 18)
             VStack(spacing: 6) {
-                Capsule().fill(.white.opacity(0.85)).frame(width: 7, height: 2.5)
-                Capsule().fill(.white.opacity(0.85)).frame(width: 7, height: 2.5)
+                Capsule().fill(.panelPrimary.opacity(0.85)).frame(width: 7, height: 2.5)
+                Capsule().fill(.panelPrimary.opacity(0.85)).frame(width: 7, height: 2.5)
             }
         }
     }
 
     private var socket: some View {
         RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(.white.opacity(phase == .reconnecting ? 0.32 : 0.16))
+            .fill(phase == .reconnecting ? Color.panelFillStrong : Color.panelFill)
             .overlay {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(.white.opacity(0.4), lineWidth: 1)
+                    .strokeBorder(.panelQuaternary, lineWidth: 1)
             }
             .overlay {
+                // 插孔：浅色下插座是白玻璃，压暗要比 .panelShade 深才看得见。
+                let hole = Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.45),
+                                              light: NSColor.black.withAlphaComponent(0.35))
                 VStack(spacing: 5.5) {
-                    Capsule().fill(.black.opacity(0.45)).frame(width: 6, height: 3)
-                    Capsule().fill(.black.opacity(0.45)).frame(width: 6, height: 3)
+                    Capsule().fill(hole).frame(width: 6, height: 3)
+                    Capsule().fill(hole).frame(width: 6, height: 3)
                 }
             }
             .frame(width: 18, height: 30)

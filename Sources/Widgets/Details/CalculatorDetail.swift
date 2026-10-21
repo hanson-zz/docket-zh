@@ -69,7 +69,7 @@ struct CalculatorDetail: View {
                       prompt: Text("100 USD、5 km、3*4+2"))
                 .textFieldStyle(.plain)
                 .font(.system(size: 15, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($typing)
                 .onSubmit { commit(text) }
             if !text.isEmpty {
@@ -79,7 +79,7 @@ struct CalculatorDetail: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.panelTertiary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tr("清除"))
@@ -100,8 +100,8 @@ struct CalculatorDetail: View {
                     HStack(spacing: 6) {
                         tag(out.kind)
                         Text(detail(out))
-                            .font(WidgetStyle.caption(11))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -109,12 +109,12 @@ struct CalculatorDetail: View {
                         HStack(alignment: .firstTextBaseline, spacing: 5) {
                             Text("= " + out.text)
                                 .font(.system(size: 28, weight: .bold).monospacedDigit())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                                 .rollingValue(out.text)
                             if !out.unit.isEmpty {
                                 Text(out.unit)
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.75))
+                                    .foregroundStyle(.panelSecondary)
                             }
                         }
                         .lineLimit(1)
@@ -127,12 +127,12 @@ struct CalculatorDetail: View {
                     if failure.kind == .currency { tag(.currency) }
                     Text(failure.message)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(2)
                 case nil:
                     Text("输入什么都行：带币种算汇率，带单位做换算，其余当算式。")
-                        .font(WidgetStyle.caption(12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -167,8 +167,8 @@ struct CalculatorDetail: View {
         case .math: Color(hex: "#FF9F0A")
         }
         return Text(kind.tag)
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(color)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(color.panelReadable)
             .padding(.horizontal, 6)
             .frame(height: 16)
             .background(color.opacity(0.18), in: .capsule)
@@ -211,7 +211,7 @@ struct CalculatorDetail: View {
             HStack(spacing: 10) {
                 Text(tr("小数位"))
                     .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                     .frame(width: 56, alignment: .leading)
                 DetailSegmented(pages: CalcNumberStyle.Decimals.allCases, title: \.title,
                                 selected: style.decimals) { choice in
@@ -224,7 +224,7 @@ struct CalculatorDetail: View {
             HStack(spacing: 10) {
                 Text(tr("千分位"))
                     .font(WidgetStyle.label(13))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 0)
                 Toggle("", isOn: Binding(
                     get: { style.grouping ?? CalcNumberStyle.defaultGrouping },
@@ -267,16 +267,16 @@ struct CalculatorDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("最近")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelTertiary)
                     Spacer(minLength: 0)
                     Button("清空") {
                         guard !context.isPreview else { return }
                         WidgetWriter.write(instance) { $0.set(SmartCalc.historyKey, .list([])) }
                     }
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.label(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelSecondary)
                 }
                 ForEach(entries, id: \.self) { entry in row(entry) }
             }
@@ -297,17 +297,17 @@ struct CalculatorDetail: View {
                 if entry == pinned {
                     Image(systemName: "pin.fill")
                         .font(.system(size: 8))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Text(entry)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 6)
                 Text(answer)
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
             }
             .padding(.horizontal, 10)
@@ -327,19 +327,19 @@ struct CalculatorDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(status)
-                        .font(WidgetStyle.caption(10))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
                     Spacer(minLength: 0)
                     Button("刷新") { service.refresh(force: true) }
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                         .disabled(context.isPreview || service.loading)
                 }
                 Button(CurrencyService.attribution) { NSWorkspace.shared.open(CurrencyService.attributionURL) }
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelTertiary)
             }
         }
     }

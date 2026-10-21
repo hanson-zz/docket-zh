@@ -50,8 +50,8 @@ struct AIPromptChipBar: View {
         switch AIPromptStrip.statusLine(notice: notice, clipboardPreview: clipboardPreview) {
         case .notice(let text):
             Text(text)
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.updatesFrequently)
@@ -65,8 +65,8 @@ struct AIPromptChipBar: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
             }
@@ -95,11 +95,11 @@ struct AIPromptChipBar: View {
         } label: {
             HStack(spacing: 3) {
                 Text("常用")
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                 Image(systemName: "chevron.down")
                     .font(.system(size: 8, weight: .semibold))
             }
-            .foregroundStyle(.white.opacity(0.75))
+            .foregroundStyle(.panelSecondary)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -116,14 +116,14 @@ struct AIPromptChipBar: View {
                     Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
                 }
                 // 英文按钮比中文宽，挤的时候先缩小字号，不截成“Transl…”。
-                Text(title).font(.system(size: 11.5))
+                Text(title).font(.system(size: 13))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.35))
+            .foregroundStyle(.panelPrimary.opacity(enabled ? 0.85 : 0.35))
             .padding(.horizontal, 7)
             .frame(height: 22)
-            .background(Capsule().fill(.white.opacity(0.08)))
+            .background(Capsule().fill(.panelFill))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

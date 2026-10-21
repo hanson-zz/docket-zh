@@ -144,10 +144,10 @@ struct BookmarksDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(mode == .browse ? tr("书签") : tr("编辑书签"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(mode == .browse ? tr("\(links.count) 个网址 · 点开用默认浏览器") : tr("拖动排序 · 点名字改名"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -168,7 +168,7 @@ struct BookmarksDetail: View {
                 if refreshing.isEmpty {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                 } else {
                     ProgressView().controlSize(.mini)
                 }
@@ -189,11 +189,11 @@ struct BookmarksDetail: View {
             Button { switchTo(.edit) } label: {
                 Text(tr("编辑"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -239,7 +239,7 @@ struct BookmarksDetail: View {
         } else if visible.isEmpty {
             Text(tr("这个分组还没有书签。点“编辑”，选中书签后移到分组。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.vertical, 8)
         } else {
@@ -248,7 +248,7 @@ struct BookmarksDetail: View {
         if let podcastStatus {
             Text(podcastStatus)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
         }
         if !context.isPreview { dropHint }
@@ -273,10 +273,10 @@ struct BookmarksDetail: View {
                         Button { startNewGroup() } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(.panelPrimary)
                                 .frame(width: 30, height: 30)
-                                .background(Circle().fill(.white.opacity(0.08)))
-                                .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+                                .background(Circle().fill(.panelFill))
+                                .overlay(Circle().strokeBorder(.panelStroke, lineWidth: 0.6))
                                 .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
@@ -298,12 +298,12 @@ struct BookmarksDetail: View {
         } label: {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: on ? .bold : .semibold))
-                .foregroundStyle(on ? accentInk : .white.opacity(0.86))
+                .foregroundStyle(on ? accentInk : .panelPrimary)
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .frame(height: 30)
-                .background(Capsule().fill(on ? accent : .white.opacity(0.08)))
-                .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+                .background(Capsule().fill(on ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(on ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -317,16 +317,16 @@ struct BookmarksDetail: View {
                 .focused($focus, equals: .group)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .onSubmit { createGroup() }
                 .padding(.horizontal, 12)
                 .frame(width: 180, height: 30)
-                .background(Capsule().fill(.white.opacity(0.1)))
+                .background(Capsule().fill(.panelFill))
                 .overlay(Capsule().strokeBorder(accent.opacity(0.9), lineWidth: 1.2))
             Button(tr("取消")) { withAnimation(.snappy(duration: 0.2)) { newGroup = nil } }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
         }
     }
 
@@ -373,12 +373,12 @@ struct BookmarksDetail: View {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 TextField("", text: $newLink, prompt: Text(tr("粘贴网址，回车添加")))
                     .focused($focus, equals: .add)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13, weight: newLink.isEmpty ? .regular : .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .onSubmit { readLink() }
                     .onChange(of: newLink) { notice = nil }
                     .disabled(context.isPreview)
@@ -386,11 +386,11 @@ struct BookmarksDetail: View {
             .padding(.horizontal, 14)
             .frame(height: 40)
             .background {
-                RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(focus == .add ? 0.1 : 0.08))
+                RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .strokeBorder(focus == .add ? accent.opacity(0.9) : .white.opacity(0.14),
+                    .strokeBorder(focus == .add ? accent.opacity(0.9) : .panelStroke,
                                   lineWidth: focus == .add ? 1.2 : 0.6)
             }
             if let notice {
@@ -446,10 +446,10 @@ struct BookmarksDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: title)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(pendingStatus(pending))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 4)
@@ -469,7 +469,7 @@ struct BookmarksDetail: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 22, height: 30)
                         .contentShape(.rect)
                 }
@@ -553,7 +553,7 @@ struct BookmarksDetail: View {
                 }
                 Text(verbatim: title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -608,15 +608,15 @@ struct BookmarksDetail: View {
         HStack(spacing: 14) {
             Image(systemName: "arrow.down")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(accent)
+                .foregroundStyle(accent.panelReadable)
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 2) {
                 Text(tr("把链接拖到卡片上就能加入"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("浏览器地址栏、聊天里的链接都行"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.85)
@@ -625,7 +625,7 @@ struct BookmarksDetail: View {
         .padding(.horizontal, 16)
         .frame(height: 56)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.03))
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -641,12 +641,12 @@ struct BookmarksDetail: View {
         pendingCard
         Text(tr("\(shownTab ?? tr("全部")) · \(visible.count) 个"))
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .padding(.top, 2)
         if visible.isEmpty {
             Text(tr("这里还没有书签"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         } else {
             editList
         }
@@ -717,23 +717,23 @@ struct BookmarksDetail: View {
                             .focused($focus, equals: .rename)
                             .textFieldStyle(.plain)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .onSubmit { commitRename() }
                             .padding(.horizontal, 6)
                             .frame(height: 24)
-                            .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(0.12)))
+                            .background(RoundedRectangle(cornerRadius: 7).fill(.panelFill))
                             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(accent.opacity(0.9), lineWidth: 1.2))
                     } else {
                         Text(verbatim: title)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .contentShape(.rect)
                             .onTapGesture { startRename(link, title: title) }
                             .help(tr("点名字改名"))
                     }
                     Text(verbatim: [Bookmark.shortHost(link.url), group].compactMap { $0 }.joined(separator: " · "))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 Spacer(minLength: 4)
@@ -778,7 +778,11 @@ struct BookmarksDetail: View {
     }
 
     private func rowBackground(lifted: Bool) -> some View {
-        let fill: Color = lifted ? Color(red: 0.23, green: 0.23, blue: 0.25) : Color.white.opacity(0.06)
+        // 拖起来的那一行要盖住下面的行，用实心底，跟着浅色/深色走。
+        let fill: Color = lifted
+            ? Color.panelDynamic(dark: NSColor(srgbRed: 0.23, green: 0.23, blue: 0.25, alpha: 1),
+                                 light: NSColor(srgbRed: 0.97, green: 0.97, blue: 0.98, alpha: 1))
+            : Color.panelFill
         let shadow: Color = Color.black.opacity(lifted ? 0.35 : 0)
         return RoundedRectangle(cornerRadius: 12, style: .continuous)
             .fill(fill)
@@ -787,7 +791,7 @@ struct BookmarksDetail: View {
 
     private func rowBorder(lifted: Bool, chosen: Bool) -> some View {
         let marked = lifted || chosen
-        let colour: Color = marked ? accent.opacity(lifted ? 0.7 : 0.9) : Color.white.opacity(0.1)
+        let colour: Color = marked ? accent.opacity(lifted ? 0.7 : 0.9) : Color.panelStroke
         return RoundedRectangle(cornerRadius: 12, style: .continuous)
             .strokeBorder(colour, lineWidth: marked ? 1 : 0.6)
     }
@@ -798,7 +802,7 @@ struct BookmarksDetail: View {
         let urls = list.map(\.url)
         return Image(systemName: "line.3.horizontal")
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(lifted ? 0.85 : 0.5))
+            .foregroundStyle(.panelPrimary.opacity(lifted ? 0.85 : 0.5))
             .frame(width: 24, height: Self.rowHeight - 4)
             .contentShape(.rect)
             .gesture(
@@ -840,7 +844,7 @@ struct BookmarksDetail: View {
             HStack(spacing: 8) {
                 Text(tr("移到分组"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 0)
                 ProBadge()
             }
@@ -869,7 +873,7 @@ struct BookmarksDetail: View {
             if unlocked, chosenURL == nil, newGroup == nil {
                 Text(tr("先点一行选中书签"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.52))
+                    .foregroundStyle(.panelTertiary)
             }
         }
         .padding(12)
@@ -880,12 +884,12 @@ struct BookmarksDetail: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(enabled ? 0.92 : 0.4))
+                .foregroundStyle(.panelPrimary.opacity(enabled ? 0.92 : 0.4))
                 .lineLimit(1)
                 .padding(.horizontal, 13)
                 .frame(height: 28)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

@@ -54,11 +54,9 @@ struct AppVolumeDetail: View {
 
     var body: some View {
         DetailCard {
-            ZStack {
-                Color(hex: AppVolumePanelStyle.base)
-                RadialGradient(colors: [accent.opacity(0.13), .clear],
-                               center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
-            }
+            // 液态玻璃：不再铺实心底色，只留右上角一点主题色光。
+            RadialGradient(colors: [accent.opacity(0.13), .clear],
+                           center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header
@@ -93,10 +91,10 @@ struct AppVolumeDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: tr("应用音量"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: AppVolumeText.meetingCaption(active: meeting))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .lineLimit(2)
@@ -107,7 +105,7 @@ struct AppVolumeDetail: View {
                     Button(tr("全部复原")) { service.resetAll() }
                         .buttonStyle(.plain)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                         .help(tr("所有 App 回到原本的音量"))
                 }
             }
@@ -121,11 +119,11 @@ struct AppVolumeDetail: View {
         } label: {
             Text(verbatim: tr("开会模式"))
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(meeting ? accentInk : .white.opacity(0.92))
+                .foregroundStyle(meeting ? accentInk : .panelPrimary)
                 .padding(.horizontal, 16)
                 .frame(height: 30)
-                .background(Capsule().fill(meeting ? accent : .white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(meeting ? 0 : 0.18), lineWidth: 0.6))
+                .background(Capsule().fill(meeting ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(meeting ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -145,11 +143,11 @@ struct AppVolumeDetail: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: row.name)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(.panelPrimary)
                     if idle {
                         Text(verbatim: AppVolumeText.preset(row.setting))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                     }
                 }
                 .lineLimit(1)
@@ -162,7 +160,7 @@ struct AppVolumeDetail: View {
                     slider(row, live: live)
                     Text(verbatim: muted ? tr("静音") : AppVolume.percentText(live))
                         .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(muted ? Color(hex: AppVolumePanelStyle.redInk) : .white.opacity(0.8))
+                        .foregroundStyle(muted ? AppVolumePanelStyle.mutedInk : .panelPrimary)
                         .frame(width: 42, alignment: .trailing)
                         .contentTransition(.numericText())
                 }
@@ -173,7 +171,7 @@ struct AppVolumeDetail: View {
                     slider(row, live: live)
                     Text(verbatim: AppVolume.percentText(live))
                         .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.panelPrimary)
                         .frame(width: 42, alignment: .trailing)
                 }
                 .padding(.leading, 32)
@@ -181,7 +179,7 @@ struct AppVolumeDetail: View {
             if let problem = row.problem {
                 Text(verbatim: problem)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                    .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -216,9 +214,9 @@ struct AppVolumeDetail: View {
         } label: {
             Image(systemName: AppVolume.symbol(percent: live, muted: row.setting.muted))
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(row.setting.muted ? Color.white.opacity(0.5) : Color.white)
+                .foregroundStyle(row.setting.muted ? Color.panelTertiary : Color.panelPrimary)
                 .frame(width: 22, height: 22)
-                .background(Circle().fill(.white.opacity(row.setting.muted ? 0.08 : 0.16)))
+                .background(Circle().fill(row.setting.muted ? Color.panelFill : Color.panelFillStrong))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -235,11 +233,11 @@ struct AppVolumeDetail: View {
         } label: {
             Text(verbatim: tr("静音"))
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(muted ? Color(hex: AppVolumePanelStyle.redInk) : .white.opacity(0.82))
+                .foregroundStyle(muted ? AppVolumePanelStyle.mutedInk : .panelPrimary)
                 .frame(width: 54, height: 24)
                 .background(Capsule().fill(muted ? Color(hex: AppVolumePanelStyle.red).opacity(0.18)
-                                                 : .white.opacity(0.08)))
-                .overlay(Capsule().strokeBorder(.white.opacity(muted ? 0 : 0.16), lineWidth: 0.6))
+                                                 : Color.panelFill))
+                .overlay(Capsule().strokeBorder(muted ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -272,11 +270,11 @@ struct AppVolumeDetail: View {
         } label: {
             Text(verbatim: tr("＋ 添加 App（先设好音量）"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                .background(Capsule().fill(.panelFill))
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -326,7 +324,7 @@ struct AppVolumeDetail: View {
     private var footer: some View {
         Text(verbatim: tr("100% 是原本的音量，不做处理；调过的 App 经系统音频接入处理。右键一行可设开会时降不降低它。"))
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.55))
+            .foregroundStyle(.panelTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -334,24 +332,24 @@ struct AppVolumeDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "waveform.badge.exclamationmark")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: tr("需要录音权限"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: tr("在“隐私与安全性 ▸ 录屏与系统录音”中允许码头录制系统音频。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             Button(tr("打开设置")) { service.openPrivacySettings() }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 10)
                 .frame(height: 26)
-                .background(Capsule().fill(.white.opacity(0.2)))
+                .background(Capsule().fill(.panelFillStrong))
         }
         .padding(10)
         .background(pane(0.1))
@@ -360,15 +358,15 @@ struct AppVolumeDetail: View {
     private func note(_ text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(.panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func pane(_ opacity: Double, radius: CGFloat = 12) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(.white.opacity(opacity))
+            .fill(.panelFill)
             .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(.white.opacity(0.11), lineWidth: 0.6))
+                .strokeBorder(.panelStroke, lineWidth: 0.6))
     }
 
     private var accent: Color {
@@ -387,4 +385,9 @@ enum AppVolumePanelStyle {
     static let accentInk = "#22093A"
     static let red = "#FF6B5A"
     static let redInk = "#FFB3AA"
+    /// 静音的红字：深色下原来的浅粉，浅色玻璃上换成加深的红。
+    static var mutedInk: Color {
+        Color.panelDynamic(dark: NSColor(Color(hex: redInk)),
+                           light: NSColor(Color(hex: red)).blended(withFraction: 0.3, of: .black) ?? .systemRed)
+    }
 }

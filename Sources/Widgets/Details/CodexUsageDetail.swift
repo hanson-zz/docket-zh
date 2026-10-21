@@ -45,16 +45,16 @@ struct CodexUsageDetail: View {
                     chart(report, now: now)
                     if let source = report.source, !context.isPreview {
                         Text(tr("来源：\(source.title)"))
-                            .font(WidgetStyle.caption(10))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelTertiary)
                     }
                 } else {
                     PanelNote(symbol: "network", text: service.problem?.message ?? tr("正在读取…")).frame(height: 100)
                 }
                 if let problem = service.problem, report != nil, !context.isPreview {
                     Text(problem.message)
-                        .font(WidgetStyle.caption(11))
-                        .foregroundStyle(Color(hex: "#FF9F0A"))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 8) {
@@ -91,12 +91,12 @@ struct CodexUsageDetail: View {
         return HStack(spacing: 8) {
             Circle().fill(CodexStyle.color(activity)).frame(width: 8, height: 8)
             Text(activity.title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             if let project, activity != .idle {
                 Text(project)
-                    .font(WidgetStyle.caption(11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -113,21 +113,21 @@ struct CodexUsageDetail: View {
         return VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(w.group.map { "\($0) · \(w.label)" } ?? w.label)
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 4)
                 Text("\(showsRemaining ? tr("剩余") : tr("已用")) \(GaugeReading.percent(fraction))")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.12))
+                    Capsule().fill(.panelTrack)
                     Capsule().fill(tint).frame(width: geo.size.width * fraction)
                     // Where an even pace would be by now.
                     if let elapsed = CodexPace.elapsedFraction(w, now: now) {
-                        Rectangle().fill(.white.opacity(0.7))
+                        Rectangle().fill(.panelSecondary)
                             .frame(width: 1.5)
                             .offset(x: geo.size.width * (showsRemaining ? 1 - elapsed : elapsed) - 0.75)
                     }
@@ -135,8 +135,8 @@ struct CodexUsageDetail: View {
             }
             .frame(height: 6)
             Text(caption(w, now: now))
-                .font(WidgetStyle.caption(10))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
         }
         .padding(10)
@@ -174,9 +174,9 @@ struct CodexUsageDetail: View {
         if series.contains(where: { $0 > 0 }) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("近 30 天 token")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
-                DitherChart(samples: series, tint: .white.opacity(0.85), range: 0...(series.max() ?? 1))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
+                DitherChart(samples: series, tint: .panelPrimary, range: 0...(series.max() ?? 1))
                     .frame(height: 44)
             }
         }
@@ -185,27 +185,27 @@ struct CodexUsageDetail: View {
     private var proxySection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("代理（可选）")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 6) {
                 TextField("", text: $proxy, prompt: Text("127.0.0.1:7890 或 socks5://127.0.0.1:7891"))
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 8)
                     .frame(height: 26)
                     .glassPane(cornerRadius: 7)
                     .onSubmit(saveProxy)
                 Button("保存", action: saveProxy)
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .disabled(context.isPreview)
             }
             Text(proxyRejected ? tr("地址格式不对，应为“主机:端口”。")
                  : tr("留空则使用系统代理。只在终端里设置了 HTTPS_PROXY 时，应用读不到，需要填在这里。"))
-                .font(WidgetStyle.caption(10))
-                .foregroundStyle(proxyRejected ? Color(hex: "#FF9F0A") : .white.opacity(0.55))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(proxyRejected ? Color(hex: "#FF9F0A").panelReadable : .panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

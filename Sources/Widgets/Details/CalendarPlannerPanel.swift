@@ -128,15 +128,15 @@ struct CalendarPlannerPanel: View {
             Text(String(calendar.component(.day, from: day)))
                 .font(.system(size: 40, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(weekdayTitle(day))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(granted ? CalendarPlanner.headline(day: day, now: now, count: count, calendar: calendar)
                              : tr("\(calendar.component(.month, from: day)) 月"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 4)
@@ -176,9 +176,9 @@ struct CalendarPlannerPanel: View {
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(.white.opacity(0.12)))
+                .background(Circle().fill(.panelFill))
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -199,14 +199,14 @@ struct CalendarPlannerPanel: View {
                     VStack(spacing: 3) {
                         Text(WeekAgenda.weekdayNames[item.index])
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(isSelected ? 0.9 : 0.62))
+                            .foregroundStyle(.panelPrimary.opacity(isSelected ? 0.9 : 0.62))
                         Text(String(calendar.component(.day, from: item.date)))
                             .font(.system(size: 15, weight: item.isToday ? .bold : .medium, design: .rounded))
                             .monospacedDigit()
-                            .foregroundStyle(item.isToday ? accent : .white)
+                            .foregroundStyle(item.isToday ? accent.panelReadable : .panelPrimary)
                         HStack(spacing: 2.6) {
                             ForEach(0..<CalendarPlanner.dots(item.count), id: \.self) { _ in
-                                Circle().fill(.white.opacity(0.7)).frame(width: 4.4, height: 4.4)
+                                Circle().fill(.panelSecondary).frame(width: 4.4, height: 4.4)
                             }
                         }
                         .frame(height: 5)
@@ -215,10 +215,10 @@ struct CalendarPlannerPanel: View {
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.white.opacity(0.14))
+                                .fill(.panelFillStrong)
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .strokeBorder(.white.opacity(0.25), lineWidth: 0.6)
+                                        .strokeBorder(.panelQuaternary, lineWidth: 0.6)
                                 }
                         }
                     }
@@ -243,11 +243,11 @@ struct CalendarPlannerPanel: View {
                             Capsule().fill(color(item)).frame(width: 4, height: 16)
                             Text(item.title)
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                             Spacer(minLength: 4)
                             Text(tr("全天"))
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.7))
+                                .foregroundStyle(.panelSecondary)
                         }
                         .lineLimit(1)
                         .padding(.horizontal, 10)
@@ -283,11 +283,11 @@ struct CalendarPlannerPanel: View {
                     Text(String(hour))
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 30, alignment: .trailing)
                         .offset(y: y - 8)
                     Rectangle()
-                        .fill(.white.opacity(0.10))
+                        .fill(.panelSeparator)
                         .frame(width: width, height: 0.5)
                         .offset(x: axisX, y: y)
                 }
@@ -314,11 +314,11 @@ struct CalendarPlannerPanel: View {
                 if let fraction = DayTimeline.nowFraction(now, hours: hours, day: day, calendar: calendar) {
                     let y = CGFloat(fraction) * height
                     Rectangle()
-                        .fill(.white.opacity(0.95))
+                        .fill(.panelPrimary)
                         .frame(width: width + 2, height: 1.6)
                         .offset(x: axisX - 2, y: y - 0.8)
                     Circle()
-                        .fill(.white)
+                        .fill(.panelPrimary)
                         .frame(width: 8, height: 8)
                         .offset(x: axisX - 6, y: y - 4)
                 }
@@ -339,18 +339,18 @@ struct CalendarPlannerPanel: View {
                 Group {
                     if height >= 40 {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(entry.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
-                            Text(detail).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+                            Text(entry.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.panelPrimary)
+                            Text(detail).font(.system(size: 13, weight: .medium)).foregroundStyle(.panelSecondary)
                         }
                     } else {
                         HStack(spacing: 6) {
-                            Text(entry.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                            Text(entry.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.panelPrimary)
                             Spacer(minLength: 2)
                             if !narrow {
                                 Text(CalendarPlanner.rangeText(entry.start, entry.end, calendar: calendar))
                                     .font(.system(size: 13, weight: .medium))
                                     .monospacedDigit()
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.panelSecondary)
                             }
                         }
                     }
@@ -372,18 +372,18 @@ struct CalendarPlannerPanel: View {
     private func gapBlock(_ gap: DateInterval, now: Date, height: CGFloat) -> some View {
         let frame = RoundedRectangle(cornerRadius: 8, style: .continuous)
         ZStack(alignment: .leading) {
-            frame.fill(.white.opacity(0.03))
+            frame.fill(.panelFill)
             frame.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             HStack(spacing: 6) {
                 if height >= 44 {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(CalendarPlanner.gapTitle(gap))
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(.panelPrimary)
                         Text(CalendarPlanner.rangeText(gap.start, gap.end, calendar: calendar))
                             .font(.system(size: 13, weight: .medium))
                             .monospacedDigit()
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .lineLimit(1)
                     Spacer(minLength: 0)
@@ -399,7 +399,7 @@ struct CalendarPlannerPanel: View {
                 } else if height >= 22 {
                     Text(CalendarPlanner.gapTitle(gap))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     focusButton(gap, now: now, title: tr("专注一下"), height: max(20, min(26, height - 2)))
@@ -440,30 +440,30 @@ struct CalendarPlannerPanel: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(tr("接下来"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 ForEach(items) { item in
                     Button { open(item.entry) } label: {
                         HStack(spacing: 10) {
                             Capsule().fill(color(item.entry)).frame(width: 4, height: 20)
                             Text(item.day)
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.66))
+                                .foregroundStyle(.panelSecondary)
                                 .frame(minWidth: 34, alignment: .leading)
                             Text(item.entry.title)
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                             Spacer(minLength: 6)
                             Text(item.time)
                                 .font(.system(size: 14, weight: .medium))
                                 .monospacedDigit()
-                                .foregroundStyle(.white.opacity(0.86))
+                                .foregroundStyle(.panelPrimary)
                         }
                         .lineLimit(1)
                         .padding(.horizontal, 12)
                         .frame(height: 48)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.10), lineWidth: 0.6)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6)
                         }
                         .contentShape(Rectangle())
                     }
@@ -479,11 +479,11 @@ struct CalendarPlannerPanel: View {
         HStack(spacing: 8) {
             Image(systemName: "plus")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             TextField("", text: $sentence, prompt: Text(tr("写一句，如「明天下午 3 点开会」")))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .onSubmit { submitSentence() }
                 .disabled(context.isPreview)
         }
@@ -495,7 +495,7 @@ struct CalendarPlannerPanel: View {
     private func noticeLine(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.75))
+            .foregroundStyle(.panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -507,12 +507,12 @@ struct CalendarPlannerPanel: View {
         TextField("", text: $draftTitle, prompt: Text(tr("日程标题")))
             .textFieldStyle(.plain)
             .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
             .focused($titleFocused)
             .onSubmit { addDraft() }
             .padding(.horizontal, 16)
             .frame(height: 42)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.10)))
+            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
             .overlay {
                 RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(accent.opacity(0.9), lineWidth: 1.2)
             }
@@ -544,10 +544,10 @@ struct CalendarPlannerPanel: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("写回系统日历"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 8)
             Button {
@@ -556,11 +556,11 @@ struct CalendarPlannerPanel: View {
             } label: {
                 Text(tr("取消"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                    .background(Capsule().fill(.panelFill))
+                    .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -577,19 +577,19 @@ struct CalendarPlannerPanel: View {
                 HStack(spacing: 10) {
                     Text(tr("时间"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                     Text(CalendarPlanner.dayLabel(draftSlot.start, now: now, calendar: calendar))
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(draftSlot.isAllDay ? tr("全天")
                                             : CalendarPlanner.rangeText(draftSlot.start, draftSlot.end, calendar: calendar))
                         .font(.system(size: 15, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 0)
                     Image(systemName: showsTimePicker ? "chevron.up" : "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                 }
                 .lineLimit(1)
                 .contentShape(Rectangle())
@@ -613,10 +613,10 @@ struct CalendarPlannerPanel: View {
                     } label: {
                         Text(length.title)
                             .font(.system(size: 13, weight: on ? .bold : .medium))
-                            .foregroundStyle(on ? ink : .white)
+                            .foregroundStyle(on ? ink : .panelPrimary)
                             .padding(.horizontal, 11)
                             .frame(height: 30)
-                            .background(Capsule().fill(on ? accent : .white.opacity(0.10)))
+                            .background(Capsule().fill(on ? accent : .panelFill))
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -626,7 +626,7 @@ struct CalendarPlannerPanel: View {
             HStack(spacing: 6) {
                 Text(line.text)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(line.clash ? 0.9 : 0.62))
+                    .foregroundStyle(.panelPrimary.opacity(line.clash ? 0.9 : 0.62))
                     .lineLimit(1)
                 Circle()
                     .fill(line.clash ? Self.warnRed : Self.okGreen)
@@ -645,7 +645,7 @@ struct CalendarPlannerPanel: View {
         HStack(spacing: 8) {
             Text(tr("日历"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
                     ForEach(writable) { item in
@@ -657,13 +657,13 @@ struct CalendarPlannerPanel: View {
                                 Circle().fill(item.color).frame(width: 10, height: 10)
                                 Text(item.title)
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.panelPrimary)
                                     .lineLimit(1)
                             }
                             .padding(.horizontal, 10)
                             .frame(height: 30)
-                            .background(Capsule().fill(.white.opacity(on ? 0.16 : 0.07)))
-                            .overlay { Capsule().strokeBorder(.white.opacity(on ? 0.6 : 0.14), lineWidth: on ? 0.9 : 0.6) }
+                            .background(Capsule().fill(on ? Color.panelFillStrong : Color.panelFill))
+                            .overlay { Capsule().strokeBorder(on ? Color.panelSecondary : Color.panelStroke, lineWidth: on ? 0.9 : 0.6) }
                             .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -685,11 +685,11 @@ struct CalendarPlannerPanel: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.title)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Text(entry.calendar.isEmpty ? CalendarPlanner.dayLabel(entry.start, now: now, calendar: calendar)
                                                 : "\(entry.calendar) · \(CalendarPlanner.dayLabel(entry.start, now: now, calendar: calendar))")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
             }
@@ -697,19 +697,19 @@ struct CalendarPlannerPanel: View {
             if entry.isAllDay {
                 Text(tr("全天"))
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
             } else {
                 if editWritable { dragAxis(entry) }
                 HStack {
                     Text(CalendarPlanner.rangeText(editStart, editEnd, calendar: calendar))
                         .font(.system(size: 15, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                     Spacer(minLength: 6)
                     if editWritable {
                         Text(tr("拖两端改时间"))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.62))
+                            .foregroundStyle(.panelSecondary)
                     }
                 }
                 if editWritable {
@@ -719,7 +719,7 @@ struct CalendarPlannerPanel: View {
                         HStack(spacing: 6) {
                             Text(line.text)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(.panelPrimary)
                                 .lineLimit(1)
                             Circle().fill(Self.warnRed).frame(width: 7, height: 7)
                         }
@@ -731,17 +731,17 @@ struct CalendarPlannerPanel: View {
                 if editRecurring {
                     Text(tr("重复日程：只改这一次"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 HStack(spacing: 8) {
                     Button { deleteEntry(entry) } label: {
                         Text(confirmDelete ? tr("再点一次删除") : tr("删除"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Self.warnRed)
+                            .foregroundStyle(Self.warnRed.panelReadable)
                             .frame(maxWidth: .infinity)
                             .frame(height: 30)
-                            .background(Capsule().fill(.white.opacity(confirmDelete ? 0.18 : 0.12)))
-                            .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                            .background(Capsule().fill(confirmDelete ? Color.panelFillStrong : Color.panelFill))
+                            .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -763,7 +763,7 @@ struct CalendarPlannerPanel: View {
             } else {
                 Text(tr("这个日历是只读的，改不了。"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             if let notice { noticeLine(notice) }
         }
@@ -792,11 +792,11 @@ struct CalendarPlannerPanel: View {
             ZStack(alignment: .topLeading) {
                 ForEach(labels, id: \.self) { hour in
                     let lx = inset + CGFloat(hour - hours.lowerBound) / span * width
-                    Rectangle().fill(.white.opacity(0.15)).frame(width: 0.6, height: 22).offset(x: lx, y: 8)
+                    Rectangle().fill(.panelFillStrong).frame(width: 0.6, height: 22).offset(x: lx, y: 8)
                     Text("\(hour):00")
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize()
                         .frame(width: 50)
                         .offset(x: lx - 25, y: 34)
@@ -825,12 +825,12 @@ struct CalendarPlannerPanel: View {
             .coordinateSpace(.named("calendarEditAxis"))
         }
         .frame(height: 56)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(0.22)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelShade))
     }
 
     private var handle: some View {
         RoundedRectangle(cornerRadius: 3, style: .continuous)
-            .fill(.white)
+            .fill(.panelPrimary)
             .frame(width: 6, height: 26)
             // 把手只有 6pt 宽，点中的范围放大一圈。
             .padding(.horizontal, 6)
@@ -844,7 +844,7 @@ struct CalendarPlannerPanel: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(permissionText)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             // 拒绝过以后再问也不会弹框，只能去系统设置里改。
             Button {
@@ -853,10 +853,10 @@ struct CalendarPlannerPanel: View {
             } label: {
                 Text(access == .notDetermined ? tr("允许访问") : tr("打开系统设置"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 14)
                     .frame(height: 30)
-                    .background(Capsule().fill(.white.opacity(0.14)))
+                    .background(Capsule().fill(.panelFillStrong))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)

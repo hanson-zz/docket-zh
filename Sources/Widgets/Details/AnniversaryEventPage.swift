@@ -111,7 +111,7 @@ struct AnniversaryEventPage: View {
                     }
                 } label: {
                     Text("换一个")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .menuStyle(.button)
                 .buttonStyle(.bordered)
@@ -135,19 +135,19 @@ struct AnniversaryEventPage: View {
     private var hero: some View {
         let percent = Int((reading.progress * 100).rounded())
         return HStack(spacing: 16) {
-            MetricProgressRing(progress: reading.progress, tint: tint, track: .white.opacity(0.1),
+            MetricProgressRing(progress: reading.progress, tint: tint, track: .panelTrack,
                                diameter: 84, lineWidth: 7) {
                 VStack(spacing: 1) {
                     if let year = yearLabel {
                         Text(year)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.panelSecondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
                     Text(verbatim: "\(percent)%")
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                 }
             }
@@ -156,13 +156,13 @@ struct AnniversaryEventPage: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(tint)
+                    .foregroundStyle(tint.panelReadable)
                     .lineLimit(1)
                 bigNumber
                 ForEach(heroLines, id: \.self) { line in
                     Text(line)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
@@ -183,7 +183,7 @@ struct AnniversaryEventPage: View {
         if isToday {
             Text("就是今天")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         } else {
@@ -194,9 +194,9 @@ struct AnniversaryEventPage: View {
                     .rollingValue(reading.days)
                 Text(AnniversaryShareCard.unit(reading))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.panelPrimary)
             .lineLimit(1)
             .minimumScaleFactor(0.6)
         }
@@ -236,8 +236,8 @@ struct AnniversaryEventPage: View {
                     sectionTitle(tr("里程碑"))
                     Spacer(minLength: 4)
                     Text("圆点是下一个，打勾是已经过了")
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(.white.opacity(0.42))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
@@ -255,8 +255,8 @@ struct AnniversaryEventPage: View {
         return VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 2) {
                 Text(title)
-                    .font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
@@ -273,8 +273,8 @@ struct AnniversaryEventPage: View {
             }
             Text(stone.isToday ? tr("就是今天")
                  : "\(Anniversary.dotText(stone.date)) \(Anniversary.weekdayShort(stone.date))")
-                .font(.system(size: 9))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -310,21 +310,21 @@ struct AnniversaryEventPage: View {
         if event.lunar { date += " · " + tr("农历\(Anniversary.lunarShort(item.date))") }
         return HStack(spacing: 8) {
             Text(tr("第 \(item.ordinal) 个周年"))
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .frame(width: 78, alignment: .leading)
             Text(date)
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 4)
             Text(item.daysLeft == 0 ? tr("就是今天") : tr("还有 \(item.daysLeft) 天"))
-                .font(.system(size: 11))
-                .foregroundStyle(item.daysLeft == 0 ? tint : .white.opacity(0.6))
+                .font(.system(size: 13))
+                .foregroundStyle(item.daysLeft == 0 ? tint.panelReadable : .panelSecondary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
@@ -336,8 +336,8 @@ struct AnniversaryEventPage: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.75))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.panelSecondary)
     }
 
     // MARK: Actions
@@ -353,8 +353,8 @@ struct AnniversaryEventPage: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
                 }
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.65))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -364,8 +364,8 @@ struct AnniversaryEventPage: View {
     private func pill(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: symbol)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.9))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 14)
                 .frame(height: 28)
                 .glassPane(cornerRadius: 8)
@@ -396,8 +396,8 @@ struct AnniversaryEventPage: View {
             .disabled(isPreview)
             if let notice {
                 Text(notice)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .transition(.opacity)
             }
@@ -455,8 +455,8 @@ struct AnniversaryBackButton: View {
                     .font(.system(size: 10, weight: .semibold))
                 Text("纪念日")
             }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.panelSecondary)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

@@ -53,8 +53,8 @@ struct PodcastDetail: View {
                 addField
                 if let message {
                     Text(message)
-                        .font(.system(size: 11))
-                        .foregroundStyle(messageIsError ? Color(hex: "#FF9F0A") : .white.opacity(0.7))
+                        .font(.system(size: 13))
+                        .foregroundStyle(messageIsError ? Color(hex: "#FF9F0A").panelReadable : .panelSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if shows.isEmpty {
@@ -78,12 +78,12 @@ struct PodcastDetail: View {
         HStack(spacing: 6) {
             Image(systemName: "link")
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             TextField("", text: $link, prompt: Text("粘贴小宇宙链接，例如 xiaoyuzhoufm.com/podcast/…"))
                 .focused($addingFocused)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .foregroundStyle(.white)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary)
                 .onSubmit { add() }
                 .disabled(context.isPreview || adding)
             if adding {
@@ -91,8 +91,8 @@ struct PodcastDetail: View {
             } else if !link.isEmpty {
                 Button("订阅") { add() }
                     .buttonStyle(.plain)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(accent)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(accent.panelReadable)
             }
         }
         .padding(.horizontal, 10)
@@ -138,13 +138,13 @@ struct PodcastDetail: View {
         return HStack(spacing: 6) {
             PodcastCover(url: item.imageURL, size: 22, preview: context.isPreview)
             Text(item.title)
-                .font(.system(size: 11, weight: selected ? .semibold : .regular))
-                .foregroundStyle(.white.opacity(selected ? 1 : 0.7))
+                .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                .foregroundStyle(.panelPrimary.opacity(selected ? 1 : 0.7))
                 .lineLimit(1)
                 .frame(maxWidth: 110)
             if fresh > 0 {
                 Text("\(fresh)")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 4)
                     .frame(minHeight: 14)
@@ -154,7 +154,7 @@ struct PodcastDetail: View {
         .padding(.leading, 4)
         .padding(.trailing, 8)
         .padding(.vertical, 4)
-        .background(Capsule().fill(.white.opacity(selected ? 0.18 : 0.07)))
+        .background(Capsule().fill(selected ? Color.panelFillStrong : Color.panelFill))
         .contentShape(Capsule())
         .onTapGesture {
             guard !context.isPreview else { return }
@@ -178,11 +178,11 @@ struct PodcastDetail: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(player.isPlaying ? (player.isBuffering ? tr("正在缓冲") : tr("正在播放")) : tr("已暂停"))
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(accent)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(accent.panelReadable)
                 Text(episode.title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
             }
             Slider(value: Binding(get: { min(position, duration) },
@@ -201,8 +201,8 @@ struct PodcastDetail: View {
                 Spacer()
                 Text("-" + PodcastPlayback.clock(max(0, duration - position)))
             }
-            .font(.system(size: 10).monospacedDigit())
-            .foregroundStyle(.white.opacity(0.6))
+            .font(.system(size: 13).monospacedDigit())
+            .foregroundStyle(.panelSecondary)
             chapterLines(episode, position: position)
             HStack(spacing: 22) {
                 Spacer()
@@ -220,8 +220,8 @@ struct PodcastDetail: View {
             }
             if let problem = player.problem {
                 Text(problem)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: "#FF9F0A"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
             }
         }
         .padding(10)
@@ -255,11 +255,11 @@ struct PodcastDetail: View {
         } label: {
             HStack(spacing: 6) {
                 Text(PodcastPlayback.clock(chapter.start))
-                    .font(.system(size: 9).monospacedDigit())
-                    .foregroundStyle(isCurrent ? accent : .white.opacity(0.35))
+                    .font(.system(size: 13).monospacedDigit())
+                    .foregroundStyle(isCurrent ? accent.panelReadable : .panelTertiary)
                 Text(chapter.title)
-                    .font(.system(size: isCurrent ? 12 : 10.5, weight: isCurrent ? .semibold : .regular))
-                    .foregroundStyle(.white.opacity(isCurrent ? 1 : 0.45))
+                    .font(.system(size: 13, weight: isCurrent ? .semibold : .regular))
+                    .foregroundStyle(.panelPrimary.opacity(isCurrent ? 1 : 0.45))
                     .lineLimit(1)
             }
             .contentShape(.rect)
@@ -279,9 +279,9 @@ struct PodcastDetail: View {
             Image(systemName: symbol)
                 .playPauseMorph(symbol)
                 .font(.system(size: size * 0.4, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(.white.opacity(filled ? 0.2 : 0.08)))
+                .background(Circle().fill(filled ? Color.panelFillStrong : Color.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -296,7 +296,7 @@ struct PodcastDetail: View {
             HStack(spacing: 6) {
                 Text(show.author.isEmpty ? show.title : "\(show.title) · \(show.author)")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                 Spacer()
                 if service.loading.contains(show.id) {
@@ -307,7 +307,7 @@ struct PodcastDetail: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .buttonStyle(.plain)
                     .help("刷新单集")
@@ -316,8 +316,8 @@ struct PodcastDetail: View {
             }
             if let problem = service.problems[show.id], !context.isPreview {
                 Text(problem)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: "#FF9F0A"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
             }
             if show.episodes.isEmpty {
                 PandaEmptyState(empty: .podcast, title: tr("刷新"), panel: true,
@@ -383,9 +383,9 @@ struct PodcastDetail: View {
                     .rotationEffect(.degrees(pullArmed ? 180 : 0))
                     .animation(.easeInOut(duration: 0.15), value: pullArmed)
                 Text(pullArmed ? tr("松手刷新") : tr("下拉刷新"))
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
             }
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(.panelSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: pull, alignment: .center)
             .clipped()
@@ -399,8 +399,8 @@ struct PodcastDetail: View {
         HStack(spacing: 6) {
             ProgressView().controlSize(.mini)
             Text("正在刷新")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 24)
@@ -411,8 +411,8 @@ struct PodcastDetail: View {
         Text(PodcastLibrary.hasOlderEpisodes(show)
              ? tr("更早的单集小宇宙页面没有提供，订阅后的新单集会一直保留")
              : tr("没有更早的单集了"))
-            .font(.system(size: 12))
-            .foregroundStyle(.white.opacity(0.45))
+            .font(.system(size: 13))
+            .foregroundStyle(.panelTertiary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
@@ -427,7 +427,7 @@ struct PodcastDetail: View {
             Image(systemName: current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .playPauseMorph(current && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(current ? accent : .white.opacity(0.75))
+                .foregroundStyle(current ? accent : .panelSecondary)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     if isNew {
@@ -435,7 +435,7 @@ struct PodcastDetail: View {
                     }
                     Text(episode.title)
                         .font(.system(size: 13, weight: current ? .semibold : .regular))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                 }
                 HStack(spacing: 6) {
@@ -444,11 +444,11 @@ struct PodcastDetail: View {
                         .filter { !$0.isEmpty }.joined(separator: " · "))
                     if let saved {
                         Text(saved.finished ? tr("已听完") : tr("已听 \(Int(saved.fraction * 100))%"))
-                            .foregroundStyle(accent.opacity(0.9))
+                            .foregroundStyle(accent.panelReadable.opacity(0.9))
                     }
                 }
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -481,16 +481,16 @@ struct PodcastDetail: View {
                                      WidgetWriter.write(instance) { $0.set("notify", .bool(value)) }
                                  })) {
                 Text("有新单集时通知")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
             }
             .toggleStyle(.switch)
             .tint(panelTint.control)
             .controlSize(.mini)
             Spacer()
             Text("每小时检查一次")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
         }
     }
 }

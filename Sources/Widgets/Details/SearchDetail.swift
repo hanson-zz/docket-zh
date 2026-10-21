@@ -36,7 +36,7 @@ struct SearchDetail: View {
                     if files {
                         Image(systemName: "folder")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.panelSecondary)
                     } else if let engine {
                         SiteBadge(site: engine, size: 22)
                     }
@@ -44,15 +44,15 @@ struct SearchDetail: View {
                               prompt: Text(files ? tr("文件名") : tr("用\(engine?.title ?? tr("网页"))搜索")))
                         .textFieldStyle(.plain)
                         .font(.system(size: 16))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .focused($focused)
                         .onSubmit(submit)
                     Button(action: submit) {
                         Image(systemName: "arrow.right")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .frame(width: 26, height: 26)
-                            .background(Color.white.opacity(0.2), in: .circle)
+                            .background(Color.panelFillStrong, in: .circle)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("搜索")
@@ -82,7 +82,7 @@ struct SearchDetail: View {
                     siteCell(title: tr("添加"), selected: false) {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(panelTint.accent(or: Color(hex: "#4C9BFF")))
+                            .foregroundStyle(panelTint.accent(or: Color(hex: "#4C9BFF")).panelReadable)
                             .frame(width: 34, height: 34)
                     }
                 }
@@ -120,12 +120,12 @@ struct SearchDetail: View {
             icon()
                 .padding(5)
                 .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(.white.opacity(selected ? 0.22 : 0.08)))
+                    .fill(selected ? Color.panelFillStrong : Color.panelFill))
                 .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .strokeBorder(.white.opacity(selected ? 0.55 : 0), lineWidth: 1))
+                    .strokeBorder(selected ? Color.panelTertiary : Color.clear, lineWidth: 1))
             Text(title)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.white.opacity(selected ? 1 : 0.75))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary.opacity(selected ? 1 : 0.75))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }

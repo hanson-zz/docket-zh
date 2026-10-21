@@ -170,16 +170,17 @@ struct ClassicClockPanel: View {
 
     private var theme: ClockPanelTheme {
         let accent = input.model.tint.accent(or: .orange)
-        return ClockPanelTheme(ink: .white, dim: .white.opacity(0.65), rule: .white.opacity(0.12),
-                               tile: .white.opacity(0.09), tileStroke: .white.opacity(0.1),
-                               accent: accent, lit: accent, unlit: .white.opacity(0.15),
+        // 液态玻璃：跟着浅色/深色走（ClockPanelCard(forceDark: false)）。
+        return ClockPanelTheme(ink: .panelPrimary, dim: .panelSecondary, rule: .panelSeparator,
+                               tile: .panelFill, tileStroke: .panelStroke,
+                               accent: accent, lit: accent, unlit: .panelTrack,
                                figures: .rounded, bar: .line)
     }
 
     var body: some View {
         let theme = self.theme
         let model = input.model
-        ClockPanelCard {
+        ClockPanelCard(forceDark: false) {
             ClockPanelSky(now: model.now)
         } content: {
             VStack(alignment: .leading, spacing: 14) {
@@ -187,7 +188,7 @@ struct ClassicClockPanel: View {
                     ClockPanelTime(now: model.now, zone: .current, size: 50)
                     Text(verbatim: model.fullDate + " · " + model.lunarLine)
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.82))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -207,15 +208,15 @@ struct ClassicClockPanel: View {
         HStack(spacing: 6) {
             Text(tr("日出 \(sun.rise)"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 4)
             Text(tr("昼长 \(sun.length)"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 4)
             Text(tr("日落 \(sun.set)"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
         }
         .monospacedDigit()
         .lineLimit(1)
@@ -230,7 +231,7 @@ struct ClassicClockPanel: View {
             Spacer(minLength: 6)
             Text(verbatim: ClockPanelFormat.zoneName(.current, at: model.now) + " · " + model.zoneLabel)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
         }
         .lineLimit(1)
@@ -246,12 +247,19 @@ struct ClassicClockPanel: View {
 struct ClockPanelSky: View {
     var now: Date
 
+    @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         let c = Calendar.current.dateComponents([.hour, .minute], from: now)
         let hour = Double(c.hour ?? 0) + Double(c.minute ?? 0) / 60
-        let colors = SkyBackdrop.palette(hour)
+        // 液态玻璃：往下接的底色和 SkyBackdrop 一样只是玻璃上一层淡色；
+        // 保持暗色时还是压暗的实心天色。
+        let base: Color = forcedDark
+            ? (SkyBackdrop.palette(hour).last ?? MeshBackdrop.graphite)
+            : (SkyBackdrop.rawPalette(hour).last ?? .clear).opacity(scheme == .light ? 0.26 : 0.38)
         ZStack(alignment: .top) {
-            (colors.last ?? MeshBackdrop.graphite)
+            base
             SkyBackdrop(date: now, zone: .current)
                 .frame(height: 240)
         }
@@ -267,16 +275,17 @@ struct AnalogClockPanel: View {
 
     private var theme: ClockPanelTheme {
         let accent = input.model.tint.accent(or: .orange)
-        return ClockPanelTheme(ink: .white, dim: .white.opacity(0.62), rule: .white.opacity(0.12),
-                               tile: .white.opacity(0.07), tileStroke: .white.opacity(0.1),
-                               accent: accent, lit: accent, unlit: .white.opacity(0.14),
+        // 液态玻璃：跟着浅色/深色走（ClockPanelCard(forceDark: false)）。
+        return ClockPanelTheme(ink: .panelPrimary, dim: .panelSecondary, rule: .panelSeparator,
+                               tile: .panelFill, tileStroke: .panelStroke,
+                               accent: accent, lit: accent, unlit: .panelTrack,
                                figures: .rounded, bar: .line)
     }
 
     var body: some View {
         let theme = self.theme
         let model = input.model
-        ClockPanelCard {
+        ClockPanelCard(forceDark: false) {
             MeshBackdrop(color: .orange)
         } content: {
             VStack(alignment: .leading, spacing: 16) {
@@ -285,17 +294,17 @@ struct AnalogClockPanel: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(verbatim: ClockPanelWeekday.of(model.now, zone: .current))
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                         Text(verbatim: ClockPanelWeekday.monthDay(model.now, zone: .current))
                             .font(.system(size: 14))
                             .foregroundStyle(theme.dim)
                         HStack(alignment: .firstTextBaseline, spacing: 1) {
                             Text(verbatim: model.digits.hour.trimmingCharacters(in: .whitespaces) + ":" + model.digits.minute)
                                 .font(.system(size: 24, weight: .semibold, design: .rounded).monospacedDigit())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                             Text(verbatim: ":" + model.digits.second)
                                 .font(.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit())
-                                .foregroundStyle(theme.accent)
+                                .foregroundStyle(theme.accent.panelReadable)
                         }
                         .padding(.top, 2)
                         Text(verbatim: model.lunarLine)
@@ -332,12 +341,12 @@ struct PanelDial: View {
     var body: some View {
         let a = angles
         ZStack {
-            Circle().fill(.white.opacity(0.06))
-            Circle().strokeBorder(.white.opacity(0.28), lineWidth: 1)
+            Circle().fill(.panelFill)
+            Circle().strokeBorder(.panelQuaternary, lineWidth: 1)
             ForEach(0..<60, id: \.self) { mark in
                 let major = mark % 5 == 0
                 Capsule()
-                    .fill(.white.opacity(major ? 0.75 : 0.22))
+                    .fill(major ? Color.panelSecondary : Color.panelQuaternary)
                     .frame(width: major ? 1.8 : 0.8, height: diameter * (major ? 0.07 : 0.035))
                     .offset(y: -diameter * 0.44)
                     .rotationEffect(.degrees(Double(mark) * 6))
@@ -346,11 +355,11 @@ struct PanelDial: View {
                 let angle = Double(number % 12) / 12 * 2 * Double.pi
                 Text(verbatim: "\(number)")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .offset(x: sin(angle) * diameter * 0.31, y: -cos(angle) * diameter * 0.31)
             }
-            hand(length: diameter * 0.24, width: 3, degrees: a.hour, color: .white)
-            hand(length: diameter * 0.36, width: 2, degrees: a.minute, color: .white)
+            hand(length: diameter * 0.24, width: 3, degrees: a.hour, color: .panelPrimary)
+            hand(length: diameter * 0.36, width: 2, degrees: a.minute, color: .panelPrimary)
             hand(length: diameter * 0.4, width: 1, degrees: a.second, color: accent)
             Circle().fill(accent).frame(width: 5, height: 5)
         }

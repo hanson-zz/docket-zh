@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 世界时钟面板：每个城市一张卡，右上角一枚当地地标线稿。
@@ -65,10 +66,10 @@ struct WorldClockDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: title)
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(verbatim: subtitle(list, now: now))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
             }
             .lineLimit(1)
@@ -104,7 +105,7 @@ struct WorldClockDetail: View {
                 Button { switchTo(.edit) } label: {
                     Text(tr("编辑"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.panelPrimary)
                         .padding(.horizontal, 14)
                         .frame(height: 28)
                         .glassPane(cornerRadius: 9)
@@ -127,7 +128,7 @@ struct WorldClockDetail: View {
                 Button { switchTo(.edit) } label: {
                     Text(tr("取消"))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.panelPrimary)
                         .frame(height: 28)
                         .contentShape(.rect)
                 }
@@ -164,7 +165,7 @@ struct WorldClockDetail: View {
             }
             Text(tr("点城市卡展开或收起未来 12 小时"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.52))
+                .foregroundStyle(.panelTertiary)
                 .padding(.top, 2)
         }
     }
@@ -187,10 +188,10 @@ struct WorldClockDetail: View {
             }
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.white.opacity(0.05))
+                    .fill(.panelFill)
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                            .strokeBorder(.panelStroke, lineWidth: 0.5)
                     }
             }
 
@@ -198,7 +199,7 @@ struct WorldClockDetail: View {
 
             Text(tr("最多 12 个城市，至少留 1 个"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.52))
+                .foregroundStyle(.panelTertiary)
         }
     }
 
@@ -251,10 +252,10 @@ struct WorldClockDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: city.name)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.97))
+                        .foregroundStyle(.panelPrimary)
                     Text(verbatim: WorldClockText.offsetLine(city, now: now))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -263,7 +264,7 @@ struct WorldClockDetail: View {
 
                 Text(ClockFormat.time(now, zone: zone))
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
 
@@ -285,7 +286,8 @@ struct WorldClockDetail: View {
         .background {
             if lifted {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(red: 0.23, green: 0.23, blue: 0.26))
+                    .fill(Color.panelDynamic(dark: NSColor(srgbRed: 0.23, green: 0.23, blue: 0.26, alpha: 1),
+                                         light: NSColor(srgbRed: 0.97, green: 0.97, blue: 0.98, alpha: 1)))
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .strokeBorder(accent.opacity(0.6), lineWidth: 1)
@@ -295,7 +297,7 @@ struct WorldClockDetail: View {
         }
         .overlay(alignment: .bottom) {
             if index < list.count - 1, !lifted {
-                Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5).padding(.leading, 70)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5).padding(.leading, 70)
             }
         }
     }
@@ -304,7 +306,7 @@ struct WorldClockDetail: View {
     private func handle(_ city: WorldCity, index: Int, list: [WorldCity], lifted: Bool) -> some View {
         Image(systemName: "line.3.horizontal")
             .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(.white.opacity(lifted ? 0.85 : 0.5))
+            .foregroundStyle(.panelPrimary.opacity(lifted ? 0.85 : 0.5))
             .frame(width: 32, height: Self.editRowHeight)
             .contentShape(.rect)
             .gesture(
@@ -341,16 +343,16 @@ struct WorldClockDetail: View {
         return Button { switchTo(.add) } label: {
             Text(full ? tr("已有 12 个城市") : tr("＋ 添加城市"))
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white.opacity(full ? 0.45 : 0.92))
+                .foregroundStyle(.panelPrimary.opacity(full ? 0.45 : 0.92))
                 .frame(maxWidth: .infinity)
                 .frame(height: 42)
                 .background {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.white.opacity(0.04))
+                        .fill(.panelFill)
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                        .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 }
                 .contentShape(.rect)
         }
@@ -401,10 +403,10 @@ struct WorldCityCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(verbatim: city.name)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.97))
+                        .foregroundStyle(.panelPrimary)
                     Text(verbatim: WorldClockText.offsetLine(city, now: now))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -413,7 +415,7 @@ struct WorldCityCard: View {
                     bigTime
                     Text(verbatim: WorldClockText.dayLine(zone, now: now))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.66))
+                        .foregroundStyle(.panelSecondary)
                 }
                 .lineLimit(1)
                 // 地标水印在右上角，时间大字右边留出它的位置，不压在线稿上。
@@ -423,7 +425,7 @@ struct WorldCityCard: View {
             .frame(height: 70)
 
             if expanded {
-                Rectangle().fill(.white.opacity(0.1)).frame(height: 0.5)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5)
                     .padding(.horizontal, 14)
                 WorldClockStrip(zone: zone, name: city.name, now: now)
                     .padding(.horizontal, 14)
@@ -435,7 +437,7 @@ struct WorldCityCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background { WorldCitySky(zone: zone, now: now) }
         .overlay(alignment: .topTrailing) {
-            CityLandmarkMark(landmark: city.landmark, color: .white.opacity(0.24))
+            CityLandmarkMark(landmark: city.landmark, color: .panelQuaternary)
                 .frame(width: 64, height: 64)
                 .padding(.top, 3)
                 .padding(.trailing, 2)
@@ -443,7 +445,7 @@ struct WorldCityCard: View {
         .clipShape(.rect(cornerRadius: 14, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                .strokeBorder(.panelStroke, lineWidth: 0.5)
         }
         .accessibilityElement(children: .combine)
     }
@@ -454,13 +456,13 @@ struct WorldCityCard: View {
         return HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(verbatim: parts.time)
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.97))
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
             if let meridiem = parts.meridiem {
                 Text(verbatim: meridiem)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.66))
+                    .foregroundStyle(.panelSecondary)
             }
         }
     }
@@ -472,18 +474,25 @@ struct WorldCitySky: View {
     var zone: TimeZone
     var now: Date
 
+    @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
         let hour = CityLandmarkBadge.hour(now, zone: zone)
         let night = !(6..<18).contains(hour)
+        // 液态玻璃：天色只是玻璃上一层淡色（同 SkyBackdrop），保持暗色时还是压暗的实心天色。
+        let colors = forcedDark
+            ? SkyBackdrop.palette(hour)
+            : SkyBackdrop.rawPalette(hour).map { $0.opacity(scheme == .light ? 0.26 : 0.38) }
         GeometryReader { geo in
             ZStack(alignment: .top) {
-                LinearGradient(colors: SkyBackdrop.palette(hour), startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
                 LinearGradient(colors: [.white.opacity(0.05), .clear],
                                startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.25))
                 if night {
                     ForEach(Array(Self.stars.enumerated()), id: \.offset) { _, star in
                         Circle()
-                            .fill(.white.opacity(0.35))
+                            .fill(forcedDark ? Color.white.opacity(0.35) : Color.panelTertiary)
                             .frame(width: star.2, height: star.2)
                             .position(x: geo.size.width * star.0, y: min(geo.size.height, 70) * star.1)
                     }
@@ -515,10 +524,10 @@ struct WorldClockStrip: View {
                     VStack(spacing: 4) {
                         Text(Self.hourLabel(hour, zone: .current))
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.panelTertiary)
                         Text(Self.hourLabel(hour, zone: zone))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.95))
+                            .foregroundStyle(.panelPrimary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 3)
                             .background {
@@ -539,7 +548,7 @@ struct WorldClockStrip: View {
                 Text(tr("阴影为当地 6 至 18 点"))
             }
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.55))
+            .foregroundStyle(.panelTertiary)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
         }

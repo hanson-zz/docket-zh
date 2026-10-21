@@ -76,10 +76,10 @@ struct ShortcutDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(editing ? tr("选择快捷指令") : tr("快捷指令"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(editing ? tr("勾选加入 · 拖动排序") : ShortcutRun.header(count: list.count))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -100,11 +100,11 @@ struct ShortcutDetail: View {
                     Button { switchEditing(true) } label: {
                         Text(tr("编辑"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 13)
                             .frame(height: 28)
-                            .background(Capsule().fill(.white.opacity(0.12)))
-                            .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                            .background(Capsule().fill(.panelFill))
+                            .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -136,7 +136,7 @@ struct ShortcutDetail: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(tr("已选"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 if list.count > Self.visibleRows {
                     ScrollView(.vertical) { rows(list, now: now) }
                         .scrollIndicators(.automatic)
@@ -152,11 +152,11 @@ struct ShortcutDetail: View {
         Button(action: openShortcuts) {
             Text(tr("打开快捷指令 App"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                .background(Capsule().fill(.panelFill))
+                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -167,10 +167,10 @@ struct ShortcutDetail: View {
         VStack(spacing: 10) {
             Image(systemName: "square.2.layers.3d.fill")
                 .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(accent)
+                .foregroundStyle(accent.panelReadable)
             Text(tr("从系统的快捷指令里挑几个放到卡片上，点一下就跑。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if !context.isPreview {
@@ -196,7 +196,7 @@ struct ShortcutDetail: View {
         HStack(spacing: 8) {
             Text(tr("卡片上"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .frame(width: 50, alignment: .leading)
             ForEach(list.prefix(ShortcutDeck.tileLimit)) { item in
                 ShortcutIcon(item: item, size: 44, running: service.isRunning(item.name))
@@ -229,7 +229,7 @@ struct ShortcutDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(verbatim: item.name)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.97))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     statusLine(status.text, tone: status.tone)
                 }
@@ -262,9 +262,9 @@ struct ShortcutDetail: View {
 
     private func statusColor(_ tone: ShortcutRun.Tone) -> Color {
         switch tone {
-        case .plain, .success: .white.opacity(0.62)
-        case .running: accent
-        case .failure: Self.red
+        case .plain, .success: .panelSecondary
+        case .running: accent.panelReadable
+        case .failure: Self.red.panelReadable
         }
     }
 
@@ -275,10 +275,10 @@ struct ShortcutDetail: View {
             if running { service.stop(item.name) } else { service.run(item.name) }
         } label: {
             ZStack {
-                Circle().fill(running ? Color.white.opacity(0.16) : accent)
+                Circle().fill(running ? Color.panelFillStrong : accent)
                 Image(systemName: running ? "stop.fill" : "play.fill")
                     .font(.system(size: running ? 12 : 13, weight: .bold))
-                    .foregroundStyle(running ? Color.white : accentInk)
+                    .foregroundStyle(running ? Color.panelPrimary : accentInk)
                     .offset(x: running ? 0 : 1.5)
             }
             .frame(width: 34, height: 34)
@@ -301,12 +301,12 @@ struct ShortcutDetail: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(open ? tr("输出") : tr("输出：\(output)"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.86))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .rotationEffect(.degrees(open ? 180 : 0))
                 }
                 .contentShape(.rect)
@@ -316,7 +316,7 @@ struct ShortcutDetail: View {
             if open {
                 Text(verbatim: output)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.86))
+                    .foregroundStyle(.panelPrimary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -326,7 +326,7 @@ struct ShortcutDetail: View {
                 } label: {
                     Label(tr("拷贝"), systemImage: "doc.on.doc")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.panelPrimary)
                 }
                 .buttonStyle(.plain)
             }
@@ -334,7 +334,7 @@ struct ShortcutDetail: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.black.opacity(0.22)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelShade))
     }
 
     // MARK: 编辑
@@ -348,11 +348,11 @@ struct ShortcutDetail: View {
                 HStack {
                     Text(tr("已加入 \(list.count)"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                     Spacer(minLength: 0)
                     Text(tr("卡片放前 \(ShortcutDeck.tileLimit) 个"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                 }
                 addedList(list)
             }
@@ -363,7 +363,7 @@ struct ShortcutDetail: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             TextField(tr("搜索快捷指令"), text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
@@ -371,17 +371,17 @@ struct ShortcutDetail: View {
             if service.loadedAt != nil, service.loadError == nil {
                 Text(tr("全部 \(service.names.count) 个"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .fixedSize()
             }
         }
         .padding(.horizontal, 14)
         .frame(height: 40)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(searching ? accent.opacity(0.9) : .white.opacity(0.14), lineWidth: searching ? 1.2 : 0.6)
+                .strokeBorder(searching ? accent.opacity(0.9) : .panelStroke, lineWidth: searching ? 1.2 : 0.6)
         }
         .onAppear {
             DispatchQueue.main.async { searching = true }
@@ -435,16 +435,16 @@ struct ShortcutDetail: View {
                 } else {
                     // 还没加入的用中性底，加入后才有自己的颜色和图标。
                     ZStack {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.12))
+                        RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill)
                         Image(systemName: "square.2.layers.3d")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.75))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .frame(width: 32, height: 32)
                 }
                 Text(verbatim: name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(blocked ? 0.45 : 0.97))
+                    .foregroundStyle(.panelPrimary.opacity(blocked ? 0.45 : 0.97))
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 check(on)
@@ -459,7 +459,7 @@ struct ShortcutDetail: View {
         .accessibilityValue(on ? tr("已加入") : tr("未加入"))
         .overlay(alignment: .bottom) {
             if !last {
-                Rectangle().fill(.white.opacity(0.1)).frame(height: 0.5).padding(.leading, 56).padding(.trailing, 12)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5).padding(.leading, 56).padding(.trailing, 12)
             }
         }
     }
@@ -472,7 +472,7 @@ struct ShortcutDetail: View {
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(accentInk)
             } else {
-                Circle().strokeBorder(.white.opacity(0.45), lineWidth: 1.4)
+                Circle().strokeBorder(.panelTertiary, lineWidth: 1.4)
             }
         }
         .frame(width: 20, height: 20)
@@ -520,7 +520,7 @@ struct ShortcutDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: item.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 if missing {
                     Text(tr("找不到了"))
                         .font(.system(size: 13, weight: .medium))
@@ -530,9 +530,9 @@ struct ShortcutDetail: View {
             .lineLimit(1)
             Spacer(minLength: 4)
             if missing {
-                pillButton(tr("移除"), tint: Self.red) { remove(item) }
+                pillButton(tr("移除"), tint: Self.red.panelReadable) { remove(item) }
             } else {
-                pillButton(open ? tr("收起") : tr("外观"), tint: .white) {
+                pillButton(open ? tr("收起") : tr("外观"), tint: .panelPrimary) {
                     withAnimation(.snappy(duration: 0.22)) { styling = open ? nil : item.name }
                 }
             }
@@ -542,10 +542,11 @@ struct ShortcutDetail: View {
         .frame(height: Self.editRowHeight)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(lifted ? Color(red: 0.23, green: 0.23, blue: 0.26) : .white.opacity(0.06))
+                .fill(lifted ? Color.panelDynamic(dark: NSColor(srgbRed: 0.23, green: 0.23, blue: 0.26, alpha: 1),
+                                         light: NSColor(srgbRed: 0.97, green: 0.97, blue: 0.98, alpha: 1)) : Color.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(lifted ? accent.opacity(0.6) : .white.opacity(0.10), lineWidth: lifted ? 1 : 0.6)
+                        .strokeBorder(lifted ? accent.opacity(0.6) : .panelStroke, lineWidth: lifted ? 1 : 0.6)
                 }
                 .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 6, y: 4)
         }
@@ -560,8 +561,8 @@ struct ShortcutDetail: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 60, height: 28)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                .background(Capsule().fill(.panelFill))
+                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -571,7 +572,7 @@ struct ShortcutDetail: View {
     private func handle(_ item: ShortcutItem, index: Int, list: [ShortcutItem], lifted: Bool) -> some View {
         Image(systemName: "line.3.horizontal")
             .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(.white.opacity(lifted ? 0.85 : 0.5))
+            .foregroundStyle(.panelPrimary.opacity(lifted ? 0.85 : 0.5))
             .frame(width: 28, height: Self.editRowHeight)
             .contentShape(.rect)
             .gesture(
@@ -603,7 +604,7 @@ struct ShortcutDetail: View {
             HStack(spacing: 0) {
                 Text(tr("颜色"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(width: 44, alignment: .leading)
                 HStack(spacing: 7) {
                     ForEach(ShortcutColor.allCases, id: \.self) { colour in
@@ -616,7 +617,7 @@ struct ShortcutDetail: View {
                                 .padding(3.5)
                                 .overlay {
                                     if colour == item.color {
-                                        Circle().strokeBorder(.white, lineWidth: 1.6)
+                                        Circle().strokeBorder(.panelPrimary, lineWidth: 1.6)
                                     }
                                 }
                                 .contentShape(.circle)
@@ -631,7 +632,7 @@ struct ShortcutDetail: View {
             HStack(spacing: 0) {
                 Text(tr("图标"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .frame(width: 44, alignment: .leading)
                 HStack(spacing: 7) {
                     ForEach(ShortcutSymbol.allCases, id: \.self) { symbol in
@@ -641,14 +642,14 @@ struct ShortcutDetail: View {
                         } label: {
                             Image(systemName: symbol.systemName)
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.panelPrimary)
                                 .frame(width: 30, height: 30)
                                 .background {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(.white.opacity(selected ? 0.20 : 0.08))
+                                        .fill(selected ? Color.panelFillStrong : Color.panelFill)
                                         .overlay {
                                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                .strokeBorder(.white.opacity(selected ? 0.8 : 0.12),
+                                                .strokeBorder(selected ? Color.panelPrimary : Color.panelStroke,
                                                               lineWidth: selected ? 1.2 : 0.6)
                                         }
                                 }
@@ -664,7 +665,7 @@ struct ShortcutDetail: View {
             HStack {
                 Text(tr("卡片上就用这个颜色和图标"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Button(tr("移除")) { remove(item) }
                     .buttonStyle(.plain)
@@ -676,10 +677,10 @@ struct ShortcutDetail: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.10))
+                .fill(.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.16), lineWidth: 0.6)
+                        .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
     }
@@ -700,7 +701,7 @@ struct ShortcutDetail: View {
     private func note(_ text: String, tint: Color?) -> some View {
         Text(text)
             .font(.system(size: 13))
-            .foregroundStyle(tint ?? .white.opacity(0.7))
+            .foregroundStyle(tint?.panelReadable ?? .panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
