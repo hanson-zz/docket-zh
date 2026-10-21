@@ -8,6 +8,8 @@ struct DockItemView: View {
     var position: DockPosition
     var isRunning: Bool
     var showRunningDot: Bool
+    /// 设置里的小组件间距，小间隔的长度跟着它走，和扩展栏算的一致。
+    var itemGap: Double = Geometry.defaultItemGap
 
     @Environment(\.colorScheme) private var scheme
     @State private var spacerHovered = false
@@ -39,7 +41,7 @@ struct DockItemView: View {
     private func spacerLength(_ size: SpacerSize) -> CGFloat {
         let full = position.isVertical ? geo.height : geo.width
         return CGFloat(Geometry.spacerLength(size, tile: Double(full),
-                                             itemGap: Geometry.chrome(scale: scale).itemGap))
+                                             itemGap: Geometry.chrome(scale: scale, itemGap: itemGap).itemGap))
     }
 
     @ViewBuilder

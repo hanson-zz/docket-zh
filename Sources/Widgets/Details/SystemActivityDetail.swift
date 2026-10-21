@@ -145,7 +145,9 @@ struct SystemActivityDetail: View {
 
     private var browse: some View {
         let page = DetailPanelSections.page(stored: storedPage, available: BrowsePage.allCases) ?? .day
-        return VStack(alignment: .leading, spacing: 12) {
+        // 四格读数压到约 78pt、竖向间距 12→10、进程行 44→34：「占用最高」页
+        // 5 行全显示，面板约 553pt，在 560 限高内不用滚。
+        return VStack(alignment: .leading, spacing: 10) {
             readingsGrid
             // 面板统一限高后，四格读数下面分两页：最近 24 小时曲线和占用最高的进程。
             // 切到的那页记住。
@@ -177,7 +179,7 @@ struct SystemActivityDetail: View {
         let reading = readout(metric)
         let firing = isFiring(metric)
         let tint = firing ? red : accent
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 5) {
                 Text(verbatim: metric.title)
                     .font(.system(size: 13, weight: .semibold))
@@ -200,11 +202,11 @@ struct SystemActivityDetail: View {
             .minimumScaleFactor(0.7)
             spark(reading.series, minimumSpan: reading.minimumSpan)
                 .stroke(tint, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                .frame(height: 18)
+                .frame(height: 14)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.07)))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
         .accessibilityElement(children: .combine)
@@ -425,7 +427,7 @@ struct SystemActivityDetail: View {
                 Text(verbatim: tr("正在读取进程…"))
                     .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.6))
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 34)
             } else {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     processRow(row)
@@ -433,7 +435,7 @@ struct SystemActivityDetail: View {
                         Rectangle()
                             .fill(.white.opacity(0.1))
                             .frame(height: 0.6)
-                            .padding(.leading, 42)
+                            .padding(.leading, 34)
                     }
                 }
             }
@@ -444,7 +446,7 @@ struct SystemActivityDetail: View {
         let name = context.isPreview ? row.name : monitor.name(for: row)
         let canQuit = !context.isPreview && monitor.canQuit(row)
         return HStack(spacing: 10) {
-            processIcon(row, size: 28)
+            processIcon(row, size: 24)
             Text(verbatim: name)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
@@ -464,7 +466,7 @@ struct SystemActivityDetail: View {
                     Text(verbatim: tr("退出"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 30)
+                        .frame(width: 50, height: 24)
                         .background(Capsule().fill(.white.opacity(0.12)))
                         .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
                         .contentShape(.capsule)
@@ -473,11 +475,11 @@ struct SystemActivityDetail: View {
                 .help(tr("退出 \(name)"))
             } else {
                 // 系统进程和码头自己不给退出，留出同样的宽度让数字对齐。
-                Color.clear.frame(width: 56, height: 30)
+                Color.clear.frame(width: 50, height: 24)
                     .help(tr("不是普通 App，不能在这里退出"))
             }
         }
-        .frame(height: 44)
+        .frame(height: 34)
         .accessibilityElement(children: .combine)
     }
 

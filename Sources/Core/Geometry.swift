@@ -71,12 +71,24 @@ public enum Geometry {
         public var gripLong, gripShort, gripCross: Double
     }
 
-    public static func chrome(scale: Double) -> Chrome {
+    /// 设置 ▸ 扩展栏 ▸ 小组件间距 的范围和默认值，单位是大小 100% 时的点数。
+    /// 默认 4 就是加这项设置之前写死的间距，老用户的外观不变。
+    public static let itemGapRange: ClosedRange<Double> = 2...16
+    public static let defaultItemGap: Double = 4
+
+    /// 存着的间距读成能用的值：超出范围的夹回去，不是数（写坏的配置）回到默认。
+    public static func itemGap(_ stored: Double) -> Double {
+        stored.isFinite ? clamp(stored, itemGapRange).rounded() : defaultItemGap
+    }
+
+    /// - Parameter itemGap: 用户设的小组件间距（大小不超过 100% 时的实际点数）。
+    ///   大小超过 100% 时和以前一样按比例放大。
+    public static func chrome(scale: Double, itemGap: Double = defaultItemGap) -> Chrome {
         let inverse = 1 / min(1, scale)
         return Chrome(
             padding: (8 + 2 * inverse) * scale,
             radius: 22 / clamp(scale, 0.5, 1) * scale,
-            itemGap: 4 * scale * inverse,
+            itemGap: Geometry.itemGap(itemGap) * scale * inverse,
             // Widgets sit flush against their neighbours; the negative gap
             // closes the hairline the tile's own inset would otherwise leave.
             adjacentGap: -scale * inverse,

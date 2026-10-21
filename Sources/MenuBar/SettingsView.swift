@@ -91,6 +91,12 @@ struct SettingsView: View {
         state.customDock.followSystemDock && state.customDock.scaleOverridden == true
     }
 
+    /// 小组件间距滑杆：读的时候先夹到 2 到 16，写坏的配置也能拖。
+    private var itemGapBinding: Binding<Double> {
+        Binding(get: { Geometry.itemGap(state.customDock.itemGap) },
+                set: { state.customDock.itemGap = Geometry.itemGap($0) })
+    }
+
     private var adoptedApps: Bool {
         state.customDock.followSystemDock && state.customDock.mirrorSystemApps == false
     }
@@ -691,30 +697,48 @@ struct SettingsView: View {
                         }
                     }
                 }
+            }
 
-                LabeledContent("大小") {
-                    HStack {
-                        // Through setScale, not around it. Binding straight to
-                        // the stored value skipped the override flag and never
-                        // wrote the profile, so the size silently reverted.
-                        Slider(value: Binding(get: { shownScale }, set: onSetScale),
-                               in: Geometry.scaleRange)
-                        Text("\(Int((shownScale * 100).rounded()))%")
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .frame(width: 44, alignment: .trailing)
+            // 跟随程序坞时也给大小滑杆：默认停在程序坞图标大小换算出的值，
+            // 拖一下就转成手动（setScale 置上 scaleOverridden），
+            // 「保持一致」并进这一行，不再单独占一行。
+            LabeledContent {
+                HStack {
+                    // Through setScale, not around it. Binding straight to
+                    // the stored value skipped the override flag and never
+                    // wrote the profile, so the size silently reverted.
+                    Slider(value: Binding(get: { shownScale }, set: onSetScale),
+                           in: Geometry.scaleRange)
+                    Text("\(Int((shownScale * 100).rounded()))%")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
+                    // The way back from sizing the shelf with its grip or this
+                    // slider while following.
+                    if scaleOverridden {
+                        Button("保持一致", action: onResumeFollowingScale)
                     }
+                }
+            } label: {
+                if state.customDock.followSystemDock {
+                    subtitled(tr("大小"), scaleOverridden
+                              ? tr("已手动设置")
+                              : tr("默认和程序坞一样大，拖动即改为手动"))
+                } else {
+                    Text("大小")
                 }
             }
 
-            // The way back from sizing the shelf with its grip while
-            // following, which used to set an override nothing could clear.
-            if scaleOverridden {
-                LabeledContent {
-                    Button("保持一致", action: onResumeFollowingScale)
-                } label: {
-                    subtitled(tr("大小"), tr("已手动设置。其他设置仍跟随程序坞。"))
+            LabeledContent {
+                HStack {
+                    Slider(value: itemGapBinding, in: Geometry.itemGapRange, step: 1)
+                    Text("\(Int(Geometry.itemGap(state.customDock.itemGap))) pt")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
                 }
+            } label: {
+                subtitled(tr("小组件间距"), tr("扩展栏上各项之间的距离"))
             }
         }
 

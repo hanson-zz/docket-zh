@@ -18812,6 +18812,17 @@
         }
       }
     },
+    "小组件间距" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item Spacing"
+          }
+        }
+      }
+    },
     "小组件颜色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24021,6 +24032,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shelf"
+          }
+        }
+      }
+    },
+    "扩展栏上各项之间的距离" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Space between items on the shelf"
           }
         }
       }
@@ -50231,6 +50253,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not set by default. Press it to open a small field; Return adds the line to the first Quick To-do on the shelf."
+          }
+        }
+      }
+    },
+    "默认和程序坞一样大，拖动即改为手动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matches the Dock by default; dragging makes it manual"
           }
         }
       }

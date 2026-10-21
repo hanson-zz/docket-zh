@@ -3,7 +3,7 @@ import SwiftUI
 /// 专注计时面板，深色玻璃。浏览态：顶上写这一轮要做的事，中间大进度环（剩余、
 /// 第几轮小点、共几分钟），暂停和重置，环境音一行（声音、音量、换），下面是今天的
 /// 时间轴（每个完整的番茄一段，正在做的淡一点，白线是现在）和近七天统计，这两样
-/// 收在“今天”一段里，默认收起，标题行写今天专注了多久。点“设置”在面板里
+/// 收在“今天”一段里（没解锁时近七天统计换成折叠外的一行 Pro 提示），默认收起，标题行写今天专注了多久。点“设置”在面板里
 /// 直接调专注、短休息、长休息、几轮一组，点最近的任务名沿用，选开始专注时放的
 /// 环境音、音量，休息时声音停不停、提不提醒起身。
 ///
@@ -83,7 +83,8 @@ struct FocusTimerDetail: View {
     private func browse(_ state: TimerState, now: Date) -> some View {
         let total = max(1, state.duration ?? Double(max(1, state.minutes) * 60))
         let left = Self.remaining(in: state, total: total, now: now)
-        return VStack(alignment: .leading, spacing: 14) {
+        // 竖向间距 14→12、圆环 158→150：免费用户多出一行 Pro 提示，面板仍在 560 以内。
+        return VStack(alignment: .leading, spacing: 12) {
             header(title: tr("专注计时"), subtitle: FocusDay.status(state, now: now)) {
                 pillButton(tr("设置"), solid: false) {
                     commitDraft()
@@ -102,6 +103,10 @@ struct FocusTimerDetail: View {
             }
             ambientRow(state)
             today(state, now: now)
+            // 没解锁时「近七天专注统计 Pro」放在折叠外面单独一行，收起时也看得到。
+            if !ProLicenseGate.canSeeFocusHistory(unlocked: unlocked) {
+                historyProRow
+            }
         }
     }
 
@@ -186,7 +191,7 @@ struct FocusTimerDetail: View {
             }
             .padding(.horizontal, 22)
         }
-        .frame(width: 158, height: 158)
+        .frame(width: 150, height: 150)
         .padding(.vertical, 3)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tr("剩余 \(docketClockString(left))，\(FocusDay.status(state, now: .now))"))
@@ -327,44 +332,54 @@ struct FocusTimerDetail: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
-                history(now: now)
-                    .padding(.top, 4)
+                if ProLicenseGate.canSeeFocusHistory(unlocked: unlocked) {
+                    FocusWeeklyReport(accent: accent, now: now, isPreview: context.isPreview)
+                        .padding(.top, 4)
+                }
             }
         }
     }
 
-    /// 近七天统计：Pro 看报告，没解锁时一行提示，点一下弹付费墙。今天的照常看。
-    @ViewBuilder
-    private func history(now: Date) -> some View {
-        if ProLicenseGate.canSeeFocusHistory(unlocked: unlocked) {
-            FocusWeeklyReport(accent: accent, now: now, isPreview: context.isPreview)
-        } else {
-            Button { PaywallWindow.shared.show() } label: {
-                HStack(spacing: 8) {
-                    Text(tr("近七天专注统计"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
-                    Spacer(minLength: 4)
-                    HStack(spacing: 4) {
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text(ProFeatures.badgeTitle)
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .foregroundStyle(Self.gold)
-                    .padding(.horizontal, 8)
-                    .frame(height: 22)
-                    .background(Capsule().fill(Self.gold.opacity(0.16))
-                        .overlay(Capsule().strokeBorder(Self.gold.opacity(0.55), lineWidth: 0.6)))
+    /// 没解锁时的近七天统计入口：36pt 玻璃条，行首小熊猫，Pro 标后带箭头，
+    /// 点一下弹付费墙。今天的照常看。
+    private var historyProRow: some View {
+        Button { PaywallWindow.shared.show() } label: {
+            HStack(spacing: 8) {
+                if let panda = PetArt.image(.redPanda, .idle) {
+                    Image(nsImage: panda)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .accessibilityHidden(true)
                 }
-                .padding(.horizontal, 12)
-                .frame(height: 40)
-                .contentShape(.rect)
-                .glassPane(cornerRadius: 12)
+                Text(tr("近七天专注统计"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                HStack(spacing: 4) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(ProFeatures.badgeTitle)
+                        .font(.system(size: 13, weight: .bold))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(Self.gold)
+                .padding(.horizontal, 8)
+                .frame(height: 22)
+                .background(Capsule().fill(Self.gold.opacity(0.16))
+                    .overlay(Capsule().strokeBorder(Self.gold.opacity(0.55), lineWidth: 0.6)))
             }
-            .buttonStyle(.plain)
-            .help(tr("专注历史统计是码头 Pro 专属，免费版只看今天。点一下购买、输入激活码或开始试用。"))
+            .padding(.leading, 8)
+            .padding(.trailing, 7)
+            .frame(height: 36)
+            .contentShape(.rect)
+            .glassPane(cornerRadius: 12)
         }
+        .buttonStyle(.plain)
+        .help(tr("专注历史统计是码头 Pro 专属，免费版只看今天。点一下购买、输入激活码或开始试用。"))
     }
 
     // MARK: 设置

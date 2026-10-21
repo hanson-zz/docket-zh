@@ -187,7 +187,7 @@ struct DockShelfView: View {
         return fitScale
     }
     private var magnifies: Bool { app.magnificationEnabled }
-    private var chrome: Geometry.Chrome { Geometry.chrome(scale: scale) }
+    private var chrome: Geometry.Chrome { Geometry.chrome(scale: scale, itemGap: settings.itemGap) }
 
     private var iconGeometry: Geometry.IconGeometry {
         Geometry.iconGeometry(scale: scale, vertical: vertical, hasWidgets: hasWidgets)
@@ -285,7 +285,7 @@ struct DockShelfView: View {
     /// `solve`: every slot, a gap before each but the first, the padding at
     /// both ends and the add button.
     private func restLength(_ slots: [Slot], at s: Double) -> CGFloat {
-        let chromeAt = Geometry.chrome(scale: s)
+        let chromeAt = Geometry.chrome(scale: s, itemGap: settings.itemGap)
         let geo = Geometry.iconGeometry(scale: s, vertical: vertical, hasWidgets: hasWidgets)
         var total: CGFloat = 0
         for (index, slot) in slots.enumerated() {
@@ -432,7 +432,7 @@ struct DockShelfView: View {
         if case .spacer(_, let size) = item {
             let full = vertical ? geo.height : geo.width
             let length = CGFloat(Geometry.spacerLength(size, tile: Double(full),
-                                                       itemGap: Geometry.chrome(scale: scale).itemGap))
+                                                       itemGap: Geometry.chrome(scale: scale, itemGap: settings.itemGap).itemGap))
             return vertical ? CGSize(width: geo.width, height: length)
                             : CGSize(width: length, height: geo.height)
         }
@@ -882,7 +882,8 @@ struct DockShelfView: View {
                            isRunning: isRunning(entry.item),
                            now: app.now,
                            isPreview: app.showsSampleData,
-                           monochrome: settings.widgetColor == .monochrome) { menu(for: entry) }
+                           monochrome: settings.widgetColor == .monochrome,
+                           itemGap: settings.itemGap) { menu(for: entry) }
             .equatable()
             // Only widgets read this. An icon already answers the pointer by
             // magnifying, and a second affordance on top would be noise.
@@ -1754,6 +1755,8 @@ private struct TileContent<Menu: View>: View, Equatable {
     var isPreview = false
     /// Widgets drawn in greys only; see `WidgetColorMode`.
     var monochrome = false
+    /// 小组件间距；小间隔的长度跟着它，改了要重画。
+    var itemGap: Double = Geometry.defaultItemGap
     /// Deliberately absent from `==`: a closure cannot be compared, and its
     /// captures are either value-stable (the entry) or references that stay
     /// current (AppState).
@@ -1765,7 +1768,7 @@ private struct TileContent<Menu: View>: View, Equatable {
         if MenuTracking.isOpen { return true }
         guard a.scale == b.scale, a.position == b.position,
               a.isRunning == b.isRunning, a.monochrome == b.monochrome,
-              a.item == b.item else { return false }
+              a.itemGap == b.itemGap, a.item == b.item else { return false }
         // Only time-dependent tiles care about the tick; app icons must not
         // redraw once a second for nothing.
         return a.item.isWidget ? a.now == b.now : true
@@ -1790,7 +1793,7 @@ private struct TileContent<Menu: View>: View, Equatable {
                 .proLocked(widget, isPreview: isPreview)
         } else {
             DockItemView(item: item, scale: scale, position: position,
-                         isRunning: isRunning, showRunningDot: true)
+                         isRunning: isRunning, showRunningDot: true, itemGap: itemGap)
         }
     }
 }

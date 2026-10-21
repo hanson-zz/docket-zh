@@ -890,6 +890,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// Six was hard-coded, which is right beside Apple's Dock but reads as a
     /// stray gap to anyone who wants the shelf flush with the bezel.
     public var edgeGap: Double = 6
+    /// 扩展栏上相邻两项之间的距离（大小不超过 100% 时的点数），2 到 16。
+    /// 旧配置里没有这个键时是 4，也就是加这项设置之前写死的间距。
+    public var itemGap: Double = Geometry.defaultItemGap
     /// Keep clear of Apple's Dock when both are on the same edge.
     ///
     /// On by default so the two never stack. Turning it off lets the shelf
@@ -935,6 +938,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         magnification = try c.decodeIfPresent(Bool.self, forKey: .magnification) ?? true
         switchLayoutsByGesture = try c.decodeIfPresent(Bool.self, forKey: .switchLayoutsByGesture) ?? true
         edgeGap = try c.decodeIfPresent(Double.self, forKey: .edgeGap) ?? 6
+        itemGap = (try? c.decodeIfPresent(Double.self, forKey: .itemGap)) ?? Geometry.defaultItemGap
         reserveSystemDockSpace = try c.decodeIfPresent(Bool.self, forKey: .reserveSystemDockSpace) ?? true
     }
 
