@@ -56,10 +56,11 @@ final class PanelContrastTests: XCTestCase {
         }
     }
 
-    /// 背景太暗压到黑也不够时，直接给 1（纯黑），不死循环。
+    /// 背景是中灰，压到纯黑也到不了 4.5（黑对 #666666 约 3.7）：直接给 1，不死循环。
     func testUnreachableTargetReturnsFull() {
-        let dark = color("#202020")
-        XCTAssertEqual(PanelContrast.fraction(for: color("#FFCC00"), background: dark), 1)
+        let gray = color("#666666")
+        XCTAssertLessThan(WidgetTint.contrastRatio(ColorCode(red: 0, green: 0, blue: 0), gray), 4.5)
+        XCTAssertEqual(PanelContrast.fraction(for: color("#FFCC00"), background: gray), 1)
     }
 
     func testDarkenedScalesComponents() {
