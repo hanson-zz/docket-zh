@@ -10,7 +10,7 @@ import SwiftUI
 final class GroupWindow {
     static let shared = GroupWindow()
 
-    private var panel: NSPanel?
+    private var panel: PopupPanel?
     private var hosting: FirstMouseHostingView<GroupSheet>?
     /// Which group is open, so clicking the same tile again closes it.
     private(set) var openGroupID: UUID?
@@ -19,6 +19,12 @@ final class GroupWindow {
     /// 这次打开时的位置和回调，组里加了东西以后原地重画、重新算大小要用。
     private var placement: (anchor: CGPoint, edge: DockPosition, iconSide: CGFloat)?
     private var actions: Actions?
+    /// 点窗口外面、按 Esc 收起。见 PopupDismisser。
+    private let dismisser = PopupDismisser()
+    /// 窗口里有能先退一步的东西（改名改了一半、展开的选择列表），GroupSheet 报上来。
+    private var backable = false
+    /// Esc 先退一步：每按一次加一，GroupSheet 看到变化就撤销改名或收起选择列表。
+    private var backOutTick = 0
     /// 锁定扩展栏：组里的图标不能拖出、不能从访达拖进来，「从分组中移除」变灰。
     /// 扩展栏在设置变化时写进来；开着的窗口原地换成新的一份。
     var locked = false {
@@ -38,7 +44,19 @@ final class GroupWindow {
     /// 小组件库新建一个空组以后要扩展栏立刻打开它：userInfo["id"] 是组的 id 字符串。
     static let openRequest = Notification.Name("com.docket-zh.app-group.open")
 
-    private init() {}
+    private init() {
+        dismisser.visibleFrame = { [weak self] in
+            guard let self, self.isOpen, let panel = self.panel else { return nil }
+            // 窗口四周那圈透明的拖拽余量看不见，点在上面算外面。
+            let room = GroupSheet.dragRoom
+            return panel.frame.insetBy(dx: room, dy: room)
+        }
+        dismisser.window = { [weak self] in self?.panel }
+        dismisser.currentID = { [weak self] in self?.openGroupID }
+        dismisser.inner = { [weak self] in self?.backable ?? false }
+        dismisser.backOut = { [weak self] in self?.stepBack() }
+        dismisser.dismiss = { [weak self] in self?.close() }
+    }
 
     /// Opens `group`, or closes it if it is already the one showing.
     ///
@@ -52,6 +70,8 @@ final class GroupWindow {
                 rename: @escaping (String) -> Void,
                 add: @escaping ([URL]) -> Void) {
         if openGroupID == group.id { return close() }
+        // 点外面收起它的正是点这个格子的那一下：结果是收起，不再打开。
+        if dismisser.swallowsOpen(id: group.id) { return }
         show(group, anchor: anchor, edge: edge, iconSide: iconSide,
              actions: Actions(open: open, remove: remove, rename: rename, add: add))
     }
@@ -92,8 +112,10 @@ final class GroupWindow {
     }
 
     func close() {
+        dismisser.stop()
         guard panel?.isVisible == true, openGroupID != nil else { return }
         openGroupID = nil
+        backable = false
         // orderOut alone is a vanish. The window fades while the sheet inside
         // it scales back toward the tile it came from.
         NSAnimationContext.runAnimationGroup { context in
@@ -110,11 +132,19 @@ final class GroupWindow {
         }
     }
 
+    /// Esc 先退一步：撤销改了一半的名字，或者清空、收起展开的选择列表。
+    private func stepBack() {
+        guard isOpen, let current = hosting?.rootView.group else { return }
+        backOutTick += 1
+        hosting?.rootView = sheet(for: current)
+    }
+
     private func sheet(for group: DockGroup) -> GroupSheet {
         let actions = self.actions
         let placement = self.placement
         return GroupSheet(group: group, edge: placement?.edge ?? .bottom, session: session,
                           iconSide: placement?.iconSide ?? 48, locked: locked,
+                          backOut: backOutTick,
                           open: { [weak self] item in
             actions?.open(item)
             self?.close()
@@ -126,7 +156,7 @@ final class GroupWindow {
            resized: { [weak self] in
             // 下一轮再量：这一轮 SwiftUI 还没把新内容排好。
             Task { @MainActor in self?.refit() }
-        })
+        }, backableChanged: { [weak self] in self?.backable = $0 })
     }
 
     private func show(_ group: DockGroup, anchor: CGPoint, edge: DockPosition,
@@ -139,13 +169,16 @@ final class GroupWindow {
         placement = (anchor, edge, iconSide)
         hosting?.rootView = sheet(for: group)
         openGroupID = group.id
+        backable = false
 
         guard place(panel, anchor: anchor, edge: edge) else { return }
         panel.alphaValue = 1
         panel.orderFrontRegardless()
         // Needed for the name field; the shelf itself still never takes key,
         // so clicking a tile does not pull focus out of the user's app.
+        // 也是 Esc 能收到的前提。
         panel.makeKey()
+        dismisser.start()
     }
 
     /// 按现在的内容把窗口放到格子旁边。内容还量不出大小时返回 false。
@@ -178,7 +211,7 @@ final class GroupWindow {
         )
     }
 
-    private func existingOrNew() -> NSPanel {
+    private func existingOrNew() -> PopupPanel {
         if let panel { return panel }
         let hosting = FirstMouseHostingView(rootView: GroupSheet(group: DockGroup(name: ""),
                                                                   edge: .bottom, session: session,
@@ -188,10 +221,14 @@ final class GroupWindow {
                                                                   resized: {}))
         hosting.sizingOptions = [.intrinsicContentSize]
 
-        let panel = KeyablePanel(contentRect: .zero,
-                                 styleMask: [.borderless, .nonactivatingPanel],
-                                 backing: .buffered, defer: false)
+        let panel = PopupPanel(contentRect: .zero,
+                               styleMask: [.borderless, .nonactivatingPanel],
+                               backing: .buffered, defer: false)
         panel.contentView = hosting
+        panel.onEscape = { [weak self, weak panel] in
+            guard let self, let panel, self.isOpen else { return false }
+            return self.dismisser.escape(in: panel)
+        }
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
@@ -223,6 +260,8 @@ struct GroupSheet: View {
     var iconSide: CGFloat
     /// 锁定扩展栏时不能拖出、拖进。
     var locked = false
+    /// Esc 先退一步的计数，变了就撤销改名或交给选择列表退一步。
+    var backOut = 0
     var open: (DockItem) -> Void
     var remove: (DockItem) -> Void
     var rename: (String) -> Void
@@ -230,6 +269,8 @@ struct GroupSheet: View {
     var add: ([URL]) -> Void
     /// 内容大小变了（展开、收起选择列表），窗口要跟着改。
     var resized: () -> Void
+    /// 有没有能让 Esc 先退一步的东西（改名改了一半、展开着选择列表）。
+    var backableChanged: (Bool) -> Void = { _ in }
 
     @State private var appeared = false
     @State private var draft = ""
@@ -238,6 +279,11 @@ struct GroupSheet: View {
     @State private var picking = false
     /// 有 App 从访达拖到窗口上。
     @State private var dropTargeted = false
+    /// 交给选择列表的 Esc 退一步计数。
+    @State private var pickerBackOut = 0
+
+    /// 改名框里的字改过了还没确认。
+    private var renaming: Bool { editing && draft != group.name }
 
     /// Wraps rather than growing without limit - a group with thirty apps
     /// should not produce a sheet wider than the screen. 最后一格是「＋」。
@@ -281,6 +327,7 @@ struct GroupSheet: View {
 
             if picking {
                 GroupAppPicker(group: group,
+                               backOut: pickerBackOut,
                                onAdd: { urls in
                                    picking = false
                                    add(urls)
@@ -359,6 +406,16 @@ struct GroupSheet: View {
             appeared = false
             // Next runloop, or setting and clearing in one pass animates nothing.
             Task { @MainActor in enter() }
+        }
+        .onChange(of: renaming || picking, initial: true) { _, now in backableChanged(now) }
+        .onChange(of: backOut) { _, _ in
+            if renaming {
+                // 撤销：先把字改回去，失焦时的提交就什么也不做。
+                draft = group.name
+                editing = false
+            } else if picking {
+                pickerBackOut += 1
+            }
         }
     }
 
@@ -682,6 +739,8 @@ enum GroupAppScan {
 /// 已经在组里的打勾、不能再选。
 struct GroupAppPicker: View {
     var group: DockGroup
+    /// 窗口的 Esc 退一步计数：搜索有字先清空，没字就收起列表。
+    var backOut = 0
     var onAdd: ([URL]) -> Void
     var onCancel: () -> Void
 
@@ -726,6 +785,9 @@ struct GroupAppPicker: View {
             .frame(width: Self.width)
         }
         .onExitCommand(perform: onCancel)
+        .onChange(of: backOut) { _, _ in
+            if query.isEmpty { onCancel() } else { query = "" }
+        }
         .task {
             searching = true
             let installed = await Task.detached(priority: .userInitiated) {

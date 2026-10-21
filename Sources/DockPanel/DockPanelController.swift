@@ -13,7 +13,6 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     private var revealed = true
     private var hideWorkItem: DispatchWorkItem?
-    private var groupCloseItem: DispatchWorkItem?
     /// True while any menu of ours is open.
     ///
     /// A context menu draws *above* the shelf, so reaching for an item takes
@@ -648,8 +647,6 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         pollTimer = nil
         hideWorkItem?.cancel()
         hideWorkItem = nil
-        groupCloseItem?.cancel()
-        groupCloseItem = nil
         gesture.stop()
         swiping = false
         swipe = nil
@@ -703,34 +700,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         // shelf just stays put while the panel is up.
         // The widget library pins it for the same reason: what is picked
         // there lands on the shelf, and it should be in view when it does.
-        // 文件夹小窗也一样：开着时扩展栏不收，点外面才关。
+        // 文件夹小窗、分组窗口也一样：开着时扩展栏不收。它们点窗口外面或按
+        // Esc 才关（见 PopupDismisser），不再因为指针离开就关：从访达把东西
+        // 拖进分组时指针本来就要离开。
         if WidgetDetailWindow.shared.isAnchoredOpen || LibraryWindow.shared.isOpen
-            || FolderBrowserWindow.shared.isOpen {
+            || FolderBrowserWindow.shared.isOpen || GroupWindow.shared.isOpen {
             hideWorkItem?.cancel()
             hideWorkItem = nil
             if !revealed { setRevealed(true) }
             return
         }
-
-        if GroupWindow.shared.isOpen {
-            hideWorkItem?.cancel()
-            hideWorkItem = nil
-            if !revealed { setRevealed(true) }
-
-            // An icon being dragged out is *meant* to be outside both. Closing
-            // the sheet under it would cancel the gesture that is carrying it,
-            // which is why dragging one out could not be completed at all.
-            if withinShelf(mouse) || GroupWindow.shared.contains(mouse)
-                || DragOut.shared.item != nil {
-                groupCloseItem?.cancel()
-                groupCloseItem = nil
-            } else if groupCloseItem == nil {
-                scheduleGroupClose()
-            }
-            return
-        }
-        groupCloseItem?.cancel()
-        groupCloseItem = nil
 
         // A swipe is carrying the shelf, or has just let go of it. The
         // fingers are the authority until Mission Control has settled.
@@ -874,17 +853,6 @@ final class DockPanelController: NSObject, NSWindowDelegate {
                                     ceiling: topCeiling(of: screen),
                                     depth: edge == .top ? topRevealZoneDepth : revealZoneDepth,
                                     island: islandFootprint)
-    }
-
-    /// Closes an opened group once the pointer has left both it and the
-    /// shelf. Longer than the hide delay: reaching a sheet that sits above
-    /// the shelf means crossing empty space, and that must not dismiss it.
-    private func scheduleGroupClose() {
-        let work = DispatchWorkItem {
-            MainActor.assumeIsolated { GroupWindow.shared.close() }
-        }
-        groupCloseItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
     }
 
     private func scheduleHide() {

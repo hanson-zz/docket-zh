@@ -7,9 +7,10 @@ import UniformTypeIdentifiers
 /// 点扩展栏上的文件夹格子弹出的浏览小窗：在扩展栏上方（按扩展栏所在的边）
 /// 列出文件夹里的东西，点子文件夹在小窗里进入，点文件用默认 App 打开。
 ///
-/// 和分组窗口、小组件面板一样是单独的面板，同一时间三者只开一个。点小窗外面、
-/// 按 Esc、再点一次同一个格子都会关上。排序、过滤、相对时间这些规则在
-/// Core 的 `FolderBrowse`。
+/// 和分组窗口、小组件面板一样是单独的面板，同一时间三者只开一个。点小窗外面
+/// 任意地方（别的 App、桌面、扩展栏其他位置）、按 Esc（搜索有字时先清空搜索）、
+/// 再点一次同一个格子都会关上，见 PopupDismisser。排序、过滤、相对时间这些
+/// 规则在 Core 的 `FolderBrowse`。
 @MainActor
 final class FolderBrowserWindow {
     static let shared = FolderBrowserWindow()
@@ -20,15 +21,30 @@ final class FolderBrowserWindow {
     private var panel: FolderBrowserPanel?
     private var hosting: FirstMouseHostingView<FolderBrowserView>?
     private let model = FolderBrowserModel()
-    /// 点外面就关：一个看别的 App 里的点击，一个看本 App 里的。
-    private var monitors: [Any] = []
-    /// 扩展栏自己的范围，点在上面由扩展栏决定（同一格是关，别的格子换掉）。
+    /// 点外面、按 Esc 就关。
+    private let dismisser = PopupDismisser()
+    /// 扩展栏自己的范围（没有点位时用来推算弹出位置）。
     private var host: CGRect = .zero
     /// 确认移到废纸篓的提示框开着时不算点到外面。
     private var holdOpen = false
     private let preview = QuickLookSource()
 
-    private init() {}
+    private init() {
+        dismisser.visibleFrame = { [weak self] in
+            guard let self, self.isOpen else { return nil }
+            return self.panel?.frame
+        }
+        dismisser.window = { [weak self] in self?.panel }
+        dismisser.currentID = { [weak self] in self?.openFolderID }
+        dismisser.holdOpen = { [weak self] in self?.holdOpen ?? false }
+        dismisser.inner = { [weak self] in !(self?.model.query.isEmpty ?? true) }
+        dismisser.backOut = { [weak self] in
+            // 清空并退出搜索，第二次 Esc 再收起。
+            self?.model.query = ""
+            _ = self?.panel?.makeFirstResponder(nil)
+        }
+        dismisser.dismiss = { [weak self] in self?.close() }
+    }
 
     var isOpen: Bool { openFolderID != nil && panel?.isVisible == true }
 
@@ -41,6 +57,8 @@ final class FolderBrowserWindow {
     /// 打开 `folder`；已经开着同一个格子就关上。
     func toggle(id: UUID, folder: URL, anchor: CGPoint, edge: DockPosition, host: CGRect) {
         if openFolderID == id, isOpen { return close() }
+        // 点外面收起它的正是点这个格子的那一下：结果是收起，不再打开。
+        if dismisser.swallowsOpen(id: id) { return }
         show(id: id, folder: folder, anchor: anchor, edge: edge, host: host)
     }
 
@@ -52,9 +70,9 @@ final class FolderBrowserWindow {
     }
 
     func close() {
+        dismisser.stop()
         guard openFolderID != nil else { return }
         openFolderID = nil
-        stopWatching()
         model.stop()
         if let ql = QLPreviewPanel.sharedPreviewPanelExists() ? QLPreviewPanel.shared() : nil,
            ql.isVisible {
@@ -114,7 +132,7 @@ final class FolderBrowserWindow {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().alphaValue = 1
         }
-        watchForDismissal()
+        dismisser.start()
     }
 
     private func view() -> FolderBrowserView {
@@ -157,6 +175,13 @@ final class FolderBrowserWindow {
 
     fileprivate func endPreview(_ panel: QLPreviewPanel) {
         if panel.dataSource === preview { panel.dataSource = nil }
+        // 关快速查看不连带收起小窗；焦点还给小窗，Esc、空格接着能用。
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, self.isOpen, let window = self.panel else { return }
+                window.makeKey()
+            }
+        }
     }
 
     /// 空格：不在打字时（或搜索框是空的时）预览选中的那一项。
@@ -189,38 +214,6 @@ final class FolderBrowserWindow {
         }
     }
 
-    // MARK: 点外面关
-
-    private func watchForDismissal() {
-        stopWatching()
-        let dismiss: (NSEvent) -> Void = { [weak self] event in
-            guard let self, let panel = self.panel, !self.holdOpen else { return }
-            // 快速查看窗口、提示框里的点击不算外面。
-            if event.window is QLPreviewPanel || (event.window != nil && event.window === NSApp.modalWindow) {
-                return
-            }
-            let point = event.window?.convertPoint(toScreen: event.locationInWindow)
-                ?? NSEvent.mouseLocation
-            guard !panel.frame.contains(point), !self.host.contains(point) else { return }
-            if let ql = QLPreviewPanel.sharedPreviewPanelExists() ? QLPreviewPanel.shared() : nil,
-               ql.isVisible, ql.frame.contains(point) { return }
-            self.close()
-        }
-        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: dismiss) {
-            monitors.append(global)
-        }
-        if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { event in
-            dismiss(event)
-            return event
-        }) { monitors.append(local) }
-    }
-
-    private func stopWatching() {
-        monitors.forEach(NSEvent.removeMonitor)
-        monitors.removeAll()
-    }
-
     private func existingOrNew() -> FolderBrowserPanel {
         if let panel { return panel }
         let hosting = FirstMouseHostingView(rootView: view())
@@ -242,6 +235,10 @@ final class FolderBrowserWindow {
         // 比扩展栏高一层，和分组窗口一样。
         panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.dockWindow)) + 2)
         panel.onCancel = { [weak self] in self?.close() }
+        panel.onEscape = { [weak self, weak panel] in
+            guard let self, let panel, self.isOpen else { return false }
+            return self.dismisser.escape(in: panel)
+        }
         panel.onSpace = { [weak self] typing in self?.space(typing: typing) ?? false }
 
         self.panel = panel
@@ -250,18 +247,12 @@ final class FolderBrowserWindow {
     }
 }
 
-/// 小窗的窗口：能成为 key（搜索框打字），Esc、Command-W 关上，空格快速查看，
-/// 并且是快速查看面板的控制者（系统的快速查看要在响应链上找一个）。
-final class FolderBrowserPanel: NSPanel {
+/// 小窗的窗口：能成为 key（搜索框打字），Esc（见 PopupPanel）、Command-W 关上，
+/// 空格快速查看，并且是快速查看面板的控制者（系统的快速查看要在响应链上找一个）。
+final class FolderBrowserPanel: PopupPanel {
     var onCancel: (() -> Void)?
     /// 空格：参数是现在是不是在搜索框里打字；返回 true 表示已处理。
     var onSpace: ((Bool) -> Bool)?
-
-    override var canBecomeKey: Bool { true }
-
-    override func cancelOperation(_ sender: Any?) {
-        onCancel?()
-    }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if event.modifierFlags.contains(.command),
