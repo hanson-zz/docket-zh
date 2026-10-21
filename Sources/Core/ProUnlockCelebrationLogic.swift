@@ -270,6 +270,7 @@ public enum ProUnlockHighlights {
         case .style(.liquid): tr("液态外观")
         case .setting(.aiNotch): tr("刘海 AI 对话")
         case .setting(.chargeLimit): tr("充电上限")
+        case .setting(.windowPreview): tr("窗口预览")
         case .kind(.pet): tr("电子宠物")
         case .tool(.textCapture): tr("截图识字")
         case .kind(let kind): WidgetCatalog.entry(kind)?.name ?? kind.rawValue
@@ -284,6 +285,7 @@ public enum ProUnlockHighlights {
         case .style(.liquid): "drop.fill"
         case .setting(.aiNotch): "sparkles"
         case .setting(.chargeLimit): "battery.75percent"
+        case .setting(.windowPreview): "macwindow.on.rectangle"
         case .kind(.pet): "pawprint.fill"
         case .tool(.textCapture): "text.viewfinder"
         default: "star.fill"

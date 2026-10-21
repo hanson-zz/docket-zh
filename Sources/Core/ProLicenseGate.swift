@@ -292,4 +292,12 @@ public enum ProLicenseGate {
         effective.enabled = config.enabled && canUse(.chargeLimit, unlocked: unlocked)
         return effective
     }
+
+    // MARK: 悬停窗口预览
+
+    /// 扩展栏悬停弹窗口预览在不在生效：设置里打开，且 Pro 已解锁。没解锁时不弹，
+    /// 开关照旧存着，解锁或试用后自动恢复。
+    public static func windowPreviewActive(_ settings: CustomDockSettings, unlocked: Bool) -> Bool {
+        settings.hoverWindowPreview && canUse(.windowPreview, unlocked: unlocked)
+    }
 }

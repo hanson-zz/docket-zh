@@ -1116,6 +1116,8 @@ struct DockShelfView: View {
         // The Dock drops its label the moment you click, and here it would
         // otherwise sit over whatever the click just opened.
         TooltipWindow.shared.hide()
+        // 点了格子就收起窗口预览，指针离开这个格子前不再弹。
+        WindowPreviewWindow.shared.close(suppress: true)
 
         // Anything other than the open group or panel dismisses it: clicking
         // another tile is a decision to do something else.
@@ -1369,6 +1371,8 @@ struct DockShelfView: View {
         var centre: CGPoint
         /// Which item this is, so a widget under the pointer can be told.
         var id: UUID
+        /// 正在运行的 App 格子才有，悬停窗口预览用。
+        var runningBundleID: String? = nil
     }
 
     /// How far the shelf sits inside its own panel, along the long axis.
@@ -1449,12 +1453,22 @@ struct DockShelfView: View {
         }
         let centre = CGPoint(x: along, y: crossCentre)
         return HoverTarget(text: entry.item.isWidget ? nil : entry.label,
-                           along: along, cross: cross, centre: centre, id: entry.id)
+                           along: along, cross: cross, centre: centre, id: entry.id,
+                           runningBundleID: runningBundleID(entry.item))
+    }
+
+    /// 悬停窗口预览只看正在运行的 App 格子。
+    private func runningBundleID(_ item: DockItem) -> String? {
+        guard case .app(_, let bundleID, _) = item,
+              AppCatalog.shared.isRunning(bundleID: bundleID) else { return nil }
+        return bundleID
     }
 
     private func applyHoverLabel(_ target: HoverTarget?) {
         guard let target, let window = shelfWindow else {
             TooltipWindow.shared.hide()
+            WindowPreviewWindow.shared.hoverTile(bundleID: nil, anchor: .zero, edge: position,
+                                                 host: shelfWindow?.frame ?? .zero, settings: settings)
             return
         }
         let frame = window.frame
@@ -1485,6 +1499,9 @@ struct DockShelfView: View {
             // it, the same way moving off the shelf does.
             TooltipWindow.shared.hide()
         }
+        // 正在运行的 App 停够 0.5 秒弹窗口预览（Pro，设置里打开），从格子外缘弹出。
+        WindowPreviewWindow.shared.hoverTile(bundleID: target.runningBundleID, anchor: anchor,
+                                             edge: position, host: frame, settings: settings)
     }
 
     // MARK: Overflow

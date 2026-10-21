@@ -932,6 +932,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// 锁定扩展栏：不能拖动排序、拖出、拖入、拖动浮动扩展栏，右键里改布局的项
     /// 变灰；打开和悬停照常。见 `ShelfLock`。旧配置里没有这个键时是不锁。
     public var locked: Bool = false
+    /// 悬停正在运行的 App 格子时弹出窗口预览（码头 Pro）。默认关，旧配置里没有这个键
+    /// 时也是关。没解锁时开关照旧存着，只是不弹，见 `ProLicenseGate.windowPreviewActive`。
+    public var hoverWindowPreview: Bool = false
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -990,6 +993,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
             ?? .defaultValue
         showLayoutLabelOnHover = (try? c.decodeIfPresent(Bool.self, forKey: .showLayoutLabelOnHover)) ?? true
         locked = (try? c.decodeIfPresent(Bool.self, forKey: .locked)) ?? false
+        hoverWindowPreview = (try? c.decodeIfPresent(Bool.self, forKey: .hoverWindowPreview)) ?? false
     }
 
     /// 只读不写的旧键。

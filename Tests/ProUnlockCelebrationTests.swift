@@ -115,8 +115,8 @@ final class ProUnlockCelebrationTests: XCTestCase {
             XCTAssertTrue(all.contains(item), "\(item) 不在 Pro 清单里")
         }
         XCTAssertEqual(ProUnlockHighlights.overflowCount(), expected - 5)
-        // 今天的清单：14 种小组件、5 个工具、2 个设置、13 类外观样式，减去 5 个。
-        XCTAssertEqual(ProUnlockHighlights.overflowCount(), 29)
+        // 今天的清单：14 种小组件、5 个工具、3 个设置、13 类外观样式，减去 5 个。
+        XCTAssertEqual(ProUnlockHighlights.overflowCount(), 30)
         XCTAssertEqual(ProUnlockHighlights.overflowCount(total: 3, shown: 5), 0)
         XCTAssertEqual(ProUnlockHighlights.overflowCount(total: 7, shown: -1), 7)
     }

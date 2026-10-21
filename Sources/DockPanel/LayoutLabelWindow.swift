@@ -109,6 +109,8 @@ final class LayoutLabelWindow {
     private var blockedByPopup: Bool {
         GroupWindow.shared.isOpen || FolderBrowserWindow.shared.isOpen
             || WidgetDetailWindow.shared.isAnchoredOpen
+            // 悬停窗口预览也在扩展栏外侧，开着时标签让开。
+            || WindowPreviewWindow.shared.isOpen
     }
 
     private func update() {

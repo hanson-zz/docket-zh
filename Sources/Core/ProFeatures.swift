@@ -33,6 +33,8 @@ import Foundation
 /// - 壁纸的自动换：按早中晚的时刻、跟日出日落、到点从收藏随机（设置存在卡片的
 ///   `autoChange` 这一组，见 `WallpaperSchedule`），见
 ///   `ProLicenseGate.wallpaperAutoChangeActive`。壁纸本身 2026-10-20 起免费。
+/// - 扩展栏悬停正在运行的 App 弹出窗口预览（`CustomDockSettings.hoverWindowPreview`），
+///   见 `ProLicenseGate.windowPreviewActive`。
 /// - 加密货币面板的到价提醒（高于、低于，存在卡片的 `alerts`），见
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 public enum ProFeatures {
@@ -118,6 +120,8 @@ public enum ProFeatures {
         case aiNotch
         /// 电池面板里的充电上限。
         case chargeLimit
+        /// 设置 ▸ 扩展栏的「悬停显示窗口预览」。
+        case windowPreview
     }
 
     // MARK: 判断

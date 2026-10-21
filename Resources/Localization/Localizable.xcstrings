@@ -232,6 +232,17 @@
         }
       }
     },
+    "%@ · %@ 个窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ windows"
+          }
+        }
+      }
+    },
     "%@ · %@ 天后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3044,6 +3055,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, just now"
+          }
+        }
+      }
+    },
+    "%@，已最小化" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, minimized"
           }
         }
       }
@@ -10601,6 +10623,17 @@
         }
       }
     },
+    "关闭窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Window"
+          }
+        }
+      }
+    },
     "关闭闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11723,6 +11756,17 @@
         }
       }
     },
+    "已最小化" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimized"
+          }
+        }
+      }
+    },
     "并排" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11778,6 +11822,17 @@
         }
       }
     },
+    "悬停显示窗口预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show window previews on hover"
+          }
+        }
+      }
+    },
     "所有 App" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11785,6 +11840,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All Apps"
+          }
+        }
+      }
+    },
+    "打开屏幕录制权限后可看缩略图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Screen Recording to see thumbnails"
+          }
+        }
+      }
+    },
+    "打开辅助功能权限后可列出窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Accessibility to list windows"
           }
         }
       }
@@ -23380,13 +23457,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf"
           }
         }
       }
@@ -39438,6 +39515,17 @@
         }
       }
     },
+    "看不到窗口列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't list windows"
+          }
+        }
+      }
+    },
     "看全部台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40842,6 +40930,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tunis"
+          }
+        }
+      }
+    },
+    "窗口预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window previews"
           }
         }
       }
@@ -46910,6 +47009,17 @@
         }
       }
     },
+    "还有 %@ 个窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more windows"
+          }
+        }
+      }
+    },
     "还有 %@ 个要响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -51723,6 +51833,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mouse"
+          }
+        }
+      }
+    },
+    "鼠标停在正在运行的 App 上约 0.5 秒，弹出它的窗口缩略图，点一下切过去。缩略图要屏幕录制权限，没给时只列窗口名。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest the pointer on a running app for about half a second to see thumbnails of its windows, and click one to switch to it. Thumbnails need Screen Recording; without it you get the window names."
           }
         }
       }
