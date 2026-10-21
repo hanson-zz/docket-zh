@@ -99,6 +99,17 @@ final class LibraryWindow: HostedWindow {
                 onAddItem: { item in
                     withAnimation(.snappy(duration: 0.25)) { app.addItem(item) }
                 },
+                onAddGroup: {
+                    let made = withAnimation(.snappy(duration: 0.25)) {
+                        app.addEmptyGroup(named: tr("分组"))
+                    }
+                    guard let id = made else { return }
+                    // 等新格子长出来、扩展栏按新内容排好，再从它那里打开组窗口。
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        NotificationCenter.default.post(name: GroupWindow.openRequest, object: nil,
+                                                        userInfo: ["id": id.uuidString])
+                    }
+                },
                 placed: { app.effectiveItems.compactMap(\.widget) },
                 onRemove: { id in
                     withAnimation(.snappy(duration: 0.25)) { app.removeItem(id) }

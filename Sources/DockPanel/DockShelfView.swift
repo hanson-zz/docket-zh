@@ -513,6 +513,10 @@ struct DockShelfView: View {
         .onReceive(NotificationCenter.default.publisher(for: WidgetPanelOpener.shelfRequest)) { note in
             openWidgetPanel(note, solved)
         }
+        // 小组件库「应用分组」刚放下一个空组：从它的格子打开组窗口。
+        .onReceive(NotificationCenter.default.publisher(for: GroupWindow.openRequest)) { note in
+            openRequestedGroup(note, solved)
+        }
         .onChange(of: solved.slots.count) { scroll = clampedScroll(scroll, solved) }
         .onChange(of: fitKey(), initial: true) { _, key in refit(key) }
         .onChange(of: WidgetConditionMonitor.conditionalKinds(in: app.customProfile?.items ?? []),
@@ -1011,6 +1015,9 @@ struct DockShelfView: View {
             // a no-op still *consumes* the tap.
             .modifier(TapToOpen(enabled: entry.opens,
                                  label: entry.actionLabel) { open(entry) })
+            // 从访达把 .app 拖到分组格子上就收进组里，像系统程序坞的文件夹。
+            .modifier(GroupAppDrop(groupID: entry.item.group?.id,
+                                   receive: { addApps($0, toGroup: $1) }))
             .gesture(reorderGesture(entry, solved))
             // Collapsing children puts the label on the tile, but it also
             // hides a widget's own controls from assistive tech, so only do it
@@ -1044,24 +1051,7 @@ struct DockShelfView: View {
             WidgetDetailWindow.shared.close()
         }
         if let group = entry.item.group {
-            GroupWindow.shared.toggle(
-                group,
-                anchor: hoverAnchor ?? .zero,
-                edge: position,
-                iconSide: iconGeometry.icon,
-                open: { AppCatalog.shared.open($0) },
-                remove: { item in
-                    let landing = lastIncoming
-                    withAnimation(.snappy(duration: 0.24)) {
-                        app.removeFromGroup(item.id, group: group.id, at: landing)
-                    }
-                    lastIncoming = nil
-                },
-                rename: { name in
-                    var updated = group
-                    updated.name = name
-                    app.replaceItem(group.id, with: .group(updated))
-                })
+            toggleGroup(group, anchor: hoverAnchor ?? .zero)
             return
         }
         if let widget = entry.item.widget {
@@ -1091,6 +1081,70 @@ struct DockShelfView: View {
         // moment the launch settles - whether it succeeded or never started.
         if !isRunning(entry.item) { bounce(entry) }
         AppCatalog.shared.open(entry.item) { _ in stopBounce(entry.id) }
+    }
+
+    /// 打开（或收起）一个分组的窗口。改名、加 App 都按 id 改扩展栏上的那份，
+    /// 窗口手里的旧副本不会把刚加进去的 App 盖掉。
+    private func toggleGroup(_ group: DockGroup, anchor: CGPoint) {
+        let groupID = group.id
+        GroupWindow.shared.toggle(
+            group,
+            anchor: anchor,
+            edge: position,
+            iconSide: iconGeometry.icon,
+            open: { AppCatalog.shared.open($0) },
+            remove: { item in
+                let landing = lastIncoming
+                withAnimation(.snappy(duration: 0.24)) {
+                    app.removeFromGroup(item.id, group: groupID, at: landing)
+                }
+                lastIncoming = nil
+            },
+            rename: { name in
+                app.renameGroup(groupID, to: name)
+                if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
+            },
+            add: { urls in addApps(urls, toGroup: groupID) })
+    }
+
+    /// 选好的、拖进来的 App 加进组，组窗口开着就原地刷新。
+    private func addApps(_ urls: [URL], toGroup groupID: UUID) {
+        let items = urls.filter(AppGroups.isAppBundle).map { AppGroups.appItem(for: $0) }
+        guard !items.isEmpty else { return }
+        withAnimation(.snappy(duration: 0.24)) { app.addToGroup(groupID, items: items) }
+        if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
+    }
+
+    /// 小组件库新建了一个空组：等它出现在这条扩展栏上，从它的格子长出组窗口。
+    /// 几条扩展栏都有它时只开一次。
+    private func openRequestedGroup(_ note: Notification, _ solved: Solved) {
+        guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
+              GroupWindow.shared.openGroupID != id,
+              let window = shelfWindow, window.isVisible,
+              let index = solved.slots.indices.first(where: { index in
+                  if case .item(let entry) = solved.slots[index] { return entry.item.id == id }
+                  return false
+              }),
+              case .item(let entry) = solved.slots[index],
+              let group = entry.item.group else { return }
+        var frame = window.frame
+        if ShelfPresence.shared.isTuckedAway() {
+            ShelfPresence.shared.reveal()
+            frame = ShelfPresence.shared.revealedFrame() ?? frame
+        }
+        let along = plateCentre(of: index, solved) + shelfInset(solved)
+        let cross: CGFloat = switch position {
+        case .bottom, .right: crossHeadroom
+        case .top, .left: solved.restCross
+        }
+        let anchor: CGPoint = switch position {
+        case .bottom, .top: CGPoint(x: frame.minX + along, y: frame.maxY - cross)
+        case .left, .right: CGPoint(x: frame.minX + cross, y: frame.maxY - along)
+        }
+        TooltipWindow.shared.hide()
+        WidgetDetailWindow.shared.close()
+        GroupWindow.shared.close()
+        toggleGroup(group, anchor: anchor)
     }
 
     /// Opens an AI 助手's panel in the given mode, or switches the open one.
@@ -1890,6 +1944,31 @@ private struct TapToOpen: ViewModifier {
                 // out the button trait that carries an app tile's activation.
                 // Without this a widget's panel is reachable by mouse only.
                 .accessibilityAction(named: label, action)
+        } else {
+            content
+        }
+    }
+}
+
+/// 分组格子收从访达拖来的 .app。不是分组的格子什么都不加。
+private struct GroupAppDrop: ViewModifier {
+    var groupID: UUID?
+    var receive: ([URL], UUID) -> Void
+
+    @State private var targeted = false
+
+    func body(content: Content) -> some View {
+        if let groupID {
+            content
+                .onDrop(of: FileDropDelegate.types,
+                        delegate: FileDropDelegate(enabled: true,
+                                                   update: { over, _ in targeted = over },
+                                                   receive: { urls in
+                                                       let apps = urls.filter(AppGroups.isAppBundle)
+                                                       if !apps.isEmpty { receive(apps, groupID) }
+                                                   }))
+                .scaleEffect(targeted ? 1.12 : 1)
+                .animation(.snappy(duration: 0.18), value: targeted)
         } else {
             content
         }

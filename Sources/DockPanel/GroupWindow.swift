@@ -16,6 +16,19 @@ final class GroupWindow {
     private(set) var openGroupID: UUID?
     /// Changes on every open, to restart the sheet's entrance.
     private var session = UUID()
+    /// 这次打开时的位置和回调，组里加了东西以后原地重画、重新算大小要用。
+    private var placement: (anchor: CGPoint, edge: DockPosition, iconSide: CGFloat)?
+    private var actions: Actions?
+
+    private struct Actions {
+        var open: (DockItem) -> Void
+        var remove: (DockItem) -> Void
+        var rename: (String) -> Void
+        var add: ([URL]) -> Void
+    }
+
+    /// 小组件库新建一个空组以后要扩展栏立刻打开它：userInfo["id"] 是组的 id 字符串。
+    static let openRequest = Notification.Name("com.docket-zh.app-group.open")
 
     private init() {}
 
@@ -28,10 +41,25 @@ final class GroupWindow {
                 iconSide: CGFloat,
                 open: @escaping (DockItem) -> Void,
                 remove: @escaping (DockItem) -> Void,
-                rename: @escaping (String) -> Void) {
+                rename: @escaping (String) -> Void,
+                add: @escaping ([URL]) -> Void) {
         if openGroupID == group.id { return close() }
         show(group, anchor: anchor, edge: edge, iconSide: iconSide,
-             open: open, remove: remove, rename: rename)
+             actions: Actions(open: open, remove: remove, rename: rename, add: add))
+    }
+
+    /// 组里的东西变了（「＋」选了 App、从访达拖进来、改了名）：开着的就是它时
+    /// 原地换成新的一份，不重放入场动画，窗口跟着内容改大小。
+    func refresh(_ group: DockGroup) {
+        guard isOpen, openGroupID == group.id else { return }
+        hosting?.rootView = sheet(for: group)
+        refit()
+    }
+
+    /// 按内容重新算窗口大小和位置（「＋」展开选择列表、加了一排图标时）。
+    func refit() {
+        guard isOpen, let panel, let placement else { return }
+        place(panel, anchor: placement.anchor, edge: placement.edge)
     }
 
     /// Whether a group is showing, so the shelf can stay put while it is.
@@ -74,30 +102,51 @@ final class GroupWindow {
         }
     }
 
+    private func sheet(for group: DockGroup) -> GroupSheet {
+        let actions = self.actions
+        let placement = self.placement
+        return GroupSheet(group: group, edge: placement?.edge ?? .bottom, session: session,
+                          iconSide: placement?.iconSide ?? 48,
+                          open: { [weak self] item in
+            actions?.open(item)
+            self?.close()
+        }, remove: { [weak self] item in
+            actions?.remove(item)
+            self?.close()
+        }, rename: { actions?.rename($0) },
+           add: { actions?.add($0) },
+           resized: { [weak self] in
+            // 下一轮再量：这一轮 SwiftUI 还没把新内容排好。
+            Task { @MainActor in self?.refit() }
+        })
+    }
+
     private func show(_ group: DockGroup, anchor: CGPoint, edge: DockPosition,
-                      iconSide: CGFloat,
-                      open: @escaping (DockItem) -> Void,
-                      remove: @escaping (DockItem) -> Void,
-                      rename: @escaping (String) -> Void) {
+                      iconSide: CGFloat, actions: Actions) {
         let panel = existingOrNew()
         // A fresh token per open: the hosting view is reused, so its state
         // survives being ordered out and would otherwise start already-shown.
         session = UUID()
-        hosting?.rootView = GroupSheet(group: group, edge: edge, session: session,
-                                       iconSide: iconSide,
-                                       open: { [weak self] item in
-            open(item)
-            self?.close()
-        }, remove: { [weak self] item in
-            remove(item)
-            self?.close()
-        }, rename: rename)
+        self.actions = actions
+        placement = (anchor, edge, iconSide)
+        hosting?.rootView = sheet(for: group)
         openGroupID = group.id
 
+        guard place(panel, anchor: anchor, edge: edge) else { return }
+        panel.alphaValue = 1
+        panel.orderFrontRegardless()
+        // Needed for the name field; the shelf itself still never takes key,
+        // so clicking a tile does not pull focus out of the user's app.
+        panel.makeKey()
+    }
+
+    /// 按现在的内容把窗口放到格子旁边。内容还量不出大小时返回 false。
+    @discardableResult
+    private func place(_ panel: NSPanel, anchor: CGPoint, edge: DockPosition) -> Bool {
         let size = hosting?.fittingSize ?? .zero
         let room = GroupSheet.dragRoom
         let visible = CGSize(width: size.width - room * 2, height: size.height - room * 2)
-        guard visible.width > 1, visible.height > 1 else { return }
+        guard visible.width > 1, visible.height > 1 else { return false }
 
         // Everything is positioned against the sheet the user can see; the
         // panel is then offset so its invisible margin falls outside that.
@@ -105,13 +154,9 @@ final class GroupWindow {
         let sheet = Geometry.popupOrigin(edge: edge, anchor: anchor, size: visible, gap: 12)
         let placed = clamped(sheet, size: visible)
 
-        panel.setFrame(CGRect(origin: CGPoint(x: placed.x - room, y: placed.y - room),
-                              size: size), display: true)
-        panel.alphaValue = 1
-        panel.orderFrontRegardless()
-        // Needed for the name field; the shelf itself still never takes key,
-        // so clicking a tile does not pull focus out of the user's app.
-        panel.makeKey()
+        let frame = CGRect(origin: CGPoint(x: placed.x - room, y: placed.y - room), size: size)
+        if panel.frame != frame { panel.setFrame(frame, display: true) }
+        return true
     }
 
     /// Keeps the sheet on screen when the group sits near a corner.
@@ -131,7 +176,8 @@ final class GroupWindow {
                                                                   edge: .bottom, session: session,
                                                                   iconSide: 48,
                                                                   open: { _ in }, remove: { _ in },
-                                                                  rename: { _ in }))
+                                                                  rename: { _ in }, add: { _ in },
+                                                                  resized: {}))
         hosting.sizingOptions = [.intrinsicContentSize]
 
         let panel = KeyablePanel(contentRect: .zero,
@@ -170,14 +216,22 @@ struct GroupSheet: View {
     var open: (DockItem) -> Void
     var remove: (DockItem) -> Void
     var rename: (String) -> Void
+    /// 「＋」选好的、从访达拖进来的 App（只会是 .app）。
+    var add: ([URL]) -> Void
+    /// 内容大小变了（展开、收起选择列表），窗口要跟着改。
+    var resized: () -> Void
 
     @State private var appeared = false
     @State private var draft = ""
     @FocusState private var editing: Bool
+    /// 「＋」展开的选择 App 列表。
+    @State private var picking = false
+    /// 有 App 从访达拖到窗口上。
+    @State private var dropTargeted = false
 
     /// Wraps rather than growing without limit - a group with thirty apps
-    /// should not produce a sheet wider than the screen.
-    private var columns: Int { min(5, max(1, group.items.count)) }
+    /// should not produce a sheet wider than the screen. 最后一格是「＋」。
+    private var columns: Int { min(5, max(1, group.items.count + 1)) }
     private let side: CGFloat = 52
 
     /// Named so a dragged icon can tell when it has left the sheet.
@@ -215,26 +269,60 @@ struct GroupSheet: View {
                 .onSubmit { commit() }
                 .onChange(of: editing) { _, focused in if !focused { commit() } }
 
-            VStack(spacing: 10) {
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    HStack(spacing: 10) {
-                        ForEach(row) { item in
-                            GroupSheetItem(item: item, side: side, sheet: bounds,
-                                           dockSide: iconSide, group: group.id,
-                                           open: { open(item) },
-                                           remove: { remove(item) })
+            if picking {
+                GroupAppPicker(group: group,
+                               onAdd: { urls in
+                                   picking = false
+                                   add(urls)
+                               },
+                               onCancel: { picking = false })
+            } else if group.items.isEmpty {
+                emptyState
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                        HStack(spacing: 10) {
+                            ForEach(row) { item in
+                                GroupSheetItem(item: item, side: side, sheet: bounds,
+                                               dockSide: iconSide, group: group.id,
+                                               open: { open(item) },
+                                               remove: { remove(item) })
+                            }
+                            if index == rows.count - 1, row.count < columns {
+                                addCell
+                            }
                         }
+                    }
+                    if rows.last?.count == columns {
+                        HStack(spacing: 10) { addCell }
                     }
                 }
             }
         }
         .padding(14)
+        // 从访达拖 .app 进来就加进组；别的东西不接。
+        .onDrop(of: FileDropDelegate.types,
+                delegate: FileDropDelegate(enabled: !picking,
+                                           update: { over, _ in dropTargeted = over },
+                                           receive: { urls in
+                                               let apps = urls.filter(AppGroups.isAppBundle)
+                                               if !apps.isEmpty { add(apps) }
+                                           }))
+        .overlay {
+            if dropTargeted {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Color.accentColor.opacity(0.8), lineWidth: 2)
+            }
+        }
         .coordinateSpace(name: Self.space)
         .background {
             GeometryReader { proxy in
                 Color.clear
                     .onAppear { bounds = proxy.size }
-                    .onChange(of: proxy.size) { _, new in bounds = new }
+                    .onChange(of: proxy.size) { _, new in
+                        bounds = new
+                        resized()
+                    }
             }
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(.regularMaterial)
@@ -256,10 +344,62 @@ struct GroupSheet: View {
         }
         .onChange(of: session) { _, _ in
             draft = group.name
+            picking = false
             appeared = false
             // Next runloop, or setting and clearing in one pass animates nothing.
             Task { @MainActor in enter() }
         }
+    }
+
+    /// 空组：一句说明加一个大「＋」。
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Text(tr("把 App 拖进来，或点 ＋ 选择"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: 220)
+            Button { picking = true } label: {
+                Label(tr("选择 App"), systemImage: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelOnPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.panelPrimary))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("选择 App"))
+        }
+        .padding(.vertical, 8)
+    }
+
+    /// 格子最后的「＋」，和图标一样大，点了展开选择列表。
+    private var addCell: some View {
+        Button { picking = true } label: {
+            VStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.panelTertiary,
+                                  style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                    .overlay {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                    .frame(width: side, height: side)
+                Text(tr("添加"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .frame(width: side + 8)
+            }
+            .padding(4)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(tr("选择要加进分组的 App"))
+        .accessibilityLabel(tr("添加 App"))
     }
 
     /// Ignores an empty name rather than leaving a group with none.
@@ -430,5 +570,265 @@ private struct GroupSheetItem: View {
         }
         if case .link(_, _, let title) = item { return title }
         return tr("项目")
+    }
+}
+
+// MARK: - 选择 App
+
+/// 选择列表里的一个 App。
+struct GroupAppCandidate: Identifiable, Sendable, Hashable {
+    var url: URL
+    var name: String
+    var bundleID: String
+    var running = false
+
+    var id: String { url.standardizedFileURL.path(percentEncoded: false) }
+
+    var item: DockItem {
+        .app(id: UUID(), bundleID: bundleID, ref: .capture(url))
+    }
+}
+
+/// 读应用程序文件夹里的 App：/Applications、~/Applications、系统自带的
+/// /System/Applications（各带一层子文件夹，比如「实用工具」），再加访达。
+/// 不碰主线程，几百个 App 也只是列目录。
+enum GroupAppScan {
+    nonisolated static func installed() -> [GroupAppCandidate] {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        let roots = [
+            URL(fileURLWithPath: "/Applications"),
+            home.appending(path: "Applications"),
+            URL(fileURLWithPath: "/System/Applications"),
+        ]
+        var urls: [URL] = [URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")]
+        for root in roots {
+            guard let children = try? fm.contentsOfDirectory(
+                at: root, includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]) else { continue }
+            for child in children {
+                if AppGroups.isAppBundle(child) {
+                    urls.append(child)
+                } else if (try? child.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true,
+                          let inner = try? fm.contentsOfDirectory(
+                              at: child, includingPropertiesForKeys: nil,
+                              options: [.skipsHiddenFiles]) {
+                    urls.append(contentsOf: inner.filter(AppGroups.isAppBundle))
+                }
+            }
+        }
+        var seen = Set<String>()
+        var result: [GroupAppCandidate] = []
+        for url in urls where fm.fileExists(atPath: url.path(percentEncoded: false)) {
+            let bundleID = Bundle(url: url)?.bundleIdentifier ?? ""
+            let key = bundleID.isEmpty ? url.standardizedFileURL.path : bundleID.lowercased()
+            guard seen.insert(key).inserted else { continue }
+            let name = WidgetLibraryGroups.appTitle(fm.displayName(atPath: url.path(percentEncoded: false)))
+            result.append(GroupAppCandidate(url: url, name: name, bundleID: bundleID))
+        }
+        return result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// 正在运行的排前面（不在应用程序文件夹里的也算），其余按名字。
+    @MainActor
+    static func merged(installed: [GroupAppCandidate], running: [RunningApp]) -> [GroupAppCandidate] {
+        var runningIDs = Set<String>()
+        var extra: [GroupAppCandidate] = []
+        for app in running {
+            guard let url = app.url, AppGroups.isAppBundle(url) else { continue }
+            runningIDs.insert(app.id.lowercased())
+            if !installed.contains(where: { $0.bundleID.lowercased() == app.id.lowercased() }) {
+                extra.append(GroupAppCandidate(url: url, name: app.name, bundleID: app.id, running: true))
+            }
+        }
+        let marked = installed.map { candidate -> GroupAppCandidate in
+            var copy = candidate
+            copy.running = !candidate.bundleID.isEmpty && runningIDs.contains(candidate.bundleID.lowercased())
+            return copy
+        }
+        let all = (marked + extra).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return all.filter(\.running) + all.filter { !$0.running }
+    }
+}
+
+/// 组窗口里「＋」展开的选择列表：可多选，带图标和搜索，正在运行的排前面，
+/// 已经在组里的打勾、不能再选。
+struct GroupAppPicker: View {
+    var group: DockGroup
+    var onAdd: ([URL]) -> Void
+    var onCancel: () -> Void
+
+    @State private var candidates: [GroupAppCandidate]?
+    @State private var chosen: [String] = []
+    @State private var query = ""
+    @FocusState private var searching: Bool
+
+    private static let width: CGFloat = 300
+    private static let listHeight: CGFloat = 300
+
+    var body: some View {
+        VStack(spacing: 8) {
+            searchField
+            list
+                .frame(width: Self.width, height: Self.listHeight)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            HStack(spacing: 8) {
+                Button(tr("取消"), action: onCancel)
+                    .buttonStyle(.plain)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.panelFill))
+                    .keyboardShortcut(.cancelAction)
+                Spacer(minLength: 0)
+                Button { confirm() } label: {
+                    Text(chosen.isEmpty ? tr("添加") : tr("添加 \(chosen.count) 个"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelOnPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(chosen.isEmpty ? Color.panelTertiary : Color.panelPrimary))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(chosen.isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+            .frame(width: Self.width)
+        }
+        .onExitCommand(perform: onCancel)
+        .task {
+            searching = true
+            let installed = await Task.detached(priority: .userInitiated) {
+                GroupAppScan.installed()
+            }.value
+            candidates = GroupAppScan.merged(installed: installed, running: AppCatalog.shared.running)
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
+            TextField(tr("搜索 App"), text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($searching)
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.panelTertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tr("清除搜索"))
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .frame(width: Self.width)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill))
+    }
+
+    @ViewBuilder
+    private var list: some View {
+        if let candidates {
+            let shown = candidates.filter {
+                AppGroups.matches(query, name: $0.name, bundleID: $0.bundleID)
+            }
+            if candidates.isEmpty {
+                note(tr("在应用程序文件夹里没有找到 App。"))
+            } else if shown.isEmpty {
+                note(tr("没有匹配的 App"))
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        let running = shown.filter(\.running)
+                        if !running.isEmpty {
+                            header(tr("正在运行的 App"))
+                            ForEach(running) { row($0) }
+                            header(tr("所有 App"))
+                        }
+                        ForEach(shown.filter { !$0.running }) { row($0) }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        } else {
+            VStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text(tr("正在读取 App…"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13))
+            .foregroundStyle(.panelSecondary)
+            .multilineTextAlignment(.center)
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.panelTertiary)
+            .padding(.horizontal, 10)
+            .padding(.top, 6)
+            .padding(.bottom, 2)
+    }
+
+    private func row(_ candidate: GroupAppCandidate) -> some View {
+        let already = AppGroups.contains(candidate.item, in: group)
+        let selected = chosen.contains(candidate.id)
+        return Button {
+            if selected { chosen.removeAll { $0 == candidate.id } } else { chosen.append(candidate.id) }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: already || selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 15))
+                    .foregroundStyle(already ? AnyShapeStyle(.panelTertiary)
+                                     : selected ? AnyShapeStyle(Color.accentColor)
+                                     : AnyShapeStyle(.panelTertiary))
+                Image(nsImage: AppCatalog.shared.icon(for: candidate.url))
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 22, height: 22)
+                Text(candidate.name)
+                    .font(.system(size: 13))
+                    .foregroundStyle(already ? Color.panelTertiary : Color.panelPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: 4)
+                if already {
+                    Text(tr("已在分组中"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(selected ? AnyShapeStyle(.panelSelected) : AnyShapeStyle(.clear))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(already)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    /// 按勾选的先后加进组。
+    private func confirm() {
+        guard let candidates, !chosen.isEmpty else { return }
+        let byID = Dictionary(candidates.map { ($0.id, $0.url) }, uniquingKeysWith: { a, _ in a })
+        onAdd(chosen.compactMap { byID[$0] })
     }
 }

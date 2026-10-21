@@ -171,6 +171,8 @@ private struct LibraryShortcut: Identifiable {
 struct WidgetLibraryView: View {
     var onAdd: (WidgetInstance) -> Void
     var onAddItem: (DockItem) -> Void
+    /// 「应用分组」：在扩展栏上放一个空组并打开它。
+    var onAddGroup: () -> Void
     /// Widgets sitting directly on the active shelf, read in `body` so the
     /// library's minus buttons follow additions and removals as they happen.
     var placed: () -> [WidgetInstance]
@@ -182,12 +184,14 @@ struct WidgetLibraryView: View {
     ///   screenshot tool opens it on a category instead.
     init(onAdd: @escaping (WidgetInstance) -> Void,
          onAddItem: @escaping (DockItem) -> Void = { _ in },
+         onAddGroup: @escaping () -> Void = {},
          placed: @escaping () -> [WidgetInstance] = { [] },
          onRemove: @escaping (UUID) -> Void = { _ in },
          onClose: @escaping () -> Void,
          initialCategory: WidgetCategory? = nil) {
         self.onAdd = onAdd
         self.onAddItem = onAddItem
+        self.onAddGroup = onAddGroup
         self.placed = placed
         self.onRemove = onRemove
         self.onClose = onClose
@@ -232,7 +236,7 @@ struct WidgetLibraryView: View {
                     }
                     row(.appsAndFolders, symbol: WidgetCategory.appsAndFolders.symbol,
                         title: WidgetCategory.appsAndFolders.displayName,
-                        count: LibraryShortcut.all.filter { $0.url != nil }.count
+                        count: LibraryShortcut.all.filter { $0.url != nil }.count + 1
                             + widgetCount(libraryCards.filter { $0.category == .appsAndFolders }),
                         enabled: true)
                     // A category with nothing in it is not listed at all.
@@ -349,7 +353,7 @@ struct WidgetLibraryView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
             Divider()
-            if flatCards.isEmpty && visibleShortcuts.isEmpty {
+            if flatCards.isEmpty && visibleShortcuts.isEmpty && !showsGroupShortcut {
                 empty
             } else {
                 grid
@@ -373,7 +377,7 @@ struct WidgetLibraryView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
-                    if !visibleShortcuts.isEmpty {
+                    if !visibleShortcuts.isEmpty || showsGroupShortcut {
                         shortcutsSection
                     }
                     ForEach(sections, id: \.title) { section in
@@ -447,6 +451,9 @@ struct WidgetLibraryView: View {
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 76, maximum: 84), spacing: 8)],
                       alignment: .leading, spacing: 10) {
+                if showsGroupShortcut {
+                    groupShortcutView
+                }
                 ForEach(visibleShortcuts) { shortcut in
                     shortcutView(shortcut)
                 }
@@ -483,6 +490,39 @@ struct WidgetLibraryView: View {
         .buttonStyle(.plain)
         .help(shortcut.url == nil ? tr("选择其他\(shortcut.isFolder ? tr("文件夹") : tr("应用"))") : tr("添加到扩展栏"))
         .accessibilityLabel(shortcut.url == nil ? shortcut.title : tr("添加“\(shortcut.title)”"))
+    }
+
+    /// 「应用分组」：一个空组的样子（虚线框加「＋」），点一下在扩展栏上放一个
+    /// 空组并打开它，再往里加 App。
+    private var groupShortcutView: some View {
+        Button(action: onAddGroup) {
+            VStack(spacing: 5) {
+                GroupTile(group: DockGroup(name: "", keepsEmpty: true), side: 40)
+                    .frame(width: 52, height: 52)
+                Text(tr("应用分组"))
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .frame(width: 76)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(tr("在扩展栏上放一个空分组，再把几个 App 收进去"))
+        .accessibilityLabel(tr("添加应用分组"))
+    }
+
+    /// 搜「分组」「group」「fenzu」也能找到它。
+    private var showsGroupShortcut: Bool {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        if !query.isEmpty {
+            return WidgetSearch.matches(query, names: [tr("应用分组"), "App Group", "folder", "stack"],
+                                        kind: "")
+        }
+        switch selection {
+        case .all, .appsAndFolders: return true
+        case .category, .recommended: return false
+        }
     }
 
     private var visibleShortcuts: [LibraryShortcut] {

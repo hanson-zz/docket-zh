@@ -20,6 +20,35 @@ struct GroupTile: View {
     private var radius: CGFloat { side * 0.225 }
 
     var body: some View {
+        if group.items.isEmpty {
+            emptyPlate
+        } else {
+            filledPlate
+        }
+    }
+
+    /// 空组（从小组件库「应用分组」新建、还没放东西）：淡底加虚线框，中间一个「＋」，
+    /// 一眼看出是个等着放 App 的容器，而不是三格空白。
+    private var emptyPlate: some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let ink = scheme == .dark ? Color.white : Color.black
+        return shape
+            .fill(group.tint.swatch.map { $0.opacity(scheme == .dark ? 0.30 : 0.20) }
+                  ?? ink.opacity(scheme == .dark ? 0.08 : 0.05))
+            .overlay {
+                shape.strokeBorder(ink.opacity(scheme == .dark ? 0.42 : 0.32),
+                                   style: StrokeStyle(lineWidth: max(1, side * 0.035),
+                                                      dash: [max(2, side * 0.09), max(2, side * 0.06)]))
+            }
+            .overlay {
+                Image(systemName: "plus")
+                    .font(.system(size: side * 0.36, weight: .medium))
+                    .foregroundStyle(ink.opacity(scheme == .dark ? 0.70 : 0.55))
+            }
+            .frame(width: side, height: side)
+    }
+
+    private var filledPlate: some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
             .fill(plate)
             .overlay {

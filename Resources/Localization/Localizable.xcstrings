@@ -11448,6 +11448,72 @@
         }
       }
     },
+    "在应用程序文件夹里没有找到 App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No apps found in your Applications folders."
+          }
+        }
+      }
+    },
+    "在扩展栏上放一个空分组，再把几个 App 收进去" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put an empty group on the shelf, then gather apps into it"
+          }
+        }
+      }
+    },
+    "已在分组中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in group"
+          }
+        }
+      }
+    },
+    "应用分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Group"
+          }
+        }
+      }
+    },
+    "所有 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Apps"
+          }
+        }
+      }
+    },
+    "把 App 拖进来，或点 ＋ 选择" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag apps here, or click + to choose"
+          }
+        }
+      }
+    },
     "按钮控制需要辅助功能权限" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25785,6 +25851,17 @@
         }
       }
     },
+    "搜索 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Apps"
+          }
+        }
+      }
+    },
     "搜索、整理收藏、更多表情" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27457,6 +27534,17 @@
         }
       }
     },
+    "正在读取 App…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading apps…"
+          }
+        }
+      }
+    },
     "正在读取播放列表…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27508,6 +27596,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Running…"
+          }
+        }
+      }
+    },
+    "正在运行的 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running Apps"
           }
         }
       }
@@ -27838,6 +27937,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No folder is ticked. Click \"Settings\" to tick one or add a folder."
+          }
+        }
+      }
+    },
+    "没有匹配的 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching apps"
           }
         }
       }
@@ -28238,6 +28348,28 @@
         }
       }
     },
+    "添加 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@"
+          }
+        }
+      }
+    },
+    "添加 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Apps"
+          }
+        }
+      }
+    },
     "添加 App…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28278,6 +28410,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add City"
+          }
+        }
+      }
+    },
+    "添加应用分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add App Group"
           }
         }
       }
@@ -47735,6 +47878,17 @@
         }
       }
     },
+    "选择 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Apps"
+          }
+        }
+      }
+    },
     "选择一个码头布局备份文件。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47863,6 +48017,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose the folder for the photo slideshow"
+          }
+        }
+      }
+    },
+    "选择要加进分组的 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose apps to add to the group"
           }
         }
       }

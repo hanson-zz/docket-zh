@@ -518,14 +518,22 @@ public struct DockGroup: Codable, Hashable, Sendable, Identifiable {
     public var name: String
     public var tint: GroupTint
     public var items: [DockItem]
+    /// 从小组件库「应用分组」新建的组为 true：少于两个（包括空着）也留在扩展栏上，
+    /// 它是用户特意放的容器。拖一个图标到另一个上合成的组是 nil，照旧在只剩一个时
+    /// 让位给那个图标。可选，旧版本存下的组照常解码。
+    public var keepsEmpty: Bool?
 
     public init(id: UUID = UUID(), name: String, tint: GroupTint = .none,
-                items: [DockItem] = []) {
+                items: [DockItem] = [], keepsEmpty: Bool? = nil) {
         self.id = id
         self.name = name
         self.tint = tint
         self.items = items
+        self.keepsEmpty = keepsEmpty
     }
+
+    /// 少于两个时要不要留着，见 `keepsEmpty`。
+    public var keepsWhenSmall: Bool { keepsEmpty == true }
 
     /// How many icons the closed tile shows: a 2×2 grid, as Dockset does.
     ///
@@ -759,7 +767,8 @@ public enum ShelfItems {
     }
 
     /// Takes an item out of a group and puts it back on the shelf beside it,
-    /// dissolving the group if that leaves it with fewer than two.
+    /// dissolving the group if that leaves it with fewer than two (unless it
+    /// is one made from the library, see `DockGroup.keepsEmpty`).
     /// - Parameter at: where the user dropped it, as a slot index. Beside the
     ///   group when unknown - a drop with no destination still has to land
     ///   somewhere predictable.
@@ -786,7 +795,9 @@ public enum ShelfItems {
     /// way to that icon rather than waiting to be tidied up.
     public static func dissolvingSmallGroups(in items: [DockItem]) -> [DockItem] {
         items.flatMap { item -> [DockItem] in
-            guard let group = item.group, group.items.count < 2 else { return [item] }
+            // 从库里新建的组例外：空着或只剩一个也留着，见 DockGroup.keepsEmpty。
+            guard let group = item.group, group.items.count < 2, !group.keepsWhenSmall
+            else { return [item] }
             return group.items
         }
     }

@@ -438,6 +438,36 @@ public final class AppState {
         }
     }
 
+    /// 小组件库「应用分组」：在扩展栏末尾放一个空组，名字避开重名（「分组 2」），
+    /// 少于两个也不解散。返回新组的 id，没有扩展栏配置时为 nil。
+    @discardableResult
+    public func addEmptyGroup(named base: String) -> UUID? {
+        guard state.customDock.profileID.flatMap({ index(of: $0) }) != nil else { return nil }
+        var made: UUID?
+        mutateItems { items in
+            let result = AppGroups.addingEmptyGroup(named: base, in: items)
+            made = result.id
+            return result.items
+        }
+        return made
+    }
+
+    /// 往组里加 App（组窗口的「＋」、从访达拖到组上），已在组里的跳过。
+    public func addToGroup(_ groupID: UUID, items: [DockItem]) {
+        guard !items.isEmpty else { return }
+        mutateItems { AppGroups.adding(items, toGroup: groupID, in: $0) }
+    }
+
+    /// 按 id 改分组名字，不用组窗口手里可能已经旧了的那份。
+    public func renameGroup(_ groupID: UUID, to name: String) {
+        mutateItems { AppGroups.renaming(groupID, to: name, in: $0) }
+    }
+
+    /// 扩展栏上当前的这个组（组窗口加了东西以后拿新的来重画）。
+    public func group(_ groupID: UUID) -> DockGroup? {
+        effectiveItems.first { $0.id == groupID }?.group
+    }
+
     /// Editing the shelf's own list always takes ownership of it first.
     private func mutateItems(_ transform: ([DockItem]) -> [DockItem]) {
         if mirroringApps { adoptSystemApps() }
