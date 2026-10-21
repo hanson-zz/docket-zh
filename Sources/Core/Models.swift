@@ -855,7 +855,9 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     public var showHandleWhenHidden: Bool = true
     public var useAsDesktopWidget: Bool = false
     public var hideWhenMacOSDockAppears: Bool = false
-    public var showRunningApps: Bool = true
+    /// 打开了但没固定的 App 放在哪里，或者不显示。替代了旧的
+    /// `showRunningApps` 开关：旧配置里只有那个键时按它迁移，见 `init(from:)`。
+    public var runningApps: RunningAppsPlacement = .defaultValue
     public var showTrash: Bool = false
     /// Flies on the shelf's own Trash icon, the same as the 废纸篓 widget's.
     /// On by default: they only arrive once the Trash passes the size below.
@@ -929,7 +931,15 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         showHandleWhenHidden = try c.decodeIfPresent(Bool.self, forKey: .showHandleWhenHidden) ?? true
         useAsDesktopWidget = try c.decodeIfPresent(Bool.self, forKey: .useAsDesktopWidget) ?? false
         hideWhenMacOSDockAppears = try c.decodeIfPresent(Bool.self, forKey: .hideWhenMacOSDockAppears) ?? false
-        showRunningApps = try c.decodeIfPresent(Bool.self, forKey: .showRunningApps) ?? true
+        if let placement = try? c.decodeIfPresent(RunningAppsPlacement.self, forKey: .runningApps) {
+            runningApps = placement
+        } else {
+            // 旧版只有一个开关。新键不在时按它迁移：关是不显示，开是固定 App 之后。
+            let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
+                .decodeIfPresent(Bool.self, forKey: .showRunningApps)
+            runningApps = legacy.map(RunningAppsPlacement.init(legacyShowRunningApps:))
+                ?? .defaultValue
+        }
         showTrash = try c.decodeIfPresent(Bool.self, forKey: .showTrash) ?? false
         showTrashFlies = try c.decodeIfPresent(Bool.self, forKey: .showTrashFlies) ?? true
         trashFliesThreshold = try c.decodeIfPresent(String.self, forKey: .trashFliesThreshold)
@@ -940,6 +950,11 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         edgeGap = try c.decodeIfPresent(Double.self, forKey: .edgeGap) ?? 6
         itemGap = (try? c.decodeIfPresent(Double.self, forKey: .itemGap)) ?? Geometry.defaultItemGap
         reserveSystemDockSpace = try c.decodeIfPresent(Bool.self, forKey: .reserveSystemDockSpace) ?? true
+    }
+
+    /// 只读不写的旧键。
+    private enum LegacyKeys: String, CodingKey {
+        case showRunningApps
     }
 
     public init() {}

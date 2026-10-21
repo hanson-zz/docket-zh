@@ -917,6 +917,14 @@ struct SettingsView: View {
         }
     }
 
+    /// Whether the shelf runs top to bottom, for the running apps' labels
+    /// (最上边 rather than 最左边). Judged by the shelf's own edge setting;
+    /// while it follows the Dock the edge is not known here, and the
+    /// horizontal words are the more common case.
+    private var runningAppsVertical: Bool {
+        !state.customDock.followSystemDock && state.customDock.position.isVertical
+    }
+
     /// A control's label with one line of explanation under it, the way
     /// System Settings does it, in place of a tooltip nobody hovers for.
     private func subtitled(_ title: String, _ detail: String) -> some View {
@@ -971,7 +979,18 @@ struct SettingsView: View {
             // Both add apps, so neither is a question a widgets-only shelf
             // is asking.
             if !state.customDock.widgetsOnly {
-                Toggle("显示正在运行的应用", isOn: $state.customDock.showRunningApps)
+                // Five places rather than a switch: the running apps can lead
+                // the row, sit either side of the pinned apps, or trail it.
+                // A menu, not segments: five labels do not fit beside the
+                // title in English.
+                Picker(selection: $state.customDock.runningApps) {
+                    ForEach(RunningAppsPlacement.allCases, id: \.self) { placement in
+                        Text(placement.label(vertical: runningAppsVertical)).tag(placement)
+                    }
+                } label: {
+                    subtitled(tr("正在运行的应用"),
+                              tr("打开了但没固定的 App 运行时出现在扩展栏，和固定的分开。选择它们放在哪，或者关掉。"))
+                }
                 Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
                 if state.customDock.showTrash {
                     Toggle("废纸篓图标上显示苍蝇", isOn: $state.customDock.showTrashFlies)

@@ -562,7 +562,7 @@ private func makeShelfState(widgets: [WidgetInstance], apps: [String],
     shelf.state.customDock.scale = shelfScale
     shelf.state.customDock.position = .bottom
     shelf.state.customDock.followSystemDock = false
-    shelf.state.customDock.showRunningApps = false
+    shelf.state.customDock.runningApps = .hidden
     shelf.showsSampleData = sample
     return shelf
 }

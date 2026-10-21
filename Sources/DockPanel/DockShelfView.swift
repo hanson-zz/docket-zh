@@ -109,15 +109,19 @@ struct DockShelfView: View {
         var isDraggable: Bool { !isRunningApp && !isTrash }
     }
 
-    /// One position along the shelf: either an entry or the hairline that
-    /// separates pinned items from running apps.
+    /// One position along the shelf: either an entry or a hairline that
+    /// separates the running apps (or the Trash) from their neighbours.
     ///
     /// Modelling the separator as a slot keeps every layout calculation
     /// uniform - otherwise its width silently skews every position after it,
     /// and magnification drifts off the running apps.
     private enum Slot: Identifiable {
         case item(Entry)
-        case separator
+        /// The n-th separator in the row, counted from the leading end. A row
+        /// can hold up to three (either side of the running apps and before
+        /// the Trash), and each needs an identity of its own: `ForEach` with
+        /// two equal ids is undefined.
+        case separator(Int)
         /// The size grip, which sits where the widgets end and the apps begin.
         case grip
 
@@ -131,12 +135,12 @@ struct DockShelfView: View {
         var id: UUID {
             switch self {
             case .item(let entry): entry.id
-            case .separator: Self.separatorID
+            case .separator(let n): Self.separatorIDs[min(n, Self.separatorIDs.count - 1)]
             case .grip: Self.gripID
             }
         }
 
-        private static let separatorID = UUID()
+        private static let separatorIDs = (0..<4).map { _ in UUID() }
         private static let gripID = UUID()
     }
 
@@ -227,18 +231,18 @@ struct DockShelfView: View {
         // They stay in the profile and are listed under "已隐藏的小组件".
         let items = WidgetVisibility.visibleItems(shown, conditions,
                                                   ignoringConditions: app.showsSampleData)
-        var entries = items.map {
+        let pinned = items.map {
             Entry(id: $0.id, item: $0, isRunningApp: false, label: label(for: $0))
         }
-        // Running apps are apps. Offering to append them to a shelf that is
+        // Running apps are apps. Offering to add them to a shelf that is
         // deliberately showing no apps would be the same control contradicting
         // itself.
-        if settings.showRunningApps, !settings.widgetsOnly {
-            let running = AppCatalog.shared.unpinned(from: items)
-            for app in running {
+        var running: [Entry] = []
+        if settings.runningApps != .hidden, !settings.widgetsOnly {
+            for app in AppCatalog.shared.unpinned(from: items) {
                 guard let url = app.url else { continue }
                 let id = UUID.stable(from: app.id)
-                entries.append(Entry(id: id,
+                running.append(Entry(id: id,
                                      item: .app(id: id, bundleID: app.id, ref: FileRef(url: url)),
                                      isRunningApp: true,
                                      label: app.name))
@@ -249,33 +253,42 @@ struct DockShelfView: View {
         // Not a profile item: it is a setting, so it is appended per solve
         // rather than stored, and it can never be dragged out of place.
         // The Trash is not a widget either.
-        if settings.showTrash, !settings.widgetsOnly, let trash = AppCatalog.trashURL {
-            entries.append(Entry(id: Self.trashID,
-                                 item: .folder(id: Self.trashID,
-                                               ref: FileRef(url: trash),
-                                               icon: FolderIcon()),
-                                 isRunningApp: false,
-                                 isTrash: true,
-                                 label: tr("废纸篓")))
+        var trash: Entry?
+        if settings.showTrash, !settings.widgetsOnly, let trashURL = AppCatalog.trashURL {
+            trash = Entry(id: Self.trashID,
+                          item: .folder(id: Self.trashID,
+                                        ref: FileRef(url: trashURL),
+                                        icon: FolderIcon()),
+                          isRunningApp: false,
+                          isTrash: true,
+                          label: tr("废纸篓"))
         }
 
-        // Rebuild slots with the separator and the grip in the right places.
+        // The order, the separators and the grip come from `ShelfRow`, which
+        // is tested in Core: the running cluster goes where the setting says,
+        // with a separator on each side that has a neighbour, and the Trash
+        // stays last.
         //
-        // The grip goes on the seam between the widgets and the apps rather
-        // than after everything: that is the edge the drag actually moves, and
-        // at the end of the row it sat a long way from the thing it resizes.
-        // Modelled as a slot for the same reason the separator is - anything
-        // occupying width that the layout does not know about silently skews
-        // every position after it.
-        let lastWidget = entries.lastIndex { $0.item.isWidget }
-        for (index, entry) in entries.enumerated() {
-            if entry.isRunningApp, index > 0, !entries[index - 1].isRunningApp {
-                slots.append(.separator)
-            }
-            if entry.isTrash, index > 0 { slots.append(.separator) }
-            slots.append(.item(entry))
-            if let lastWidget, index == lastWidget, index < entries.count - 1 {
-                slots.append(.grip)
+        // The grip goes on the seam after the last widget rather than after
+        // everything: that is the edge the drag actually moves, and at the end
+        // of the row it sat a long way from the thing it resizes. Modelled as a
+        // slot for the same reason the separator is - anything occupying width
+        // that the layout does not know about silently skews every position
+        // after it.
+        let tokens = ShelfRow.tokens(pinnedIsWidget: pinned.map(\.item.isWidget),
+                                     runningCount: running.count,
+                                     showsTrash: trash != nil,
+                                     placement: settings.runningApps)
+        var separators = 0
+        for token in tokens {
+            switch token {
+            case .pinned(let index): slots.append(.item(pinned[index]))
+            case .running(let index): slots.append(.item(running[index]))
+            case .trash: if let trash { slots.append(.item(trash)) }
+            case .separator:
+                slots.append(.separator(separators))
+                separators += 1
+            case .grip: slots.append(.grip)
             }
         }
         return slots
@@ -660,17 +673,23 @@ struct DockShelfView: View {
             ForEach(Array(solved.slots.enumerated()), id: \.element.id) { index, slot in
                 switch slot {
                 case .separator:
+                    let shift = passiveShift(slotIndex: index, solved, incoming: incoming)
                     separator
+                        .offset(x: vertical ? 0 : shift, y: vertical ? shift : 0)
                         .padding(vertical ? .top : .leading, solved.gaps[index])
                 case .grip:
+                    let shift = passiveShift(slotIndex: index, solved, incoming: incoming)
                     grip
+                        .offset(x: vertical ? 0 : shift, y: vertical ? shift : 0)
                         .padding(vertical ? .top : .leading, solved.gaps[index])
                 case .item(let entry):
                     tile(entry,
                          solved: solved,
                          scale: solved.scales[index],
-                         shift: solved.offsets[index] + reorderShift(entry, solved)
-                              + incomingShift(entry, solved, slot: incoming))
+                         shift: solved.offsets[index]
+                              + (entry.isDraggable
+                                 ? reorderShift(entry, solved) + incomingShift(entry, solved, slot: incoming)
+                                 : passiveShift(slotIndex: index, solved, incoming: incoming)))
                         .padding(vertical ? .top : .leading, solved.gaps[index])
                         // The row parts for an icon on its way out of a group.
                         .animation(.snappy(duration: 0.24), value: incoming)
@@ -853,15 +872,54 @@ struct DockShelfView: View {
         }
     }
 
+    /// Where each movable entry sits at rest, along the row.
+    ///
+    /// Read off the solved row rather than summed from the movable entries
+    /// alone: running apps can sit at the start of the row or between the
+    /// widgets and the apps (see `RunningAppsPlacement`), and summing only
+    /// the movable ones put every tile after them in the wrong place, so a
+    /// drag past them landed a tile or two off.
     private func restCenters(of movable: [Entry], _ solved: Solved) -> [Double] {
-        var centers: [Double] = []
-        var cursor: CGFloat = 0
-        for entry in movable {
-            let length = longLength(entry.item)
-            centers.append(Double(cursor + length / 2))
-            cursor += length + chrome.itemGap
+        movable.map { entry in
+            guard let index = solved.slots.firstIndex(where: { $0.id == entry.id }) else { return 0 }
+            return Double(solved.centers[index])
         }
-        return centers
+    }
+
+    /// How far a slot that cannot be dragged (a running app, the Trash, a
+    /// separator, the grip) steps aside while the row parts around it.
+    ///
+    /// Movable tiles part by index (`reorderShift`, `incomingShift`). These
+    /// have no index among them, so they go by position: during a reorder,
+    /// anything between where the tile was and where it is heading slides
+    /// with the tiles around it; while an icon is carried in from a group,
+    /// anything after the gap moves along to keep it open. Without this a
+    /// running app sitting between two pinned ones was overlapped by them.
+    private func passiveShift(slotIndex: Int, _ solved: Solved, incoming: Int?) -> CGFloat {
+        // Nothing is parting most of the time, and this runs for every slot
+        // on every render, so leave before any of the work below.
+        guard drag != nil || incoming != nil,
+              solved.centers.indices.contains(slotIndex) else { return 0 }
+        let movable = solved.entries.filter(\.isDraggable)
+        if let drag {
+            guard drag.from != drag.destination,
+                  movable.indices.contains(drag.from),
+                  movable.indices.contains(drag.destination) else { return 0 }
+            let centers = restCenters(of: movable, solved)
+            let here = Double(solved.centers[slotIndex])
+            let from = centers[drag.from]
+            let to = centers[drag.destination]
+            let size = longLength(movable[drag.from].item) + chrome.itemGap
+            if to > from, here > from, here < to { return -size }
+            if to < from, here < from, here > to { return size }
+            return 0
+        }
+        guard let incoming else { return 0 }
+        let anchorEntry = movable.indices.contains(incoming) ? movable[incoming] : movable.last
+        let anchor = anchorEntry.flatMap { entry in
+            solved.slots.firstIndex(where: { $0.id == entry.id })
+        } ?? -1
+        return slotIndex > anchor ? iconGeometry.width + chrome.itemGap : 0
     }
 
     // MARK: Tiles
