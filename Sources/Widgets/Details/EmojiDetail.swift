@@ -52,6 +52,10 @@ struct EmojiDetail: View {
     private static let gold = Color(hex: "#FFC94D")
     private static let goldInk = Color(hex: "#2A1C00")
     private static let red = Color(hex: "#FF6B5A")
+    /// 拖起来的格子、肤色条的实心底：深色下原来的深灰，浅色下近白，盖住下面的格子。
+    private static let solidTile = Color.panelDynamic(
+        dark: NSColor(srgbRed: 0.23, green: 0.23, blue: 0.26, alpha: 1),
+        light: NSColor(srgbRed: 0.97, green: 0.97, blue: 0.98, alpha: 1))
     private static let skins = ["#FFCC4D", "#F7DECE", "#F3D2A2", "#D5AB88", "#AF7E57", "#7C533E"]
     /// 浏览态一行 8 个 36 的格子，正好 288（320 减两边 16）。
     private static let columns = 8
@@ -124,10 +128,10 @@ struct EmojiDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(editing ? tr("整理表情") : tr("表情符号"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Text(editing ? tr("星标收藏 · 拖动排序 · 红钮移除") : tr("点一下拷贝 · 双击插到光标处"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
@@ -147,11 +151,11 @@ struct EmojiDetail: View {
                     Button { switchEditing(true) } label: {
                         Text(tr("整理"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 13)
                             .frame(height: 28)
-                            .background(Capsule().fill(.white.opacity(0.12)))
-                            .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                            .background(Capsule().fill(.panelFill))
+                            .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
@@ -184,11 +188,11 @@ struct EmojiDetail: View {
         return HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
-            TextField("", text: $query, prompt: Text(tr("搜索：笑、心、cat、猫")).foregroundStyle(.white.opacity(0.5)))
+                .foregroundStyle(.panelSecondary)
+            TextField("", text: $query, prompt: Text(tr("搜索：笑、心、cat、猫")).foregroundStyle(.panelTertiary))
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($searchFocused)
                 .onSubmit(submitSearch)
                 .onChange(of: query) { _, new in
@@ -202,7 +206,7 @@ struct EmojiDetail: View {
             if let suggestion {
                 Text(tr("也能搜 \(suggestion)"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .fixedSize()
             }
@@ -210,7 +214,7 @@ struct EmojiDetail: View {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .frame(width: 20, height: 20)
                         .contentShape(.rect)
                 }
@@ -220,10 +224,10 @@ struct EmojiDetail: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 40)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(editing && active ? accent.opacity(0.9) : .white.opacity(0.14),
+                .strokeBorder(editing && active ? accent.opacity(0.9) : .panelStroke,
                               lineWidth: editing && active ? 1.2 : 0.6)
         }
         .contentShape(.rect)
@@ -263,7 +267,7 @@ struct EmojiDetail: View {
                     Button(tr("清空")) { clearRecent() }
                         .buttonStyle(.plain)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .disabled(context.isPreview)
                 }
             }
@@ -281,7 +285,7 @@ struct EmojiDetail: View {
             .padding(.bottom, 8)
         Text(tr("单个表情按住就能换肤色"))
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .padding(.leading, 2)
             .padding(.bottom, 12)
         if let note, let copied {
@@ -296,11 +300,11 @@ struct EmojiDetail: View {
         } label: {
             Text(tr("更多表情：打开系统表情面板"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                .background(Capsule().fill(.panelFill))
+                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -310,7 +314,7 @@ struct EmojiDetail: View {
         HStack(spacing: 0) {
             Text(tr("默认肤色"))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(13.0 / 14.0)
             Spacer(minLength: 8)
@@ -326,7 +330,7 @@ struct EmojiDetail: View {
                             .padding(3.5)
                             .overlay {
                                 if tone == p.tone {
-                                    Circle().strokeBorder(.white, lineWidth: 1.6)
+                                    Circle().strokeBorder(.panelPrimary, lineWidth: 1.6)
                                 }
                             }
                             .contentShape(.circle)
@@ -366,14 +370,14 @@ struct EmojiDetail: View {
             .frame(width: 20, height: 20)
             Text(note == .inserted ? tr("已插入") : tr("已拷贝"))
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .fixedSize()
             Text(verbatim: p.display(emoji))
                 .font(.system(size: 20))
             Text(note == .needsAccess ? tr("允许辅助功能后双击能直接插入")
                  : note == .inserted ? tr("插到了光标处") : tr("去输入框按 ⌘V 粘贴"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -381,7 +385,7 @@ struct EmojiDetail: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(minHeight: 48)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.12)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(accent.opacity(0.6), lineWidth: 1)
@@ -409,13 +413,13 @@ struct EmojiDetail: View {
         if fullWarning {
             Text(tr("收藏最多 \(EmojiPrefs.maxFavorites) 个，先移除几个再加。"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Self.red)
+                .foregroundStyle(Self.red.panelReadable)
                 .padding(.bottom, 10)
         }
         HStack(spacing: 8) {
             footerButton(tr("清空最近用过"), tint: Self.red, enabled: !p.recent.isEmpty) { clearRecent() }
             footerButton(confirmRestore ? tr("再点一次恢复") : tr("恢复默认"),
-                         tint: confirmRestore ? accent : .white, enabled: true) {
+                         tint: confirmRestore ? accent : .panelPrimary, enabled: true) {
                 if confirmRestore {
                     confirmRestore = false
                     toning = nil
@@ -433,12 +437,12 @@ struct EmojiDetail: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(tint)
+                .foregroundStyle(tint.panelReadable)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
-                .background(Capsule().fill(.white.opacity(0.12)))
-                .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6) }
+                .background(Capsule().fill(.panelFill))
+                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -511,7 +515,7 @@ struct EmojiDetail: View {
         let starred = area == .editResults && p.isFavorite(item)
         return ZStack(alignment: .topTrailing) {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(highlighted ? accent.opacity(0.22) : lifted ? Color(red: 0.23, green: 0.23, blue: 0.26) : .white.opacity(0.06))
+                .fill(highlighted ? accent.opacity(0.22) : lifted ? Self.solidTile : .panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
                         .strokeBorder(highlighted || lifted ? accent : .clear, lineWidth: 1.4)
@@ -526,9 +530,9 @@ struct EmojiDetail: View {
             if starred {
                 Image(systemName: "star.fill")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
                     .padding(2)
-                    .background(Circle().fill(MeshBackdrop.graphite))
+                    .background(Circle().fill(Self.solidTile))
                     .offset(x: 1, y: -1)
             }
         }
@@ -599,11 +603,11 @@ struct EmojiDetail: View {
                 Button {
                     WidgetDetailWindow.shared.focusField { searchFocused = true }
                 } label: {
-                    dashedBox(.white.opacity(0.3))
+                    dashedBox(.panelQuaternary)
                         .overlay {
                             Image(systemName: "plus")
                                 .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(.panelSecondary)
                         }
                         .contentShape(.rect)
                 }
@@ -629,7 +633,7 @@ struct EmojiDetail: View {
         let toningThis = toning?.area == .editFavorites && toning?.emoji == item
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: lifted ? 11 : 10, style: .continuous)
-                .fill(lifted ? Color(red: 0.23, green: 0.23, blue: 0.26) : toningThis ? accent.opacity(0.22) : .white.opacity(0.06))
+                .fill(lifted ? Self.solidTile : toningThis ? accent.opacity(0.22) : .panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: lifted ? 11 : 10, style: .continuous)
                         .strokeBorder(lifted || toningThis ? accent.opacity(0.9) : .clear, lineWidth: 1.4)
@@ -656,7 +660,7 @@ struct EmojiDetail: View {
                     withAnimation(.snappy(duration: 0.2)) { save(p.removingFavorite(at: index)) }
                 } label: {
                     ZStack {
-                        Circle().fill(MeshBackdrop.graphite).frame(width: 16, height: 16)
+                        Circle().fill(Self.solidTile).frame(width: 16, height: 16)
                         Circle().fill(Self.red).frame(width: 14, height: 14)
                         Capsule().fill(Color(hex: "#330B05")).frame(width: 7, height: 1.8)
                     }
@@ -720,12 +724,12 @@ struct EmojiDetail: View {
             HStack {
                 Text(tr("选肤色"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Button(tr("收起")) { withAnimation(.snappy(duration: 0.2)) { toning = nil } }
                     .buttonStyle(.plain)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -747,10 +751,10 @@ struct EmojiDetail: View {
                                 .background {
                                     if tone == currentTone {
                                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(.white.opacity(0.16))
+                                            .fill(.panelFillStrong)
                                             .overlay {
                                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                    .strokeBorder(.white.opacity(0.7), lineWidth: 1)
+                                                    .strokeBorder(.panelQuaternary, lineWidth: 1)
                                             }
                                             .padding(.horizontal, 3)
                                     }
@@ -763,9 +767,9 @@ struct EmojiDetail: View {
                     }
                 }
                 .padding(.vertical, 4)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(red: 0.23, green: 0.23, blue: 0.25)))
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Self.solidTile))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.6)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
             }
         }
@@ -796,12 +800,12 @@ struct EmojiDetail: View {
         HStack {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 8)
             if let trailing {
                 Text(trailing)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             accessory()
         }
@@ -812,7 +816,7 @@ struct EmojiDetail: View {
     private func emptyLine(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(.panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)

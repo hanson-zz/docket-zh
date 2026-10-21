@@ -116,11 +116,11 @@ struct FocusTimerDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 6)
@@ -133,11 +133,11 @@ struct FocusTimerDetail: View {
         HStack(spacing: 10) {
             Image(systemName: "pencil")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             TextField(tr("这一轮要做什么"), text: $draft)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($taskFocused)
                 .onSubmit { commitDraft() }
                 .disabled(context.isPreview)
@@ -146,10 +146,10 @@ struct FocusTimerDetail: View {
         .frame(height: 40)
         .background {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(.white.opacity(taskFocused ? 0.1 : 0.08))
+                .fill(Color.panelFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .strokeBorder(taskFocused ? accent.opacity(0.9) : Color.white.opacity(0.14),
+                        .strokeBorder(taskFocused ? accent.opacity(0.9) : Color.panelStroke,
                                       lineWidth: taskFocused ? 1.2 : 0.6)
                 }
         }
@@ -164,7 +164,7 @@ struct FocusTimerDetail: View {
         let round = FocusCycle.round(state)
         return ZStack {
             Circle()
-                .stroke(.white.opacity(0.12), lineWidth: 10)
+                .stroke(.panelTrack, lineWidth: 10)
             Circle()
                 .trim(from: 0, to: idle ? 1 : min(1, max(0, left / total)))
                 .stroke(color.opacity(idle ? 0.35 : 1), style: StrokeStyle(lineWidth: 10, lineCap: .round))
@@ -180,13 +180,13 @@ struct FocusTimerDetail: View {
                 Text(docketClockString(left))
                     .font(.system(size: 42, weight: .light, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .rollingValue(Int(left.rounded(.up)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text(tr("共 \(Int((total / 60).rounded())) 分钟"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             .padding(.horizontal, 22)
@@ -200,23 +200,23 @@ struct FocusTimerDetail: View {
     /// 做完的轮是强调色，正在专注的这一轮白色，还没到的淡。
     private func dotColor(_ index: Int, round: Int, resting: Bool, color: Color) -> Color {
         if index < round - 1 { return color }
-        if index == round - 1 { return resting ? color : Color.white.opacity(0.9) }
-        return .white.opacity(0.22)
+        if index == round - 1 { return resting ? color : Color.panelPrimary }
+        return .panelTrack
     }
 
     private func bigButton(_ title: String, solid: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 15, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? ink : .white)
+                .foregroundStyle(solid ? ink : .panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
                 .background {
                     if solid {
                         Capsule().fill(accent)
                     } else {
-                        Capsule().fill(.white.opacity(0.12))
-                            .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                        Capsule().fill(.panelFill)
+                            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     }
                 }
                 .contentShape(Capsule())
@@ -228,15 +228,15 @@ struct FocusTimerDetail: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? ink : .white)
+                .foregroundStyle(solid ? ink : .panelPrimary)
                 .padding(.horizontal, solid ? 15 : 13)
                 .frame(height: 28)
                 .background {
                     if solid {
                         Capsule().fill(accent)
                     } else {
-                        Capsule().fill(.white.opacity(0.12))
-                            .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                        Capsule().fill(.panelFill)
+                            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     }
                 }
                 .contentShape(Capsule())
@@ -251,7 +251,7 @@ struct FocusTimerDetail: View {
         let sound = FocusAmbient.sound(state)
         let label = Text(tr("环境音"))
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.86))
+            .foregroundStyle(.panelPrimary)
             .fixedSize()
         let choose = Button {
             commitDraft()
@@ -259,14 +259,14 @@ struct FocusTimerDetail: View {
         } label: {
             Text(sound?.title ?? tr("不播放"))
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(sound == nil ? Color.white.opacity(0.7) : accent)
+                .foregroundStyle(sound == nil ? Color.panelSecondary : accent.panelReadable)
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, 12)
                 .frame(height: 28)
                 .background {
-                    Capsule().fill(sound == nil ? Color.white.opacity(0.08) : accent.opacity(0.2))
-                        .overlay(Capsule().strokeBorder(sound == nil ? Color.white.opacity(0.14) : accent.opacity(0.8),
+                    Capsule().fill(sound == nil ? Color.panelFill : accent.opacity(0.2))
+                        .overlay(Capsule().strokeBorder(sound == nil ? Color.panelStroke : accent.opacity(0.8),
                                                         lineWidth: 0.8))
                 }
                 .contentShape(Capsule())
@@ -285,7 +285,7 @@ struct FocusTimerDetail: View {
         } label: {
             Text(tr("换"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.86))
+                .foregroundStyle(.panelPrimary)
                 .frame(minWidth: 24, minHeight: 28)
                 .contentShape(.rect)
         }
@@ -342,11 +342,11 @@ struct FocusTimerDetail: View {
             HStack {
                 Text(tr("今天"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 8)
                 Text(FocusDay.focusedText(minutes: minutes))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(minutes > 0 ? accent : Color.white.opacity(0.62))
+                    .foregroundStyle(minutes > 0 ? accent.panelReadable : Color.panelSecondary)
                     .monospacedDigit()
             }
         } content: {
@@ -354,7 +354,7 @@ struct FocusTimerDetail: View {
                 FocusDayTimeline(segments: segments, now: now, accent: accent)
                 Text(FocusDay.footer(done: done.count, live: live != nil))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                 if ProLicenseGate.canSeeFocusHistory(unlocked: unlocked) {
                     FocusWeeklyReport(accent: accent, now: now, isPreview: context.isPreview)
@@ -379,7 +379,7 @@ struct FocusTimerDetail: View {
                 }
                 Text(tr("近七天专注统计"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 HStack(spacing: 4) {
@@ -390,7 +390,7 @@ struct FocusTimerDetail: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .bold))
                 }
-                .foregroundStyle(Self.gold)
+                .foregroundStyle(Self.gold.panelReadable)
                 .padding(.horizontal, 8)
                 .frame(height: 22)
                 .background(Capsule().fill(Self.gold.opacity(0.16))
@@ -422,7 +422,7 @@ struct FocusTimerDetail: View {
             HStack(spacing: 10) {
                 Text(tr("音量"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Slider(value: volumeBinding(state), in: 0...100)
                     .controlSize(.small)
                     .tint(accent)
@@ -466,7 +466,7 @@ struct FocusTimerDetail: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(.white.opacity(0.1)).frame(height: 0.6).padding(.horizontal, 14)
+        Rectangle().fill(.panelSeparator).frame(height: 0.6).padding(.horizontal, 14)
     }
 
     private func sectionLabel(_ text: String, trailing: String? = nil) -> some View {
@@ -476,7 +476,7 @@ struct FocusTimerDetail: View {
             if let trailing { Text(trailing) }
         }
         .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.62))
+        .foregroundStyle(.panelSecondary)
     }
 
     private func stepperRow(_ label: String, text: String,
@@ -486,14 +486,14 @@ struct FocusTimerDetail: View {
         HStack {
             Text(label)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 8)
             HStack(spacing: 0) {
                 stepButton("minus", enabled: canMinus) { update(minus) }
                     .accessibilityLabel(tr("\(label)减少"))
                 Text(text)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .frame(maxWidth: .infinity)
@@ -501,8 +501,8 @@ struct FocusTimerDetail: View {
                     .accessibilityLabel(tr("\(label)增加"))
             }
             .frame(width: 132, height: 30)
-            .background(Capsule().fill(.white.opacity(0.08))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6)))
+            .background(Capsule().fill(.panelFill)
+                .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6)))
         }
         .padding(.horizontal, 14)
         .frame(height: 48)
@@ -512,7 +512,7 @@ struct FocusTimerDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 0.85 : 0.3))
+                .foregroundStyle(enabled ? Color.panelPrimary : Color.panelQuaternary)
                 .frame(width: 34, height: 30)
                 .contentShape(.rect)
         }
@@ -528,7 +528,7 @@ struct FocusTimerDetail: View {
             if recent.isEmpty {
                 Text(tr("在上面写下任务名，开始专注后会记在这里。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 CityChipFlow(spacing: 6) {
@@ -540,7 +540,7 @@ struct FocusTimerDetail: View {
                         } label: {
                             Text(task)
                                 .font(.system(size: 13, weight: chosen ? .bold : .semibold))
-                                .foregroundStyle(chosen ? ink : Color.white.opacity(0.88))
+                                .foregroundStyle(chosen ? ink : Color.panelPrimary)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                                 .padding(.horizontal, 11)
@@ -550,8 +550,8 @@ struct FocusTimerDetail: View {
                                     if chosen {
                                         Capsule().fill(accent)
                                     } else {
-                                        Capsule().fill(.white.opacity(0.08))
-                                            .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.6))
+                                        Capsule().fill(.panelFill)
+                                            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                                     }
                                 }
                                 .contentShape(Capsule())
@@ -581,17 +581,17 @@ struct FocusTimerDetail: View {
                 } label: {
                     Text(sound?.title ?? tr("不播放"))
                         .font(.system(size: 13, weight: chosen ? .bold : .semibold))
-                        .foregroundStyle(chosen ? ink : Color.white.opacity(0.88))
+                        .foregroundStyle(chosen ? ink : Color.panelPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
                         .background {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(chosen ? accent : Color.white.opacity(0.08))
+                                .fill(chosen ? accent : Color.panelFill)
                                 .overlay {
                                     if !chosen {
                                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .strokeBorder(.white.opacity(0.14), lineWidth: 0.6)
+                                            .strokeBorder(.panelStroke, lineWidth: 0.6)
                                     }
                                 }
                         }
@@ -608,7 +608,7 @@ struct FocusTimerDetail: View {
         HStack {
             Text(label)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.94))
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 8)
             Toggle(label, isOn: Binding(get: { isOn }, set: set))
                 .labelsHidden()
@@ -714,7 +714,7 @@ struct FocusDayTimeline: View {
         .padding(.horizontal, 14)
         .padding(.top, 14)
         .padding(.bottom, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.black.opacity(0.22)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelShade))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tr("今天完成 \(segments.filter { !$0.live }.count) 个番茄"))
     }
@@ -726,7 +726,7 @@ struct FocusDayTimeline: View {
         let nowX = x(now)
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .fill(.white.opacity(0.07))
+                .fill(.panelTrack)
                 .frame(width: width, height: Self.barHeight)
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 let left = x(segment.start), right = x(segment.end)
@@ -737,20 +737,20 @@ struct FocusDayTimeline: View {
                     .help(segment.task.isEmpty ? "" : segment.task)
             }
             Rectangle()
-                .fill(.white)
+                .fill(.panelPrimary)
                 .frame(width: 1.6, height: Self.barHeight + 10)
                 .offset(x: min(width - 0.8, max(0, nowX - 0.8)), y: -5)
             ForEach(Array(ticks.enumerated()), id: \.offset) { index, hour in
                 let raw = CGFloat(hour - window.lowerBound) / span * width
                 Rectangle()
-                    .fill(.white.opacity(0.25))
+                    .fill(.panelQuaternary)
                     .frame(width: 1, height: 4)
                     .offset(x: min(width - 1, max(0, raw - 0.5)), y: Self.barHeight + 4)
                 let text = "\(hour)"
                 let half = CGFloat(text.count) * 13 * 0.3
                 Text(text)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
                     .fixedSize()
                     .position(x: index == 0 ? max(half, raw) : (index == ticks.count - 1 ? min(width - half, raw) : raw),

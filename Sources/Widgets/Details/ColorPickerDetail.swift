@@ -64,11 +64,11 @@ struct ColorPickerDetail: View {
     private var hero: some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(shown.map(\.swiftUIColor) ?? Color.white.opacity(0.1))
+                .fill(shown.map(\.swiftUIColor) ?? Color.panelFill)
                 .frame(width: 56, height: 56)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.25), lineWidth: 0.5)
+                        .strokeBorder(.panelQuaternary, lineWidth: 0.5)
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: shown.map { style.text($0) } ?? tr("还没有取色"))
@@ -78,7 +78,7 @@ struct ColorPickerDetail: View {
                     .minimumScaleFactor(0.55)
                 Text(copied.map { tr("已拷贝 \($0)") } ?? tr("点按下方的值即可拷贝"))
                     .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -97,7 +97,7 @@ struct ColorPickerDetail: View {
         } label: {
             Image(systemName: saved ? "star.fill" : "star")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(saved ? Color(hex: "#FFD43B") : .white.opacity(0.75))
+                .foregroundStyle(saved ? Color(hex: "#FFD43B").panelReadable : .panelSecondary)
                 .frame(width: 30, height: 30)
                 .contentShape(.rect)
         }
@@ -129,15 +129,15 @@ struct ColorPickerDetail: View {
                 HStack(spacing: 4) {
                     Text(verbatim: format.title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                     Spacer(minLength: 0)
                     Image(systemName: copied == format.title ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Text(verbatim: value)
                     .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
@@ -184,11 +184,11 @@ struct ColorPickerDetail: View {
                 sectionTitle(tr("我的色板"))
                 Text(tr("不会被挤掉"))
                     .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                 Spacer(minLength: 0)
                 Text(verbatim: "\(colors.count)/\(ColorPalette.limit)")
                     .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
             }
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(colors, id: \.self) { color in
@@ -207,12 +207,12 @@ struct ColorPickerDetail: View {
                         ColorPicking.togglePalette(shown)
                     } label: {
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .strokeBorder(.white.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                            .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                             .frame(height: 26)
                             .overlay {
                                 Image(systemName: "plus")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.7))
+                                    .foregroundStyle(.panelSecondary)
                             }
                             .contentShape(.rect)
                     }
@@ -237,7 +237,7 @@ struct ColorPickerDetail: View {
                     Button(tr("清空")) { confirmClear = true }
                         .buttonStyle(.plain)
                         .font(WidgetStyle.label(13))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                         .disabled(context.isPreview)
                         .confirmationDialog(tr("清空最近的颜色？"), isPresented: $confirmClear) {
                             Button(tr("清空"), role: .destructive) {
@@ -253,7 +253,7 @@ struct ColorPickerDetail: View {
             if colors.isEmpty {
                 Text(tr("取到的颜色会出现在这里，右键可收藏或删除"))
                     .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
             } else {
                 LazyVGrid(columns: columns, spacing: 6) {
@@ -294,7 +294,7 @@ struct ColorPickerDetail: View {
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
             .font(WidgetStyle.label(13))
-            .foregroundStyle(.white.opacity(0.85))
+            .foregroundStyle(.panelPrimary)
     }
 
     private func swatch(_ color: ColorCode, height: CGFloat, starred: Bool) -> some View {
@@ -307,7 +307,7 @@ struct ColorPickerDetail: View {
                 .frame(height: height)
                 .overlay {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(.white.opacity(color == shown ? 0.9 : 0.15),
+                        .strokeBorder(color == shown ? Color.panelPrimary : Color.panelStroke,
                                       lineWidth: color == shown ? 1.5 : 0.5)
                 }
                 .overlay(alignment: .topTrailing) {

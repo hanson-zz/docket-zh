@@ -81,8 +81,8 @@ struct ClipboardDetail: View {
                     }
                 }
                 Text("历史只保存在内存中，退出码头后即清除；加了星标的文本会保存下来。密码管理器标记为隐藏的内容不会被记录。")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -103,7 +103,7 @@ struct ClipboardDetail: View {
         VStack(alignment: .leading, spacing: 4) {
             TextEditor(text: $draft)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .scrollContentBackground(.hidden)
                 .scrollIndicators(.never)
                 .focused($editorFocused)
@@ -111,12 +111,12 @@ struct ClipboardDetail: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             HStack(spacing: 6) {
                 Text(draftIsEmpty ? tr("内容不能为空") : tr("\(draft.count) 字"))
-                    .font(WidgetStyle.caption(10).monospacedDigit())
-                    .foregroundStyle(.white.opacity(draft.count > draftLimit || draftIsEmpty ? 0.9 : 0.5))
+                    .font(WidgetStyle.caption(13).monospacedDigit())
+                    .foregroundStyle(draft.count > draftLimit || draftIsEmpty ? Color.panelPrimary : Color.panelTertiary)
                 Spacer(minLength: 0)
                 Text("Esc 取消")
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelTertiary)
             }
         }
         .padding(.horizontal, 10)
@@ -170,7 +170,7 @@ struct ClipboardDetail: View {
         } label: {
             Image(systemName: "pencil")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
                 .frame(width: 22, height: 22)
                 .contentShape(.rect)
         }
@@ -182,16 +182,16 @@ struct ClipboardDetail: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             TextField("", text: $query, prompt: Text("搜索剪贴板"))
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .foregroundStyle(.white)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary)
                 .focused($searching)
                 .disabled(context.isPreview)
             if !query.isEmpty {
                 Button { query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.5))
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.panelTertiary)
                 }
                 .buttonStyle(.plain)
             }
@@ -242,9 +242,9 @@ struct ClipboardDetail: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .semibold))
+            .font(.system(size: 13, weight: .semibold))
             .tracking(0.6)
-            .foregroundStyle(.white.opacity(0.55))
+            .foregroundStyle(.panelTertiary)
             .padding(.leading, 4)
             .padding(.top, 2)
     }
@@ -253,9 +253,9 @@ struct ClipboardDetail: View {
         rowShell(id: "pin:" + text) {
             Image(systemName: "text.quote")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.1))
+                .background(Color.panelFill)
         } title: {
             text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: " ")
         } caption: {
@@ -336,10 +336,10 @@ struct ClipboardDetail: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(on ? 1 : 0.5))
+                .foregroundStyle(on ? Color.panelPrimary : Color.panelTertiary)
                 .frame(width: 26, height: 22)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(on ? panelTint.fill(0.45, or: .white.opacity(0.2)) : .clear))
+                    .fill(on ? panelTint.fill(0.45, or: .panelFillStrong) : .clear))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -412,9 +412,9 @@ struct ClipboardDetail: View {
                       flashed: copied == "pin:" + text, flashText: pastes ? tr("已粘贴") : tr("已拷贝")) {
             Image(systemName: "text.quote")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.1))
+                .background(Color.panelFill)
         } accessory: {
             starButton(text, pinned: true)
         }
@@ -451,12 +451,12 @@ struct ClipboardDetail: View {
                 .clipShape(.rect(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(title())
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white)
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(2)
                 Text(copied == id ? (pastes ? tr("已粘贴") : tr("已拷贝")) : caption())
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
             }
             Spacer(minLength: 0)
             HStack(spacing: 0) { star() }
@@ -475,7 +475,7 @@ struct ClipboardDetail: View {
         } label: {
             Image(systemName: pinned ? "star.fill" : "star")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(pinned ? Color.yellow : .white.opacity(0.5))
+                .foregroundStyle(pinned ? Color.yellow.panelReadable : .panelTertiary)
                 .frame(width: 22, height: 22)
                 .contentShape(.rect)
         }
@@ -493,9 +493,9 @@ struct ClipboardDetail: View {
         case .text:
             Image(systemName: "text.alignleft")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.panelPrimary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.1))
+                .background(Color.panelFill)
         }
     }
 

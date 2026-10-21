@@ -79,13 +79,13 @@ struct CountdownDetail: View {
         return HStack(alignment: .center, spacing: 8) {
             Text(name.isEmpty ? tr("倒计时") : name)
                 .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
             Spacer(minLength: 6)
             if let state = CountdownRun.stateText(phase) {
                 Text(state)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(accent.panelReadable)
                     .padding(.horizontal, 9)
                     .frame(height: 22)
                     .background(Capsule().fill(accent.opacity(0.16)))
@@ -98,7 +98,7 @@ struct CountdownDetail: View {
         let ringing = isRinging(phase)
         return ZStack {
             Circle()
-                .stroke(.white.opacity(0.10), lineWidth: 7)
+                .stroke(.panelTrack, lineWidth: 7)
             Circle()
                 .trim(from: 0, to: ringing ? 1 : min(1, max(0, 1 - fraction)))
                 .stroke(accent.opacity(phase == .idle ? 0.35 : 1),
@@ -116,19 +116,19 @@ struct CountdownDetail: View {
                     }
                     Text(tr("时间到"))
                         .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                 } else {
                     Text(CountdownRun.remainingText(left))
                         .font(.system(size: 48, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .rollingValue(Int(left.rounded(.up)))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
                 Text(caption(phase, left: left, total: total, now: now))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.68))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
@@ -171,16 +171,16 @@ struct CountdownDetail: View {
             HStack(spacing: 6) {
                 Text(tr("快速开始"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
-                Circle().fill(.white.opacity(0.55)).frame(width: 5, height: 5)
+                    .foregroundStyle(.panelSecondary)
+                Circle().fill(Color.panelTertiary).frame(width: 5, height: 5)
                 Text(tr("在卡片上"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                 Spacer(minLength: 6)
                 Button { withAnimation(.snappy(duration: 0.25)) { editingPresets = true } } label: {
                     Text(tr("调整卡片预设"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(accent)
+                        .foregroundStyle(accent.panelReadable)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -191,21 +191,21 @@ struct CountdownDetail: View {
                     Button { start(duration: Double(minutes * 60)) } label: {
                         Text(CountdownRun.presetLabel(minutes))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
                             .frame(height: 36)
                             .background {
-                                Capsule().fill(minutes == last ? accent.opacity(0.22) : .white.opacity(0.09))
+                                Capsule().fill(minutes == last ? accent.opacity(0.22) : .panelFill)
                                     .overlay {
-                                        Capsule().strokeBorder(minutes == last ? accent.opacity(0.6) : .white.opacity(0.14),
+                                        Capsule().strokeBorder(minutes == last ? accent.opacity(0.6) : .panelStroke,
                                                                lineWidth: 0.6)
                                     }
                             }
                             .overlay(alignment: .topTrailing) {
                                 if presets.contains(minutes) {
-                                    Circle().fill(.white.opacity(0.55)).frame(width: 5, height: 5)
+                                    Circle().fill(Color.panelTertiary).frame(width: 5, height: 5)
                                         .padding(.top, 7).padding(.trailing, 9)
                                 }
                             }
@@ -224,7 +224,7 @@ struct CountdownDetail: View {
         return HStack(spacing: 8) {
             Text(tr("自定义"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 0)
             roundStep("minus", enabled: minutes > CountdownRun.presetRange.lowerBound) {
                 custom = CountdownRun.stepping(minutes, up: false)
@@ -232,7 +232,7 @@ struct CountdownDetail: View {
             Text(CountdownRun.lengthText(Double(minutes * 60)))
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(width: 76)
@@ -258,12 +258,12 @@ struct CountdownDetail: View {
             HStack {
                 Text(tr("卡片上的预设"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                 Spacer()
                 Button { withAnimation(.snappy(duration: 0.25)) { editingPresets = false } } label: {
                     Text(tr("完成"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(accent)
+                        .foregroundStyle(accent.panelReadable)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -272,7 +272,7 @@ struct CountdownDetail: View {
                 HStack(spacing: 10) {
                     Text(tr("第 \(index + 1) 个"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                     Spacer(minLength: 0)
                     roundStep("minus", enabled: minutes > CountdownRun.presetRange.lowerBound) {
                         setPreset(index, to: CountdownRun.stepping(minutes, up: false))
@@ -281,7 +281,7 @@ struct CountdownDetail: View {
                         Text(CountdownRun.lengthText(Double(minutes * 60)))
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .monospacedDigit()
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .frame(minWidth: 96)
                             .contentShape(.rect)
                     }
@@ -304,13 +304,13 @@ struct CountdownDetail: View {
         HStack(spacing: 6) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 6)
             if !adding {
                 Button(action: add) {
                     Label(tr("添加"), systemImage: "plus")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(canAdd ? accent : .white.opacity(0.3))
+                        .foregroundStyle(canAdd ? accent.panelReadable : .panelQuaternary)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -331,7 +331,7 @@ struct CountdownDetail: View {
             if extras.isEmpty && !addingTimer {
                 Text(tr("泡面、晾衣服、等会议可以一起计，各计各的。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             ForEach(extras) { timer in
@@ -353,7 +353,7 @@ struct CountdownDetail: View {
                 Text(CountdownRun.lengthText(Double(timerMinutes * 60)))
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .frame(width: 96)
                     .contentTransition(.numericText())
@@ -383,11 +383,11 @@ struct CountdownDetail: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(timer.title)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
                     Text(rowStatus(phase, left: left, total: timer.duration, now: now))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(ringing ? accent : .white.opacity(0.6))
+                        .foregroundStyle(ringing ? accent.panelReadable : .panelSecondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)
                 }
@@ -395,7 +395,7 @@ struct CountdownDetail: View {
                 Text(ringing ? tr("时间到") : CountdownRun.remainingText(left))
                     .font(.system(size: ringing ? 17 : 22, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(Color.white.opacity(phase == .idle ? 0.5 : 1))
+                    .foregroundStyle(phase == .idle ? Color.panelTertiary : Color.panelPrimary)
                     .rollingValue(Int(left.rounded(.up)))
                     .lineLimit(1)
                 if ringing {
@@ -410,7 +410,7 @@ struct CountdownDetail: View {
             if phase != .idle {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.10))
+                        Capsule().fill(.panelTrack)
                         Capsule().fill(accent)
                             .frame(width: max(3, geo.size.width * (ringing ? 1 : min(1, max(0, fraction)))))
                     }
@@ -428,9 +428,9 @@ struct CountdownDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(.white.opacity(0.12)))
+                .background(Circle().fill(.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -488,7 +488,7 @@ struct CountdownDetail: View {
                     }
                     Text(tr("生日、纪念日、发布日，算到那天还有几天。"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -513,7 +513,7 @@ struct CountdownDetail: View {
                 Toggle(isOn: $dateYearly) {
                     Text(tr("每年重复"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.panelPrimary)
                 }
                 .toggleStyle(.switch)
                 .controlSize(.small)
@@ -545,18 +545,18 @@ struct CountdownDetail: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(days < 0 ? 0.5 : 0.95))
+                    .foregroundStyle(days < 0 ? Color.panelTertiary : Color.panelPrimary)
                     .lineLimit(1)
                 Text(CountdownList.dateText(item))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
             Text(CountdownList.daysText(days))
                 .font(.system(size: days > 1 ? 17 : 15, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(days == 0 ? accent : .white.opacity(days < 0 ? 0.45 : 1))
+                .foregroundStyle(days == 0 ? accent.panelReadable : (days < 0 ? Color.panelTertiary : Color.panelPrimary))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
             rowGlyph("xmark", label: tr("删除 \(item.title)")) { removeDate(item.id) }
@@ -570,9 +570,9 @@ struct CountdownDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 0.9 : 0.3))
+                .foregroundStyle(enabled ? Color.panelPrimary : Color.panelQuaternary)
                 .frame(width: 28, height: 28)
-                .background(Circle().fill(.white.opacity(0.12)))
+                .background(Circle().fill(.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

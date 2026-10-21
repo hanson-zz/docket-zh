@@ -213,11 +213,11 @@ struct TimeProgressColors: Equatable, Sendable {
     func day(_ day: TimeProgress.YearDay) -> (Color, Double) {
         switch day.mark {
         case .past: (accent, 0.82)
-        case .future: (.white, 0.12)
+        case .future: (.panelPrimary, 0.12)
         case .holiday: (contrast, day.isPast ? 1 : 0.6)
         case .makeupWorkday: (contrast, 0.4)
         case .anniversary: (amber, day.isPast ? 0.75 : 1)
-        case .today: (.white, 1)
+        case .today: (.panelPrimary, 1)
         }
     }
 }
@@ -252,14 +252,14 @@ struct TimeProgressPercent: View {
     var value: Int
     var size: CGFloat
     var signSize: CGFloat
-    var signColor: Color = .white.opacity(0.7)
+    var signColor: Color = .panelSecondary
     var weight: Font.Weight = .bold
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 1) {
             Text(verbatim: "\(value)")
                 .font(TimeProgressType.figure(size, weight: weight))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .rollingValue(value)
             Text(verbatim: "%")
                 .font(TimeProgressType.figure(signSize, weight: .semibold))

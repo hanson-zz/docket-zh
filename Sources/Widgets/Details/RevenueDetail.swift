@@ -30,8 +30,8 @@ struct RevenueDetail: View {
                     accountRow
                     metricRow
                     Text(caption)
-                        .font(WidgetStyle.caption(12))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 unconnected
@@ -59,9 +59,9 @@ struct RevenueDetail: View {
                 .fill(accent)
                 .frame(width: 8, height: 8)
             Text(account.uppercased())
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -76,11 +76,11 @@ struct RevenueDetail: View {
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 8)
             Text(periodShort)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.white.opacity(0.18)))
+                .background(Capsule().fill(.panelFillStrong))
                 .fixedSize()
         }
     }
@@ -92,28 +92,28 @@ struct RevenueDetail: View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: "link.badge.plus")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
             Text("未连接")
                 .font(WidgetStyle.value(20))
                 .foregroundStyle(WidgetStyle.primary)
             Text(tr("码头没有保存任何 \(provider) 凭据，因此没有可显示的金额，也没有可绘制的历史数据。"))
-                .font(WidgetStyle.caption(12))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             // Points at the panel's own settings button rather than repeating
             // it: the header already carries the only control that can reach
             // the widget's settings from here.
             Label("使用此面板顶部的设置按钮连接账户",
                   systemImage: "slider.horizontal.3")
-                .font(WidgetStyle.label(11.5))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.white.opacity(0.4),
+                .strokeBorder(.panelQuaternary,
                               style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
         }
     }
@@ -124,11 +124,11 @@ struct RevenueDetail: View {
     private var about: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("关于此指标")
-                .font(WidgetStyle.label(12))
+                .font(WidgetStyle.label(13))
                 .foregroundStyle(WidgetStyle.primary)
             Text(explanation)
-                .font(WidgetStyle.caption(11.5))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

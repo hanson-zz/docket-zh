@@ -81,7 +81,7 @@ struct ReorderableChecklist: View {
                     if isDragging {
                         Text(verbatim: tr("拖动中"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(accentText)
                     }
                 }
                 .contentShape(Rectangle())
@@ -194,14 +194,14 @@ struct ReorderableChecklist: View {
     private var primary: Color {
         switch look {
         case .settings: .primary
-        case .panel: .white.opacity(0.95)
+        case .panel: .panelPrimary
         }
     }
 
     private var secondary: Color {
         switch look {
         case .settings: .secondary
-        case .panel: .white.opacity(0.7)
+        case .panel: .panelSecondary
         }
     }
 
@@ -209,6 +209,14 @@ struct ReorderableChecklist: View {
         switch look {
         case .settings: .accentColor
         case .panel(let accent, _): accent
+        }
+    }
+
+    /// 主题色写成字：面板在浅色玻璃上加深一档。
+    private var accentText: Color {
+        switch look {
+        case .settings: .accentColor
+        case .panel(let accent, _): accent.panelReadable
         }
     }
 
@@ -222,7 +230,7 @@ struct ReorderableChecklist: View {
     private func rowFill(_ dragging: Bool) -> Color {
         switch look {
         case .settings: dragging ? Color.primary.opacity(0.12) : Color.primary.opacity(0.05)
-        case .panel: dragging ? Color.white.opacity(0.16) : Color.white.opacity(0.06)
+        case .panel: dragging ? Color.panelFillStrong : Color.panelFill
         }
     }
 }

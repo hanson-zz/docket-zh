@@ -57,14 +57,14 @@ struct AirDropDetail: View {
                 if let notice {
                     Text(verbatim: notice)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.78))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 recentSection
                 Text(verbatim: tr("接收模式仍在控制中心或系统设置里改"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -84,6 +84,11 @@ struct AirDropDetail: View {
         }
     }
 
+    /// 文件已不在原处的提示字：深色下淡红，浅色玻璃上换成深红才读得出。
+    private static let missingRed = Color.panelDynamic(
+        dark: NSColor(srgbRed: 1, green: 0.702, blue: 0.667, alpha: 1),
+        light: NSColor(srgbRed: 0.72, green: 0.2, blue: 0.16, alpha: 1))
+
     private var ground: Color {
         switch mode {
         case .contacts: Self.blue
@@ -99,11 +104,11 @@ struct AirDropDetail: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: tr("隔空投送"))
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.97))
+                    .foregroundStyle(.panelPrimary)
                 Button(action: openSettings) {
                     Text(verbatim: "\(mode?.title ?? tr("无法获取设置")) · \(tr("设置")) ›")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                         .contentShape(.rect)
                 }
@@ -114,12 +119,12 @@ struct AirDropDetail: View {
             Button(action: openWindow) {
                 Text(verbatim: tr("打开隔空投送"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .padding(.horizontal, 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -134,12 +139,12 @@ struct AirDropDetail: View {
         return VStack(spacing: 10) {
             Text(verbatim: lit ? state.title : (state.disabled ? state.caption : tr("把文件拖到这里发送")))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(state.disabled ? 0.55 : 0.95))
+                .foregroundStyle(state.disabled ? Color.panelTertiary : Color.panelPrimary)
                 .lineLimit(1)
             if lit {
                 Text(verbatim: state.caption)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(palette.accent)
+                    .foregroundStyle(palette.accent.panelReadable)
                     .monospacedDigit()
                     .frame(height: 30)
             } else {
@@ -165,7 +170,7 @@ struct AirDropDetail: View {
         .frame(height: 92)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(lit ? 0.07 : 0.03))
+                .fill(Color.panelFill)
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(lit ? palette.accent.opacity(0.95) : palette.accent.opacity(0.6),
                               style: StrokeStyle(lineWidth: lit ? 1.6 : 1.2, dash: [5, 4]))
@@ -180,16 +185,16 @@ struct AirDropDetail: View {
             HStack {
                 Text(verbatim: tr("最近发过"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Text(verbatim: tr("码头经手的"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
             if entries.isEmpty {
                 Text(verbatim: tr("从卡片或这里发出去的文件会列在这里，点一下再发一次。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 6)
             } else {
@@ -209,12 +214,12 @@ struct AirDropDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: entry.name)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(exists ? 0.95 : 0.5))
+                    .foregroundStyle(exists ? Color.panelPrimary : Color.panelTertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(verbatim: AirDropHistory.caption(entry, exists: exists, now: context.now))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(exists ? Color.white.opacity(0.55) : Color(hex: "#FFB3AA"))
+                    .foregroundStyle(exists ? Color.panelTertiary : Self.missingRed)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -223,12 +228,12 @@ struct AirDropDetail: View {
             } label: {
                 Text(verbatim: tr("再发一次"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(exists ? 0.92 : 0.5))
+                    .foregroundStyle(exists ? Color.panelPrimary : Color.panelTertiary)
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .frame(height: 26)
-                    .background(Capsule().fill(.white.opacity(0.12)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.6))
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -238,9 +243,9 @@ struct AirDropDetail: View {
         .frame(height: 44)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(0.06))
+                .fill(.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 0.6))
+                    .strokeBorder(.panelStroke, lineWidth: 0.6))
         }
         .contextMenu {
             if exists {

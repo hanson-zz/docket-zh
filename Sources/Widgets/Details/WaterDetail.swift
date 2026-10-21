@@ -138,12 +138,12 @@ struct WaterDetail: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("饮料")
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                     Spacer()
                     Text(tr("\(picked.title)：按 \(Int((picked.factor * 100).rounded()))% 计入"))
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
                         .monospacedDigit()
                         .lineLimit(1)
                 }
@@ -177,9 +177,10 @@ struct WaterDetail: View {
                               phase: context.isPreview || reduceMotion ? nil : tick.date.timeIntervalSinceReferenceDate,
                               characterScale: 0.66, overlap: 0.14, detailed: true)
                     .overlay(alignment: .topLeading) {
+                        // 百分比压在杯子里：大杯子自己画深色杯身（插画，不跟外观），字保持白色。
                         Text(verbatim: "\(WaterIntake.percent(total: today.total, goal: today.goal))%")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
                             .monospacedDigit()
                             .padding(.leading, cupHeight * 0.64 * 0.22)
                             .padding(.top, cupHeight * 0.1)
@@ -187,18 +188,18 @@ struct WaterDetail: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("今天已喝")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(WaterIntake.figure(today.total, ounces: ounces))
                         .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                         .rollingValue(today.total)
                     Text(verbatim: "/ \(WaterIntake.figure(today.goal, ounces: ounces)) \(WaterIntake.unitLabel(ounces: ounces))")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                 }
                 statusLine(today, now: now, cup: cup)
@@ -207,16 +208,16 @@ struct WaterDetail: View {
                     .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: today.total)
                     .padding(.vertical, 2)
                 Text(tr("一杯 \(WaterIntake.amount(cup, ounces: ounces))，\(WaterCupPage.cupsToGoal(goal: today.goal, cup: cup)) 杯达标"))
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .monospacedDigit()
                 Label(lastLine(all, now: now), systemImage: "drop.fill")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .help(tr("上次喝水"))
                 Label(tr("下次提醒 \(dueLine(now: now))"), systemImage: "bell.fill")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.7)
@@ -224,8 +225,8 @@ struct WaterDetail: View {
         }
         .overlay(alignment: .topTrailing) {
             Label(tr("\(streak) 天"), systemImage: "flame.fill")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.45))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(streak > 0 ? Color(hex: PaletteColor.orange.hex).panelReadable : .panelTertiary)
                 .monospacedDigit()
                 .help(tr("连续达标 \(streak) 天"))
         }
@@ -238,17 +239,17 @@ struct WaterDetail: View {
         let color: Color
         if today.isMet {
             text = tr("达标啦！\(character.title)喝饱了")
-            color = accent.mix(with: .white, by: 0.4)
+            color = accent.mix(with: .panelPrimary, by: 0.4)
         } else if parched {
             text = tr("渴成骷髅了")
-            color = Color(hex: PaletteColor.red.hex)
+            color = Color(hex: PaletteColor.red.hex).panelReadable
         } else {
             let left = WaterIntake.amount(max(0, today.goal - today.total), ounces: ounces)
             text = tr("还差 \(left)，约 \(WaterCupPage.cupsLeft(total: today.total, goal: today.goal, cup: cup)) 杯")
-            color = .white.opacity(0.75)
+            color = .panelSecondary
         }
         return Text(text)
-            .font(.system(size: 11))
+            .font(.system(size: 13))
             .foregroundStyle(color)
             .monospacedDigit()
     }
@@ -320,19 +321,19 @@ struct WaterDetail: View {
                     .font(.system(size: 12, weight: .medium))
                     .frame(height: 15)
                 Text(title)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                     .fixedSize()
             }
-            .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
+            .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
             .padding(.horizontal, 6)
             .frame(minWidth: 40, maxWidth: .infinity)
             .frame(height: 38)
             // 选中只是亮一点加一圈白描边，不用大块的蓝。
             .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
+                .fill(selected ? Color.panelFillStrong : Color.panelFill))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
+                .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -357,12 +358,12 @@ struct WaterDetail: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(current.id == nil ? tr("新饮料") : tr("编辑饮料"))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 Text(verbatim: "\(current.name.count)/\(CustomDrinks.maxNameLength)")
-                    .font(.system(size: 10))
-                    .foregroundStyle(tooLong ? Color(hex: PaletteColor.red.hex) : .white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(tooLong ? Color(hex: PaletteColor.red.hex).panelReadable : .panelTertiary)
                     .monospacedDigit()
             }
             // The AI form's NSTextField: it takes the cursor when the editor
@@ -378,8 +379,8 @@ struct WaterDetail: View {
                                    set: { draft?.factor = CustomDrinks.clampFactor($0) }),
                     in: CustomDrinks.factorRange, step: CustomDrinks.factorStep) {
                 Text(tr("计入比例 \(Int((current.factor * 100).rounded()))%"))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             .controlSize(.small)
@@ -391,13 +392,13 @@ struct WaterDetail: View {
                     } label: {
                         Image(systemName: symbol)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(selected ? Color.white : Color.white.opacity(0.65))
+                            .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 26)
                             .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color.white.opacity(selected ? 0.18 : 0.06)))
+                                .fill(selected ? Color.panelFillStrong : Color.panelFill))
                             .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
+                                .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
@@ -406,26 +407,26 @@ struct WaterDetail: View {
             }
             if let error = current.error ?? (tooLong ? tr("名字最多 \(CustomDrinks.maxNameLength) 个字") : nil) {
                 Text(error)
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Color(hex: PaletteColor.red.hex))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(hex: PaletteColor.red.hex).panelReadable)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 10) {
                 if let id = current.id {
                     Button("删除", role: .destructive) { removeDrink(id) }
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(Color(hex: PaletteColor.red.hex))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(Color(hex: PaletteColor.red.hex).panelReadable)
                 }
                 Spacer()
                 Button("取消") { draft = nil }
                 .buttonStyle(.plain)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelSecondary)
                 Button("保存", action: saveDraft)
                     .buttonStyle(.plain)
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(canSave ? 1 : 0.35))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(canSave ? Color.panelPrimary : Color.panelQuaternary)
                     .disabled(!canSave)
             }
         }
@@ -484,8 +485,8 @@ struct WaterDetail: View {
             WaterPanda(character: character, mood: .cheer, level: 1, height: 22)
                 .frame(height: 24)
             Text(character.earnedLine)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             Button("换上") {
@@ -497,17 +498,17 @@ struct WaterDetail: View {
                 }
             }
             .buttonStyle(.plain)
-            .font(WidgetStyle.label(11))
-            .foregroundStyle(.white)
+            .font(WidgetStyle.label(13))
+            .foregroundStyle(.panelPrimary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(.white.opacity(0.18)))
+            .background(Capsule().fill(.panelFillStrong))
             Button {
                 WidgetWriter.write(instance) { config in dropNotice(character, in: &config) }
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.panelTertiary)
                     .frame(width: 18, height: 18)
                     .contentShape(.rect)
             }
@@ -526,13 +527,13 @@ struct WaterDetail: View {
                     TextField("", text: $customAmount, prompt: Text("毫升"))
                         .textFieldStyle(.plain)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .focused($focus, equals: .amount)
                         .onSubmit(addCustom)
                     Button("添加", action: addCustom)
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                         .disabled(Int(customAmount) == nil)
                     Button {
                         editingCustom = false
@@ -540,7 +541,7 @@ struct WaterDetail: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.panelTertiary)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("取消")
@@ -581,7 +582,7 @@ struct WaterDetail: View {
                 if let cup {
                     let scale: CGFloat = cup == .small ? 0.7 : cup == .cup ? 0.85 : 1
                     Rectangle()
-                        .fill(Color.white.opacity(0.14))
+                        .fill(Color.panelTrack)
                         .overlay(alignment: .bottom) {
                             Rectangle()
                                 .fill(WaterStyle.water.opacity(0.75))
@@ -593,18 +594,18 @@ struct WaterDetail: View {
                 } else if let symbol {
                     Image(systemName: symbol)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 13)
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     Text(title)
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.55))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.panelTertiary)
                     }
                 }
                 .lineLimit(1)
@@ -613,9 +614,9 @@ struct WaterDetail: View {
             .frame(maxWidth: .infinity)
             .frame(height: 40)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(highlighted ? 0.16 : 0.1)))
+                .fill(highlighted ? Color.panelFillStrong : Color.panelFill))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(.white.opacity(highlighted ? 0.35 : 0), lineWidth: 1))
+                .strokeBorder((highlighted ? Color.panelQuaternary : Color.clear), lineWidth: 1))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -649,11 +650,11 @@ struct WaterDetail: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text("今天")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Text(tr("\(count) 杯 · 计入 \(WaterIntake.amount(today.total, ounces: ounces))"))
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -663,11 +664,11 @@ struct WaterDetail: View {
                     withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { WaterLog.undo(instance) }
                 } label: {
                     Label("撤销上一杯", systemImage: "arrow.uturn.backward")
-                        .font(WidgetStyle.label(11))
-                        .foregroundStyle(.white.opacity(today.entries.isEmpty ? 0.3 : 0.85))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(today.entries.isEmpty ? Color.panelQuaternary : Color.panelPrimary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(.white.opacity(today.entries.isEmpty ? 0.05 : 0.12)))
+                        .background(Capsule().fill(Color.panelFill))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -676,8 +677,8 @@ struct WaterDetail: View {
             timeline(today, now: now)
             if today.entries.isEmpty {
                 Text("今天还没喝水。点上面的按钮记一杯，小熊猫就开始装水了。")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 2)
             } else {
@@ -686,7 +687,7 @@ struct WaterDetail: View {
                 DetailFold(key: DetailPanelSections.foldKey(.water, "entries")) {
                     Text(tr("每一杯的记录"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 } content: {
                     entryRows(rows, count: count)
                 }
@@ -710,8 +711,8 @@ struct WaterDetail: View {
             } label: {
                 Label(showsAllEntries ? tr("收起") : tr("展开全部 \(count) 条"),
                       systemImage: showsAllEntries ? "chevron.up" : "chevron.down")
-                    .font(WidgetStyle.label(11))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity)
                     .contentShape(.rect)
             }
@@ -740,41 +741,41 @@ struct WaterDetail: View {
             let x: (Int) -> CGFloat = { minute in inset + usable * CGFloat(axis.fraction(minute)) }
             ZStack(alignment: .topLeading) {
                 Capsule()
-                    .fill(.white.opacity(0.18))
+                    .fill(.panelTrack)
                     .frame(width: usable, height: 2)
                     .position(x: inset + usable / 2, y: lineY)
                 if let nextMinute {
                     Image(systemName: "bell.fill")
                         .font(.system(size: 8))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(.panelTertiary)
                         .position(x: x(nextMinute), y: lineY)
                         .help(tr("下次提醒 \(PostureSchedule.clock(nextMinute))"))
                 }
                 if !context.isPreview, nowMinute >= axis.start, nowMinute <= axis.end {
                     Capsule()
-                        .fill(.white.opacity(0.8))
+                        .fill(.panelSecondary)
                         .frame(width: 1.5, height: 14)
                         .position(x: x(nowMinute), y: lineY)
                     Text("现在")
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelSecondary)
                         .fixedSize()
                         .position(x: x(nowMinute), y: 4)
                 }
                 ForEach(Array(today.entries.enumerated()), id: \.offset) { _, entry in
                     Image(systemName: CustomDrinks.symbol(of: entry, in: namedDrinks))
                         .font(.system(size: 7.5, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(entry.type == .water ? Color.white : Color.panelPrimary)
                         .frame(width: 14, height: 14)
                         .background(Circle().fill(entry.type == .water ? WaterStyle.water.opacity(0.85)
-                                                  : Color.white.opacity(0.28)))
+                                                  : Color.panelFillStrong))
                         .position(x: x(entry.minute), y: lineY)
                         .help("\(entry.clock) \(CustomDrinks.title(of: entry, in: namedDrinks)) \(WaterIntake.amount(entry.amount, ounces: ounces))")
                 }
                 ForEach(axis.ticks, id: \.self) { tick in
                     Text(verbatim: WaterCupPage.tickLabel(tick))
-                        .font(.system(size: 8.5, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelTertiary)
                         .monospacedDigit()
                         .fixedSize()
                         .position(x: x(tick), y: 34)
@@ -825,28 +826,28 @@ struct WaterDetail: View {
         let name = CustomDrinks.title(of: entry, in: namedDrinks)
         return HStack(spacing: 8) {
             Text(entry.clock)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
                 .monospacedDigit()
                 .frame(width: 40, alignment: .leading)
             Image(systemName: CustomDrinks.symbol(of: entry, in: namedDrinks))
                 .font(.system(size: 11))
-                .foregroundStyle(accent.mix(with: .white, by: 0.35))
+                .foregroundStyle(accent.mix(with: .panelPrimary, by: 0.35))
                 .frame(width: 16)
             Text(name)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .layoutPriority(1)
             Spacer(minLength: 4)
             Text(WaterIntake.amount(entry.amount, ounces: ounces))
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
                 .monospacedDigit()
             if entry.effective != entry.amount {
                 Text(tr("计 \(WaterIntake.figure(entry.effective, ounces: ounces))"))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .monospacedDigit()
             }
             Button {
@@ -855,7 +856,7 @@ struct WaterDetail: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.panelTertiary)
                     .frame(width: 18, height: 18)
                     .contentShape(.rect)
             }
@@ -892,12 +893,12 @@ struct WaterDetail: View {
                 HStack(alignment: .bottom, spacing: 8) {
                     ForEach(week, id: \.key) { day in
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .fill(day.isMet ? accent.opacity(0.9) : Color.white.opacity(day.total > 0 ? 0.35 : 0.1))
+                            .fill(day.isMet ? accent.opacity(0.9) : day.total > 0 ? Color.panelQuaternary : Color.panelTrack)
                             .frame(height: max(3, height * day.fraction))
                             .frame(maxWidth: .infinity, maxHeight: height, alignment: .bottom)
                             .overlay(alignment: .top) {
                                 if day.isToday {
-                                    Circle().fill(.white).frame(width: 4, height: 4).offset(y: -7)
+                                    Circle().fill(.panelPrimary).frame(width: 4, height: 4).offset(y: -7)
                                         .opacity(day.fraction > 0.9 ? 0 : 1)
                                 }
                             }
@@ -905,12 +906,12 @@ struct WaterDetail: View {
                     }
                 }
                 Rectangle()
-                    .fill(.white.opacity(0.35))
+                    .fill(.panelQuaternary)
                     .frame(height: 0.5)
                     .overlay(alignment: .trailing) {
                         Text("目标")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.panelTertiary)
                             .offset(y: -7)
                     }
             }
@@ -918,8 +919,8 @@ struct WaterDetail: View {
             HStack(spacing: 8) {
                 ForEach(week, id: \.key) { day in
                     Text(day.isToday ? tr("今") : Self.weekdays[weekdayIndex(day.date)])
-                        .font(.system(size: 9, weight: day.isToday ? .bold : .semibold))
-                        .foregroundStyle(.white.opacity(day.isToday ? 0.9 : 0.5))
+                        .font(.system(size: 13, weight: day.isToday ? .bold : .semibold))
+                        .foregroundStyle(day.isToday ? Color.panelPrimary : Color.panelTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -941,13 +942,13 @@ struct WaterDetail: View {
         let cell: CGFloat = 16
         return VStack(alignment: .leading, spacing: 4) {
             Text(now.formatted(.dateTime.year().month(.wide)))
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelSecondary)
             HStack(spacing: 0) {
                 ForEach(Self.weekdays, id: \.self) { name in
                     Text(name)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -972,7 +973,7 @@ struct WaterDetail: View {
 
     private func dot(_ day: WaterDayReading, size: CGFloat) -> some View {
         ZStack {
-            Circle().fill(day.isMet ? accent.opacity(0.9) : Color.white.opacity(day.isFuture ? 0.03 : 0.08))
+            Circle().fill(day.isMet ? accent.opacity(0.9) : Color.panelFill)
             if !day.isMet, day.total > 0 {
                 Circle()
                     .trim(from: 0, to: day.fraction)
@@ -981,11 +982,11 @@ struct WaterDetail: View {
                     .padding(1)
             }
             if day.isToday {
-                Circle().strokeBorder(.white.opacity(0.85), lineWidth: 1)
+                Circle().strokeBorder(.panelSecondary, lineWidth: 1)
             }
             Text("\(day.day)")
                 .font(.system(size: 7.5, weight: day.isToday ? .bold : .medium))
-                .foregroundStyle(.white.opacity(day.isMet ? 1 : (day.isFuture ? 0.25 : 0.6)))
+                .foregroundStyle(day.isMet ? Color.white : (day.isFuture ? Color.panelQuaternary : Color.panelSecondary))
                 .monospacedDigit()
         }
         .frame(width: size, height: size)
@@ -1005,8 +1006,8 @@ struct WaterDetail: View {
                 confirmReset = true
             } label: {
                 Label("复位喝水设置", systemImage: "arrow.counterclockwise")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 30)
                     .glassPane(cornerRadius: 10)
@@ -1027,8 +1028,8 @@ struct WaterDetail: View {
             }
 
             Text("达标后当天不再提醒，刚喝过水也会顺延。一杯的容量和单位可以在设置的小组件页里改。")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1058,7 +1059,7 @@ struct WaterDetail: View {
             settingRow(tr("时段")) {
                 HStack(spacing: 4) {
                     timePicker(reminder.start, key: "start")
-                    Text("到").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                    Text("到").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                     timePicker(reminder.end % 1440, key: "end")
                 }
             }
@@ -1080,7 +1081,7 @@ struct WaterDetail: View {
             settingRow(tr("下次提醒")) {
                 HStack(spacing: 6) {
                     if !calendar.isDate(shown, inSameDayAs: now) {
-                        Text("明天").font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                        Text("明天").font(.system(size: 13)).foregroundStyle(.panelSecondary)
                     }
                     DatePicker("", selection: Binding(
                         get: { Self.date(minutes: minutes) },
@@ -1118,8 +1119,8 @@ struct WaterDetail: View {
     private func settingRow<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
         HStack {
             Text(title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             Spacer()
             content()
         }
@@ -1144,11 +1145,11 @@ struct WaterDetail: View {
     private func chip(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white)
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(Color.white.opacity(0.14)))
+                .background(Capsule().fill(Color.panelFillStrong))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -1175,8 +1176,8 @@ struct WaterDetail: View {
         }
         return VStack(alignment: .leading, spacing: 6) {
             Text("角色")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             HStack(spacing: 4) {
                 ForEach(WaterCharacter.allCases) { character in
                     let selected = character == chosen
@@ -1202,24 +1203,24 @@ struct WaterDetail: View {
                                         // needs more days is plain white.
                                         Image(systemName: "lock.fill")
                                             .font(.system(size: 8, weight: .bold))
-                                            .foregroundStyle(.white)
+                                            .foregroundStyle(proLocked ? Color.white : Color.panelPrimary)
                                             .padding(2.5)
                                             .background(Circle().fill(proLocked ? Color(hex: ShelfColor.redPanda.hex)
-                                                                                : Color.white.opacity(0.3)))
+                                                                                : Color.panelFillStrong))
                                     }
                                 }
                             Text(character.title)
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
-                        .foregroundStyle(selected ? Color.white : Color.white.opacity(0.7))
+                        .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(Color.white.opacity(selected ? 0.18 : 0.08)))
+                            .fill(selected ? Color.panelFillStrong : Color.panelFill))
                         .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .strokeBorder(Color.white.opacity(selected ? 0.45 : 0), lineWidth: 1))
+                            .strokeBorder((selected ? Color.panelQuaternary : Color.clear), lineWidth: 1))
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
@@ -1233,8 +1234,8 @@ struct WaterDetail: View {
             if !waiting.isEmpty {
                 Text(waiting.map { tr("\($0.0.title)：\(WaterCharacter.unlockHint(daysLeft: $0.1))") }
                     .joined(separator: tr("；")))
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1305,8 +1306,8 @@ extension WaterDetail {
                 bodyDetails
                 todayDetails
                 Text("推荐量只是日常参考，不是医疗建议。心脏、肾脏疾病需要限水的人请遵医嘱。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1326,16 +1327,16 @@ extension WaterDetail {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("每日目标")
-                                .font(WidgetStyle.label(12))
-                                .foregroundStyle(.white.opacity(0.85))
+                                .font(WidgetStyle.label(13))
+                                .foregroundStyle(.panelPrimary)
                             Text(result.isManual ? tr("已手动设置") : tr("按个人情况推荐"))
-                                .font(.system(size: 10))
-                                .foregroundStyle(result.isManual ? Color(hex: PaletteColor.orange.hex) : .white.opacity(0.55))
+                                .font(.system(size: 13))
+                                .foregroundStyle(result.isManual ? Color(hex: PaletteColor.orange.hex).panelReadable : .panelTertiary)
                         }
                         Spacer()
                         Text(WaterIntake.amount(result.goal, ounces: ounces))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .monospacedDigit()
                     }
                 }
@@ -1343,8 +1344,8 @@ extension WaterDetail {
             if result.isManual {
                 HStack(spacing: 6) {
                     Text(tr("推荐目标 \(WaterIntake.amount(result.recommended, ounces: ounces))"))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
                     Spacer(minLength: 0)
                     Button {
@@ -1352,8 +1353,8 @@ extension WaterDetail {
                         WaterLog.useRecommended(in: instance)
                     } label: {
                         Label("恢复推荐", systemImage: "arrow.uturn.backward")
-                            .font(WidgetStyle.label(11))
-                            .foregroundStyle(.white)
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 4)
                             .background(Capsule().fill(accent.opacity(0.7)))
@@ -1372,47 +1373,47 @@ extension WaterDetail {
     private func breakdown(_ result: WaterGoalResult) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("计算明细")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             ForEach(result.lines) { line in
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(line.title)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.panelPrimary)
                         if !line.detail.isEmpty {
                             Text(line.detail)
-                                .font(.system(size: 9.5))
-                                .foregroundStyle(.white.opacity(0.5))
+                                .font(.system(size: 13))
+                                .foregroundStyle(.panelTertiary)
                         }
                     }
                     Spacer(minLength: 4)
                     Text(WaterGoal.signed(line))
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                 }
             }
-            Rectangle().fill(.white.opacity(0.2)).frame(height: 0.5)
+            Rectangle().fill(.panelSeparator).frame(height: 0.5)
             HStack {
                 Text("推荐目标")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 Text(tr("\(result.recommended) 毫升"))
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
             }
             if let manual = result.manual {
                 HStack {
                     Text("已手动设置")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                     Spacer()
                     Text(tr("\(manual) 毫升"))
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                         .monospacedDigit()
                 }
             }
@@ -1426,8 +1427,8 @@ extension WaterDetail {
         let profile = currentProfile
         return VStack(alignment: .leading, spacing: 8) {
             Text("个人情况")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             numberField(tr("体重"), text: $weightText, unit: tr("公斤"), prompt: "60", field: .weight, save: saveWeight)
             optionRow(tr("性别")) {
                 Picker("", selection: Binding(
@@ -1476,12 +1477,12 @@ extension WaterDetail {
             }
             if profile.sex == .male, profile.condition != .none {
                 Text("性别为男时不计特殊状态。")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
             }
             Text("都可以不填：没填体重时按膳食指南（2022）的成人基准估算。")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
@@ -1493,8 +1494,8 @@ extension WaterDetail {
         let profile = currentProfile
         return VStack(alignment: .leading, spacing: 8) {
             Text("今天")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             Stepper(value: Binding(
                 get: { profile.exerciseMinutes },
                 set: { value in
@@ -1505,12 +1506,12 @@ extension WaterDetail {
                 }), in: 0...WaterGoal.maxExerciseMinutes, step: 10) {
                     HStack {
                         Text("今日运动")
-                            .font(WidgetStyle.label(12))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .font(WidgetStyle.label(13))
+                            .foregroundStyle(.panelPrimary)
                         Spacer()
                         Text(profile.exerciseMinutes == 0 ? tr("没有", context: "amount") : tr("\(profile.exerciseMinutes) 分钟"))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.panelPrimary)
                             .monospacedDigit()
                     }
                 }
@@ -1524,16 +1525,16 @@ extension WaterDetail {
                     }
                 })) {
                     Text("发烧或腹泻")
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
                 }
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .tint(panelTint.control)
                 .disabled(context.isPreview)
             Text("今日运动和发烧或腹泻只算今天，明天自动清零。")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
         }
         .padding(10)
         .glassPane(cornerRadius: 10)
@@ -1561,8 +1562,8 @@ extension WaterDetail {
 
     private func optionTitle(_ title: String) -> some View {
         Text(title)
-            .font(WidgetStyle.label(12))
-            .foregroundStyle(.white.opacity(0.85))
+            .font(WidgetStyle.label(13))
+            .foregroundStyle(.panelPrimary)
             .lineLimit(1)
             .fixedSize()
     }
@@ -1571,21 +1572,21 @@ extension WaterDetail {
                              field: Field, save: @escaping () -> Void) -> some View {
         HStack(spacing: 8) {
             Text(title)
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 4)
             TextField("", text: text, prompt: Text(prompt))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 56)
                 .focused($focus, equals: field)
                 .onSubmit(save)
                 .disabled(context.isPreview)
             Text(unit)
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
                 .frame(width: 28, alignment: .leading)
         }
     }

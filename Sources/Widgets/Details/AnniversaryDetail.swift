@@ -178,11 +178,11 @@ struct AnniversaryDetail: View {
         } label: {
             VStack(alignment: .leading, spacing: 3) {
                 Text("这个月")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
                 Text(text)
-                    .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -205,20 +205,20 @@ struct AnniversaryDetail: View {
         return HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
                 Text("纪念日")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                 Text(next.map { "\($0.event.title) \($0.sentence)" } ?? tr("添加第一个纪念日"))
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
             Spacer()
             Text("\(all.count)/\(Anniversary.maxEvents)")
-                .font(WidgetStyle.label(11))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelTertiary)
                 .monospacedDigit()
         }
     }
@@ -250,8 +250,8 @@ struct AnniversaryDetail: View {
             VStack(alignment: .leading, spacing: 6) {
                 if year != previous {
                     Text(tr("\(String(year)) 年"))
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelSecondary)
                         .padding(.top, index > 0 ? 4 : 0)
                 }
                 row(reading)
@@ -262,8 +262,8 @@ struct AnniversaryDetail: View {
     private var todayLine: some View {
         HStack(spacing: 6) {
             Text("今天")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Self.todayRed)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Self.todayRed.panelReadable)
                 .frame(width: 34, alignment: .trailing)
             Circle()
                 .fill(Self.todayRed)
@@ -285,20 +285,20 @@ struct AnniversaryDetail: View {
             VStack(spacing: -1) {
                 Text("\(calendar.component(.day, from: reading.timelineDate))")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .monospacedDigit()
                 Text(tr("\(calendar.component(.month, from: reading.timelineDate))月"))
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelTertiary)
             }
             .frame(width: 34)
 
             ZStack {
                 Rectangle()
-                    .fill(.white.opacity(0.12))
+                    .fill(.panelSeparator)
                     .frame(width: 1)
                 Circle()
-                    .fill(reading.isToday ? Self.todayRed : .white.opacity(0.4))
+                    .fill(reading.isToday ? Self.todayRed : Color.panelTertiary)
                     .frame(width: 6, height: 6)
             }
             .frame(width: 12)
@@ -322,29 +322,29 @@ struct AnniversaryDetail: View {
                 HStack(spacing: 4) {
                     Text(event.title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(tint)
+                        .foregroundStyle(tint.panelReadable)
                         .lineLimit(1)
                     Image(systemName: event.kind == .countdown ? "arrow.down" : "arrow.up")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(event.kind == .countdown ? Self.todayRed : Color(hex: PaletteColor.green.hex))
+                        .foregroundStyle((event.kind == .countdown ? Self.todayRed : Color(hex: PaletteColor.green.hex)).panelReadable)
                         .help(event.kind.title)
                     if pinned == event.id {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 8))
-                            .foregroundStyle(.white.opacity(0.55))
+                            .foregroundStyle(.panelTertiary)
                             .help("显示在单个卡片上")
                     }
                 }
                 Text(Anniversary.subtitle(reading))
-                    .font(WidgetStyle.caption(10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
             Text(reading.anniversaryNote.map { tr("\($0) · 今天") } ?? reading.sentence)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(tint)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint.panelReadable)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
@@ -383,8 +383,8 @@ struct AnniversaryDetail: View {
         } label: {
             Label(count >= Anniversary.maxEvents ? tr("最多 \(Anniversary.maxEvents) 个纪念日") : tr("添加纪念日"),
                   systemImage: "plus")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(count >= Anniversary.maxEvents ? 0.45 : 0.9))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(count >= Anniversary.maxEvents ? Color.panelTertiary : Color.panelPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 32)
                 .glassPane(cornerRadius: 10)
@@ -399,14 +399,14 @@ struct AnniversaryDetail: View {
     private func editor(_ current: Draft) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(current.isNew ? tr("添加纪念日") : tr("编辑纪念日"))
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .tracking(0.8)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
 
             TextField("", text: binding(\.title), prompt: Text("名称，比如“生日”或“在一起”"))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .focused($titleFocused)
                 .padding(.horizontal, 10)
                 .frame(height: 30)
@@ -434,8 +434,8 @@ struct AnniversaryDetail: View {
 
             HStack {
                 Text("日期")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 DatePicker("", selection: binding(\.date), displayedComponents: .date)
                     .labelsHidden()
@@ -447,12 +447,12 @@ struct AnniversaryDetail: View {
                 .toggleStyle(.switch)
                 .tint(panelTint.control)
                 .controlSize(.small)
-                .font(WidgetStyle.label(12))
+                .font(WidgetStyle.label(13))
             Toggle("按农历", isOn: binding(\.lunar))
                 .toggleStyle(.switch)
                 .tint(panelTint.control)
                 .controlSize(.small)
-                .font(WidgetStyle.label(12))
+                .font(WidgetStyle.label(13))
             if current.lunar { lunarPickers(current) }
 
             swatches(current)
@@ -461,14 +461,14 @@ struct AnniversaryDetail: View {
                 .toggleStyle(.switch)
                 .tint(panelTint.control)
                 .controlSize(.small)
-                .font(WidgetStyle.label(12))
+                .font(WidgetStyle.label(13))
 
             HStack(spacing: 8) {
                 if !current.isNew {
                     Button("删除", role: .destructive) { remove(current.id) }
                         .buttonStyle(.plain)
-                        .font(WidgetStyle.label(12))
-                        .foregroundStyle(Self.todayRed)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(Self.todayRed.panelReadable)
                 }
                 Spacer()
                 Button("取消") { draft = nil }
@@ -492,8 +492,8 @@ struct AnniversaryDetail: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text("农历")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
                 Spacer()
                 Picker("", selection: Binding(
                     get: { parts.month },
@@ -512,8 +512,8 @@ struct AnniversaryDetail: View {
             }
             .controlSize(.small)
             Text(tr("\(Anniversary.lunarText(current.date))，每年按这个农历日子计算，闰月按平月，没有三十的月份算廿九。"))
-                .font(WidgetStyle.caption(10))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -521,8 +521,8 @@ struct AnniversaryDetail: View {
     private func swatches(_ current: Draft) -> some View {
         HStack(spacing: 7) {
             Text("颜色")
-                .font(WidgetStyle.label(12))
-                .foregroundStyle(.white.opacity(0.8))
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
             Spacer(minLength: 4)
             swatch(nil, selected: current.color == nil)
             ForEach(PaletteColor.picker, id: \.self) { color in
@@ -546,7 +546,7 @@ struct AnniversaryDetail: View {
                     }
                 }
                 .padding(2)
-                .overlay { Circle().strokeBorder(.white.opacity(selected ? 0.9 : 0), lineWidth: 1.5) }
+                .overlay { Circle().strokeBorder(selected ? Color.panelPrimary : Color.clear, lineWidth: 1.5) }
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

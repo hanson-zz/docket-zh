@@ -51,7 +51,7 @@ struct StockSymbolEditor: View {
             Text(holdings != nil ? tr("拖右边的把手排序；填了持仓，上面就算今日盈亏，填了成本价再算持仓盈亏。")
                                  : tr("拖右边的把手排序，卡片按这个顺序轮播。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onDisappear { searchTask?.cancel() }
@@ -63,11 +63,11 @@ struct StockSymbolEditor: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
             TextField("", text: $query, prompt: Text(tr("输入代码或名称，比如 NVDA、茅台、0700")))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
                 .onSubmit { if let first = hits.first { add(first.symbol) } }
                 .onChange(of: query) { _, text in search(text) }
             if searching {
@@ -79,7 +79,7 @@ struct StockSymbolEditor: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                 }
                 .buttonStyle(.plain)
                 .help(tr("清空"))
@@ -87,10 +87,10 @@ struct StockSymbolEditor: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 34)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 0.8)
+                .strokeBorder(.panelStroke, lineWidth: 0.8)
         }
         .disabled(isPreview)
     }
@@ -120,7 +120,7 @@ struct StockSymbolEditor: View {
         if list.isEmpty {
             Text(searching ? tr("正在搜索…") : tr("没找到。可以直接输入代码，比如 600519、0700、NVDA。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         } else {
             VStack(spacing: 4) {
@@ -135,10 +135,10 @@ struct StockSymbolEditor: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(hit.name.isEmpty ? StockBoard.displaySymbol(hit.symbol) : hit.name)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(hit.exchange.isEmpty ? hit.symbol : "\(hit.symbol) · \(hit.exchange)")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -148,10 +148,10 @@ struct StockSymbolEditor: View {
             } label: {
                 Text(added ? tr("已添加") : tr("添加"))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(added ? .white.opacity(0.5) : Color.black.opacity(0.85))
+                    .foregroundStyle(added ? .panelTertiary : Color.black.opacity(0.85))
                     .padding(.horizontal, 12)
                     .frame(height: 26)
-                    .background(Capsule().fill(added ? Color.white.opacity(0.08) : accent))
+                    .background(Capsule().fill(added ? Color.panelFill : accent))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -160,7 +160,7 @@ struct StockSymbolEditor: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.10)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill))
     }
 
     private func add(_ symbol: String) {
@@ -193,12 +193,12 @@ struct StockSymbolEditor: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(StockBoard.displaySymbol(symbol))
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 let name = subtitle(symbol)
                 if !name.isEmpty {
                     Text(name)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.panelSecondary)
                 }
             }
             .lineLimit(1)
@@ -207,7 +207,7 @@ struct StockSymbolEditor: View {
             if let holdings { holdingButton(symbol, holdings[symbol]) }
             Image(systemName: "line.3.horizontal")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
                 .frame(width: 24, height: Self.rowHeight)
                 .contentShape(Rectangle())
                 .gesture(dragGesture(symbol, index: index))
@@ -259,14 +259,14 @@ struct StockSymbolEditor: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .foregroundStyle(.white.opacity(holding == nil ? 0.7 : 0.95))
+                .foregroundStyle(holding == nil ? Color.panelSecondary : Color.panelPrimary)
                 .padding(.horizontal, 10)
                 .frame(height: 24)
                 .background {
                     if holding == nil {
-                        Capsule().strokeBorder(.white.opacity(0.4), style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
+                        Capsule().strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
                     } else {
-                        Capsule().fill(.white.opacity(open ? 0.24 : 0.14))
+                        Capsule().fill(open ? Color.panelFillStrong : Color.panelFill)
                     }
                 }
                 .contentShape(Capsule())
@@ -290,7 +290,7 @@ struct StockSymbolEditor: View {
             if PreciousMetal.hasUnitSwitch(symbol) {
                 Text(tr("切换单位时成本价不会换算"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 6) {
@@ -309,14 +309,14 @@ struct StockSymbolEditor: View {
             .controlSize(.small)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.09)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.panelFill))
     }
 
     private func field(_ title: String, text: Binding<String>, prompt: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             TextField("", text: text, prompt: Text(verbatim: prompt))

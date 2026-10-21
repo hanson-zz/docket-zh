@@ -82,10 +82,10 @@ struct AppSwitcherDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("应用切换器")
                     .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 Text(AppSwitcherList.subtitle(pinned: pinned.count, running: running))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -94,11 +94,11 @@ struct AppSwitcherDetail: View {
             } label: {
                 Text(editing ? tr("完成") : tr("编辑"))
                     .font(.system(size: 13, weight: editing ? .bold : .semibold))
-                    .foregroundStyle(editing ? ink : .white)
+                    .foregroundStyle(editing ? ink : .panelPrimary)
                     .padding(.horizontal, editing ? 15 : 13)
                     .frame(height: 28)
-                    .background(Capsule().fill(editing ? accent : .white.opacity(0.1)))
-                    .overlay(Capsule().strokeBorder(.white.opacity(editing ? 0 : 0.14), lineWidth: 0.8))
+                    .background(Capsule().fill(editing ? accent : .panelFill))
+                    .overlay(Capsule().strokeBorder(editing ? Color.clear : Color.panelStroke, lineWidth: 0.8))
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -110,12 +110,12 @@ struct AppSwitcherDetail: View {
         HStack {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
             Spacer(minLength: 6)
             if let note {
                 Text(verbatim: note)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
         }
@@ -137,7 +137,7 @@ struct AppSwitcherDetail: View {
                             AppSwitcherIcon(app: app, size: 40)
                                 .opacity(app.isRunning ? 1 : 0.45)
                             Circle()
-                                .fill(.white.opacity(app.isRunning ? 0.8 : 0))
+                                .fill(app.isRunning ? Color.panelSecondary : Color.clear)
                                 .frame(width: 4, height: 4)
                         }
                         .contentShape(.rect)
@@ -159,7 +159,7 @@ struct AppSwitcherDetail: View {
             if shown.isEmpty {
                 Text(runningApps.isEmpty ? tr("没有正在运行的应用。") : tr("正在运行的应用都隐藏了。"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
             } else {
                 ScrollView {
@@ -191,17 +191,17 @@ struct AppSwitcherDetail: View {
             AppSwitcherIcon(app: app, size: 24)
             Text(verbatim: app.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 4)
             if let count = counts[app.id], count > 0 {
                 Text(count > 1 && open ? tr("\(count) 个窗口") : "\(count)")
                     .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.horizontal, 7)
                     .frame(height: 20)
-                    .background(Capsule().fill(.white.opacity(0.14)))
+                    .background(Capsule().fill(.panelFillStrong))
                     .help(tr("\(count) 个窗口"))
             }
             Button {
@@ -209,7 +209,7 @@ struct AppSwitcherDetail: View {
             } label: {
                 Image(systemName: open ? "chevron.down" : "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .frame(width: 26, height: 26)
                     .contentShape(.rect)
             }
@@ -222,7 +222,7 @@ struct AppSwitcherDetail: View {
         .padding(.trailing, 4)
         .frame(height: 38)
         .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(.white.opacity(app.isActive ? 0.12 : 0.06)))
+            .fill(app.isActive ? Color.panelFillStrong : Color.panelFill))
         .contentShape(.rect(cornerRadius: 11))
         .onTapGesture { self.open(app) }
         .contextMenu { menu(app) }
@@ -239,7 +239,7 @@ struct AppSwitcherDetail: View {
                 HStack(spacing: 8) {
                     Text("列出窗口需要辅助功能权限")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     Button {
@@ -259,7 +259,7 @@ struct AppSwitcherDetail: View {
             } else if windows.isEmpty {
                 Text("没有打开的窗口")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .padding(.leading, 14)
                     .frame(height: 28)
             } else {
@@ -269,7 +269,7 @@ struct AppSwitcherDetail: View {
                     } label: {
                         Text(verbatim: window.title)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white.opacity(index == 0 ? 0.9 : 0.75))
+                            .foregroundStyle(index == 0 ? Color.panelPrimary : Color.panelSecondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .padding(.horizontal, 14)
@@ -301,12 +301,12 @@ struct AppSwitcherDetail: View {
                     } label: {
                         Text(verbatim: option.title)
                             .font(.system(size: 13, weight: on ? .bold : .semibold))
-                            .foregroundStyle(on ? ink : .white.opacity(0.88))
+                            .foregroundStyle(on ? ink : .panelPrimary)
                             .lineLimit(1)
                             .padding(.horizontal, 11)
                             .frame(height: 30)
-                            .background(Capsule().fill(on ? accent : .white.opacity(0.08)))
-                            .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.14), lineWidth: 0.6))
+                            .background(Capsule().fill(on ? accent : .panelFill))
+                            .overlay(Capsule().strokeBorder(on ? Color.clear : Color.panelStroke, lineWidth: 0.6))
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -328,7 +328,7 @@ struct AppSwitcherDetail: View {
                 Text(tr(" · 管理")).fixedSize()
             }
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -359,10 +359,10 @@ struct AppSwitcherDetail: View {
                 Button { addApp() } label: {
                     Label(tr("添加 App…"), systemImage: "plus")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(pins.count >= AppSwitcherList.maxPinned ? 0.4 : 0.9))
+                        .foregroundStyle(pins.count >= AppSwitcherList.maxPinned ? Color.panelTertiary : Color.panelPrimary)
                         .frame(maxWidth: .infinity, minHeight: 32)
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(.white.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                            .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -407,7 +407,7 @@ struct AppSwitcherDetail: View {
     private func editNote(_ text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.panelSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -417,7 +417,7 @@ struct AppSwitcherDetail: View {
             AppSwitcherIcon(app: app, size: 24).opacity(dim ? 0.5 : 1)
             Text(verbatim: app.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(dim ? 0.6 : 0.95))
+                .foregroundStyle(dim ? Color.panelSecondary : Color.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 4)
@@ -426,7 +426,7 @@ struct AppSwitcherDetail: View {
         .padding(.leading, 10)
         .padding(.trailing, 4)
         .frame(height: 38)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.white.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(.panelFill))
     }
 
     private func iconButton(_ symbol: String, help: String, disabled: Bool = false,
@@ -434,9 +434,9 @@ struct AppSwitcherDetail: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(disabled ? 0.3 : 0.85))
+                .foregroundStyle(disabled ? Color.panelQuaternary : Color.panelPrimary)
                 .frame(width: 28, height: 28)
-                .background(Circle().fill(.white.opacity(disabled ? 0.04 : 0.1)))
+                .background(Circle().fill(Color.panelFill))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

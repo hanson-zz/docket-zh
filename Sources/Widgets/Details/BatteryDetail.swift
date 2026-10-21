@@ -77,13 +77,13 @@ struct BatteryDetail: View {
             let metrics = BatteryMetrics.shared
             VStack(alignment: .leading, spacing: 6) {
                 Text("今天")
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelSecondary)
                 if metrics.history.samples(from: Calendar.current.startOfDay(for: context.now),
                                            to: context.now.addingTimeInterval(1)).isEmpty {
                     Text("每 5 分钟记录一次电量，稍后这里会画出今天的曲线")
-                        .font(WidgetStyle.caption(11))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
                         .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 } else {
                     BatteryDayChart(history: metrics.history, day: context.now, now: context.now)
@@ -108,8 +108,8 @@ struct BatteryDetail: View {
     private func stat(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(WidgetStyle.caption(11))
-                .foregroundStyle(.white.opacity(0.65))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
             Text(value)
                 .font(WidgetStyle.value(17))
                 .monospacedDigit()
@@ -140,7 +140,7 @@ struct BatteryDetail: View {
                             .rollingValue(value)
                         Text("%")
                             .font(.system(size: 30, weight: .light))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.panelSecondary)
                     }
                     .modifier(BatteryPlugBounce(trigger: gaugeState(device).pluggedAt))
                 } else {
@@ -148,11 +148,11 @@ struct BatteryDetail: View {
                     // level.
                     Text("-")
                         .font(.system(size: 60, weight: .light))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                 }
                 Text(heroCaption(device))
-                    .font(WidgetStyle.label(12))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelSecondary)
                     .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
@@ -170,7 +170,7 @@ struct BatteryDetail: View {
             } else if device.charging {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.panelPrimary)
                     .padding(.bottom, 6)
             }
         }
@@ -182,19 +182,19 @@ struct BatteryDetail: View {
         HStack(spacing: 12) {
             MetricProgressRing(progress: device.present ? device.level : 0,
                                tint: tint(device),
-                               track: .white.opacity(0.14),
+                               track: .panelTrack,
                                diameter: 34,
                                lineWidth: 4) {
                 Image(systemName: device.symbol)
                     .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(device.present ? tint(device) : WidgetStyle.secondary)
+                    .foregroundStyle(device.present ? tint(device).panelReadable : WidgetStyle.secondary)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text(device.name)
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(WidgetStyle.primary)
                 Text(caption(device))
-                    .font(WidgetStyle.caption(11))
+                    .font(WidgetStyle.caption(13))
                     .foregroundStyle(WidgetStyle.secondary)
             }
             Spacer(minLength: 8)
