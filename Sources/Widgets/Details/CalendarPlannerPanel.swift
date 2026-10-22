@@ -9,6 +9,8 @@ import SwiftUI
 /// 没日程的整点折成一条「空闲 3 小时」，点了展开，展开的段顶上一条「收起」点了重新折叠，现在线那一段不折；
 /// 空档 30 分钟以上写「专注一下」，点了开专注计时；一天没有定时日程时不画轴，给小熊猫空状态，
 /// 看的是今天时「新建日程」旁边也有「专注一下」），「接下来」，底下「写一句」。
+/// 头上的月历按钮把一周条换成整月（‹ › 翻月，点哪天看哪天，可选左边一列 ISO 周数，本月一片描细框）。
+/// 设置里的外观：突出显示的星期（数字用淡一点的强调色）、日程圆点（可按日历颜色，最多 3 个），见 `CalendarLook`。
 /// 新建：标题、时间预设（30 分钟 / 1 小时 / 2 小时 / 全天）、日历、冲突提示，写回系统日历。
 /// 点开日程：拖两端改时间，或删除，都写回系统日历；重复日程只动这一次。
 ///
@@ -48,6 +50,12 @@ struct CalendarPlannerPanel: View {
     @State private var openFolds: Set<Int> = []
     /// 一周条的宽度，按它决定农历小字写几种。先按 320 宽面板的内容区算，免得第一帧跳一下。
     @State private var stripWidth: CGFloat = 288
+    /// 一周条换成了月历；`month` 是月历正在看的那个月的 1 号。
+    @State private var monthMode = false
+    @State private var month: Date?
+    @State private var monthWidth: CGFloat = 288
+    /// 读进来的日程覆盖的时间：月历里点别的周也能看那天的时间轴。
+    @State private var loaded: DateInterval?
 
     // 新建
     @State private var draftTitle = ""
@@ -75,6 +83,7 @@ struct CalendarPlannerPanel: View {
     private var config: WidgetConfig { instance.config }
     private var chosen: Set<String> { picked ?? Set(config.strings("calendars")) }
     private var showsAllDay: Bool { config.bool("allDay", default: true) }
+    private var look: CalendarLook { CalendarLook(config) }
     private var granted: Bool { context.isPreview || access == .fullAccess }
 
     var body: some View {
@@ -98,10 +107,13 @@ struct CalendarPlannerPanel: View {
             picked = nil
             selected = nil
             openFolds = []
+            monthMode = false
+            month = nil
             mode = .browse
             load()
         }
         .onChange(of: selected) { _, _ in openFolds = [] }
+        .onChange(of: month) { _, _ in load() }
         .onChange(of: calendar.startOfDay(for: context.now)) { _, _ in load() }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
     }
@@ -110,8 +122,28 @@ struct CalendarPlannerPanel: View {
 
     private func shownDay(now: Date) -> Date {
         let today = calendar.startOfDay(for: now)
-        guard let selected, WeekAgenda.interval(now, calendar: calendar).contains(selected) else { return today }
+        guard let selected else { return today }
+        if monthMode, let loaded, loaded.contains(selected) { return selected }
+        guard WeekAgenda.interval(now, calendar: calendar).contains(selected) else { return today }
         return selected
+    }
+
+    /// 「接下来」只看今天起两周多，月历多读进来的日程不算。
+    private func aheadEnd(now: Date) -> Date {
+        let today = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .day, value: 15, to: today) ?? today.addingTimeInterval(15 * 86_400)
+    }
+
+    private func setMonthMode(_ on: Bool, now: Date) {
+        if on {
+            month = MonthGrid.monthStart(shownDay(now: now), calendar: calendar)
+        } else {
+            // 回到一周条时，选在别的周的日子回到今天。
+            if let selected, !WeekAgenda.interval(now, calendar: calendar).contains(selected) { self.selected = nil }
+            month = nil
+        }
+        // 换 `month` 会触发重新读日程（见 body 的 onChange）。
+        monthMode = on
     }
 
     @ViewBuilder
@@ -120,7 +152,11 @@ struct CalendarPlannerPanel: View {
         let onDay = CalendarPlanner.entries(on: day, shown(now: now), includeAllDay: showsAllDay, calendar: calendar)
         header(day: day, count: onDay.count, now: now)
         if granted {
-            weekStrip(now: now, day: day)
+            if monthMode {
+                monthView(now: now, day: day)
+            } else {
+                weekStrip(now: now, day: day)
+            }
             let allDay = onDay.filter(\.isAllDay)
             let timed = onDay.filter { !$0.isAllDay }
             allDayRow(allDay, now: now)
@@ -159,6 +195,7 @@ struct CalendarPlannerPanel: View {
             .lineLimit(1)
             Spacer(minLength: 4)
             if granted, !context.isPreview {
+                monthToggle(now: now)
                 if sources.count > 1 { picker }
                 Button {
                     startNew(day: day, now: now)
@@ -179,6 +216,23 @@ struct CalendarPlannerPanel: View {
     private func weekdayTitle(_ day: Date) -> String {
         let index = (calendar.component(.weekday, from: day) + 5) % 7
         return tr("周\(WeekAgenda.weekdayNames[index])")
+    }
+
+    /// 一周条和整月来回切。
+    private func monthToggle(now: Date) -> some View {
+        Button {
+            setMonthMode(!monthMode, now: now)
+        } label: {
+            Image(systemName: monthMode ? "calendar.badge.minus" : "calendar")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(monthMode ? accent.panelReadable : .panelPrimary)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(monthMode ? Color.panelSelected : Color.panelFill))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(monthMode ? tr("收起月历") : tr("看整月"))
+        .accessibilityLabel(monthMode ? tr("收起月历") : tr("看整月"))
     }
 
     /// 日历筛选：账户里挂了一堆订阅日历时，面板只看想看的。
@@ -225,16 +279,11 @@ struct CalendarPlannerPanel: View {
                         Text(String(calendar.component(.day, from: item.date)))
                             .font(.system(size: 15, weight: item.isToday ? .bold : .medium, design: .rounded))
                             .monospacedDigit()
-                            .foregroundStyle(item.isToday ? accent.panelReadable : .panelPrimary)
+                            .foregroundStyle(dayColor(today: item.isToday, highlighted: look.isHighlighted(item.date, calendar: calendar)))
                         if lunarRow {
                             lunarText(lunar[item.date])
                         }
-                        HStack(spacing: 2.6) {
-                            ForEach(0..<CalendarPlanner.dots(item.count), id: \.self) { _ in
-                                Circle().fill(.panelSecondary).frame(width: 4.4, height: 4.4)
-                            }
-                        }
-                        .frame(height: 5)
+                        dotRow(item.entries)
                     }
                     .frame(width: 38, height: lunarRow ? 74 : 58)
                     .background {
@@ -260,6 +309,189 @@ struct CalendarPlannerPanel: View {
         } action: { width in
             if abs(width - stripWidth) > 0.5 { stripWidth = width }
         }
+    }
+
+    /// 日期数字的颜色：今天强调色，突出显示的星期淡一点的强调色，其余主文字色。
+    private func dayColor(today: Bool, highlighted: Bool) -> Color {
+        if today { return accent.panelReadable }
+        return highlighted ? accent.panelReadable.opacity(0.72) : .panelPrimary
+    }
+
+    /// 农历下面那排日程圆点：最多 3 个，按日历颜色或统一灰点；圆点关掉时留空，行高不变。
+    private func dotRow(_ entries: [WeekEntry]) -> some View {
+        HStack(spacing: 2.6) {
+            ForEach(Array(look.dots(for: entries).enumerated()), id: \.offset) { _, dot in
+                Circle().fill(dotColor(dot)).frame(width: 4.4, height: 4.4)
+            }
+        }
+        .frame(height: 5)
+    }
+
+    private func dotColor(_ dot: CalendarLook.Dot) -> Color {
+        switch dot {
+        case .color(let hex): hex.isEmpty ? accent : Color(hex: hex)
+        case .plain: .panelSecondary
+        }
+    }
+
+    // MARK: 月历
+
+    /// 整月：头上「2026 年 10 月」和翻月，一行星期，可选左边一列周数，格子里数字、农历、圆点。
+    private func monthView(now: Date, day: Date) -> some View {
+        let shownMonth = month ?? MonthGrid.monthStart(day, calendar: calendar)
+        let weeks = MonthGrid.weeks(shownMonth, now: now, calendar: calendar)
+        let all = shown(now: now).filter { showsAllDay || !$0.isAllDay }
+        let look = self.look
+        let weekColumn: CGFloat = look.weekNumbers ? 28 : 0
+        let density = WeekLunar.density(columnWidth: Double((monthWidth - weekColumn) / 7), english: L10n.isEnglish)
+        let lunar = WeekLunar.labels(for: weeks.flatMap { $0.days.map(\.date) }, density: density,
+                                     holidays: HolidayService.shared.known, calendar: calendar)
+        let lunarRow = density != .hidden
+        // 数字 20 + 农历 16 + 圆点 5，再留点空。
+        let cellHeight: CGFloat = lunarRow ? 50 : 34
+        return VStack(spacing: 6) {
+            monthBar(shownMonth, now: now)
+            HStack(spacing: 0) {
+                if look.weekNumbers {
+                    Text(tr("周数"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+                        .frame(width: weekColumn)
+                }
+                ForEach(0..<7, id: \.self) { index in
+                    Text(WeekAgenda.weekdayNames[index])
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(look.highlighted.contains(index) ? accent.panelReadable.opacity(0.72) : .panelSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            HStack(alignment: .top, spacing: 0) {
+                if look.weekNumbers {
+                    VStack(spacing: 0) {
+                        ForEach(weeks) { week in
+                            Text(String(week.number))
+                                .font(.system(size: 13, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(.panelTertiary)
+                                .frame(width: weekColumn, height: cellHeight)
+                                .accessibilityLabel(tr("第 \(week.number) 周"))
+                        }
+                    }
+                }
+                VStack(spacing: 0) {
+                    ForEach(weeks) { week in
+                        HStack(spacing: 0) {
+                            ForEach(week.days) { cell in
+                                monthCell(cell, selected: cell.date == day, lunar: lunarRow ? lunar[cell.date] : nil,
+                                          lunarRow: lunarRow, height: cellHeight,
+                                          entries: CalendarPlanner.entries(on: cell.date, all, includeAllDay: showsAllDay,
+                                                                           calendar: calendar))
+                            }
+                        }
+                    }
+                }
+                .overlay {
+                    if look.outline {
+                        MonthOutline(points: MonthGrid.outline(weeks), rows: weeks.count)
+                            .stroke(accent.panelReadable.opacity(0.5),
+                                    style: StrokeStyle(lineWidth: 1, lineCap: .round, lineJoin: .round))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                if abs(width - monthWidth) > 0.5 { monthWidth = width }
+            }
+        }
+    }
+
+    /// 月历头：月份，不在本月时给「本月」，‹ › 翻月。
+    private func monthBar(_ shownMonth: Date, now: Date) -> some View {
+        let current = MonthGrid.monthStart(now, calendar: calendar)
+        return HStack(spacing: 6) {
+            Text(MonthGrid.title(shownMonth, english: L10n.isEnglish, calendar: calendar))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            if shownMonth != current {
+                Button {
+                    month = current
+                    selected = nil
+                } label: {
+                    Text(tr("本月"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 10)
+                        .frame(height: 26)
+                        .background(Capsule().fill(.panelFill))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            monthStep("chevron.left", tr("上个月")) { month = MonthGrid.shift(shownMonth, by: -1, calendar: calendar) }
+            monthStep("chevron.right", tr("下个月")) { month = MonthGrid.shift(shownMonth, by: 1, calendar: calendar) }
+        }
+    }
+
+    private func monthStep(_ symbol: String, _ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(.panelFill))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(title)
+        .accessibilityLabel(title)
+    }
+
+    /// 月历一格：数字（今天强调色加粗，突出的星期淡强调色），农历，圆点；选中的那天垫一块玻璃。
+    /// 「框出本月」开着时别的月份的日子淡到 0.35，关着时 0.6。点别的月份的日子顺手翻过去。
+    private func monthCell(_ cell: MonthGrid.Day, selected isSelected: Bool, lunar: WeekLunar.Label?,
+                           lunarRow: Bool, height: CGFloat, entries: [WeekEntry]) -> some View {
+        Button {
+            selected = cell.date
+            if !cell.inMonth { month = MonthGrid.monthStart(cell.date, calendar: calendar) }
+        } label: {
+            VStack(spacing: 2) {
+                Text(String(calendar.component(.day, from: cell.date)))
+                    .font(.system(size: 15, weight: cell.isToday ? .bold : .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(dayColor(today: cell.isToday, highlighted: look.isHighlighted(cell.date, calendar: calendar)))
+                    .frame(height: 20)
+                if lunarRow {
+                    lunarText(lunar)
+                }
+                dotRow(entries)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(.panelRaised).panelLift()
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(.panelQuaternary, lineWidth: 0.6)
+                        }
+                        .padding(1.5)
+                }
+            }
+            .opacity(cell.inMonth ? 1 : (look.outline ? 0.35 : 0.6))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tr("\(MonthGrid.dayTitle(cell.date, english: L10n.isEnglish, calendar: calendar)) \(entries.count) 个日程"))
     }
 
     /// 数字下面那行农历：节气用强调色，休绿、班橙，月名和日名淡一些。没有字的那天留空，行高不变。
@@ -582,7 +814,8 @@ struct CalendarPlannerPanel: View {
 
     @ViewBuilder
     private func upcoming(now: Date) -> some View {
-        let items = CalendarPlanner.upcoming(shown(now: now).filter { showsAllDay || !$0.isAllDay },
+        let end = aheadEnd(now: now)
+        let items = CalendarPlanner.upcoming(shown(now: now).filter { (showsAllDay || !$0.isAllDay) && $0.start < end },
                                              now: now, limit: 3, calendar: calendar)
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
@@ -1150,10 +1383,13 @@ struct CalendarPlannerPanel: View {
         }
         let now = Date()
         let week = WeekAgenda.interval(now, calendar: calendar)
-        let today = calendar.startOfDay(for: now)
-        // 这一周，再加两周给「接下来」。
-        let ahead = calendar.date(byAdding: .day, value: 15, to: today) ?? week.end
-        let span = DateInterval(start: week.start, end: max(week.end, ahead))
+        // 这一周，再加两周给「接下来」；看月历时再加上整张月历。
+        let ahead = aheadEnd(now: now)
+        var span = DateInterval(start: week.start, end: max(week.end, ahead))
+        if monthMode, let month, let grid = MonthGrid.interval(month, calendar: calendar) {
+            span = DateInterval(start: min(span.start, grid.start), end: max(span.end, grid.end))
+        }
+        loaded = span
         entries = CalendarEventStore.entries(in: span, chosen: chosen)
         let all = CalendarEventStore.calendars()
         sources = all.map(PlannerCalendar.init)
@@ -1208,5 +1444,27 @@ private struct PlannerCalendar: Identifiable, Hashable {
         title = calendar.title
         let hex = CalendarColorHex.hex(calendar.color)
         color = Color(hex: hex.isEmpty ? "#FF7A66" : hex)
+    }
+}
+
+/// 月历上本月那一片的细框：`MonthGrid.outline` 给的格子顶点按格子大小放大。
+private struct MonthOutline: Shape {
+    var points: [(x: Int, y: Int)]
+    var rows: Int
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard let first = points.first, rows > 0 else { return path }
+        let width = rect.width / 7
+        let height = rect.height / CGFloat(rows)
+        // 往里收半个线宽，四边的线不被裁掉。
+        func point(_ p: (x: Int, y: Int)) -> CGPoint {
+            CGPoint(x: min(max(CGFloat(p.x) * width, 0.5), rect.width - 0.5),
+                    y: min(max(CGFloat(p.y) * height, 0.5), rect.height - 0.5))
+        }
+        path.move(to: point(first))
+        for p in points.dropFirst() { path.addLine(to: point(p)) }
+        path.closeSubpath()
+        return path
     }
 }

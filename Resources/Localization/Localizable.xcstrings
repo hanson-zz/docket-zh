@@ -16500,6 +16500,17 @@
         }
       }
     },
+    "周数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wk"
+          }
+        }
+      }
+    },
     "周日" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17416,6 +17427,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dot is next, ticks have passed"
+          }
+        }
+      }
+    },
+    "圆点用日历的颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use calendar colours for dots"
           }
         }
       }
@@ -27589,6 +27611,17 @@
         }
       }
     },
+    "收起月历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide month"
+          }
+        }
+      }
+    },
     "收起窗口列表" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34837,6 +34870,17 @@
         }
       }
     },
+    "有日程的日子画小圆点" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dot days that have events"
+          }
+        }
+      }
+    },
     "有未完成的待办时显示" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40703,6 +40747,17 @@
         }
       }
     },
+    "看整月" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show month"
+          }
+        }
+      }
+    },
     "看热门" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42085,6 +42140,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Free for %@ hr"
+          }
+        }
+      }
+    },
+    "突出显示的星期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Highlight weekdays"
           }
         }
       }
@@ -45359,6 +45425,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dial"
+          }
+        }
+      }
+    },
+    "被选的日子在面板的一周条和月历里，日期数字用淡一点的主题色。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the panel's week strip and month view, the dates of the chosen days use a lighter accent colour."
           }
         }
       }
@@ -53835,6 +53912,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Week %@ of the year, day %@ of the week."
+          }
+        }
+      }
+    },
+    "月历左边显示周数" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show week numbers in the month view"
+          }
+        }
+      }
+    },
+    "月历框出本月，其他月份的日子变淡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outline this month in the month view and dim other months"
           }
         }
       }

@@ -298,9 +298,42 @@ struct WidgetSettingsSections: View {
             // 代码框下面两个快捷项：黄金、白银（Yahoo 的 GC=F、SI=F）。
             plainControl(key, entry: entry, instance: instance)
             metalShortcuts(instance)
+        } else if entry.kind == .calendar || entry.kind == .week, key == CalendarLook.highlightKey {
+            highlightDaysControl(instance)
+        } else if entry.kind == .calendar || entry.kind == .week, key == CalendarLook.colorDotsKey {
+            // 「圆点」的子项，缩进一级。
+            plainControl(key, entry: entry, instance: instance)
+                .padding(.leading, 20)
         } else {
             plainControl(key, entry: entry, instance: instance)
         }
+    }
+
+    /// 日历「突出显示的星期」：一排七个勾，周一在前，和面板的列一致；可以一个都不勾。
+    private func highlightDaysControl(_ instance: WidgetInstance) -> some View {
+        let saved = Set(instance.config.strings(CalendarLook.highlightKey, default: CalendarLook.defaultHighlight))
+        return LabeledContent(tr("突出显示的星期")) {
+            HStack(spacing: 8) {
+                ForEach(CalendarLook.weekdayChoices, id: \.value) { choice in
+                    VStack(spacing: 2) {
+                        Text(choice.title)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                        Toggle(choice.title, isOn: Binding(
+                            get: { saved.contains(choice.value) },
+                            set: { on in
+                                var next = saved
+                                if on { next.insert(choice.value) } else { next.remove(choice.value) }
+                                let list = CalendarLook.weekdayChoices.map(\.value).filter(next.contains)
+                                write(instance) { $0.set(CalendarLook.highlightKey, .list(list.map { .string($0) })) }
+                            }))
+                            .toggleStyle(.checkbox)
+                            .labelsHidden()
+                    }
+                }
+            }
+        }
+        .help(tr("被选的日子在面板的一周条和月历里，日期数字用淡一点的主题色。"))
     }
 
     /// “＋ 黄金”“＋ 白银”：自选股有分组时加进卡片上正在看的分组，否则加在代码列表最后。
@@ -569,6 +602,10 @@ struct WidgetSettingsSections: View {
         "list": tr("列表"),
         "allDay": tr("显示全天日程"),
         "calendars": tr("日历"),
+        "monthOutline": tr("月历框出本月，其他月份的日子变淡"),
+        "eventDots": tr("有日程的日子画小圆点"),
+        "eventDotsColor": tr("圆点用日历的颜色"),
+        "weekNumbers": tr("月历左边显示周数"),
         "color": tr("颜色"),
         "period": tr("时段"),
         "display": tr("显示内容"),

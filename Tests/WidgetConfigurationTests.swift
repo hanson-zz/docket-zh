@@ -187,7 +187,8 @@ final class WidgetConfigurationTests: XCTestCase {
     /// conference URL and a row to put it in, neither of which exists.
     func testCalendarOffersItsOwnOptionsInOrder() {
         XCTAssertEqual(WidgetCatalog.configurableKeys(.calendar),
-                       ["allDay", "calendars"])
+                       ["allDay", "calendars", "eventDots", "eventDotsColor", "highlightDays", "monthOutline", "weekNumbers"])
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.week), WidgetCatalog.configurableKeys(.calendar))
     }
 
     // MARK: optionLabel

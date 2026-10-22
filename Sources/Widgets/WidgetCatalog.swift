@@ -131,8 +131,14 @@ public enum WidgetCatalog {
         // 没有就不显示，见 MeetingLink。原来的「日期 + 日程列表」换成今日时间线，
         // 放好的卡片读配置时 agenda 自动换成 timeline，见 CalendarDay.migratingLayout。
         Entry(kind: .calendar, name: tr("日历"), category: .time,
+              // 后五项是面板外观：突出的星期、月历框出本月、日程圆点（按日历颜色）、月历周数，见 CalendarLook。
               defaults: c(["layout": .string("nextEvent"), "allDay": .bool(true),
-                           "calendars": .list([])]),
+                           "calendars": .list([]),
+                           CalendarLook.highlightKey: .list(CalendarLook.defaultHighlight.map(WidgetConfig.Value.string)),
+                           CalendarLook.outlineKey: .bool(CalendarLook.defaultOutline),
+                           CalendarLook.dotsKey: .bool(CalendarLook.defaultDots),
+                           CalendarLook.colorDotsKey: .bool(CalendarLook.defaultColorDots),
+                           CalendarLook.weekNumbersKey: .bool(CalendarLook.defaultWeekNumbers)]),
               variants: [(tr("下一个日程"), ["layout": .string("nextEvent")]),
                          (tr("今日时间线"), ["layout": .string(CalendarDay.timelineLayout)]),
                          (tr("日期"), ["layout": .string("date")]),
@@ -557,7 +563,12 @@ public enum WidgetCatalog {
         // This week from EventKit, Monday first; see WeekAgenda. Same
         // options as the Calendar widget, which reads the same store.
         Entry(kind: .week, name: tr("一周日程"), category: .time,
-              defaults: c(["allDay": .bool(true), "calendars": .list([])]),
+              defaults: c(["allDay": .bool(true), "calendars": .list([]),
+                           CalendarLook.highlightKey: .list(CalendarLook.defaultHighlight.map(WidgetConfig.Value.string)),
+                           CalendarLook.outlineKey: .bool(CalendarLook.defaultOutline),
+                           CalendarLook.dotsKey: .bool(CalendarLook.defaultDots),
+                           CalendarLook.colorDotsKey: .bool(CalendarLook.defaultColorDots),
+                           CalendarLook.weekNumbersKey: .bool(CalendarLook.defaultWeekNumbers)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Lunar date, solar terms and the official holidays; see ChineseCalendar.
@@ -806,6 +817,9 @@ public enum WidgetCatalog {
         // 收音机的皮肤在“样式”里选，不再单列一项。
         case (.radio, RadioSkin.key):
             false
+        // 圆点按日历颜色只在画圆点时有意义。
+        case (.calendar, CalendarLook.colorDotsKey), (.week, CalendarLook.colorDotsKey):
+            config.bool(CalendarLook.dotsKey, default: CalendarLook.defaultDots)
         // 渴成骷髅只画在角色上；圆环和液态没有角色。
         case (.water, WaterParched.key):
             WaterLayout.stored(config) == .character
