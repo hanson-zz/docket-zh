@@ -178,4 +178,26 @@ final class AINotchLayoutTests: XCTestCase {
         XCTAssertLessThan(panel.maxY, entry.minY)
         XCTAssertGreaterThanOrEqual(panel.minY, narrow.minY)
     }
+
+    func testOnlyNotchAnchorsKeepThePanelBlack() {
+        let notchEntry = AINotchLayout.entry(for: laptopScreen(), shiduoRunning: false)!.frame
+        XCTAssertTrue(AINotchLayout.hangsFromNotch(notchEntry))
+        XCTAssertTrue(AINotchLayout.hangsFromNotch(AINotchLayout.anchor(for: laptopScreen(), shiduoRunning: true)))
+        // 菜单栏自动隐藏（量出来是 0）时按刘海高度算，仍然挂在刘海下面。
+        XCTAssertTrue(AINotchLayout.hangsFromNotch(AINotchLayout.anchor(for: laptopScreen(menuBar: 0),
+                                                                       shiduoRunning: false)))
+        let capsule = AINotchLayout.entry(for: externalScreen(), shiduoRunning: false)!.frame
+        XCTAssertFalse(AINotchLayout.hangsFromNotch(capsule))
+        // 外接屏没有入口窗口时按屏幕中点算，宽度是 0。
+        XCTAssertFalse(AINotchLayout.hangsFromNotch(CGRect(x: external.midX, y: 1416, width: 0, height: 24)))
+    }
+
+    func testPanelHeaderMergesServiceNameAndWebControls() {
+        XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 0))
+        XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 1))
+        XCTAssertTrue(AINotchPanelHeader.showsServiceChips(serviceCount: 2))
+        XCTAssertTrue(AINotchPanelHeader.showsWebControls(.web))
+        XCTAssertFalse(AINotchPanelHeader.showsWebControls(.api))
+        XCTAssertFalse(AINotchPanelHeader.showsWebControls(.jump))
+    }
 }

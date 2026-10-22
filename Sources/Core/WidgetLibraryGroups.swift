@@ -20,6 +20,17 @@ public enum WidgetLibraryGroups {
 
     public static func isNew(_ kind: WidgetKind) -> Bool { newKinds.contains(kind) }
 
+    /// 卡片底下写的名字。分好组时小标题已经写了种类名（「AI 助手 2 种样式」），
+    /// 卡片只写样式名（「横版」）；搜索结果和推荐不分组，样式名前面带上种类名
+    /// （「AI 助手 · 横版」），免得只剩「横版」看不出是什么。样式名里已经有种类名
+    /// （「电池格」之于「电池」）或者没有样式（名字就是种类名）时原样写。
+    public static func cardTitle(variant: String, kindName: String, grouped: Bool) -> String {
+        let kind = kindName.trimmingCharacters(in: .whitespaces)
+        guard !grouped, !kind.isEmpty, variant != kind,
+              !variant.localizedCaseInsensitiveContains(kind) else { return variant }
+        return "\(kind) · \(variant)"
+    }
+
     /// 每个分类里卡片的先后，按分类定稿时列的顺序。不在这里的排在最后，保持目录顺序。
     public static let displayOrder: [WidgetKind] = [
         .appSwitcher, .shortcut,
@@ -36,6 +47,12 @@ public enum WidgetLibraryGroups {
     ]
 
     /// 种类小标题后面的一句说明，没有就是 nil。
+    /// 种类小标题旁边那一句 Pro 功能提示（带 Pro 标识，可点），没有就是 nil。
+    /// AI 助手：同一个小组件的对话也能挂在刘海下面（刘海对话是 Pro），不另开库样式。
+    public static func proHint(_ kind: WidgetKind) -> String? {
+        kind == .aiAssistant ? tr("也能在刘海里用") : nil
+    }
+
     public static func note(_ kind: WidgetKind) -> String? {
         switch kind {
         case .reminders: tr("和系统提醒事项同步")

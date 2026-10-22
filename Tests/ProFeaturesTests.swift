@@ -286,10 +286,10 @@ final class ProFeaturesTests: XCTestCase {
 
     func testRenamedCardsKeepTheirLayouts() {
         let ai = WidgetCatalog.entry(.aiAssistant)!.variants
-        XCTAssertEqual(ai.map(\.title), ["AI 任意门（横版）", "AI 任意门（竖版）"])
+        XCTAssertEqual(ai.map(\.title), ["横版", "竖版"])
         XCTAssertEqual(ai.map { $0.overrides["layout"] }, [.string(AIServices.wideLayout), .string(AIServices.squareLayout)])
         let photos = WidgetCatalog.entry(.photos)!.variants
-        XCTAssertEqual(photos.map(\.title), ["相册标准", "相册宽幅"])
+        XCTAssertEqual(photos.map(\.title), ["标准", "宽幅"])
         XCTAssertEqual(photos.map { $0.overrides["layout"] }, [.string("standard"), .string("wide")])
     }
 

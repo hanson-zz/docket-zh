@@ -308,10 +308,11 @@ public enum WidgetCatalog {
               defaults: c(["layout": .string("standard"), "folder": .string(""),
                            "interval": .number(PhotoRotation.defaultInterval), "shuffle": .bool(false),
                            PhotoRotation.memoriesFirstKey: .bool(true)]),
-              // 卡片名突出是相册，和时钟的“标准”分得开；layout 值不变，
-              // 已经放好的卡片不受影响。
-              variants: [(tr("相册标准"), ["layout": .string("standard")]),
-                         (tr("相册宽幅"), ["layout": .string("wide")])],
+              // 库里小标题已经写了「相册」，样式名只写标准、宽幅；不分组的搜索结果
+              // 里前面带上种类名（「相册 · 标准」），和时钟的「标准」分得开。
+              // layout 值不变，已经放好的卡片不受影响。
+              variants: [(tr("标准"), ["layout": .string("standard")]),
+                         (tr("宽幅"), ["layout": .string("wide")])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .screenshots, name: tr("最近截图"), category: .files, defaults: c([:]),
@@ -362,9 +363,10 @@ public enum WidgetCatalog {
         // 用 AIServices 的默认；所以设置页里没有它们。
         Entry(kind: .aiAssistant, name: tr("AI 助手"), category: .ai,
               defaults: c(["layout": .string(AIServices.wideLayout)]),
-              // 卡片名说清是什么：横排是一排 AI 字牌，方块是小熊猫。layout 值不变。
-              variants: [(tr("AI 任意门（横版）"), ["layout": .string(AIServices.wideLayout)]),
-                         (tr("AI 任意门（竖版）"), ["layout": .string(AIServices.squareLayout)])],
+              // 横版是一排 AI 字牌，竖版是小熊猫方块。库里小标题已经写了「AI 助手」，
+              // 样式名只写横版、竖版（不分组的搜索结果里前面会带上种类名）。layout 值不变。
+              variants: [(tr("横版"), ["layout": .string(AIServices.wideLayout)]),
+                         (tr("竖版"), ["layout": .string(AIServices.squareLayout)])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .search, name: tr("搜索"), category: .ai,

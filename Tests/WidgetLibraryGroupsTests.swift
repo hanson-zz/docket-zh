@@ -225,4 +225,29 @@ final class WidgetLibraryGroupsTests: XCTestCase {
         XCTAssertNil(WidgetLibraryGroups.verticalMove(from: 6, rows: rows, by: 1))
         XCTAssertNil(WidgetLibraryGroups.verticalMove(from: 99, rows: rows, by: 1))
     }
+
+    func testCardTitleAddsTheKindOnlyWhenUngrouped() {
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "横版", kindName: "AI 助手", grouped: true), "横版")
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "横版", kindName: "AI 助手", grouped: false), "AI 助手 · 横版")
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "Wide", kindName: "AI Assistant", grouped: false),
+                       "AI Assistant · Wide")
+        // 没有样式（名字就是种类名）、样式名里已经带种类名时原样写。
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "便签", kindName: "便签", grouped: false), "便签")
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "电池格", kindName: "电池", grouped: false), "电池格")
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "Battery cells", kindName: "battery", grouped: false),
+                       "Battery cells")
+        XCTAssertEqual(WidgetLibraryGroups.cardTitle(variant: "标准", kindName: "", grouped: false), "标准")
+    }
+
+    func testAIAndPhotoVariantsUseShortNamesUnderTheirHeader() {
+        // 小标题已经写了种类名，样式名不再重复，卡片底栏放得下。
+        XCTAssertEqual(WidgetCatalog.entry(.aiAssistant)!.variants.map(\.title), ["横版", "竖版"])
+        XCTAssertEqual(WidgetCatalog.entry(.photos)!.variants.map(\.title), ["标准", "宽幅"])
+    }
+
+    func testOnlyTheAIAssistantHeaderMentionsTheNotch() {
+        XCTAssertEqual(WidgetLibraryGroups.proHint(.aiAssistant), "也能在刘海里用")
+        XCTAssertNil(WidgetLibraryGroups.proHint(.clock))
+        XCTAssertNil(WidgetLibraryGroups.proHint(.aiUsage))
+    }
 }

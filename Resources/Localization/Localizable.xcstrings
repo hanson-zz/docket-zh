@@ -3224,6 +3224,17 @@
         }
       }
     },
+    "%@，码头 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Dockling Pro"
+          }
+        }
+      }
+    },
     "%@，还剩 %@ 秒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3913,6 +3924,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI Assistant"
+          }
+        }
+      }
+    },
+    "AI 助手的对话也能挂在刘海下面，码头 Pro 功能：点一下看看解锁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Assistant chats can also open below the notch, a Dockling Pro feature: click to see how to unlock it"
+          }
+        }
+      }
+    },
+    "AI 助手的对话也能挂在刘海下面：点一下打开设置 ▸ AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Assistant chats can also open below the notch: click to open Settings ▸ AI"
           }
         }
       }
@@ -7121,6 +7154,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pinyin, initials or Chinese work too, like tianqi, tq, 天气"
+          }
+        }
+      }
+    },
+    "也能在刘海里用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also works in the notch"
           }
         }
       }
@@ -12119,6 +12163,39 @@
         }
       }
     },
+    "在刘海下面直接对话是码头 Pro 功能，点一下看看解锁。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatting right below the notch is a Dockling Pro feature. Click to see how to unlock it."
+          }
+        }
+      }
+    },
+    "在刘海里对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch Chat"
+          }
+        }
+      }
+    },
+    "在刘海里对话，码头 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch Chat, Dockling Pro"
+          }
+        }
+      }
+    },
     "在应用程序文件夹里没有找到 App。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12394,6 +12471,17 @@
         }
       }
     },
+    "打开后点一下刘海或按快捷键，就在刘海下面直接对话。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on to chat right below the notch: click the notch or press the shortcut."
+          }
+        }
+      }
+    },
     "打开屏幕录制权限后可看缩略图" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12522,6 +12610,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "List"
+          }
+        }
+      }
+    },
+    "刘海对话已打开：点一下刘海或按快捷键展开对话。再点关掉刘海入口。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch Chat is on: click the notch or press the shortcut to open it. Click again to turn the notch entry off."
           }
         }
       }
@@ -17427,6 +17526,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adds a line at the end"
+          }
+        }
+      }
+    },
+    "在浏览器打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Browser"
           }
         }
       }
@@ -35475,6 +35585,17 @@
         }
       }
     },
+    "横版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wide"
+          }
+        }
+      }
+    },
     "樱花粉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41704,6 +41825,17 @@
         }
       }
     },
+    "竖版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Square"
+          }
+        }
+      }
+    },
     "站会" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43449,6 +43581,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Web usage"
+          }
+        }
+      }
+    },
+    "网页载入中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading page"
           }
         }
       }

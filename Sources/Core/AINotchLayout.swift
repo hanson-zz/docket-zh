@@ -142,6 +142,14 @@ public enum AINotchLayout {
         hovering || generating ? 1 : capsuleRestingOpacity
     }
 
+    /// 面板是不是直接挂在刘海下面（刘海入口，或拾掇占着刘海时按刘海算的位置）。
+    /// 挂在刘海下面时面板保持纯黑，顶边和刘海连成一块；外接屏的小胶囊下面、
+    /// 没有刘海的屏幕上是液态玻璃，跟随浅色 / 深色。刘海那一段有宽度、高度是
+    /// 菜单栏高度（至少 22）；胶囊只有 18 高，没有入口时按屏幕中点算的位置宽度是 0。
+    public static func hangsFromNotch(_ anchor: CGRect) -> Bool {
+        anchor.width > 0 && anchor.height >= 22
+    }
+
     /// 展开的面板：从入口正下方长出来，水平对着入口中间，超出屏幕时往里收。
     public static func panelFrame(below entry: CGRect, screen: CGRect, size: CGSize = panelSize) -> CGRect {
         var x = entry.midX - size.width / 2
@@ -169,4 +177,18 @@ public enum AIShiduo {
 
     public static let explanation =
         tr("检测到「拾掇」正在运行：拾掇的悬浮暂存架在指针碰到刘海或把文件拖到刘海时弹出，为了不和它抢，码头不在刘海上放任何 AI 入口，刘海的点击和悬停都让给拾掇。这时请用快捷键或货架上 AI 卡片的小熊猫展开对话。")
+}
+
+// MARK: - 展开面板的顶栏
+
+/// 展开面板顶上那一行放什么。以前是「小熊猫 / 网页 · 你的账号 / 图钉」一行，
+/// 下面一个服务胶囊，网页模式再一条「豆包 ↻ 在浏览器打开」标题栏，服务名写了
+/// 三遍。现在合成一行：只有一个服务时写服务名，几个服务时那一行就是切换胶囊；
+/// 网页模式的刷新和在浏览器打开挪到这一行右边，图钉在最后。
+public enum AINotchPanelHeader {
+    /// 几个服务时才画切换胶囊，只有一个时直接写服务名。
+    public static func showsServiceChips(serviceCount: Int) -> Bool { serviceCount > 1 }
+
+    /// 刷新、在浏览器打开只有网页模式有。
+    public static func showsWebControls(_ mode: AIOpenMode) -> Bool { mode == .web }
 }

@@ -204,6 +204,10 @@ struct WidgetLibraryView: View {
 
     private static let sidebarWidth: CGFloat = 175
     private static let cardWidth: CGFloat = 168
+    /// 底栏留够两行 13pt 名字的高度，长名字换行而不是截成「…」。
+    private static let cardFooterHeight: CGFloat = 34
+    /// 10 + 预览 66 + 6 + 底栏 34 + 10。
+    private static let cardHeight: CGFloat = 126
     private static let columns = 3
 
     @State private var selection: LibrarySelection = .all
@@ -406,7 +410,7 @@ struct WidgetLibraryView: View {
                                                              count: Self.columns),
                                               alignment: .leading, spacing: 12) {
                                         ForEach(group.cards) { card in
-                                            cardView(card)
+                                            cardView(card, grouped: group.kind != nil)
                                         }
                                     }
                                 }
@@ -430,6 +434,7 @@ struct WidgetLibraryView: View {
             Text(name)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.85))
+                .accessibilityAddTraits(.isHeader)
             if ProFeatures.isProKind(kind) {
                 ProBadge()
             }
@@ -443,9 +448,42 @@ struct WidgetLibraryView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(.tertiary)
             }
+            if let hint = WidgetLibraryGroups.proHint(kind) {
+                proHintButton(hint)
+            }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// 小标题旁的「也能在刘海里用 Pro」：已解锁时打开设置 ▸ AI（刘海入口开关在那），
+    /// 没解锁时弹付费墙。只是一句提示，不是新的库样式。
+    private func proHintButton(_ hint: String) -> some View {
+        Button {
+            if ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked),
+               let app = AIChatCenter.shared.app {
+                SettingsWindow.shared.show(app: app, tab: "AI")
+            } else {
+                PaywallWindow.shared.show()
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(hint)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                    .fixedSize()
+                ProBadge()
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.leading, 6)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(ProAccess.isUnlocked
+              ? tr("AI 助手的对话也能挂在刘海下面：点一下打开设置 ▸ AI")
+              : tr("AI 助手的对话也能挂在刘海下面，码头 Pro 功能：点一下看看解锁"))
+        .accessibilityLabel(tr("\(hint)，码头 Pro"))
     }
 
     private var shortcutsSection: some View {
@@ -603,33 +641,27 @@ struct WidgetLibraryView: View {
         for url in panel.urls { onAddItem(LibraryShortcut.item(for: url)) }
     }
 
-    private func cardView(_ card: LibraryCard) -> some View {
+    /// 一张库卡片。底栏只放名字和 −/+：名字最多两行、不缩到 13pt 以下，
+    /// Pro 和「新」角标挪到预览右上角，不再和名字抢一行（以前「AI 任意门（横版）」
+    /// 加角标和两个按钮只剩「AI 任意…」）。`grouped` 为 false（搜索结果、推荐）
+    /// 时名字前面带上种类名，见 `WidgetLibraryGroups.cardTitle`。
+    private func cardView(_ card: LibraryCard, grouped: Bool) -> some View {
         let focused = focus == .card(card.id)
-        return VStack(spacing: 8) {
+        let title = WidgetLibraryGroups.cardTitle(variant: card.title, kindName: card.name, grouped: grouped)
+        return VStack(spacing: 6) {
             LibraryPreview(instance: card.preview)
-            HStack(spacing: 4) {
-                Text(card.title)
+                .overlay(alignment: .topTrailing) { cornerBadges(card) }
+            HStack(alignment: .center, spacing: 4) {
+                Text(title)
                     .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                     .truncationMode(.tail)
-                // Pro 标识固定显示，不随解锁状态变；判断统一在 ProFeatures。
-                if ProFeatures.isPro(card.kind, overrides: card.overrides) {
-                    ProBadge()
-                }
-                if WidgetCatalog.isNew(card.kind) {
-                    Text("新")
-                        .font(.system(size: ProBadge.fontSize(compact: false), weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, ProBadge.horizontalPadding(compact: false))
-                        .padding(.vertical, ProBadge.verticalPadding(compact: false))
-                        .background(Capsule().fill(Color.accentColor))
-                        .fixedSize()
-                        .help("近期新增的小组件")
-                        .accessibilityLabel("新")
-                }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
                 // 需要系统权限的不再画小锁（像是锁住不能用），第一次用到时
-                // 再请求；是哪项权限写在整张卡片的悬停说明里。Pro 角标照旧。
-                Spacer(minLength: 2)
+                // 再请求；是哪项权限写在整张卡片的悬停说明里。
                 let onShelf = placedInstances(for: card)
                 if !onShelf.isEmpty {
                     Button { remove(card) } label: {
@@ -648,6 +680,7 @@ struct WidgetLibraryView: View {
                             .font(.system(size: 13, weight: .semibold))
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
+                            .fixedSize()
                     }
                 }
                 Button { add(card) } label: {
@@ -659,9 +692,10 @@ struct WidgetLibraryView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(tr("添加“\(card.title)”"))
             }
+            .frame(height: Self.cardFooterHeight)
         }
         .padding(10)
-        .frame(width: Self.cardWidth, height: 116)
+        .frame(width: Self.cardWidth, height: Self.cardHeight)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.background.secondary))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -684,6 +718,32 @@ struct WidgetLibraryView: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(card.name), \(card.title)")
         .accessibilityHint("将此小组件添加到程序坞")
+    }
+
+    /// 预览右上角的 Pro、「新」角标（Pro 标识固定显示，不随解锁状态变；判断
+    /// 统一在 ProFeatures）。预览上的小卡片缩放后很少顶到右上角，角标再带一道
+    /// 细阴影，压在卡片上也分得清。
+    @ViewBuilder private func cornerBadges(_ card: LibraryCard) -> some View {
+        let pro = ProFeatures.isPro(card.kind, overrides: card.overrides)
+        let new = WidgetCatalog.isNew(card.kind)
+        if pro || new {
+            HStack(spacing: 3) {
+                if pro { ProBadge() }
+                if new {
+                    Text("新")
+                        .font(.system(size: ProBadge.fontSize(compact: false), weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, ProBadge.horizontalPadding(compact: false))
+                        .padding(.vertical, ProBadge.verticalPadding(compact: false))
+                        .background(Capsule().fill(Color.accentColor))
+                        .fixedSize()
+                        .help("近期新增的小组件")
+                        .accessibilityLabel("新")
+                }
+            }
+            .shadow(color: .black.opacity(0.18), radius: 1.5, y: 0.5)
+            .offset(x: 4, y: -4)
+        }
     }
 
     // MARK: Data

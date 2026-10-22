@@ -115,6 +115,16 @@ struct AIBouncingDots: View {
 // MARK: - 展开的面板
 
 /// 刘海下面长出来的对话面板，约 420 x 520。
+///
+/// 底色：挂在刘海下面时保持纯黑（液态玻璃规则里的暗色例外），顶边 12 的圆角
+/// 正好接住刘海，看起来是刘海长出来的一块，换成浅色玻璃会在刘海下沿断开一截
+/// 黑白接缝。外接屏胶囊下面、没有刘海的屏幕上没有黑色硬件要接，改用液态玻璃，
+/// 跟随设置里的浅色 / 深色。内容一律用 PanelColors 语义色，纯黑时环境是深色，
+/// 解析成原来的白。
+///
+/// 层级：顶上一行是小熊猫 + 服务名（几个服务时是切换胶囊）+ 网页模式的刷新、
+/// 在浏览器打开 + 图钉，下面一排提示词，再下面是对话、网页或跳转。服务名只写
+/// 一遍，见 `AINotchPanelHeader`。
 struct AIChatPanelView: View {
     var center: AIChatCenter
     var model: AINotchPanelModel
@@ -123,19 +133,25 @@ struct AIChatPanelView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
+    /// 顶栏、提示词、网页四周统一的边距。
+    static let inset: CGFloat = 12
+
     private static let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 26,
                                                       bottomTrailingRadius: 26, topTrailingRadius: 12,
                                                       style: .continuous)
 
     var body: some View {
+        let notch = model.hangsFromNotch
         content
             .frame(width: AINotchLayout.panelSize.width, height: AINotchLayout.panelSize.height)
-            .background(Self.shape.fill(.black))
-            .overlay(Self.shape.stroke(.white.opacity(0.08), lineWidth: 0.5))
+            .background { AIChatPanelSurface(shape: Self.shape, notch: notch) }
+            .overlay {
+                if notch { Self.shape.stroke(.white.opacity(0.08), lineWidth: 0.5) }
+            }
             .clipShape(Self.shape)
             .scaleEffect(x: appeared ? 1 : 0.55, y: appeared ? 1 : 0.08, anchor: .top)
             .opacity(appeared ? 1 : 0)
-            .environment(\.colorScheme, .dark)
+            .panelForceDark(notch)
             .onAppear(perform: enter)
             .onChange(of: model.session) { _, _ in
                 appeared = false
@@ -165,10 +181,6 @@ struct AIChatPanelView: View {
     @ViewBuilder private var content: some View {
         VStack(spacing: 0) {
             header
-            if !center.services.isEmpty {
-                chips
-            }
-            Rectangle().fill(.white.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 14)
             if let service = center.current {
                 AIPromptBar(center: center, service: service, close: close)
             }
@@ -191,38 +203,52 @@ struct AIChatPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            AIPandaAvatar(size: 28)
-            Text("小熊猫")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
-            Spacer(minLength: 8)
-            if let service = center.current {
-                Text(center.modeLabel(for: service))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+            AIPandaAvatar(size: 26)
+            if AINotchPanelHeader.showsServiceChips(serviceCount: center.services.count) {
+                chips
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                title
+                Spacer(minLength: 6)
             }
-            Button {
-                center.pinned.toggle()
-            } label: {
-                Image(systemName: center.pinned ? "pin.fill" : "pin")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(center.pinned ? 0.95 : 0.55))
-                    .rotationEffect(.degrees(center.pinned ? 0 : 35))
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(.white.opacity(center.pinned ? 0.16 : 0.06)))
-                    .contentShape(Circle())
+            if let service = center.current, AINotchPanelHeader.showsWebControls(center.mode(for: service)) {
+                reloadButton(service)
+                headerButton("arrow.up.right.square", help: tr("在浏览器打开"),
+                             label: tr("在浏览器打开当前网页")) { center.openInBrowser(service) }
             }
-            .buttonStyle(.plain)
-            .help(center.pinned ? tr("已钉住：点面板外面不会收起") : tr("钉住：点面板外面不收起"))
-            .accessibilityLabel(center.pinned ? tr("取消钉住") : tr("钉住面板"))
+            pinButton
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 12)
+        .padding(.horizontal, Self.inset)
+        .padding(.top, 10)
         .padding(.bottom, 8)
     }
 
+    /// 只有一个服务（或还没有服务）时：服务名，同一行后面跟一句小字写打开方式
+    /// （「网页 · 你的账号」「API · deepseek-chat」）。
+    @ViewBuilder private var title: some View {
+        if let service = center.current {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(service.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                Text(center.modeLabel(for: service))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .help(center.modeLabel(for: service))
+            .accessibilityElement(children: .combine)
+        } else {
+            Text("小熊猫")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+        }
+    }
+
+    /// 几个服务时顶上那一行就是切换胶囊，选中的那个就是标题，不再另写服务名。
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
@@ -234,24 +260,95 @@ struct AIChatPanelView: View {
                         HStack(spacing: 4) {
                             Text(service.title)
                                 .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                                .lineLimit(1)
+                                .fixedSize()
                             if center.isGenerating(service.id) {
                                 Circle().fill(Color(hex: AIGlyph.dotHex)).frame(width: 5, height: 5)
                             }
                         }
-                        .foregroundStyle(.white.opacity(selected ? 1 : 0.75))
+                        .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
                         .padding(.horizontal, 11)
                         .frame(height: 26)
-                        .background(Capsule().fill(.white.opacity(selected ? 0.2 : 0.06)))
-                        .overlay(Capsule().strokeBorder(.white.opacity(selected ? 0.35 : 0.12), lineWidth: 0.75))
+                        .background {
+                            if selected {
+                                Capsule().fill(.panelRaised).panelLift()
+                            } else {
+                                Capsule().fill(.panelFill)
+                            }
+                        }
                         .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .help(center.modeLabel(for: service))
                     .accessibilityLabel(selected ? tr("\(service.title)，当前") : tr("切换到 \(service.title)"))
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.vertical, 2)
         }
-        .padding(.bottom, 10)
+    }
+
+    /// 刷新；网页在载入时换成转圈，位置不变，顶栏不跳。
+    @ViewBuilder private func reloadButton(_ service: AIService) -> some View {
+        if center.isLoading(service.id) {
+            ProgressView()
+                .controlSize(.small)
+                .frame(width: 28, height: 28)
+                .accessibilityLabel(tr("网页载入中"))
+        } else {
+            headerButton("arrow.clockwise", help: tr("刷新"), label: tr("刷新网页")) { center.reload(service) }
+        }
+    }
+
+    private func headerButton(_ symbol: String, help: String, label: String,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.panelFill))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(label)
+    }
+
+    private var pinButton: some View {
+        Button {
+            center.pinned.toggle()
+        } label: {
+            Image(systemName: center.pinned ? "pin.fill" : "pin")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(center.pinned ? Color.panelPrimary : Color.panelSecondary)
+                .rotationEffect(.degrees(center.pinned ? 0 : 35))
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(center.pinned ? Color.panelSelected : Color.panelFill))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(center.pinned ? tr("已钉住：点面板外面不会收起") : tr("钉住：点面板外面不收起"))
+        .accessibilityLabel(center.pinned ? tr("取消钉住") : tr("钉住面板"))
+    }
+}
+
+/// 面板底：挂在刘海下面是纯黑；其他地方是液态玻璃，系统「降低透明度」时换成
+/// 实心底（同 `PanelGlassSurface`，那个只认圆角矩形，这里上下圆角不一样）。
+private struct AIChatPanelSurface: View {
+    var shape: UnevenRoundedRectangle
+    var notch: Bool
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        if notch {
+            shape.fill(.black)
+        } else if reduceTransparency {
+            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
+        } else {
+            Color.clear.glassEffect(.regular, in: shape)
+        }
     }
 }
 
@@ -284,8 +381,8 @@ private struct AIPromptBar: View {
                 close()
                 SettingsWindow.shared.show(app: app, tab: "AI")
             })
-            .padding(.horizontal, 14)
-            .padding(.top, 8)
+            .padding(.horizontal, AIChatPanelView.inset)
+            .padding(.top, 2)
     }
 
     private func helpText(_ title: String) -> String {
@@ -313,10 +410,10 @@ private struct AIAPIChatPane: View {
                 VStack(spacing: 8) {
                     Text("想问点什么？")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.panelPrimary)
                     Text("回答会一个字一个字流出来，可以停、重试、复制、接着问。")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 30)
@@ -381,12 +478,12 @@ private struct AIAPIChatPane: View {
                 case .failed(let reason):
                     Label(reason, systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color(hex: PaletteColor.orange.hex))
+                        .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
                         .fixedSize(horizontal: false, vertical: true)
                 case .stopped:
                     Text(message.text.isEmpty ? tr("（已停止）") : tr("（已停止生成）"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.panelTertiary)
                 default:
                     EmptyView()
                 }
@@ -417,7 +514,7 @@ private struct AIAPIChatPane: View {
             Label(title, systemImage: symbol)
                 .labelStyle(.titleAndIcon)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.panelSecondary)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -439,7 +536,7 @@ struct AIAnswerText: View {
                 case .text(let paragraph):
                     Text(Self.attributed(paragraph, cursor: streaming && isLast))
                         .font(.system(size: 13.5))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.panelPrimary)
                         .lineSpacing(3)
                         .textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -448,25 +545,25 @@ struct AIAnswerText: View {
                         if !language.isEmpty {
                             Text(language)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.45))
+                                .foregroundStyle(.panelTertiary)
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
                             Text(body + (streaming && isLast ? "▍" : ""))
                                 .font(.system(size: 13, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(.panelPrimary)
                                 .textSelection(.enabled)
                                 .fixedSize()
                         }
                     }
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.08)))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.panelFill))
                 }
             }
             if blocks.isEmpty && streaming {
                 Text("▍")
                     .font(.system(size: 13.5))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.panelPrimary)
             }
         }
     }
@@ -503,7 +600,7 @@ private struct AIChatInput: View {
                 if center.draft.isEmpty {
                     Text(placeholder)
                         .font(.system(size: 13.5))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.panelTertiary)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
@@ -520,9 +617,9 @@ private struct AIChatInput: View {
             } label: {
                 Image(systemName: generating ? "stop.fill" : "arrow.up")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.panelOnPrimary)
                     .frame(width: 30, height: 30)
-                    .background(Circle().fill(.white.opacity(generating || AIAsk.question(center.draft) != nil ? 1 : 0.35)))
+                    .background(Circle().fill(.panelPrimary.opacity(generating || AIAsk.question(center.draft) != nil ? 1 : 0.35)))
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -531,7 +628,7 @@ private struct AIChatInput: View {
         .padding(.leading, 12)
         .padding(.trailing, 8)
         .frame(height: 56)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.white.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(.panelFill))
     }
 }
 
@@ -541,38 +638,15 @@ private struct AIWebPane: View {
     var center: AIChatCenter
     var service: AIService
 
+    @Environment(\.colorScheme) private var scheme
+
+    /// 网页的圆角：面板底角 26 往里收一个边距，和面板同心。
+    private static let corner: CGFloat = 14
+
+    /// 服务名、刷新、在浏览器打开都在面板顶栏，这里只剩网页本身：圆角内嵌，
+    /// 四周和顶栏、提示词同一个边距，下面一行小字写网页由谁提供。
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Text(service.title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-                if center.isLoading(service.id) {
-                    ProgressView().controlSize(.mini)
-                }
-                Spacer(minLength: 0)
-                Button {
-                    center.reload(service)
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-                .help("刷新")
-                .accessibilityLabel("刷新网页")
-                Button {
-                    center.openInBrowser(service)
-                } label: {
-                    Text("在浏览器打开 ↗")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("在浏览器打开当前网页")
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 30)
+        VStack(spacing: 6) {
             if center.showsGoogleWarning(service.id) {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -583,47 +657,63 @@ private struct AIWebPane: View {
                         .underline()
                 }
                 .font(.system(size: 13))
-                .foregroundStyle(Color(hex: PaletteColor.orange.hex))
-                .padding(.horizontal, 12)
+                .foregroundStyle(Color(hex: PaletteColor.orange.hex).panelReadable)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color(hex: PaletteColor.orange.hex).opacity(0.12))
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: PaletteColor.orange.hex).opacity(0.12)))
             }
-            AIWebHost(center: center, service: service)
+            AIWebHost(center: center, service: service, dark: scheme == .dark, corner: Self.corner)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.13)))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .padding(.horizontal, 10)
-        .padding(.top, 10)
-        .overlay(alignment: .bottom) {
+                .background(RoundedRectangle(cornerRadius: Self.corner, style: .continuous).fill(.panelFill))
+                .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
+                        .strokeBorder(.panelSeparator, lineWidth: 0.5)
+                        .allowsHitTesting(false)
+                }
             if let credit = AIWeb.credit(service.homeURL) {
                 Text(credit)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.35))
-                    .padding(.bottom, 4)
+                    .foregroundStyle(.panelTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
         }
-        .padding(.bottom, 22)
+        .padding(.horizontal, AIChatPanelView.inset)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
     }
 }
 
 /// 把服务自己的 WKWebView 放进来。网页由 `AIChatCenter` 留着，换服务时只
-/// 换挂上去的那一个，不重载。
+/// 换挂上去的那一个，不重载。网页的外观跟着面板：纯黑（刘海）或深色时是
+/// darkAqua，网页按 prefers-color-scheme 换深色；浅色玻璃上是 aqua。圆角在
+/// 容器的图层上裁，WKWebView 是 AppKit 视图，SwiftUI 的 clipShape 不一定裁得到。
 private struct AIWebHost: NSViewRepresentable {
     var center: AIChatCenter
     var service: AIService
+    var dark: Bool
+    var corner: CGFloat
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
         container.wantsLayer = true
+        container.layer?.cornerRadius = corner
+        container.layer?.cornerCurve = .continuous
+        container.layer?.masksToBounds = true
         return container
     }
 
     func updateNSView(_ container: NSView, context: Context) {
+        let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        if container.appearance?.name != appearance?.name { container.appearance = appearance }
         guard let web = center.webView(for: service) else {
             container.subviews.forEach { $0.removeFromSuperview() }
             return
         }
+        // 网页可能先挂在过别的容器里，外观直接设在网页上，不靠继承。
+        if web.appearance?.name != appearance?.name { web.appearance = appearance }
         guard web.superview !== container else { return }
         container.subviews.forEach { $0.removeFromSuperview() }
         web.removeFromSuperview()
@@ -655,19 +745,19 @@ private struct AIJumpPane: View {
                 if center.draft.isEmpty {
                     Text("想问点什么？")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.panelTertiary)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white.opacity(0.08)))
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.panelFill))
             HStack(spacing: 10) {
                 Button(tr("只打开 \(service.title)")) { center.openService() }
                     .buttonStyle(.plain)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
                 Button {
                     guard !AskTextView.keyWindowIsComposing else { return }
@@ -688,14 +778,14 @@ private struct AIJumpPane: View {
                  ? tr("跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
                  : tr("跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(center.jumpHint == nil ? 0.5 : 0.8))
+                .foregroundStyle(center.jumpHint == nil ? Color.panelTertiary : Color.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Text("想直接在这里对话：到“设置 ▸ AI”把它改成网页或 API。")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(AIChatPanelView.inset)
     }
 }

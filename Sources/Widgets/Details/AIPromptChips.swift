@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// 只管画和把点击交出去；文字从哪来、交给谁由用它的地方决定（刘海对话交给
 /// `AIChatCenter`，迷你提问面板照平时提问交给选中的服务）。哪些显示、第二行
-/// 显示什么见 Core 的 `AIPromptStrip`。两处都是深色底，字一律用白色。
+/// 显示什么见 Core 的 `AIPromptStrip`。颜色用面板语义色：迷你提问面板是液态
+/// 玻璃，刘海对话挂在刘海下面时是纯黑（环境深色，语义色解析成白）。
 struct AIPromptChipBar: View {
     /// 有没有输入框：刘海对话的网页模式没有，剪贴板按钮和点预览带进去都不出现。
     var hasInput: Bool

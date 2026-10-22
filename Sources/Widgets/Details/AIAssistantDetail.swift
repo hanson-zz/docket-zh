@@ -43,9 +43,15 @@ struct AIAssistantDetail: View {
     private var header: some View {
         HStack(spacing: 8) {
             AIPandaAvatar(size: 28)
-            Text(state.mode == .manage ? tr("管理字牌") : tr("问问 AI"))
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.panelPrimary)
+            if state.mode == .manage {
+                Text(tr("管理字牌"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+            } else {
+                // 提问时顶栏不再写「问问 AI」（输入框里已经写着「想问点什么？」），
+                // 位置让给刘海对话开关。
+                AINotchSwitch(isPreview: context.isPreview)
+            }
             Spacer(minLength: 0)
             Button(state.mode == .manage ? tr("完成") : tr("管理字牌")) {
                 state.mode = state.mode == .manage ? .ask : .manage
@@ -53,11 +59,84 @@ struct AIAssistantDetail: View {
             .buttonStyle(.plain)
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.panelPrimary)
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, 10)
             .frame(height: 24)
             .background(Capsule().fill(.panelFill))
             .accessibilityLabel(state.mode == .manage ? tr("完成管理，回到提问") : tr("管理字牌"))
         }
+    }
+}
+
+/// 顶栏里的「在刘海里对话 Pro」开关：已解锁时切换刘海入口（设置 ▸ AI 里「在刘海
+/// 显示 AI 助手」同一个键 `aiNotch.enabled`）；没解锁时开关画成关着，点了弹付费墙，
+/// 不改设置（同设置页：没解锁时打开只弹付费墙）。Pro 标识固定显示。
+struct AINotchSwitch: View {
+    var isPreview: Bool
+
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+
+    private var center: AIChatCenter { AIChatCenter.shared }
+    private var unlocked: Bool { ProLicenseGate.canOpenAINotch(unlocked: licenseUnlocked || supporter) }
+    private var isOn: Bool { unlocked && center.settings.enabled }
+
+    var body: some View {
+        Button(action: toggle) {
+            HStack(spacing: 6) {
+                Text("在刘海里对话")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
+                ProBadge()
+                AIMiniSwitch(isOn: isOn)
+            }
+            .padding(.leading, 10)
+            .padding(.trailing, 4)
+            .frame(height: 26)
+            .background(Capsule().fill(.panelFill))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isPreview)
+        .help(unlocked
+              ? (isOn ? tr("刘海对话已打开：点一下刘海或按快捷键展开对话。再点关掉刘海入口。")
+                      : tr("打开后点一下刘海或按快捷键，就在刘海下面直接对话。"))
+              : tr("在刘海下面直接对话是码头 Pro 功能，点一下看看解锁。"))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("在刘海里对话，码头 Pro"))
+        .accessibilityValue(isOn ? tr("开") : tr("关"))
+        .accessibilityAddTraits(.isToggle)
+    }
+
+    private func toggle() {
+        guard !isPreview else { return }
+        guard unlocked else {
+            PaywallWindow.shared.show()
+            return
+        }
+        center.updateSettings { $0.enabled.toggle() }
+    }
+}
+
+/// 小号开关的样子（26 x 16）：开着是主题蓝，关着是轨道灰。只是画，点击交给外面的按钮。
+private struct AIMiniSwitch: View {
+    var isOn: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack(alignment: isOn ? .trailing : .leading) {
+            Capsule().fill(isOn ? Color(hex: AIGlyph.dotHex) : Color.panelTrack)
+            Circle()
+                .fill(.white)
+                .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+                .padding(2)
+        }
+        .frame(width: 26, height: 16)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isOn)
+        .accessibilityHidden(true)
     }
 }
 
@@ -719,6 +798,10 @@ struct AskTextEditor: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
+        // 字色是 labelColor，跟着 NSView 自己的外观解析；刘海对话保持纯黑时
+        // 环境是深色、窗口可能是浅色，按环境设一下，免得黑字落在黑底上。
+        let appearance = NSAppearance(named: context.environment.colorScheme == .dark ? .darkAqua : .aqua)
+        if scroll.appearance?.name != appearance?.name { scroll.appearance = appearance }
         guard let view = scroll.documentView as? AskTextView else { return }
         // 输入法正在选字时不要改它的字，会把候选打断。
         if view.string != text, !view.hasMarkedText() {

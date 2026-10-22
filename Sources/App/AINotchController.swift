@@ -220,6 +220,7 @@ final class AINotchController {
         let panel = existingOrNewPanel()
         let frame = AINotchLayout.panelFrame(below: entry, screen: screen)
         panel.setFrame(frame, display: false)
+        panelModel.hangsFromNotch = AINotchLayout.hangsFromNotch(entry)
         panelModel.isOpen = true
         panelModel.session = UUID()
         panel.alphaValue = 1
@@ -304,6 +305,9 @@ final class AINotchController {
 final class AINotchPanelModel {
     var isOpen = false
     var session = UUID()
+    /// 挂在刘海下面（保持纯黑，和刘海连成一块）还是外接屏胶囊下面（液态玻璃，
+    /// 跟随浅色 / 深色）。见 `AINotchLayout.hangsFromNotch`。
+    var hangsFromNotch = true
 }
 
 // MARK: - 入口窗口
