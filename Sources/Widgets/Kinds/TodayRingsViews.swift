@@ -131,8 +131,9 @@ struct TodayRingBadge: View {
     }
 }
 
-/// 三环中心：没全满时是总百分比（13pt，最多 99%），全满时是那一档的小竹叶。
-/// 百分比按中心空圆的宽度挑最宽放得下的字宽，再放不下就只写数字，不缩到 13pt 以下。
+/// 三环中心：没全满时只写总进度数字（13pt 粗体，不带 %，最多 99），全满时是那一档的小竹叶。
+/// 数字按中心空圆里内接得下的宽度（`TodayRings.centreWidth`）挑最宽放得下的字宽，不缩到 13pt 以下。
+/// 读屏不读这里，卡片整体的标签照旧读「今日三环，百分之几」。
 struct TodayRingsCentre: View {
     var items: [PerfectDayProgress]
     /// 最内环里空出的圆的直径。
@@ -141,12 +142,11 @@ struct TodayRingsCentre: View {
     var body: some View {
         if let percent = TodayRings.centrePercent(items) {
             ViewThatFits(in: .horizontal) {
-                figure("\(percent)%", width: .standard)
-                figure("\(percent)%", width: .condensed)
-                figure("\(percent)%", width: .compressed)
+                figure("\(percent)", width: .standard)
+                figure("\(percent)", width: .condensed)
                 figure("\(percent)", width: .compressed)
             }
-            .frame(width: max(1, hole - 2))
+            .frame(width: max(1, CGFloat(TodayRings.centreWidth(hole: Double(hole)))))
         } else {
             LeafGlyph(tier: PerfectDay.record(items, key: "").tier, size: max(12, hole - 4))
         }

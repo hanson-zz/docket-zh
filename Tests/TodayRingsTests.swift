@@ -288,16 +288,33 @@ final class TodayRingsTests: XCTestCase {
 
     // MARK: Card (58pt)
 
-    func testCardCentreLeavesRoomForThirteenPointPercent() {
+    func testCardCentreLeavesRoomForThirteenPointFigure() {
+        XCTAssertEqual(TodayRings.cardLine, 6, "环线宽 6pt")
+        XCTAssertEqual(TodayRings.cardDiameter, 58, "外径保持 58：扩展栏卡片内容高度")
         let card = TodayRings.hole(diameter: TodayRings.cardDiameter, line: TodayRings.cardLine, gap: TodayRings.cardGap)
         let column = TodayRings.hole(diameter: TodayRings.columnDiameter, line: TodayRings.cardLine,
                                      gap: TodayRings.cardGap)
-        XCTAssertEqual(card, 24)
-        XCTAssertGreaterThanOrEqual(column, 22)
-        XCTAssertLessThanOrEqual(TodayRings.cardDiameter, 58, "扩展栏卡片内容高度 58")
+        XCTAssertEqual(card, 20)
+        XCTAssertEqual(column, 18)
+        XCTAssertGreaterThan(TodayRings.cardGap, 0, "三条环之间留缝，不粘在一起")
+        // 三条环加缝正好铺满外径到空圆。
+        XCTAssertEqual(card + 6 * TodayRings.cardLine + 4 * TodayRings.cardGap, TodayRings.cardDiameter)
         XCTAssertLessThanOrEqual(TodayRings.columnDiameter + 20, 76, "竖排列宽 76 减两边内边距")
         XCTAssertLessThan(TodayRings.columnDiameter, TodayRings.columnHeight)
         XCTAssertEqual(TodayRings.hole(diameter: 20, line: 5, gap: 1), 0, "放不下时不出负数")
+    }
+
+    func testCentreWidthFitsTwoBoldDigits() {
+        // 13pt 粗体等宽数字一位约 7.8pt，"99" 约 15.6pt。
+        let twoDigits = 15.6
+        let card = TodayRings.hole(diameter: TodayRings.cardDiameter, line: TodayRings.cardLine, gap: TodayRings.cardGap)
+        XCTAssertGreaterThanOrEqual(TodayRings.centreWidth(hole: card), twoDigits, "卡片中心标准字宽放得下 99")
+        let column = TodayRings.hole(diameter: TodayRings.columnDiameter, line: TodayRings.cardLine,
+                                     gap: TodayRings.cardGap)
+        XCTAssertGreaterThanOrEqual(TodayRings.centreWidth(hole: column), 13, "竖排中心至少放得下窄字宽的 99")
+        XCTAssertLessThan(TodayRings.centreWidth(hole: card), card, "内接宽度比空圆直径窄，四角不碰环")
+        XCTAssertEqual(TodayRings.centreWidth(hole: 8), 0, "空圆比字还矮时为 0")
+        XCTAssertEqual(TodayRings.centreWidth(hole: 0), 0)
     }
 
     func testCardWidths() {
@@ -307,6 +324,7 @@ final class TodayRingsTests: XCTestCase {
     }
 
     func testCentrePercentIsNilWhenFullAndNeverRoundsToHundred() {
+        // 中心只写数字，最多两位。
         XCTAssertNil(TodayRings.centrePercent([water(2500), habit(3, of: 3), focus(55)]), "全满中心画竹叶")
         XCTAssertEqual(TodayRings.centrePercent([water(2500), habit(2, of: 3), focus(35)]), 79)
         // 两项满、一项 99.6%：四舍五入是 100，但没全满，写 99。

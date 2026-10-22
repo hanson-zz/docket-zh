@@ -91,20 +91,31 @@ public enum TodayRings {
         card(config) == .medium ? 240 : 78
     }
 
-    /// 竖排时的高度：三环（中心是百分比）上下各留一点。
+    /// 竖排时的高度：三环（中心是总进度数字）上下各留一点。
     public static let columnHeight: Double = 72
 
-    /// 扩展栏卡片里三环的尺寸：外径 58（内容高度），线宽 5，环间距 1，
-    /// 最内环中间留出约 24 的圆给 13pt 的百分比或竹叶。
+    /// 扩展栏卡片里三环的尺寸：外径 58（内容高度），线宽 6，环间距 0.5（Retina 上一个像素的缝），
+    /// 最内环中间留出 58 - 36 - 2 = 20 的圆，给 13pt 粗体的两位数字或竹叶。
+    /// 间距 1 时空圆只剩 18，"99" 的四角会碰到最内环。
     public static let cardDiameter = 58.0
-    public static let cardLine = 5.0
-    public static let cardGap = 1.0
-    /// 竖排列宽 76 减两边各 10 的内边距：竖排的三环外径 56。
+    public static let cardLine = 6.0
+    public static let cardGap = 0.5
+    /// 竖排列宽 76 减两边各 10 的内边距：竖排的三环外径 56，空圆 18。
     public static let columnDiameter = 56.0
 
     /// 最内环里面空出来的圆的直径：外径减去三条线宽的两倍和两道间距的两倍。
     public static func hole(diameter: Double, line: Double, gap: Double) -> Double {
         max(0, diameter - 6 * line - 4 * gap)
+    }
+
+    /// 13pt 数字的大写高度（SF 约 0.71em），算中心空圆里放得下多宽的字用。
+    public static let centreFigureHeight = 9.3
+
+    /// 中心空圆里一行高 `height` 的字最多能有多宽：圆内接矩形的宽，四角不碰最内环。
+    public static func centreWidth(hole: Double, height: Double = centreFigureHeight) -> Double {
+        let r = hole / 2, h = height / 2
+        guard r > h else { return 0 }
+        return 2 * (r * r - h * h).squareRoot()
     }
 
     // MARK: Laps
@@ -159,8 +170,8 @@ public enum TodayRings {
         return Int((sum / Double(taking.count) * 100).rounded())
     }
 
-    /// 卡片中心写的百分比：全满时为 nil（中心画竹叶）。没全满时最多写 99，
-    /// 免得四舍五入成 100% 却没有竹叶（比如两项满、一项 99.6%）。
+    /// 卡片中心写的总进度数字（只写数字，不带 %；读屏仍读百分之几）：全满时为 nil（中心画竹叶）。
+    /// 没全满时最多写 99，免得四舍五入成 100 却没有竹叶（比如两项满、一项 99.6%），也保证最多两位。
     public static func centrePercent(_ items: [PerfectDayProgress]) -> Int? {
         if isFull(items) { return nil }
         return min(99, percent(items))
