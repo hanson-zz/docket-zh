@@ -16,6 +16,8 @@ struct PerfectDayDetail: View {
     @State private var anchor = ShareAnchorBox()
     @State private var notice: String?
     @State private var showBadges = false
+    /// 三环样式的面板里点了「本月竹篮和徽章」：这次打开改看竹篮。
+    @State private var showBasket = false
 
     /// As far back as the history is kept.
     private static let maxMonthsBack = 26
@@ -41,6 +43,14 @@ struct PerfectDayDetail: View {
     }
 
     var body: some View {
+        if TodayRings.isRings(instance.config) && !showBasket {
+            TodayRingsDetail(instance: instance, context: context) { showBasket = true }
+        } else {
+            basketBody
+        }
+    }
+
+    private var basketBody: some View {
         let all = records
         let items = today
         let shownMonth = month

@@ -101,12 +101,32 @@ public enum PerfectDayItem: String, CaseIterable, Sendable, Hashable, Identifiab
         }
     }
 
-    /// The colour of its little ring, as hex.
+    /// The colour of its little ring, as hex. 竹篮和今日三环共用这一套：喝水青绿、
+    /// 专注珊瑚橙、习惯竹黄绿（原来是蓝、绿、紫）。三环的弧从 `hex` 渐变到
+    /// `lightHex`，超过 100% 的第二圈用加深一档的 `deepHex`。
     public var hex: String {
         switch self {
-        case .water: "#4FA8FF"
-        case .habit: "#4CD07D"
-        case .focus: "#8E7CFF"
+        case .water: "#0FA89A"
+        case .habit: "#7FB21E"
+        case .focus: "#F2603A"
+        }
+    }
+
+    /// 弧的末端，渐变的浅色一头。
+    public var lightHex: String {
+        switch self {
+        case .water: "#4FD8C4"
+        case .habit: "#C4E04A"
+        case .focus: "#FFA25C"
+        }
+    }
+
+    /// 同色加深一档（`hex` 的 80%）：超过 100% 时绕的第二圈。
+    public var deepHex: String {
+        switch self {
+        case .water: "#0C867B"
+        case .habit: "#668E18"
+        case .focus: "#C24D2E"
         }
     }
 }
@@ -174,8 +194,23 @@ public struct PerfectDayProgress: Equatable, Hashable, Sendable, Identifiable {
     public var fraction: Double
     /// "1200/2000 毫升", "2/3 项", "30/50 分钟", or why it does not count.
     public var detail: String
+    /// 今日三环用的原始数：喝了几毫升、打了几项卡、专注几分钟。不计入时是 0。
+    public var amount: Int = 0
+    /// 对应的目标：毫升、习惯总项数、分钟。不计入时是 0。
+    public var goal: Int = 0
+    /// 喝水的一杯多少毫升（喝水小组件的 cupSize），其他项是 0。
+    public var cupSize: Int = 0
+    /// 今天还没完成的习惯名，按习惯打卡里的顺序。
+    public var pending: [String] = []
 
     public var id: String { item.rawValue }
+
+    /// 不封顶的进度：125% 是 1.25。没有目标时退回 `fraction`。
+    public var ratio: Double {
+        guard mark.takesPart else { return 0 }
+        guard goal > 0 else { return max(0, fraction) }
+        return max(0, Double(amount) / Double(goal))
+    }
 }
 
 /// A day as the panel's calendar and frequency strip draw it.
@@ -312,18 +347,22 @@ public enum PerfectDay {
         let isToday = key == HabitTracker.dayKey(today, calendar: calendar)
         // Two 喝水 widgets (one per layout) are the same person drinking:
         // the one furthest along speaks for the day.
-        let candidates = configs.map { config -> WaterDay in
+        let candidates = configs.map { config -> (day: WaterDay, cup: Int) in
             let days = WaterIntake.days(config)
             let goal = WaterIntake.goal(config, now: date, calendar: calendar)
-            if isToday { return WaterIntake.today(days, goal: goal, now: date, calendar: calendar) }
-            return days.first { $0.key == key } ?? WaterDay(key: key, goal: goal)
+            let cup = WaterIntake.cupSize(config)
+            if isToday { return (WaterIntake.today(days, goal: goal, now: date, calendar: calendar), cup) }
+            return (days.first { $0.key == key } ?? WaterDay(key: key, goal: goal), cup)
         }
-        let day = candidates.max {
-            WaterIntake.progress(total: $0.total, goal: $0.goal) < WaterIntake.progress(total: $1.total, goal: $1.goal)
-        } ?? WaterDay(key: key, goal: WaterIntake.defaultGoal)
+        let best = candidates.max {
+            WaterIntake.progress(total: $0.day.total, goal: $0.day.goal)
+                < WaterIntake.progress(total: $1.day.total, goal: $1.day.goal)
+        } ?? (day: WaterDay(key: key, goal: WaterIntake.defaultGoal), cup: WaterIntake.defaultCup)
+        let day = best.day
         return PerfectDayProgress(item: .water, mark: day.isMet ? .met : .missed,
                                   fraction: WaterIntake.progress(total: day.total, goal: day.goal),
-                                  detail: tr("\(day.total)/\(day.goal) 毫升"))
+                                  detail: tr("\(day.total)/\(day.goal) 毫升"),
+                                  amount: day.total, goal: day.goal, cupSize: best.cup)
     }
 
     /// 习惯 on `date`: every habit of every 习惯打卡 widget checked in. Two
@@ -342,9 +381,11 @@ public enum PerfectDay {
             return PerfectDayProgress(item: .habit, mark: .off, fraction: 0, detail: tr("还没有设置习惯"))
         }
         let done = HabitTracker.doneToday(all, today: date, calendar: calendar)
+        let pending = all.filter { !HabitTracker.isDone($0, on: date, calendar: calendar) }.map(\.name)
         return PerfectDayProgress(item: .habit, mark: done >= all.count ? .met : .missed,
                                   fraction: Double(done) / Double(all.count),
-                                  detail: tr("\(done)/\(all.count) 项"))
+                                  detail: tr("\(done)/\(all.count) 项"),
+                                  amount: done, goal: all.count, pending: pending)
     }
 
     /// 专注 on `date`.
@@ -355,7 +396,8 @@ public enum PerfectDay {
         let goal = max(1, goal)
         return PerfectDayProgress(item: .focus, mark: minutes >= goal ? .met : .missed,
                                   fraction: min(1, Double(minutes) / Double(goal)),
-                                  detail: tr("\(minutes)/\(goal) 分钟"))
+                                  detail: tr("\(minutes)/\(goal) 分钟"),
+                                  amount: max(0, minutes), goal: goal)
     }
 
     /// The three items on `date`, in order.

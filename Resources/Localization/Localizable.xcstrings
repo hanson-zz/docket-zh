@@ -210,6 +210,28 @@
         }
       }
     },
+    "%@ / %@ 毫升" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / %@ ml"
+          }
+        }
+      }
+    },
+    "%@ / %@ 达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / %@ met"
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3059,6 +3081,17 @@
         }
       }
     },
+    "%@，全满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, all closed"
+          }
+        }
+      }
+    },
     "%@，刚刚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3312,6 +3345,39 @@
         }
       }
     },
+    "/ %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/ %@ min"
+          }
+        }
+      }
+    },
+    "/ %@ 杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/ %@ cups"
+          }
+        }
+      }
+    },
+    "/ %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/ %@ habits"
+          }
+        }
+      }
+    },
     "0 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3499,6 +3565,17 @@
         }
       }
     },
+    "2/3 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2/3 habits"
+          }
+        }
+      }
+    },
     "2000/2000 毫升" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3565,6 +3642,17 @@
         }
       }
     },
+    "2500/2000 毫升" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2500/2000 ml"
+          }
+        }
+      }
+    },
     "3 号会议室" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3627,6 +3715,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30/50 min"
+          }
+        }
+      }
+    },
+    "35/50 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35/50 min"
           }
         }
       }
@@ -4936,6 +5035,17 @@
         }
       }
     },
+    "三环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings"
+          }
+        }
+      }
+    },
     "三项全部达标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6124,6 +6234,17 @@
         }
       }
     },
+    "专注 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min of focus"
+          }
+        }
+      }
+    },
     "专注一下" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6208,6 +6329,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus: open \"System Settings ▸ Focus\", pick a Focus, click \"Add Filter\" under \"Focus filters\", choose Dockling and pick a layout. It switches to that layout while the Focus is on and goes back when it ends."
+          }
+        }
+      }
+    },
+    "专注目标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus goal"
           }
         }
       }
@@ -6971,6 +7103,17 @@
         }
       }
     },
+    "习惯 %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ habits"
+          }
+        }
+      }
+    },
     "习惯打卡" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7488,6 +7631,17 @@
         }
       }
     },
+    "今天一环全满 · 得到一片%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your ring closed today · earned a %@"
+          }
+        }
+      }
+    },
     "今天三件事" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7521,6 +7675,28 @@
         }
       }
     },
+    "今天三环全满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All three rings closed today"
+          }
+        }
+      }
+    },
+    "今天三环全满 · 得到一片%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All three rings closed today · earned a %@"
+          }
+        }
+      }
+    },
     "今天上班" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7539,6 +7715,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This afternoon free"
+          }
+        }
+      }
+    },
+    "今天两环全满 · 得到一片%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Both rings closed today · earned a %@"
           }
         }
       }
@@ -8012,6 +8199,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today: %@"
+          }
+        }
+      }
+    },
+    "今日三环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Rings"
+          }
+        }
+      }
+    },
+    "今日三环，%@%%，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's Rings, %@%%, %@"
           }
         }
       }
@@ -10139,6 +10348,17 @@
         }
       }
     },
+    "全满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All closed"
+          }
+        }
+      }
+    },
     "全球" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10271,6 +10491,17 @@
         }
       }
     },
+    "全部打卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All checked in"
+          }
+        }
+      }
+    },
     "全部拖出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10344,6 +10575,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All output devices"
+          }
+        }
+      }
+    },
+    "全部达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All goals met"
           }
         }
       }
@@ -11613,6 +11855,28 @@
         }
       }
     },
+    "刚好达标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal met exactly"
+          }
+        }
+      }
+    },
+    "卡片大小" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card size"
+          }
+        }
+      }
+    },
     "可以在「系统设置 › 隐私与安全性 › 文件与文件夹」里允许码头访问。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11719,6 +11983,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Beside the Dock"
+          }
+        }
+      }
+    },
+    "喝水 %@ 杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ cups of water"
+          }
+        }
+      }
+    },
+    "喝水目标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water goal"
           }
         }
       }
@@ -26951,6 +27237,17 @@
         }
       }
     },
+    "放上喝水、专注计时或习惯打卡小组件就能开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a Water, Focus Timer or Habit widget to get started"
+          }
+        }
+      }
+    },
     "放哪些照片 · 多久换一张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27941,6 +28238,17 @@
         }
       }
     },
+    "未计入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not counted"
+          }
+        }
+      }
+    },
     "本周六停水通知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27970,6 +28278,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "local time"
+          }
+        }
+      }
+    },
+    "本月竹篮和徽章" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month's basket and badges"
           }
         }
       }
@@ -39669,6 +39988,17 @@
         }
       }
     },
+    "目标和喝水、专注计时、习惯打卡同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goals stay in sync with Water, Focus Timer and Habits"
+          }
+        }
+      }
+    },
     "目标币种" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41315,6 +41645,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bamboo Barn"
+          }
+        }
+      }
+    },
+    "竹篮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basket"
           }
         }
       }
@@ -45249,6 +45590,17 @@
         }
       }
     },
+    "设置目标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Goals"
+          }
+        }
+      }
+    },
     "设计周刊" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45685,6 +46037,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't read the response from chatgpt.com. The API may have changed."
+          }
+        }
+      }
+    },
+    "读书" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading"
           }
         }
       }
@@ -46158,6 +46521,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stand"
+          }
+        }
+      }
+    },
+    "超出 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min over"
           }
         }
       }
@@ -46910,6 +47284,17 @@
         }
       }
     },
+    "近 7 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 days"
+          }
+        }
+      }
+    },
     "近 7 天起身" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47196,6 +47581,17 @@
         }
       }
     },
+    "还差 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min to go"
+          }
+        }
+      }
+    },
     "还差 %@ 杯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47207,6 +47603,17 @@
         }
       }
     },
+    "还差 %@ 环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ rings to go"
+          }
+        }
+      }
+    },
     "还差 %@，约 %@ 杯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47214,6 +47621,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ to go, about %@ cups"
+          }
+        }
+      }
+    },
+    "还差%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still to go: %@"
+          }
+        }
+      }
+    },
+    "还差「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still to do: \"%@\""
+          }
+        }
+      }
+    },
+    "还差「%@」等 %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still to do: \"%@\" and %@ in total"
           }
         }
       }
@@ -47511,6 +47951,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No color picked yet"
+          }
+        }
+      }
+    },
+    "还没有可计的环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rings to count yet"
           }
         }
       }

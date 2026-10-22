@@ -381,7 +381,8 @@ final class PerfectDayTests: XCTestCase {
     func testCatalogAndSearch() {
         let entry = WidgetCatalog.entry(.perfectDay)
         XCTAssertEqual(entry?.name, "小熊猫的竹篮")
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.perfectDay), [LiquidLooks.key], "只有外观；专注目标在专注计时的面板里")
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.perfectDay), [TodayRings.styleKey, LiquidLooks.key, TodayRings.cardKey],
+                       "样式、外观和三环卡片大小；专注目标在专注计时的面板里")
         for query in ["竹篮", "竹叶", "小熊猫", "zl", "zhulan", "满篮", "打卡汇总", "徽章", "bamboo"] {
             XCTAssertTrue(WidgetSearch.matches(query, names: ["小熊猫的竹篮"], kind: "perfect-day"), query)
         }

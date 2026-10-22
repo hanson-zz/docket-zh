@@ -118,7 +118,7 @@ final class WidgetOptionTests: XCTestCase {
             .fileShelf: ["expire"],
             .translate: ["clickAction", "autoDirection"],
             .pet: ["character"],
-            .perfectDay: ["look"],
+            .perfectDay: ["look", "basketStyle", "ringsCard"],
             .podcast: ["notify"],
             .toggles: ["actions", "keepAwakeFor", "showNames"],
             .appSwitcher: ["sort"],

@@ -536,9 +536,12 @@ public enum WidgetCatalog {
         // PerfectDayCenter (see PerfectDay). No options: the focus goal is
         // the 专注计时 panel's. The kind stays perfect-day so widgets already
         // placed keep working.
-        // 唯一的选项是外观：竹叶（默认）或液态，见 LiquidLooks。
+        // 样式：竹篮（默认）或今日三环（见 TodayRings），同一份数据。竹篮下可选
+        // 外观竹叶（默认）或液态（见 LiquidLooks）；三环下可选卡片小（默认）或中。
         Entry(kind: .perfectDay, name: tr("小熊猫的竹篮"), category: .health,
-              defaults: c([LiquidLooks.key: .string(LiquidLooks.BasketLook.leaf.rawValue)]),
+              defaults: c([LiquidLooks.key: .string(LiquidLooks.BasketLook.leaf.rawValue),
+                           TodayRings.styleKey: .string(PerfectDayStyle.basket.rawValue),
+                           TodayRings.cardKey: .string(TodayRingsCard.small.rawValue)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // This week from EventKit, Monday first; see WeekAgenda. Same
@@ -695,6 +698,11 @@ public enum WidgetCatalog {
         case (.clock, _):
             ClockStyles.applies(key, to: config)
         // 液态小圆杯只画在小卡的圆环上；声音四项在设置里自己一组，不在这里列。
+        // 竹叶 / 液态只在竹篮样式下有，卡片大小只在三环样式下有。
+        case (.perfectDay, LiquidLooks.key):
+            !TodayRings.isRings(config)
+        case (.perfectDay, TodayRings.cardKey):
+            TodayRings.isRings(config)
         case (.aiUsage, LiquidLooks.key):
             !CodexCard.isMedium(config)
         case (.aiUsage, CodexChimeSettings.waitingKey), (.aiUsage, CodexChimeSettings.doneKey),
@@ -1065,7 +1073,8 @@ public enum WidgetCatalog {
             return CGSize(width: WaterIntake.tileWidth(layout: WaterLayout.raw(cfg)), height: 62)
         case .pet: return CGSize(width: 196, height: 62)
         case .podcast: return CGSize(width: 220, height: 62)
-        case .perfectDay: return CGSize(width: 196, height: 62)
+        case .perfectDay:
+            return CGSize(width: TodayRings.isRings(cfg) ? TodayRings.tileWidth(cfg) : 196, height: 62)
         case .slacker:
             return CGSize(width: SlackerClock.tileWidth(count: SlackerClock.Settings(config: cfg).items.count), height: 62)
         case .aiAssistant:
@@ -1185,9 +1194,9 @@ public enum WidgetCatalog {
         // The character, a line, the bar and the bowl.
         case .pet:
             return 118
-        // The leaf, its name and the three dots.
+        // The leaf, its name and the three dots; 三环样式是三环和一行百分比。
         case .perfectDay:
-            return 112
+            return TodayRings.isRings(cfg) ? TodayRings.columnHeight : 112
         // Two lines of title, the panda, and the cells two to a row.
         case .slacker:
             return SlackerClock.columnHeight(count: SlackerClock.Settings(config: cfg).items.count)

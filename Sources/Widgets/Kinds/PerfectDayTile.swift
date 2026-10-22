@@ -21,8 +21,10 @@ struct PerfectDayTile: View {
 
     private var center: PerfectDayCenter { .shared }
 
+    private var isRings: Bool { TodayRings.isRings(instance.config) }
+
     private var progress: [PerfectDayProgress] {
-        if context.isPreview { return PerfectDayCenter.sampleProgress }
+        if context.isPreview { return isRings ? TodayRings.sample : PerfectDayCenter.sampleProgress }
         return center.progress(now: context.now)
     }
 
@@ -36,6 +38,10 @@ struct PerfectDayTile: View {
                         guard !context.isPreview else { return }
                         LibraryWindow.shared.openFromEmptyState()
                     }
+                } else if isRings {
+                    // 今日三环：同一份数据的另一种外观，见 TodayRings。
+                    TodayRingsTileBody(items: items, card: TodayRings.card(instance.config),
+                                       vertical: context.position.isVertical)
                 } else if LiquidLooks.basketLook(instance.config) == .liquid {
                     liquid(items, tier: tier)
                 } else if context.position.isVertical {
@@ -47,7 +53,9 @@ struct PerfectDayTile: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(tr("小熊猫的竹篮，今天\(tier.map { tr("收到\($0.leafName)") } ?? tr("还没有竹叶"))"))
+        .accessibilityLabel(isRings
+            ? tr("今日三环，\(TodayRings.percent(items))%，\(TodayRings.cardCaption(items))")
+            : tr("小熊猫的竹篮，今天\(tier.map { tr("收到\($0.leafName)") } ?? tr("还没有竹叶"))"))
         .onAppear { if !context.isPreview { center.refresh(now: context.now) } }
     }
 
@@ -188,6 +196,14 @@ final class PerfectDayCenter {
     }
 
     func focusGoal() -> Int { FocusLogStore.goal }
+
+    /// 几天的三项读数（今日三环面板的近 7 天小格），按天的 key。只读一次来源。
+    func progress(days: [Date], now: Date) -> [String: [PerfectDayProgress]] {
+        let s = sources()
+        var result: [String: [PerfectDayProgress]] = [:]
+        for day in days { result[HabitTracker.dayKey(day)] = progress(s, on: day, now: now) }
+        return result
+    }
 
     /// Every minute ever focused, for the 专注 badges.
     var focusMinutes: Int { FocusLogStore.shared.lifetimeMinutes }
