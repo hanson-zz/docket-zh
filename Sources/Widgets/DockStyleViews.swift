@@ -357,7 +357,7 @@ struct PandaEmptyState: View {
     }
 
     private var labelColor: Color {
-        guard theme != nil else { return panel ? .white : WidgetStyle.primary }
+        guard theme != nil else { return panel ? .panelPrimary : WidgetStyle.primary }
         return empty.usesDarkLabel ? Color.black.opacity(0.85) : .white
     }
 
@@ -397,14 +397,14 @@ struct PandaEmptyState: View {
             VStack(spacing: 4) {
                 Text(message ?? empty.line())
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 if message == nil, let hint = empty.hint {
                     Text(hint)
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.68))
+                        .foregroundStyle(.panelSecondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)

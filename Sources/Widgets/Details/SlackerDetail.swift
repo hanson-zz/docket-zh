@@ -312,7 +312,7 @@ struct SlackerDetail: View {
         return VStack(alignment: .leading, spacing: 6) {
             Text(tr("显示更多"))
                 .font(WidgetStyle.label(13))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.panelPrimary)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 4) {
                     ForEach(items) { item in

@@ -252,7 +252,7 @@ struct AIGlyph: View {
     var isDefault = false
     var style: Style = .shelf
 
-    private var ink: Color { style == .panel ? .white : WidgetStyle.primary }
+    private var ink: Color { style == .panel ? .panelPrimary : WidgetStyle.primary }
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
