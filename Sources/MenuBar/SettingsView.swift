@@ -775,7 +775,7 @@ struct SettingsView: View {
                     // 替换里打开它就是“替换并自动隐藏”，系统程序坞也跟着藏。
                     Toggle(isOn: $state.customDock.autoHide) {
                         subtitled(tr("隐藏，直到指针移到屏幕边缘"),
-                                  tr("会让系统程序坞自动隐藏，退出码头时恢复。"))
+                                  tr("会让系统程序坞自动隐藏且不再弹出，退出码头时恢复。"))
                     }
                 } else {
                     Toggle("隐藏，直到指针移到屏幕边缘", isOn: $state.customDock.autoHide)

@@ -1097,9 +1097,10 @@ public struct PersistedState: Codable, Sendable {
     /// Apple's Dock preferences from before the shelf borrowed its strip.
     /// Non-nil means they are currently changed and owe a restore.
     public var borrowedDockPrefs: DockPrefs?
-    /// 系统程序坞自动隐藏的原值，“替换并自动隐藏”把它改成开之前记下的。
-    /// 不为 nil 表示程序坞现在被码头改着，欠一次还原，见 `SystemDockHiding`。
-    public var hiddenDockAutoHide: Bool?
+    /// 系统程序坞自动隐藏和 `autohide-delay` 的原值，“替换并自动隐藏”改它们之前
+    /// 记下的。不为 nil 表示程序坞现在被码头改着，欠一次还原，见 `SystemDockHiding`。
+    /// 老版本这里存的是一个 Bool，读进来是没记延迟的原值。
+    public var hiddenDockAutoHide: HiddenDockOriginal?
     /// Whether to look for new releases.
     ///
     /// Three states on purpose. Nil means the question has not been asked, and
@@ -1145,7 +1146,7 @@ public struct PersistedState: Codable, Sendable {
         timer = try c.decodeIfPresent(TimerState.self, forKey: .timer) ?? TimerState()
         originalMacOSDock = try c.decodeIfPresent([MacOSDockTile].self, forKey: .originalMacOSDock)
         borrowedDockPrefs = try c.decodeIfPresent(DockPrefs.self, forKey: .borrowedDockPrefs)
-        hiddenDockAutoHide = try? c.decodeIfPresent(Bool.self, forKey: .hiddenDockAutoHide)
+        hiddenDockAutoHide = try? c.decodeIfPresent(HiddenDockOriginal.self, forKey: .hiddenDockAutoHide)
         checkForUpdates = try c.decodeIfPresent(Bool.self, forKey: .checkForUpdates)
         focusRevert = try c.decodeIfPresent(FocusRevert.self, forKey: .focusRevert)
         island = try c.decodeIfPresent(IslandSettings.self, forKey: .island) ?? IslandSettings()

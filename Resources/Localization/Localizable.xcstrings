@@ -8951,13 +8951,13 @@
         }
       }
     },
-    "会让系统程序坞自动隐藏，退出码头时恢复。" : {
+    "会让系统程序坞自动隐藏且不再弹出，退出码头时恢复。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hides the macOS Dock automatically while on; your Dock setting comes back when Dockling quits."
+            "value" : "Hides the macOS Dock and keeps it from popping up while on; your Dock settings come back when Dockling quits."
           }
         }
       }

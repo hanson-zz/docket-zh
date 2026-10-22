@@ -112,23 +112,38 @@ public enum DockStrut {
         restartDockNow()
     }
 
-    // MARK: 只改自动隐藏（替换并自动隐藏）
+    // MARK: 只改自动隐藏和弹出延迟（替换并自动隐藏）
 
-    /// 系统程序坞现在是不是自动隐藏。直接读偏好，不走 `SystemDockSettings`
-    /// 的缓存：码头自己刚写过时那份缓存还是旧的。
-    public static func currentAutoHide() -> Bool {
+    /// 系统程序坞现在的自动隐藏和 `autohide-delay`。直接读偏好，不走
+    /// `SystemDockSettings` 的缓存：码头自己刚写过时那份缓存还是旧的。
+    public static func currentHiding() -> SystemDockHiding.Current {
         let defaults = UserDefaults.standard.persistentDomain(forName: domain) ?? [:]
-        return defaults["autohide"] as? Bool ?? false
+        return SystemDockHiding.Current(
+            autoHide: defaults["autohide"] as? Bool ?? false,
+            delay: DockAutoHideDelay(preference: defaults["autohide-delay"]))
     }
 
-    /// 只改自动隐藏这一项，大小和位置不动，然后重启程序坞让它读到。
+    /// 按 `changes` 改自动隐藏和弹出延迟（`.absent` 是删键），大小、位置和
+    /// `autohide-time-modifier` 不动，两项一起写完只重启一次程序坞。
+    /// 没有要改的就什么都不做。
     ///
     /// 同步，和 `releaseNow` 一样：退出时没有时间等，而且离开“替换并自动隐藏”
     /// 马上进入普通替换时，借保留区要读到的是已经还原的原值。
-    public static func setAutoHideNow(_ autoHide: Bool) {
+    public static func applyHidingNow(_ changes: SystemDockHiding.Changes) {
+        guard !changes.isEmpty else { return }
         let defaults = UserDefaults.standard
         var domainValues = defaults.persistentDomain(forName: domain) ?? [:]
-        domainValues["autohide"] = autoHide
+        if let autoHide = changes.autoHide {
+            domainValues["autohide"] = autoHide
+        }
+        switch changes.delay {
+        case .none:
+            break
+        case .some(.absent):
+            domainValues.removeValue(forKey: "autohide-delay")
+        case .some(.seconds(let seconds)):
+            domainValues["autohide-delay"] = seconds
+        }
         defaults.setPersistentDomain(domainValues, forName: domain)
         CFPreferencesAppSynchronize(domain as CFString)
         restartDockNow()
