@@ -56017,13 +56017,13 @@
         }
       }
     },
-    "5 小时或每周额度用到 90% 时响一下" : {
+    "5 小时或每周额度用到 80% 时响一下" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Once when the 5-hour or weekly usage reaches 90%"
+            "value" : "Once when the 5-hour or weekly usage reaches 80%"
           }
         }
       }

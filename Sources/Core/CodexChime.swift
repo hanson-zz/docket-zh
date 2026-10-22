@@ -17,7 +17,7 @@ public struct CodexChimeSettings: Equatable, Sendable {
     public var waiting: Bool
     /// 一轮完成：默认关。
     public var done: Bool
-    /// 额度快用完（过 90%）：默认关。
+    /// 额度快用完（过 80%）：默认关。
     public var quota: Bool
     /// macOS 自带提示音的名字（/System/Library/Sounds）。
     public var tone: String
@@ -49,8 +49,8 @@ public enum CodexChime {
         case waiting, done, quota
     }
 
-    /// 额度快用完：用掉 90% 时响一下。
-    public static let quotaLevel = 0.9
+    /// 额度快用完：用掉 80% 时响一下。
+    public static let quotaLevel = 0.8
 
     /// 这一种事件出不出声。
     public static func sounds(_ event: Event, settings: CodexChimeSettings) -> Bool {
@@ -90,14 +90,14 @@ public enum CodexChime {
         }
     }
 
-    /// 额度这一次刚升过 90%：上一次还在线下、这一次到了线上才算，停在 95% 不再
+    /// 额度这一次刚升过 80%：上一次还在线下、这一次到了线上才算，停在 85% 不再
     /// 响，重置回落后再升上来会再响一次。没有上一次读数时不算。
     public static func quotaCrossed(previous: Double?, current: Double, level: Double = quotaLevel) -> Bool {
         guard let previous else { return false }
         return previous < level && current >= level
     }
 
-    /// 额度提醒：横幅按原来的「首次提醒阈值」几档发，声音只在升过 90% 那一次带。
+    /// 额度提醒：横幅按原来的「首次提醒阈值」几档发，声音只在升过 80% 那一次带。
     /// 返回 nil 是这次不用提醒；hit 是通知标题里说的那一档。
     public static func quota(previous: Double?, current: Double, bannerOn: Bool, alertAt: Int,
                              soundOn: Bool) -> (hit: Double, sound: Bool)? {

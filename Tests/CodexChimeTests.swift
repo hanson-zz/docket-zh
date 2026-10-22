@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import Docket
 
-/// 「Codex 用量」的提示音：默认值、哪些变化出声、额度过 90%、防抖、小喇叭。
+/// 「Codex 用量」的提示音：默认值、哪些变化出声、额度过 80%、防抖、小喇叭。
 final class CodexChimeTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 
@@ -57,13 +57,13 @@ final class CodexChimeTests: XCTestCase {
         XCTAssertEqual(e.map { $0.event }, [.waiting, .done])
     }
 
-    func testQuotaCrossesNinetyOnce() {
-        XCTAssertTrue(CodexChime.quotaCrossed(previous: 0.85, current: 0.9))
-        XCTAssertFalse(CodexChime.quotaCrossed(previous: 0.9, current: 0.95), "停在线上不再响")
+    func testQuotaCrossesEightyOnce() {
+        XCTAssertTrue(CodexChime.quotaCrossed(previous: 0.75, current: 0.8))
+        XCTAssertFalse(CodexChime.quotaCrossed(previous: 0.8, current: 0.85), "停在线上不再响")
         XCTAssertFalse(CodexChime.quotaCrossed(previous: nil, current: 0.95), "没有上一次读数不响")
-        XCTAssertFalse(CodexChime.quotaCrossed(previous: 0.5, current: 0.89))
+        XCTAssertFalse(CodexChime.quotaCrossed(previous: 0.5, current: 0.79))
         // 重置回落后再升上来，再响一次。
-        XCTAssertTrue(CodexChime.quotaCrossed(previous: 0.1, current: 0.92))
+        XCTAssertTrue(CodexChime.quotaCrossed(previous: 0.1, current: 0.82))
     }
 
     func testQuotaBannerAndSound() {
@@ -71,13 +71,13 @@ final class CodexChimeTests: XCTestCase {
         let a = CodexChime.quota(previous: 0.7, current: 0.82, bannerOn: true, alertAt: 80, soundOn: false)
         XCTAssertEqual(a?.hit ?? 0, 0.8, accuracy: 1e-9)
         XCTAssertEqual(a?.sound, false)
-        // 横幅关、声音开：只在过 90% 时发，带声音。
-        XCTAssertNil(CodexChime.quota(previous: 0.7, current: 0.82, bannerOn: false, alertAt: 80, soundOn: true))
-        let b = CodexChime.quota(previous: 0.85, current: 0.91, bannerOn: false, alertAt: 80, soundOn: true)
-        XCTAssertEqual(b?.hit ?? 0, 0.9, accuracy: 1e-9)
+        // 横幅关、声音开：只在过 80% 时发，带声音。
+        XCTAssertNil(CodexChime.quota(previous: 0.7, current: 0.78, bannerOn: false, alertAt: 80, soundOn: true))
+        let b = CodexChime.quota(previous: 0.75, current: 0.81, bannerOn: false, alertAt: 80, soundOn: true)
+        XCTAssertEqual(b?.hit ?? 0, 0.8, accuracy: 1e-9)
         XCTAssertEqual(b?.sound, true)
-        // 两个都开，一次跨过 90 和 95：一条通知，标题说 95%，带声音。
-        let c = CodexChime.quota(previous: 0.85, current: 0.96, bannerOn: true, alertAt: 80, soundOn: true)
+        // 两个都开，一次跨过 80、90 和 95：一条通知，标题说 95%，带声音。
+        let c = CodexChime.quota(previous: 0.75, current: 0.96, bannerOn: true, alertAt: 80, soundOn: true)
         XCTAssertEqual(c?.hit ?? 0, 0.95, accuracy: 1e-9)
         XCTAssertEqual(c?.sound, true)
         // 都关：没有。

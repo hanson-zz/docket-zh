@@ -17,7 +17,7 @@ struct CodexSoundSettings: View {
             toggle(CodexChimeSettings.doneKey, title: tr("一轮完成"),
                    note: tr("每做完一轮响一下"), on: sound.done)
             toggle(CodexChimeSettings.quotaKey, title: tr("额度快用完"),
-                   note: tr("5 小时或每周额度用到 90% 时响一下"), on: sound.quota)
+                   note: tr("5 小时或每周额度用到 80% 时响一下"), on: sound.quota)
             Picker(tr("提示音"), selection: Binding(
                 get: { CodexChimeSettings(config: instance.config).tone },
                 set: { tone in
