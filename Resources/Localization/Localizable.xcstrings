@@ -55664,6 +55664,413 @@
           }
         }
       }
+    },
+    "在跑 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running %@"
+          }
+        }
+      }
+    },
+    "在改文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editing files"
+          }
+        }
+      }
+    },
+    "想执行 %@，等你批准" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wants to run %@, waiting for your OK"
+          }
+        }
+      }
+    },
+    "想改文件，等你批准" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wants to edit files, waiting for your OK"
+          }
+        }
+      }
+    },
+    "有一步要你批准" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A step needs your approval"
+          }
+        }
+      }
+    },
+    "这一轮做完了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This turn is done"
+          }
+        }
+      }
+    },
+    "%@天%@时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@d %@h"
+          }
+        }
+      }
+    },
+    "工作中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Working"
+          }
+        }
+      }
+    },
+    "没有进行中的会话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active sessions"
+          }
+        }
+      }
+    },
+    "这个状态会响提示音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This state plays a sound"
+          }
+        }
+      }
+    },
+    "%@ 后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@"
+          }
+        }
+      }
+    },
+    "打开终端" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Terminal"
+          }
+        }
+      }
+    },
+    "设置 ▸ 小组件 ▸ Codex 用量，声音也在那里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings ▸ Widgets ▸ Codex Usage, where the sounds are too"
+          }
+        }
+      }
+    },
+    "这个状态会响，点按静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This state plays a sound. Click to mute it"
+          }
+        }
+      }
+    },
+    "这个状态静音，点按打开提示音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This state is muted. Click to turn its sound on"
+          }
+        }
+      }
+    },
+    "正在运行 · %@ 个会话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running · %@ sessions"
+          }
+        }
+      }
+    },
+    "现在没有进行中的会话。在终端里运行 codex 后，这里会列出它在做什么。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active sessions right now. Run codex in a terminal and it shows up here with what it is doing."
+          }
+        }
+      }
+    },
+    "去终端" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to Terminal"
+          }
+        }
+      }
+    },
+    "Codex 不让别的程序替你批准，点按把开着这个会话的终端带到前面。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex does not let other apps approve for you. Click to bring the terminal running this session to the front."
+          }
+        }
+      }
+    },
+    "用量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage"
+          }
+        }
+      }
+    },
+    "照现在的速度，约 %@ 用完" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At this pace, runs out around %@"
+          }
+        }
+      }
+    },
+    "照现在的速度，够用到重置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At this pace, it lasts until the reset"
+          }
+        }
+      }
+    },
+    "%@后重置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets in %@"
+          }
+        }
+      }
+    },
+    "%@ 个会话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sessions"
+          }
+        }
+      }
+    },
+    "数据来自本机 Codex 记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Codex's records on this Mac"
+          }
+        }
+      }
+    },
+    "数据来自本机 Codex 记录 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Codex's records on this Mac · %@"
+          }
+        }
+      }
+    },
+    "更多" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
+    },
+    "可用重置 %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ resets available"
+          }
+        }
+      }
+    },
+    "Codex 要你批准一条命令或修改时响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When Codex needs you to approve a command or a change"
+          }
+        }
+      }
+    },
+    "一轮完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn finished"
+          }
+        }
+      }
+    },
+    "每做完一轮响一下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once each time a turn finishes"
+          }
+        }
+      }
+    },
+    "额度快用完" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage almost used up"
+          }
+        }
+      }
+    },
+    "5 小时或每周额度用到 90% 时响一下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once when the 5-hour or weekly usage reaches 90%"
+          }
+        }
+      }
+    },
+    "提示音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert sound"
+          }
+        }
+      }
+    },
+    "默认只开「等你确认」。声音跟着系统通知响，勿扰和专注模式下由系统静音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only Needs you is on by default. Sounds play with system notifications, so Do Not Disturb and Focus silence them."
+          }
+        }
+      }
+    },
+    "码头还没有通知权限，提示音要靠系统通知才能响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling does not have notification permission yet. Sounds need system notifications to play."
+          }
+        }
+      }
+    },
+    "允许通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Notifications"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

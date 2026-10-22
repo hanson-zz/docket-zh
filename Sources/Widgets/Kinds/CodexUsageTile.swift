@@ -1,7 +1,10 @@
 import SwiftUI
 
-/// Codex's session and weekly limits as two rings, each with the time to its
-/// reset, and a dot saying whether Codex is working, waiting for you or done.
+/// Codex 的状态、5 小时和每周额度。
+///
+/// 小卡：一行状态（点、状态字、开着提示音时的小喇叭），下面两个圆环各带
+/// 重置倒计时。中卡：左边小熊猫随状态换姿势，项目名和正在做什么，右边两条
+/// 进度条。扩展栏在左右两侧（竖排）时照旧是上下两个圆环。
 struct CodexUsageTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -18,55 +21,33 @@ struct CodexUsageTile: View {
 
     private var service: CodexService { CodexService.shared }
     private var showsRemaining: Bool { instance.config.string("show", default: "used") == "remaining" }
+    private var isMedium: Bool { CodexCard.isMedium(instance.config) }
 
     private var report: CodexUsageReport? {
         context.isPreview ? CodexSample.report(now: context.now) : service.report
     }
 
-    private var activity: CodexActivity { context.isPreview ? .working : service.activity }
+    private var activity: CodexActivity {
+        context.isPreview ? (isMedium ? .waiting : .working) : service.activity
+    }
+
+    /// 卡片上那一个会话：中卡显示它的项目和正在做什么。
+    private var lead: CodexSession? {
+        context.isPreview ? CodexSample.sessions(now: context.now).first : CodexSessionList.lead(service.sessions)
+    }
+
+    private var chime: CodexChimeSettings {
+        context.isPreview ? CodexChimeSettings(config: instance.config) : service.chime
+    }
 
     var body: some View {
         WidgetSurface {
-            if let report, !report.ringWindows.isEmpty {
-                let windows = report.ringWindows
-                if context.position.isVertical {
-                    VStack(spacing: 6) {
-                        ForEach(windows) { w in
-                            VStack(spacing: 2) {
-                                ring(w, diameter: 34)
-                                Text(w.shortLabel)
-                                    .font(WidgetStyle.caption(10))
-                                    .foregroundStyle(WidgetStyle.secondary)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    .overlay(alignment: .topTrailing) { statusDot }
-                } else {
-                    HStack(spacing: 10) {
-                        ForEach(windows) { w in
-                            HStack(spacing: 8) {
-                                ring(w, diameter: 40)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(w.shortLabel)
-                                        .font(WidgetStyle.title)
-                                        .foregroundStyle(WidgetStyle.primary)
-                                    Text(resetText(w))
-                                        .font(WidgetStyle.note)
-                                        .foregroundStyle(WidgetStyle.secondary)
-                                        .monospacedDigit()
-                                }
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.6)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityElement(children: .combine)
-                        }
-                    }
-                    .overlay(alignment: .topTrailing) { statusDot.offset(x: 4, y: -2) }
-                }
+            if context.position.isVertical {
+                verticalBody
+            } else if isMedium {
+                mediumBody
             } else {
-                placeholder
+                smallBody
             }
         }
         .onAppear {
@@ -83,6 +64,172 @@ struct CodexUsageTile: View {
         .onChange(of: Int(context.now.timeIntervalSince1970) / 60) {
             if !context.isPreview { service.refresh() }
         }
+    }
+
+    // MARK: 竖排
+
+    @ViewBuilder private var verticalBody: some View {
+        if let report, !report.ringWindows.isEmpty {
+            VStack(spacing: 6) {
+                ForEach(report.ringWindows) { w in
+                    VStack(spacing: 2) {
+                        ring(w, diameter: 34)
+                        Text(CodexCard.label(w))
+                            .font(WidgetStyle.caption(10))
+                            .foregroundStyle(WidgetStyle.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .overlay(alignment: .topTrailing) { statusDot }
+        } else {
+            placeholder
+        }
+    }
+
+    // MARK: 小卡
+
+    @ViewBuilder private var smallBody: some View {
+        if let report, !report.ringWindows.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                statusLine(size: 14)
+                HStack(spacing: 10) {
+                    ForEach(report.ringWindows) { w in
+                        HStack(spacing: 7) {
+                            ring(w, diameter: 36)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(CodexCard.label(w))
+                                    .font(WidgetStyle.label(13))
+                                    .foregroundStyle(WidgetStyle.primary)
+                                Text(resetShort(w))
+                                    .font(WidgetStyle.caption(13))
+                                    .foregroundStyle(WidgetStyle.secondary)
+                                    .monospacedDigit()
+                            }
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else {
+            placeholder
+        }
+    }
+
+    // MARK: 中卡
+
+    private var mediumBody: some View {
+        HStack(alignment: .center, spacing: 10) {
+            CodexPanda(activity: activity, size: 44)
+            VStack(alignment: .leading, spacing: 3) {
+                statusLine(size: 14)
+                Text(lead?.project ?? (activity == .idle ? tr("没有进行中的会话") : "Codex"))
+                    .font(WidgetStyle.label(14))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if let doing = lead?.doing?.text ?? service.problem.map(CodexStyle.short), !doing.isEmpty {
+                    Text(doing)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .frame(width: 136, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                if let report, !report.ringWindows.isEmpty {
+                    ForEach(report.ringWindows) { w in bar(w) }
+                } else {
+                    Text(service.problem.map(CodexStyle.short) ?? tr("正在读取…"))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private func bar(_ w: CodexLimitWindow) -> some View {
+        let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
+        let tint = usageTint(w.usedFraction)
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Text(CodexCard.label(w))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(WidgetStyle.primary)
+                Spacer(minLength: 2)
+                if let resets = w.resetsAt {
+                    Text(resetMedium(resets))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(WidgetStyle.secondary)
+                        .monospacedDigit()
+                }
+                Text(GaugeReading.percent(fraction))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(WidgetStyle.primary.opacity(0.12))
+                    Capsule().fill(tint).frame(width: max(6, geo.size.width * fraction))
+                }
+            }
+            .frame(height: 6)
+        }
+        .opacity(report?.isStale(now: context.now) == true && !context.isPreview ? 0.55 : 1)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: 状态行
+
+    /// 点 + 状态字 + 小喇叭（这个状态的提示音开着时才画）。
+    private func statusLine(size: CGFloat) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(CodexStyle.color(activity))
+                .frame(width: 8, height: 8)
+                .phaseAnimator([false, true]) { dot, on in
+                    dot.opacity(activity == .working && on ? 0.4 : 1)
+                } animation: { _ in .easeInOut(duration: 0.9) }
+            Text(activity.title)
+                .font(WidgetStyle.label(size))
+                .foregroundStyle(CodexStyle.text(activity, dark: scheme == .dark))
+                .lineLimit(1)
+            if CodexChime.speaker(for: activity, settings: chime) == .on {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .help(tr("这个状态会响提示音"))
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Codex \(activity.title)")
+    }
+
+    /// "2:14"、"1天22时"，没有重置时间时是已用 / 剩余。
+    private func resetShort(_ w: CodexLimitWindow) -> String {
+        guard let resets = w.resetsAt else { return showsRemaining ? tr("剩余") : tr("已用") }
+        return CodexCard.resetShort(resets.timeIntervalSince(context.now))
+    }
+
+    /// 中卡：一天内 "2:14 后"，更远的写星期几（"周五"）。
+    private func resetMedium(_ resets: Date) -> String {
+        let seconds = resets.timeIntervalSince(context.now)
+        if seconds < 86_400 { return tr("\(CodexPace.compact(seconds)) 后") }
+        let f = DateFormatter()
+        f.locale = L10n.interfaceLocale
+        f.setLocalizedDateFormatFromTemplate("EEE")
+        return f.string(from: resets)
     }
 
     /// 圆环（默认）或液态小圆杯，见 `LiquidLooks`。
@@ -131,11 +278,6 @@ struct CodexUsageTile: View {
         .opacity(report?.isStale(now: context.now) == true && !context.isPreview ? 0.55 : 1)
     }
 
-    private func resetText(_ w: CodexLimitWindow) -> String {
-        guard let resets = w.resetsAt else { return showsRemaining ? tr("剩余") : tr("已用") }
-        return tr("\(CodexPace.compact(resets.timeIntervalSince(context.now))) 后重置")
-    }
-
     @ViewBuilder private var statusDot: some View {
         if activity != .idle {
             Circle()
@@ -179,13 +321,21 @@ enum CodexStyle {
         return Color(hex: "#30D158")
     }
 
+    /// 状态点：工作中青绿、等你确认橙、已完成绿、空闲灰（按效果图，不用蓝）。
     static func color(_ activity: CodexActivity) -> Color {
         switch activity {
-        case .working: Color(hex: "#0A84FF")
-        case .waiting: Color(hex: "#FF9F0A")
-        case .done: Color(hex: "#30D158")
-        case .idle: Color.secondary
+        case .working: Color(hex: "#26AAA0")
+        case .waiting: Color(hex: "#FF953C")
+        case .done: Color(hex: "#34BE6E")
+        case .idle: Color(hex: "#96969E")
         }
+    }
+
+    /// 状态字：浅色下压深一档，深色下略提亮，免得浅色玻璃上看不清。
+    static func text(_ activity: CodexActivity, dark: Bool) -> Color {
+        guard activity != .idle else { return .primary }
+        let c = color(activity)
+        return dark ? c.mix(with: .white, by: 0.18) : c.mix(with: .black, by: 0.28)
     }
 
     /// The problem in a few words, for the tile.
@@ -202,6 +352,23 @@ enum CodexStyle {
 
 /// The numbers drawn in the library and in screenshots. Never a real account.
 enum CodexSample {
+    /// 面板和中卡预览里的三个会话。
+    static func sessions(now: Date) -> [CodexSession] {
+        [
+            CodexSession(id: "sample-1", project: "docket", state: .waiting,
+                         doing: .askingToRun("git push"), since: now.addingTimeInterval(-4 * 60), modified: now),
+            CodexSession(id: "sample-2", project: "bake-cost", state: .working,
+                         doing: .running("npm test"), since: now.addingTimeInterval(-23 * 60), modified: now),
+            CodexSession(id: "sample-3", project: "dockling-site", state: .done,
+                         doing: .finished, since: now.addingTimeInterval(-20), modified: now),
+        ]
+    }
+
+    static func stats() -> (today: CodexStatBucket, week: CodexStatBucket) {
+        (CodexStatBucket(sessions: 6, seconds: 2 * 3600 + 35 * 60, tokens: 12_400_000),
+         CodexStatBucket(sessions: 31, seconds: 14 * 3600, tokens: 58_600_000))
+    }
+
     static func report(now: Date) -> CodexUsageReport {
         let daily = (0..<30).map { i -> CodexDailyTokens in
             let day = Calendar.current.date(byAdding: .day, value: i - 29, to: now) ?? now
@@ -212,11 +379,32 @@ enum CodexSample {
         }
         return CodexUsageReport(
             windows: [
-                CodexLimitWindow(id: "primary", label: tr("5 小时额度"), usedFraction: 0.42,
+                CodexLimitWindow(id: "primary", label: tr("5 小时额度"), usedFraction: 0.38,
                                  resetsAt: now.addingTimeInterval(2 * 3600 + 14 * 60), duration: 18_000),
-                CodexLimitWindow(id: "secondary", label: tr("每周额度"), usedFraction: 0.18,
-                                 resetsAt: now.addingTimeInterval(4 * 86_400 + 3 * 3600), duration: 604_800),
+                CodexLimitWindow(id: "secondary", label: tr("每周额度"), usedFraction: 0.61,
+                                 resetsAt: now.addingTimeInterval(86_400 + 22 * 3600), duration: 604_800),
             ],
             plan: "plus", resetCredits: 1, daily: daily, fetchedAt: now)
+    }
+}
+
+/// 中卡和面板角落的小熊猫，随状态换姿势。图读不到时画一个状态色的圆点。
+struct CodexPanda: View {
+    var activity: CodexActivity
+    var size: CGFloat
+
+    var body: some View {
+        Group {
+            if let image = PandaArt.image(CodexCard.pandaImage(activity)) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            } else {
+                Circle().fill(CodexStyle.color(activity).opacity(0.3))
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }

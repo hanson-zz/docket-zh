@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 @preconcurrency import UserNotifications
@@ -15,8 +16,10 @@ import Observation
 /// widget can not sign Codex out. The token goes to chatgpt.com and nowhere
 /// else.
 ///
-/// Activity is read from the end of Codex's newest session log every few
-/// seconds; nothing is sent anywhere for it.
+/// Activity is read from the end of Codex's recent session logs every few
+/// seconds; nothing is sent anywhere for it. Every session written to in the
+/// last hour is read, so the panel can list each one that is working, waiting
+/// for you or just finished, and the card shows the most urgent of them.
 ///
 /// Endpoints and file layouts learned from Codenotch (MIT); see NOTICE.md.
 @MainActor @Observable
@@ -48,8 +51,16 @@ final class CodexService {
     private(set) var loading = false
     private(set) var email: String?
     private(set) var activity: CodexActivity = .idle
-    /// The newest session's working folder, when its log names one.
+    /// The lead session's working folder, when its log names one.
     private(set) var activityProject: String?
+    /// 正在运行的会话（等你确认、工作中、刚完成），等你的排最前。
+    private(set) var sessions: [CodexSession] = []
+    /// 今天和本周的会话数、时长、token，读本机会话记录；还没读过是 nil。
+    private(set) var stats: (today: CodexStatBucket, week: CodexStatBucket)?
+    /// 最近一次读到会话记录的时间（面板底部的「1 分钟前」）。
+    private(set) var scannedAt: Date?
+    /// 声音设置，卡片上的小喇叭也读它。
+    private(set) var chime = CodexChimeSettings()
 
     @ObservationIgnored private var lastAttempt: Date?
     @ObservationIgnored private var failures = 0
@@ -62,6 +73,12 @@ final class CodexService {
     @ObservationIgnored private var includeExtras = false
     @ObservationIgnored private var askedPermission = false
     @ObservationIgnored private let presenter = BannerPresenter()
+    @ObservationIgnored private var previousStates: [String: CodexActivity]?
+    @ObservationIgnored private var gate = CodexChimeGate()
+    @ObservationIgnored private var scanning = false
+    @ObservationIgnored private var statsLoading = false
+    @ObservationIgnored private var statsAt: Date?
+    @ObservationIgnored private var statsCache: [String: CodexStatsCacheEntry] = [:]
 
     private static let cacheKey = "codex.lastReport"
     static let proxyKey = "codex.proxy"
@@ -85,6 +102,8 @@ final class CodexService {
         notifyQuota = config.bool("notify", default: true)
         notifyDone = config.bool("notifyDone", default: true)
         alertFirst = config.int("alertAt", default: 80)
+        let sound = CodexChimeSettings(config: config)
+        if sound != chime { chime = sound }
         let extras = config.bool("extras", default: false)
         if extras != includeExtras {
             includeExtras = extras
@@ -297,34 +316,75 @@ final class CodexService {
     }
 
     private func scanActivity() {
-        let read = Self.readActivity(now: .now)
-        if read.state == .done, activity == .working || activity == .waiting, notifyDone {
-            post(id: "docket.codex.done", title: tr("Codex 已完成"), body: read.project.map { tr("\($0) 里的任务已经完成。") } ?? tr("当前任务已经完成。"))
+        guard !scanning else { return }
+        scanning = true
+        Task {
+            let list = await Task.detached(priority: .utility) { Self.readSessions(now: .now) }.value
+            scanning = false
+            apply(sessions: list)
         }
-        if read.state == .waiting, activity != .waiting, notifyDone {
-            post(id: "docket.codex.waiting", title: tr("Codex 在等你确认"), body: tr("有一条命令或修改需要你批准。"))
-        }
-        if read.state != activity { activity = read.state }
-        if read.project != activityProject { activityProject = read.project }
     }
 
+    private func apply(sessions list: [CodexSession]) {
+        let states = Dictionary(list.map { ($0.id, $0.state) }, uniquingKeysWith: { first, _ in first })
+        for change in CodexChime.events(previous: previousStates, current: states) {
+            remind(change.event, session: list.first { $0.id == change.session })
+        }
+        previousStates = states
+        scannedAt = .now
+        if list != sessions { sessions = list }
+        let overall = CodexSessionList.overall(list)
+        if overall != activity { activity = overall }
+        let project = CodexSessionList.lead(list)?.project
+        if project != activityProject { activityProject = project }
+    }
+
+    /// 一个会话进入等你确认或做完一轮：按横幅开关和声音设置发一条系统通知。
+    private func remind(_ event: CodexChime.Event, session: CodexSession?) {
+        let delivery = CodexChime.delivery(event, banner: notifyDone, settings: chime)
+        let now = Date.now
+        guard delivery.post, gate.allow("\(session?.id ?? "-").\(event.rawValue)", at: now) else { return }
+        let sound = delivery.sound && gate.allowSound(at: now)
+        let project = session?.project
+        switch event {
+        case .waiting:
+            let what = session?.doing?.text ?? tr("有一条命令或修改需要你批准。")
+            post(id: "docket.codex.waiting.\(session?.id ?? "")", title: tr("Codex 在等你确认"),
+                 body: project.map { "\($0) · \(what)" } ?? what, sound: sound)
+        case .done:
+            post(id: "docket.codex.done.\(session?.id ?? "")", title: tr("Codex 已完成"),
+                 body: project.map { tr("\($0) 里的任务已经完成。") } ?? tr("当前任务已经完成。"), sound: sound)
+        case .quota:
+            break
+        }
+    }
+
+    /// 卡片上原来只看最新一个会话；现在是总状态和排第一的会话的项目名。
     nonisolated static func readActivity(now: Date) -> (state: CodexActivity, project: String?) {
+        let list = readSessions(now: now)
+        return (CodexSessionList.overall(list), CodexSessionList.lead(list)?.project)
+    }
+
+    /// 今天和昨天的文件夹里，最近一小时写过的会话记录，每个读开头和末尾。
+    nonisolated static func readSessions(now: Date) -> [CodexSession] {
         let fm = FileManager.default
-        let sessions = home.appendingPathComponent("sessions")
-        var newest: (url: URL, modified: Date)?
+        let sessionsDir = home.appendingPathComponent("sessions")
+        var list: [CodexSession] = []
         for folder in CodexRollout.dayFolders(now: now) {
-            let dir = sessions.appendingPathComponent(folder)
+            let dir = sessionsDir.appendingPathComponent(folder)
             guard let names = try? fm.contentsOfDirectory(atPath: dir.path) else { continue }
             for name in names where name.hasSuffix(".jsonl") {
                 let url = dir.appendingPathComponent(name)
-                guard let date = (try? fm.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date else { continue }
-                if newest == nil || date > newest!.modified { newest = (url, date) }
+                guard let modified = (try? fm.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date,
+                      now.timeIntervalSince(modified) < CodexSessionList.recentWindow else { continue }
+                let meta = CodexRollout.meta(inHead: head(url, bytes: 64 * 1024))
+                let tail = CodexRollout.summary(inTail: tail(url, bytes: 512 * 1024))
+                if let session = CodexSession.make(id: name, meta: meta, tail: tail, modified: modified, now: now) {
+                    list.append(session)
+                }
             }
         }
-        guard let newest else { return (.idle, nil) }
-        let event = CodexRollout.lastEvent(inTail: tail(newest.url, bytes: 512 * 1024))
-        let state = CodexRollout.state(lastEvent: event, modified: newest.modified, now: now)
-        return (state, project(newest.url))
+        return CodexSessionList.sorted(list)
     }
 
     /// The end of a log that can run to hundreds of megabytes.
@@ -337,45 +397,157 @@ final class CodexService {
         return (try? handle.readToEnd()) ?? Data()
     }
 
-    /// The folder name from the log's first line (`session_meta.cwd`).
-    nonisolated private static func project(_ url: URL) -> String? {
-        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+    nonisolated private static func head(_ url: URL, bytes: Int) -> Data {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return Data() }
         defer { try? handle.close() }
-        guard let head = try? handle.read(upToCount: 64 * 1024),
-              let line = head.split(separator: UInt8(ascii: "\n")).first,
-              let record = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
-              let payload = record["payload"] as? [String: Any],
-              let cwd = payload["cwd"] as? String, !cwd.isEmpty else { return nil }
-        return URL(fileURLWithPath: cwd).lastPathComponent
+        return (try? handle.read(upToCount: bytes)) ?? Data()
+    }
+
+    // MARK: Stats
+
+    /// 读今天和本周的统计，五分钟一次（面板开着时才叫）。
+    func loadStats(force: Bool = false) {
+        let now = Date.now
+        if !force, let statsAt, now.timeIntervalSince(statsAt) < 300 { return }
+        guard !statsLoading else { return }
+        statsLoading = true
+        statsAt = now
+        let cache = statsCache
+        Task {
+            let result = await Task.detached(priority: .utility) { Self.readStats(now: now, cache: cache) }.value
+            statsLoading = false
+            statsCache = result.cache
+            stats = CodexStats.buckets(result.records, now: now)
+        }
+    }
+
+    /// 本周每个主会话一条记录。按路径缓存，文件大小和修改时间都没变就不重读。
+    /// 超过 64 MB 的记录不数时长（读起来太久），这一格的时长就不显示。
+    nonisolated static func readStats(now: Date, cache: [String: CodexStatsCacheEntry])
+        -> (records: [CodexSessionRecord], cache: [String: CodexStatsCacheEntry]) {
+        let fm = FileManager.default
+        let sessionsDir = home.appendingPathComponent("sessions")
+        var records: [CodexSessionRecord] = []
+        var next: [String: CodexStatsCacheEntry] = [:]
+        for folder in CodexStats.weekFolders(now: now) {
+            let dir = sessionsDir.appendingPathComponent(folder)
+            guard let names = try? fm.contentsOfDirectory(atPath: dir.path) else { continue }
+            for name in names where name.hasSuffix(".jsonl") {
+                let url = dir.appendingPathComponent(name)
+                guard let attrs = try? fm.attributesOfItem(atPath: url.path),
+                      let modified = attrs[.modificationDate] as? Date else { continue }
+                let size = (attrs[.size] as? NSNumber)?.uint64Value ?? 0
+                if let hit = cache[url.path], hit.size == size, hit.modified == modified {
+                    next[url.path] = hit
+                    if let record = hit.record { records.append(record) }
+                    continue
+                }
+                let meta = CodexRollout.meta(inHead: head(url, bytes: 64 * 1024))
+                var record: CodexSessionRecord?
+                if meta?.isSubagent != true {
+                    let started = meta?.startedAt ?? (attrs[.creationDate] as? Date) ?? modified
+                    let seconds = size <= 64 * 1024 * 1024
+                        ? (try? Data(contentsOf: url, options: .mappedIfSafe)).flatMap(CodexRollout.activeSeconds(inLog:))
+                        : nil
+                    let tokens = CodexRollout.summary(inTail: tail(url, bytes: 256 * 1024)).totalTokens
+                    // 一轮都没开始的会话（开了就关）不算。
+                    if seconds != nil || tokens != nil {
+                        record = CodexSessionRecord(startedAt: started, activeSeconds: seconds, tokens: tokens)
+                    }
+                }
+                next[url.path] = CodexStatsCacheEntry(size: size, modified: modified, record: record)
+                if let record { records.append(record) }
+            }
+        }
+        return (records, next)
+    }
+
+    // MARK: Terminal
+
+    /// 「打开终端」「去终端」：把开着这个会话的终端（或编辑器、Codex 应用）叫到
+    /// 前台；都没开着时打开系统「终端」。Codex 不让别的程序替你点允许。
+    func openTerminal(for session: CodexSession? = nil) {
+        let running = NSWorkspace.shared.runningApplications
+        let id = CodexTerminal.target(host: CodexTerminal.host(originator: session?.originator),
+                                      running: running.compactMap(\.bundleIdentifier))
+        if let app = running.first(where: { $0.bundleIdentifier == id }) {
+            app.activate()
+        } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        }
+    }
+
+    /// 设置里「允许通知」：还没问过时请系统弹一次授权框。
+    func requestNotificationPermission() {
+        askedPermission = true
+        Task {
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+            await NotificationAccessMonitor.shared.refresh()
+        }
     }
 
     // MARK: Notifications
 
     private func alertIfNeeded(_ fresh: CodexUsageReport) {
-        let thresholds = CodexAlert.thresholds(first: alertFirst)
         for w in fresh.ringWindows {
             defer { lastAlerted[w.id] = w.usedFraction }
-            guard notifyQuota,
-                  let hit = CodexAlert.crossed(previous: lastAlerted[w.id], current: w.usedFraction,
-                                               thresholds: thresholds) else { continue }
+            guard let hit = CodexChime.quota(previous: lastAlerted[w.id], current: w.usedFraction,
+                                             bannerOn: notifyQuota, alertAt: alertFirst, soundOn: chime.quota)
+            else { continue }
+            let key = "quota.\(w.id).\(Int((hit.hit * 100).rounded()))"
+            guard gate.allow(key, at: .now) else { continue }
             let reset = w.resetsAt.map { tr("，\(CodexPace.duration($0.timeIntervalSinceNow))后重置") } ?? ""
-            let title = hit >= 1 ? tr("Codex \(w.label)已用完") : tr("Codex \(w.label)已用 \(Int((hit * 100).rounded()))%")
-            post(id: "docket.codex.quota.\(w.id)", title: title, body: tr("剩余 \(GaugeReading.percent(w.remainingFraction))\(reset)。"))
+            let title = hit.hit >= 1 ? tr("Codex \(w.label)已用完") : tr("Codex \(w.label)已用 \(Int((hit.hit * 100).rounded()))%")
+            post(id: "docket.codex.quota.\(w.id)", title: title,
+                 body: tr("剩余 \(GaugeReading.percent(w.remainingFraction))\(reset)。"),
+                 sound: hit.sound && gate.allowSound(at: .now))
         }
     }
 
-    private func post(id: String, title: String, body: String) {
+    /// 发一条系统通知。`sound` 为真时带上设置里选的 macOS 提示音，勿扰和专注
+    /// 模式由系统自己挡；为假时不出声。
+    private func post(id: String, title: String, body: String, sound: Bool) {
         let center = UNUserNotificationCenter.current()
         if center.delegate == nil { center.delegate = presenter }
         let ask = !askedPermission
         askedPermission = true
+        let tone = chime.tone
         Task {
             if ask { _ = try? await center.requestAuthorization(options: [.alert, .sound]) }
             let content = UNMutableNotificationContent()
             content.title = title
             content.body = body
-            content.sound = .default
+            if sound { content.sound = Self.notificationSound(tone) }
             try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
         }
     }
+
+    /// 系统通知只认本应用目录、~/Library/Sounds 和应用包里的声音文件，读不到
+    /// /System/Library/Sounds。所以把选中的那个系统提示音复制一份到
+    /// ~/Library/Sounds/Dockling-<名字>.aiff（不打包、不改系统文件），换了提示音
+    /// 就删掉旧的那份。复制不成时用系统默认提示音。
+    private static func notificationSound(_ tone: String) -> UNNotificationSound {
+        let fm = FileManager.default
+        let dir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Sounds")
+        let name = "Dockling-\(tone).aiff"
+        let dest = dir.appendingPathComponent(name)
+        if !fm.fileExists(atPath: dest.path) {
+            let source = URL(fileURLWithPath: "/System/Library/Sounds/\(tone).aiff")
+            guard fm.fileExists(atPath: source.path) else { return .default }
+            try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+            guard (try? fm.copyItem(at: source, to: dest)) != nil else { return .default }
+            for old in (try? fm.contentsOfDirectory(atPath: dir.path)) ?? []
+            where old.hasPrefix("Dockling-") && old.hasSuffix(".aiff") && old != name {
+                try? fm.removeItem(at: dir.appendingPathComponent(old))
+            }
+        }
+        return UNNotificationSound(named: UNNotificationSoundName(name))
+    }
+}
+
+/// 统计缓存的一条：文件大小、修改时间都没变就直接用上次读的结果。
+struct CodexStatsCacheEntry: Sendable {
+    var size: UInt64
+    var modified: Date
+    var record: CodexSessionRecord?
 }

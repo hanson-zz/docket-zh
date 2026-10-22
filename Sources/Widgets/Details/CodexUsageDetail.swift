@@ -1,20 +1,38 @@
 import AppKit
 import SwiftUI
 
-/// Every limit window with its reset and its pace, the last 30 days of
-/// tokens, and the proxy the requests go through.
+/// Codex 的详情面板：角落小熊猫和总状态，正在运行的会话（项目、在做什么、
+/// 耗时，等你确认的给「去终端」），5 小时和每周用量，今日 / 本周统计，
+/// 「打开终端」。原来的刷新、网页版用量、近 30 天 token 和代理收进「更多」。
+///
+/// Codex 不把审批交给别的程序，所以这里不画「允许 / 拒绝」，只把开着会话的
+/// 终端叫到前台。读不准的统计项直接不显示。
 struct CodexUsageDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var proxy = ""
     @State private var proxyRejected = false
+    @State private var showsMore = false
+    @Environment(\.colorScheme) private var scheme
 
     private var service: CodexService { CodexService.shared }
     private var showsRemaining: Bool { instance.config.string("show", default: "used") == "remaining" }
 
     private var report: CodexUsageReport? {
         context.isPreview ? CodexSample.report(now: context.now) : service.report
+    }
+
+    private var sessions: [CodexSession] {
+        context.isPreview ? CodexSample.sessions(now: context.now) : service.sessions
+    }
+
+    private var activity: CodexActivity {
+        context.isPreview ? CodexSessionList.overall(sessions) : service.activity
+    }
+
+    private var chime: CodexChimeSettings {
+        context.isPreview ? CodexChimeSettings(config: instance.config) : service.chime
     }
 
     var body: some View {
@@ -27,6 +45,7 @@ struct CodexUsageDetail: View {
             service.configure(instance.config)
             service.startActivity()
             service.refresh()
+            service.loadStats()
         }
     }
 
@@ -34,33 +53,386 @@ struct CodexUsageDetail: View {
         DetailCard {
             MeshBackdrop(color: WidgetStyle.tint(.indigo))
         } content: {
-            VStack(alignment: .leading, spacing: 12) {
-                PanelHeader(symbol: "gauge.with.dots.needle.33percent", title: tr("Codex 用量"), subtitle: subtitle(now: now))
-                activityRow
-                if let report, !report.windows.isEmpty {
-                    VStack(spacing: 6) {
-                        ForEach(report.windows) { w in windowRow(w, now: now) }
-                    }
-                    stats(report, now: now)
-                    chart(report, now: now)
-                    if let source = report.source, !context.isPreview {
-                        Text(tr("来源：\(source.title)"))
-                            .font(WidgetStyle.caption(13))
-                            .foregroundStyle(.panelTertiary)
-                    }
-                } else {
-                    PanelNote(symbol: "network", text: service.problem?.message ?? tr("正在读取…")).frame(height: 100)
+            VStack(alignment: .leading, spacing: 14) {
+                header
+                sessionsSection(now: now)
+                usageSection(now: now)
+                statsSection(now: now)
+                Button {
+                    guard !context.isPreview else { return }
+                    service.openTerminal(for: CodexSessionList.lead(sessions))
+                } label: {
+                    Text("打开终端")
+                        .font(WidgetStyle.label(15))
+                        .foregroundStyle(.panelOnPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(Capsule().fill(.panelPrimary))
+                        .contentShape(.capsule)
                 }
-                if let problem = service.problem, report != nil, !context.isPreview {
+                .buttonStyle(.plain)
+                footer(now: now)
+                moreSection(now: now)
+            }
+        }
+        .onChange(of: Int(now.timeIntervalSince1970) / 300) {
+            if !context.isPreview { service.loadStats() }
+        }
+    }
+
+    // MARK: 头
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 10) {
+            CodexPanda(activity: activity, size: 46)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: "Codex")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
+                HStack(spacing: 6) {
+                    Circle().fill(CodexStyle.color(activity)).frame(width: 8, height: 8)
+                    Text(activity.title)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(CodexStyle.color(activity).panelReadable)
+                    speakerButton
+                }
+            }
+            Spacer(minLength: 4)
+            Button {
+                guard !context.isPreview, let app = AIChatCenter.shared.app else { return }
+                WidgetDetailWindow.shared.close()
+                SettingsWindow.shared.show(app: app, tab: "Widgets")
+            } label: {
+                Text("设置")
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
+                    .padding(.horizontal, 14)
+                    .frame(height: 28)
+                    .background(Capsule().fill(Color.panelFill))
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .help(tr("设置 ▸ 小组件 ▸ Codex 用量，声音也在那里"))
+        }
+    }
+
+    /// 标题里的小喇叭：这个状态有声音开关时画，点一下直接开关这一项。
+    @ViewBuilder private var speakerButton: some View {
+        let mark = CodexChime.speaker(for: activity, settings: chime)
+        if mark != .hidden, let key = CodexChime.toggleKey(for: activity) {
+            Button {
+                guard !context.isPreview else { return }
+                WidgetWriter.write(instance) { $0.set(key, .bool(mark != .on)) }
+            } label: {
+                Image(systemName: mark == .on ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(mark == .on ? Color.panelSecondary : Color.panelTertiary)
+                    .frame(width: 22, height: 22)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(mark == .on ? tr("这个状态会响，点按静音") : tr("这个状态静音，点按打开提示音"))
+        }
+    }
+
+    // MARK: 正在运行
+
+    @ViewBuilder private func sessionsSection(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionTitle(sessions.isEmpty ? tr("正在运行") : tr("正在运行 · \(sessions.count) 个会话"))
+            if sessions.isEmpty {
+                Text("现在没有进行中的会话。在终端里运行 codex 后，这里会列出它在做什么。")
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glassPane(cornerRadius: 12)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(sessions.prefix(5).enumerated()), id: \.element.id) { index, session in
+                        if index > 0 { Divider().overlay(.panelSeparator).padding(.horizontal, 12) }
+                        sessionRow(session, now: now)
+                    }
+                }
+                .glassPane(cornerRadius: 12)
+            }
+        }
+    }
+
+    private func sessionRow(_ session: CodexSession, now: Date) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            Circle().fill(CodexStyle.color(session.state)).frame(width: 8, height: 8)
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(session.project ?? "Codex")
+                        .font(WidgetStyle.label(14))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Text(session.state.title)
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(CodexStyle.color(session.state).panelReadable)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                if let doing = session.doing?.text {
+                    Text(doing)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            Spacer(minLength: 4)
+            Text(session.elapsedText(now: now))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize()
+            if session.state == .waiting {
+                Button {
+                    guard !context.isPreview else { return }
+                    service.openTerminal(for: session)
+                } label: {
+                    Text("去终端")
+                        .font(WidgetStyle.label(13))
+                        .foregroundStyle(.panelPrimary)
+                        .padding(.horizontal, 10)
+                        .frame(height: 26)
+                        .background(Capsule().fill(Color.panelRaised).panelLift(true))
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .help(tr("Codex 不让别的程序替你批准，点按把开着这个会话的终端带到前面。"))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+    }
+
+    // MARK: 用量
+
+    @ViewBuilder private func usageSection(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                sectionTitle(tr("用量"))
+                Spacer(minLength: 4)
+                if let report, let pace = paceText(report, now: now) {
+                    Text(pace)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            if let report, !report.windows.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(report.windows) { w in windowRow(w, now: now) }
+                }
+                .padding(12)
+                .glassPane(cornerRadius: 12)
+                if let problem = service.problem, !context.isPreview {
                     Text(problem.message)
                         .font(WidgetStyle.caption(13))
                         .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            } else {
+                PanelNote(symbol: "network", text: service.problem?.message ?? tr("正在读取…"))
+                    .frame(height: 96)
+                    .glassPane(cornerRadius: 12)
+            }
+        }
+    }
+
+    /// 标题右边一句：照现在的速度够不够用到重置（看 5 小时窗口）。
+    private func paceText(_ report: CodexUsageReport, now: Date) -> String? {
+        guard let w = report.primary else { return nil }
+        if let out = CodexPace.runsOutAt(w, now: now) {
+            let f = DateFormatter()
+            f.dateFormat = "HH:mm"
+            return tr("照现在的速度，约 \(f.string(from: out)) 用完")
+        }
+        return CodexPace.elapsedFraction(w, now: now) == nil ? nil : tr("照现在的速度，够用到重置")
+    }
+
+    private func windowRow(_ w: CodexLimitWindow, now: Date) -> some View {
+        let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
+        let tint = CodexStyle.tint(used: w.usedFraction)
+        let main = w.group == nil
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(w.group.map { "\($0) · \(w.label)" } ?? CodexCard.label(w))
+                    .font(WidgetStyle.label(main ? 15 : 13))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text(GaugeReading.percent(fraction))
+                    .font(.system(size: main ? 19 : 14, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.panelTrack)
+                    Capsule().fill(tint.panelGraphic).frame(width: max(8, geo.size.width * fraction))
+                    // Where an even pace would be by now.
+                    if let elapsed = CodexPace.elapsedFraction(w, now: now) {
+                        Rectangle().fill(.panelSecondary)
+                            .frame(width: 1.5)
+                            .offset(x: geo.size.width * (showsRemaining ? 1 - elapsed : elapsed) - 0.75)
+                    }
+                }
+            }
+            .frame(height: main ? 8 : 6)
+            if let resets = w.resetsAt {
+                HStack {
+                    Text(tr("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置"))
+                    Spacer(minLength: 4)
+                    Text(resetClock(resets, now: now))
+                }
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(.panelSecondary)
+                .monospacedDigit()
+                .lineLimit(1)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// "14:20"；不是今天的写星期几，"周五 09:00"。
+    private func resetClock(_ date: Date, now: Date) -> String {
+        let f = DateFormatter()
+        f.locale = L10n.interfaceLocale
+        if Calendar.current.isDate(date, inSameDayAs: now) {
+            f.dateFormat = "HH:mm"
+        } else {
+            f.setLocalizedDateFormatFromTemplate("EEE HH:mm")
+        }
+        return f.string(from: date)
+    }
+
+    // MARK: 统计
+
+    @ViewBuilder private func statsSection(now: Date) -> some View {
+        let local: (today: CodexStatBucket, week: CodexStatBucket)? = context.isPreview ? CodexSample.stats() : service.stats
+        let server = context.isPreview ? nil : report.flatMap { CodexStats.serverTokens($0.daily, now: now) }
+        let today = statCell(title: tr("今天"), bucket: local?.today, serverTokens: server?.today)
+        let week = statCell(title: tr("本周"), bucket: local?.week, serverTokens: server?.week)
+        if today != nil || week != nil {
+            VStack(alignment: .leading, spacing: 8) {
+                sectionTitle(tr("统计"))
+                HStack(spacing: 8) {
+                    if let today { today }
+                    if let week { week }
+                }
+            }
+        }
+    }
+
+    /// 一格统计。token 优先用 chatgpt.com 按天给的数，没有时用本机会话记录里的；
+    /// 时长读不准时不写；什么都没有时这一格不画。
+    private func statCell(title: String, bucket: CodexStatBucket?, serverTokens: Int?) -> AnyView? {
+        let tokens = serverTokens ?? bucket?.tokens
+        var details: [String] = []
+        if let bucket {
+            details.append(tr("\(bucket.sessions) 个会话"))
+            if let seconds = bucket.seconds, bucket.sessions > 0 { details.append(CodexStats.durationText(seconds)) }
+        }
+        guard tokens != nil || !details.isEmpty else { return nil }
+        let parts = tokens.map { CodexStats.tokenParts($0, english: L10n.isEnglish) }
+        return AnyView(
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
+                if let parts {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(parts.number)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.panelPrimary)
+                            .monospacedDigit()
+                        Text(parts.unit)
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                }
+                if !details.isEmpty {
+                    Text(details.joined(separator: " · "))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassPane(cornerRadius: 12)
+        )
+    }
+
+    // MARK: 底部
+
+    private func footer(now: Date) -> some View {
+        Text(footerText(now: now))
+            .font(WidgetStyle.caption(13))
+            .foregroundStyle(.panelTertiary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity)
+    }
+
+    private func footerText(now: Date) -> String {
+        if context.isPreview { return tr("示例数据") }
+        guard let at = service.scannedAt ?? report?.fetchedAt else { return tr("数据来自本机 Codex 记录") }
+        let minutes = Int(max(0, now.timeIntervalSince(at)) / 60)
+        let ago = minutes < 1 ? tr("刚刚") : tr("\(minutes) 分钟前")
+        return tr("数据来自本机 Codex 记录 · \(ago)")
+    }
+
+    // MARK: 更多
+
+    private func moreSection(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { showsMore.toggle() }
+            } label: {
+                HStack(spacing: 5) {
+                    Text("更多")
+                        .font(WidgetStyle.label(13))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .rotationEffect(.degrees(showsMore ? 180 : 0))
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(.panelSecondary)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            if showsMore {
+                Text(subtitle(now: now))
+                    .font(WidgetStyle.caption(13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                if let report {
+                    chart(report, now: now)
+                    if let resets = report.resetCredits {
+                        Text(tr("可用重置 \(resets) 次"))
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                }
                 HStack(spacing: 8) {
                     PanelButton(title: tr("刷新"), symbol: "arrow.clockwise", prominent: true) {
                         guard !context.isPreview else { return }
                         service.refresh(force: true)
+                        service.loadStats(force: true)
                     }
                     PanelButton(title: tr("网页版用量"), symbol: "arrow.up.right") {
                         guard !context.isPreview, let url = URL(string: "https://chatgpt.com/codex/settings/usage") else { return }
@@ -81,92 +453,9 @@ struct CodexUsageDetail: View {
             let f = DateFormatter()
             f.dateFormat = Calendar.current.isDate(report.fetchedAt, inSameDayAs: now) ? "HH:mm" : tr("M月d日 HH:mm")
             parts.append(report.isStale(now: now) ? tr("\(f.string(from: report.fetchedAt)) 的缓存") : tr("\(f.string(from: report.fetchedAt)) 更新"))
+            if let source = report.source { parts.append(tr("来源：\(source.title)")) }
         }
         return parts.isEmpty ? tr("读取 ~/.codex 的登录") : parts.joined(separator: " · ")
-    }
-
-    private var activityRow: some View {
-        let activity = context.isPreview ? CodexActivity.working : service.activity
-        let project = context.isPreview ? "docket" : service.activityProject
-        return HStack(spacing: 8) {
-            Circle().fill(CodexStyle.color(activity)).frame(width: 8, height: 8)
-            Text(activity.title)
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(.panelPrimary)
-            if let project, activity != .idle {
-                Text(project)
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.panelSecondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 28)
-        .glassPane(cornerRadius: 9)
-    }
-
-    private func windowRow(_ w: CodexLimitWindow, now: Date) -> some View {
-        let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
-        let tint = CodexStyle.tint(used: w.usedFraction)
-        return VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(w.group.map { "\($0) · \(w.label)" } ?? w.label)
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.panelPrimary)
-                Spacer(minLength: 4)
-                Text("\(showsRemaining ? tr("剩余") : tr("已用")) \(GaugeReading.percent(fraction))")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                    .monospacedDigit()
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.panelTrack)
-                    Capsule().fill(tint).frame(width: geo.size.width * fraction)
-                    // Where an even pace would be by now.
-                    if let elapsed = CodexPace.elapsedFraction(w, now: now) {
-                        Rectangle().fill(.panelSecondary)
-                            .frame(width: 1.5)
-                            .offset(x: geo.size.width * (showsRemaining ? 1 - elapsed : elapsed) - 0.75)
-                    }
-                }
-            }
-            .frame(height: 6)
-            Text(caption(w, now: now))
-                .font(WidgetStyle.caption(13))
-                .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
-        }
-        .padding(10)
-        .glassPane(cornerRadius: 10)
-    }
-
-    private func caption(_ w: CodexLimitWindow, now: Date) -> String {
-        var parts: [String] = []
-        if let resets = w.resetsAt {
-            let f = DateFormatter()
-            f.dateFormat = Calendar.current.isDate(resets, inSameDayAs: now) ? "HH:mm" : tr("M月d日 HH:mm")
-            parts.append(tr("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置（\(f.string(from: resets))）"))
-        }
-        if let out = CodexPace.runsOutAt(w, now: now) {
-            let f = DateFormatter()
-            f.dateFormat = "HH:mm"
-            parts.append(tr("按当前速度约 \(f.string(from: out)) 用完"))
-        } else if let delta = CodexPace.delta(w, now: now) {
-            parts.append(delta > 0.05 ? tr("用得偏快") : tr("节奏正常"))
-        }
-        return parts.joined(separator: " · ")
-    }
-
-    private func stats(_ report: CodexUsageReport, now: Date) -> some View {
-        let series = CodexPace.series(report.daily, now: now)
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-            StatChip(label: tr("今天"), value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.last ?? 0))
-            StatChip(label: tr("30 天"), value: report.daily.isEmpty ? "-" : CodexPace.tokens(series.reduce(0, +)))
-            StatChip(label: tr("可用重置"), value: report.resetCredits.map { tr("\($0) 次") } ?? "-")
-        }
     }
 
     @ViewBuilder private func chart(_ report: CodexUsageReport, now: Date) -> some View {
@@ -208,6 +497,12 @@ struct CodexUsageDetail: View {
                 .foregroundStyle(proxyRejected ? Color(hex: "#FF9F0A").panelReadable : .panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(WidgetStyle.label(13))
+            .foregroundStyle(.panelSecondary)
     }
 
     private func saveProxy() {

@@ -588,13 +588,21 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // Codex's own rate limits, read with the sign-in Codex keeps in
-        // ~/.codex, and what Codex is doing from its newest session log.
+        // ~/.codex, and what Codex is doing from its recent session logs.
+        // 卡片两种：小（状态 + 两个圆环，没存 layout 的老卡片也按它）和中（小熊猫、
+        // 项目和正在做什么 + 两条进度条）。声音四项在设置里单独一组「声音」，
+        // 见 CodexChimeSettings。
         Entry(kind: .aiUsage, name: tr("Codex 用量"), category: .ai,
-              defaults: c(["show": .string("used"), "notify": .bool(true), "alertAt": .number(80),
-                           "notifyDone": .bool(true), "extras": .bool(false),
+              defaults: c(["layout": .string(CodexCard.small), "show": .string("used"), "notify": .bool(true),
+                           "alertAt": .number(80), "notifyDone": .bool(true), "extras": .bool(false),
                            // 外观：圆环（默认）或液态小圆杯，见 LiquidLooks。
-                           LiquidLooks.key: .string(LiquidLooks.CodexLook.ring.rawValue)]),
-              variants: [], supportsCompact: false, selfContained: true),
+                           LiquidLooks.key: .string(LiquidLooks.CodexLook.ring.rawValue),
+                           CodexChimeSettings.waitingKey: .bool(true), CodexChimeSettings.doneKey: .bool(false),
+                           CodexChimeSettings.quotaKey: .bool(false),
+                           CodexChimeSettings.toneKey: .string(CodexChimeSettings.defaultTone)]),
+              variants: [(tr("小"), ["layout": .string(CodexCard.small)]),
+                         (tr("中"), ["layout": .string(CodexCard.medium)])],
+              supportsCompact: false, selfContained: true),
     ]
 
     private static let byKind: [WidgetKind: Entry] = Dictionary(
@@ -686,6 +694,12 @@ public enum WidgetCatalog {
         // 时钟的子选项只在它所属的样式下列出（见 `ClockStyles.applies`）。
         case (.clock, _):
             ClockStyles.applies(key, to: config)
+        // 液态小圆杯只画在小卡的圆环上；声音四项在设置里自己一组，不在这里列。
+        case (.aiUsage, LiquidLooks.key):
+            !CodexCard.isMedium(config)
+        case (.aiUsage, CodexChimeSettings.waitingKey), (.aiUsage, CodexChimeSettings.doneKey),
+             (.aiUsage, CodexChimeSettings.quotaKey), (.aiUsage, CodexChimeSettings.toneKey):
+            false
         case (.system, "chart"):
             config.string("layout", default: "numbers") == "numbers"
         // Mini is a 64pt chip: artwork and one glyph, which is play and
@@ -976,7 +990,8 @@ public enum WidgetCatalog {
                 return CGSize(width: 124, height: 62)
             }
             return cfg.bool("chart") ? CGSize(width: 160, height: 84) : CGSize(width: 100, height: 62)
-        case .aiUsage: return CGSize(width: 244, height: 62)
+        case .aiUsage:
+            return CodexCard.isMedium(cfg) ? CGSize(width: 404, height: 104) : CGSize(width: 216, height: 104)
         // 一排圆角图标，按卡片上的个数算宽（最多 4 个）。
         case .shortcut:
             return CGSize(width: ShortcutDeck.tileWidth(count: ShortcutDeck.tileItems(cfg).count), height: 62)

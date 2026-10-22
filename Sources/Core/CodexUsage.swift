@@ -300,7 +300,7 @@ public enum CodexActivity: String, Codable, Equatable, Sendable {
     public var title: String {
         switch self {
         case .idle: tr("空闲")
-        case .working: tr("正在工作")
+        case .working: tr("工作中")
         case .waiting: tr("等你确认")
         case .done: tr("已完成")
         }

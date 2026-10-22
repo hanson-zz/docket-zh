@@ -64,6 +64,9 @@ struct WidgetSettingsSections: View {
                 if pair.instance.kind == .battery {
                     batteryAlertSection(pair.instance)
                 }
+                if pair.instance.kind == .aiUsage {
+                    CodexSoundSettings(instance: pair.instance) { change in write(pair.instance, change) }
+                }
                 if WidgetTint.offersColor(pair.instance.kind) || WidgetTint.offersBackground(pair.instance.kind) {
                     Section("颜色与背景") {
                         WidgetTintPicker(instance: pair.instance) { change in

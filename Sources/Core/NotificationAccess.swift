@@ -44,7 +44,7 @@ public enum NotificationAccess: Equatable, Sendable {
         "posture": ["notify"],
         "podcast": ["notify"],
         "github": ["notify"],
-        "ai-usage": ["notify", "notifyDone"],
+        "ai-usage": ["notify", "notifyDone", "soundDone", "soundQuota", "soundWaiting"],
         "lunar": ["workAlert"],
         "microphone": ["notifyMic", "notifyCamera"],
     ]
