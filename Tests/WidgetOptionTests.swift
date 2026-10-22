@@ -303,6 +303,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "gauges.cpuAlert", "gauges.memoryAlert", "gauges.storageAlert", "gauges.batteryAlert",
         // Codex 用量的声音四项在设置里自己一组「声音」（CodexSoundSettings），不在通用列表里。
         "ai-usage.soundWaiting", "ai-usage.soundDone", "ai-usage.soundQuota", "ai-usage.tone",
+        // 小熊猫的竹篮：卡片大小只在三环样式下有（竹叶 / 液态在默认的竹篮样式下照常列出）。
+        "perfect-day.ringsCard",
     ]
 
     func testStockOptionsFollowTheList() {
