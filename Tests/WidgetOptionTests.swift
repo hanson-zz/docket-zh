@@ -87,7 +87,7 @@ final class WidgetOptionTests: XCTestCase {
             .shortcut: [],
             .stock: ["symbol", "symbols", "chart", "alerts", "rotate", "colors", "metalUnit"],
             .watchlist: ["symbols", "groups", "holdings", "sort", "colors", "metalUnit"],
-            .weather: ["city", "cities", "fahrenheit", "caption", "days", "moreCities", "showIndices", "showRain"],
+            .weather: ["city", "cities", "fahrenheit", "caption", "days", "moreCities", "showIndices", "showRain", "showTips"],
             .photos: ["folder", "interval", "shuffle", "memoriesFirst"],
             .emoji: ["emoji"],
             .search: ["engine"],
@@ -285,7 +285,7 @@ final class OptionApplicabilityTests: XCTestCase {
         // 副标题只有“当前”有，天数只有“多日预报”有（WeatherStyle）。
         "weather.caption", "weather.days",
         // 面板的城市列表和显示开关，多城市样式的面板不读。
-        "weather.moreCities", "weather.showIndices", "weather.showRain",
+        "weather.moreCities", "weather.showIndices", "weather.showRain", "weather.showTips",
         // 水面动效只有液态外观有。
         "progress.liquidMotion",
         // 时钟的子选项只在所属样式下列出（ClockStyles.applies）。

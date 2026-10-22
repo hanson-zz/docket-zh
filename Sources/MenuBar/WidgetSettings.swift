@@ -735,6 +735,7 @@ struct WidgetSettingsSections: View {
         "weather.moreCities": tr("更多城市（第 2 个起需要 Pro，面板里左右切换）"),
         "weather.showIndices": tr("面板显示生活指数"),
         "weather.showRain": tr("面板显示 2 小时降水提示"),
+        "weather.showTips": tr("暖心提示"),
         "mail.limit": tr("每次显示"),
         "mail.markReadOnOpen": tr("点开后自动标已读"),
         "mail.summary": tr("显示一行摘要"),

@@ -36,15 +36,18 @@ public struct WeatherNowcast: Equatable, Sendable {
         public var windSpeed: Double?
         public var windFrom: Double?
         public var humidity: Double?
+        /// 体感温度（`apparent_temperature`），暖心提示的穿衣那句用。
+        public var apparentC: Double?
 
         public init(temperatureC: Double, code: Int, isDay: Bool = true, windSpeed: Double? = nil,
-                    windFrom: Double? = nil, humidity: Double? = nil) {
+                    windFrom: Double? = nil, humidity: Double? = nil, apparentC: Double? = nil) {
             self.temperatureC = temperatureC
             self.code = code
             self.isDay = isDay
             self.windSpeed = windSpeed
             self.windFrom = windFrom
             self.humidity = humidity
+            self.apparentC = apparentC
         }
     }
 
@@ -90,7 +93,7 @@ public struct WeatherNowcast: Equatable, Sendable {
             URLQueryItem(name: "latitude", value: String(format: "%.4f", lat)),
             URLQueryItem(name: "longitude", value: String(format: "%.4f", lon)),
             URLQueryItem(name: "current",
-                         value: "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day"),
+                         value: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day"),
             URLQueryItem(name: "hourly",
                          value: "temperature_2m,weather_code,precipitation,precipitation_probability,uv_index,is_day"),
             URLQueryItem(name: "minutely_15", value: "precipitation"),
@@ -112,6 +115,7 @@ public struct WeatherNowcast: Equatable, Sendable {
             struct Current: Decodable {
                 var temperature_2m: Double?
                 var relative_humidity_2m: Double?
+                var apparent_temperature: Double?
                 var weather_code: Double?
                 var wind_speed_10m: Double?
                 var wind_direction_10m: Double?
@@ -147,7 +151,8 @@ public struct WeatherNowcast: Equatable, Sendable {
            celsius.isFinite, code.isFinite {
             current = Current(temperatureC: celsius, code: Int(code), isDay: (c.is_day ?? 1) != 0,
                               windSpeed: c.wind_speed_10m, windFrom: c.wind_direction_10m,
-                              humidity: c.relative_humidity_2m)
+                              humidity: c.relative_humidity_2m,
+                              apparentC: c.apparent_temperature.flatMap { $0.isFinite ? $0 : nil })
         }
 
         var hours: [Hour] = []

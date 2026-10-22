@@ -137,6 +137,13 @@ public struct DailyForecast: Equatable, Sendable {
         return days.first { $0.key == key }
     }
 
+    /// 今天前后第 `offset` 天（-1 昨天，1 明天），按这个地方的日历。暖心提示
+    /// 比较昨天、今天、明天的最高温用；请求带 `past_days=1`，所以有昨天。
+    public func day(offset: Int, now: Date) -> Day? {
+        let key = Self.dayKey(now.addingTimeInterval(Double(offset) * 86_400), utcOffsetSeconds: utcOffsetSeconds)
+        return days.first { $0.key == key }
+    }
+
     /// "2026-10-13" for an instant, at a fixed offset from UTC.
     public static func dayKey(_ date: Date, utcOffsetSeconds: Int) -> String {
         var calendar = Calendar(identifier: .gregorian)
@@ -217,6 +224,8 @@ public struct DailyForecast: Equatable, Sendable {
             URLQueryItem(name: "current", value: "temperature_2m,weather_code,is_day"),
             URLQueryItem(name: "timezone", value: "auto"),
             URLQueryItem(name: "forecast_days", value: String(days)),
+            // 多取昨天一天，暖心提示说“比昨天冷几度”；列表和 7 天都从今天起算（upcoming）。
+            URLQueryItem(name: "past_days", value: "1"),
         ]
         return components?.url
     }

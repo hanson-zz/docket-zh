@@ -21,6 +21,9 @@ struct WeatherTile: View {
     private var layout: String { WeatherStyle.layout(instance.config) }
     private var captionChoice: WeatherStyle.Caption { WeatherStyle.caption(instance.config) }
     private var fahrenheit: Bool { instance.config.bool("fahrenheit") }
+    private var showTips: Bool { instance.config.bool(WeatherTips.showKey, default: true) }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// An empty `city` means "wherever I am".
     ///
@@ -71,7 +74,7 @@ struct WeatherTile: View {
                 case WeatherStyle.forecastLayout: forecastRow
                 case WeatherStyle.citiesLayout: citiesRow
                 case WeatherStyle.hourlyLayout: hourlyStrip
-                default: wide(caption: currentCaption)
+                default: wide(caption: currentCaption, tip: cardTip)
                 }
             }
         }
@@ -79,6 +82,7 @@ struct WeatherTile: View {
         .onChange(of: city) { load() }
         .onChange(of: layout) { load() }
         .onChange(of: cities) { load() }
+        .onChange(of: showTips) { load() }
         // The shared place can move under this tile (the last city set
         // wins), and the daily forecast has to follow it.
         .onChange(of: sharedPlaceKey) {
@@ -105,6 +109,12 @@ struct WeatherTile: View {
     /// Each place is throttled to one fetch per 30 minutes inside the
     /// service, so calling this on every 15-minute tick costs nothing.
     private func refreshForecasts() async {
+        // 暖心提示要的降水概率、紫外线、空气质量和昨天今天明天的最高最低温。
+        // 两个服务各自限流（15 分钟、30 分钟），每 15 分钟调一次不多花。
+        if wantsTips, let place = WeatherService.shared.place {
+            await WeatherExtrasService.shared.refresh(place)
+            if layout != WeatherStyle.forecastLayout { await ForecastService.shared.refresh(place) }
+        }
         switch layout {
         case WeatherStyle.forecastLayout:
             if let place = WeatherService.shared.place {
@@ -160,6 +170,28 @@ struct WeatherTile: View {
                                       hours: hours.map { (start: $0.date, mm: $0.precipitationMM) })
     }
 
+    // MARK: - 暖心提示
+
+    /// 只有横排的“当前”样式有地方放一行提示。
+    private var wantsTips: Bool {
+        showTips && !context.position.isVertical && layout == WeatherStyle.currentLayout
+    }
+
+    /// 卡片上轮到的那一句，每 8 秒换下一句（`context.now` 每秒走一次，不另开定时器）。
+    /// 副标题已经在说“约 40 分钟后有雨”时，降雨那句不再重复。
+    private var cardTip: WeatherTips.Tip? {
+        guard wantsTips, let weather else { return nil }
+        let place = WeatherService.shared.place
+        let nowcast = context.isPreview ? nil : place.flatMap { WeatherExtrasService.shared.nowcast(at: $0) }
+        let aqi = context.isPreview ? nil : place.flatMap { WeatherExtrasService.shared.aqi(at: $0) }
+        let zone = WeatherSun.place(preview: context.isPreview)?.zone ?? .current
+        var tips = WeatherTips.tips(WeatherTipSource.input(weather: weather, nowcast: nowcast, aqi: aqi,
+                                                           forecast: dailyForecast, now: context.now,
+                                                           zone: zone, fahrenheit: fahrenheit))
+        if minutesUntilRain != nil { tips.removeAll { $0.kind == .rain } }
+        return WeatherTips.rotating(tips, now: context.now)
+    }
+
     /// The Current layout's third line: rain on its way wins, then the chosen caption.
     private var currentCaption: String {
         if let minutes = minutesUntilRain { return WeatherStyle.rainSoonText(minutes: minutes) }
@@ -176,12 +208,38 @@ struct WeatherTile: View {
     /// the temperature over a caption beside it. The caption shrinks to one
     /// line like every other tile's, so a long condition reads smaller rather
     /// than pushing a second line out of the card.
-    private func wide(caption: String) -> some View {
-        HStack(spacing: WidgetStyle.rowSpacing) {
+    ///
+    /// 暖心提示（`tip`）在下面加一行 13pt：先试整句，放不下换短句，再放不下就不显示，
+    /// 不缩字、不挤上面的读数（ViewThatFits 只挑放得下的那一版）。
+    @ViewBuilder private func wide(caption: String, tip: WeatherTips.Tip? = nil) -> some View {
+        let row = HStack(spacing: WidgetStyle.rowSpacing) {
             TileBadge { icon(size: 19) }
             TileReading(value: weather.map { degrees($0.temperatureC) } ?? "--°", caption: caption)
             Spacer(minLength: 0)
         }
+        if let tip {
+            // 高度放不下第三行时整行不要；宽度上先整句、再短句，都放不下就空着。
+            ViewThatFits(in: .vertical) {
+                VStack(alignment: .leading, spacing: 2) {
+                    row
+                    ViewThatFits(in: .horizontal) {
+                        tipLine(tip.text)
+                        tipLine(tip.short)
+                        Color.clear.frame(width: 0, height: 0)
+                    }
+                }
+                row
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tip.text)
+        } else {
+            row
+        }
+    }
+
+    private func tipLine(_ text: String) -> some View {
+        WeatherTipLine(text: text)
+            .id(text)
+            .transition(.opacity)
     }
 
     /// The next few hours, each a small symbol over its temperature. Falls

@@ -299,7 +299,9 @@ public enum WidgetCatalog {
                            // 面板改版：城市管理加的第 2 个起（Pro），面板显示的降水提示和生活指数。
                            WeatherPanel.moreCitiesKey: .list([]),
                            WeatherPanel.showIndicesKey: .bool(true),
-                           WeatherPanel.showRainKey: .bool(true)]),
+                           WeatherPanel.showRainKey: .bool(true),
+                           // 暖心提示：卡片轮换一句、面板小熊猫说一句（WeatherTips），默认开。
+                           WeatherTips.showKey: .bool(true)]),
               variants: [(tr("当前"), ["layout": .string(WeatherStyle.currentLayout)]),
                          (tr("多日预报"), ["layout": .string(WeatherStyle.forecastLayout)]),
                          (tr("逐小时预报"), ["layout": .string(WeatherStyle.hourlyLayout)]),
@@ -779,7 +781,8 @@ public enum WidgetCatalog {
         case (.weather, "cities"):
             WeatherStyle.layout(config) == WeatherStyle.citiesLayout
         case (.weather, "city"), (.weather, WeatherPanel.moreCitiesKey),
-             (.weather, WeatherPanel.showRainKey), (.weather, WeatherPanel.showIndicesKey):
+             (.weather, WeatherPanel.showRainKey), (.weather, WeatherPanel.showIndicesKey),
+             (.weather, WeatherTips.showKey):
             WeatherStyle.layout(config) != WeatherStyle.citiesLayout
         // 副标题只有“当前”有，天数只有“多日预报”有。
         case (.weather, WeatherStyle.captionKey):

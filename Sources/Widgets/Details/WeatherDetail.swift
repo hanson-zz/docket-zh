@@ -3,7 +3,8 @@ import AppKit
 
 /// 天气面板，320pt 宽、液态玻璃（跟随浅色/深色）。两个状态：
 ///
-/// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；当前温度大字、
+/// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；下面小熊猫说一句
+///   暖心提示（`WeatherTips` 里优先级最高的那句，可关）；当前温度大字、
 ///   天气和今天最高最低；下面分页（顶部分段，记住切到的那页）：今天是 2 小时
 ///   降水条和一句“约 40 分钟后有雨，持续半小时”，和风、湿度、日出、日落；指数是
 ///   生活指数三格（穿衣、紫外线、空气质量，可关）；逐小时是接下来 12 小时（横向
@@ -149,6 +150,15 @@ struct WeatherDetail: View {
     private var fahrenheit: Bool { config.bool("fahrenheit") }
     private var showRain: Bool { config.bool(WeatherPanel.showRainKey, default: true) }
     private var showIndices: Bool { config.bool(WeatherPanel.showIndicesKey, default: true) }
+    private var showTips: Bool { config.bool(WeatherTips.showKey, default: true) }
+
+    /// 暖心提示：当前城市最要紧的那一句（小熊猫说的）。拖逐小时预报时照旧说现在。
+    private var topTip: WeatherTips.Tip? {
+        guard showTips, !city.isEmpty, let weather = shownWeather else { return nil }
+        return WeatherTips.top(WeatherTipSource.input(weather: weather, nowcast: nowcast, aqi: aqi,
+                                                      forecast: forecast, now: context.now, zone: zone,
+                                                      fahrenheit: fahrenheit))
+    }
 
     /// 选中城市的坐标：第 1 个是共用的天气位置，其余是这里自己查到的。
     private var coordinate: WeatherService.Coordinate? {
@@ -239,6 +249,12 @@ struct WeatherDetail: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 header
+                // 暖心提示：顶上小熊猫说一句，换城市时跟着换。
+                if let tip = topTip {
+                    WeatherTipBubble(tip: tip)
+                        .id(tip.text)
+                        .transition(.opacity)
+                }
                 if city.isEmpty {
                     noPlace
                 } else if let weather = shownWeather {
@@ -1432,6 +1448,7 @@ struct WeatherDetail: View {
         let rows: [(String, String, Bool)] = [
             (tr("2 小时降水提示"), WeatherPanel.showRainKey, true),
             (tr("生活指数"), WeatherPanel.showIndicesKey, true),
+            (tr("暖心提示"), WeatherTips.showKey, true),
             (tr("温度用 °F"), "fahrenheit", false),
         ]
         return VStack(spacing: 0) {
