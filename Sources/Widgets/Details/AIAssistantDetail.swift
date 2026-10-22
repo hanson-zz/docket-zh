@@ -5,10 +5,10 @@ import UniformTypeIdentifiers
 /// AI 助手的面板：迷你提问，或者管理字牌。
 ///
 /// 提问：多行输入框，Enter 提交，Shift+Enter 换行，中文输入法选字时的
-/// Enter 只确认选字。下面选发给哪个服务（默认是蓝点那个）。服务正式支持
-/// 把问题带进网址的，主按钮是“打开并提问”；不支持的是“复制问题并打开”，
-/// 复制到剪贴板再打开服务，提示用户自己粘贴。这里不调用任何接口，也就不
-/// 显示“已发送”“已回答”之类的状态，回答在那个服务里看。
+/// Enter 只确认选字。下面选发给哪个服务（默认是蓝点那个）。主按钮的字很短：
+/// 装了 App 是“打开 豆包”（复制问题再开 App），没装是“去网页问”（能带问题的
+/// 带进网址，不能的先复制），API 方式是“发送”；具体会做什么写在下面的提示句里。
+/// App 方式不调用任何接口，也就不显示“已发送”“已回答”之类的状态，回答在那个服务里看。
 ///
 /// 两种模式用同一个高度：面板的大小在打开时量一次，之后切换模式不会重新量。
 struct AIAssistantDetail: View {
@@ -150,6 +150,7 @@ private struct AIAskView: View {
     var services: [AIService]
 
     @State private var targetID: String?
+    @State private var choosing = false
 
     private var state: AIPanelState { AIPanelState.shared }
 
@@ -174,26 +175,26 @@ private struct AIAskView: View {
             VStack(alignment: .leading, spacing: 10) {
                 input
                 promptBar
+                // 服务选择器占剩下的宽度（名字完整显示，太窄才截尾），右边两个按钮按内容定宽。
                 HStack(spacing: 8) {
                     picker
-                    Spacer(minLength: 0)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     shotButton
                     Button(action: submitFromButton) {
                         Text(buttonTitle)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(panelTint.ink(or: .white))
-                            .padding(.horizontal, 12)
+                            .lineLimit(1)
+                            .padding(.horizontal, 14)
                             .frame(height: 28)
-                            .background(Capsule().fill(panelTint.accent(or: Color(hex: AIGlyph.dotHex)).opacity(canSubmit ? 1 : 0.35)))
                     }
-                    .buttonStyle(.plain)
+                    // 可用：实心蓝（或卡片主题色）白字；空着时中性灰底 + 次级字色，见 PanelSolidButtonStyle。
+                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex)),
+                                                       ink: panelTint.ink(or: .white)))
+                    .fixedSize()
                     .disabled(!canSubmit)
-                    .help(targetMode == .api ? tr("在刘海对话里用 API 直接问 \(target?.title ?? "")")
-                          : targetMode == .web ? tr("复制问题，在刘海对话里打开 \(target?.title ?? "") 的网页")
-                          : target?.supportsAsk == true
-                          ? tr("在浏览器打开 \(target?.title ?? "")，问题会带过去")
-                          : tr("把问题复制到剪贴板，再打开 \(target?.title ?? "")"))
+                    .help(buttonHelp)
                     .accessibilityLabel(buttonTitle)
+                    .accessibilityHint(buttonHelp)
                 }
                 if let hint = state.hint(instance.id) {
                     Text(hint)
@@ -328,19 +329,12 @@ private struct AIAskView: View {
         SettingsWindow.shared.show(app: app, tab: "AI")
     }
 
+    /// 选发给哪个服务。不用 Menu：macOS 的 Menu 标签只取第一段文字，字牌里的
+    /// 「豆」被当成整个标题，后面的服务名丢了（真机截图）。改成按钮 + 弹出列表，
+    /// 标签照原样画，服务名完整显示，太窄时才截尾。
     private var picker: some View {
-        Menu {
-            ForEach(services) { service in
-                Button {
-                    targetID = service.id
-                } label: {
-                    if service.id == target?.id {
-                        Label(service.title, systemImage: "checkmark")
-                    } else {
-                        Text(service.title)
-                    }
-                }
-            }
+        Button {
+            choosing.toggle()
         } label: {
             HStack(spacing: 6) {
                 if let target {
@@ -348,16 +342,53 @@ private struct AIAskView: View {
                     Text(tr("发给 \(target.title)"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.panelSecondary)
             }
+            .frame(height: 28)
+            .contentShape(.rect)
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .popover(isPresented: $choosing, arrowEdge: .top) { serviceList }
+        .help(tr("选择提问的服务"))
         .accessibilityLabel(tr("选择提问的服务，当前是 \(target?.title ?? tr("无"))"))
+    }
+
+    private var serviceList: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(services) { service in
+                Button {
+                    targetID = service.id
+                    choosing = false
+                } label: {
+                    HStack(spacing: 8) {
+                        AIGlyph(initial: service.initial, size: 20, style: .panel)
+                        Text(service.title)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 12)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.panelPrimary)
+                            .opacity(service.id == target?.id ? 1 : 0)
+                    }
+                    .padding(.horizontal, 8)
+                    .frame(height: 28)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(service.title)
+                .accessibilityAddTraits(service.id == target?.id ? .isSelected : [])
+            }
+        }
+        .padding(6)
+        .frame(minWidth: 180)
     }
 
     private var empty: some View {
@@ -375,11 +406,25 @@ private struct AIAskView: View {
         target.map { AIChatCenter.shared.mode(for: $0) } ?? .jump
     }
 
+    /// 主按钮的字要短（「打开 豆包」「去网页问」「发送」），会做什么写在下面的提示句里。
     private var buttonTitle: String {
+        AIAsk.buttonTitle(mode: targetMode, service: target,
+                          appInstalled: target.map { AIServiceOpener.installedApp($0) != nil } ?? false)
+    }
+
+    /// 悬停说明和读屏提示：把按钮做什么说完整。
+    private var buttonHelp: String {
+        let name = target?.title ?? ""
         switch targetMode {
-        case .api: tr("在刘海里问")
-        case .web: tr("复制并在刘海打开")
-        case .jump: AIAsk.buttonTitle(for: target)
+        case .api: return tr("在刘海对话里用 API 直接问 \(name)")
+        case .web: return tr("复制问题，在刘海对话里打开 \(name) 的网页")
+        case .jump:
+            if let target, AIServiceOpener.installedApp(target) != nil {
+                return tr("复制问题，再打开 \(name) App")
+            }
+            return target?.supportsAsk == true
+                ? tr("在浏览器打开 \(name)，问题会带过去")
+                : tr("把问题复制到剪贴板，再打开 \(name)")
         }
     }
 

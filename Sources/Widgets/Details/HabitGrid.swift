@@ -318,13 +318,11 @@ struct HabitEditor: View {
                 } label: {
                     Text(isNew ? tr("添加") : tr("完成"))
                         .font(WidgetStyle.label(13))
-                        .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .frame(height: 28)
-                        .background(Capsule().fill(Color(hex: color.hex).opacity(canSave ? 0.9 : 0.3)))
-                        .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                // 还不能保存时中性灰底 + 次级字色，不再是淡色底压白字。
+                .buttonStyle(PanelSolidButtonStyle(fill: Color(hex: color.hex).opacity(0.9)))
                 .disabled(!canSave)
             }
         }

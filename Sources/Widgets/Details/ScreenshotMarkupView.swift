@@ -49,11 +49,9 @@ struct ScreenshotMarkupView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 8) {
-                bigButton(tr("存为新图"), solid: false) { saveCopy() }
-                bigButton(tr("拷贝"), solid: true) { copy() }
+                bigButton(tr("存为新图"), solid: false, enabled: base != nil) { saveCopy() }
+                bigButton(tr("拷贝"), solid: true, enabled: base != nil) { copy() }
             }
-            .disabled(base == nil)
-            .opacity(base == nil ? 0.45 : 1)
         }
         .task(id: url) { load() }
         .onChange(of: document) { _, _ in redraw() }
@@ -265,18 +263,31 @@ struct ScreenshotMarkupView: View {
         .glassPane(cornerRadius: 12)
     }
 
-    private func bigButton(_ title: String, solid: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(verbatim: title)
-                .font(.system(size: 15, weight: solid ? .bold : .semibold))
-                .foregroundStyle(solid ? palette.ink : .panelPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .background(Capsule().fill(solid ? palette.accent : .panelFill))
-                .overlay(Capsule().strokeBorder(Color.panelStroke.opacity(solid ? 0 : 1), lineWidth: 0.6))
-                .contentShape(Capsule())
+    /// 实心的「拷贝」用 PanelSolidButtonStyle：图还没载入时中性灰底 + 次级字色，
+    /// 不再是整排调淡后的淡色底；「存为新图」是玻璃按钮，禁用时照旧调淡。
+    @ViewBuilder
+    private func bigButton(_ title: String, solid: Bool, enabled: Bool,
+                           action: @escaping () -> Void) -> some View {
+        let label = Text(verbatim: title)
+            .font(.system(size: 15, weight: solid ? .bold : .semibold))
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+        if solid {
+            Button(action: action) { label }
+                .buttonStyle(PanelSolidButtonStyle(fill: palette.accent, ink: palette.ink))
+                .disabled(!enabled)
+        } else {
+            Button(action: action) {
+                label
+                    .foregroundStyle(.panelPrimary)
+                    .background(Capsule().fill(.panelFill))
+                    .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(!enabled)
+            .opacity(enabled ? 1 : 0.45)
         }
-        .buttonStyle(.plain)
     }
 
     private var discardBar: some View {

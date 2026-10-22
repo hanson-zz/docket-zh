@@ -110,12 +110,10 @@ struct OnboardingView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .foregroundStyle(.white)
-                .background(Color.accentColor.opacity(primaryEnabled ? 1 : 0.4),
-                            in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
-        .buttonStyle(.plain)
+        // 不能点时中性灰底 + 次级字色，不再是淡色底压白字。
+        .buttonStyle(PanelSolidButtonStyle(fill: Color.accentColor,
+                                           shape: RoundedRectangle(cornerRadius: 24, style: .continuous)))
         .disabled(!primaryEnabled)
         // 导览开着时回车留给导览卡片的“下一步”，不要直接翻到下一页。
         .keyboardShortcut(tourStop == nil ? KeyboardShortcut.defaultAction : nil)

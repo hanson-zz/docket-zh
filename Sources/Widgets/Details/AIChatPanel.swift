@@ -645,12 +645,11 @@ private struct AIChatInput: View {
             } label: {
                 Image(systemName: generating ? "stop.fill" : "arrow.up")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.panelOnPrimary)
                     .frame(width: 30, height: 30)
-                    .background(Circle().fill(.panelPrimary.opacity(generating || AIAsk.question(center.draft) != nil ? 1 : 0.35)))
-                    .contentShape(Circle())
             }
-            .buttonStyle(.plain)
+            // 能发或正在生成（停止键）时实心主文字色；空着时中性灰底 + 次级字色，不再是淡灰底压白箭头。
+            .buttonStyle(PanelSolidButtonStyle(fill: Color.panelPrimary, ink: Color.panelOnPrimary, shape: Circle(),
+                                               enabled: generating || AIAsk.question(center.draft) != nil))
             .accessibilityLabel(generating ? tr("停止生成") : tr("发送"))
         }
         .padding(.leading, 12)
@@ -791,15 +790,17 @@ private struct AIJumpPane: View {
                     guard !AskTextView.keyWindowIsComposing else { return }
                     center.jump()
                 } label: {
-                    Text(AIAsk.buttonTitle(for: service))
+                    // 字要短（「打开 豆包」「去网页问」），会做什么写在下面的提示句里。
+                    Text(AIAsk.buttonTitle(mode: .jump, service: service,
+                                           appInstalled: AIServiceOpener.installedApp(service) != nil))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
+                        .lineLimit(1)
+                        .padding(.horizontal, 14)
                         .frame(height: 28)
-                        .background(Capsule().fill(Color(hex: AIChatPanelView.solidBlueHex)
-                            .opacity(AIAsk.question(center.draft) != nil ? 1 : 0.35)))
                 }
-                .buttonStyle(.plain)
+                // 可用实心蓝白字；空着时中性灰底 + 次级字色（PanelSolidButtonStyle）。
+                .buttonStyle(PanelSolidButtonStyle(fill: Color(hex: AIChatPanelView.solidBlueHex)))
+                .fixedSize()
                 .disabled(AIAsk.question(center.draft) == nil)
             }
             Text(center.jumpHint ?? (AIServiceOpener.installedApp(service) != nil

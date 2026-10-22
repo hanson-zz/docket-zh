@@ -615,15 +615,12 @@ struct LunarDetail: View {
             Button { save() } label: {
                 Text(tr("保存"))
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(accentInk)
                     .padding(.horizontal, 15)
                     .frame(height: 28)
-                    .background(Capsule().fill(accent))
-                    .contentShape(.capsule)
             }
-            .buttonStyle(.plain)
+            // 还没写名字时中性灰底 + 次级字色，不再整体变淡。
+            .buttonStyle(PanelSolidButtonStyle(fill: accent, ink: accentInk))
             .disabled(!canSave)
-            .opacity(canSave ? 1 : 0.45)
             .help(canSave ? tr("保存") : tr("先写个名字"))
         }
 

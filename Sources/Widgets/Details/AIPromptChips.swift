@@ -121,13 +121,11 @@ struct AIPromptChipBar: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(.panelPrimary.opacity(enabled ? 0.85 : 0.35))
             .padding(.horizontal, 7)
             .frame(height: 22)
-            .background(Capsule().fill(.panelFill))
-            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        // 禁用（剪贴板里没有文字）时三级字色，浅色约 3.6:1，淡一档但认得出来。
+        .buttonStyle(PanelChipButtonStyle())
         .disabled(!enabled)
         .help(help)
         .accessibilityLabel(label)

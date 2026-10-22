@@ -1992,6 +1992,17 @@
         }
       }
     },
+    "去网页问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask on the Web"
+          }
+        }
+      }
+    },
     "发一个最小的请求，看密钥、地址和模型对不对。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2113,6 +2124,17 @@
         }
       }
     },
+    "复制问题，再打开 %@ App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the question, then open the %@ app"
+          }
+        }
+      }
+    },
     "密钥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2186,6 +2208,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore Original Name"
+          }
+        }
+      }
+    },
+    "打开 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open App"
           }
         }
       }
@@ -17794,17 +17827,6 @@
         }
       }
     },
-    "在刘海里问" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ask in Notch"
-          }
-        }
-      }
-    },
     "在卡片上" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18571,17 +18593,6 @@
         }
       }
     },
-    "复制并在刘海打开" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy and Open in Notch"
-          }
-        }
-      }
-    },
     "复制结果 %@ %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18611,17 +18622,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy Diagnostics"
-          }
-        }
-      }
-    },
-    "复制问题并打开" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy Question and Open"
           }
         }
       }
@@ -25689,17 +25689,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open it to see unread mail here. Dockling never opens it on its own."
-          }
-        }
-      }
-    },
-    "打开并提问" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open and Ask"
           }
         }
       }
@@ -50598,6 +50587,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose Shortcuts"
+          }
+        }
+      }
+    },
+    "选择提问的服务" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a service to ask"
           }
         }
       }

@@ -524,8 +524,27 @@ public enum AIAsk {
     }
 
     /// 主按钮上的字。
-    public static func buttonTitle(for service: AIService?) -> String {
-        service?.supportsAsk == true ? tr("打开并提问") : tr("复制问题并打开")
+    /// 主按钮上的字：要短，具体会做什么写在下面的提示句里，不重复。
+    /// API 方式「发送」；App 方式装了 App 时「打开 豆包」；其余（网页方式、
+    /// 没装 App 走浏览器）「去网页问」。
+    public static func buttonTitle(mode: AIOpenMode, service: AIService?, appInstalled: Bool) -> String {
+        switch mode {
+        case .api: return tr("发送")
+        case .web: return tr("去网页问")
+        case .jump:
+            guard let service, appInstalled else { return tr("去网页问") }
+            return appButtonTitle(service)
+        }
+    }
+
+    /// 服务名超过这么多个字时按钮写「打开 App」，免得把按钮撑得太宽。
+    public static let maxButtonNameLength = 10
+
+    /// 「打开 豆包」；名字太长（自定义服务）时「打开 App」。
+    public static func appButtonTitle(_ service: AIService) -> String {
+        let name = service.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= maxButtonNameLength else { return tr("打开 App") }
+        return tr("打开 \(name)")
     }
 
     /// 做完之后面板上的一句话。只说做了什么，不假装已经发送或已经回答。

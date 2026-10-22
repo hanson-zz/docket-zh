@@ -266,7 +266,6 @@ final class AIServicesTests: XCTestCase {
         XCTAssertFalse(url.absoluteString.contains("&b"), "& 要编码，不然问题被截断")
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }
         XCTAssertEqual(query?.value, "什么是 a&b?\n第二行")
-        XCTAssertEqual(AIAsk.buttonTitle(for: chatgpt), "打开并提问")
 
         let perplexity = try XCTUnwrap(AIServices.builtIn("perplexity"))
         guard case .openWithQuestion(let p) = AIAsk.plan("swift", service: perplexity) else {
@@ -278,9 +277,30 @@ final class AIServicesTests: XCTestCase {
     func testServicesWithoutATemplateCopyThenOpen() throws {
         let deepseek = try XCTUnwrap(AIServices.builtIn("deepseek"))
         XCTAssertEqual(AIAsk.plan("  你好  ", service: deepseek), .copyThenOpen("你好"))
-        XCTAssertEqual(AIAsk.buttonTitle(for: deepseek), "复制问题并打开")
-        XCTAssertEqual(AIAsk.buttonTitle(for: nil), "复制问题并打开")
         XCTAssertEqual(AIAsk.hint(after: .copyThenOpen("你好"), service: deepseek), "已复制，到 DeepSeek 里粘贴即可。")
+    }
+
+    /// 主按钮的字要短：装了 App「打开 豆包」，没装或网页方式「去网页问」，API「发送」。
+    func testAskButtonTitleIsShort() throws {
+        let doubao = try XCTUnwrap(AIServices.builtIn("doubao"))
+        let chatgpt = try XCTUnwrap(AIServices.builtIn("chatgpt"))
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: true), "打开 豆包")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: true), "打开 ChatGPT")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: false), "去网页问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: false), "去网页问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: nil, appInstalled: true), "去网页问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .web, service: doubao, appInstalled: true), "去网页问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .api, service: doubao, appInstalled: false), "发送")
+        for service in AIServices.builtIn {
+            let title = AIAsk.buttonTitle(mode: .jump, service: service, appInstalled: true)
+            XCTAssertLessThanOrEqual(title.count, 3 + AIAsk.maxButtonNameLength, service.id)
+            XCTAssertFalse(title.contains("复制"), service.id)
+        }
+        var long = doubao
+        long.title = "一个名字特别特别长的自定义服务"
+        XCTAssertEqual(AIAsk.appButtonTitle(long), "打开 App")
+        long.title = "   "
+        XCTAssertEqual(AIAsk.appButtonTitle(long), "打开 App")
     }
 
     func testAVeryLongQuestionIsCopiedInsteadOfStuffedIntoAURL() throws {
