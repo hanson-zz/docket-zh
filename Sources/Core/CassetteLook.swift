@@ -16,6 +16,15 @@ public enum MusicCard {
     /// 中卡，卡带外观只在这一档显示。
     public static let medium = "medium"
 
+    /// 中卡之前存的卡片：存过 `mini` 却没有 `layout` 的，补上完整，好让样式菜单认出来。
+    /// 什么都没存的空配置不补。
+    public static func legacyResolved(_ config: WidgetConfig) -> WidgetConfig {
+        guard config.values[layoutKey] == nil, config.values["mini"] != nil else { return config }
+        var copy = config
+        copy.set(layoutKey, .string(wide))
+        return copy
+    }
+
     /// 中卡：不是迷你，且 `layout` 为 medium。
     public static func isMedium(_ config: WidgetConfig) -> Bool {
         !config.bool("mini") && config.string(layoutKey, default: wide) == medium

@@ -824,13 +824,12 @@ public enum WidgetCatalog {
     /// matching on layout alone made them indistinguishable - the style
     /// picker could neither tell them apart nor show the right one.
     ///
-    /// A key the widget predates is read as the catalog's default, the same
-    /// way the tile draws it (`WidgetTile` merges the defaults): a Now Playing
-    /// card saved before it had a `layout` is the wide card, and says so.
+    /// 正在播放的卡片在有中卡之前没存 `layout`，按完整读（`MusicCard.legacyResolved`），
+    /// 样式菜单才认得出是完整还是迷你。别的键不补默认值，空配置照旧谁都不匹配。
     public static func variantTitle(matching config: WidgetConfig,
                                     kind: WidgetKind) -> String? {
         guard let entry = entry(kind) else { return nil }
-        let resolved = config.merging(defaults: entry.defaults)
+        let resolved = kind == .music ? MusicCard.legacyResolved(config) : config
         return entry.variants.first { variant in
             variant.overrides.allSatisfy { resolved.values[$0.key] == $0.value }
         }?.title

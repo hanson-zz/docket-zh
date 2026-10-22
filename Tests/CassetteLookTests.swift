@@ -171,6 +171,7 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(false)]), kind: .music), "完整")
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(true)]), kind: .music), "迷你")
         XCTAssertFalse(MusicCard.isMedium(WidgetConfig(["mini": .bool(false)])))
+        XCTAssertNil(WidgetCatalog.variantTitle(matching: WidgetConfig(), kind: .music), "空配置照旧谁都不匹配")
         // 库里默认放的还是完整。
         XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.first?.title, "完整")
     }
