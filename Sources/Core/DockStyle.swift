@@ -189,6 +189,8 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
     case downloads
     /// 文件暂存里没有文件。
     case fileShelf
+    /// 日历面板：那天没有定时日程。
+    case calendar
     case habit, anniversary, alarm, radio, podcast, bookmarks, screenshots, photos, basket
 
     /// 资源名，不带扩展名。
@@ -199,6 +201,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .clipboard: "pet-panda-rest"
         case .downloads: "pet-panda-rest"
         case .fileShelf: "pet-panda-idle"
+        case .calendar: "pet-panda-rest"
         case .habit: "pet-panda-cheer"
         case .anniversary: "pet-panda-eat"
         case .alarm: "pet-panda-rest"
@@ -233,7 +236,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .screenshots: "#64D2FF"
         case .photos: "#FFD60A"
         case .basket: "#30D158"
-        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf, .calendar: nil
         }
     }
 
@@ -252,7 +255,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .screenshots: "viewfinder"
         case .photos: "photo"
         case .basket: "leaf.fill"
-        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf, .calendar: nil
         }
     }
 
@@ -268,7 +271,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .screenshots: tr("截的图会出现在这里")
         case .photos: tr("选个文件夹，轮流播放")
         case .basket: tr("喝杯水，第一片就来了")
-        case .todo, .todoDone, .clipboard, .downloads, .fileShelf: nil
+        case .todo, .todoDone, .clipboard, .downloads, .fileShelf, .calendar: nil
         }
     }
 
@@ -306,6 +309,7 @@ public enum PandaEmpty: String, CaseIterable, Sendable {
         case .clipboard: compact ? tr("空") : tr("还没拷贝过东西")
         case .downloads: compact ? tr("空") : tr("下载文件夹是空的")
         case .fileShelf: compact ? tr("拖入") : tr("把文件拖到这里")
+        case .calendar: compact ? tr("空闲") : tr("这天没有日程")
         case .habit: compact ? tr("无习惯") : tr("还没有习惯")
         case .anniversary: compact ? tr("纪念日") : tr("记住一个好日子")
         case .alarm: compact ? tr("无闹钟") : tr("还没有闹钟")

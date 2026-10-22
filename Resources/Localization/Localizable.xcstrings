@@ -111,6 +111,17 @@
         }
       }
     },
+    "%@ %@ %@ 个日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@, %@ events"
+          }
+        }
+      }
+    },
     "%@ %@ 个日程" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1889,6 +1900,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ ml"
+          }
+        }
+      }
+    },
+    "%@ 点到 %@ 点空闲，点按展开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free from %@:00 to %@:00, click to expand"
           }
         }
       }
@@ -8023,6 +8045,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No events today"
+          }
+        }
+      }
+    },
+    "今天没有日程，安排点什么吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing scheduled today"
           }
         }
       }
@@ -27545,6 +27578,17 @@
         }
       }
     },
+    "新建日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Event"
+          }
+        }
+      }
+    },
     "新西伯利亚" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -41583,6 +41627,17 @@
         }
       }
     },
+    "空闲 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free for %@ hr"
+          }
+        }
+      }
+    },
     "突尼斯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48758,6 +48813,17 @@
         }
       }
     },
+    "这天没有日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing scheduled this day"
+          }
+        }
+      }
+    },
     "这张图读不出来" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50873,6 +50939,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Divide"
+          }
+        }
+      }
+    },
+    "除了全天日程，没有别的安排" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only all-day events"
           }
         }
       }

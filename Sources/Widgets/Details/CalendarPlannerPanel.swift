@@ -4,13 +4,16 @@ import SwiftUI
 
 /// 日历面板，日历和一周日程两种小组件共用（卡片各管各的，面板是这一套）。
 ///
-/// 浏览：头上大日期和「10 月 · 今天 4 个日程」，一周条（每天下面圆点是日程数，点哪天看哪天），
-/// 那天的时间轴（空档 30 分钟以上写「专注一下」，点了开专注计时），「接下来」，底下「写一句」。
+/// 浏览：头上大日期和「10 月 · 今天 4 个日程」，一周条（数字下面一行农历小字：节气、休 / 班、初一写月名，
+/// 英文界面不写；再下面圆点是日程数，点哪天看哪天），全天日程放顶上，那天的时间轴（连着 2 小时以上
+/// 没日程的整点折成一条「空闲 3 小时」，点了展开，现在线那一段不折；空档 30 分钟以上写「专注一下」，
+/// 点了开专注计时；一天没有定时日程时不画轴，给小熊猫空状态），「接下来」，底下「写一句」。
 /// 新建：标题、时间预设（30 分钟 / 1 小时 / 2 小时 / 全天）、日历、冲突提示，写回系统日历。
 /// 点开日程：拖两端改时间，或删除，都写回系统日历；重复日程只动这一次。
 ///
 /// 要完整的日历读写权限；没有时照旧只给「允许访问」或「打开系统设置」，不画编出来的日程。
-/// 逻辑（空档、预设、冲突、拖动吸附、一句话解析）在 Core 的 `CalendarPlanner`、`CalendarSentence`。
+/// 逻辑（空档、预设、冲突、拖动吸附、一句话解析、折叠、农历小字）在 Core 的 `CalendarPlanner`、
+/// `CalendarSentence`、`AgendaFold`、`WeekLunar`。
 struct CalendarPlannerPanel: View {
     @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
@@ -23,6 +26,8 @@ struct CalendarPlannerPanel: View {
     static let coralInk = Color(hex: "#330B05")
     private static let okGreen = Color(hex: "#5BD98A")
     private static let warnRed = Color(hex: "#FF6B5A")
+    /// 调休上班的「班」。
+    private static let makeupOrange = Color(hex: "#FF9F0A")
 
     private var accent: Color { panelTint.accent(or: Self.coral) }
     private var ink: Color { panelTint.ink(or: Self.coralInk) }
@@ -38,6 +43,10 @@ struct CalendarPlannerPanel: View {
     @State private var mode: Mode = .browse
     @State private var sentence = ""
     @State private var notice: String?
+    /// 时间轴上点开过的折叠段（起点整点）；换一天就清空。
+    @State private var openFolds: Set<Int> = []
+    /// 一周条的宽度，按它决定农历小字写几种。先按 320 宽面板的内容区算，免得第一帧跳一下。
+    @State private var stripWidth: CGFloat = 288
 
     // 新建
     @State private var draftTitle = ""
@@ -87,9 +96,11 @@ struct CalendarPlannerPanel: View {
         .onChange(of: instance.id) { _, _ in
             picked = nil
             selected = nil
+            openFolds = []
             mode = .browse
             load()
         }
+        .onChange(of: selected) { _, _ in openFolds = [] }
         .onChange(of: calendar.startOfDay(for: context.now)) { _, _ in load() }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
     }
@@ -109,8 +120,14 @@ struct CalendarPlannerPanel: View {
         header(day: day, count: onDay.count, now: now)
         if granted {
             weekStrip(now: now, day: day)
-            allDayRow(onDay.filter(\.isAllDay), now: now)
-            timeline(onDay.filter { !$0.isAllDay }, day: day, now: now)
+            let allDay = onDay.filter(\.isAllDay)
+            let timed = onDay.filter { !$0.isAllDay }
+            allDayRow(allDay, now: now)
+            if timed.isEmpty {
+                emptyDay(day: day, now: now, hasAllDay: !allDay.isEmpty)
+            } else {
+                timeline(timed, day: day, now: now)
+            }
             upcoming(now: now)
             sentenceField
             if let notice { noticeLine(notice) }
@@ -190,6 +207,10 @@ struct CalendarPlannerPanel: View {
 
     private func weekStrip(now: Date, day: Date) -> some View {
         let days = WeekAgenda.days(shown(now: now), now: now, includeAllDay: showsAllDay, calendar: calendar)
+        let density = WeekLunar.density(columnWidth: Double(stripWidth / 7), english: L10n.isEnglish)
+        let lunar = WeekLunar.labels(for: days.map(\.date), density: density,
+                                     holidays: HolidayService.shared.known, calendar: calendar)
+        let lunarRow = density != .hidden
         return HStack(spacing: 0) {
             ForEach(days) { item in
                 let isSelected = item.date == day
@@ -204,6 +225,9 @@ struct CalendarPlannerPanel: View {
                             .font(.system(size: 15, weight: item.isToday ? .bold : .medium, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(item.isToday ? accent.panelReadable : .panelPrimary)
+                        if lunarRow {
+                            lunarText(lunar[item.date])
+                        }
                         HStack(spacing: 2.6) {
                             ForEach(0..<CalendarPlanner.dots(item.count), id: \.self) { _ in
                                 Circle().fill(.panelSecondary).frame(width: 4.4, height: 4.4)
@@ -211,7 +235,7 @@ struct CalendarPlannerPanel: View {
                         }
                         .frame(height: 5)
                     }
-                    .frame(width: 38, height: 58)
+                    .frame(width: 38, height: lunarRow ? 74 : 58)
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -226,9 +250,37 @@ struct CalendarPlannerPanel: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(tr("\(WeekAgenda.dayTitle(item)) \(item.count) 个日程"))
+                .accessibilityLabel(lunar[item.date].map { tr("\(WeekAgenda.dayTitle(item)) \($0.text) \(item.count) 个日程") }
+                                    ?? tr("\(WeekAgenda.dayTitle(item)) \(item.count) 个日程"))
             }
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            if abs(width - stripWidth) > 0.5 { stripWidth = width }
+        }
+    }
+
+    /// 数字下面那行农历：节气用强调色，休绿、班橙，月名和日名淡一些。没有字的那天留空，行高不变。
+    private func lunarText(_ label: WeekLunar.Label?) -> some View {
+        let style = label?.style ?? .day
+        let color: Color = switch style {
+        case .term: accent.panelReadable
+        case .holiday: Self.okGreen.panelReadable
+        case .makeup: Self.makeupOrange.panelReadable
+        case .month, .day: .panelSecondary
+        }
+        let weight: Font.Weight = switch style {
+        case .term, .holiday, .makeup, .month: .semibold
+        case .day: .regular
+        }
+        return Text(label?.text ?? " ")
+            .font(.system(size: 13, weight: weight))
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .fixedSize()
+            .frame(height: 16)
+            .accessibilityHidden(true)
     }
 
     // MARK: 全天
@@ -266,20 +318,30 @@ struct CalendarPlannerPanel: View {
     private func timeline(_ timed: [WeekEntry], day: Date, now: Date) -> some View {
         let hours = CalendarPlanner.hourRange(timed, day: day, now: now, calendar: calendar)
         let span = hours.upperBound - hours.lowerBound
-        // 9 到 18 点每小时 30pt；范围更大时压一点，最少 20pt，面板不至于太长。
-        let hourHeight: CGFloat = span <= 10 ? 30 : max(20, 300 / CGFloat(span))
-        let height = CGFloat(span) * hourHeight
         let spans = timed.map { CalendarSpan(id: $0.id, start: $0.start, end: $0.end) }
+        // 连着空着的整点折成一条；照常画的小时不超过 10 个时每小时 30pt，多了压一点，最少 20pt。
+        let segments = AgendaFold.segments(spans, hours: hours, day: day, now: now, expanded: openFolds, calendar: calendar)
+        let drawn = segments.filter { $0.kind == .hours }.reduce(0) { $0 + $1.hours }
+        let hourHeight: CGFloat = drawn <= 10 ? 30 : max(20, 300 / CGFloat(drawn))
+        let axis = AgendaAxis(segments: segments, hourHeight: Double(hourHeight))
+        let height = CGFloat(axis.height)
         let blocks = DayTimeline.blocks(spans, hours: hours, day: day, now: now, maxLanes: 2, calendar: calendar)
-        let gaps = context.isPreview ? [] : CalendarPlanner.gaps(timed, day: day, hours: hours, now: now, calendar: calendar)
+        let gaps: [(gap: DateInterval, shown: DateInterval)] = context.isPreview ? [] :
+            CalendarPlanner.gaps(timed, day: day, hours: hours, now: now, calendar: calendar).compactMap { gap in
+                AgendaFold.visible(gap, in: segments, day: day, calendar: calendar).map { (gap: gap, shown: $0) }
+            }
         let byID = Dictionary(timed.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // `DayTimeline` 给的是整条轴上的比例，换回当天第几小时再交给折叠后的轴。
+        let hourAt: (Double) -> Double = { Double(hours.lowerBound) + $0 * Double(span) }
+        let tops = axis.tops
+        let folds = segments.indices.filter { segments[$0].kind == .free }
         let axisX: CGFloat = 40
 
         return GeometryReader { geo in
             let width = geo.size.width - axisX
             ZStack(alignment: .topLeading) {
-                ForEach(Array(hours), id: \.self) { hour in
-                    let y = CGFloat(hour - hours.lowerBound) * hourHeight
+                ForEach(axis.labelHours, id: \.self) { hour in
+                    let y = CGFloat(axis.y(hour: Double(hour)))
                     Text(String(hour))
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
@@ -292,10 +354,16 @@ struct CalendarPlannerPanel: View {
                         .offset(x: axisX, y: y)
                 }
 
-                ForEach(Array(gaps.enumerated()), id: \.offset) { _, gap in
-                    let y0 = CGFloat(CalendarPlanner.offset(gap.start, hours: hours, day: day, calendar: calendar)) * hourHeight
-                    let y1 = CGFloat(CalendarPlanner.offset(gap.end, hours: hours, day: day, calendar: calendar)) * hourHeight
-                    gapBlock(gap, now: now, height: max(0, y1 - y0 - 6))
+                ForEach(folds, id: \.self) { index in
+                    foldRow(segments[index])
+                        .frame(width: width - 2, height: CGFloat(AgendaFold.foldHeight) - 6)
+                        .offset(x: axisX + 2, y: CGFloat(tops[index]) + 3)
+                }
+
+                ForEach(Array(gaps.enumerated()), id: \.offset) { _, item in
+                    let y0 = CGFloat(axis.y(item.shown.start, day: day, calendar: calendar))
+                    let y1 = CGFloat(axis.y(item.shown.end, day: day, calendar: calendar))
+                    gapBlock(item.gap, now: now, height: max(0, y1 - y0 - 6))
                         .frame(width: width - 2)
                         .offset(x: axisX + 2, y: y0 + 3)
                 }
@@ -303,8 +371,9 @@ struct CalendarPlannerPanel: View {
                 ForEach(blocks, id: \.id) { block in
                     if let entry = byID[block.id] {
                         let laneWidth = (width - 2) / CGFloat(max(1, block.lanes))
-                        let y0 = CGFloat(block.from) * height
-                        let h = max(16, CGFloat(block.to - block.from) * height - 3)
+                        let y0 = CGFloat(axis.y(hour: hourAt(block.from)))
+                        let y1 = CGFloat(axis.y(hour: hourAt(block.to)))
+                        let h = max(16, y1 - y0 - 3)
                         eventBlock(entry, height: h, narrow: block.lanes > 1, past: block.isPast)
                             .frame(width: laneWidth - (block.lanes > 1 ? 2 : 0), height: h)
                             .offset(x: axisX + 2 + CGFloat(block.lane) * laneWidth, y: y0 + 1.5)
@@ -312,7 +381,7 @@ struct CalendarPlannerPanel: View {
                 }
 
                 if let fraction = DayTimeline.nowFraction(now, hours: hours, day: day, calendar: calendar) {
-                    let y = CGFloat(fraction) * height
+                    let y = CGFloat(axis.y(hour: hourAt(fraction)))
                     Rectangle()
                         .fill(.panelPrimary)
                         .frame(width: width + 2, height: 1.6)
@@ -325,6 +394,42 @@ struct CalendarPlannerPanel: View {
             }
         }
         .frame(height: height + 8)
+    }
+
+    /// 折起来的空闲段：一条细行「空闲 3 小时」，点了展开成照常的小时。
+    private func foldRow(_ segment: AgendaFold.Segment) -> some View {
+        Button {
+            openFolds.insert(segment.id)
+        } label: {
+            HStack(spacing: 6) {
+                Rectangle().fill(.panelSeparator).frame(height: 0.5)
+                Text(AgendaFold.freeTitle(segment))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelTertiary)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5)
+            }
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Capsule().fill(.panelFill))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(tr("展开"))
+        .accessibilityLabel(AgendaFold.freeAccessibility(segment))
+    }
+
+    /// 一天没有定时日程：不画整条空轴，给一句小熊猫空状态，按钮直接新建。
+    private func emptyDay(day: Date, now: Date, hasAllDay: Bool) -> some View {
+        PandaEmptyState(empty: .calendar, title: tr("新建日程"), panel: true,
+                        message: AgendaFold.emptyLine(day: day, now: now, hasAllDay: hasAllDay, calendar: calendar)) {
+            guard !context.isPreview else { return }
+            startNew(day: day, now: Date())
+        }
     }
 
     private func eventBlock(_ entry: WeekEntry, height: CGFloat, narrow: Bool, past: Bool) -> some View {
