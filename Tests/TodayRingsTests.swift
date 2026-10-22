@@ -285,4 +285,64 @@ final class TodayRingsTests: XCTestCase {
         // 没有记录的日子照读数画。
         XCTAssertEqual(TodayRings.weekRings(readings, record: nil), readings)
     }
+
+    // MARK: Card (58pt)
+
+    func testCardCentreLeavesRoomForThirteenPointPercent() {
+        let card = TodayRings.hole(diameter: TodayRings.cardDiameter, line: TodayRings.cardLine, gap: TodayRings.cardGap)
+        let column = TodayRings.hole(diameter: TodayRings.columnDiameter, line: TodayRings.cardLine,
+                                     gap: TodayRings.cardGap)
+        XCTAssertEqual(card, 24)
+        XCTAssertGreaterThanOrEqual(column, 22)
+        XCTAssertLessThanOrEqual(TodayRings.cardDiameter, 58, "扩展栏卡片内容高度 58")
+        XCTAssertLessThanOrEqual(TodayRings.columnDiameter + 20, 76, "竖排列宽 76 减两边内边距")
+        XCTAssertLessThan(TodayRings.columnDiameter, TodayRings.columnHeight)
+        XCTAssertEqual(TodayRings.hole(diameter: 20, line: 5, gap: 1), 0, "放不下时不出负数")
+    }
+
+    func testCardWidths() {
+        XCTAssertEqual(TodayRings.tileWidth(WidgetConfig()), 78, "小卡只放三环：58 的方形加两边内边距")
+        let medium = WidgetConfig([TodayRings.cardKey: .string(TodayRingsCard.medium.rawValue)])
+        XCTAssertEqual(TodayRings.tileWidth(medium), 240)
+    }
+
+    func testCentrePercentIsNilWhenFullAndNeverRoundsToHundred() {
+        XCTAssertNil(TodayRings.centrePercent([water(2500), habit(3, of: 3), focus(55)]), "全满中心画竹叶")
+        XCTAssertEqual(TodayRings.centrePercent([water(2500), habit(2, of: 3), focus(35)]), 79)
+        // 两项满、一项 99.6%：四舍五入是 100，但没全满，写 99。
+        XCTAssertEqual(TodayRings.centrePercent([water(2500), habit(3, of: 3), focus(498, goal: 500)]), 99)
+        XCTAssertEqual(TodayRings.centrePercent([off[.water]!, off[.habit]!, off[.focus]!]), 0)
+    }
+
+    func testCardLinesAreShort() {
+        XCTAssertEqual(TodayRings.cardLine(water(1250, goal: 2000)), "喝水 5/8 杯")
+        XCTAssertEqual(TodayRings.cardLine(focus(35)), "专注 35/50 分")
+        XCTAssertEqual(TodayRings.cardLine(habit(2, of: 3)), "习惯 2/3")
+        XCTAssertEqual(TodayRings.cardLine(off[.water]!), "喝水 未计入")
+        XCTAssertEqual(TodayRings.cardLine(off[.focus]!), "专注 未计入")
+        XCTAssertEqual(TodayRings.cardLine(off[.habit]!), "习惯 未计入")
+        for p in [water(1250), focus(35), habit(2, of: 3)] {
+            XCTAssertLessThanOrEqual(TodayRings.cardLine(p).count, 12, TodayRings.cardLine(p))
+        }
+    }
+
+    // MARK: 竹篮样式面板的喝水单位
+
+    func testBasketWaterDetailFollowsTheWaterUnit() {
+        let today = day(2026, 10, 15, hour: 15)
+        var config = WidgetConfig(["goal": .number(2000)])
+        let days = WaterIntake.logging(.water, amount: 1200, in: [], goal: 2000, now: today, calendar: calendar)
+        WaterIntake.store(days, in: &config, now: today, calendar: calendar)
+
+        let ml = PerfectDay.water([config], on: today, today: today, calendar: calendar)
+        XCTAssertEqual(ml.detail, WaterIntake.tally(total: 1200, goal: 2000, ounces: false))
+        XCTAssertTrue(ml.detail.hasSuffix(WaterIntake.unitLabel(ounces: false)))
+
+        config.values["unit"] = .string("oz")
+        let oz = PerfectDay.water([config], on: today, today: today, calendar: calendar)
+        XCTAssertEqual(oz.detail, WaterIntake.tally(total: 1200, goal: 2000, ounces: true))
+        XCTAssertEqual(oz.detail, TodayRings.note(oz), "竹篮面板和三环面板同一种写法")
+        XCTAssertFalse(oz.detail.contains(WaterIntake.unitLabel(ounces: false)))
+        XCTAssertTrue(oz.detail.hasSuffix(WaterIntake.unitLabel(ounces: true)))
+    }
 }

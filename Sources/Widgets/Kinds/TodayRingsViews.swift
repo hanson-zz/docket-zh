@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 今日三环的图形：三条同心、约 270° 开口朝下的弧，从外到内喝水、专注、习惯
 /// （`TodayRings.order`）。起点在左下，顺时针绕到右下；起点上画小图标（水滴、
-/// 计时、勾）。超过 100% 的部分同色加深一档从起点再绕第二圈，端头带一圈投影，
+/// 计时、勾；扩展栏卡片 icons 为 false，不画）。超过 100% 的部分同色加深一档从起点再绕第二圈，端头带一圈投影，
 /// 看起来压在第一圈上。不计入的一项只画一条虚线轨道。颜色见 `PerfectDayItem`。
 struct TodayRingsGraphic: View {
     var items: [PerfectDayProgress]
@@ -11,12 +11,15 @@ struct TodayRingsGraphic: View {
     var line: CGFloat
     var gap: CGFloat
     var icons = true
+    /// 扩展栏卡片：轨道底色深一点，小尺寸下三条环也看得出整圈。
+    var strongTrack = false
 
     var body: some View {
         ZStack {
             ForEach(Array(TodayRings.order.enumerated()), id: \.element) { index, item in
                 let centre = diameter - line - CGFloat(index) * 2 * (line + gap)
-                TodayRingArc(item: item, progress: items.first { $0.item == item }, line: line, icons: icons)
+                TodayRingArc(item: item, progress: items.first { $0.item == item }, line: line, icons: icons,
+                             strongTrack: strongTrack)
                     .frame(width: max(1, centre), height: max(1, centre))
             }
         }
@@ -39,6 +42,7 @@ struct TodayRingArc: View {
     var progress: PerfectDayProgress?
     var line: CGFloat
     var icons: Bool
+    var strongTrack = false
 
     @Environment(\.colorScheme) private var scheme
 
@@ -59,7 +63,7 @@ struct TodayRingArc: View {
                 // 轨道：主色淡淡一层；不计入时是虚线。
                 Circle()
                     .trim(from: 0, to: Self.span)
-                    .stroke(base.opacity(takes ? (scheme == .dark ? 0.26 : 0.2) : 0.14),
+                    .stroke(base.opacity(takes ? trackOpacity : 0.14),
                             style: takes ? round : StrokeStyle(lineWidth: line * 0.55, lineCap: .round,
                                                                dash: [max(1, line * 0.5), max(2, line * 0.9)]))
                     .rotationEffect(.degrees(TodayRings.startAngle))
@@ -96,6 +100,11 @@ struct TodayRingArc: View {
         .accessibilityHidden(true)
     }
 
+    private var trackOpacity: Double {
+        if strongTrack { return scheme == .dark ? 0.34 : 0.26 }
+        return scheme == .dark ? 0.26 : 0.2
+    }
+
     /// 起点（左下 135°）在 frame 里的位置。
     private func point(r: CGFloat, in size: CGSize) -> CGPoint {
         let a = TodayRings.startAngle * .pi / 180
@@ -122,8 +131,40 @@ struct TodayRingBadge: View {
     }
 }
 
-/// 扩展栏上的三环卡片：小卡三环 + 百分比和「还差 N 环」，中卡三环 + 右边三项数字，
-/// 竖排三环 + 一行百分比。
+/// 三环中心：没全满时是总百分比（13pt，最多 99%），全满时是那一档的小竹叶。
+/// 百分比按中心空圆的宽度挑最宽放得下的字宽，再放不下就只写数字，不缩到 13pt 以下。
+struct TodayRingsCentre: View {
+    var items: [PerfectDayProgress]
+    /// 最内环里空出的圆的直径。
+    var hole: CGFloat
+
+    var body: some View {
+        if let percent = TodayRings.centrePercent(items) {
+            ViewThatFits(in: .horizontal) {
+                figure("\(percent)%", width: .standard)
+                figure("\(percent)%", width: .condensed)
+                figure("\(percent)%", width: .compressed)
+                figure("\(percent)", width: .compressed)
+            }
+            .frame(width: max(1, hole - 2))
+        } else {
+            LeafGlyph(tier: PerfectDay.record(items, key: "").tier, size: max(12, hole - 4))
+        }
+    }
+
+    private func figure(_ text: String, width: Font.Width) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: 13, weight: .bold).width(width))
+            .foregroundStyle(WidgetStyle.primary)
+            .monospacedDigit()
+            .lineLimit(1)
+            .fixedSize()
+    }
+}
+
+/// 扩展栏上的三环卡片，内容高度 58：小卡只有三环（中心百分比或竹叶），
+/// 中卡左边三环、右边三行「喝水 5/8 杯」，竖排三环。卡片上不画起点小图标，
+/// 面板里的大三环才画。
 struct TodayRingsTileBody: View {
     var items: [PerfectDayProgress]
     var card: TodayRingsCard
@@ -131,91 +172,56 @@ struct TodayRingsTileBody: View {
 
     var body: some View {
         if vertical {
-            column
+            rings(diameter: CGFloat(TodayRings.columnDiameter))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if card == .medium {
             medium
         } else {
-            small
+            rings(diameter: CGFloat(TodayRings.cardDiameter))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    private var graphic: some View {
-        TodayRingsGraphic(items: items, diameter: 54, line: 5.5, gap: 1.5)
-    }
-
-    private var small: some View {
-        HStack(spacing: 10) {
-            graphic
-            VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: "\(TodayRings.percent(items))%")
-                    .font(WidgetStyle.value(22))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .monospacedDigit()
-                Text(TodayRings.cardCaption(items))
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(WidgetStyle.secondary)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            Spacer(minLength: 0)
+    private func rings(diameter: CGFloat) -> some View {
+        let line = CGFloat(TodayRings.cardLine)
+        let gap = CGFloat(TodayRings.cardGap)
+        let hole = CGFloat(TodayRings.hole(diameter: Double(diameter), line: Double(line), gap: Double(gap)))
+        return ZStack {
+            TodayRingsGraphic(items: items, diameter: diameter, line: line, gap: gap,
+                              icons: false, strongTrack: true)
+            TodayRingsCentre(items: items, hole: hole)
+                .accessibilityHidden(true)
         }
-        .accessibilityElement(children: .combine)
+        .frame(width: diameter, height: diameter)
     }
 
     private var medium: some View {
-        HStack(spacing: 10) {
-            graphic
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 12) {
+            rings(diameter: CGFloat(TodayRings.cardDiameter))
+            VStack(alignment: .leading, spacing: 2) {
                 ForEach(TodayRings.order, id: \.self) { item in
                     if let p = items.first(where: { $0.item == item }) { row(p) }
                 }
             }
-            .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
         }
     }
 
     private func row(_ p: PerfectDayProgress) -> some View {
-        let figure = TodayRings.figure(p)
         let takes = p.mark.takesPart
-        return HStack(spacing: 5) {
-            TodayRingBadge(item: p.item, size: 14, dimmed: !takes)
-            Text(p.item.title)
+        return HStack(spacing: 6) {
+            Circle()
+                .fill(Color(hex: p.item.hex).opacity(takes ? 1 : 0.4))
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
+            Text(TodayRings.cardLine(p))
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(takes ? WidgetStyle.primary : WidgetStyle.secondary)
-            if takes {
-                Text(verbatim: "\(TodayRings.percent(p))%")
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .monospacedDigit()
-            }
-            Spacer(minLength: 4)
-            if !figure.value.isEmpty {
-                Text(figure.value)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.panelText(Color(hex: p.item.hex)))
-                    .monospacedDigit()
-            }
-            Text(figure.unit)
-                .font(WidgetStyle.caption(13))
-                .foregroundStyle(WidgetStyle.secondary)
-                .monospacedDigit()
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
-        .frame(height: 17)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var column: some View {
-        VStack(spacing: 4) {
-            graphic
-            Text(verbatim: "\(TodayRings.percent(items))%")
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(WidgetStyle.primary)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: true, vertical: false)
         }
+        .frame(height: 16)
         .accessibilityElement(children: .combine)
     }
 }

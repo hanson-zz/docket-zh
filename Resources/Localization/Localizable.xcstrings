@@ -6245,6 +6245,28 @@
         }
       }
     },
+    "专注 %@/%@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus %@/%@ min"
+          }
+        }
+      }
+    },
+    "专注 未计入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus off"
+          }
+        }
+      }
+    },
     "专注一下" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7110,6 +7132,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ habits"
+          }
+        }
+      }
+    },
+    "习惯 %@/%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habits %@/%@"
+          }
+        }
+      }
+    },
+    "习惯 未计入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habits off"
           }
         }
       }
@@ -11994,6 +12038,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ cups of water"
+          }
+        }
+      }
+    },
+    "喝水 %@/%@ 杯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water %@/%@ cups"
+          }
+        }
+      }
+    },
+    "喝水 未计入" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water off"
           }
         }
       }

@@ -84,13 +84,28 @@ public enum TodayRings {
 
     public static func isRings(_ config: WidgetConfig) -> Bool { style(config) == .rings }
 
-    /// 扩展栏横排时卡片的宽：小卡 168，中卡 320。高度和别的卡片一样。
+    /// 扩展栏横排时卡片的宽：小卡只有三环，按 58 的方形加两边各 10 的内边距；
+    /// 中卡是三环加右边三行「喝水 5/8 杯」，文字区按英文最长的一行
+    /// （"Focus 120/240 min"、"Water off"）留够。高度和别的卡片一样，内容 58。
     public static func tileWidth(_ config: WidgetConfig) -> Double {
-        card(config) == .medium ? 320 : 168
+        card(config) == .medium ? 240 : 78
     }
 
-    /// 竖排时的高度：三环加一行百分比。
-    public static let columnHeight: Double = 88
+    /// 竖排时的高度：三环（中心是百分比）上下各留一点。
+    public static let columnHeight: Double = 72
+
+    /// 扩展栏卡片里三环的尺寸：外径 58（内容高度），线宽 5，环间距 1，
+    /// 最内环中间留出约 24 的圆给 13pt 的百分比或竹叶。
+    public static let cardDiameter = 58.0
+    public static let cardLine = 5.0
+    public static let cardGap = 1.0
+    /// 竖排列宽 76 减两边各 10 的内边距：竖排的三环外径 56。
+    public static let columnDiameter = 56.0
+
+    /// 最内环里面空出来的圆的直径：外径减去三条线宽的两倍和两道间距的两倍。
+    public static func hole(diameter: Double, line: Double, gap: Double) -> Double {
+        max(0, diameter - 6 * line - 4 * gap)
+    }
 
     // MARK: Laps
 
@@ -142,6 +157,13 @@ public enum TodayRings {
         guard !taking.isEmpty else { return 0 }
         let sum = taking.reduce(0.0) { $0 + min(1, $1.ratio) }
         return Int((sum / Double(taking.count) * 100).rounded())
+    }
+
+    /// 卡片中心写的百分比：全满时为 nil（中心画竹叶）。没全满时最多写 99，
+    /// 免得四舍五入成 100% 却没有竹叶（比如两项满、一项 99.6%）。
+    public static func centrePercent(_ items: [PerfectDayProgress]) -> Int? {
+        if isFull(items) { return nil }
+        return min(99, percent(items))
     }
 
     // MARK: Full
@@ -290,6 +312,27 @@ public enum TodayRings {
             return ("\(progress.amount)", tr("/ \(progress.goal) 分钟"))
         case .habit:
             return ("\(progress.amount)", tr("/ \(progress.goal) 项"))
+        }
+    }
+
+    /// 中卡右边的一行，短写："喝水 5/8 杯"、"专注 35/50 分"、"习惯 2/3"；
+    /// 不计入时 "喝水 未计入"。英文用短词（"Water 5/8 cups"、"Focus off"）。
+    public static func cardLine(_ progress: PerfectDayProgress) -> String {
+        guard progress.mark.takesPart else {
+            switch progress.item {
+            case .water: return tr("喝水 未计入")
+            case .focus: return tr("专注 未计入")
+            case .habit: return tr("习惯 未计入")
+            }
+        }
+        switch progress.item {
+        case .water:
+            let cups = shownCups(progress)
+            return tr("喝水 \(cups.cups)/\(cups.goal) 杯")
+        case .focus:
+            return tr("专注 \(progress.amount)/\(progress.goal) 分")
+        case .habit:
+            return tr("习惯 \(progress.amount)/\(progress.goal)")
         }
     }
 

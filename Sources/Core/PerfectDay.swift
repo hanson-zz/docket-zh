@@ -192,7 +192,7 @@ public struct PerfectDayProgress: Equatable, Hashable, Sendable, Identifiable {
     public var mark: PerfectDayMark
     /// 0...1 toward met.
     public var fraction: Double
-    /// "1200/2000 毫升", "2/3 项", "30/50 分钟", or why it does not count.
+    /// "1200 / 2000 毫升"（喝水小组件设成盎司时按盎司）, "2/3 项", "30/50 分钟", or why it does not count.
     public var detail: String
     /// 今日三环用的原始数：喝了几毫升、打了几项卡、专注几分钟。不计入时是 0。
     public var amount: Int = 0
@@ -364,7 +364,7 @@ public enum PerfectDay {
         let day = best.day
         return PerfectDayProgress(item: .water, mark: day.isMet ? .met : .missed,
                                   fraction: WaterIntake.progress(total: day.total, goal: day.goal),
-                                  detail: tr("\(day.total)/\(day.goal) 毫升"),
+                                  detail: WaterIntake.tally(total: day.total, goal: day.goal, ounces: best.ounces),
                                   amount: day.total, goal: day.goal, cupSize: best.cup, ounces: best.ounces)
     }
 
