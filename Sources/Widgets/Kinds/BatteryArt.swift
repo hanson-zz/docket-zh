@@ -609,7 +609,7 @@ struct BatteryDayChart: View {
                             path.move(to: CGPoint(x: 0, y: y(mark)))
                             path.addLine(to: CGPoint(x: size.width, y: y(mark)))
                         }
-                        .stroke(.white.opacity(mark == 50 ? 0.10 : 0.16),
+                        .stroke(Color.panelSeparator.opacity(mark == 50 ? 0.8 : 1),
                                 style: StrokeStyle(lineWidth: 0.5, dash: mark == 50 ? [3, 3] : []))
                     }
                     ForEach(Array(spans.enumerated()), id: \.offset) { _, interval in
@@ -621,18 +621,18 @@ struct BatteryDayChart: View {
                     ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                         let points = segment.map { CGPoint(x: x($0.date), y: y($0.percent)) }
                         if points.count == 1, let point = points.first {
-                            Circle().fill(.white).frame(width: 3, height: 3)
+                            Circle().fill(Color.panelPrimary).frame(width: 3, height: 3)
                                 .offset(x: point.x - 1.5, y: point.y - 1.5)
                         } else {
                             Path { path in path.addLines(points) }
-                                .stroke(.white.opacity(0.9),
+                                .stroke(Color.panelPrimary.opacity(0.9),
                                         style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
                         }
                     }
                     // Now.
                     if now >= start, now < end {
                         Rectangle()
-                            .fill(.white.opacity(0.35))
+                            .fill(Color.panelTertiary)
                             .frame(width: 1, height: size.height)
                             .offset(x: x(now))
                     }
@@ -646,7 +646,7 @@ struct BatteryDayChart: View {
                 }
             }
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.55))
+            .foregroundStyle(.panelTertiary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("今天的电量曲线")
