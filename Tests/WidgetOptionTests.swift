@@ -80,7 +80,7 @@ final class WidgetOptionTests: XCTestCase {
             .notes: ["text", "color", "font", "fontSize"],
             .music: ["mini", "previous", "next", "backward", "forward",
                      "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers",
-                     "qqmusic", "autoSwitch", "pinned"],
+                     "qqmusic", "autoSwitch", "pinned", "cassette"],
             .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart", "unit"],
@@ -276,6 +276,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
         // 固定的来源在面板的来源列表里选，设置页不列。
         "music.pinned",
+        // 卡带外观只画在中卡上（MusicCard），完整和迷你不列。
+        "music.cassette",
         "search.engine",
         "weather.city", "weather.cities",
         // 副标题只有“当前”有，天数只有“多日预报”有（WeatherStyle）。

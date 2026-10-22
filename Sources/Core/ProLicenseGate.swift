@@ -18,6 +18,9 @@ import Foundation
 /// - 收音机整种免费，三款复古皮肤（木壳电子管、晶体管便携、数码卡座）和五款新外观
 ///   （烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）是 Pro，
 ///   没解锁时画回经典的半圆表盘，不盖遮罩；配置照旧存着皮肤，解锁或试用时自动回来。
+/// - 正在播放整种免费，中卡的三种卡带外观（磁带、随身听、收录机）是 Pro：设置里
+///   照样列出并标 Pro，选时弹付费墙；已经选了的没解锁时画回默认样式，不盖遮罩，
+///   配置照旧存着，解锁或试用时自动回来，见 `musicCassette`。
 /// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
 ///   超过 3 个的不删数据，超出的只读带小锁；近七天报告是 Pro。
 /// - 录音整种免费，转文字、裁剪和编辑是 Pro：没解锁时录音和列表照常，点这几个
@@ -153,6 +156,11 @@ public enum ProLicenseGate {
         let skin = RadioSkin.stored(config)
         guard !unlocked, skin.isPro else { return skin }
         return .classic
+    }
+
+    /// 正在播放卡片实际画哪种外观：只有横排的中卡画卡带，没解锁时退回默认。
+    public static func musicCassette(config: WidgetConfig, unlocked: Bool, vertical: Bool) -> CassetteLook {
+        CassetteLook.shown(config: config, unlocked: unlocked, vertical: vertical)
     }
 
     // MARK: 习惯打卡

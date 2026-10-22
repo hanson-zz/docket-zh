@@ -19835,13 +19835,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、正在播放 3 种卡带外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character and 8 Pro Radio looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks and 3 Now Playing cassette looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
           }
         }
       }
@@ -56519,6 +56519,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow Notifications"
+          }
+        }
+      }
+    },
+    "磁带" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tape"
+          }
+        }
+      }
+    },
+    "随身听" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portable Player"
+          }
+        }
+      }
+    },
+    "收录机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boombox"
           }
         }
       }

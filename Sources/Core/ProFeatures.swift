@@ -17,7 +17,8 @@ import Foundation
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
 ///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
 ///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
-///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）。喝水卡片
+///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）、正在播放
+///   中卡的三种卡带外观（`cassette` 为磁带、随身听、收录机；默认免费，见 `CassetteLook`）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 /// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
 /// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
@@ -177,6 +178,11 @@ public enum ProFeatures {
         case .radio:
             // 收音机整种免费，经典免费，其余 8 款外观是 Pro。
             if case .string(let raw) = overrides[RadioSkin.key] { return RadioSkin(stored: raw).isPro }
+        case .music:
+            // 正在播放的三种卡带外观是 Pro，默认样式免费。
+            if case .string(let raw) = overrides[CassetteLook.key] {
+                return (CassetteLook(rawValue: raw) ?? .plain).isPro
+            }
         case .water:
             // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。
             if case .string(let layout) = overrides[WaterLayout.key] { return layout == WaterLayout.character.rawValue }

@@ -168,8 +168,14 @@ public enum WidgetCatalog {
                            MusicSourceSwitch.autoKey: .bool(true), MusicSourceSwitch.pinnedKey: .string(""),
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
-                           "browsers": .bool(true)]),
-              variants: [(tr("完整"), ["mini": .bool(false)]), (tr("迷你"), ["mini": .bool(true)])],
+                           "browsers": .bool(true),
+                           // 卡片三档：完整、迷你、中卡（MusicCard）。没存 layout 的老卡片按完整读。
+                           MusicCard.layoutKey: .string(MusicCard.wide),
+                           // 中卡的外观：默认免费，磁带、随身听、收录机是 Pro（CassetteLook）。
+                           CassetteLook.key: .string(CassetteLook.fallback.rawValue)]),
+              variants: [(tr("完整"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.wide)]),
+                         (tr("迷你"), ["mini": .bool(true), MusicCard.layoutKey: .string(MusicCard.wide)]),
+                         (tr("中"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .battery, name: tr("电池"), category: .system,
@@ -721,6 +727,9 @@ public enum WidgetCatalog {
         // 固定的来源在面板的来源列表里点选，设置页不给文字框。
         case (.music, MusicSourceSwitch.pinnedKey):
             false
+        // 卡带外观只画在中卡上，完整和迷你不列。
+        case (.music, CassetteLook.key):
+            MusicCard.isMedium(config)
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"
@@ -814,11 +823,16 @@ public enum WidgetCatalog {
     /// "Numbers + graph" share a layout and differ only by `chart`, so
     /// matching on layout alone made them indistinguishable - the style
     /// picker could neither tell them apart nor show the right one.
+    ///
+    /// A key the widget predates is read as the catalog's default, the same
+    /// way the tile draws it (`WidgetTile` merges the defaults): a Now Playing
+    /// card saved before it had a `layout` is the wide card, and says so.
     public static func variantTitle(matching config: WidgetConfig,
                                     kind: WidgetKind) -> String? {
         guard let entry = entry(kind) else { return nil }
+        let resolved = config.merging(defaults: entry.defaults)
         return entry.variants.first { variant in
-            variant.overrides.allSatisfy { config.values[$0.key] == $0.value }
+            variant.overrides.allSatisfy { resolved.values[$0.key] == $0.value }
         }?.title
     }
 
@@ -955,7 +969,9 @@ public enum WidgetCatalog {
             }
         case .notes: return CGSize(width: 160, height: 100)
         case .music:
-            return cfg.bool("mini") ? CGSize(width: 64, height: 62) : CGSize(width: 264, height: 132)
+            if cfg.bool("mini") { return CGSize(width: 64, height: 62) }
+            // 中卡和 Codex 用量的中卡一样宽（404），卡带外观只在这一档。
+            return MusicCard.isMedium(cfg) ? CGSize(width: 404, height: 104) : CGSize(width: 264, height: 132)
         case .battery:
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.

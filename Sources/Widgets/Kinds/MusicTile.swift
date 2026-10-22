@@ -19,6 +19,14 @@ struct MusicTile: View {
     private var config: WidgetConfig { instance.config }
     private var isMini: Bool { config.bool("mini") }
 
+    /// 中卡的外观：磁带、随身听、收录机只画在横排的中卡上，没解锁 Pro 时退回默认
+    /// （`ProLicenseGate.musicCassette`）。竖排的中卡回退成默认的竖条样式，不缩放机身。
+    /// 预览按存着的外观画，静止不转。
+    private var cassette: CassetteLook {
+        ProLicenseGate.musicCassette(config: config, unlocked: context.isPreview || ProAccess.isUnlocked,
+                                     vertical: context.position.isVertical)
+    }
+
     /// Sources the user allows, in preference order. 加了 QQ 音乐；顺序和读法在
     /// Core 的 `MusicSource.enabled`，面板读同一份。
     private var sources: [MusicSource] { MusicSource.enabled(in: config) }
@@ -27,8 +35,8 @@ struct MusicTile: View {
 
     /// The artwork, when there is one to stand on.
     private var cover: NSImage? {
-        // 迷你只有播放键和小竖条，不铺封面。
-        guard !context.isPreview, !isMini else { return nil }
+        // 迷你只有播放键和小竖条，不铺封面；卡带外观把封面贴在磁带上。
+        guard !context.isPreview, !isMini, cassette == .plain else { return nil }
         return playing?.artwork
     }
 
@@ -116,8 +124,15 @@ struct MusicTile: View {
         // 38 points of picture competing with the text beside it. Behind
         // everything it is the record you are listening to rather than a
         // stamp of it.
-        WidgetSurface(image: cover) {
-            content
+        Group {
+            if cassette != .plain, let deck = cassetteTrack {
+                CassetteCard(look: cassette, track: deck, actions: cassetteActions,
+                             visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+            } else {
+                WidgetSurface(image: cover) {
+                    content
+                }
+            }
         }
         .onAppear {
             guard !context.isPreview else { return }
@@ -163,6 +178,36 @@ struct MusicTile: View {
         } else {
             idle
         }
+    }
+
+    // MARK: Cassette, 404×58
+
+    /// 卡带卡片上的这首歌。没在播放时机身照样摆着，写「未在播放」，转轮停在开头；
+    /// 要授权时回退默认卡片，那里有「连接」按钮。
+    private var cassetteTrack: CassetteTrack? {
+        if let track = playing {
+            return CassetteTrack(title: track.title, artist: track.artist, isPlaying: track.isPlaying,
+                                 progress: track.progress, elapsed: track.elapsed, duration: track.duration,
+                                 artwork: context.isPreview ? nil : track.artwork, sourceIcon: sourceIcon(track),
+                                 showsTime: track.duration > 0)
+        }
+        guard !needsPermission else { return nil }
+        return CassetteTrack(title: tr("未在播放"), artist: "", isPlaying: false, progress: 0,
+                             elapsed: 0, duration: 0, artwork: nil, sourceIcon: nil, showsTime: false)
+    }
+
+    /// 机身上的三个键调用和完整卡片一样的媒体控制；网页视频只有播放暂停，
+    /// 设置里关掉的上一首、下一首也按不动。预览里都不动。
+    private var cassetteActions: CassetteActions {
+        guard !context.isPreview, let track = playing else { return CassetteActions() }
+        let source = track.source
+        let skips = track.hasSkipControls && source != nil
+        return CassetteActions(
+            previous: skips && config.bool("previous", default: true)
+                ? { if let source { MusicService.shared.previous(on: source) } } : nil,
+            toggle: { toggle(track) },
+            next: skips && config.bool("next", default: true)
+                ? { if let source { MusicService.shared.next(on: source) } } : nil)
     }
 
     // MARK: Mini, 64×62
