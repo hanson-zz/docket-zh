@@ -8,7 +8,8 @@ import SwiftUI
 /// 「谁在用网」前 5 个 App 和各自的上下行（系统自带 nettop 读，只在面板开着时读，
 /// 读不了就整块不显示）；「今天」累计下载和上传（码头开着时累计，零点清零）。
 ///
-/// 卡片是 Wi-Fi 圆环外观时，标题下多一行信号（圆环、强度、连接速率），和原来一样。
+/// 卡片是 Wi-Fi 圆环外观时，标题下多一块「信号大环」：104pt 的环按卡片选的样式
+/// （经典或数字）画，右边是强度大字、「-52 dBm · 63%」和「连接 866 Mbps」。
 /// 卡片设成只看下载或只看上传时，面板也只说那一个方向。
 struct NetworkDetail: View {
     var instance: WidgetInstance
@@ -37,7 +38,7 @@ struct NetworkDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header
-                if let wifi = wifiStyle { wifiRow(wifi) }
+                if let wifi = wifiStyle { signalHero(wifi) }
                 headline
                 if window >= 2 { history }
                 if preview || top.available { whoSection }
@@ -153,41 +154,48 @@ struct NetworkDetail: View {
         }
     }
 
-    // MARK: Wi-Fi 圆环外观多一行信号
+    // MARK: Wi-Fi 圆环外观：顶部信号大环
 
     private var wifiStyle: WifiRingStyle? {
         WifiRingStyle.shown(layout: instance.config.string("layout", default: "speed"),
                             unlocked: ProAccess.isUnlocked || preview)
     }
 
-    private func wifiRow(_ style: WifiRingStyle) -> some View {
+    /// 大环的直径（效果图 104pt）。
+    private static let heroRing: CGFloat = 104
+
+    private func signalHero(_ style: WifiRingStyle) -> some View {
         let rssi = preview ? -52 : WifiMetrics.shared.rssi
         let rate = preview ? 866 : WifiMetrics.shared.rate
         let reading = WifiReading(rssi: rssi)
-        return HStack(spacing: 12) {
-            WifiRingView(style: style, reading: reading, diameter: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: reading.label)
-                    .font(.system(size: 15, weight: .bold))
+        let summary = WifiSignalSummary(rssi: rssi, rate: rate)
+        return HStack(spacing: 16) {
+            WifiRingView(style: style, reading: reading, diameter: Self.heroRing)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: summary.label)
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(.panelPrimary)
-                Text(verbatim: wifiDetail(rssi: rssi, rate: rate, reading: reading))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.panelSecondary)
-                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(15.0 / 24)
+                Group {
+                    // 没连上时只留「未连接」一个词。
+                    if let level = summary.level { Text(verbatim: level) }
+                    if let link = summary.link { Text(verbatim: link) }
+                }
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(13.0 / 15)
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
         }
-        .padding(10)
-        .background(pane(0.06))
-    }
-
-    private func wifiDetail(rssi: Int?, rate: Double?, reading: WifiReading) -> String {
-        guard let rssi else { return tr("Wi-Fi 信号") }
-        var parts = ["\(rssi) dBm", "\(reading.percent)%"]
-        if let rate { parts.append(tr("连接 \(Int(rate.rounded())) Mbps")) }
-        return parts.joined(separator: " · ")
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(pane(0.06, radius: 16))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: 此刻

@@ -430,8 +430,8 @@ final class ProFeaturesTests: XCTestCase {
     func testPaywallCountsComeFromTheLists() {
         XCTAssertEqual(ProFeatures.liquidKinds.count, 8)
         XCTAssertEqual(Set(ProFeatures.liquidKinds).count, ProFeatures.liquidKinds.count, "液态清单不重复")
-        // 4 款表盘 + 3 个角色 + 3 种 Wi-Fi + 3 种电池 + 6 种底板配色。
-        XCTAssertEqual(ProFeatures.exclusiveStyleCount, 19)
+        // 4 款表盘 + 3 个角色 + 1 种 Wi-Fi（数字）+ 3 种电池 + 6 种底板配色。
+        XCTAssertEqual(ProFeatures.exclusiveStyleCount, 17)
         XCTAssertEqual(ProFeatures.proTools.count, 5)
     }
 }

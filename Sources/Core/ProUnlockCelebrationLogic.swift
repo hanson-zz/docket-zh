@@ -205,7 +205,7 @@ public enum ProUnlockStyle: String, CaseIterable, Sendable {
     case clockFaces
     /// 喝水的企鹅、水獭、章鱼角色。
     case characters
-    /// 数字、点状、细线 Wi-Fi 和像素电池等电池外观。
+    /// 数字 Wi-Fi 和像素电池等电池外观。
     case wifiBatteryLooks
     /// 小组件自定义颜色和渐变背景。
     case customTint

@@ -29,19 +29,15 @@ struct WifiRingView: View {
         colors: [Color(red: 0.42, green: 0.36, blue: 1.0), Color(red: 0.2, green: 0.8, blue: 0.85)],
         center: .center, startAngle: .degrees(0), endAngle: .degrees(270))
 
-    private var lineWidth: CGFloat {
-        switch style {
-        case .thin: max(1.5, diameter * 0.035)
-        case .dotted: max(2, diameter * 0.06)
-        default: max(3, diameter * 0.08)
-        }
-    }
+    private var lineWidth: CGFloat { max(3, diameter * 0.08) }
 
-    private var stroke: StrokeStyle {
-        style == .dotted
-            ? StrokeStyle(lineWidth: lineWidth, lineCap: .round, dash: [0.1, lineWidth * 1.8])
-            : StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-    }
+    private var stroke: StrokeStyle { StrokeStyle(lineWidth: lineWidth, lineCap: .round) }
+
+    /// 数字款中央的数字：约直径的 0.3，卡片小环里也不小于 13pt。
+    private var numberSize: CGFloat { max(13, diameter * 0.3) }
+
+    /// 数字款的图标让位给数字，缩到约直径的 0.16；经典款照旧 0.3。
+    private var glyphSize: CGFloat { diameter * (style == .numeric ? 0.16 : 0.3) }
 
     var body: some View {
         ZStack {
@@ -56,19 +52,24 @@ struct WifiRingView: View {
                 .rotationEffect(.degrees(135))
                 .animation(.easeOut(duration: 0.5), value: reading.percent)
 
-            VStack(spacing: diameter * 0.04) {
+            VStack(spacing: style == .numeric ? 0 : diameter * 0.04) {
                 if style == .numeric {
                     Text(reading.rssi == nil ? "--" : "\(reading.percent)")
-                        .font(.system(size: diameter * 0.17, weight: .semibold, design: .rounded))
+                        .font(.system(size: numberSize, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(WidgetStyle.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(min(1, 13 / numberSize))
+                        // 三位数（100）也收在环里，不顶到环线。
+                        .frame(maxWidth: diameter * 0.68)
                 }
                 Image(systemName: reading.rssi == nil ? "wifi.slash" : "wifi",
                       variableValue: reading.rssi == nil ? nil : Double(reading.percent) / 100)
-                    .font(.system(size: diameter * (style == .numeric ? 0.22 : 0.3), weight: .semibold))
+                    .font(.system(size: glyphSize, weight: .semibold))
                     .foregroundStyle(reading.rssi == nil ? WidgetStyle.secondary : WidgetStyle.primary)
             }
-            .offset(y: -diameter * 0.04)
+            // 数字款整组往上提一点，图标底边离下面的四个圆点留出空隙。
+            .offset(y: -diameter * (style == .numeric ? 0.07 : 0.04))
 
             HStack(spacing: diameter * 0.05) {
                 ForEach(0..<4, id: \.self) { index in

@@ -436,6 +436,8 @@ public struct WidgetInstance: Codable, Hashable, Identifiable, Sendable {
             case .weather: config = WeatherStyle.migrating(stored)
             // 静音默认快捷键从 ⌥⌘M 改成 ⌃⌥⌘M，还存着旧默认的老卡片跟着换。
             case .microphone: config = MicPrivacySettings.migratingMuteKey(stored)
+            // Wi-Fi 四款并成两款：点状、细线读成经典。
+            case .network: config = WifiRingStyle.migrating(stored)
             default: config = stored
             }
         } else if raw == WaterIntake.legacyHydrationKind {

@@ -32293,13 +32293,13 @@
         }
       }
     },
-    "数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池" : {
+    "数字 Wi-Fi；像素电池、能量粒子、小熊猫抱电池" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Numbers, Dots and Thin bars Wi-Fi; Pixel battery, Energy particles, Red panda hug"
+            "value" : "Numbers Wi-Fi; Pixel battery, Energy particles, Red panda hug"
           }
         }
       }
@@ -39786,17 +39786,6 @@
         }
       }
     },
-    "点状" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dots"
-          }
-        }
-      }
-    },
     "点缩略图直接进标注" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44006,17 +43995,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mix: %@"
-          }
-        }
-      }
-    },
-    "细线" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thin bars"
           }
         }
       }

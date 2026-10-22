@@ -23,7 +23,7 @@ private struct ProPerk: Identifiable {
             ProPerk(id: "faces", symbol: "clock.fill", title: tr("专属表盘和角色"),
                     detail: tr("时钟的霓虹、实景、液晶表盘和翻页的大号卡片；企鹅、水獭、章鱼三个角色（柴犬、橘猫在喝水里累计达标 3 天、7 天免费解锁）")),
             ProPerk(id: "looks", symbol: "battery.100percent.bolt", title: tr("Wi-Fi 和电池外观"),
-                    detail: tr("数字、点状、细线 Wi-Fi；像素电池、能量粒子、小熊猫抱电池")),
+                    detail: tr("数字 Wi-Fi；像素电池、能量粒子、小熊猫抱电池")),
             ProPerk(id: "colors", symbol: "paintpalette.fill", title: tr("专属配色和样式"),
                     detail: tr("小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、正在播放 3 种卡带外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）")),
             ProPerk(id: "tools", symbol: "wand.and.stars", title: tr("Pro 工具"),

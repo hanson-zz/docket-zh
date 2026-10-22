@@ -8,7 +8,7 @@ import Foundation
 /// - 原来的赞助者专属样式：时钟的霓虹、实景、液晶（原简约）表盘和翻页的
 ///   “大号带时分秒”卡片（原极简），清单在 `ClockStyles`；企鹅、水獭、章鱼
 ///   三个角色（喝水的柴犬、橘猫改为累计达标解锁，电子宠物整种是 Pro），网络
-///   活动的数字、点状、细线 Wi-Fi，电池的像素电池、能量粒子、小熊猫抱电池。
+///   活动的数字 Wi-Fi（点状、细线已并入免费的经典），电池的像素电池、能量粒子、小熊猫抱电池。
 /// - 整种是 Pro 的小组件，见 `proKinds`。
 /// - 快速开关里的截图识字、二维码、演示模式、只锁键盘、低电量模式。
 /// - 所有小组件的“液态”外观（`layout` 或 `look` 为 liquid）。
@@ -77,9 +77,9 @@ public enum ProFeatures {
         .battery, .system, .timer, .progress, .water, .aiUsage, .perfectDay, .slacker,
     ]
 
-    /// 原来的赞助者专属外观一共几种，付费墙和官网的“19 种专属外观”从这里数：
+    /// 原来的赞助者专属外观一共几种，付费墙和官网的“17 种专属外观”从这里数：
     /// 时钟的 Pro 表盘和 Pro 选项值（霓虹、实景、液晶，翻页的大号带时分秒卡片）、
-    /// 企鹅水獭章鱼三个角色、三种 Wi-Fi、三种电池外观、六种扩展栏底板配色。
+    /// 企鹅水獭章鱼三个角色、数字 Wi-Fi、三种电池外观、六种扩展栏底板配色。
     public static var exclusiveStyleCount: Int {
         let faces = ClockStyles.all.filter(\.isPro).count
             + ClockStyles.allOptions.reduce(0) { $0 + $1.proValues.count }

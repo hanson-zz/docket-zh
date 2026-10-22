@@ -53,7 +53,7 @@ public enum WidgetCatalog {
         isSupporterOnly(overrides)
     }
 
-    /// 网络活动's four Wi-Fi rings, one variant each.
+    /// 网络活动's two Wi-Fi rings (经典 and 数字), one variant each.
     private static let wifiVariants: [(title: String, overrides: [String: WidgetConfig.Value])] =
         WifiRingStyle.allCases.map { (title: "Wi-Fi \($0.title)", overrides: ["layout": .string($0.rawValue)]) }
 
