@@ -187,9 +187,9 @@ private struct AIAskView: View {
                             .padding(.horizontal, 14)
                             .frame(height: 28)
                     }
-                    // 可用：实心蓝（或卡片主题色）白字；空着时中性灰底 + 次级字色，见 PanelSolidButtonStyle。
-                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex)),
-                                                       ink: panelTint.ink(or: .white)))
+                    // 可用：实心蓝白字；设了主题色按 PanelButtonLook.solid(for:) 配（白字不够就加深，
+                    // 太浅的改深色字），对比度不低于 4.5。空着时中性灰底 + 次级字色。
+                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
                     .fixedSize()
                     .disabled(!canSubmit)
                     .help(buttonHelp)
