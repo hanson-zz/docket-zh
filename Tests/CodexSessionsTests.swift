@@ -187,6 +187,27 @@ final class CodexSessionsTests: XCTestCase {
         XCTAssertNil(CodexSessionList.lead([]))
     }
 
+    func testOddNumbersInTheLogDoNotCrash() {
+        // "nan"、"inf"、超大的数：读成没有，而不是在 Int(_:) 里崩掉。
+        XCTAssertNil(CodexUsageParser.number("nan"))
+        XCTAssertNil(CodexUsageParser.number("inf"))
+        XCTAssertNil(CodexUsageParser.number("1e400"))
+        XCTAssertEqual(CodexUsageParser.number("374.92"), 374.92)
+        let tail = log([
+            line("event_msg", ["type": "token_count", "info": ["total_token_usage": ["total_tokens": "nan"]]]),
+            line("event_msg", ["type": "token_count", "info": ["total_token_usage": ["total_tokens": 1e300]]]),
+        ])
+        XCTAssertNil(CodexRollout.summary(inTail: tail).totalTokens)
+        let t0 = now.addingTimeInterval(-600)
+        let data = log([
+            line("event_msg", ["type": "task_started"], at: t0),
+            line("event_msg", ["type": "task_complete", "duration_ms": "inf"], at: t0.addingTimeInterval(60)),
+            line("event_msg", ["type": "task_started"], at: t0.addingTimeInterval(100)),
+            line("event_msg", ["type": "task_complete", "duration_ms": 1e300], at: t0.addingTimeInterval(130)),
+        ])
+        XCTAssertEqual(CodexRollout.activeSeconds(inLog: data) ?? 0, 90, accuracy: 0.01)
+    }
+
     // MARK: 统计
 
     func testActiveSecondsAddsTurnsAndSkipsTheOpenOne() {

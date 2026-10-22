@@ -74,6 +74,37 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertEqual(CassetteMotion.angle(t: .infinity, degreesPerSecond: 120), 0)
     }
 
+    func testSpinKeepsTurningSmoothlyAcrossASpeedChange() {
+        var spin = CassetteMotion.Spin(phase: 10)
+        XCTAssertEqual(spin.angle(at: 1000, degreesPerSecond: 120), 10, accuracy: 1e-9)
+        let before = spin.angle(at: 1001, degreesPerSecond: 120)
+        XCTAssertEqual(before, 130, accuracy: 1e-9)
+        // 换档那一刻角度不变，之后按新转速走。
+        XCTAssertEqual(spin.angle(at: 1001, degreesPerSecond: 240), before, accuracy: 1e-9)
+        XCTAssertEqual(spin.angle(at: 1002, degreesPerSecond: 240), 10, accuracy: 1e-9)
+    }
+
+    func testSpinRestsWhilePausedAndResumesFromThere() {
+        var spin = CassetteMotion.Spin()
+        _ = spin.angle(at: 50, degreesPerSecond: 90)
+        _ = spin.angle(at: 51, degreesPerSecond: 90)
+        spin.pause(at: 51.5)
+        XCTAssertEqual(spin.restingAngle, 135, accuracy: 1e-9)
+        // 停了很久再播放：从停下的角度接着转，不会一下跳到 t × 转速。
+        XCTAssertEqual(spin.angle(at: 900, degreesPerSecond: 90), 135, accuracy: 1e-9)
+        XCTAssertEqual(spin.angle(at: 901, degreesPerSecond: 90), 225, accuracy: 1e-9)
+    }
+
+    func testSpinIgnoresBadTimesAndClockGoingBack() {
+        var spin = CassetteMotion.Spin()
+        _ = spin.angle(at: 10, degreesPerSecond: 120)
+        let a = spin.angle(at: 11, degreesPerSecond: 120)
+        XCTAssertEqual(spin.angle(at: .nan, degreesPerSecond: 120), spin.restingAngle)
+        let back = spin.angle(at: 5, degreesPerSecond: 120)
+        XCTAssertTrue((0..<360).contains(back))
+        XCTAssertEqual(a, 120, accuracy: 1e-9)
+    }
+
     func testFramesOnlyWhilePlayingVisibleAndMotionAllowed() {
         XCTAssertEqual(CassetteMotion.framesPerSecond(playing: true, visible: true, reduceMotion: false),
                        CassetteMotion.fps)

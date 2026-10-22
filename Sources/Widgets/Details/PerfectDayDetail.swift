@@ -88,10 +88,29 @@ struct PerfectDayDetail: View {
     private func header(month: Date, cheer: Bool) -> some View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("小熊猫的竹篮")
-                    .font(.system(size: 13, weight: .semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                HStack(spacing: 8) {
+                    Text("小熊猫的竹篮")
+                        .font(.system(size: 13, weight: .semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(.white.opacity(0.7))
+                    // 三环样式的面板点「本月竹篮和徽章」过来的：给一条回三环的路。
+                    if showBasket, TodayRings.isRings(instance.config) {
+                        Button { showBasket = false } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Text(tr("返回三环"))
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(.white.opacity(0.14)))
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
                 HStack(spacing: 4) {
                     Button { monthsBack = min(Self.maxMonthsBack, monthsBack + 1) } label: {
                         Image(systemName: "chevron.left")

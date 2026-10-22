@@ -172,7 +172,7 @@ extension CodexRollout {
                 if summary.totalTokens == nil,
                    let info = payload["info"] as? [String: Any],
                    let total = info["total_token_usage"] as? [String: Any],
-                   let n = CodexUsageParser.number(total["total_tokens"]) {
+                   let n = CodexUsageParser.number(total["total_tokens"]), n >= 0, n < 1e15 {
                     summary.totalTokens = Int(n)
                 }
             case ("event_msg", "task_started"), ("event_msg", "turn_started"):
@@ -316,7 +316,7 @@ extension CodexRollout {
             case "task_started", "turn_started":
                 open = at
             case "task_complete", "turn_complete", "turn_aborted":
-                if let ms = CodexUsageParser.number(payload["duration_ms"]), ms >= 0 {
+                if let ms = CodexUsageParser.number(payload["duration_ms"]), ms >= 0, ms < 1e12 {
                     total += ms / 1000
                     counted = true
                 } else if let start = open, let end = at, end >= start {

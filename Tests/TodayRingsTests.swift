@@ -253,4 +253,36 @@ final class TodayRingsTests: XCTestCase {
         XCTAssertEqual(TodayRings.percent(TodayRings.sample), 79)
         XCTAssertGreaterThan(TodayRings.sample.first { $0.item == .water }!.ratio, 1)
     }
+
+    func testWaterNoteFollowsTheWaterUnit() {
+        var p = water(2500)
+        p.ounces = true
+        XCTAssertEqual(TodayRings.note(p), WaterIntake.tally(total: 2500, goal: 2000, ounces: true))
+        XCTAssertTrue(TodayRings.note(p).hasSuffix(WaterIntake.unitLabel(ounces: true)))
+    }
+
+    func testWeekCellFollowsTheSettledRecord() {
+        // 记录：喝水没达标、习惯不参加、专注达标；读数却是喝水已满、专注没满。
+        let settled = record("20261020", "0-1")
+        let readings = [water(2400), habit(1, of: 3), focus(20)]
+        let rings = TodayRings.weekRings(readings, record: settled)
+        let w = rings.first { $0.item == .water }!
+        let h = rings.first { $0.item == .habit }!
+        let f = rings.first { $0.item == .focus }!
+        XCTAssertEqual(w.mark, .missed)
+        XCTAssertLessThan(w.ratio, 1)
+        XCTAssertEqual(h.mark, .off)
+        XCTAssertEqual(f.mark, .met)
+        XCTAssertGreaterThanOrEqual(f.ratio, 1)
+        // 和记录一致的读数原样保留。
+        let same = TodayRings.weekRings([water(1200), focus(60)], record: record("20261020", "0-1"))
+        XCTAssertEqual(same.first { $0.item == .water }?.amount, 1200)
+        XCTAssertEqual(same.first { $0.item == .focus }?.amount, 60)
+        // 没有读数也按记录画：达标满圈。
+        let bare = TodayRings.weekRings(nil, record: record("20261020", "1-0"))
+        XCTAssertEqual(bare.first { $0.item == .water }?.ratio, 1)
+        XCTAssertLessThan(bare.first { $0.item == .focus }?.ratio ?? 1, 1)
+        // 没有记录的日子照读数画。
+        XCTAssertEqual(TodayRings.weekRings(readings, record: nil), readings)
+    }
 }

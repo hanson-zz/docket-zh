@@ -265,7 +265,9 @@ struct TodayRingsDetail: View {
                 LeafGlyph(tier: leaf, size: 24)
             }
         } else {
-            TodayRingsGraphic(items: readings ?? [], diameter: 34, line: 3.5, gap: 1, icons: false)
+            // 以那天结算的记录为准，免得弧画满了却没有竹叶（见 `TodayRings.weekRings`）。
+            TodayRingsGraphic(items: TodayRings.weekRings(readings, record: day.record),
+                              diameter: 34, line: 3.5, gap: 1, icons: false)
                 .opacity(day.record == nil && !day.isToday ? 0.5 : 1)
         }
     }

@@ -47493,6 +47493,17 @@
         }
       }
     },
+    "返回三环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to rings"
+          }
+        }
+      }
+    },
     "返回上一层" : {
       "extractionState" : "manual",
       "localizations" : {

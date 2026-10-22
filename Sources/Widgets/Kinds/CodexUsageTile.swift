@@ -11,6 +11,7 @@ struct CodexUsageTile: View {
 
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// 圆环和水杯的颜色：默认照旧按用掉多少变绿、橙、红；颜色面板里选过
     /// 颜色时，用掉不到 70% 用选的颜色，快用完的橙和红照旧提醒。
@@ -34,6 +35,13 @@ struct CodexUsageTile: View {
     /// 卡片上那一个会话：中卡显示它的项目和正在做什么。
     private var lead: CodexSession? {
         context.isPreview ? CodexSample.sessions(now: context.now).first : CodexSessionList.lead(service.sessions)
+    }
+
+    /// 状态点只在工作中、卡片看得见时一闪一闪；其余时候只给一个阶段，
+    /// phaseAnimator 不再常驻循环（以前空闲、等你确认时也一直在跑动画）。
+    private var pulses: Bool {
+        activity == .working && !reduceMotion
+            && !context.isPreview && ShelfVisibility.shared.cardsOnScreen
     }
 
     private var chime: CodexChimeSettings {
@@ -198,7 +206,7 @@ struct CodexUsageTile: View {
             Circle()
                 .fill(CodexStyle.color(activity))
                 .frame(width: 8, height: 8)
-                .phaseAnimator([false, true]) { dot, on in
+                .phaseAnimator(pulses ? [false, true] : [false]) { dot, on in
                     dot.opacity(activity == .working && on ? 0.4 : 1)
                 } animation: { _ in .easeInOut(duration: 0.9) }
             Text(activity.title)
@@ -283,7 +291,7 @@ struct CodexUsageTile: View {
             Circle()
                 .fill(CodexStyle.color(activity))
                 .frame(width: 7, height: 7)
-                .phaseAnimator([false, true]) { dot, on in
+                .phaseAnimator(pulses ? [false, true] : [false]) { dot, on in
                     dot.opacity(activity == .working && on ? 0.35 : 1)
                 } animation: { _ in .easeInOut(duration: 0.9) }
                 .help("Codex \(activity.title)")

@@ -193,6 +193,40 @@ public enum TodayRings {
         }
     }
 
+    /// 近 7 天一格里画的三环，和那天结算下来的记录对齐：小格的弧是现在从来源
+    /// 重读的，而竹叶看的是结算时冻结的记录，两者可能不一样（之后改了目标、
+    /// 补打了更早的卡、删了小组件）。以记录为准：记录里没参加的画虚线，记录里
+    /// 没达标的弧停在满圈前，记录里达标的画满。没有记录的日子照读数画。
+    public static func weekRings(_ readings: [PerfectDayProgress]?, record: PerfectDayRecord?) -> [PerfectDayProgress] {
+        guard let record else { return readings ?? [] }
+        return order.map { item in
+            let mark = record.mark(item)
+            var p = readings?.first { $0.item == item }
+                ?? PerfectDayProgress(item: item, mark: mark, fraction: mark == .met ? 1 : 0.5, detail: "")
+            p.mark = mark
+            switch mark {
+            case .off:
+                break
+            case .met:
+                if p.ratio < 1 {
+                    if p.goal > 0 { p.amount = p.goal } else { p.fraction = 1 }
+                }
+            case .missed:
+                if p.ratio >= 1 {
+                    if p.goal > 0 {
+                        p.amount = Int(Double(p.goal) * weekMissedCap)
+                    } else {
+                        p.fraction = weekMissedCap
+                    }
+                }
+            }
+            return p
+        }
+    }
+
+    /// 记录里没达标、读数却已满的那一项，小格里画到这么多。
+    public static let weekMissedCap = 0.9
+
     // MARK: Words
 
     /// 面板右上角的小胶囊："全部达标" 或 "1 / 3 达标"。
@@ -259,13 +293,14 @@ public enum TodayRings {
         }
     }
 
-    /// 面板一行的第二行：喝水写毫升，专注写还差或超出几分钟，习惯写还差哪一项。
+    /// 面板一行的第二行：喝水写毫升（或盎司），专注写还差或超出几分钟，习惯写还差哪一项。
     /// 不计入时写原因（没放小组件、没设习惯）。
     public static func note(_ progress: PerfectDayProgress) -> String {
         guard progress.mark.takesPart else { return progress.detail }
         switch progress.item {
         case .water:
-            return tr("\(progress.amount) / \(progress.goal) 毫升")
+            // 跟喝水小组件的单位走：设成盎司时写「40.6 / 67.6 盎司」。
+            return WaterIntake.tally(total: progress.amount, goal: progress.goal, ounces: progress.ounces)
         case .focus:
             let diff = progress.amount - progress.goal
             if diff < 0 { return tr("还差 \(-diff) 分钟") }

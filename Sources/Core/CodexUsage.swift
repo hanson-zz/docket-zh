@@ -275,14 +275,19 @@ public enum CodexUsageParser {
     }
 
     /// Numbers arrive as numbers or as decimal strings ("374.92").
+    /// 只给有限值：字符串 "nan"、"inf" 和超大的数会被 `Double(_:)` 读成非有限值，
+    /// 拿去 `Int(_:)` 会直接崩，这里一律当没读到。
     static func number(_ value: Any?) -> Double? {
+        let raw: Double?
         switch value {
-        case let d as Double: return d.isFinite ? d : nil
-        case let i as Int: return Double(i)
-        case let n as NSNumber: return n.doubleValue
-        case let s as String: return Double(s)
-        default: return nil
+        case let d as Double: raw = d
+        case let i as Int: raw = Double(i)
+        case let n as NSNumber: raw = n.doubleValue
+        case let s as String: raw = Double(s)
+        default: raw = nil
         }
+        guard let raw, raw.isFinite else { return nil }
+        return raw
     }
 }
 

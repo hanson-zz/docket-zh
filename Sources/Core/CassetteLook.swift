@@ -90,7 +90,7 @@ public enum CassetteMotion {
     }
 
     /// 带速一定，卷得越粗转得越慢。`fraction` 是卷径占满卷的比例，按六档取值，
-    /// 换档只在一首歌里发生几次（轮辐六重对称，换档时看不出跳）。
+    /// 换档只在一首歌里发生几次；换档时角度从当前位置接着转，见 `Spin`。
     /// 满卷约 1/3 圈每秒，最细（只剩轮毂）约 1 圈每秒。
     public static func degreesPerSecond(fraction: Double) -> Double {
         let f = fraction.isFinite ? Swift.min(Swift.max(fraction, 0.3), 1) : 1
@@ -104,6 +104,55 @@ public enum CassetteMotion {
         let local = t.truncatingRemainder(dividingBy: 3600)
         let a = (local * degreesPerSecond).truncatingRemainder(dividingBy: 360)
         return a < 0 ? a + 360 : a
+    }
+
+    /// 一个转轮的累计角度。转速换档时从当前角度接着转，不会因为 `t × 新转速`
+    /// 和 `t × 旧转速` 差出一截而跳一下；暂停时停在原地，再播放从停下的角度接着走。
+    public struct Spin: Equatable, Sendable {
+        /// 上次换档（或开始）时的角度，0..<360。
+        public private(set) var baseAngle: Double
+        /// 上次换档（或开始）的时刻；暂停时是 nil。
+        public private(set) var baseTime: Double?
+        public private(set) var rate: Double = 0
+
+        public init(phase: Double = 0) {
+            baseAngle = Spin.wrap(phase)
+        }
+
+        /// 时刻 `t` 的角度，转速是 `degreesPerSecond`。转速变了就把当前角度记成新起点。
+        public mutating func angle(at t: Double, degreesPerSecond dps: Double) -> Double {
+            guard t.isFinite, dps.isFinite else { return baseAngle }
+            guard let start = baseTime, t >= start else {
+                // 刚开始、刚从暂停回来，或时钟往回拨了：从现在的角度起算。
+                baseTime = t
+                rate = dps
+                return baseAngle
+            }
+            let now = Spin.wrap(baseAngle + (t - start) * rate)
+            if dps != rate || t - start > 3600 {
+                baseAngle = now
+                baseTime = t
+                rate = dps
+            }
+            return now
+        }
+
+        /// 停住：角度留在 `t` 时的位置，下次 `angle` 从这里接着转。
+        public mutating func pause(at t: Double) {
+            if let start = baseTime, t.isFinite, t >= start {
+                baseAngle = Spin.wrap(baseAngle + (t - start) * rate)
+            }
+            baseTime = nil
+        }
+
+        /// 现在停着的角度（暂停时画这个）。
+        public var restingAngle: Double { baseAngle }
+
+        static func wrap(_ degrees: Double) -> Double {
+            guard degrees.isFinite else { return 0 }
+            let a = degrees.truncatingRemainder(dividingBy: 360)
+            return a < 0 ? a + 360 : a
+        }
     }
 
     /// 收录机纸盆的缩放：播放时在 1 到 1+`depth` 之间轻轻胀缩（两个频率叠在一起，

@@ -141,30 +141,31 @@ struct ReelPair: View {
     var visible: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 两个轮子的累计角度：换档、暂停再播放都从当前角度接着转（`CassetteMotion.Spin`）。
+    @State private var spins = ReelSpins()
 
     var body: some View {
         let fps = CassetteMotion.framesPerSecond(playing: playing, visible: visible, reduceMotion: reduceMotion)
         TimelineView(.animation(minimumInterval: 1 / (fps ?? CassetteMotion.fps), paused: fps == nil)) { timeline in
-            let t = fps == nil ? 0 : timeline.date.timeIntervalSinceReferenceDate
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            let rl = CGFloat(CassetteMotion.packRadius(min: Double(minRadius), max: Double(maxRadius),
+                                                       progress: progress, left: true))
+            let rr = CGFloat(CassetteMotion.packRadius(min: Double(minRadius), max: Double(maxRadius),
+                                                       progress: progress, left: false))
+            let angles = spins.angles(at: t, moving: fps != nil,
+                                      left: CassetteMotion.degreesPerSecond(fraction: Double(rl / max(maxRadius, 0.1))),
+                                      right: CassetteMotion.degreesPerSecond(fraction: Double(rr / max(maxRadius, 0.1))))
             Canvas { ctx, size in
                 let cy = size.height / 2
                 let left = CGPoint(x: size.width / 2 - spacing / 2, y: cy)
                 let right = CGPoint(x: size.width / 2 + spacing / 2, y: cy)
-                let rl = CGFloat(CassetteMotion.packRadius(min: Double(minRadius), max: Double(maxRadius),
-                                                           progress: progress, left: true))
-                let rr = CGFloat(CassetteMotion.packRadius(min: Double(minRadius), max: Double(maxRadius),
-                                                           progress: progress, left: false))
                 // 两卷之间底下那一段带子。
                 var tape = Path()
                 tape.move(to: CGPoint(x: left.x, y: cy + rl))
                 tape.addLine(to: CGPoint(x: right.x, y: cy + rr))
                 ctx.stroke(tape, with: .color(CassettePalette.tape.opacity(0.8)), lineWidth: 0.6)
-                let reels: [(center: CGPoint, radius: CGFloat, phase: Double)] = [(left, rl, 8), (right, rr, 38)]
-                for (center, radius, phase) in reels {
-                    let dps = CassetteMotion.degreesPerSecond(fraction: Double(radius / max(maxRadius, 0.1)))
-                    let angle = CassetteMotion.angle(t: t, degreesPerSecond: dps) + phase
-                    drawReel(ctx, center: center, pack: radius, hub: hubRadius, degrees: angle)
-                }
+                drawReel(ctx, center: left, pack: rl, hub: hubRadius, degrees: angles.left)
+                drawReel(ctx, center: right, pack: rr, hub: hubRadius, degrees: angles.right)
             }
         }
         .accessibilityHidden(true)
@@ -185,6 +186,22 @@ struct ReelPair: View {
             spokes.addLine(to: CGPoint(x: c.x + cos(a) * hub * 0.3, y: c.y + sin(a) * hub * 0.3))
         }
         ctx.stroke(spokes, with: .color(CassettePalette.hub), lineWidth: max(0.8, hub * 0.18))
+    }
+}
+
+/// 一对转轮的角度，存在 `@State` 里跨帧累计。只在 TimelineView 取帧时改，
+/// 不参与 SwiftUI 的依赖追踪（普通类，不是 Observable），改它不会引起重画。
+private final class ReelSpins {
+    private var left = CassetteMotion.Spin(phase: 8)
+    private var right = CassetteMotion.Spin(phase: 38)
+
+    func angles(at t: Double, moving: Bool, left dpsL: Double, right dpsR: Double) -> (left: Double, right: Double) {
+        guard moving else {
+            left.pause(at: t)
+            right.pause(at: t)
+            return (left.restingAngle, right.restingAngle)
+        }
+        return (left.angle(at: t, degreesPerSecond: dpsL), right.angle(at: t, degreesPerSecond: dpsR))
     }
 }
 

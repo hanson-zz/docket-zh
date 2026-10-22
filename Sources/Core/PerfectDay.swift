@@ -202,6 +202,8 @@ public struct PerfectDayProgress: Equatable, Hashable, Sendable, Identifiable {
     public var cupSize: Int = 0
     /// 今天还没完成的习惯名，按习惯打卡里的顺序。
     public var pending: [String] = []
+    /// 喝水小组件设成盎司：三环面板的毫升那一行按盎司写（`unit` 为 oz）。
+    public var ounces = false
 
     public var id: String { item.rawValue }
 
@@ -347,22 +349,23 @@ public enum PerfectDay {
         let isToday = key == HabitTracker.dayKey(today, calendar: calendar)
         // Two 喝水 widgets (one per layout) are the same person drinking:
         // the one furthest along speaks for the day.
-        let candidates = configs.map { config -> (day: WaterDay, cup: Int) in
+        let candidates = configs.map { config -> (day: WaterDay, cup: Int, ounces: Bool) in
             let days = WaterIntake.days(config)
             let goal = WaterIntake.goal(config, now: date, calendar: calendar)
             let cup = WaterIntake.cupSize(config)
-            if isToday { return (WaterIntake.today(days, goal: goal, now: date, calendar: calendar), cup) }
-            return (days.first { $0.key == key } ?? WaterDay(key: key, goal: goal), cup)
+            let ounces = WaterIntake.usesOunces(config)
+            if isToday { return (WaterIntake.today(days, goal: goal, now: date, calendar: calendar), cup, ounces) }
+            return (days.first { $0.key == key } ?? WaterDay(key: key, goal: goal), cup, ounces)
         }
         let best = candidates.max {
             WaterIntake.progress(total: $0.day.total, goal: $0.day.goal)
                 < WaterIntake.progress(total: $1.day.total, goal: $1.day.goal)
-        } ?? (day: WaterDay(key: key, goal: WaterIntake.defaultGoal), cup: WaterIntake.defaultCup)
+        } ?? (day: WaterDay(key: key, goal: WaterIntake.defaultGoal), cup: WaterIntake.defaultCup, ounces: false)
         let day = best.day
         return PerfectDayProgress(item: .water, mark: day.isMet ? .met : .missed,
                                   fraction: WaterIntake.progress(total: day.total, goal: day.goal),
                                   detail: tr("\(day.total)/\(day.goal) 毫升"),
-                                  amount: day.total, goal: day.goal, cupSize: best.cup)
+                                  amount: day.total, goal: day.goal, cupSize: best.cup, ounces: best.ounces)
     }
 
     /// 习惯 on `date`: every habit of every 习惯打卡 widget checked in. Two
