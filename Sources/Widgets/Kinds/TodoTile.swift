@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 快速待办的卡片：“今天三件事”，拖进来就记，做完了小熊猫庆祝。
+/// 快速待办的卡片：「今天」分组里的几条，拖进来就记，做完了小熊猫庆祝。
 ///
 /// The list is the widget's own (see `QuickTodo`), never the system's
 /// Reminders, so it works with no permission and no account. The card's
@@ -10,7 +10,7 @@ import SwiftUI
 /// become a task.
 ///
 /// 第二天第一次显示时先收拾一遍（`QuickTodo.applyRollover`）：昨天做完的收进“已收起”（留 7 天），
-/// 没做完的留给面板顶部问顺延还是放弃。
+/// 昨天没做完的「今天」自动排到今天最前面，面板里截止胶囊标红。
 ///
 /// 设了提醒时间的一行后面有个小闹钟和时刻；到点那一秒弹出卡片（到点弹出卡片
 /// ▸ 待办，由 `TimedAlertDriver` 在后台读存储看着），在卡片上点完成时这里照样
@@ -111,11 +111,11 @@ struct TodoTile: View {
 
     // MARK: 横排
 
-    /// 今天三件事，或者前几条没做完的。标题一行，下面最多三行，每行左边的圆圈勾完成。
+    /// 「今天」分组里的几条，或者前几条没做完的。标题一行，下面最多三行，每行左边的圆圈勾完成。
     private func list(_ card: TodoCardRows, openCount: Int) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 4) {
-                Text(card.focused ? tr("今天三件事") : tr("快速待办"))
+                Text(card.focused ? tr("今天") : tr("快速待办"))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
@@ -318,6 +318,12 @@ enum TodoLog {
         WidgetWriter.write(latest(instance)) { config in
             QuickTodo.store(edit(QuickTodo.items(config)), in: &config)
         }
+        synced(instance)
+    }
+
+    /// 写过清单：这张卡片打开了和提醒事项的双向同步（Pro）时排一轮。
+    private static func synced(_ instance: WidgetInstance) {
+        TodoReminderSyncService.shared.localChanged(instance.id)
     }
 
     /// - Parameter cheering: 这一下勾掉了最后一项。同一次写入里记下庆祝的截止
@@ -332,12 +338,23 @@ enum TodoLog {
                 QuickTodo.recordCleared(in: &config, today: day)
             }
         }
+        synced(instance)
     }
 
-    /// 记一条：输入框、快捷键小框和拖放都走这里，记下今天的日子。
-    static func add(_ text: String, link: String? = nil, to instance: WidgetInstance) {
-        let day = today
-        change(instance) { QuickTodo.adding(text, to: $0, link: link, day: day) }
+    /// 记一条：输入框和快捷键小框都走这里，记下今天的日子。
+    ///
+    /// 认自然语言时间（`TodoTimeParse`）：「明天 9 点交稿」记成“交稿”，明天 9:00
+    /// 提醒，在「稍后」；提醒在今天或只说了“今天”的放进「今天」。认不出时整句照记。
+    static func add(_ text: String, link: String? = nil, to instance: WidgetInstance, now: Date = Date()) {
+        let day = TodoDay.key(now)
+        if let parsed = TodoTimeParse.parse(text, now: now) {
+            change(instance) {
+                QuickTodo.adding(parsed.title, to: $0, link: link, day: day,
+                                 today: parsed.today, remindAt: parsed.remindAt)
+            }
+        } else {
+            change(instance) { QuickTodo.adding(text, to: $0, link: link, day: day) }
+        }
     }
 
     static func add(_ drops: [TodoDrop], to instance: WidgetInstance) {
@@ -356,6 +373,7 @@ enum TodoLog {
             QuickTodo.store(result.items, in: &config)
             QuickTodo.storeArchive(result.archive, in: &config)
         }
+        synced(instance)
     }
 
     /// 从“已收起”里删掉一条。
@@ -363,6 +381,7 @@ enum TodoLog {
         WidgetWriter.write(latest(instance)) { config in
             QuickTodo.storeArchive(QuickTodo.removingArchived(id, from: QuickTodo.archive(config)), in: &config)
         }
+        synced(instance)
     }
 
     /// 新的一天第一次显示时收拾一遍。今天已经收拾过就什么也不写。
@@ -370,6 +389,7 @@ enum TodoLog {
         let current = latest(instance)
         guard QuickTodo.needsRollover(current.config, today: today) else { return }
         WidgetWriter.write(current) { QuickTodo.applyRollover(in: &$0, today: today) }
+        synced(instance)
     }
 
     /// 庆祝播完：清掉记号。读的是现在保存着的那份，不会把中途的改动写回去。

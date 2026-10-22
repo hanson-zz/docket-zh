@@ -236,7 +236,7 @@ final class ReminderPopupTests: XCTestCase {
         let yesterday = TodoDay.key(at(17, 16), calendar: calendar)
         XCTAssertEqual(ReminderPopupText.todoDetail(TodoPopupInfo(today: true, addedDay: yesterday), today: today,
                                                     calendar: calendar),
-                       "今天三件事之一 · 昨天记下的")
+                       "今天要做 · 昨天记下的")
         XCTAssertEqual(ReminderPopupText.todoDetail(TodoPopupInfo(today: false, addedDay: today), today: today,
                                                     calendar: calendar),
                        "今天记下的")

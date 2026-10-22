@@ -56,16 +56,17 @@ final class QuickTodoTodayTests: XCTestCase {
         XCTAssertNil(reopened.first?.doneDay)
     }
 
-    // MARK: 今天三件事
+    // MARK: 今天
 
-    func testAtMostThreeAreMarkedForToday() {
+    func testTodayHasNoLimitAndRemembersTheDay() {
+        // 改版后「今天」不再限 3 条：拖进几条都行，记下放进来的那天，拿出去时清掉。
         var items = (1...5).map { TodoItem(id: "\($0)", text: "第\($0)条") }
-        for id in ["1", "2", "3", "4"] { items = QuickTodo.togglingToday(id, in: items) }
-        XCTAssertEqual(QuickTodo.todayItems(items).map(\.id), ["1", "2", "3"])
-        XCTAssertFalse(QuickTodo.canMarkToday(items))
-        items = QuickTodo.togglingToday("2", in: items)
-        XCTAssertEqual(QuickTodo.todayItems(items).map(\.id), ["1", "3"])
-        XCTAssertTrue(QuickTodo.canMarkToday(items))
+        for id in ["1", "2", "3", "4", "5"] { items = QuickTodo.togglingToday(id, in: items, day: "2026-10-22") }
+        XCTAssertEqual(QuickTodo.todayItems(items).map(\.id), ["1", "2", "3", "4", "5"])
+        XCTAssertEqual(items.first?.todaySince, "2026-10-22")
+        items = QuickTodo.togglingToday("2", in: items, day: "2026-10-22")
+        XCTAssertEqual(QuickTodo.todayItems(items).map(\.id), ["1", "3", "4", "5"])
+        XCTAssertNil(items.first { $0.id == "2" }?.todaySince)
     }
 
     func testTheCardShowsTheMarkedOnesWithTheirProgress() {
@@ -188,7 +189,8 @@ final class QuickTodoTodayTests: XCTestCase {
 }
 
 final class QuickTodoTaglineTests: XCTestCase {
-    func testTheLibrarySaysQuickTodoStaysLocal() {
-        XCTAssertEqual(WidgetLibraryGroups.note(.todo), "随手记，不同步")
+    func testTheLibrarySaysQuickTodoSyncIsOptional() {
+        // 默认只存在本机，改版后可以选择和提醒事项双向同步（Pro）。
+        XCTAssertEqual(WidgetLibraryGroups.note(.todo), "随手记，可选同步")
     }
 }

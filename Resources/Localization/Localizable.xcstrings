@@ -2003,6 +2003,39 @@
         }
       }
     },
+    "今天也辛苦啦，去喝口水歇一歇" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've worked hard today. Grab some water and take a break"
+          }
+        }
+      }
+    },
+    "今天要做" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For today"
+          }
+        }
+      }
+    },
+    "今天还剩 %@ 件 · 已完成 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left today · %@ done"
+          }
+        }
+      }
+    },
     "会打开 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2058,6 +2091,17 @@
         }
       }
     },
+    "写一件事，回车添加，比如：明天 9 点交稿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a to-do and press Return, like: Submit draft tomorrow 9am"
+          }
+        }
+      }
+    },
     "切换" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2065,6 +2109,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Switch"
+          }
+        }
+      }
+    },
+    "列表「%@」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List: %@"
           }
         }
       }
@@ -2091,6 +2146,17 @@
         }
       }
     },
+    "双向同步 ·" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two-way sync ·"
+          }
+        }
+      }
+    },
     "双方当地都在 9:00 到 18:00 是适合；对方当地 22:00 到 7:00 是在睡觉；其余时间看对方快上班还是已下班" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2113,6 +2179,28 @@
         }
       }
     },
+    "取消重要" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmark as Important"
+          }
+        }
+      }
+    },
+    "另一张快速待办卡片已在同步，这张先不同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another Quick To-do card is already syncing, so this one doesn't"
+          }
+        }
+      }
+    },
     "只显示当前桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2120,6 +2208,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Current desktop only"
+          }
+        }
+      }
+    },
+    "同步到系统「提醒事项」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with Reminders"
+          }
+        }
+      }
+    },
+    "回车添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to add"
           }
         }
       }
@@ -2311,6 +2421,17 @@
         }
       }
     },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
+          }
+        }
+      }
+    },
     "恢复 ⌥Tab" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2355,6 +2476,39 @@
         }
       }
     },
+    "把待办拖到这里，今天就做它" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag a to-do here to do it today"
+          }
+        }
+      }
+    },
+    "拖到这里，放到稍后再做" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag here to do it later"
+          }
+        }
+      }
+    },
+    "拖动排序，拖进「今天」就是今天做" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to reorder; drag into Today to do it today"
+          }
+        }
+      }
+    },
     "按 App 分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2373,6 +2527,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hold ⌥ and press Tab to list every window, release ⌥ to switch. Cleared means off."
+          }
+        }
+      }
+    },
+    "换一个列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another list"
+          }
+        }
+      }
+    },
+    "换一个提醒事项列表：没做完的会在新列表里建一遍，原来列表里的不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another Reminders list. Open to-dos are added to the new list, and the old list stays as it is"
           }
         }
       }
@@ -28421,6 +28597,17 @@
         }
       }
     },
+    "放进今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Today"
+          }
+        }
+      }
+    },
     "放进来多久后自动移出" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29543,6 +29730,17 @@
         }
       }
     },
+    "标为重要" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as Important"
+          }
+        }
+      }
+    },
     "标已读" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30511,6 +30709,17 @@
         }
       }
     },
+    "没能同步：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't sync: %@"
+          }
+        }
+      }
+    },
     "没能放回「%@」：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30830,6 +31039,17 @@
         }
       }
     },
+    "添加待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to-do"
+          }
+        }
+      }
+    },
     "添加收藏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30892,6 +31112,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Station"
+          }
+        }
+      }
+    },
+    "清单空空的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing on the list"
           }
         }
       }
@@ -42712,6 +42943,17 @@
         }
       }
     },
+    "移到今天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Today"
+          }
+        }
+      }
+    },
     "移到废纸篓" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42741,6 +42983,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Top"
+          }
+        }
+      }
+    },
+    "移到稍后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to Later"
           }
         }
       }
@@ -42917,6 +43170,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snooze %@ min"
+          }
+        }
+      }
+    },
+    "稍后 (todo)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
           }
         }
       }
@@ -47676,6 +47958,17 @@
         }
       }
     },
+    "读不到提醒事项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read Reminders"
+          }
+        }
+      }
+    },
     "读不到输出设备" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48695,6 +48988,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type, then Return"
+          }
+        }
+      }
+    },
+    "输入框里写一件事，回车就记下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a to-do above and press Return"
           }
         }
       }
@@ -51251,6 +51555,17 @@
         }
       }
     },
+    "选的列表找不到了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The chosen list can't be found"
+          }
+        }
+      }
+    },
     "选肤色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -51500,6 +51815,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All done."
+          }
+        }
+      }
+    },
+    "都做完啦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done"
           }
         }
       }
@@ -51808,6 +52134,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset stopwatch"
+          }
+        }
+      }
+    },
+    "重要" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Important"
           }
         }
       }
@@ -52666,6 +53003,17 @@
         }
       }
     },
+    "随手记，可选同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jot it down, sync optional"
+          }
+        }
+      }
+    },
     "随时可以跳过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -53142,6 +53490,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Needs audio recording permission, click to open Settings"
+          }
+        }
+      }
+    },
+    "需要提醒事项权限才能同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncing needs access to Reminders"
+          }
+        }
+      }
+    },
+    "需要提醒事项权限才能同步，可以在系统设置里开启。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncing needs access to Reminders. You can turn it on in System Settings."
           }
         }
       }

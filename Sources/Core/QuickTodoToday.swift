@@ -38,10 +38,10 @@ public enum TodoDay {
     }
 }
 
-/// 卡片上画哪几条：标了“今天三件事”时就是它们，没标就是前几条未完成的。
+/// 卡片上画哪几条：「今天」分组里有东西时就是它们，没有就是前几条未完成的。
 public struct TodoCardRows: Equatable, Sendable {
     public var rows: [TodoItem]
-    /// 是不是“今天三件事”（标过的那几条）。
+    /// 是不是「今天」分组里的那几条。
     public var focused: Bool
     /// 右上角的“x/3”：标过的里做完了几条、一共标了几条。没标时是全部的。
     public var done: Int
@@ -51,35 +51,31 @@ public struct TodoCardRows: Equatable, Sendable {
 }
 
 extension QuickTodo {
-    /// 今天要做的最多标几条。
+    /// 卡片上最多画几行。「今天」分组本身不限条数（旧版本的“今天三件事”最多 3 条，
+    /// 改版后取消了上限）。
     public static let maxToday = 3
 
-    /// 标为今天要做的那几条：没做完的在前，各自保持清单里的顺序。
+    /// 「今天」分组里的那几条：没做完的在前，各自保持清单里的顺序。
     public static func todayItems(_ items: [TodoItem]) -> [TodoItem] {
         ordered(items).filter(\.today)
     }
 
-    /// 还能不能再标一条。
-    public static func canMarkToday(_ items: [TodoItem]) -> Bool {
-        items.filter(\.today).count < maxToday
-    }
-
-    /// 标为今天要做，或者取消。已经标满三条时再标什么也不改。
-    public static func togglingToday(_ id: String, in items: [TodoItem]) -> [TodoItem] {
-        guard let item = items.first(where: { $0.id == id }) else { return ordered(items) }
-        guard item.today || canMarkToday(items) else { return ordered(items) }
+    /// 放进「今天」或拿回「稍后」。放进来时记下今天（`day`），拿出去时清掉。
+    public static func togglingToday(_ id: String, in items: [TodoItem], day: String? = nil) -> [TodoItem] {
+        guard items.contains(where: { $0.id == id }) else { return ordered(items) }
         return ordered(items.map { other in
             guard other.id == id else { return other }
             var changed = other
             changed.today.toggle()
+            changed.todaySince = changed.today ? (day ?? changed.addedDay) : nil
             return changed
         })
     }
 
     /// 卡片上的几行。
     ///
-    /// 标过“今天三件事”时只画它们，做完的也留着打勾划线，右上角是做完几条 / 标了
-    /// 几条；一条都没标时画前 `limit` 条没做完的，右上角是全部的完成数。
+    /// 「今天」分组里有东西时只画它们，做完的也留着打勾划线，右上角是做完几条 / 一共
+    /// 几条；今天一条都没有时画前 `limit` 条没做完的，右上角是全部的完成数。
     public static func cardRows(_ items: [TodoItem], limit: Int = maxToday) -> TodoCardRows {
         let list = ordered(items)
         let unfinished = open(list)
@@ -106,7 +102,8 @@ extension QuickTodo {
     /// 第二天收拾清单：昨天以前做完的从清单里拿掉（`applyRollover` 把它们挪进
     /// 收起区），没记日子的老条目记成今天。
     ///
-    /// 没做完的留着，由面板顶部问一句顺延还是放弃（见 `leftover`）。旧版本写下
+    /// 没做完的留着：`applyRollover` 接着用 `planningToday` 把昨天没做完的「今天」
+    /// 挪到最前面（改版后不再问顺延还是放弃）。旧版本写下
     /// 的条目没有日子，一律当作今天记下、今天做完，升级当天不会被当成“昨天的”。
     public static func rollingOver(_ items: [TodoItem], today: String) -> [TodoItem] {
         ordered(items).compactMap { item in
@@ -138,7 +135,7 @@ extension QuickTodo {
         let moved = archiving(current, today: today)
         let kept = prunedArchive(moved + archive(config), today: today, calendar: calendar)
         storeArchive(kept, in: &config)
-        store(rollingOver(current, today: today), in: &config)
+        store(planningToday(rollingOver(current, today: today), today: today, calendar: calendar), in: &config)
         config.set(dayKey, .string(today))
     }
 

@@ -228,6 +228,10 @@ public enum ProLicenseGate {
     /// 邮件面板顶部能不能按账户筛选（Pro）。没解锁时按「全部」显示，筛选照旧存着。
     public static func canFilterMailAccounts(unlocked: Bool) -> Bool { unlocked }
 
+    /// 快速待办和系统“提醒事项”双向同步（Pro）。没解锁时开关显示为关、点了弹付费墙，
+    /// 已经打开的开关照旧存着只是不同步，解锁后接着同步；逐条“转成提醒事项”一直免费。
+    public static func canSyncTodoReminders(unlocked: Bool) -> Bool { unlocked }
+
     // MARK: 天气城市
 
     /// 天气面板最多能切换几个城市：没解锁时 1 个，解锁后列表上限个。

@@ -11,15 +11,16 @@ import Foundation
 /// config type carries it without a new Codable shape, and tab-separated
 /// because a tab cannot be typed into the single-line field that adds items.
 ///
-/// 今天三件事、拖进来的链接和当天清用到的几样东西跟在后面，每样一段
-/// `键=值`（`s=1` 标为今天、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天、
-/// `r=` 提醒时间，1970 年起的秒数）。一样都没有时写出来和原来一模一样，旧数据
-/// 读出来就是没有提醒时间。
+/// 分组、拖进来的链接和当天清用到的几样东西跟在后面，每样一段
+/// `键=值`（`s=1` 在「今天」分组、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天、
+/// `r=` 提醒时间，1970 年起的秒数；`p=` 放进「今天」的那天、`f=1` 重要；`x=` 同步到的
+/// 系统提醒事项标识、`h=` 上次同步时的指纹）。一样都没有时写出来和原来一模一样，旧数据
+/// 读出来就是没有提醒时间。旧版本的星标（“今天三件事”）也是 `s=1`，升级后就是「今天」。
 public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     public var id: String
     public var text: String
     public var done: Bool
-    /// 标为“今天三件事”之一。
+    /// 在「今天」分组里（旧版本的“今天三件事”星标也记在这里）。
     public var today: Bool
     /// 拖进来的链接或文件地址（绝对 URL 字符串），点一下打开。
     public var link: String?
@@ -29,10 +30,21 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     public var doneDay: String?
     /// 可选的提醒时间：到点弹出卡片（见 `QuickTodo.dueReminders`）。
     public var remindAt: Date?
+    /// 放进「今天」的那天。比今天早而还没做完，就是昨天（或更早）没做完顺下来的，
+    /// 截止胶囊标红。旧数据没有这一段，按 `addedDay` 算。
+    public var todaySince: String?
+    /// 重要：行尾一面小红旗，只有一级。
+    public var important: Bool
+    /// 同步到系统“提醒事项”里的那一条（`calendarItemIdentifier`），没同步过是 nil。
+    public var externalID: String?
+    /// 上次同步时两边一致的指纹（见 `TodoReminderSync.fingerprint`），用来分辨哪边改过。
+    public var syncMark: String?
 
     public init(id: String = TodoItem.newID(), text: String, done: Bool = false,
                 today: Bool = false, link: String? = nil,
-                addedDay: String? = nil, doneDay: String? = nil, remindAt: Date? = nil) {
+                addedDay: String? = nil, doneDay: String? = nil, remindAt: Date? = nil,
+                todaySince: String? = nil, important: Bool = false,
+                externalID: String? = nil, syncMark: String? = nil) {
         self.id = id
         self.text = text
         self.done = done
@@ -41,6 +53,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         self.addedDay = addedDay
         self.doneDay = doneDay
         self.remindAt = remindAt.map { Date(timeIntervalSince1970: $0.timeIntervalSince1970.rounded(.down)) }
+        self.todaySince = todaySince
+        self.important = important
+        self.externalID = externalID
+        self.syncMark = syncMark
     }
 
     public static func newID() -> String {
@@ -60,6 +76,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         if let addedDay { fields.append("a=\(addedDay)") }
         if let doneDay { fields.append("d=\(doneDay)") }
         if let remindAt { fields.append("r=\(Int(remindAt.timeIntervalSince1970))") }
+        if let todaySince { fields.append("p=\(todaySince)") }
+        if important { fields.append("f=1") }
+        if let externalID, !externalID.isEmpty { fields.append("x=\(externalID)") }
+        if let syncMark, !syncMark.isEmpty { fields.append("h=\(syncMark)") }
         return fields.joined(separator: "\t")
     }
 
@@ -77,6 +97,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             var added: String?
             var finished: String?
             var remind: Date?
+            var since: String?
+            var flagged = false
+            var external: String?
+            var mark: String?
             for field in parts.dropFirst(3) {
                 if field == "s=1" { today = true }
                 else if field.hasPrefix("u=") { link = String(field.dropFirst(2)) }
@@ -85,6 +109,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
                 else if field.hasPrefix("r="), let seconds = Int(field.dropFirst(2)), seconds > 0 {
                     remind = Date(timeIntervalSince1970: TimeInterval(seconds))
                 }
+                else if field.hasPrefix("p="), TodoDay.isKey(String(field.dropFirst(2))) { since = String(field.dropFirst(2)) }
+                else if field == "f=1" { flagged = true }
+                else if field.hasPrefix("x="), field.count > 2 { external = String(field.dropFirst(2)) }
+                else if field.hasPrefix("h="), field.count > 2 { mark = String(field.dropFirst(2)) }
                 else { words.append(field) }
             }
             let text = words.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -92,7 +120,8 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             let id = parts[0]
             self.init(id: id.isEmpty ? fallbackID : id, text: text, done: parts[1] == "1",
                       today: today, link: link?.isEmpty == true ? nil : link,
-                      addedDay: added, doneDay: finished, remindAt: remind)
+                      addedDay: added, doneDay: finished, remindAt: remind,
+                      todaySince: since, important: flagged, externalID: external, syncMark: mark)
         } else {
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
@@ -151,12 +180,16 @@ public enum QuickTodo {
     /// - Parameters:
     ///   - link: 拖进来的链接或文件地址，没有时为 nil。
     ///   - day: 记下的那天（`TodoDay.key`），当天清用；nil 时不记。
+    ///   - today: 放进「今天」分组（排在今天的最后）；否则在「稍后」的最后。
+    ///   - remindAt: 输入里认出的提醒时间（见 `TodoTimeParse`）。
     public static func adding(_ text: String, to items: [TodoItem], id: String = TodoItem.newID(),
-                              link: String? = nil, day: String? = nil) -> [TodoItem] {
+                              link: String? = nil, day: String? = nil,
+                              today: Bool = false, remindAt: Date? = nil) -> [TodoItem] {
         guard let words = clean(text), items.count < maxItems else { return ordered(items) }
         let current = ordered(items)
         let address = link.map { String($0.prefix(maxLinkLength)) }
-        let item = TodoItem(id: id, text: words, link: address, addedDay: day)
+        let item = TodoItem(id: id, text: words, today: today, link: address, addedDay: day,
+                            remindAt: remindAt, todaySince: today ? day : nil)
         return open(current) + [item] + current.filter(\.done)
     }
 

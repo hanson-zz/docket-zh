@@ -56,7 +56,8 @@ public enum WidgetLibraryGroups {
     public static func note(_ kind: WidgetKind) -> String? {
         switch kind {
         case .reminders: tr("和系统提醒事项同步")
-        case .todo: tr("随手记，不同步")
+        // 默认只存在本机；和系统提醒事项双向同步是可选的（Pro）。
+        case .todo: tr("随手记，可选同步")
         // 数剩余时间的四个按尺度分工，卡片上写明各管多长。
         case .countdown: tr("几分钟内")
         case .alarm: tr("今天某个时刻")

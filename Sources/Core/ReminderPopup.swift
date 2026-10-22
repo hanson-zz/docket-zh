@@ -112,7 +112,7 @@ public struct WaterPopupInfo: Equatable, Hashable, Sendable {
     public var cupsLeft: Int { WaterCupPage.cupsLeft(total: total, goal: goal, cup: cup) }
 }
 
-/// 待办卡片上的来源和“今天三件事”。
+/// 待办卡片上的来源和「今天」分组。
 public struct TodoPopupInfo: Equatable, Hashable, Sendable {
     public struct Row: Equatable, Hashable, Sendable {
         public var text: String
@@ -124,13 +124,13 @@ public struct TodoPopupInfo: Equatable, Hashable, Sendable {
         }
     }
 
-    /// 是不是“今天三件事”之一。
+    /// 是不是在「今天」分组里。
     public var today: Bool
     /// 记下的那天（`TodoDay` 的键）。
     public var addedDay: String?
-    /// 今天三件事里的另外几条（这一条是其中之一时）。
+    /// 「今天」里的另外几条（这一条也在今天时），最多 `maxOthers` 条。
     public var others: [Row]
-    /// 今天三件事做完几条、一共几条。
+    /// 「今天」做完几条、一共几条。
     public var todayDone: Int
     public var todayTotal: Int
 
@@ -142,11 +142,15 @@ public struct TodoPopupInfo: Equatable, Hashable, Sendable {
         self.todayTotal = todayTotal
     }
 
+    /// 卡片上最多列几条别的。
+    public static let maxOthers = 2
+
     /// 从清单里取出一条的来源。
     public static func from(_ item: TodoItem, in items: [TodoItem]) -> TodoPopupInfo {
         let marked = QuickTodo.todayItems(items)
         guard item.today else { return TodoPopupInfo(today: false, addedDay: item.addedDay) }
-        let others = marked.filter { $0.id != item.id }.map { Row(text: $0.text, done: $0.done) }
+        // 「今天」不再限 3 条，卡片上只列另外两条（没做完的在前），进度照全部算。
+        let others = marked.filter { $0.id != item.id }.prefix(maxOthers).map { Row(text: $0.text, done: $0.done) }
         return TodoPopupInfo(today: true, addedDay: item.addedDay, others: others,
                              todayDone: marked.filter(\.done).count, todayTotal: marked.count)
     }
@@ -517,10 +521,10 @@ public enum ReminderPopupText {
         tr("加一杯 \(WaterIntake.amount(info.cup, ounces: info.ounces))")
     }
 
-    /// 待办第三行：“今天三件事之一 · 昨天记下的”。
+    /// 待办第三行：“今天要做 · 昨天记下的”。
     public static func todoDetail(_ info: TodoPopupInfo?, today: String, calendar: Calendar = .current) -> String {
         var parts: [String] = []
-        if info?.today == true { parts.append(tr("今天三件事之一")) }
+        if info?.today == true { parts.append(tr("今天要做")) }
         if let added = info?.addedDay, let line = addedLine(added, today: today, calendar: calendar) {
             parts.append(line)
         }
