@@ -124,7 +124,7 @@ struct AIBouncingDots: View {
 /// 读的字至少 panelSecondary（浅色玻璃上 panelTertiary 不到 4.5）。
 ///
 /// 层级：顶上一行是小熊猫 + 服务名（几个服务时是切换胶囊）+ 网页模式的刷新、
-/// 在浏览器打开 + 图钉，下面一排提示词，再下面是对话、网页或跳转。服务名只写
+/// 在浏览器打开 + 图钉，下面一排提示词，再下面是对话、网页或 App 方式。服务名只写
 /// 一遍，见 `AINotchPanelHeader`。
 struct AIChatPanelView: View {
     var center: AIChatCenter
@@ -136,7 +136,7 @@ struct AIChatPanelView: View {
 
     /// 顶栏、提示词、网页四周统一的边距。
     static let inset: CGFloat = 12
-    /// 实心蓝底白字（我的提问气泡、跳转按钮）：白字对比度 5.2，过 4.5；原来的
+    /// 实心蓝底白字（我的提问气泡、App 方式的按钮）：白字对比度 5.2，过 4.5；原来的
     /// #3B82F6 只有 3.7，小熊猫的 #4C9BFF 只有 2.8。
     static let solidBlueHex = "#2563EB"
 
@@ -379,7 +379,7 @@ private struct AIChatNotchBlend: View {
 /// 服务字牌下面的一排，画法和迷你提问面板共用（`AIPromptChipBar`）。
 ///
 /// 文字先取输入框，空着时取剪贴板。API 直接发出去流式回答；网页模式没有
-/// 输入框，复制套好的提示词，到网页里粘贴；跳转和平时提问一样。
+/// 输入框，复制套好的提示词，到网页里粘贴；App 方式和平时提问一样。
 private struct AIPromptBar: View {
     var center: AIChatCenter
     var service: AIService
@@ -493,7 +493,13 @@ private struct AIAPIChatPane: View {
             }
         case .assistant:
             VStack(alignment: .leading, spacing: 6) {
-                if !message.text.isEmpty || message.status == .streaming {
+                if message.status == .streaming && message.text.isEmpty {
+                    // API 流式回答还没到第一个字：先写一句占位，收到内容就换成回答。
+                    Text(tr("正在思考…"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .accessibilityAddTraits(.updatesFrequently)
+                } else if !message.text.isEmpty || message.status == .streaming {
                     AIAnswerText(text: message.text, streaming: message.status == .streaming)
                 }
                 switch message.status {
@@ -745,9 +751,9 @@ private struct AIWebHost: NSViewRepresentable {
     }
 }
 
-// MARK: - 跳转
+// MARK: - App 方式
 
-/// 跳转模式：和原来的提问面板一样，能带问题的带着问题开浏览器，其余复制
+/// App 方式：和原来的提问面板一样，能带问题的带着问题开浏览器，其余复制
 /// 问题再打开 App 或网页。
 private struct AIJumpPane: View {
     var center: AIChatCenter
@@ -796,9 +802,11 @@ private struct AIJumpPane: View {
                 .buttonStyle(.plain)
                 .disabled(AIAsk.question(center.draft) == nil)
             }
-            Text(center.jumpHint ?? (service.supportsAsk
-                 ? tr("跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
-                 : tr("跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
+            Text(center.jumpHint ?? (AIServiceOpener.installedApp(service) != nil
+                 ? tr("App：Enter 提交，会复制问题并打开 \(service.title) App。")
+                 : service.supportsAsk
+                 ? tr("App：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
+                 : tr("App：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
                 .font(.system(size: 13))
                 .foregroundStyle(center.jumpHint == nil ? Color.panelSecondary : Color.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -67,6 +67,8 @@ struct TranslateDetail: View {
                 statusLine
                 HStack(spacing: 8) {
                     PanelButton(title: tr("粘贴剪贴板"), symbol: "doc.on.clipboard") { pasteClipboard() }
+                    PanelButton(title: tr("截图翻译", context: "button"), symbol: "text.viewfinder") { translateScreenshot() }
+                        .help(tr("框选屏幕上的一块，本机识别并把译文盖在原文的位置上"))
                     PanelButton(title: tr("翻译"), symbol: "translate", prominent: true) { translate(force: true) }
                         .keyboardShortcut(.return, modifiers: .command)
                         .help("⌘↩ 立即翻译")
@@ -113,8 +115,10 @@ struct TranslateDetail: View {
         .onAppear {
             guard !context.isPreview else { return }
             editing = true
+            if takeShotText() { return }
             if Translate.clickAction(config) == .clipboard { pasteClipboard() }
         }
+        .onChange(of: ShotInbox.shared.translate[instance.id]) { _, _ in _ = takeShotText() }
         .onDisappear { TranslateSpeaker.shared.stop() }
     }
 
@@ -427,6 +431,23 @@ struct TranslateDetail: View {
             configuration?.invalidate()
         } else {
             configuration = next
+        }
+    }
+
+    /// 截图编辑工具条「取字」里点了「送翻译」：文字放进输入框，停顿后照常翻译。
+    private func takeShotText() -> Bool {
+        guard let text = ShotInbox.shared.takeTranslate(instance.id) else { return false }
+        draft = Translate.clamped(text)
+        return true
+    }
+
+    /// 「截图翻译」：收起面板，框选一块，在截图上原位显示译文（和截图编辑工具条的翻译同一套）。
+    private func translateScreenshot() {
+        guard !context.isPreview else { return }
+        WidgetDetailWindow.shared.close()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            ShotEditor.shared.beginTranslate()
         }
     }
 

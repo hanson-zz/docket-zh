@@ -57,6 +57,9 @@ public final class AppState {
             if state.quickTodoHotKey != oldValue.quickTodoHotKey {
                 onQuickTodoHotKeyChanged?(state.quickTodoHotKey)
             }
+            if state.shotHotKeys != oldValue.shotHotKeys {
+                ShotHotKey.shared.apply(state.shotHotKeys)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them

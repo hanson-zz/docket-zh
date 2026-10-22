@@ -442,6 +442,19 @@ struct SettingsView: View {
                 Text("快速待办")
             }
 
+            Section {
+                shotHotKeyRow(tr("截图编辑"), tr("默认不设。框选一块，截完在旁边出现编辑工具条。"),
+                              combo: state.shotHotKeys.edit, others: [state.shotHotKeys.translate]) {
+                    state.shotHotKeys.edit = $0
+                }
+                shotHotKeyRow(tr("截图翻译"), tr("默认不设。框选一块，本机识别并把译文盖在原文上（Pro）。"),
+                              combo: state.shotHotKeys.translate, others: [state.shotHotKeys.edit]) {
+                    state.shotHotKeys.translate = $0
+                }
+            } header: {
+                Text(verbatim: tr("截图"))
+            }
+
             shortcutList(.customDock, title: tr("切换扩展栏布局"))
                 .disabled(state.setup == .macOSDockOnly)
             shortcutList(.macOSDock, title: tr("切换系统程序坞布局"))
@@ -454,6 +467,30 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// 截图编辑 / 截图翻译的一行：录制、清除，撞上系统截图键或码头里别的快捷键时提醒一句。
+    @ViewBuilder
+    private func shotHotKeyRow(_ title: String, _ subtitle: String, combo: KeyCombo?, others: [KeyCombo?],
+                               set: @escaping (KeyCombo?) -> Void) -> some View {
+        LabeledContent {
+            HStack(spacing: 6) {
+                ShortcutRecorder(combo: combo) { set($0) }
+                if combo != nil {
+                    Button("清除") { set(nil) }
+                        .controlSize(.small)
+                }
+            }
+        } label: {
+            subtitled(title, subtitle)
+        }
+        if let warning = ShotHotKeyAdvice.warning(for: combo,
+                                                  others: others + [state.aiNotch.hotKey, state.quickTodoHotKey]) {
+            Label(warning, systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     @ViewBuilder
@@ -1555,6 +1592,7 @@ final class ShortcutKeyRecorder {
         HotKeyService.shared.suspend()
         AIHotKey.shared.suspend()
         TodoHotKey.shared.suspend()
+        ShotHotKey.shared.suspend()
         MicMuteHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
@@ -1572,6 +1610,7 @@ final class ShortcutKeyRecorder {
         HotKeyService.shared.resume()
         AIHotKey.shared.resume()
         TodoHotKey.shared.resume()
+        ShotHotKey.shared.resume()
         MicMuteHotKey.shared.resume()
     }
 

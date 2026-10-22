@@ -272,6 +272,8 @@ public enum ProUnlockHighlights {
         case .setting(.chargeLimit): tr("充电上限")
         case .setting(.windowPreview): tr("窗口预览")
         case .setting(.shelfGroups): tr("新建分组")
+        case .setting(.shotTranslate): tr("截图翻译")
+        case .setting(.shotPin): tr("截图贴图")
         case .kind(.pet): tr("电子宠物")
         case .tool(.textCapture): tr("截图识字")
         case .kind(let kind): WidgetCatalog.entry(kind)?.name ?? kind.rawValue
@@ -288,6 +290,8 @@ public enum ProUnlockHighlights {
         case .setting(.chargeLimit): "battery.75percent"
         case .setting(.windowPreview): "macwindow.on.rectangle"
         case .setting(.shelfGroups): "square.stack.3d.up.fill"
+        case .setting(.shotTranslate): "translate"
+        case .setting(.shotPin): "pin.fill"
         case .kind(.pet): "pawprint.fill"
         case .tool(.textCapture): "text.viewfinder"
         default: "star.fill"

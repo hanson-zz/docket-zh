@@ -7,23 +7,25 @@ import Foundation
 
 // MARK: - 截完后
 
-/// 截完一张图之后做什么。新放的卡片默认「两者」：存进截图文件夹，同时拷贝到
-/// 剪贴板（用户 10-20 定的，`newWidget`，在 WidgetCatalog.make 里写进配置）。
+/// 截完一张图之后做什么。新放的卡片默认「编辑」（推荐）：选区旁边出现编辑工具条，
+/// 标注、取字、翻译、存文件、贴图、拷贝都在那里（`newWidget`，在 WidgetCatalog.make
+/// 里写进配置）。10-20 到 10-22 之间新放的卡片存的是「两者」，原样保留。
 /// 配置里没存过这个键的老卡片读成「存文件」，和升级前一样（`fallback`）。
 public enum CaptureAfter: String, CaseIterable, Sendable, Identifiable {
-    case save, copy, both, markup
+    case edit, save, copy, both, markup
 
     public static let key = "after"
     /// 读不到键（老卡片）或认不出的值：存文件，升级前就是这样。
     public static let fallback: CaptureAfter = .save
     /// 新放的卡片写进配置的值。
-    public static let newWidget: CaptureAfter = .both
+    public static let newWidget: CaptureAfter = .edit
 
     public var id: String { rawValue }
 
     /// 面板分段和设置页菜单上的字。
     public var title: String {
         switch self {
+        case .edit: tr("编辑")
         case .save: tr("存文件")
         case .copy: tr("拷贝")
         case .both: tr("两者")
@@ -34,6 +36,7 @@ public enum CaptureAfter: String, CaseIterable, Sendable, Identifiable {
     /// 面板标题下面那句「截完：存文件 + 拷贝」里的说法。
     public var summary: String {
         switch self {
+        case .edit: tr("编辑工具条")
         case .save: tr("存文件")
         case .copy: tr("只拷贝")
         case .both: tr("存文件 + 拷贝")
@@ -41,11 +44,14 @@ public enum CaptureAfter: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// 要不要落一个文件。只拷贝时不存，图只在剪贴板里。
-    public var savesFile: Bool { self != .copy }
+    /// 要不要落一个文件。只拷贝时不存，图只在剪贴板里；编辑时在工具条上点了
+    /// 「存文件」才存。
+    public var savesFile: Bool { self != .copy && self != .edit }
     /// 存好之后要不要把图也拷贝一份（只拷贝时由 screencapture -c 直接放进剪贴板）。
     public var copiesAfterSaving: Bool { self == .both }
     public var opensMarkup: Bool { self == .markup }
+    /// 截完在选区旁边打开编辑工具条（不经过 screencapture 存文件）。
+    public var opensEditor: Bool { self == .edit }
 
     public static func from(_ config: WidgetConfig) -> CaptureAfter {
         CaptureAfter(rawValue: config.string(key, default: fallback.rawValue)) ?? fallback

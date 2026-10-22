@@ -316,4 +316,13 @@ public enum ProLicenseGate {
     public static func canCreateShelfGroup(unlocked: Bool) -> Bool {
         canUse(.shelfGroups, unlocked: unlocked)
     }
+
+    // MARK: 截图编辑
+
+    /// 截图编辑工具条上的一样能不能用：标注、取字、存文件、拷贝免费；截图翻译和贴图
+    /// 是 Pro，没解锁时点了弹付费墙，不执行，也不改任何设置。
+    public static func canUseShotFeature(_ feature: ShotFeature, unlocked: Bool) -> Bool {
+        guard let setting = feature.proSetting else { return true }
+        return canUse(setting, unlocked: unlocked)
+    }
 }

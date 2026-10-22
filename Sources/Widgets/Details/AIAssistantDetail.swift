@@ -177,6 +177,7 @@ private struct AIAskView: View {
                 HStack(spacing: 8) {
                     picker
                     Spacer(minLength: 0)
+                    shotButton
                     Button(action: submitFromButton) {
                         Text(buttonTitle)
                             .font(.system(size: 13, weight: .semibold))
@@ -201,7 +202,9 @@ private struct AIAskView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.updatesFrequently)
                 } else {
-                    Text(target?.supportsAsk == true
+                    Text(target.map { AIServiceOpener.installedApp($0) != nil } == true
+                         ? tr("Enter 提交，Shift+Enter 换行。会复制问题并打开 \(target?.title ?? "") App。")
+                         : target?.supportsAsk == true
                          ? tr("Enter 提交，Shift+Enter 换行。会在浏览器打开 \(target?.title ?? "")。")
                          : tr("Enter 提交，Shift+Enter 换行。\(target?.title ?? tr("这个服务"))不支持带问题打开，会先复制问题。"))
                         .font(.system(size: 13))
@@ -210,6 +213,30 @@ private struct AIAskView: View {
                 }
             }
         }
+    }
+
+    /// 「截图问 AI」：收起面板，框选屏幕上的一块，识别出的文字带进输入框，再打开面板。
+    /// 截的图识别完就删，不留副本。
+    private var shotButton: some View {
+        Button {
+            guard !context.isPreview else { return }
+            let id = instance.id
+            WidgetDetailWindow.shared.close()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(250))
+                ShotEditor.askAIFromScreen(widget: id)
+            }
+        } label: {
+            Image(systemName: "text.viewfinder")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .frame(width: 30, height: 28)
+                .background(Capsule().fill(.panelFill))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(tr("截图问 AI：框选屏幕上的一块，识别出的文字带进输入框"))
+        .accessibilityLabel(tr("截图问 AI"))
     }
 
     private var input: some View {
@@ -343,7 +370,7 @@ private struct AIAskView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 这个服务在刘海对话里的打开方式。不是跳转时，问题交给刘海对话。
+    /// 这个服务在刘海对话里的打开方式。不是 App 方式时，问题交给刘海对话。
     private var targetMode: AIOpenMode {
         target.map { AIChatCenter.shared.mode(for: $0) } ?? .jump
     }
@@ -390,7 +417,8 @@ private struct AIAskView: View {
             }
             return
         }
-        let plan = AIAsk.plan(asked, service: service)
+        // 「App」方式：装了 ChatGPT、Perplexity 这类 App 时复制问题再打开 App，没装才走浏览器。
+        let plan = AIAsk.plan(asked, service: service, appInstalled: AIServiceOpener.installedApp(service) != nil)
         switch plan {
         case .blocked:
             state.setHint(AIAsk.hint(after: plan, service: service), for: instance.id)

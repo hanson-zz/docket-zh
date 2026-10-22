@@ -219,6 +219,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         QuickTodoCapture.shared.apply(state.state.quickTodoHotKey)
         state.onQuickTodoHotKeyChanged = { combo in QuickTodoCapture.shared.apply(combo) }
 
+        // 截图编辑、截图翻译两个快捷键（默认不设）；编辑工具条的「送翻译」「问 AI」
+        // 要找扩展栏上的卡片。
+        ShotEditor.shared.app = state
+        ShotHotKey.shared.apply(state.state.shotHotKeys)
+
         // Layout hotkeys. Registered now and again whenever a layout gains,
         // loses or changes its combination; the service ignores a list that
         // has not changed, so the didSet that reports it can be generous.

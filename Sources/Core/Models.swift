@@ -1124,6 +1124,8 @@ public struct PersistedState: Codable, Sendable {
     public var aiNotch = AINotchSettings()
     /// 弹出快速待办小输入框的全局快捷键。默认不设。
     public var quickTodoHotKey: KeyCombo?
+    /// 截图编辑、截图翻译两个全局快捷键。默认都不设，见 `ShotHotKeys`。
+    public var shotHotKeys = ShotHotKeys()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1155,6 +1157,7 @@ public struct PersistedState: Codable, Sendable {
         reminderPopups = (try? c.decodeIfPresent(ReminderPopupSettings.self, forKey: .reminderPopups)) ?? ReminderPopupSettings()
         aiNotch = (try? c.decodeIfPresent(AINotchSettings.self, forKey: .aiNotch)) ?? AINotchSettings()
         quickTodoHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .quickTodoHotKey)
+        shotHotKeys = (try? c.decodeIfPresent(ShotHotKeys.self, forKey: .shotHotKeys)) ?? ShotHotKeys()
     }
 
     public init() {}

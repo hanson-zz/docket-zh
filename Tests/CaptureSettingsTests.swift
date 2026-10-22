@@ -20,14 +20,17 @@ final class CaptureSettingsTests: XCTestCase {
         XCTAssertEqual(CaptureButtons.from(merged), [.region, .window, .text, .record])
     }
 
-    func testNewCardsAreBothWithRecordRegion() throws {
+    func testNewCardsAreEditWithRecordRegion() throws {
+        // 10-22 起新放的卡片推荐「编辑」：截完在选区旁边出现编辑工具条。
         let fresh = try XCTUnwrap(WidgetCatalog.make(.capture))
-        XCTAssertEqual(CaptureAfter.from(fresh.config), .both)
+        XCTAssertEqual(CaptureAfter.from(fresh.config), .edit)
         XCTAssertEqual(CaptureButtons.from(fresh.config), [.region, .window, .text, .recordRegion])
-        XCTAssertEqual(CaptureOptions(config: fresh.config).summary, "截完：存文件 + 拷贝 · PNG")
+        XCTAssertEqual(CaptureOptions(config: fresh.config).summary, "截完：编辑工具条 · PNG")
         var config = WidgetConfig()
         CaptureNewWidget.apply(to: &config)
-        XCTAssertEqual(config.string(CaptureAfter.key), "both")
+        XCTAssertEqual(config.string(CaptureAfter.key), "edit")
+        // 之前新放、存着「两者」的卡片照旧是两者。
+        XCTAssertEqual(CaptureAfter.from(WidgetConfig([CaptureAfter.key: .string("both")])), .both)
         XCTAssertEqual(config.strings(CaptureButtons.key), ["region", "window", "text", "recordRegion"])
         // 用户改过的值，重启后读回来不被新默认盖掉。
         var edited = fresh.config
@@ -66,7 +69,10 @@ final class CaptureSettingsTests: XCTestCase {
         XCTAssertTrue(CaptureAfter.both.savesFile && CaptureAfter.both.copiesAfterSaving)
         XCTAssertFalse(CaptureAfter.save.copiesAfterSaving)
         XCTAssertTrue(CaptureAfter.markup.savesFile && CaptureAfter.markup.opensMarkup)
-        XCTAssertEqual(CaptureAfter.allCases.map(\.title), ["存文件", "拷贝", "两者", "标注"])
+        XCTAssertTrue(CaptureAfter.edit.opensEditor)
+        XCTAssertFalse(CaptureAfter.edit.savesFile || CaptureAfter.edit.copiesAfterSaving || CaptureAfter.edit.opensMarkup)
+        XCTAssertFalse(CaptureAfter.allCases.filter { $0 != .edit }.contains(where: \.opensEditor))
+        XCTAssertEqual(CaptureAfter.allCases.map(\.title), ["编辑", "存文件", "拷贝", "两者", "标注"])
         XCTAssertEqual(CaptureDelay.choices.map(CaptureDelay.title), ["不延时", "3 秒", "5 秒", "10 秒"])
     }
 

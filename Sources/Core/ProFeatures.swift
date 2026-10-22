@@ -41,6 +41,8 @@ import Foundation
 ///   已经放好的分组没解锁时照常显示、打开、增删，只是不能再从库里新建。
 /// - 加密货币面板的到价提醒（高于、低于，存在卡片的 `alerts`），见
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
+/// - 截图编辑工具条的截图翻译（译文盖在截图上，翻译面板的「截图翻译」同一个）和贴图，
+///   见 `ShotFeature`、`ProLicenseGate.canUseShotFeature`。标注、取字、存文件、拷贝免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -129,6 +131,11 @@ public enum ProFeatures {
         /// 从小组件库新建「应用分组」和「文件夹分组」。拖图标叠成的分组不算，
         /// 已经放好的分组没解锁时也照常显示和使用，见 `ProLicenseGate.canCreateShelfGroup`。
         case shelfGroups
+        /// 截图编辑工具条和翻译面板里的「截图翻译」：本机识别、翻译，译文按原文块的位置
+        /// 盖在截图上。取字（只识别、拷贝）免费，见 `ShotFeature`。
+        case shotTranslate
+        /// 截图编辑工具条里的「贴图」：把截图钉在屏幕最上层的小窗里。
+        case shotPin
     }
 
     // MARK: 判断

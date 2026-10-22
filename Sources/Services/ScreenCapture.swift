@@ -38,6 +38,11 @@ enum ScreenCapture {
     /// 选框框好，倒数完截那块；截窗口倒数完截鼠标下面的那个窗口（找不到就截整个屏幕），
     /// 这样倒数期间可以打开菜单、悬停出提示。
     static func capture(_ mode: Mode, options: CaptureOptions = CaptureOptions(after: .save), widget: UUID? = nil) {
+        // 截完后选了「编辑」：截好的图留在选区原地，旁边出现编辑工具条（`ShotEditor`）。
+        if options.after.opensEditor {
+            ShotEditor.shared.begin(mode, options: options)
+            return
+        }
         guard !running else { return }
         running = true
         Task {
@@ -62,7 +67,7 @@ enum ScreenCapture {
     }
 
     /// 倒数：屏幕上方的小提示每秒更新，最后一秒前收起，免得被截进去。
-    private static func countdown(_ seconds: Int) async {
+    static func countdown(_ seconds: Int) async {
         for left in stride(from: seconds, to: 0, by: -1) {
             if left > 1 {
                 QuickHint.show(tr("\(left) 秒后截图"), symbol: "timer", seconds: 0.9)
@@ -73,7 +78,7 @@ enum ScreenCapture {
         try? await Task.sleep(for: .milliseconds(150))
     }
 
-    private static func windowUnderPointer() -> Int? {
+    static func windowUnderPointer() -> Int? {
         let point = CGEvent(source: nil)?.location ?? .zero
         guard let raw = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                    kCGNullWindowID) as? [[String: Any]] else { return nil }

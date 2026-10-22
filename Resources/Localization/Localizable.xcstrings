@@ -4522,6 +4522,17 @@
         }
       }
     },
+    "Enter 提交，Shift+Enter 换行。会复制问题并打开 %@ App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter submits, Shift+Enter adds a line. Copies the question and opens the %@ app."
+          }
+        }
+      }
+    },
     "Esc 取消" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11382,6 +11393,17 @@
         }
       }
     },
+    "关闭贴图（Esc）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Pin (Esc)"
+          }
+        }
+      }
+    },
     "关闭闹钟" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12412,6 +12434,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mon-Fri"
+          }
+        }
+      }
+    },
+    "和码头里另一个快捷键一样，只有一个会生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as another Dockling shortcut, so only one of them will work."
           }
         }
       }
@@ -14953,6 +14986,17 @@
         }
       }
     },
+    "原文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original"
+          }
+        }
+      }
+    },
     "原文件被移走或删掉了，可以移出暂存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15217,6 +15261,17 @@
         }
       }
     },
+    "取字：识别文字，可拷贝、送翻译、问 AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Text: recognise text to copy, translate or ask AI"
+          }
+        }
+      }
+    },
     "取快递" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15422,6 +15477,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unmute %@"
+          }
+        }
+      }
+    },
+    "取消（Esc）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel (Esc)"
           }
         }
       }
@@ -19322,6 +19388,17 @@
         }
       }
     },
+    "字号：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text size: %@"
+          }
+        }
+      }
+    },
     "存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19417,6 +19494,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storage alert line (red below this much free)"
+          }
+        }
+      }
+    },
+    "存到截图文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Screenshots Folder"
           }
         }
       }
@@ -19736,6 +19824,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Completed checkout"
+          }
+        }
+      }
+    },
+    "完成：拷贝并关闭（回车）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done: copy and close (Return)"
           }
         }
       }
@@ -21628,6 +21727,17 @@
         }
       }
     },
+    "已存到“%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to \"%@\""
+          }
+        }
+      }
+    },
     "已完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21793,6 +21903,28 @@
         }
       }
     },
+    "已拷贝文字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text copied"
+          }
+        }
+      }
+    },
+    "已拷贝文字。扩展栏上还没有 AI 助手卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text copied. There is no AI Assistant card on the shelf yet"
+          }
+        }
+      }
+    },
     "已拷贝识别结果" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21804,6 +21936,28 @@
         }
       }
     },
+    "已拷贝译文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation copied"
+          }
+        }
+      }
+    },
+    "已拷贝贴图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned screenshot copied"
+          }
+        }
+      }
+    },
     "已拷贝路径" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21811,6 +21965,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Path copied"
+          }
+        }
+      }
+    },
+    "已拷贝，可以接着画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied. Keep drawing if you like"
           }
         }
       }
@@ -24608,6 +24773,17 @@
         }
       }
     },
+    "恢复原大小" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actual Size"
+          }
+        }
+      }
+    },
     "恢复原始状态" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25015,6 +25191,17 @@
         }
       }
     },
+    "截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshots"
+          }
+        }
+      }
+    },
     "截图工具" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25048,6 +25235,57 @@
         }
       }
     },
+    "截图编辑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot editing"
+          }
+        }
+      }
+    },
+    "截图翻译" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot translation"
+          }
+        }
+      }
+    },
+    "截图翻译 (button)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图翻译"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图翻译"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图翻译"
+          }
+        }
+      }
+    },
     "截图识字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25055,6 +25293,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text from Screen"
+          }
+        }
+      }
+    },
+    "截图贴图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned screenshots"
+          }
+        }
+      }
+    },
+    "截图问 AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI about a screenshot"
+          }
+        }
+      }
+    },
+    "截图问 AI：框选屏幕上的一块，识别出的文字带进输入框" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI about a screenshot: drag over part of the screen and the recognised text goes into the box"
           }
         }
       }
@@ -26324,6 +26595,17 @@
         }
       }
     },
+    "拖动移动，滚轮缩放，按住 ⌥ 滚轮调透明度，Esc 或双击关闭，右键更多" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to move, scroll to zoom, hold Option and scroll to fade, Esc or double-click to close, right-click for more"
+          }
+        }
+      }
+    },
     "拖动调整顺序" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26573,6 +26855,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy Link"
+          }
+        }
+      }
+    },
+    "拷贝（⌘C），可以接着画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy (Command-C) and keep drawing"
           }
         }
       }
@@ -28920,6 +29213,17 @@
         }
       }
     },
+    "格子：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block size: %@"
+          }
+        }
+      }
+    },
     "格式" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28982,6 +29286,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to capture an area"
+          }
+        }
+      }
+    },
+    "框选屏幕上的一块，本机识别并把译文盖在原文的位置上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag over part of the screen to recognise it on your Mac and lay the translation over the original"
           }
         }
       }
@@ -29092,6 +29407,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Measuring apps, Downloads and Trash…"
+          }
+        }
+      }
+    },
+    "正在识别文字…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recognising text…"
           }
         }
       }
@@ -31336,6 +31662,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Undo last cup"
+          }
+        }
+      }
+    },
+    "撤销（⌘Z）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo (Command-Z)"
           }
         }
       }
@@ -35904,6 +36241,17 @@
         }
       }
     },
+    "椭圆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ellipse"
+          }
+        }
+      }
+    },
     "模型" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36223,6 +36571,17 @@
         }
       }
     },
+    "正在思考…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking…"
+          }
+        }
+      }
+    },
     "正在把 %@ 个小组件停进扩展栏，已靠岸 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36307,6 +36666,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbol on show"
+          }
+        }
+      }
+    },
+    "正在本机翻译…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translating on your Mac…"
           }
         }
       }
@@ -37110,6 +37480,17 @@
         }
       }
     },
+    "没有可以翻译的文字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to translate"
+          }
+        }
+      }
+    },
     "没有可用的输出设备" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37447,6 +37828,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't switch Low Power Mode: %@"
+          }
+        }
+      }
+    },
+    "没能存下截图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the screenshot"
           }
         }
       }
@@ -40362,6 +40754,17 @@
         }
       }
     },
+    "画笔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pen"
+          }
+        }
+      }
+    },
     "留空则使用你的当前位置。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40842,6 +41245,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Got It"
+          }
+        }
+      }
+    },
+    "矩形" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rectangle"
           }
         }
       }
@@ -42804,6 +43218,17 @@
         }
       }
     },
+    "粗细：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Line width: %@"
+          }
+        }
+      }
+    },
     "粘贴 API 密钥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43728,6 +44153,17 @@
         }
       }
     },
+    "编辑工具条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "editing toolbar"
+          }
+        }
+      }
+    },
     "编辑币种" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44226,6 +44662,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Translations are saved here, up to %@."
+          }
+        }
+      }
+    },
+    "翻译：识别后把译文盖在原文的位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate: lay the translation over the original text"
           }
         }
       }
@@ -46382,6 +46829,17 @@
         }
       }
     },
+    "识别到的文字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recognised text"
+          }
+        }
+      }
+    },
     "识别屏幕上的二维码" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46411,6 +46869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lawsuits"
+          }
+        }
+      }
+    },
+    "译文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation"
           }
         }
       }
@@ -47163,6 +47632,17 @@
         }
       }
     },
+    "贴图：钉在屏幕最上层" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin: keep it on top of everything"
+          }
+        }
+      }
+    },
     "贵州茅台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47504,28 +47984,6 @@
         }
       }
     },
-    "跳转：Enter 提交，%@ 不支持带问题打开，会先复制问题。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jump: Enter submits. %@ can't open with a question, so it's copied first."
-          }
-        }
-      }
-    },
-    "跳转：Enter 提交，会在浏览器打开 %@ 并带上问题。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jump: Enter submits and opens %@ in the browser with the question."
-          }
-        }
-      }
-    },
     "跳过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47610,6 +48068,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Weak"
+          }
+        }
+      }
+    },
+    "较粗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thick"
+          }
+        }
+      }
+    },
+    "较细" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thin"
           }
         }
       }
@@ -49407,6 +49887,17 @@
         }
       }
     },
+    "这是系统截图的快捷键，建议换一个，免得两边抢。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a system screenshot shortcut. Pick another so the two don't clash."
+          }
+        }
+      }
+    },
     "这次不响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49836,6 +50327,28 @@
         }
       }
     },
+    "送翻译" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to Translate"
+          }
+        }
+      }
+    },
+    "适中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium"
+          }
+        }
+      }
+    },
     "选 App…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50228,6 +50741,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear"
+          }
+        }
+      }
+    },
+    "透明度" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opacity"
           }
         }
       }
@@ -55588,6 +56112,39 @@
         }
       }
     },
+    "App：Enter 提交，%@ 不支持带问题打开，会先复制问题。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App: Enter submits. %@ can't open with a question, so it's copied first."
+          }
+        }
+      }
+    },
+    "App：Enter 提交，会在浏览器打开 %@ 并带上问题。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App: Enter submits and opens %@ in the browser with the question."
+          }
+        }
+      }
+    },
+    "App：Enter 提交，会复制问题并打开 %@ App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App: Enter submits, copies the question and opens the %@ app."
+          }
+        }
+      }
+    },
     "CPU %@ · 内存 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -56655,6 +57212,17 @@
         }
       }
     },
+    "输入文字，回车放好" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type, then press Return"
+          }
+        }
+      }
+    },
     "输入电平" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -56882,6 +57450,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alert when the camera turns on"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library"
           }
         }
       }
@@ -57267,6 +57846,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alert sound"
+          }
+        }
+      }
+    },
+    "默认不设。框选一块，截完在旁边出现编辑工具条。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unset by default. Drag over an area and the editing toolbar appears next to it."
+          }
+        }
+      }
+    },
+    "默认不设。框选一块，本机识别并把译文盖在原文上（Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unset by default. Drag over an area to recognise it on your Mac and lay the translation over it (Pro)."
           }
         }
       }
