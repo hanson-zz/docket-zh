@@ -1145,6 +1145,8 @@ public struct PersistedState: Codable, Sendable {
     public var quickTodoHotKey: KeyCombo?
     /// 截图编辑、截图翻译两个全局快捷键。默认都不设，见 `ShotHotKeys`。
     public var shotHotKeys = ShotHotKeys()
+    /// ⌥Tab 按窗口切换：快捷键（默认 ⌥Tab）和三个开关，见 `WindowSwitcherSettings`。
+    public var windowSwitcher = WindowSwitcherSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1177,6 +1179,7 @@ public struct PersistedState: Codable, Sendable {
         aiNotch = (try? c.decodeIfPresent(AINotchSettings.self, forKey: .aiNotch)) ?? AINotchSettings()
         quickTodoHotKey = try? c.decodeIfPresent(KeyCombo.self, forKey: .quickTodoHotKey)
         shotHotKeys = (try? c.decodeIfPresent(ShotHotKeys.self, forKey: .shotHotKeys)) ?? ShotHotKeys()
+        windowSwitcher = (try? c.decodeIfPresent(WindowSwitcherSettings.self, forKey: .windowSwitcher)) ?? WindowSwitcherSettings()
     }
 
     public init() {}

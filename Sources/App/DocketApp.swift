@@ -224,6 +224,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ShotEditor.shared.app = state
         ShotHotKey.shared.apply(state.state.shotHotKeys)
 
+        // ⌥Tab 按窗口切换：默认 ⌥Tab，要辅助功能权限，没给时不注册。平时只占这一个快捷键。
+        WindowSwitcherController.shared.apply(state.state.windowSwitcher)
+
         // Layout hotkeys. Registered now and again whenever a layout gains,
         // loses or changes its combination; the service ignores a list that
         // has not changed, so the didSet that reports it can be generous.

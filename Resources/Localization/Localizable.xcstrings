@@ -1948,6 +1948,50 @@
         }
       }
     },
+    "⌘Tab 不受影响，系统的 App 切换照常用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Tab is unaffected; the system app switcher works as usual."
+          }
+        }
+      }
+    },
+    "⌘Tab 是系统切换 App 的快捷键，建议换一个。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Tab is the system app switcher. Pick another shortcut."
+          }
+        }
+      }
+    },
+    "上一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        }
+      }
+    },
+    "下一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
     "会打开 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1992,6 +2036,39 @@
         }
       }
     },
+    "其他桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other desktop"
+          }
+        }
+      }
+    },
+    "切换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch"
+          }
+        }
+      }
+    },
+    "包含已最小化、已隐藏的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include minimized and hidden windows"
+          }
+        }
+      }
+    },
     "去网页问" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2010,6 +2087,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sends a tiny request to check the key, endpoint and model."
+          }
+        }
+      }
+    },
+    "只显示当前桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current desktop only"
           }
         }
       }
@@ -2201,6 +2289,17 @@
         }
       }
     },
+    "恢复 ⌥Tab" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore ⌥Tab"
+          }
+        }
+      }
+    },
     "恢复原名" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2230,6 +2329,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens the Mac app, or the browser if it is not installed."
+          }
+        }
+      }
+    },
+    "按 App 分组" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group by app"
+          }
+        }
+      }
+    },
+    "按住 ⌥ 按 Tab 列出所有窗口，松开 ⌥ 切过去。清空后不启用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold ⌥ and press Tab to list every window, release ⌥ to switch. Cleared means off."
           }
         }
       }
@@ -28850,6 +28971,17 @@
         }
       }
     },
+    "最小化" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimize"
+          }
+        }
+      }
+    },
     "最快" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29169,6 +29301,17 @@
         }
       }
     },
+    "松开 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release %@"
+          }
+        }
+      }
+    },
     "查看连不上的电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29319,6 +29462,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select to copy"
+          }
+        }
+      }
+    },
+    "桌面 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop %@"
           }
         }
       }
@@ -29906,6 +30060,28 @@
         }
       }
     },
+    "没有匹配的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching windows"
+          }
+        }
+      }
+    },
+    "没有可以切换的窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No windows to switch to"
+          }
+        }
+      }
+    },
     "没有名字含「%@」的项目" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29924,6 +30100,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No shortcut names contain \"%@\"."
+          }
+        }
+      }
+    },
+    "没有屏幕录制权限，卡片显示 App 大图标。授权后显示窗口缩略图。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without Screen Recording permission, cards show large app icons. Grant it to see window thumbnails."
           }
         }
       }
@@ -42591,6 +42778,17 @@
         }
       }
     },
+    "窗口切换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window switcher"
+          }
+        }
+      }
+    },
     "窗口预览" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48116,6 +48314,17 @@
         }
       }
     },
+    "输入 App 名、窗口标题或拼音首字母" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type an app name or window title"
+          }
+        }
+      }
+    },
     "输入什么都行：带币种算汇率，带单位做换算，其余当算式。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48134,6 +48343,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbol or name, e.g. NVDA, Moutai, 0700"
+          }
+        }
+      }
+    },
+    "输入以搜索窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type to search windows"
           }
         }
       }
@@ -50290,6 +50510,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quit"
+          }
+        }
+      }
+    },
+    "退出 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit app"
           }
         }
       }
@@ -52647,6 +52878,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notify when it needs care"
+          }
+        }
+      }
+    },
+    "需要辅助功能权限才能列出和切换窗口，授权前快捷键不生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility permission is needed to list and switch windows. The shortcut stays off until it is granted."
           }
         }
       }

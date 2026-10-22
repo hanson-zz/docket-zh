@@ -399,10 +399,12 @@ struct SettingsView: View {
 
     // MARK: - Shortcuts
 
-    /// 码头里所有的全局快捷键：展开 AI 对话，以及切换到每个布局。
+    /// 码头里所有的全局快捷键：窗口切换、展开 AI 对话，以及切换到每个布局。
     /// 布局的快捷键和“布局”页里的是同一份，在哪边改都一样。
     private var shortcuts: some View {
         Form {
+            WindowSwitcherSettingsSection(state: $state)
+
             Section {
                 LabeledContent {
                     HStack(spacing: 6) {
@@ -485,7 +487,8 @@ struct SettingsView: View {
             subtitled(title, subtitle)
         }
         if let warning = ShotHotKeyAdvice.warning(for: combo,
-                                                  others: others + [state.aiNotch.hotKey, state.quickTodoHotKey]) {
+                                                  others: others + [state.aiNotch.hotKey, state.quickTodoHotKey,
+                                                                    state.windowSwitcher.hotKey]) {
             Label(warning, systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 13))
                 .foregroundStyle(.orange)
@@ -1594,6 +1597,7 @@ final class ShortcutKeyRecorder {
         TodoHotKey.shared.suspend()
         ShotHotKey.shared.suspend()
         MicMuteHotKey.shared.suspend()
+        WindowSwitcherHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1612,6 +1616,7 @@ final class ShortcutKeyRecorder {
         TodoHotKey.shared.resume()
         ShotHotKey.shared.resume()
         MicMuteHotKey.shared.resume()
+        WindowSwitcherHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

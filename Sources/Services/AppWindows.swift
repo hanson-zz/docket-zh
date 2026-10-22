@@ -36,22 +36,10 @@ enum AppWindows {
     /// 没权限、App 没响应（最多等 0.25 秒）或没有窗口时是空的。
     static func windows(bundleID: String) -> [Window] {
         guard isTrusted, let app = process(bundleID: bundleID) else { return [] }
-        let element = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetMessagingTimeout(element, 0.25)
-        guard let list = copy(element, kAXWindowsAttribute) as? [AXUIElement] else { return [] }
-        var out: [Window] = []
-        for (index, window) in list.enumerated() {
-            // 超时只管设过的那个元素；窗口元素不设会按系统默认等约 6 秒，App 卡住时面板跟着卡。
-            AXUIElementSetMessagingTimeout(window, 0.25)
-            let subrole = copy(window, kAXSubroleAttribute) as? String
-            if let subrole, subrole != (kAXStandardWindowSubrole as String),
-               subrole != (kAXDialogSubrole as String) { continue }
-            let title = copy(window, kAXTitleAttribute) as? String
-            let minimized = (copy(window, kAXMinimizedAttribute) as? Bool) ?? false
-            out.append(Window(id: index, title: AppSwitcherList.windowTitle(title, minimized: minimized),
-                              minimized: minimized, element: window))
+        return AXWindowReader.windows(pid: app.processIdentifier, timeout: 0.25).map {
+            Window(id: $0.index, title: AppSwitcherList.windowTitle($0.title, minimized: $0.minimized),
+                   minimized: $0.minimized, element: $0.element)
         }
-        return out
     }
 
     /// 每个 App 有几个窗口，给列表右边的小角标；没权限时是空的。
@@ -64,17 +52,23 @@ enum AppWindows {
 
     /// 跳到这个窗口：最小化的先还原，提到最前，再把 App 切到前台。
     static func focus(_ window: Window, bundleID: String) {
-        if window.minimized {
-            AXUIElementSetAttributeValue(window.element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
-        }
-        AXUIElementPerformAction(window.element, kAXRaiseAction as CFString)
-        AXUIElementSetAttributeValue(window.element, kAXMainAttribute as CFString, kCFBooleanTrue)
-        _ = process(bundleID: bundleID)?.activate(options: [])
+        guard let app = process(bundleID: bundleID) else { return }
+        bringForward(window.element, minimized: window.minimized, app: app)
     }
 
-    private static func copy(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
-        return value
+    /// 把一个窗口带到最前（⌥Tab 窗口切换器也用）：App 隐藏着先取消隐藏，最小化的先还原，
+    /// App 切到前台（AX 的 frontmost 加 `activate`，在别的桌面时系统会切过去），再把窗口
+    /// 提到最前、设为主窗口。
+    static func bringForward(_ element: AXUIElement, minimized: Bool, app: NSRunningApplication) {
+        if app.isHidden { app.unhide() }
+        if minimized {
+            AXUIElementSetAttributeValue(element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+        }
+        let root = AXUIElementCreateApplication(app.processIdentifier)
+        AXUIElementSetMessagingTimeout(root, 0.25)
+        AXUIElementSetAttributeValue(root, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
+        _ = app.activate(options: [])
+        AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+        AXUIElementSetAttributeValue(element, kAXMainAttribute as CFString, kCFBooleanTrue)
     }
 }

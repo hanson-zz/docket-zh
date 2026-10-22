@@ -42,51 +42,19 @@ enum WindowPreviewSource {
     }
 
     /// 这个 App 的普通窗口和对话框，按系统给的先后。没辅助功能权限、App 不在了、
-    /// 没响应时是空的。
+    /// 没响应时是空的。读法和 ⌥Tab 窗口切换器共用 `AXWindowReader`。
     static func windows(bundleID: String) -> [Window] {
         guard AppWindows.isTrusted, let app = AppWindows.process(bundleID: bundleID) else { return [] }
-        let root = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetMessagingTimeout(root, 0.25)
-        guard let list = copy(root, kAXWindowsAttribute) as? [AXUIElement] else { return [] }
-        var out: [Window] = []
-        for (index, window) in list.enumerated() {
-            AXUIElementSetMessagingTimeout(window, 0.25)
-            let subrole = copy(window, kAXSubroleAttribute) as? String
-            if let subrole, subrole != (kAXStandardWindowSubrole as String),
-               subrole != (kAXDialogSubrole as String) { continue }
-            let title = WindowPreview.displayTitle(copy(window, kAXTitleAttribute) as? String)
-            let minimized = (copy(window, kAXMinimizedAttribute) as? Bool) ?? false
-            out.append(Window(id: index, title: title, minimized: minimized,
-                              frame: frame(of: window), element: window))
+        return AXWindowReader.windows(pid: app.processIdentifier, timeout: 0.25).map {
+            Window(id: $0.index, title: WindowPreview.displayTitle($0.title), minimized: $0.minimized,
+                   frame: $0.frame, element: $0.element)
         }
-        return out
     }
 
     /// 关掉这个窗口：按它的关闭按钮，和点红色圆点一样（有未存的改动时 App 自己会问）。
     @discardableResult
     static func close(_ window: Window) -> Bool {
-        guard let raw = copy(window.element, kAXCloseButtonAttribute),
-              CFGetTypeID(raw) == AXUIElementGetTypeID() else { return false }
-        let button = raw as! AXUIElement
-        return AXUIElementPerformAction(button, kAXPressAction as CFString) == .success
-    }
-
-    private static func frame(of window: AXUIElement) -> CGRect {
-        var origin = CGPoint.zero
-        var size = CGSize.zero
-        if let raw = copy(window, kAXPositionAttribute), CFGetTypeID(raw) == AXValueGetTypeID() {
-            AXValueGetValue(raw as! AXValue, .cgPoint, &origin)
-        }
-        if let raw = copy(window, kAXSizeAttribute), CFGetTypeID(raw) == AXValueGetTypeID() {
-            AXValueGetValue(raw as! AXValue, .cgSize, &size)
-        }
-        return CGRect(origin: origin, size: size)
-    }
-
-    private static func copy(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
-        return value
+        AXWindowReader.pressClose(window.element)
     }
 }
 
@@ -104,25 +72,39 @@ struct WindowShotRequest: Sendable {
     var title: String
     var frame: CGRect
     var pixelSize: CGSize
+    /// 系统窗口号；有的话直接按它找，不再按位置和标题配对（⌥Tab 窗口切换器传）。
+    var windowID: CGWindowID? = nil
 }
 
 /// 用 ScreenCaptureKit 的 `SCScreenshotManager` 一次截一个窗口。不隔离到任何
 /// actor，从主线程 `await` 时在后台跑，不卡扩展栏。
 enum WindowShots {
     static func capture(_ requests: [WindowShotRequest]) async -> [Int: WindowShot] {
+        let box = ShotBox()
+        await capture(requests) { key, shot in box.put(key, shot) }
+        return box.shots
+    }
+
+    /// 一张一张截，截好一张交出一张（⌥Tab 窗口切换器边截边换上）。
+    static func capture(_ requests: [WindowShotRequest],
+                        each: @escaping @Sendable (Int, WindowShot) async -> Void) async {
         guard !requests.isEmpty,
               let content = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
-        else { return [:] }
-        var out: [Int: WindowShot] = [:]
+        else { return }
         var used = Set<CGWindowID>()
         for request in requests {
             if Task.isCancelled { break }
-            let mine = content.windows.filter {
-                $0.owningApplication?.processID == request.pid && !used.contains($0.windowID)
+            let window: SCWindow?
+            if let id = request.windowID {
+                window = content.windows.first { $0.windowID == id }
+            } else {
+                let mine = content.windows.filter {
+                    $0.owningApplication?.processID == request.pid && !used.contains($0.windowID)
+                }
+                let sameFrame = mine.filter { WindowPreview.framesMatch($0.frame, request.frame) }
+                window = sameFrame.first(where: { ($0.title ?? "") == request.title }) ?? sameFrame.first
             }
-            let sameFrame = mine.filter { WindowPreview.framesMatch($0.frame, request.frame) }
-            guard let window = sameFrame.first(where: { ($0.title ?? "") == request.title }) ?? sameFrame.first
-            else { continue }
+            guard let window else { continue }
             used.insert(window.windowID)
 
             let filter = SCContentFilter(desktopIndependentWindow: window)
@@ -132,9 +114,16 @@ enum WindowShots {
             config.showsCursor = false
             config.ignoreShadowsSingleWindow = true
             if let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config) {
-                out[request.key] = WindowShot(image)
+                await each(request.key, WindowShot(image))
             }
         }
-        return out
     }
+}
+
+/// 收集一批截图（只在 `capture` 里顺序写入）。
+private final class ShotBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var store: [Int: WindowShot] = [:]
+    func put(_ key: Int, _ shot: WindowShot) { lock.withLock { store[key] = shot } }
+    var shots: [Int: WindowShot] { lock.withLock { store } }
 }
