@@ -343,23 +343,21 @@ final class ShotEditor: NSObject, NSWindowDelegate {
         }
     }
 
-    /// 视图的 `.translationTask` 拿到会话后调这里：一段一个请求，一次翻完。
+    /// 视图的 `.translationTask` 拿到会话后调这里：一段一段翻（和翻译面板一样传字符串，
+    /// 请求对象不跨线程），翻完一起盖上去。
     func runTranslation(_ session: TranslationSession, model: ShotEditorModel) async {
         guard case .working = model.translation, !model.paragraphs.isEmpty else { return }
-        let requests = model.paragraphs.enumerated().map { index, paragraph in
-            TranslationSession.Request(sourceText: paragraph.text, clientIdentifier: "\(index)")
-        }
+        let texts = model.paragraphs.map(\.text)
+        var translations: [String] = []
         do {
-            let responses = try await session.translations(from: requests)
-            var translations = Array(repeating: "", count: model.paragraphs.count)
-            for response in responses {
-                if let id = response.clientIdentifier.flatMap(Int.init), translations.indices.contains(id) {
-                    translations[id] = response.targetText
-                }
+            for text in texts {
+                let response = try await session.translate(text)
+                translations.append(response.targetText)
             }
+            guard self.model === model else { return }
             model.applyTranslations(translations)
         } catch {
-            if error is CancellationError { return }
+            if error is CancellationError || Task.isCancelled { return }
             model.translation = .failed(tr("翻译没有完成：\(error.localizedDescription)"))
         }
     }
