@@ -3,19 +3,60 @@ import Observation
 
 /// 打开 AI 服务：装了它的 Mac App 就开 App，没装就开网页。
 ///
-/// 只是打开，什么都不发送。带问题的网址（服务正式支持时）一定走浏览器，
-/// 因为 App 不接这个网址；复制问题再打开时优先 App，用户在里面粘贴。
+/// 只是打开，什么都不发送。找 App 的顺序：设置里亲手选的、服务自己记下的
+/// 路径（自定义服务）、候选 bundle id、最后在「应用程序」文件夹里按 App 名
+/// 找（见 `AIAppMatch`）。带问题的网址只在没装 App 时走浏览器。
 @MainActor
 enum AIServiceOpener {
     /// 这个服务在本机能打开的 App，没有为 nil。
     static func installedApp(_ service: AIService) -> URL? {
-        if let path = service.appPath, !path.isEmpty, FileManager.default.fileExists(atPath: path) {
-            return URL(fileURLWithPath: path)
+        app(for: service)?.url
+    }
+
+    /// 找到的 App 和它是怎么找到的（设置里显示「会打开你选的 X」还是「会打开 X」）。
+    static func app(for service: AIService) -> (url: URL, chosen: Bool)? {
+        let manager = FileManager.default
+        if let path = AIChatCenter.shared.settings.appPaths[service.id], manager.fileExists(atPath: path) {
+            return (URL(fileURLWithPath: path), true)
         }
-        if let id = service.appBundleID, !id.isEmpty {
-            return NSWorkspace.shared.urlForApplication(withBundleIdentifier: id)
+        if let path = service.appPath, !path.isEmpty, manager.fileExists(atPath: path) {
+            return (URL(fileURLWithPath: path), service.isCustom)
+        }
+        for id in AIAppMatch.bundleIDs(for: service) {
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) { return (url, false) }
+        }
+        for folder in applicationFolders {
+            if let name = AIAppMatch.bestMatch(for: service, among: listing(folder)) {
+                return (folder.appendingPathComponent(name), false)
+            }
         }
         return nil
+    }
+
+    /// 设置展开区里那行字用的：会打开什么。
+    static func target(for service: AIService) -> AIAppMatch.Target {
+        if let found = app(for: service) {
+            let name = AIAppMatch.displayName(found.url.path)
+            return found.chosen ? .chosen(name: name) : .found(name: name)
+        }
+        return service.homeURL == nil ? .nothing : .web
+    }
+
+    private static var applicationFolders: [URL] {
+        [URL(fileURLWithPath: "/Applications"),
+         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications")]
+    }
+
+    /// 文件夹里的 .app 名字。设置页每次重画都会问，按文件夹缓存 5 秒。
+    private static var listings: [URL: (date: Date, names: [String])] = [:]
+
+    private static func listing(_ folder: URL) -> [String] {
+        if let cached = listings[folder], Date().timeIntervalSince(cached.date) < 5 { return cached.names }
+        let names = ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
+            .filter { $0.lowercased().hasSuffix(".app") }
+            .sorted()
+        listings[folder] = (Date(), names)
+        return names
     }
 
     /// 点字牌：App 优先，否则网页。两样都打不开时返回 false。

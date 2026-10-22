@@ -6,7 +6,8 @@ import FoundationNetworking
 // MARK: - AI 助手：打开方式
 
 /// 每个服务在刘海对话里怎么用：网页（用自己的账号）、API（填密钥），
-/// 或者跳转（打开 Mac App 或浏览器，就是 P0 的做法）。
+/// 或者 App（打开 Mac App，没装就用浏览器，就是 P0 的做法）。原来叫「跳转」，
+/// 存的值仍是 `jump`，旧设置照常读取。
 public enum AIOpenMode: String, Codable, Sendable, CaseIterable {
     case web, api, jump
 
@@ -14,7 +15,7 @@ public enum AIOpenMode: String, Codable, Sendable, CaseIterable {
         switch self {
         case .web: tr("网页")
         case .api: "API"
-        case .jump: tr("跳转")
+        case .jump: "App"
         }
     }
 }
@@ -53,6 +54,8 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
     public var modes: [String: AIOpenMode] = [:]
     /// 用户改过的接口地址和模型名，按服务 id。空字符串表示用默认值。
     public var endpoints: [String: AIEndpoint] = [:]
+    /// 用户在设置里给服务亲手选的 Mac App 路径，按服务 id。优先于自动查找。
+    public var appPaths: [String: String] = [:]
     /// 上次在刘海里用的服务。
     public var lastServiceID: String?
     /// 用户自己存的常用提示词，按显示顺序。见 `AIPrompts`。
@@ -61,7 +64,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case enabled, mainScreenOnly, hotKey, modes, endpoints, lastServiceID, prompts
+        case enabled, mainScreenOnly, hotKey, modes, endpoints, appPaths, lastServiceID, prompts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -72,6 +75,8 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         let raw = (try? c.decodeIfPresent([String: String].self, forKey: .modes)) ?? [:]
         modes = raw.compactMapValues(AIOpenMode.init(rawValue:))
         endpoints = (try? c.decodeIfPresent([String: AIEndpoint].self, forKey: .endpoints)) ?? [:]
+        appPaths = ((try? c.decodeIfPresent([String: String].self, forKey: .appPaths)) ?? [:])
+            .filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
         lastServiceID = try? c.decodeIfPresent(String.self, forKey: .lastServiceID)
         prompts = AIPrompts.sanitized((try? c.decodeIfPresent([AIPrompt].self, forKey: .prompts)) ?? [])
     }
@@ -83,6 +88,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         try c.encodeIfPresent(hotKey, forKey: .hotKey)
         try c.encode(modes.mapValues(\.rawValue), forKey: .modes)
         try c.encode(endpoints, forKey: .endpoints)
+        if !appPaths.isEmpty { try c.encode(appPaths, forKey: .appPaths) }
         try c.encodeIfPresent(lastServiceID, forKey: .lastServiceID)
         try c.encode(prompts, forKey: .prompts)
     }
@@ -98,17 +104,34 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
 
 /// 内置服务的默认接口地址和模型名，以及怎么拼出 /chat/completions。
 ///
-/// 地址都是各家文档里写的 OpenAI 兼容地址。豆包（火山方舟）的模型名要填
-/// 用户自己创建的接入点 ID，所以没有默认模型。没写在这里的服务（元宝、
-/// 文心、Gemini、Perplexity、Grok 和自定义服务）由用户自己填地址和模型。
+/// 地址都是各家文档里写的 OpenAI 兼容地址，2026 年 10 月逐个核对过；模型名
+/// 只在文档明确写了当前可用的型号时才给默认值：
+///
+/// - DeepSeek `deepseek-flash`（api-docs.deepseek.com：deepseek-chat 已于
+///   2026-07-24 停用）
+/// - Kimi `kimi-k2.6`（platform.kimi.com 模型列表：moonshot-v1 全系列已于
+///   2026-08-31 下线，调用返回 404）
+/// - 通义 `qwen-plus`（阿里云百炼「获取 API Key」里的示例）
+/// - 智谱 `glm-4.7-flash`（智谱文档的免费模型，替代已下线的 glm-4.5-flash）
+/// - ChatGPT `gpt-6-luna`（OpenAI 弃用页：gpt-4o-mini 2027-01-14 下线，推荐它替代）
+/// - Perplexity `sonar`、Grok `grok-4.7`（各自快速开始里的型号）
+///
+/// 豆包（火山方舟）的模型名要填用户自己创建的接入点 ID；元宝（腾讯混元）、
+/// 文心（百度千帆）和 Gemini 的型号变化快，只给地址，模型由用户填。自定义
+/// 服务地址和模型都由用户填。
 public enum AIEndpoints {
     public static let defaults: [String: AIEndpoint] = [
-        "deepseek": AIEndpoint(baseURL: "https://api.deepseek.com", model: "deepseek-chat"),
-        "kimi": AIEndpoint(baseURL: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k"),
+        "deepseek": AIEndpoint(baseURL: "https://api.deepseek.com", model: "deepseek-flash"),
+        "kimi": AIEndpoint(baseURL: "https://api.moonshot.cn/v1", model: "kimi-k2.6"),
         "tongyi": AIEndpoint(baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-plus"),
-        "zhipu": AIEndpoint(baseURL: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4-flash"),
+        "zhipu": AIEndpoint(baseURL: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4.7-flash"),
         "doubao": AIEndpoint(baseURL: "https://ark.cn-beijing.volces.com/api/v3", model: ""),
-        "chatgpt": AIEndpoint(baseURL: "https://api.openai.com/v1", model: "gpt-4o-mini"),
+        "yuanbao": AIEndpoint(baseURL: "https://api.hunyuan.cloud.tencent.com/v1", model: ""),
+        "wenxin": AIEndpoint(baseURL: "https://qianfan.baidubce.com/v2", model: ""),
+        "chatgpt": AIEndpoint(baseURL: "https://api.openai.com/v1", model: "gpt-6-luna"),
+        "gemini": AIEndpoint(baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: ""),
+        "perplexity": AIEndpoint(baseURL: "https://api.perplexity.ai", model: "sonar"),
+        "grok": AIEndpoint(baseURL: "https://api.x.ai/v1", model: "grok-4.7"),
     ]
 
     /// 豆包的模型名是接入点 ID，只能用户填。
@@ -148,14 +171,14 @@ public enum AIEndpoints {
 // MARK: - 打开方式的取舍
 
 public enum AIOpenModes {
-    /// 内置的十一家默认都是网页；自定义服务默认跳转（P0 的做法）。
+    /// 内置的十一家默认都是网页；自定义服务默认 App（P0 的做法）。
     public static func defaultMode(_ service: AIService) -> AIOpenMode {
         if service.isCustom { return .jump }
         return service.homeURL == nil ? .jump : .web
     }
 
     /// 实际用哪种。选了 API 但没填密钥（或者地址、模型不全）时退回网页，
-    /// 没有网页地址的再退回跳转；网页没有地址时也退回跳转。
+    /// 没有网页地址的再退回 App；网页没有地址时也退回 App。
     public static func mode(for service: AIService, settings: AINotchSettings, hasKey: Bool) -> AIOpenMode {
         let saved = settings.modes[service.id] ?? defaultMode(service)
         switch saved {
@@ -171,7 +194,7 @@ public enum AIOpenModes {
         }
     }
 
-    /// 设置表里哪几个能选：网页要有网址，API 要有密钥和完整的接口。跳转总能选。
+    /// 设置表里哪几个能选：网页要有网址，API 要有密钥和完整的接口。App 总能选。
     public static func available(for service: AIService, settings: AINotchSettings, hasKey: Bool) -> Set<AIOpenMode> {
         var modes: Set<AIOpenMode> = [.jump]
         if service.homeURL != nil { modes.insert(.web) }
@@ -181,14 +204,14 @@ public enum AIOpenModes {
         return modes
     }
 
-    /// 面板顶部的一行字：“API · deepseek-chat”“网页 · 你的账号”“跳转 · 打开 App 或浏览器”。
+    /// 面板顶部的一行字：“API · deepseek-flash”“网页 · 你的账号”“App · 没装就用浏览器”。
     public static func label(_ mode: AIOpenMode, model: String? = nil) -> String {
         switch mode {
         case .api:
             let name = (model ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return name.isEmpty ? "API" : "API · \(name)"
         case .web: return tr("网页 · 你的账号")
-        case .jump: return tr("跳转 · 打开 App 或浏览器")
+        case .jump: return tr("App · 没装就用浏览器")
         }
     }
 }

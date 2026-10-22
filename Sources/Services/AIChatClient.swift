@@ -109,6 +109,49 @@ enum AIChatClient {
     }
 }
 
+extension AIChatClient {
+    /// 测试连接：发一个最小的流式请求（问题只有「hi」），一拿到回应的状态码
+    /// 就断开，不等回答，所以几乎不花额度。2xx 和 429 算通过（见 `AIAPISetup.verdict`）。
+    static func check(endpoint: AIEndpoint, key: String) async -> AIAPISetup.Verdict {
+        let ping = [AIChatMessage(role: .user, text: "hi")]
+        guard var request = AIChatRequest.urlRequest(endpoint: endpoint, key: key, history: ping) else {
+            return AIAPISetup.verdict(failure: .badURL)
+        }
+        request.timeoutInterval = 20
+        do {
+            let (bytes, response) = try await checkSession.bytes(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 200
+            if (200 ..< 300).contains(status) {
+                bytes.task.cancel()
+                return .ok
+            }
+            var body = Data()
+            for try await byte in bytes {
+                body.append(byte)
+                if body.count >= 16_384 { break }
+            }
+            return AIAPISetup.verdict(failure: AIChatFailure.http(status: status, body: body))
+        } catch let error as URLError {
+            return AIAPISetup.verdict(failure: AIChatFailure.network(code: error.code.rawValue) ?? .timeout)
+        } catch {
+            let ns = error as NSError
+            if ns.domain == NSURLErrorDomain, let failure = AIChatFailure.network(code: ns.code) {
+                return AIAPISetup.verdict(failure: failure)
+            }
+            return AIAPISetup.verdict(failure: .other(ns.localizedDescription))
+        }
+    }
+
+    private static let checkSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 20
+        configuration.timeoutIntervalForResource = 30
+        configuration.httpCookieStorage = nil
+        configuration.urlCache = nil
+        return URLSession(configuration: configuration)
+    }()
+}
+
 /// 每个服务的 API 密钥，存在登录钥匙串里（kSecClassGenericPassword），
 /// service 是 bundle id 加服务 id。绝不写进 UserDefaults、状态文件或日志。
 ///

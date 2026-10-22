@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 设置 ▸ AI：刘海入口的开关、快捷键（在“快捷键”页录制）、拾掇的说明，以及每个
-/// 服务的打开方式（网页 / API / 跳转）和 API 的密钥、地址、模型。
+/// 服务的打开方式（网页 / API / App）、API 的密钥、地址、模型，以及 App 方式打开哪个 Mac App。
 struct AINotchSettingsSection: View {
     @Binding var state: PersistedState
 
@@ -65,13 +66,14 @@ struct AINotchSettingsSection: View {
                     }
                 }
             }
-        } header: {
-            ProLabel(title: tr("AI 助手"), isPro: true)
-        } footer: {
+            // 长说明放在表格里而不是表尾：分组表的表尾在窄窗口里会被裁掉。
             Text("入口就是刘海本身，不占菜单栏的地方：指针移到刘海上，刘海下面会长出一小条显示小熊猫，点一下刘海或按快捷键才展开；回答生成中那一小条里是三个跳动的小点。外接屏的入口是菜单栏下方正中的小胶囊，平时半透明。「拾掇」在运行时刘海让给拾掇，码头不在刘海上放入口，请用快捷键或货架上 AI 卡片的小熊猫。灵动提示出现时入口暂时让位。货架上 AI 卡片的小熊猫打开的是同一个对话。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } header: {
+            ProLabel(title: tr("AI 助手"), isPro: true)
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in
             shiduoRunning = AINotchController.checkShiduo()
@@ -81,23 +83,45 @@ struct AINotchSettingsSection: View {
         }
 
         Section {
+            AIOpenModeNotes()
             ForEach(center.allServices) { service in
                 AIServiceModeRow(service: service, settings: $state.aiNotch)
             }
         } header: {
             Text("AI 助手的打开方式")
-        } footer: {
-            Text("网页：在面板里打开官方网页，用你自己的账号，登录一次会记住。API：填了密钥后可选，兼容 OpenAI 的 /chat/completions 流式接口，密钥存在钥匙串里。跳转：打开 Mac App 或浏览器，和以前一样。豆包的 API 要填火山方舟的接入点 ID 作为模型名。")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
 
         AIPromptsSection(prompts: $state.aiNotch.prompts)
     }
 }
 
-/// 设置表的一行：字牌、名字、“已填密钥”、三选一，展开后填密钥、地址和模型。
+/// 打开方式表最上面的三行短说明：每种方式一行，13pt，不放在会被裁切的表尾。
+private struct AIOpenModeNotes: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(AIOpenMode.allCases, id: \.self) { mode in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(mode.title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .frame(minWidth: 40, alignment: .leading)
+                    Text(AIAPISetup.modeNote(mode))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// 设置表的一行：字牌、名字、“已填密钥”、三选一和展开按钮；展开后是 API
+/// （接口地址、密钥、模型、获取密钥、测试连接）和 App（会打开什么、选择 App…）。
+///
+/// API 段总能点：差东西时把选择记下，展开这一行，焦点放到缺的那一格，旁边写
+/// 「填入密钥后生效」；密钥存好后发一个最小请求校验，通过就改用 API。
 private struct AIServiceModeRow: View {
     var service: AIService
     @Binding var settings: AINotchSettings
@@ -105,13 +129,20 @@ private struct AIServiceModeRow: View {
     @State private var expanded = false
     @State private var keyText = ""
     @State private var note: String?
+    @State private var checking = false
+    @State private var endpointEdited = false
+    @FocusState private var focus: AIAPISetup.Field?
 
     private var center: AIChatCenter { AIChatCenter.shared }
     private var hasKey: Bool { center.hasKey(service.id) }
+    private var saved: AIOpenMode { settings.modes[service.id] ?? AIOpenModes.defaultMode(service) }
+    private var readiness: AIAPISetup.Readiness {
+        AIAPISetup.readiness(serviceID: service.id, override: settings.endpoints[service.id], hasKey: hasKey)
+    }
 
     var body: some View {
-        let current = AIOpenModes.mode(for: service, settings: settings, hasKey: hasKey)
-        let available = AIOpenModes.available(for: service, settings: settings, hasKey: hasKey)
+        let effective = AIOpenModes.mode(for: service, settings: settings, hasKey: hasKey)
+        let pending = saved == .api && effective != .api
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -123,64 +154,127 @@ private struct AIServiceModeRow: View {
                     }
                     .accessibilityHidden(true)
                 Text(service.title)
+                    .lineLimit(1)
                 if hasKey {
                     Text("已填密钥")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                HStack(spacing: 2) {
-                    ForEach(AIOpenMode.allCases, id: \.self) { mode in
-                        let on = mode == current
-                        let enabled = available.contains(mode)
-                        Button {
-                            settings.modes[service.id] = mode
-                        } label: {
-                            Text(mode.title)
-                                .font(.system(size: 13, weight: on ? .semibold : .regular))
-                                .frame(width: 42, height: 22)
-                                .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(on ? Color.accentColor.opacity(0.85) : Color.clear))
-                                .foregroundStyle(on ? Color.white : (enabled ? Color.primary : Color.secondary.opacity(0.5)))
-                                .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!enabled)
-                        .help(modeHelp(mode, enabled: enabled))
-                        .accessibilityLabel(tr("\(service.title) 用\(mode.title)\(on ? tr("，当前") : "")"))
-                    }
-                }
-                .padding(2)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.06)))
+                segments(effective: effective)
                 Button {
-                    expanded.toggle()
+                    withAnimation(.easeOut(duration: 0.15)) { expanded.toggle() }
                 } label: {
                     Image(systemName: "chevron.down")
                         .rotationEffect(.degrees(expanded ? 180 : 0))
                         .foregroundStyle(.secondary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .help("密钥、接口地址和模型")
-                .accessibilityLabel(expanded ? tr("收起 \(service.title) 的接口设置") : tr("展开 \(service.title) 的接口设置"))
+                .help("接口地址、密钥、模型和 Mac App")
+                .accessibilityLabel(expanded ? tr("收起 \(service.title) 的设置") : tr("展开 \(service.title) 的设置"))
+            }
+            if pending, let hint = AIAPISetup.pendingHint(readiness, serviceID: service.id) {
+                Label(tr("API \(hint)，现在先用\(effective.title)"), systemImage: "info.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 34)
             }
             if expanded {
                 details
             }
         }
         .padding(.vertical, 2)
-    }
-
-    private func modeHelp(_ mode: AIOpenMode, enabled: Bool) -> String {
-        switch mode {
-        case .web: enabled ? tr("在面板里打开 \(service.title) 的网页，用你自己的账号。") : tr("这个服务没有网址。")
-        case .api: enabled ? tr("用 API 在面板里对话。") : tr("先展开这一行填好密钥（以及接口地址和模型）。")
-        case .jump: tr("打开 Mac App 或浏览器（原来的做法）。")
+        .onChange(of: focus) { old, _ in
+            // 改完地址或模型、焦点离开时，选的是 API 且已经齐了就校验一次。
+            guard old == .baseURL || old == .model, endpointEdited, saved == .api, readiness == .ready else { return }
+            endpointEdited = false
+            check(intent: .api)
         }
     }
+
+    // MARK: 三选一
+
+    private func segments(effective: AIOpenMode) -> some View {
+        HStack(spacing: 2) {
+            ForEach(AIOpenMode.allCases, id: \.self) { mode in
+                let look = AIAPISetup.segment(mode, saved: saved, effective: effective, hasWeb: service.homeURL != nil)
+                Button {
+                    tap(mode)
+                } label: {
+                    Text(mode.title)
+                        .font(.system(size: 13, weight: look == .current ? .semibold : .regular))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 9)
+                        .frame(minWidth: 44, minHeight: 22)
+                        .background {
+                            let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            switch look {
+                            case .current: shape.fill(Color.accentColor.opacity(0.85))
+                            case .pending: shape.strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                            default: Color.clear
+                            }
+                        }
+                        .foregroundStyle(segmentColor(look))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(look == .unavailable)
+                .help(modeHelp(mode, look: look))
+                .accessibilityLabel(tr("\(service.title) 用\(mode.title)\(look == .current ? tr("，当前") : "")"))
+            }
+        }
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.06)))
+    }
+
+    private func segmentColor(_ look: AIAPISetup.Segment) -> Color {
+        switch look {
+        case .current: .white
+        case .pending: .accentColor
+        case .normal: .primary
+        case .unavailable: Color.secondary.opacity(0.5)
+        }
+    }
+
+    private func modeHelp(_ mode: AIOpenMode, look: AIAPISetup.Segment) -> String {
+        switch mode {
+        case .web:
+            return look == .unavailable ? tr("这个服务没有网址。") : tr("在面板里打开 \(service.title) 的网页，用你自己的账号。")
+        case .api:
+            if look == .pending, let hint = AIAPISetup.pendingHint(readiness, serviceID: service.id) { return hint }
+            return readiness == .ready ? tr("用 API 在面板里对话。") : tr("点一下展开，填好密钥就能用 API。")
+        case .jump: return tr("打开 Mac App，没装就用浏览器。")
+        }
+    }
+
+    private func tap(_ mode: AIOpenMode) {
+        note = nil
+        guard mode == .api else {
+            settings.modes[service.id] = mode
+            return
+        }
+        settings.modes[service.id] = .api
+        switch AIAPISetup.tapAPI(readiness) {
+        case .select:
+            break
+        case .expand(let field):
+            withAnimation(.easeOut(duration: 0.15)) { expanded = true }
+            // 展开的那一帧输入框还没出现，下一轮再给焦点。
+            Task { @MainActor in focus = field }
+        }
+    }
+
+    // MARK: 展开区
 
     private var endpoint: Binding<AIEndpoint> {
         Binding(get: { settings.endpoints[service.id] ?? AIEndpoint() },
                 set: { value in
+                    endpointEdited = true
                     if value.baseURL.trimmingCharacters(in: .whitespaces).isEmpty
                         && value.model.trimmingCharacters(in: .whitespaces).isEmpty {
                         settings.endpoints[service.id] = nil
@@ -190,66 +284,181 @@ private struct AIServiceModeRow: View {
                 })
     }
 
+    private var modelPrompt: String {
+        if AIEndpoints.requiresModel(service.id) { return tr("接入点 ID（ep- 开头）") }
+        if let model = AIEndpoints.defaults[service.id]?.model, !model.isEmpty { return model }
+        return tr("模型名")
+    }
+
     @ViewBuilder private var details: some View {
         let fallback = AIEndpoints.defaults[service.id]
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                SecureField(hasKey ? tr("已保存，粘贴新的密钥可替换") : tr("粘贴 API 密钥"), text: $keyText)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel(tr("\(service.title) 的 API 密钥"))
-                Button("保存") { saveKey() }
-                    .disabled(keyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                if hasKey {
-                    Button("删除密钥", role: .destructive) { deleteKey() }
+        VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: "API")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 8) {
+                GridRow {
+                    fieldLabel(tr("接口地址"))
+                    TextField("接口地址", text: endpoint.baseURL, prompt: Text(fallback?.baseURL ?? "https://…/v1"))
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focus, equals: .baseURL)
+                        .accessibilityLabel(tr("\(service.title) 的接口地址"))
+                }
+                GridRow {
+                    fieldLabel(tr("密钥"))
+                    HStack(spacing: 8) {
+                        SecureField("密钥", text: $keyText,
+                                    prompt: Text(hasKey ? tr("已保存，粘贴新的密钥可替换") : tr("粘贴 API 密钥")))
+                            .textFieldStyle(.roundedBorder)
+                            .focused($focus, equals: .key)
+                            .onSubmit(saveKey)
+                            .accessibilityLabel(tr("\(service.title) 的 API 密钥"))
+                        Button("保存", action: saveKey)
+                            .disabled(keyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        if hasKey {
+                            Button("删除密钥", role: .destructive, action: deleteKey)
+                        }
+                    }
+                }
+                GridRow {
+                    fieldLabel(AIEndpoints.requiresModel(service.id) ? tr("接入点 ID") : tr("模型"))
+                    TextField("模型", text: endpoint.model, prompt: Text(modelPrompt))
+                        .textFieldStyle(.roundedBorder)
+                        .focused($focus, equals: .model)
+                        .accessibilityLabel(tr("\(service.title) 的模型名"))
                 }
             }
-            HStack(spacing: 8) {
-                TextField("接口地址", text: endpoint.baseURL,
-                          prompt: Text(fallback?.baseURL ?? "https://…/v1"))
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel(tr("\(service.title) 的接口地址"))
-                TextField("模型", text: endpoint.model,
-                          prompt: Text(AIEndpoints.requiresModel(service.id)
-                                       ? tr("接入点 ID") : (fallback?.model.isEmpty == false ? fallback!.model : tr("模型名"))))
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 150)
-                    .accessibilityLabel(tr("\(service.title) 的模型名"))
+            HStack(spacing: 12) {
+                if let page = AIAPISetup.keyPage(service.id) {
+                    Link(destination: page) {
+                        Label("获取密钥", systemImage: "arrow.up.right.square")
+                    }
+                    .font(.system(size: 13))
+                    .help(page.absoluteString)
+                }
+                Button("测试连接") { check(intent: settings.modes[service.id]) }
+                    .disabled(readiness != .ready || checking)
+                    .help("发一个最小的请求，看密钥、地址和模型对不对。")
+                if checking {
+                    ProgressView().controlSize(.small)
+                    Text("正在测试…")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
             }
             Text(note ?? detailHint(fallback))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Divider()
+            appSection
         }
         .padding(.leading, 34)
+        .padding(.top, 2)
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .fixedSize()
+            .gridColumnAlignment(.trailing)
     }
 
     private func detailHint(_ fallback: AIEndpoint?) -> String {
-        if AIEndpoints.requiresModel(service.id) {
-            return tr("豆包要在火山方舟控制台创建接入点，把接入点 ID（ep- 开头）填进“模型”。密钥只存在这台 Mac 的钥匙串里。")
-        }
+        var lines: [String] = []
+        if let provider = AIAPISetup.providerNote(service.id) { lines.append(provider) }
         if fallback == nil {
-            return tr("填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。密钥只存在这台 Mac 的钥匙串里。")
+            lines.append(tr("填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。"))
+        } else if fallback?.model.isEmpty == false {
+            lines.append(tr("地址和模型留空就用默认值。"))
+        } else {
+            lines.append(tr("地址留空就用默认值。"))
         }
-        return tr("地址和模型留空就用默认值。密钥只存在这台 Mac 的钥匙串里。")
+        lines.append(tr("密钥只存在这台 Mac 的钥匙串里。"))
+        return lines.joined(separator: " ")
     }
 
+    // MARK: App
+
+    @ViewBuilder private var appSection: some View {
+        let target = AIServiceOpener.target(for: service)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: "App")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Label(AIAppMatch.describe(target), systemImage: target == .web || target == .nothing ? "safari" : "app.badge.checkmark")
+                .font(.system(size: 13))
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                Button("选择 App…", action: chooseApp)
+                if settings.appPaths[service.id] != nil {
+                    Button("改回自动查找") { settings.appPaths[service.id] = nil }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = tr("选择")
+        panel.message = tr("选一个 Mac App，「App」方式会打开它。")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        settings.appPaths[service.id] = url.path
+    }
+
+    // MARK: 密钥和校验
+
     private func saveKey() {
-        guard AIKeyStore.write(keyText, for: service.id) else {
+        let input = AIAPISetup.normalizedKey(keyText)
+        guard case .ok(let key) = input else {
+            note = input.message
+            return
+        }
+        guard AIKeyStore.write(key, for: service.id) else {
             note = tr("没能存进钥匙串，再试一次。")
             return
         }
         keyText = ""
-        if AIEndpoints.resolved(service.id, override: settings.endpoints[service.id]) != nil {
-            settings.modes[service.id] = .api
-            note = tr("密钥已存进钥匙串，已改用 API。")
+        let now = AIAPISetup.readiness(serviceID: service.id, override: settings.endpoints[service.id], hasKey: true)
+        if now == .ready {
+            check(intent: .api)
         } else {
-            note = tr("密钥已存进钥匙串。再填好接口地址和模型就能选 API。")
+            // 还差地址或模型：先记下要用 API，焦点移到缺的那一格。
+            settings.modes[service.id] = .api
+            note = [tr("密钥已存进钥匙串。"), AIAPISetup.pendingHint(now, serviceID: service.id)]
+                .compactMap { $0 }.joined(separator: " ")
+            if case .expand(let field) = AIAPISetup.tapAPI(now) { focus = field }
         }
     }
 
     private func deleteKey() {
         AIKeyStore.delete(service.id)
-        if settings.modes[service.id] == .api { settings.modes[service.id] = nil }
-        note = tr("密钥已删除。")
+        let wasAPI = settings.modes[service.id] == .api
+        settings.modes[service.id] = AIAPISetup.modeAfterKeyDeleted(settings.modes[service.id])
+        note = wasAPI ? tr("密钥已删除，已改回网页。") : tr("密钥已删除。")
+    }
+
+    /// 发最小请求校验，按结果决定用不用 API。`intent` 是用户想要的方式。
+    private func check(intent: AIOpenMode?) {
+        guard !checking, let endpoint = center.endpoint(for: service), let key = AIKeyStore.read(service.id) else { return }
+        checking = true
+        note = nil
+        let id = service.id
+        Task { @MainActor in
+            let verdict = await AIChatClient.check(endpoint: endpoint, key: key)
+            checking = false
+            let mode = AIAPISetup.modeAfterCheck(verdict, intent: intent)
+            settings.modes[id] = mode
+            note = AIAPISetup.checkNote(verdict, mode: mode)
+        }
     }
 }

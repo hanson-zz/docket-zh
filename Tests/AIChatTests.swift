@@ -59,16 +59,18 @@ final class AIChatTests: XCTestCase {
         XCTAssertEqual(AIOpenModes.label(.api, model: "deepseek-chat"), "API · deepseek-chat")
         XCTAssertEqual(AIOpenModes.label(.api, model: " "), "API")
         XCTAssertEqual(AIOpenModes.label(.web), "网页 · 你的账号")
-        XCTAssertTrue(AIOpenModes.label(.jump).hasPrefix("跳转"))
+        XCTAssertTrue(AIOpenModes.label(.jump).hasPrefix("App"))
+        XCTAssertEqual(AIOpenMode.jump.title, "App", "原来的「跳转」改名 App，存的值仍是 jump")
     }
 
     // MARK: 接口
 
     func testDefaultEndpoints() {
         XCTAssertEqual(AIEndpoints.resolved("deepseek", override: nil),
-                       AIEndpoint(baseURL: "https://api.deepseek.com", model: "deepseek-chat"))
+                       AIEndpoint(baseURL: "https://api.deepseek.com", model: "deepseek-flash"))
         XCTAssertEqual(AIEndpoints.resolved("tongyi", override: nil)?.model, "qwen-plus")
-        XCTAssertEqual(AIEndpoints.resolved("zhipu", override: nil)?.model, "glm-4-flash")
+        XCTAssertEqual(AIEndpoints.resolved("zhipu", override: nil)?.model, "glm-4.7-flash")
+        XCTAssertEqual(AIEndpoints.resolved("kimi", override: nil)?.model, "kimi-k2.6", "moonshot-v1 已下线")
         XCTAssertEqual(AIEndpoints.resolved("chatgpt", override: nil)?.baseURL, "https://api.openai.com/v1")
         XCTAssertEqual(AIEndpoints.resolved("kimi", override: nil)?.baseURL, "https://api.moonshot.cn/v1")
         XCTAssertNil(AIEndpoints.resolved("doubao", override: nil))
@@ -313,6 +315,7 @@ final class AIChatTests: XCTestCase {
         settings.modes = ["deepseek": .api, "kimi": .jump]
         settings.endpoints = ["doubao": AIEndpoint(model: "ep-1")]
         settings.lastServiceID = "kimi"
+        settings.appPaths = ["kimi": "/Applications/Kimi.app"]
         let data = try JSONEncoder().encode(settings)
         XCTAssertEqual(try JSONDecoder().decode(AINotchSettings.self, from: data), settings)
         XCTAssertNil(settings.usableHotKey)

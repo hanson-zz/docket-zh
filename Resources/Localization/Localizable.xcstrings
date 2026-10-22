@@ -1915,6 +1915,314 @@
         }
       }
     },
+    "API %@，现在先用%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API: %@. Using %@ for now"
+          }
+        }
+      }
+    },
+    "App · 没装就用浏览器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App · browser if not installed"
+          }
+        }
+      }
+    },
+    "Gemini 用谷歌的 OpenAI 兼容接口，模型名见 Gemini API 文档。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemini uses Google's OpenAI-compatible endpoint. See the Gemini API docs for model names."
+          }
+        }
+      }
+    },
+    "会打开 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %@"
+          }
+        }
+      }
+    },
+    "会打开你选的 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %@, which you chose"
+          }
+        }
+      }
+    },
+    "元宝的 API 由腾讯混元提供，模型名见混元文档。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yuanbao's API is provided by Tencent Hunyuan. See the Hunyuan docs for model names."
+          }
+        }
+      }
+    },
+    "先粘贴密钥。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste a key first."
+          }
+        }
+      }
+    },
+    "发一个最小的请求，看密钥、地址和模型对不对。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends a tiny request to check the key, endpoint and model."
+          }
+        }
+      }
+    },
+    "在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，App 复制后打开 App（没装时用浏览器）。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 %@ 条。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick one from the \"Prompts\" menu in the notch chat to wrap the text in the input box (or the clipboard when empty) and send it to the current service: API answers directly, Web copies the prompt for you to paste, App copies it and opens the app (or the browser if it is not installed). {文本} in the content is replaced by that text; without it, the text goes after the content. Up to %@ prompts."
+          }
+        }
+      }
+    },
+    "在面板里打开官网，用你自己的账号，登录一次会记住。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the official site in the panel with your own account. Sign in once and it stays signed in."
+          }
+        }
+      }
+    },
+    "地址和模型留空就用默认值。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave the endpoint and model empty to use the defaults."
+          }
+        }
+      }
+    },
+    "地址留空就用默认值。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave the endpoint empty to use the default."
+          }
+        }
+      }
+    },
+    "填入密钥后生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes effect once you add a key"
+          }
+        }
+      }
+    },
+    "填入接入点 ID 后生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes effect once you add an endpoint ID"
+          }
+        }
+      }
+    },
+    "填入接口地址后生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes effect once you add an endpoint"
+          }
+        }
+      }
+    },
+    "填入模型名后生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takes effect once you add a model name"
+          }
+        }
+      }
+    },
+    "填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter an OpenAI-compatible endpoint (/chat/completions is added) and a model name."
+          }
+        }
+      }
+    },
+    "填密钥直接对话，回答流式显示；密钥只存在钥匙串。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat directly with a key, answers stream in. The key stays in your Keychain."
+          }
+        }
+      }
+    },
+    "密钥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key"
+          }
+        }
+      }
+    },
+    "密钥中间有空格或换行，可能粘贴了多余的内容。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The key has spaces or line breaks in it. Something extra may have been pasted."
+          }
+        }
+      }
+    },
+    "密钥只存在这台 Mac 的钥匙串里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The key is stored only in this Mac's Keychain."
+          }
+        }
+      }
+    },
+    "密钥已删除，已改回网页。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key deleted. Switched back to Web."
+          }
+        }
+      }
+    },
+    "密钥已存进钥匙串。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key saved to the Keychain."
+          }
+        }
+      }
+    },
+    "展开 %@ 的设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand %@ settings"
+          }
+        }
+      }
+    },
+    "打开 Mac App，没装就用浏览器。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the Mac app, or the browser if it is not installed."
+          }
+        }
+      }
+    },
+    "接入点 ID（ep- 开头）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endpoint ID (starts with ep-)"
+          }
+        }
+      }
+    },
+    "接口地址、密钥、模型和 Mac App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endpoint, key, model and Mac app"
+          }
+        }
+      }
+    },
+    "接口地址要以 https:// 开头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The endpoint must start with https://"
+          }
+        }
+      }
+    },
     "收起 %@ 点起的空闲" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10260,17 +10568,6 @@
         }
       }
     },
-    "先展开这一行填好密钥（以及接口地址和模型）。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand this row and add a key first (plus endpoint and model)."
-          }
-        }
-      }
-    },
     "先带我看看" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17376,17 +17673,6 @@
         }
       }
     },
-    "在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，跳转复制或带着问题打开。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 %@ 条。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick one from the \"Prompts\" menu in the notch chat to wrap the text in the input box (or the clipboard when empty) and send it to the current service: API answers directly, Web copies the prompt for you to paste, Jump copies it or opens with the question. {文本} in the content is replaced by that text; without it, the text goes after the content. Up to %@ prompts."
-          }
-        }
-      }
-    },
     "在刘海对话里用 API 直接问 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17717,17 +18003,6 @@
         }
       }
     },
-    "地址和模型留空就用默认值。密钥只存在这台 Mac 的钥匙串里。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave endpoint and model empty to use the defaults. The key is stored only in this Mac's Keychain."
-          }
-        }
-      }
-    },
     "地址格式不对，应为“主机:端口”。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17966,17 +18241,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a URL, or pick an app."
-          }
-        }
-      }
-    },
-    "填兼容 OpenAI 的接口地址（会接上 /chat/completions）和模型名。密钥只存在这台 Mac 的钥匙串里。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter an OpenAI-compatible endpoint (/chat/completions is appended) and a model name. The key is stored only in this Mac's Keychain."
           }
         }
       }
@@ -19630,17 +19894,6 @@
         }
       }
     },
-    "密钥、接口地址和模型" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Key, endpoint and model"
-          }
-        }
-      }
-    },
     "密钥不对或已失效（401），请到设置里重新填写。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19659,28 +19912,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Key deleted."
-          }
-        }
-      }
-    },
-    "密钥已存进钥匙串。再填好接口地址和模型就能选 API。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Key saved to the Keychain. Add the endpoint and model to choose API."
-          }
-        }
-      }
-    },
-    "密钥已存进钥匙串，已改用 API。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Key saved to the Keychain. Switched to API."
           }
         }
       }
@@ -20689,17 +20920,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expand"
-          }
-        }
-      }
-    },
-    "展开 %@ 的接口设置" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand %@ API settings"
           }
         }
       }
@@ -25026,17 +25246,6 @@
         }
       }
     },
-    "打开 Mac App 或浏览器（原来的做法）。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the Mac app or browser (the old way)."
-          }
-        }
-      }
-    },
     "打开“%@”" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27358,6 +27567,17 @@
         }
       }
     },
+    "收起 %@ 的设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse %@ settings"
+          }
+        }
+      }
+    },
     "收起呼吸引导" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27420,6 +27640,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename…"
+          }
+        }
+      }
+    },
+    "改回自动查找" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find Automatically"
           }
         }
       }
@@ -27629,6 +27860,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text color"
+          }
+        }
+      }
+    },
+    "文心的 API 由百度千帆提供，模型名见千帆文档。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenxin's API is provided by Baidu Qianfan. See the Qianfan docs for model names."
           }
         }
       }
@@ -28036,6 +28278,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "None"
+          }
+        }
+      }
+    },
+    "暂时没能确认：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not confirm yet: %@"
+          }
+        }
+      }
+    },
+    "暂时没能确认：%@ 已先改用 API，发送时会再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not confirm yet: %@ Switched to the API anyway; it will try again when you send."
           }
         }
       }
@@ -28777,6 +29041,17 @@
         }
       }
     },
+    "正在测试…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testing…"
+          }
+        }
+      }
+    },
     "正在统计应用、下载和废纸篓…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29184,6 +29459,28 @@
         }
       }
     },
+    "没找到 Mac App，也没有网址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Mac app found and no website"
+          }
+        }
+      }
+    },
+    "没找到 Mac App，会用浏览器打开网页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Mac app found. The website opens in your browser"
+          }
+        }
+      }
+    },
     "没找到。可以直接输入代码，比如 600519、0700、NVDA。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29470,6 +29767,17 @@
         }
       }
     },
+    "没通过：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check failed: %@"
+          }
+        }
+      }
+    },
     "河内" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29576,6 +29884,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Light skin tone"
+          }
+        }
+      }
+    },
+    "测试连接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test Connection"
           }
         }
       }
@@ -29972,6 +30291,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to add 10%, back to 0 when full"
+          }
+        }
+      }
+    },
+    "点一下展开，填好密钥就能用 API。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to expand, then add a key to use the API."
           }
         }
       }
@@ -31226,17 +31556,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collapse"
-          }
-        }
-      }
-    },
-    "收起 %@ 的接口设置" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapse %@ API settings"
           }
         }
       }
@@ -43607,17 +43926,6 @@
         }
       }
     },
-    "网页：在面板里打开官方网页，用你自己的账号，登录一次会记住。API：填了密钥后可选，兼容 OpenAI 的 /chat/completions 流式接口，密钥存在钥匙串里。跳转：打开 Mac App 或浏览器，和以前一样。豆包的 API 要填火山方舟的接入点 ID 作为模型名。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Web: open the official site in the panel with your own account; sign in once and it's remembered. API: available once a key is set, using an OpenAI-compatible /chat/completions streaming API, with the key in the Keychain. Jump: open the Mac app or browser, as before. Doubao's API needs a Volcano Ark endpoint ID as the model name."
-          }
-        }
-      }
-    },
     "罗马" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -44743,6 +45051,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moscow"
+          }
+        }
+      }
+    },
+    "获取密钥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get a Key"
           }
         }
       }
@@ -46613,13 +46932,13 @@
         }
       }
     },
-    "豆包要在火山方舟控制台创建接入点，把接入点 ID（ep- 开头）填进“模型”。密钥只存在这台 Mac 的钥匙串里。" : {
+    "豆包的 API 在火山方舟：先在控制台创建推理接入点，把接入点 ID（ep- 开头）填进「模型」。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "For Doubao, create an endpoint in the Volcano Ark console and put its ID (starts with ep-) in \"Model\". The key is stored only in this Mac's Keychain."
+            "value" : "Doubao's API is on Volcengine Ark: create an inference endpoint in the console, then enter its endpoint ID (starting with ep-) as the model."
           }
         }
       }
@@ -47104,28 +47423,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jump to %@"
-          }
-        }
-      }
-    },
-    "跳转" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jump"
-          }
-        }
-      }
-    },
-    "跳转 · 打开 App 或浏览器" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jump · opens the app or browser"
           }
         }
       }
@@ -49231,6 +49528,28 @@
         }
       }
     },
+    "连接成功。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected."
+          }
+        }
+      }
+    },
+    "连接成功，已改用 API。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected. Now using the API."
+          }
+        }
+      }
+    },
     "连接速率" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49484,6 +49803,17 @@
         }
       }
     },
+    "选一个 Mac App，「App」方式会打开它。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Mac app for the App option to open."
+          }
+        }
+      }
+    },
     "选一个节奏，跟着圆圈慢慢呼吸。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49579,6 +49909,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose Apps"
+          }
+        }
+      }
+    },
+    "选择 App…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose App…"
           }
         }
       }

@@ -21,7 +21,7 @@ final class AIChatCenter {
     private(set) var generating: Set<String> = []
     /// 钉住后点面板外面不收起。
     var pinned = false
-    /// 跳转模式下做完之后的一句话。
+    /// App 模式下做完之后的一句话。
     var jumpHint: String?
     /// 正在显示谷歌登录页的网页。
     private(set) var googleSignIn: Set<String> = []
@@ -272,7 +272,7 @@ final class AIChatCenter {
     func run(_ prompt: AIPrompt) { run(template: prompt.content, name: prompt.name) }
 
     /// 把输入框（空着时用剪贴板）的文字套进提示词，交给当前服务：API 直接
-    /// 发出去流式回答；网页复制提示词，到网页里粘贴；跳转和平时提问一样，
+    /// 发出去流式回答；网页复制提示词，到网页里粘贴；App 和平时提问一样，
     /// 能带问题的带着打开，其余复制再打开。网页模式没有输入框，只用剪贴板。
     func run(template: String, name: String) {
         guard let service = current else { return }
@@ -302,14 +302,15 @@ final class AIChatCenter {
         }
     }
 
-    // MARK: 跳转
+    // MARK: App
 
-    /// 跳转模式：服务正式支持的带着问题开浏览器，其余复制问题再打开 App 或网页。
+    /// App 模式：装了 Mac App 就复制问题再打开 App；没装时服务正式支持的带着
+    /// 问题开浏览器，其余复制问题再打开网页。
     func jump() { jump(draft) }
 
     private func jump(_ text: String) {
         guard let service = current else { return }
-        let plan = AIAsk.plan(text, service: service)
+        let plan = AIAsk.plan(text, service: service, appInstalled: AIServiceOpener.installedApp(service) != nil)
         switch plan {
         case .blocked:
             jumpHint = AIAsk.hint(after: plan, service: service)

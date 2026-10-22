@@ -45,7 +45,7 @@ struct AIPromptsSection: View {
         } header: {
             Text("AI 助手的常用提示词")
         } footer: {
-            Text(tr("在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，跳转复制或带着问题打开。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 \(AIPrompts.maxCount) 条。"))
+            Text(tr("在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，App 复制后打开 App（没装时用浏览器）。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 \(AIPrompts.maxCount) 条。"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

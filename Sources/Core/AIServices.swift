@@ -123,12 +123,13 @@ public enum AIServices {
     /// 其余都没有模板：Grok 的 `?q=` 只有第三方实测、没有官方文档，而且打开就
     /// 直接发送，不给用户看一眼；Gemini 不支持；国内几家没有找到官方说明。
     ///
-    /// Mac App 的 bundle id 只填有据可查的：ChatGPT 是 com.openai.chat（安装包
-    /// codesign 结果），Perplexity 是 ai.perplexity.mac、豆包是
-    /// com.volcengine.doubao（第三方工具的应用清单）。没装或 id 不对时照常打开网页。
+    /// Mac App 的 bundle id 只填最可信的一个：ChatGPT 是 com.openai.chat（安装包
+    /// codesign 结果），Perplexity 是 ai.perplexity.mac（第三方工具的应用清单），
+    /// 豆包是 com.bot.pc.doubao（Homebrew 官方 cask 的卸载清单）。更多候选和
+    /// 按 App 名查找见 `AIAppMatch`；都找不到时照常打开网页。
     public static let builtIn: [AIService] = [
         AIService(id: "doubao", title: tr("豆包"), initial: tr("豆"), region: .domestic,
-                  home: "https://www.doubao.com/chat/", appBundleID: "com.volcengine.doubao"),
+                  home: "https://www.doubao.com/chat/", appBundleID: "com.bot.pc.doubao"),
         AIService(id: "deepseek", title: "DeepSeek", initial: "D", region: .domestic,
                   home: "https://chat.deepseek.com/"),
         AIService(id: "kimi", title: "Kimi", initial: "K", region: .domestic,
