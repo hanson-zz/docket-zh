@@ -34463,13 +34463,13 @@
         }
       }
     },
-    "显示秒（数字类样式）" : {
+    "显示秒（数字和表盘秒针）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show seconds (digital styles)"
+            "value" : "Show seconds (digits and second hand)"
           }
         }
       }

@@ -70,7 +70,10 @@ struct ClockTile: View {
             compactCaption: nil,
             expanded: instance.expanded,
             vertical: vertical,
-            bold: bold
+            bold: bold,
+            // 小表盘的秒针跟卡片的「显示秒」开关走；颜色由表盘从卡片的
+            // 颜色主题里读（`AnalogClockFace.secondColor`）。
+            secondHand: seconds
         )
     }
 }
@@ -93,6 +96,8 @@ struct ClockReadout: View {
     var columnBadge: String?
     /// 时钟“标准”样式的粗细选了“粗”：时间用更粗的字。
     var bold: Bool = false
+    /// 小表盘画秒针。只有时钟「标准」卡片打开；世界时钟不画。
+    var secondHand: Bool = false
 
     var body: some View {
         WidgetSurface {
@@ -103,7 +108,7 @@ struct ClockReadout: View {
                 // the tile beside it share one left edge for their pictures.
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge {
-                        AnalogClockFace(now: now, zone: zone, diameter: 26)
+                        AnalogClockFace(now: now, zone: zone, diameter: 26, showsSeconds: secondHand)
                     }
                     TileReading(value: ClockFormat.time(now, zone: zone), caption: caption,
                                 valueWeight: bold ? .heavy : .semibold)
@@ -123,7 +128,7 @@ struct ClockReadout: View {
     private var column: some View {
         let parts = ClockFormat.compactTime(now, zone: zone)
         return VStack(spacing: 2) {
-            AnalogClockFace(now: now, zone: zone)
+            AnalogClockFace(now: now, zone: zone, showsSeconds: secondHand)
             HStack(alignment: .firstTextBaseline, spacing: 1.5) {
                 Text(parts.time)
                     .font(.system(size: 15, weight: bold ? .heavy : .bold))
@@ -221,23 +226,35 @@ enum ClockFormat {
 
 // MARK: - Face
 
-/// A drawn clock face: thin rim, quarter ticks, hour and minute hands.
+/// A drawn clock face: thin rim, quarter ticks, hour and minute hands, and
+/// optionally a thin second hand with a centre dot.
+///
+/// 秒针默认不画：世界时钟卡片和时钟面板城市行也用这个表盘，只有时钟
+/// 「标准」卡片打开 `showsSeconds`。卡片的 `now` 每秒刷新一次
+/// （`WidgetContext.now`），所以这里不另起计时器。
 struct AnalogClockFace: View {
     var now: Date
     var zone: TimeZone
     var diameter: CGFloat = 30
+    var showsSeconds: Bool = false
+    /// 秒针颜色；nil 时按卡片颜色主题取（`secondColor`）。
+    var secondTint: Color? = nil
 
-    private var hands: (hour: Double, minute: Double) {
-        var calendar = Calendar.current
-        calendar.timeZone = zone
-        let parts = calendar.dateComponents([.hour, .minute], from: now)
-        let minute = Double(parts.minute ?? 0)
-        let hour = Double((parts.hour ?? 0) % 12) + minute / 60
-        return (hour / 12 * 360, minute / 60 * 360)
+    @Environment(\.widgetTint) private var tint
+    @Environment(\.colorScheme) private var scheme
+
+    /// 颜色面板里选了颜色就用选的（跟随系统时是系统强调色），没选用时钟
+    /// 自己的琥珀色；都调到在当前卡片外观上看得清。不在扩展栏上（环境里
+    /// 没有颜色主题）时用时钟默认色。
+    private var secondColor: Color {
+        if let secondTint { return secondTint }
+        let dark = scheme == .dark
+        if let tint { return tint.main(dark: dark) }
+        return Color(code: WidgetTint.readable(WidgetTint.defaultPalette(.clock).main, dark: dark))
     }
 
     var body: some View {
-        let angles = hands
+        let angles = ClockHands.angles(now, zone: zone)
         ZStack {
             Circle()
                 .strokeBorder(WidgetStyle.secondary.opacity(0.45), lineWidth: 1.2)
@@ -246,6 +263,19 @@ struct AnalogClockFace: View {
             }
             hand(length: diameter * 0.26, width: 2.2, degrees: angles.hour)
             hand(length: diameter * 0.37, width: 1.6, degrees: angles.minute)
+            if showsSeconds {
+                let color = secondColor
+                Capsule()
+                    .fill(color)
+                    .frame(width: ClockHands.secondWidth, height: diameter * ClockHands.secondLength)
+                    .offset(y: -diameter * ClockHands.secondLength / 2)
+                    .rotationEffect(.degrees(angles.second))
+                    // 每秒跳一格，不做补间：59 秒到 0 秒补间会倒着转一圈。
+                    .animation(nil, value: angles.second)
+                Circle()
+                    .fill(color)
+                    .frame(width: ClockHands.dotDiameter(diameter), height: ClockHands.dotDiameter(diameter))
+            }
         }
         .frame(width: diameter, height: diameter)
     }

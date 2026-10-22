@@ -654,7 +654,7 @@ struct WidgetSettingsSections: View {
         "volume": tr("音量"),
         "showTerm": tr("显示节气"),
         "showAlmanac": tr("显示宜忌"),
-        "seconds": tr("显示秒（数字类样式）"),
+        "seconds": tr("显示秒（数字和表盘秒针）"),
         "workAlert": tr("调休上班提醒"),
         "workAlertLead": tr("提醒提前"),
         "flies": tr("垃圾多了招来苍蝇"),
