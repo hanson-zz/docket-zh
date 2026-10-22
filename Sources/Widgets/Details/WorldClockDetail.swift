@@ -229,6 +229,7 @@ struct WorldClockDetail: View {
                 }
                 .buttonStyle(.plain)
                 .transition(.move(edge: .trailing))
+                .zIndex(1)
             }
             HStack(spacing: 10) {
                 Button {
@@ -275,11 +276,13 @@ struct WorldClockDetail: View {
             .padding(.leading, 10)
             .padding(.trailing, revealing ? 8 : 4)
             .frame(height: Self.editRowHeight)
-            .offset(x: revealing ? -Self.deleteWidth : 0)
+            // 点按区域要先定再挪：放在 offset 后面时它还罩在原位置，
+            // 正好盖住露出来的「删除」，点删除只会把它收回去。
             .contentShape(.rect)
             .onTapGesture {
                 if pendingDelete != nil { withAnimation(.snappy(duration: 0.22)) { pendingDelete = nil } }
             }
+            .offset(x: revealing ? -Self.deleteWidth : 0)
         }
         .frame(height: Self.editRowHeight)
         .clipped()
