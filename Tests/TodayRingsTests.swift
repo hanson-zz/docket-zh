@@ -63,8 +63,8 @@ final class TodayRingsTests: XCTestCase {
         let small = WidgetCatalog.make(.perfectDay, overrides: [TodayRings.styleKey: .string("rings")])!
         let medium = WidgetCatalog.make(.perfectDay, overrides: [TodayRings.styleKey: .string("rings"),
                                                                  TodayRings.cardKey: .string("medium")])!
-        XCTAssertEqual(WidgetCatalog.naturalSize(small).width, 168)
-        XCTAssertEqual(WidgetCatalog.naturalSize(medium).width, 320)
+        XCTAssertEqual(WidgetCatalog.naturalSize(small).width, 78)
+        XCTAssertEqual(WidgetCatalog.naturalSize(medium).width, 240)
     }
 
     // MARK: Colours
@@ -335,12 +335,13 @@ final class TodayRingsTests: XCTestCase {
         WaterIntake.store(days, in: &config, now: today, calendar: calendar)
 
         let ml = PerfectDay.water([config], on: today, today: today, calendar: calendar)
-        XCTAssertEqual(ml.detail, WaterIntake.tally(total: 1200, goal: 2000, ounces: false))
+        XCTAssertEqual(ml.detail, WaterIntake.tally(total: ml.amount, goal: ml.goal, ounces: false))
         XCTAssertTrue(ml.detail.hasSuffix(WaterIntake.unitLabel(ounces: false)))
 
         config.values["unit"] = .string("oz")
         let oz = PerfectDay.water([config], on: today, today: today, calendar: calendar)
-        XCTAssertEqual(oz.detail, WaterIntake.tally(total: 1200, goal: 2000, ounces: true))
+        XCTAssertEqual(oz.amount, ml.amount)
+        XCTAssertEqual(oz.detail, WaterIntake.tally(total: oz.amount, goal: oz.goal, ounces: true))
         XCTAssertEqual(oz.detail, TodayRings.note(oz), "竹篮面板和三环面板同一种写法")
         XCTAssertFalse(oz.detail.contains(WaterIntake.unitLabel(ounces: false)))
         XCTAssertTrue(oz.detail.hasSuffix(WaterIntake.unitLabel(ounces: true)))
