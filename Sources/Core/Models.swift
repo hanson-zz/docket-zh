@@ -1077,6 +1077,12 @@ public struct MenuBarSettings: Codable, Hashable, Sendable {
     /// Written by every save. A file without it predates the icon-only
     /// default, so its old automatic `.custom` is reset to `.none` once.
     public var labelReviewed: Bool = true
+    /// 菜单栏第二时区：码头图标之外再放一个“● 纽约 03:56”，默认关。
+    public var showWorldClock: Bool = false
+    /// 菜单栏显示世界时钟列表里的哪个城市（`WorldCity.id`，表外城市是
+    /// `storageKey`）。nil 或已经不在列表里时用第一个和此处有时差的城市，
+    /// 见 `WorldClockMenuBar.pick`。
+    public var worldClockCity: String?
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1094,6 +1100,8 @@ public struct MenuBarSettings: Codable, Hashable, Sendable {
         let saved: MenuBarLabelMode = try c.decodeIfPresent(MenuBarLabelMode.self, forKey: .label) ?? MenuBarLabelMode.none
         label = reviewed ? saved : MenuBarLabelMode.none
         labelReviewed = true
+        showWorldClock = try c.decodeIfPresent(Bool.self, forKey: .showWorldClock) ?? false
+        worldClockCity = try c.decodeIfPresent(String.self, forKey: .worldClockCity)
     }
 
     public init() {}

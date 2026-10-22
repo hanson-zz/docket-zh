@@ -2091,6 +2091,17 @@
         }
       }
     },
+    "双方当地都在 9:00 到 18:00 是适合；对方当地 22:00 到 7:00 是在睡觉；其余时间看对方快上班还是已下班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good time when it is 9:00 to 18:00 for both of you; asleep when it is 22:00 to 7:00 for them; otherwise it depends on whether they start work soon or are off work"
+          }
+        }
+      }
+    },
     "发一个最小的请求，看密钥、地址和模型对不对。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9842,6 +9853,39 @@
         }
       }
     },
+    "你那边已下班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After hours for you"
+          }
+        }
+      }
+    },
+    "你那边是深夜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Late night for you"
+          }
+        }
+      }
+    },
+    "你那边还没上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Early for you"
+          }
+        }
+      }
+    },
     "使用“%@”" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10718,6 +10762,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add a Quick To-do to the shelf first"
+          }
+        }
+      }
+    },
+    "先在扩展栏上添加一张世界时钟卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a World Clock card to the shelf first"
           }
         }
       }
@@ -18146,6 +18201,28 @@
         }
       }
     },
+    "在菜单栏显示%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %@ in the menu bar"
+          }
+        }
+      }
+    },
+    "在菜单栏显示世界时钟里一个城市的时间，圆点颜色表示现在适不适合联系对方。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the time in one World Clock city in the menu bar. The dot's color tells you whether it is a good time to reach them."
+          }
+        }
+      }
+    },
     "在设置中添加网址" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20213,6 +20290,28 @@
         }
       }
     },
+    "对方 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Their time %@"
+          }
+        }
+      }
+    },
+    "对方在睡觉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asleep"
+          }
+        }
+      }
+    },
     "对比度不足 4.5，文字颜色已退回「自动」。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21276,6 +21375,17 @@
         }
       }
     },
+    "展开或收起城市介绍和未来 12 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows or hides the city facts and the next 12 hours"
+          }
+        }
+      }
+    },
     "展开或收起未来 12 小时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21459,6 +21569,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ done · %@ to go"
+          }
+        }
+      }
+    },
+    "已下班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off work"
           }
         }
       }
@@ -24553,6 +24674,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avoid"
+          }
+        }
+      }
+    },
+    "快上班" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts work soon"
           }
         }
       }
@@ -34357,6 +34489,17 @@
         }
       }
     },
+    "打开世界时钟面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open World Clock Panel"
+          }
+        }
+      }
+    },
     "打开了但没固定的 App 运行时出现在扩展栏，和固定的分开。选择它们放在哪，或者关掉。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39423,6 +39566,17 @@
         }
       }
     },
+    "点城市卡看城市介绍、日出日落和未来 12 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a city for facts, sunrise and sunset, and the next 12 hours"
+          }
+        }
+      }
+    },
     "点完成：小熊猫欢呼，卡片划掉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40325,6 +40479,17 @@
         }
       }
     },
+    "现在适合联系吗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good time to reach them?"
+          }
+        }
+      }
+    },
     "玻璃" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -40948,6 +41113,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Battery alert line (red below this on battery)"
+          }
+        }
+      }
+    },
+    "电话区号" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calling code"
           }
         }
       }
@@ -45293,6 +45469,17 @@
         }
       }
     },
+    "自动：世界时钟列表里第一个和这里有时差的城市。城市列表在世界时钟面板里编辑。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic: the first city in your World Clock list in a different time zone from here. Edit the list in the World Clock panel."
+          }
+        }
+      }
+    },
     "自定义" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -45872,6 +46059,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Menu bar icon hard to see in Dark Mode"
+          }
+        }
+      }
+    },
+    "菜单栏显示%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %@ in Menu Bar"
+          }
+        }
+      }
+    },
+    "菜单栏显示第二时区" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show a Second Time Zone in the Menu Bar"
           }
         }
       }
@@ -47815,6 +48024,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All accounts are off. Turn on the ones you want in Settings."
+          }
+        }
+      }
+    },
+    "货币" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency"
           }
         }
       }
@@ -50664,6 +50884,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Medium"
+          }
+        }
+      }
+    },
+    "适合" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good time"
           }
         }
       }

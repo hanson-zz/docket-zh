@@ -555,6 +555,7 @@ struct SettingsView: View {
                 Picker("在旁边显示", selection: $state.menuBar.label) {
                     ForEach(MenuBarLabelMode.allCases, id: \.self) { Text(title($0)).tag($0) }
                 }
+                worldClockMenuBarRows
             }
 
             islandSection
@@ -615,6 +616,56 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: 菜单栏第二时区
+
+    /// 菜单栏第二时区的开关和城市。城市来自第一张世界时钟卡片（当前布局优先），
+    /// 和 `WorldClockStatusItem` 读的是同一份；“自动”是第一个和此处有时差的城市。
+    @ViewBuilder
+    private var worldClockMenuBarRows: some View {
+        Toggle(isOn: $state.menuBar.showWorldClock) {
+            subtitled(tr("菜单栏显示第二时区"), tr("在菜单栏显示世界时钟里一个城市的时间，圆点颜色表示现在适不适合联系对方。"))
+        }
+        if state.menuBar.showWorldClock {
+            let cities = worldClockCities
+            Picker(tr("城市"), selection: worldClockCityBinding(cities)) {
+                Text(tr("自动")).tag(String?.none)
+                ForEach(cities) { city in
+                    Text(verbatim: city.name).tag(Optional(Self.worldClockKey(city)))
+                }
+            }
+            .help(tr("自动：世界时钟列表里第一个和这里有时差的城市。城市列表在世界时钟面板里编辑。"))
+        }
+    }
+
+    private static func worldClockKey(_ city: WorldCity) -> String {
+        city.isBuiltIn ? city.id : city.storageKey
+    }
+
+    /// 选过的城市已经从列表里删掉时按“自动”显示，菜单栏那边也是这么挑的。
+    private func worldClockCityBinding(_ cities: [WorldCity]) -> Binding<String?> {
+        Binding(
+            get: {
+                guard let chosen = state.menuBar.worldClockCity,
+                      let match = cities.first(where: { $0.id == chosen || $0.storageKey == chosen })
+                else { return nil }
+                return Self.worldClockKey(match)
+            },
+            set: { state.menuBar.worldClockCity = $0 }
+        )
+    }
+
+    /// 第一张世界时钟卡片的城市列表；没有卡片时是默认列表。
+    private var worldClockCities: [WorldCity] {
+        let active = state.customDock.profileID
+        let ordered = state.profiles.filter { $0.id == active } + state.profiles.filter { $0.id != active }
+        for profile in ordered {
+            if let widget = DockItemTree.widgets(in: profile.items).first(where: { $0.kind == .world }) {
+                return WorldClockList.cities(widget.config)
+            }
+        }
+        return WorldClockList.cities(WidgetConfig())
     }
 
     /// 灵动提示. All off by default; each source starts only when its switch

@@ -7,8 +7,10 @@ import SwiftUI
 /// word "Tomorrow" does not fit next to a place name in 56pt.
 ///
 /// 城市列表（`WorldClockList`）有多个时，卡片显示前 2 到 3 个，顺序和面板
-/// 一样：扩展栏 168×58 三个以上分三列，两个时两行、左边地标小图标；只有
-/// 一个时保持原来的样子。竖排最多三个，上下排。收起的窄卡片只显示第一个。
+/// 一样：扩展栏 168×58 三个以上分三列，两个时上下两行；竖排最多三个，上下排。
+/// 多个城市时每个城市一格，底色是当地此刻的天空（`WorldClockSkyCell`），右下角
+/// 小地标线稿，名字旁红黄绿圆点说明现在适不适合联系。只有一个时保持原来的
+/// 样子，收起的窄卡片只显示第一个。
 struct WorldClockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -51,21 +53,12 @@ struct WorldClockTile: View {
 
     // MARK: 三列
 
+    /// 每个城市一格，底色是当地此刻的天空，格子铺满卡片（不留卡片内边距）。
     private func threeColumns(_ list: [WorldCity]) -> some View {
-        WidgetSurface {
+        skySurface {
             HStack(spacing: 0) {
-                ForEach(Array(list.enumerated()), id: \.element.id) { index, city in
-                    if index > 0 {
-                        Rectangle()
-                            .fill(WidgetStyle.secondary.opacity(0.25))
-                            .frame(width: 0.5)
-                            .padding(.vertical, 6)
-                    }
-                    VStack(spacing: 1) {
-                        label(city, size: 10)
-                        time(city, size: 17)
-                    }
-                    .frame(maxWidth: .infinity)
+                ForEach(list) { city in
+                    cell(city, shape: .stacked, timeSize: 18)
                 }
             }
         }
@@ -74,15 +67,10 @@ struct WorldClockTile: View {
     // MARK: 两行
 
     private func twoRows(_ list: [WorldCity]) -> some View {
-        WidgetSurface {
-            VStack(spacing: 2) {
+        skySurface {
+            VStack(spacing: 0) {
                 ForEach(list) { city in
-                    HStack(spacing: 6) {
-                        CityLandmarkBadge(city: city, now: context.now, size: 20, inkOpacity: 0.85)
-                        label(city, size: 11)
-                        Spacer(minLength: 2)
-                        time(city, size: 15)
-                    }
+                    cell(city, shape: .row, timeSize: 16)
                 }
             }
         }
@@ -91,54 +79,35 @@ struct WorldClockTile: View {
     // MARK: 竖排
 
     private func column(_ list: [WorldCity]) -> some View {
-        WidgetSurface {
-            VStack(spacing: 4) {
-                ForEach(Array(list.enumerated()), id: \.element.id) { index, city in
-                    if index > 0 {
-                        Rectangle()
-                            .fill(WidgetStyle.secondary.opacity(0.25))
-                            .frame(height: 0.5)
-                            .padding(.horizontal, 8)
-                    }
-                    VStack(spacing: 1) {
-                        label(city, size: 10)
-                        time(city, size: 15)
-                    }
+        skySurface {
+            VStack(spacing: 0) {
+                ForEach(list) { city in
+                    cell(city, shape: .stacked, timeSize: 16)
                 }
             }
         }
     }
 
-    // MARK: 零件
-
-    /// 城市名，不是同一天时后面跟 “+1” / “−1”。
-    private func label(_ city: WorldCity, size: CGFloat) -> some View {
-        let zone = city.timeZone ?? .current
-        return HStack(alignment: .firstTextBaseline, spacing: 2) {
-            Text(verbatim: city.name)
-                .font(WidgetStyle.caption(size))
-                .foregroundStyle(WidgetStyle.secondary)
-            if let badge = Self.dayBadge(context.now, zone: zone) {
-                Text(verbatim: badge)
-                    .font(WidgetStyle.label(size - 2))
-                    .foregroundStyle(WidgetStyle.secondary.opacity(0.8))
-                    .monospacedDigit()
-            }
+    /// 卡片外壳照旧（圆角、描边、悬停），里面的天空格子抵消掉卡片的左右内边距，
+    /// 一直铺到卡片边上。
+    private func skySurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        WidgetSurface(fill: .clear) {
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // 先按卡片的圆角裁，再抵消内边距，天空格子的四角跟卡片一样圆。
+                .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.corner, style: .continuous))
+                .padding(.horizontal, -WidgetStyle.inset)
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
     }
 
-    /// 时间不带上午下午（12 小时制时也是），三列放得下。
-    private func time(_ city: WorldCity, size: CGFloat) -> some View {
-        let text = ClockFormat.compactTime(context.now, zone: city.timeZone ?? .current).time
-        return Text(verbatim: text)
-            .font(.system(size: size, weight: .bold))
-            .foregroundStyle(WidgetStyle.primary)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+    private func cell(_ city: WorldCity, shape: WorldClockSkyCell.Arrangement, timeSize: CGFloat) -> some View {
+        WorldClockSkyCell(city: city, now: context.now, shape: shape, timeSize: timeSize,
+                          showsDot: city.id != WorldCities.reference()?.id,
+                          dayBadge: Self.dayBadge(context.now, zone: city.timeZone ?? .current))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    // MARK: 零件
 
     /// "Tomorrow" / "Yesterday" when the zone's calendar day differs from the
     /// local one.

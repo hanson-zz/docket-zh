@@ -4,9 +4,11 @@ import SwiftUI
 /// 世界时钟面板：每个城市一张卡，右上角一枚当地地标线稿。
 ///
 /// 三个状态：
-/// - 浏览：城市卡写名字、和此处差几个小时、时间大字、“周二 · 凌晨”，
-///   底色是当地此刻的天空。点一张卡展开未来 12 小时的对照条（同一时间
-///   只开一张），两行是同一时刻在两地的钟点，夏令时由时区规则自己算。
+/// - 浏览：城市卡写名字、联系状态圆点、一句备注（“中国首都”）、和此处差
+///   几个小时、时间大字、“周二 · 凌晨”，底色是当地此刻的天空。点一张卡展开
+///   科普卡（同一时间只开一张）：一两句介绍，日出日落、天气、货币和汇率、
+///   电话区号，“现在适合联系吗”胶囊，下面是未来 12 小时的对照条，两行是
+///   同一时刻在两地的钟点，夏令时由时区规则自己算。
 /// - 编辑：右上“编辑”进入。拖右侧把手排序，红色减号滑出“删除”再点才删，
 ///   至少留 1 个；底部“＋ 添加城市”，最多 12 个。排在前 3 个的就是卡片上显示的。
 /// - 添加：共用的城市选择器（`WorldCityPicker`），点一行加到最后，回到编辑。
@@ -161,11 +163,11 @@ struct WorldClockDetail: View {
                         }
                     }
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(tr("展开或收起未来 12 小时"))
+                    .accessibilityHint(tr("展开或收起城市介绍和未来 12 小时"))
             }
-            Text(tr("点城市卡展开或收起未来 12 小时"))
+            Text(tr("点城市卡看城市介绍、日出日落和未来 12 小时"))
                 .font(.system(size: 13))
-                .foregroundStyle(.panelTertiary)
+                .foregroundStyle(.panelSecondary)
                 .padding(.top, 2)
         }
     }
@@ -199,7 +201,7 @@ struct WorldClockDetail: View {
 
             Text(tr("最多 12 个城市，至少留 1 个"))
                 .font(.system(size: 13))
-                .foregroundStyle(.panelTertiary)
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -391,22 +393,22 @@ struct WorldClockDetail: View {
 
 // MARK: - 城市卡
 
-/// 浏览态的一张城市卡：当地天空做底，右上角地标水印，左边名字和时差，
-/// 右边时间大字和“周二 · 凌晨”。展开时下面接 12 小时对照条。
+/// 浏览态的一张城市卡：当地天空做底，右上角地标水印，左边名字、联系状态圆点、
+/// 一句备注和时差，右边时间大字和“周二 · 凌晨”。展开时下面接科普卡和 12 小时对照条。
 struct WorldCityCard: View {
     var city: WorldCity
     var now: Date
     var expanded: Bool
 
     private var zone: TimeZone { city.timeZone ?? .current }
+    /// 此处本身：不画圆点，不问适不适合联系。
+    private var isHere: Bool { WorldCities.reference()?.id == city.id }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(verbatim: city.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.panelPrimary)
+                    nameLine
                     Text(verbatim: WorldClockText.offsetLine(city, now: now))
                         .font(.system(size: 13))
                         .foregroundStyle(.panelSecondary)
@@ -430,6 +432,12 @@ struct WorldCityCard: View {
             if expanded {
                 Rectangle().fill(.panelSeparator).frame(height: 0.5)
                     .padding(.horizontal, 14)
+                WorldCityFactsCard(city: city, now: now, isHere: isHere)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+                Rectangle().fill(.panelSeparator).frame(height: 0.5)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
                 WorldClockStrip(zone: zone, name: city.name, now: now)
                     .padding(.horizontal, 14)
                     .padding(.top, 8)
@@ -453,6 +461,25 @@ struct WorldCityCard: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// “纽约 ● · 全球金融中心”。备注太长时截断，名字不缩。
+    private var nameLine: some View {
+        HStack(alignment: .center, spacing: 6) {
+            Text(verbatim: city.name)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .layoutPriority(1)
+            if !isHere {
+                ContactDot(level: WorldClockContact.reason(there: zone, now: now).level, size: 8)
+            }
+            if let note = city.fact?.note {
+                Text(verbatim: "· \(note)")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .truncationMode(.tail)
+            }
+        }
+    }
+
     /// 时间大字；12 小时制的上午下午缩小放在后面，大字不被挤小。
     private var bigTime: some View {
         let parts = ClockFormat.compactTime(now, zone: zone)
@@ -468,6 +495,196 @@ struct WorldCityCard: View {
                     .foregroundStyle(.panelSecondary)
             }
         }
+    }
+}
+
+// MARK: - 科普卡
+
+/// 城市卡展开后的科普卡：介绍、日出日落、天气、货币和汇率、电话区号，
+/// 以及“现在适合联系吗”。
+///
+/// 日出日落按城市表里的经纬度离线算；天气按同一个坐标向天气小组件已经在用的
+/// Open-Meteo 取（`ForecastService`），取不到就不显示那一格；汇率只读计算器
+/// 已经在用的汇率服务（`CurrencyService`），没有表就只写货币名和代码，不写死
+/// 任何数字。表外的城市（系统时区）没有这些，只剩联系状态。
+struct WorldCityFactsCard: View {
+    var city: WorldCity
+    var now: Date
+    var isHere: Bool
+
+    private var zone: TimeZone { city.timeZone ?? .current }
+
+    private var place: WeatherService.Coordinate? {
+        guard let lat = city.latitude, let lon = city.longitude else { return nil }
+        return WeatherService.Coordinate(lat: lat, lon: lon, zone: city.zone)
+    }
+
+    private var weather: DailyForecast.Now? {
+        place.flatMap { ForecastService.shared.forecast(at: $0)?.current }
+    }
+
+    private var rateLine: String? {
+        guard let code = city.fact?.currency else { return nil }
+        return WorldClockInfo.rateLine(code: code, reference: WorldClockInfo.referenceCurrency(),
+                                       rates: CurrencyService.shared.rates)
+    }
+
+    var body: some View {
+        let fact = city.fact
+        let current = self.weather
+        let rate = rateLine
+        VStack(alignment: .leading, spacing: 8) {
+            if let fact {
+                Text(verbatim: fact.intro)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelPrimary)
+                    .lineSpacing(2)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 2)
+            }
+
+            if WorldClockInfo.sun(city, now: now) != nil || current != nil {
+                HStack(spacing: 8) {
+                    sunCells
+                    if let current { weatherCell(current) }
+                }
+            }
+
+            if let fact {
+                HStack(spacing: 8) {
+                    cell(tr("货币")) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(verbatim: WorldClockInfo.currencyTitle(fact.currency))
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(.panelPrimary)
+                                .layoutPriority(1)
+                            if let rate {
+                                Text(verbatim: rate)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.panelSecondary)
+                            }
+                        }
+                    }
+                    .layoutPriority(1)
+                    cell(tr("电话区号")) {
+                        Text(verbatim: fact.dialCode)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.panelPrimary)
+                            .monospacedDigit()
+                    }
+                    .frame(width: 96)
+                }
+            }
+
+            if !isHere { contactRow }
+
+            if let footnote = footnote(weather: current != nil, rate: rate != nil) {
+                Text(verbatim: footnote)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .lineLimit(1)
+        .task(id: city.id) {
+            if let place { await ForecastService.shared.refresh(place) }
+            CurrencyService.shared.start()
+            CurrencyService.shared.refresh()
+        }
+    }
+
+    @ViewBuilder
+    private var sunCells: some View {
+        switch WorldClockInfo.sun(city, now: now) {
+        case .normal(let rise, let set)?:
+            cell(tr("日出")) { iconValue("sunrise.fill", rise) }
+            cell(tr("日落")) { iconValue("sunset.fill", set) }
+        case .polarDay?:
+            cell(tr("日照")) { iconValue("sun.max.fill", tr("极昼")) }
+        case .polarNight?:
+            cell(tr("日照")) { iconValue("moon.stars.fill", tr("极夜")) }
+        case nil:
+            EmptyView()
+        }
+    }
+
+    private func weatherCell(_ current: DailyForecast.Now) -> some View {
+        cell(tr("天气")) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Image(systemName: WMOWeather.symbol(current.code, isDay: current.isDay))
+                    .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 15))
+                Text(verbatim: "\(Int(current.temperatureC.rounded()))°")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                Text(verbatim: WMOWeather.condition(current.code))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+            }
+        }
+    }
+
+    private func iconValue(_ symbol: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Image(systemName: symbol)
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 14))
+            Text(verbatim: value)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .monospacedDigit()
+        }
+    }
+
+    /// 一个小格：上面灰色标题，下面数值。
+    private func cell<Value: View>(_ title: String, @ViewBuilder value: () -> Value) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(verbatim: title)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+            value()
+                .minimumScaleFactor(0.85)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.panelFill)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(.panelStroke, lineWidth: 0.5)
+                }
+        }
+    }
+
+    /// “现在适合联系吗  ● 对方在睡觉  对方 03:56”。
+    private var contactRow: some View {
+        let reason = WorldClockContact.reason(there: zone, now: now)
+        return HStack(spacing: 8) {
+            Text(tr("现在适合联系吗"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+            ContactCapsule(reason: reason)
+            Text(verbatim: WorldClockContact.theirTime(zone, now: now))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .monospacedDigit()
+            Spacer(minLength: 0)
+        }
+        .minimumScaleFactor(0.85)
+        .padding(.top, 2)
+        .help(tr("双方当地都在 9:00 到 18:00 是适合；对方当地 22:00 到 7:00 是在睡觉；其余时间看对方快上班还是已下班"))
+    }
+
+    /// 数据来源，许可要求显示在用到数据的地方。
+    private func footnote(weather: Bool, rate: Bool) -> String? {
+        let parts = [weather ? WeatherService.forecastAttribution : nil,
+                     rate ? CurrencyService.attribution : nil].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
 
@@ -527,7 +744,7 @@ struct WorldClockStrip: View {
                     VStack(spacing: 4) {
                         Text(Self.hourLabel(hour, zone: .current))
                             .font(.system(size: 13))
-                            .foregroundStyle(.panelTertiary)
+                            .foregroundStyle(.panelSecondary)
                         Text(Self.hourLabel(hour, zone: zone))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.panelPrimary)
@@ -551,7 +768,7 @@ struct WorldClockStrip: View {
                 Text(tr("阴影为当地 6 至 18 点"))
             }
             .font(.system(size: 13))
-            .foregroundStyle(.panelTertiary)
+            .foregroundStyle(.panelSecondary)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
         }

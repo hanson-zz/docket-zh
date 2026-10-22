@@ -44,6 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var state: AppState!
     private var shelf: DockPanelController!
     private var menuBar: MenuBarController!
+    /// 菜单栏第二时区（设置里打开，默认关，关着时不占菜单栏）。
+    private var worldClockItem: WorldClockStatusItem!
     private var observation: NSObjectProtocol?
 
     /// 通知代理在启动完成之前就设好：点一条通知把没在运行的码头启动起来时，
@@ -87,7 +89,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // The Settings window writes the model directly rather than going
         // through the menu bar, so it needs the same wire.
         state.onShelfSettingsChanged = { [weak self] in self?.shelf.refresh() }
-        state.onMenuBarSettingsChanged = { [weak self] in self?.menuBar.refreshButton() }
+        worldClockItem = WorldClockStatusItem(app: state)
+        state.onMenuBarSettingsChanged = { [weak self] in
+            self?.menuBar.refreshButton()
+            self?.worldClockItem.refresh()
+        }
         state.onAppearanceChanged = { [weak self] in self?.applyAppearance() }
 
         // The Focus Timer runs through a shared provider the widgets read,
