@@ -6,8 +6,9 @@ import SwiftUI
 ///
 /// 浏览：头上大日期和「10 月 · 今天 4 个日程」，一周条（数字下面一行农历小字：节气、休 / 班、初一写月名，
 /// 英文界面不写；再下面圆点是日程数，点哪天看哪天），全天日程放顶上，那天的时间轴（连着 2 小时以上
-/// 没日程的整点折成一条「空闲 3 小时」，点了展开，现在线那一段不折；空档 30 分钟以上写「专注一下」，
-/// 点了开专注计时；一天没有定时日程时不画轴，给小熊猫空状态），「接下来」，底下「写一句」。
+/// 没日程的整点折成一条「空闲 3 小时」，点了展开，展开的段顶上一条「收起」点了重新折叠，现在线那一段不折；
+/// 空档 30 分钟以上写「专注一下」，点了开专注计时；一天没有定时日程时不画轴，给小熊猫空状态，
+/// 看的是今天时「新建日程」旁边也有「专注一下」），「接下来」，底下「写一句」。
 /// 新建：标题、时间预设（30 分钟 / 1 小时 / 2 小时 / 全天）、日历、冲突提示，写回系统日历。
 /// 点开日程：拖两端改时间，或删除，都写回系统日历；重复日程只动这一次。
 ///
@@ -331,10 +332,12 @@ struct CalendarPlannerPanel: View {
                 AgendaFold.visible(gap, in: segments, day: day, calendar: calendar).map { (gap: gap, shown: $0) }
             }
         let byID = Dictionary(timed.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        // `DayTimeline` 给的是整条轴上的比例，换回当天第几小时再交给折叠后的轴。
-        let hourAt: (Double) -> Double = { Double(hours.lowerBound) + $0 * Double(span) }
+        // `DayTimeline` 给的是整条轴上的比例，换回当天第几小时再交给折叠后的轴。按秒取整，
+        // 正好在整点结束的日程不会因为浮点误差算到「收起」细行下面去。
+        let hourAt: (Double) -> Double = { ((Double(hours.lowerBound) + $0 * Double(span)) * 3_600).rounded() / 3_600 }
         let tops = axis.tops
         let folds = segments.indices.filter { segments[$0].kind == .free }
+        let collapses = segments.indices.filter { segments[$0].kind == .collapse }
         let axisX: CGFloat = 40
 
         return GeometryReader { geo in
@@ -360,9 +363,15 @@ struct CalendarPlannerPanel: View {
                         .offset(x: axisX + 2, y: CGFloat(tops[index]) + 3)
                 }
 
+                ForEach(collapses, id: \.self) { index in
+                    collapseRow(segments[index])
+                        .frame(width: width - 2, height: CGFloat(AgendaFold.collapseHeight))
+                        .offset(x: axisX + 2, y: CGFloat(tops[index]))
+                }
+
                 ForEach(Array(gaps.enumerated()), id: \.offset) { _, item in
                     let y0 = CGFloat(axis.y(item.shown.start, day: day, calendar: calendar))
-                    let y1 = CGFloat(axis.y(item.shown.end, day: day, calendar: calendar))
+                    let y1 = CGFloat(axis.y(item.shown.end, day: day, trailing: true, calendar: calendar))
                     gapBlock(item.gap, now: now, height: max(0, y1 - y0 - 6))
                         .frame(width: width - 2)
                         .offset(x: axisX + 2, y: y0 + 3)
@@ -372,7 +381,7 @@ struct CalendarPlannerPanel: View {
                     if let entry = byID[block.id] {
                         let laneWidth = (width - 2) / CGFloat(max(1, block.lanes))
                         let y0 = CGFloat(axis.y(hour: hourAt(block.from)))
-                        let y1 = CGFloat(axis.y(hour: hourAt(block.to)))
+                        let y1 = CGFloat(axis.y(hour: hourAt(block.to), trailing: true))
                         let h = max(16, y1 - y0 - 3)
                         eventBlock(entry, height: h, narrow: block.lanes > 1, past: block.isPast)
                             .frame(width: laneWidth - (block.lanes > 1 ? 2 : 0), height: h)
@@ -423,10 +432,44 @@ struct CalendarPlannerPanel: View {
         .accessibilityLabel(AgendaFold.freeAccessibility(segment))
     }
 
-    /// 一天没有定时日程：不画整条空轴，给一句小熊猫空状态，按钮直接新建。
+    /// 点开的空闲段顶上那条细行：右边淡色「收起 ⌃」，点了重新折叠。左边一根细线接着轴。
+    private func collapseRow(_ segment: AgendaFold.Segment) -> some View {
+        HStack(spacing: 6) {
+            Rectangle().fill(.panelSeparator).frame(height: 0.5)
+            Button {
+                openFolds.remove(segment.id)
+            } label: {
+                HStack(spacing: 3) {
+                    Text(tr("收起"))
+                        .lineLimit(1)
+                        .fixedSize()
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelTertiary)
+                .padding(.horizontal, 8)
+                .frame(maxHeight: .infinity)
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .help(tr("收起"))
+            .accessibilityLabel(AgendaFold.collapseAccessibility(segment))
+        }
+    }
+
+    /// 一天没有定时日程：不画整条空轴，给一句小熊猫空状态，按钮直接新建；
+    /// 看的是今天、离午夜还有半小时以上时旁边再放「专注一下」，和轴上空档的入口同一个动作。
     private func emptyDay(day: Date, now: Date, hasAllDay: Bool) -> some View {
-        PandaEmptyState(empty: .calendar, title: tr("新建日程"), panel: true,
-                        message: AgendaFold.emptyLine(day: day, now: now, hasAllDay: hasAllDay, calendar: calendar)) {
+        let focusGap = AgendaFold.emptyFocusGap(day: day, now: now, calendar: calendar)
+        return PandaEmptyState(empty: .calendar, title: tr("新建日程"), panel: true,
+                               message: AgendaFold.emptyLine(day: day, now: now, hasAllDay: hasAllDay, calendar: calendar),
+                               secondary: focusGap.map { gap in
+                                   PandaEmptyState.Secondary(title: tr("专注一下")) {
+                                       let now = Date()
+                                       startFocus(DateInterval(start: min(max(gap.start, now), gap.end), end: gap.end), now: now)
+                                   }
+                               }) {
             guard !context.isPreview else { return }
             startNew(day: day, now: Date())
         }

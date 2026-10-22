@@ -4,7 +4,8 @@ import Foundation
 ///
 /// - `AgendaFold`：那天的时间轴按小时画时，连续 2 小时以上没有定时日程的整点段
 ///   折成一条细行「空闲 3 小时」，点了展开；现在线所在的那一小时和下一小时永不折叠，
-///   这样「专注一下」的空档总看得见。一天没有定时日程时不画轴，界面给一句空状态。
+///   这样「专注一下」的空档总看得见。点开的段顶上留一条「收起」细行，点了重新折叠。
+///   一天没有定时日程时不画轴，界面给一句空状态；看的是今天时空状态里也能直接专注。
 /// - `WeekLunar`：一周条每天数字下面那行农历小字：节气 > 休 / 班 > 初一写月名 > 日名；
 ///   窄了只留节气、休 / 班和初一；英文界面不显示。
 ///
@@ -14,10 +15,13 @@ public enum AgendaFold {
     public static let minimumHours = 2
     /// 折起来那一条的高度（pt），界面和 `AgendaAxis` 共用。
     public static let foldHeight: Double = 28
+    /// 点开的段顶上那条「收起」细行的高度（pt）。
+    public static let collapseHeight: Double = 22
 
-    /// 时间轴上的一段：照常按小时画，或者折成一条「空闲 N 小时」。
+    /// 时间轴上的一段：照常按小时画，折成一条「空闲 N 小时」，或者是点开的段顶上那条「收起」。
+    /// `collapse` 不占时间（起点和终点都是点开那段的起点），只占 `collapseHeight` 的高度。
     public struct Segment: Equatable, Hashable, Sendable {
-        public enum Kind: Equatable, Hashable, Sendable { case hours, free }
+        public enum Kind: Equatable, Hashable, Sendable { case hours, free, collapse }
         public var kind: Kind
         /// 整点，和轴的范围一样从当天零点算。
         public var start: Int
@@ -30,7 +34,7 @@ public enum AgendaFold {
         }
 
         public var hours: Int { end - start }
-        /// 折起来的段用起点当身份：界面记「哪几段点开了」。
+        /// 折起来的段（和它点开后的「收起」）用起点当身份：界面记「哪几段点开了」。
         public var id: Int { start }
     }
 
@@ -40,7 +44,7 @@ public enum AgendaFold {
         return spans.contains { !$0.isAllDay && $0.start < dayEnd && visibleEnd($0) > dayStart }
     }
 
-    /// 轴分段。`expanded` 是用户点开过的折叠段起点，这些段照常画。
+    /// 轴分段。`expanded` 是用户点开过的折叠段起点，这些段照常画，前面插一条 `collapse`。
     ///
     /// 每个整点 [h, h+1) 只要和任何定时日程重叠就算忙（首尾相接不算）。看的是今天时，
     /// 现在所在的那一小时和下一小时不折。其余连着空着、至少 `minimum` 小时的整点折成一条。
@@ -80,6 +84,10 @@ public enum AgendaFold {
                 if end - hour >= max(1, minimum), !expanded.contains(hour) {
                     closePlain(at: hour)
                     result.append(Segment(kind: .free, start: hour, end: end))
+                } else if end - hour >= max(1, minimum) {
+                    closePlain(at: hour)
+                    result.append(Segment(kind: .collapse, start: hour, end: hour))
+                    plainStart = hour
                 } else if plainStart == nil {
                     plainStart = hour
                 }
@@ -103,6 +111,21 @@ public enum AgendaFold {
         tr("\(segment.start) 点到 \(segment.end) 点空闲，点按展开")
     }
 
+    /// 「收起」细行读屏念的：「收起 10 点起的空闲」。
+    public static func collapseAccessibility(_ segment: Segment) -> String {
+        tr("收起 \(segment.start) 点起的空闲")
+    }
+
+    /// 一天没有定时日程时空状态里「专注一下」按的空档：从现在到当天结束。
+    /// 只有看的是今天、剩下的不到 `minimum` 时才给（别的日子、快到午夜时不放这个按钮）。
+    public static func emptyFocusGap(day: Date, now: Date, minimum: TimeInterval = CalendarPlanner.minimumGap,
+                                     calendar: Calendar = WeekAgenda.calendar) -> DateInterval? {
+        guard calendar.isDate(now, inSameDayAs: day) else { return nil }
+        let (_, dayEnd) = bounds(day, calendar: calendar)
+        guard dayEnd.timeIntervalSince(now) >= minimum else { return nil }
+        return DateInterval(start: now, end: dayEnd)
+    }
+
     /// 一天没有定时日程时那句空状态。只有全天日程时换个说法，免得和顶上的全天条矛盾。
     public static func emptyLine(day: Date, now: Date, hasAllDay: Bool,
                                  calendar: Calendar = WeekAgenda.calendar) -> String {
@@ -111,22 +134,37 @@ public enum AgendaFold {
     }
 
     /// 空档在轴上看得见的那部分：从它的起点到第一段折叠为止。
-    /// 看得见的不到 `minimum` 时为 nil（太矮放不下字和按钮）。
+    /// 空档跨过「收起」细行时不压在它上面：前半截够 `minimum` 就只画前半截（现在线那一段的专注入口不丢），
+    /// 不够就从细行下面开始画。看得见的不到 `minimum` 时为 nil（太矮放不下字和按钮）。
     public static func visible(_ gap: DateInterval, in segments: [Segment], day: Date,
                                minimum: TimeInterval = CalendarPlanner.minimumGap,
                                calendar: Calendar = WeekAgenda.calendar) -> DateInterval? {
         let dayStart = calendar.startOfDay(for: day)
+        var start = gap.start
         var end = gap.end
-        for segment in segments where segment.kind == .free {
-            let foldStart = dayStart.addingTimeInterval(Double(segment.start) * 3_600)
-            let foldEnd = dayStart.addingTimeInterval(Double(segment.end) * 3_600)
-            if foldEnd <= gap.start { continue }
-            if foldStart <= gap.start { return nil }
-            end = min(end, foldStart)
+        for segment in segments {
+            let segStart = dayStart.addingTimeInterval(Double(segment.start) * 3_600)
+            let segEnd = dayStart.addingTimeInterval(Double(segment.end) * 3_600)
+            switch segment.kind {
+            case .hours:
+                continue
+            case .free:
+                if segEnd <= start { continue }
+                if segStart <= start { return nil }
+                end = min(end, segStart)
+            case .collapse:
+                if segStart <= start || segStart >= end { continue }
+                if segStart.timeIntervalSince(start) >= minimum {
+                    end = segStart
+                } else {
+                    start = segStart
+                    continue
+                }
+            }
             break
         }
-        guard end.timeIntervalSince(gap.start) >= minimum else { return nil }
-        return DateInterval(start: gap.start, end: end)
+        guard end.timeIntervalSince(start) >= minimum else { return nil }
+        return DateInterval(start: start, end: end)
     }
 
     // MARK: Helpers
@@ -144,20 +182,28 @@ public enum AgendaFold {
 }
 
 /// 折叠后的轴：把「当天第几小时」换成竖直位置。照常画的段每小时 `hourHeight`，
-/// 折叠段整条 `foldHeight`（段里的时刻按比例落在这条里，只有被截断的空档会用到）。
+/// 折叠段整条 `foldHeight`（段里的时刻按比例落在这条里，只有被截断的空档会用到），
+/// 「收起」细行 `collapseHeight`，不对应任何时刻。
 public struct AgendaAxis: Equatable, Sendable {
     public var segments: [AgendaFold.Segment]
     public var hourHeight: Double
     public var foldHeight: Double
+    public var collapseHeight: Double
 
-    public init(segments: [AgendaFold.Segment], hourHeight: Double, foldHeight: Double = AgendaFold.foldHeight) {
+    public init(segments: [AgendaFold.Segment], hourHeight: Double, foldHeight: Double = AgendaFold.foldHeight,
+                collapseHeight: Double = AgendaFold.collapseHeight) {
         self.segments = segments
         self.hourHeight = hourHeight
         self.foldHeight = foldHeight
+        self.collapseHeight = collapseHeight
     }
 
     public func height(of segment: AgendaFold.Segment) -> Double {
-        segment.kind == .free ? foldHeight : Double(segment.hours) * hourHeight
+        switch segment.kind {
+        case .hours: Double(segment.hours) * hourHeight
+        case .free: foldHeight
+        case .collapse: collapseHeight
+        }
     }
 
     public var height: Double { segments.reduce(0) { $0 + height(of: $1) } }
@@ -172,14 +218,18 @@ public struct AgendaAxis: Equatable, Sendable {
     }
 
     /// 当天第 `hour` 小时（可带小数）的竖直位置；轴外的夹到两头。
-    public func y(hour: Double) -> Double {
+    ///
+    /// 正好落在「收起」细行上的整点有两个位置：当起点用（日程、空档的顶边，默认）落在细行下面，
+    /// `trailing` 当终点用（底边）落在细行上面，这样首尾相接的日程和空档都不会压住细行。
+    public func y(hour: Double, trailing: Bool = false) -> Double {
         guard let first = segments.first, let last = segments.last else { return 0 }
-        if hour <= Double(first.start) { return 0 }
-        if hour >= Double(last.end) { return height }
+        if hour < Double(first.start) { return 0 }
+        if hour > Double(last.end) { return height }
         var top = 0.0
         for segment in segments {
             let h = height(of: segment)
-            if hour < Double(segment.end) {
+            if segment.kind != .collapse,
+               trailing ? hour <= Double(segment.end) : hour < Double(segment.end) {
                 let fraction = (hour - Double(segment.start)) / Double(max(1, segment.hours))
                 return top + max(0, fraction) * h
             }
@@ -188,8 +238,8 @@ public struct AgendaAxis: Equatable, Sendable {
         return height
     }
 
-    public func y(_ date: Date, day: Date, calendar: Calendar = WeekAgenda.calendar) -> Double {
-        y(hour: date.timeIntervalSince(calendar.startOfDay(for: day)) / 3_600)
+    public func y(_ date: Date, day: Date, trailing: Bool = false, calendar: Calendar = WeekAgenda.calendar) -> Double {
+        y(hour: date.timeIntervalSince(calendar.startOfDay(for: day)) / 3_600, trailing: trailing)
     }
 
     /// 左边要写字的整点：照常画的段每个整点都写（两头都写），折叠段不写。

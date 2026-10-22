@@ -331,13 +331,21 @@ struct PandaEmptyBadge: View {
 ///
 /// 大面板：顶部一抹很淡的主题色光晕、小熊猫轻轻呼吸、脚下软阴影、右上角主题
 /// 道具圆标，标题下多一行灰色提示，按钮用主题色。小卡保持紧凑，只换姿势和
-/// 按钮颜色。传了 `message` 时用它替换标题那句，不再显示提示行。
+/// 按钮颜色。传了 `message` 时用它替换标题那句，不再显示提示行。传了 `secondary` 时大面板
+/// 在主按钮旁边并排再放一个同样大小的次按钮（淡底，不用主题色），小卡不放。
 struct PandaEmptyState: View {
+    /// 主按钮旁边的第二个动作，比如日历空状态里的「专注一下」。
+    struct Secondary {
+        var title: String
+        var action: () -> Void
+    }
+
     var empty: PandaEmpty
     var title: String
     var compact = false
     var panel = false
     var message: String? = nil
+    var secondary: Secondary? = nil
     var action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -378,6 +386,18 @@ struct PandaEmptyState: View {
             .contentShape(Capsule())
     }
 
+    private func secondaryButton(_ secondary: Secondary) -> some View {
+        Button(action: secondary.action) { Text(secondary.title).lineLimit(1).fixedSize() }
+            .buttonStyle(.plain)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.panelPrimary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(.panelFill))
+            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.5))
+            .contentShape(Capsule())
+    }
+
     var body: some View {
         if panel {
             panelBody
@@ -411,8 +431,22 @@ struct PandaEmptyState: View {
                 }
             }
             .frame(maxWidth: 260)
-            button
+            if let secondary {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        button
+                        secondaryButton(secondary)
+                    }
+                    VStack(spacing: 6) {
+                        button
+                        secondaryButton(secondary)
+                    }
+                }
                 .padding(.top, 2)
+            } else {
+                button
+                    .padding(.top, 2)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

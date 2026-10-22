@@ -1915,6 +1915,17 @@
         }
       }
     },
+    "收起 %@ 点起的空闲" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse free time from %@:00"
+          }
+        }
+      }
+    },
     "%@ 用%@%@" : {
       "extractionState" : "manual",
       "localizations" : {

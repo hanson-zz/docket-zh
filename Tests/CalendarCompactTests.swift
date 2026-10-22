@@ -29,6 +29,7 @@ final class CalendarCompactTests: XCTestCase {
 
     private func plain(_ start: Int, _ end: Int) -> Segment { Segment(kind: .hours, start: start, end: end) }
     private func free(_ start: Int, _ end: Int) -> Segment { Segment(kind: .free, start: start, end: end) }
+    private func collapse(_ at: Int) -> Segment { Segment(kind: .collapse, start: at, end: at) }
 
     private func segments(_ spans: [CalendarSpan], _ hours: ClosedRange<Int> = 9...18, now: Date? = nil,
                           expanded: Set<Int> = []) -> [Segment] {
@@ -77,10 +78,24 @@ final class CalendarCompactTests: XCTestCase {
 
     func testExpandedFoldIsDrawnAsHours() {
         let spans = [span("早会", at(20, 9), at(20, 10))]
-        XCTAssertEqual(segments(spans, now: at(20, 13, 20), expanded: [10]), [plain(9, 15), free(15, 18)])
-        XCTAssertEqual(segments(spans, now: at(20, 13, 20), expanded: [10, 15]), [plain(9, 18)])
+        // 点开的段照常画，顶上插一条「收起」。
+        XCTAssertEqual(segments(spans, now: at(20, 13, 20), expanded: [10]),
+                       [plain(9, 10), collapse(10), plain(10, 15), free(15, 18)])
+        XCTAssertEqual(segments(spans, now: at(20, 13, 20), expanded: [10, 15]),
+                       [plain(9, 10), collapse(10), plain(10, 15), collapse(15), plain(15, 18)])
         // 点开过的起点对不上（比如现在线挪了）时照常折。
         XCTAssertEqual(segments(spans, expanded: [11]), [plain(9, 10), free(10, 18)])
+    }
+
+    func testCollapseRefoldsAndStartsAxisWhenFirstHoursAreFree() {
+        let spans = [span("午饭", at(20, 12), at(20, 13))]
+        // 轴从空闲段开头：「收起」在最上面。
+        XCTAssertEqual(segments(spans, expanded: [9]), [collapse(9), plain(9, 13), free(13, 18)])
+        // 收起就是把起点从点开的集合里拿掉，回到原来的样子。
+        XCTAssertEqual(segments(spans, expanded: []), [free(9, 12), plain(12, 13), free(13, 18)])
+        // 只空一个整点的地方没有折叠，也就没有「收起」。
+        let tight = [span("a", at(20, 9), at(20, 10)), span("b", at(20, 11), at(20, 12))]
+        XCTAssertEqual(segments(tight, 9...12, expanded: [10]), [plain(9, 12)])
     }
 
     func testOverlappingEventsCountOnce() {
@@ -117,6 +132,21 @@ final class CalendarCompactTests: XCTestCase {
     func testFreeTitle() {
         XCTAssertEqual(AgendaFold.freeTitle(free(12, 15)), "空闲 3 小时")
         XCTAssertEqual(AgendaFold.freeAccessibility(free(12, 15)), "12 点到 15 点空闲，点按展开")
+        XCTAssertEqual(AgendaFold.collapseAccessibility(collapse(12)), "收起 12 点起的空闲")
+    }
+
+    func testEmptyFocusGapOnlyForTodayWithTimeLeft() {
+        XCTAssertEqual(AgendaFold.emptyFocusGap(day: day, now: at(20, 13, 20), calendar: calendar),
+                       DateInterval(start: at(20, 13, 20), end: at(21, 0)))
+        // 别的日子不放。
+        XCTAssertNil(AgendaFold.emptyFocusGap(day: day, now: elsewhere, calendar: calendar))
+        // 离午夜不到 30 分钟不放，正好 30 分钟放。
+        XCTAssertNil(AgendaFold.emptyFocusGap(day: day, now: at(20, 23, 40), calendar: calendar))
+        XCTAssertEqual(AgendaFold.emptyFocusGap(day: day, now: at(20, 23, 30), calendar: calendar),
+                       DateInterval(start: at(20, 23, 30), end: at(21, 0)))
+        // 给出的空档交给专注时长：按偏好的 25 分钟，不超过剩下的。
+        let gap = AgendaFold.emptyFocusGap(day: day, now: at(20, 13, 20), calendar: calendar)!
+        XCTAssertEqual(CalendarPlanner.focusMinutes(gap, now: at(20, 13, 20), preferred: 25), 25)
     }
 
     // MARK: 折叠后的轴
@@ -137,6 +167,32 @@ final class CalendarCompactTests: XCTestCase {
         XCTAssertEqual(AgendaAxis(segments: [], hourHeight: 30).height, 0)
     }
 
+    func testAxisCollapseRowTakesHeightButNoTime() {
+        let axis = AgendaAxis(segments: [plain(9, 10), collapse(10), plain(10, 13), free(13, 18)],
+                              hourHeight: 30, foldHeight: 28, collapseHeight: 22)
+        XCTAssertEqual(axis.height, 30 + 22 + 90 + 28, accuracy: 0.001)
+        XCTAssertEqual(axis.tops, [0, 30, 52, 142])
+        // 10 点当起点落在细行下面，当终点落在细行上面。
+        XCTAssertEqual(axis.y(hour: 10), 52, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 10, trailing: true), 30, accuracy: 0.001)
+        XCTAssertEqual(axis.y(at(20, 10), day: day, trailing: true, calendar: calendar), 30, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 9.5), 15, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 11.5), 97, accuracy: 0.001)
+        // 别处的整点两种算法一样。
+        XCTAssertEqual(axis.y(hour: 13), 142, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 13, trailing: true), 142, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 18), 170, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 18, trailing: true), 170, accuracy: 0.001)
+        XCTAssertEqual(axis.y(hour: 9, trailing: true), 0, accuracy: 0.001)
+        // 细行不写整点，10 点只写一次。
+        XCTAssertEqual(axis.labelHours, [9, 10, 11, 12, 13])
+        // 轴一开头就是细行：最早的时刻也落在细行下面。
+        let top = AgendaAxis(segments: [collapse(9), plain(9, 12)], hourHeight: 30, collapseHeight: 22)
+        XCTAssertEqual(top.y(hour: 9), 22, accuracy: 0.001)
+        XCTAssertEqual(top.y(hour: 8), 0)
+        XCTAssertEqual(top.y(hour: 12), 112, accuracy: 0.001)
+    }
+
     func testGapIsClippedAtTheFirstFold() {
         let segs = [plain(9, 10), free(10, 13), plain(13, 15), free(15, 18)]
         let gap = DateInterval(start: at(20, 13, 20), end: at(20, 18))
@@ -151,6 +207,29 @@ final class CalendarCompactTests: XCTestCase {
         // 不碰折叠段的原样返回。
         let whole = DateInterval(start: at(20, 13, 30), end: at(20, 14, 30))
         XCTAssertEqual(AgendaFold.visible(whole, in: segs, day: day, calendar: calendar), whole)
+    }
+
+    func testGapAroundCollapseRow() {
+        // 早会 9 到 10:20，10 点那一小时忙，11 点起点开了。
+        let segs = [plain(9, 11), collapse(11), plain(11, 15), free(15, 18)]
+        // 前半截只有 10 分钟：从细行下面开始画，到折叠段为止。
+        let short = DateInterval(start: at(20, 10, 50), end: at(20, 18))
+        XCTAssertEqual(AgendaFold.visible(short, in: segs, day: day, calendar: calendar),
+                       DateInterval(start: at(20, 11), end: at(20, 15)))
+        // 前半截够 30 分钟（现在线那一段）：只画前半截。
+        let long = DateInterval(start: at(20, 10, 20), end: at(20, 18))
+        XCTAssertEqual(AgendaFold.visible(long, in: segs, day: day, calendar: calendar),
+                       DateInterval(start: at(20, 10, 20), end: at(20, 11)))
+        // 正好从细行开始或整个在细行下面的不受影响。
+        let below = DateInterval(start: at(20, 11), end: at(20, 12))
+        XCTAssertEqual(AgendaFold.visible(below, in: segs, day: day, calendar: calendar), below)
+        let above = DateInterval(start: at(20, 10, 20), end: at(20, 11))
+        XCTAssertEqual(AgendaFold.visible(above, in: segs, day: day, calendar: calendar), above)
+        // 两条细行：第一条前面不够就跳到它下面，再遇到第二条时前面够了就停。
+        let two = [plain(9, 10), collapse(10), plain(10, 13), plain(13, 14), collapse(14), plain(14, 18)]
+        let wide = DateInterval(start: at(20, 9, 50), end: at(20, 18))
+        XCTAssertEqual(AgendaFold.visible(wide, in: two, day: day, calendar: calendar),
+                       DateInterval(start: at(20, 10), end: at(20, 14)))
     }
 
     // MARK: 一周条农历
