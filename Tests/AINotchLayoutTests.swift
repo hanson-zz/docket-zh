@@ -192,6 +192,36 @@ final class AINotchLayoutTests: XCTestCase {
         XCTAssertFalse(AINotchLayout.hangsFromNotch(CGRect(x: external.midX, y: 1416, width: 0, height: 24)))
     }
 
+    func testNotchBlendSitsUnderTheNotchOnly() {
+        let screen = laptopScreen()
+        let entry = AINotchLayout.entry(for: screen, shiduoRunning: false)!.frame
+        let panel = AINotchLayout.panelFrame(below: entry, screen: screen.frame)
+        let blend = AINotchLayout.notchBlend(entry: entry, panel: panel)!
+        // 和刘海同宽、正对刘海，从面板顶边往下。
+        XCTAssertEqual(blend.width, entry.width, accuracy: 0.001)
+        XCTAssertEqual(blend.minX, entry.minX - panel.minX, accuracy: 0.001)
+        XCTAssertEqual(blend.midX, panel.width / 2, accuracy: 0.001)
+        XCTAssertEqual(blend.minY, 0)
+        XCTAssertEqual(blend.height, AINotchLayout.notchBlendHeight)
+        XCTAssertTrue((8 ... 12).contains(AINotchLayout.notchBlendHeight))
+        // 面板被推开时跟着刘海走，超出面板的部分裁掉。
+        let shifted = CGRect(x: entry.minX + 300, y: panel.minY, width: panel.width, height: panel.height)
+        let clipped = AINotchLayout.notchBlend(entry: entry, panel: shifted)!
+        XCTAssertEqual(clipped.minX, 0)
+        XCTAssertEqual(clipped.width, entry.width - 300, accuracy: 0.001)
+        let away = CGRect(x: entry.maxX + 10, y: panel.minY, width: panel.width, height: panel.height)
+        XCTAssertNil(AINotchLayout.notchBlend(entry: entry, panel: away))
+        // 外接屏胶囊下面没有黑色过渡。
+        let capsule = AINotchLayout.entry(for: externalScreen(), shiduoRunning: false)!.frame
+        let capsulePanel = AINotchLayout.panelFrame(below: capsule, screen: external)
+        XCTAssertNil(AINotchLayout.notchBlend(entry: capsule, panel: capsulePanel))
+    }
+
+    func testHeaderClearsTheNotchBlend() {
+        XCTAssertEqual(AINotchLayout.headerTopPadding(hangsFromNotch: true), AINotchLayout.notchBlendHeight)
+        XCTAssertEqual(AINotchLayout.headerTopPadding(hangsFromNotch: false), 10)
+    }
+
     func testPanelHeaderMergesServiceNameAndWebControls() {
         XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 0))
         XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 1))

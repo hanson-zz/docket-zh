@@ -116,11 +116,12 @@ struct AIBouncingDots: View {
 
 /// 刘海下面长出来的对话面板，约 420 x 520。
 ///
-/// 底色：挂在刘海下面时保持纯黑（液态玻璃规则里的暗色例外），顶边 12 的圆角
-/// 正好接住刘海，看起来是刘海长出来的一块，换成浅色玻璃会在刘海下沿断开一截
-/// 黑白接缝。外接屏胶囊下面、没有刘海的屏幕上没有黑色硬件要接，改用液态玻璃，
-/// 跟随设置里的浅色 / 深色。内容一律用 PanelColors 语义色，纯黑时环境是深色，
-/// 解析成原来的白。
+/// 底色：一律是液态玻璃，跟随设置里的浅色 / 深色，刘海下面和外接屏胶囊下面
+/// 一样（以前刘海下面是纯黑，用户真机觉得黑色体验不好）。挂在刘海下面时，为了
+/// 和硬件刘海接上不出黑白硬缝，面板顶上正对刘海留一条和刘海同宽的黑色，从刘海
+/// 下沿往下约 12pt 渐隐到玻璃（`AIChatNotchBlend`），顶栏往下让出这一条；顶边
+/// 12 的圆角不变。内容、网页一律跟随面板深浅色，文字用 PanelColors 语义色，
+/// 读的字至少 panelSecondary（浅色玻璃上 panelTertiary 不到 4.5）。
 ///
 /// 层级：顶上一行是小熊猫 + 服务名（几个服务时是切换胶囊）+ 网页模式的刷新、
 /// 在浏览器打开 + 图钉，下面一排提示词，再下面是对话、网页或跳转。服务名只写
@@ -135,23 +136,30 @@ struct AIChatPanelView: View {
 
     /// 顶栏、提示词、网页四周统一的边距。
     static let inset: CGFloat = 12
+    /// 实心蓝底白字（我的提问气泡、跳转按钮）：白字对比度 5.2，过 4.5；原来的
+    /// #3B82F6 只有 3.7，小熊猫的 #4C9BFF 只有 2.8。
+    static let solidBlueHex = "#2563EB"
 
     private static let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 26,
                                                       bottomTrailingRadius: 26, topTrailingRadius: 12,
                                                       style: .continuous)
 
     var body: some View {
-        let notch = model.hangsFromNotch
         content
             .frame(width: AINotchLayout.panelSize.width, height: AINotchLayout.panelSize.height)
-            .background { AIChatPanelSurface(shape: Self.shape, notch: notch) }
-            .overlay {
-                if notch { Self.shape.stroke(.white.opacity(0.08), lineWidth: 0.5) }
+            .background {
+                ZStack(alignment: .topLeading) {
+                    AIChatPanelSurface(shape: Self.shape)
+                    if let blend = model.notchBlend {
+                        AIChatNotchBlend()
+                            .frame(width: blend.width, height: blend.height)
+                            .offset(x: blend.minX, y: blend.minY)
+                    }
+                }
             }
             .clipShape(Self.shape)
             .scaleEffect(x: appeared ? 1 : 0.55, y: appeared ? 1 : 0.08, anchor: .top)
             .opacity(appeared ? 1 : 0)
-            .panelForceDark(notch)
             .onAppear(perform: enter)
             .onChange(of: model.session) { _, _ in
                 appeared = false
@@ -219,7 +227,7 @@ struct AIChatPanelView: View {
             pinButton
         }
         .padding(.horizontal, Self.inset)
-        .padding(.top, 10)
+        .padding(.top, AINotchLayout.headerTopPadding(hangsFromNotch: model.hangsFromNotch))
         .padding(.bottom, 8)
     }
 
@@ -235,7 +243,7 @@ struct AIChatPanelView: View {
                     .layoutPriority(1)
                 Text(center.modeLabel(for: service))
                     .font(.system(size: 13))
-                    .foregroundStyle(.panelTertiary)
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -332,23 +340,37 @@ struct AIChatPanelView: View {
     }
 }
 
-/// 面板底：挂在刘海下面是纯黑；其他地方是液态玻璃，系统「降低透明度」时换成
-/// 实心底（同 `PanelGlassSurface`，那个只认圆角矩形，这里上下圆角不一样）。
+/// 面板底：液态玻璃，系统「降低透明度」时换成实心底（同 `PanelGlassSurface`，
+/// 那个只认圆角矩形，这里上下圆角不一样）。
 private struct AIChatPanelSurface: View {
     var shape: UnevenRoundedRectangle
-    var notch: Bool
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        if notch {
-            shape.fill(.black)
-        } else if reduceTransparency {
+        if reduceTransparency {
             shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
         } else {
             Color.clear.glassEffect(.regular, in: shape)
         }
+    }
+}
+
+/// 刘海下面板顶上那条黑色过渡：顶边是和刘海一样的纯黑，往下先慢后快再慢地
+/// 淡到透明，露出下面的玻璃，深色玻璃上几乎看不出，浅色玻璃上像刘海的影子
+/// 收进面板里，不是一条黑白硬缝。两侧不做羽化，和刘海的两条竖边对齐。
+private struct AIChatNotchBlend: View {
+    var body: some View {
+        LinearGradient(stops: [
+            .init(color: .black, location: 0),
+            .init(color: .black.opacity(0.85), location: 0.25),
+            .init(color: .black.opacity(0.45), location: 0.55),
+            .init(color: .black.opacity(0.12), location: 0.82),
+            .init(color: .black.opacity(0), location: 1),
+        ], startPoint: .top, endPoint: .bottom)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -413,7 +435,7 @@ private struct AIAPIChatPane: View {
                         .foregroundStyle(.panelPrimary)
                     Text("回答会一个字一个字流出来，可以停、重试、复制、接着问。")
                         .font(.system(size: 13))
-                        .foregroundStyle(.panelTertiary)
+                        .foregroundStyle(.panelSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 30)
@@ -466,7 +488,7 @@ private struct AIAPIChatPane: View {
                     .textSelection(.enabled)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: "#3B82F6")))
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: AIChatPanelView.solidBlueHex)))
                     .accessibilityLabel(tr("我：\(message.text)"))
             }
         case .assistant:
@@ -483,7 +505,7 @@ private struct AIAPIChatPane: View {
                 case .stopped:
                     Text(message.text.isEmpty ? tr("（已停止）") : tr("（已停止生成）"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.panelTertiary)
+                        .foregroundStyle(.panelSecondary)
                 default:
                     EmptyView()
                 }
@@ -545,7 +567,7 @@ struct AIAnswerText: View {
                         if !language.isEmpty {
                             Text(language)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.panelTertiary)
+                                .foregroundStyle(.panelSecondary)
                         }
                         ScrollView(.horizontal, showsIndicators: false) {
                             Text(body + (streaming && isLast ? "▍" : ""))
@@ -600,7 +622,7 @@ private struct AIChatInput: View {
                 if center.draft.isEmpty {
                     Text(placeholder)
                         .font(.system(size: 13.5))
-                        .foregroundStyle(.panelTertiary)
+                        .foregroundStyle(.panelSecondary)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
@@ -675,7 +697,7 @@ private struct AIWebPane: View {
             if let credit = AIWeb.credit(service.homeURL) {
                 Text(credit)
                     .font(.system(size: 13))
-                    .foregroundStyle(.panelTertiary)
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -687,8 +709,8 @@ private struct AIWebPane: View {
 }
 
 /// 把服务自己的 WKWebView 放进来。网页由 `AIChatCenter` 留着，换服务时只
-/// 换挂上去的那一个，不重载。网页的外观跟着面板：纯黑（刘海）或深色时是
-/// darkAqua，网页按 prefers-color-scheme 换深色；浅色玻璃上是 aqua。圆角在
+/// 换挂上去的那一个，不重载。网页的外观跟着面板（刘海下面也一样）：深色玻璃上
+/// 是 darkAqua，网页按 prefers-color-scheme 换深色；浅色玻璃上是 aqua。圆角在
 /// 容器的图层上裁，WKWebView 是 AppKit 视图，SwiftUI 的 clipShape 不一定裁得到。
 private struct AIWebHost: NSViewRepresentable {
     var center: AIChatCenter
@@ -745,7 +767,7 @@ private struct AIJumpPane: View {
                 if center.draft.isEmpty {
                     Text("想问点什么？")
                         .font(.system(size: 14))
-                        .foregroundStyle(.panelTertiary)
+                        .foregroundStyle(.panelSecondary)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
@@ -768,7 +790,7 @@ private struct AIJumpPane: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .frame(height: 28)
-                        .background(Capsule().fill(Color(hex: AIGlyph.dotHex)
+                        .background(Capsule().fill(Color(hex: AIChatPanelView.solidBlueHex)
                             .opacity(AIAsk.question(center.draft) != nil ? 1 : 0.35)))
                 }
                 .buttonStyle(.plain)
@@ -778,12 +800,12 @@ private struct AIJumpPane: View {
                  ? tr("跳转：Enter 提交，会在浏览器打开 \(service.title) 并带上问题。")
                  : tr("跳转：Enter 提交，\(service.title) 不支持带问题打开，会先复制问题。")))
                 .font(.system(size: 13))
-                .foregroundStyle(center.jumpHint == nil ? Color.panelTertiary : Color.panelPrimary)
+                .foregroundStyle(center.jumpHint == nil ? Color.panelSecondary : Color.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Text("想直接在这里对话：到“设置 ▸ AI”把它改成网页或 API。")
                 .font(.system(size: 13))
-                .foregroundStyle(.panelTertiary)
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(AIChatPanelView.inset)

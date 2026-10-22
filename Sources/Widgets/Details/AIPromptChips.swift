@@ -67,7 +67,7 @@ struct AIPromptChipBar: View {
                         .truncationMode(.tail)
                 }
                 .font(.system(size: 13))
-                .foregroundStyle(.panelTertiary)
+                .foregroundStyle(.panelSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
             }

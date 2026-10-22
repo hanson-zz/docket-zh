@@ -143,11 +143,33 @@ public enum AINotchLayout {
     }
 
     /// 面板是不是直接挂在刘海下面（刘海入口，或拾掇占着刘海时按刘海算的位置）。
-    /// 挂在刘海下面时面板保持纯黑，顶边和刘海连成一块；外接屏的小胶囊下面、
-    /// 没有刘海的屏幕上是液态玻璃，跟随浅色 / 深色。刘海那一段有宽度、高度是
-    /// 菜单栏高度（至少 22）；胶囊只有 18 高，没有入口时按屏幕中点算的位置宽度是 0。
+    /// 面板本身一律是液态玻璃，跟随浅色 / 深色；挂在刘海下面时顶上多一条和刘海
+    /// 同宽、向下渐隐的黑色过渡（`notchBlend`），接住硬件刘海，不出黑白硬缝。刘海那
+    /// 一段有宽度、高度是菜单栏高度（至少 22）；胶囊只有 18 高，没有入口时按屏幕
+    /// 中点算的位置宽度是 0。
     public static func hangsFromNotch(_ anchor: CGRect) -> Bool {
         anchor.width > 0 && anchor.height >= 22
+    }
+
+    /// 刘海下面板顶上那条黑色过渡的高度：从面板顶边（刘海下沿）往下，由刘海的
+    /// 纯黑渐隐到玻璃。连上刘海本身，整段黑色约是刘海高度加这么多。
+    public static let notchBlendHeight: CGFloat = 12
+
+    /// 刘海下面板顶上那条黑色过渡的位置，面板自己的坐标（原点在左上，y 向下）：
+    /// 和刘海同宽、正对刘海，面板被屏幕边推开时跟着刘海走，超出面板的部分裁掉。
+    /// 不挂在刘海下面（外接屏胶囊、没有刘海）时为 nil。
+    public static func notchBlend(entry: CGRect, panel: CGRect) -> CGRect? {
+        guard hangsFromNotch(entry) else { return nil }
+        let minX = max(entry.minX - panel.minX, 0)
+        let maxX = min(entry.maxX - panel.minX, panel.width)
+        guard maxX > minX else { return nil }
+        return CGRect(x: minX, y: 0, width: maxX - minX, height: notchBlendHeight)
+    }
+
+    /// 顶栏离面板顶边的距离：刘海下面让出黑色过渡那一条，顶栏的字和按钮落在
+    /// 玻璃上，不压在黑色上（浅色玻璃上的深色字压在黑上就看不见了）。
+    public static func headerTopPadding(hangsFromNotch: Bool) -> CGFloat {
+        hangsFromNotch ? notchBlendHeight : 10
     }
 
     /// 展开的面板：从入口正下方长出来，水平对着入口中间，超出屏幕时往里收。

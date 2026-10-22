@@ -221,6 +221,7 @@ final class AINotchController {
         let frame = AINotchLayout.panelFrame(below: entry, screen: screen)
         panel.setFrame(frame, display: false)
         panelModel.hangsFromNotch = AINotchLayout.hangsFromNotch(entry)
+        panelModel.notchBlend = AINotchLayout.notchBlend(entry: entry, panel: frame)
         panelModel.isOpen = true
         panelModel.session = UUID()
         panel.alphaValue = 1
@@ -305,9 +306,12 @@ final class AINotchController {
 final class AINotchPanelModel {
     var isOpen = false
     var session = UUID()
-    /// 挂在刘海下面（保持纯黑，和刘海连成一块）还是外接屏胶囊下面（液态玻璃，
-    /// 跟随浅色 / 深色）。见 `AINotchLayout.hangsFromNotch`。
+    /// 挂在刘海下面还是外接屏胶囊下面。面板都是液态玻璃、跟随浅色 / 深色；挂在
+    /// 刘海下面时顶栏让出黑色过渡那一条。见 `AINotchLayout.hangsFromNotch`。
     var hangsFromNotch = true
+    /// 刘海下面板顶上那条黑色过渡（面板坐标），不在刘海下时为 nil。见
+    /// `AINotchLayout.notchBlend`。
+    var notchBlend: CGRect?
 }
 
 // MARK: - 入口窗口
