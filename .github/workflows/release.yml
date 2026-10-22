@@ -112,7 +112,33 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="" \
-            ENABLE_HARDENED_RUNTIME=NO
+            ENABLE_HARDENED_RUNTIME=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+            DEPLOYMENT_POSTPROCESSING=YES \
+            STRIP_INSTALLED_PRODUCT=YES \
+            STRIP_STYLE=all \
+            COPY_PHASE_STRIP=YES
+
+      # 去掉调试符号表后，程序本体从约 168MB 降到约 50MB，运行行为不变。
+      # 符号单独存在 dSYM 里（下一步作为构建产物上传），查崩溃日志时用。
+      # 体积超过 100MB 时给出警告，提醒检查是否有大图或漏掉了去符号。
+      - name: Check the app size
+        run: |
+          APP=build/Build/Products/Release/Dockling.app
+          du -sh "$APP" "$APP/Contents/MacOS/"* "$APP/Contents/Resources"
+          SIZE_MB=$(( $(du -sk "$APP" | cut -f1) / 1024 ))
+          echo "App size: ${SIZE_MB} MB"
+          if [ "$SIZE_MB" -gt 100 ]; then
+            echo "::warning::Dockling.app is ${SIZE_MB} MB, over the 100 MB budget."
+          fi
+
+      - name: Keep the debug symbols
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dockling-${{ env.TAG }}-dSYM
+          path: build/Build/Products/Release/*.dSYM
+          retention-days: 90
 
       # Ad-hoc signatures change with every build, so macOS treats each update
       # as a new app and drops its permissions (Accessibility, Full Disk
