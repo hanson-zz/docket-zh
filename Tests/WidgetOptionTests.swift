@@ -301,6 +301,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "microphone.muteKey",
         // 圆环仪表的警戒线只列卡片上有的圆环（默认存储和电池，CPU 和内存没勾时不列）。
         "gauges.cpuAlert", "gauges.memoryAlert", "gauges.storageAlert", "gauges.batteryAlert",
+        // Codex 用量的声音四项在设置里自己一组「声音」（CodexSoundSettings），不在通用列表里。
+        "ai-usage.soundWaiting", "ai-usage.soundDone", "ai-usage.soundQuota", "ai-usage.tone",
     ]
 
     func testStockOptionsFollowTheList() {
