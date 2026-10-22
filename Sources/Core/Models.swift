@@ -533,10 +533,17 @@ public struct DockGroup: Codable, Hashable, Sendable, Identifiable {
     public var kind: GroupKind?
     /// 文件夹分组上次看的是哪个文件夹（组里那一项的 id），下次打开接着看它。
     public var selectedFolder: UUID?
+    /// 分组窗口里用户给条目起的名字，键是组里那一项的 id（uuidString）。只是显示名，
+    /// 不改 App 本身。可选，旧版本存下的组照常解码；没有自定义名时为 nil。
+    public var itemNames: [String: String]?
+    /// 分组窗口里图标下面不显示名字（只显示图标，悬停仍有完整名字）。nil 或 false 显示。
+    /// 可选，旧版本存下的组照常解码成显示名字。
+    public var hidesNames: Bool?
 
     public init(id: UUID = UUID(), name: String, tint: GroupTint = .none,
                 items: [DockItem] = [], keepsEmpty: Bool? = nil,
-                kind: GroupKind? = nil, selectedFolder: UUID? = nil) {
+                kind: GroupKind? = nil, selectedFolder: UUID? = nil,
+                itemNames: [String: String]? = nil, hidesNames: Bool? = nil) {
         self.id = id
         self.name = name
         self.tint = tint
@@ -544,6 +551,18 @@ public struct DockGroup: Codable, Hashable, Sendable, Identifiable {
         self.keepsEmpty = keepsEmpty
         self.kind = kind
         self.selectedFolder = selectedFolder
+        self.itemNames = itemNames
+        self.hidesNames = hidesNames
+    }
+
+    /// 分组窗口里要不要在图标下面显示名字，见 `hidesNames`。
+    public var showsNames: Bool { hidesNames != true }
+
+    /// 用户给组里这一项起的名字，没有为 nil。
+    public func customName(for itemID: UUID) -> String? {
+        guard let name = itemNames?[itemID.uuidString]?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else { return nil }
+        return name
     }
 
     /// 是不是文件夹分组，见 `kind`。

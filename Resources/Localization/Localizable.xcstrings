@@ -2179,6 +2179,17 @@
         }
       }
     },
+    "恢复原名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Original Name"
+          }
+        }
+      }
+    },
     "打开 Mac App，没装就用浏览器。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28542,6 +28553,17 @@
         }
       }
     },
+    "显示名字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Names"
+          }
+        }
+      }
+    },
     "显示宜忌" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -51071,6 +51093,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        }
+      }
+    },
+    "重命名…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename…"
           }
         }
       }

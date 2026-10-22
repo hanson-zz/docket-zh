@@ -40,6 +40,9 @@ final class GroupWindow {
         var remove: (DockItem) -> Void
         var rename: (String) -> Void
         var add: ([URL]) -> Void
+        /// 给组里一项起显示名（nil 是恢复原名），第三个参数是原名。
+        var renameItem: (DockItem, String?, String) -> Void
+        var showNames: (Bool) -> Void
     }
 
     /// 小组件库新建一个空组以后要扩展栏立刻打开它：userInfo["id"] 是组的 id 字符串。
@@ -75,12 +78,15 @@ final class GroupWindow {
                 open: @escaping (DockItem) -> Void,
                 remove: @escaping (DockItem) -> Void,
                 rename: @escaping (String) -> Void,
-                add: @escaping ([URL]) -> Void) {
+                add: @escaping ([URL]) -> Void,
+                renameItem: @escaping (DockItem, String?, String) -> Void,
+                showNames: @escaping (Bool) -> Void) {
         if openGroupID == group.id { return close() }
         // 点外面收起它的正是点这个格子的那一下：结果是收起，不再打开。
         if dismisser.swallowsOpen(id: group.id) { return }
         show(group, anchor: anchor, edge: edge, iconSide: iconSide,
-             actions: Actions(open: open, remove: remove, rename: rename, add: add))
+             actions: Actions(open: open, remove: remove, rename: rename, add: add,
+                              renameItem: renameItem, showNames: showNames))
     }
 
     /// 组里的东西变了（「＋」选了 App、从访达拖进来、改了名）：开着的就是它时
@@ -167,6 +173,8 @@ final class GroupWindow {
             self?.close()
         }, rename: { actions?.rename($0) },
            add: { actions?.add($0) },
+           renameItem: { actions?.renameItem($0, $1, $2) },
+           showNames: { actions?.showNames($0) },
            resized: { [weak self] in
             // 下一轮再量：这一轮 SwiftUI 还没把新内容排好。
             Task { @MainActor in self?.refit() }
@@ -232,6 +240,8 @@ final class GroupWindow {
                                                                   iconSide: 48,
                                                                   open: { _ in }, remove: { _ in },
                                                                   rename: { _ in }, add: { _ in },
+                                                                  renameItem: { _, _, _ in },
+                                                                  showNames: { _ in },
                                                                   resized: {}))
         hosting.sizingOptions = [.intrinsicContentSize]
 
@@ -281,6 +291,11 @@ struct GroupSheet: View {
     var rename: (String) -> Void
     /// 「＋」选好的、从访达拖进来的 App（只会是 .app）。
     var add: ([URL]) -> Void
+    /// 给组里一项起显示名（nil 是恢复原名），第三个参数是原名。只是显示名，
+    /// 锁定扩展栏时也能改。
+    var renameItem: (DockItem, String?, String) -> Void
+    /// 「显示名字」开关。
+    var showNames: (Bool) -> Void
     /// 内容大小变了（展开、收起选择列表），窗口要跟着改。
     var resized: () -> Void
     /// 有没有能让 Esc 先退一步的东西（改名改了一半、展开着选择列表）。
@@ -295,6 +310,9 @@ struct GroupSheet: View {
     @State private var dropTargeted = false
     /// 交给选择列表的 Esc 退一步计数。
     @State private var pickerBackOut = 0
+    /// 正在改显示名的那一项和改到一半的字。
+    @State private var renamingItemID: UUID?
+    @State private var itemDraft = ""
 
     /// 改名框里的字改过了还没确认。
     private var renaming: Bool { editing && draft != group.name }
@@ -303,6 +321,26 @@ struct GroupSheet: View {
     /// should not produce a sheet wider than the screen. 最后一格是「＋」。
     private var columns: Int { min(5, max(1, group.items.count + 1)) }
     private let side: CGFloat = 52
+    /// 名字那一行的宽度：比图标宽一些，「Illustrator」「Photoshop」这类一行放得下，
+    /// 放不下的折成两行，再长才在尾部省略。
+    static let labelWidth: CGFloat = 72
+
+    /// 每一项显示的名字：自定义名优先，App 用短名，见 AppGroups.displayNames。
+    private var titles: [UUID: String] {
+        AppGroups.displayNames(in: group, original: Self.originalName)
+    }
+
+    /// 一项原来的名字：App、文件是文件名（不带扩展名），链接是标题。
+    static func originalName(_ item: DockItem) -> String {
+        if let url = item.fileRef?.resolve() {
+            return url.deletingPathExtension().lastPathComponent
+        }
+        if let url = item.fileRef?.url {
+            return url.deletingPathExtension().lastPathComponent
+        }
+        if case .link(_, _, let title) = item { return title }
+        return tr("项目")
+    }
 
     /// Named so a dragged icon can tell when it has left the sheet.
     static let space = "group-sheet"
@@ -350,15 +388,33 @@ struct GroupSheet: View {
             } else if group.items.isEmpty {
                 emptyState
             } else {
+                let titles = self.titles
                 VStack(spacing: 10) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                        HStack(spacing: 10) {
+                        HStack(alignment: .top, spacing: 10) {
                             ForEach(row) { item in
+                                let original = Self.originalName(item)
+                                let custom = group.customName(for: item.id)
                                 GroupSheetItem(item: item, side: side, sheet: bounds,
                                                dockSide: iconSide, group: group.id,
                                                locked: locked,
+                                               title: titles[item.id] ?? original,
+                                               fullName: custom.map { "\($0) (\(original))" } ?? original,
+                                               showsName: group.showsNames,
+                                               hasCustomName: custom != nil,
+                                               editing: renamingItemID == item.id,
+                                               draft: $itemDraft,
                                                open: { open(item) },
-                                               remove: { remove(item) })
+                                               remove: { remove(item) },
+                                               startRename: {
+                                                   itemDraft = titles[item.id] ?? original
+                                                   renamingItemID = item.id
+                                               },
+                                               commitRename: { commitItem(item, original: original,
+                                                                          shown: titles[item.id] ?? original) },
+                                               restoreName: { renameItem(item, nil, original) },
+                                               showsNames: group.showsNames,
+                                               toggleNames: { showNames(!group.showsNames) })
                             }
                             if index == rows.count - 1, row.count < columns {
                                 addCell
@@ -403,6 +459,11 @@ struct GroupSheet: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(.white.opacity(0.14), lineWidth: 1)
                 }
+                // 右键空白处：「显示名字」开关。图标上的右键菜单里也有。
+                .contextMenu {
+                    Toggle(tr("显示名字"), isOn: Binding(get: { group.showsNames },
+                                                        set: { showNames($0) }))
+                }
         }
         .fixedSize()
         // Scales out of the tile it belongs to instead of appearing at full
@@ -418,13 +479,19 @@ struct GroupSheet: View {
         .onChange(of: session) { _, _ in
             draft = group.name
             picking = false
+            renamingItemID = nil
             appeared = false
             // Next runloop, or setting and clearing in one pass animates nothing.
             Task { @MainActor in enter() }
         }
-        .onChange(of: renaming || picking, initial: true) { _, now in backableChanged(now) }
+        .onChange(of: renaming || picking || renamingItemID != nil, initial: true) { _, now in
+            backableChanged(now)
+        }
         .onChange(of: backOut) { _, _ in
-            if renaming {
+            if renamingItemID != nil {
+                // 撤销改了一半的显示名：先清掉，失焦时的提交就什么也不做。
+                renamingItemID = nil
+            } else if renaming {
                 // 撤销：先把字改回去，失焦时的提交就什么也不做。
                 draft = group.name
                 editing = false
@@ -471,11 +538,13 @@ struct GroupSheet: View {
                             .foregroundStyle(.panelSecondary)
                     }
                     .frame(width: side, height: side)
-                Text(tr("添加"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelSecondary)
-                    .lineLimit(1)
-                    .frame(width: side + 8)
+                if group.showsNames {
+                    Text(tr("添加"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .frame(width: Self.labelWidth)
+                }
             }
             .padding(4)
             .contentShape(.rect)
@@ -483,6 +552,15 @@ struct GroupSheet: View {
         .buttonStyle(.plain)
         .help(tr("选择要加进分组的 App"))
         .accessibilityLabel(tr("添加 App"))
+    }
+
+    /// 确认显示名：没改（还是现在显示的名字）什么也不做，空的是恢复原名。
+    private func commitItem(_ item: DockItem, original: String, shown: String) {
+        guard renamingItemID == item.id else { return }
+        renamingItemID = nil
+        let name = itemDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard name != shown else { return }
+        renameItem(item, name.isEmpty ? nil : name, original)
     }
 
     /// Ignores an empty name rather than leaving a group with none.
@@ -527,9 +605,25 @@ private struct GroupSheetItem: View {
     /// 锁定扩展栏：拖动时只抖一下，不离开分组（拖出会落到扩展栏上，是扩展栏
     /// 的布局）；右键「从分组中移除」照常。
     var locked = false
+    /// 图标下面显示的名字（自定义名或短名）。
+    var title: String
+    /// 悬停提示里的完整名字（有自定义名时带上原名）。
+    var fullName: String
+    /// 「显示名字」关掉时只显示图标。
+    var showsName = true
+    var hasCustomName = false
+    /// 正在改这一项的显示名。
+    var editing = false
+    @Binding var draft: String
     var open: () -> Void
     var remove: () -> Void
+    var startRename: () -> Void = {}
+    var commitRename: () -> Void = {}
+    var restoreName: () -> Void = {}
+    var showsNames = true
+    var toggleNames: () -> Void = {}
 
+    @FocusState private var fieldFocused: Bool
     @State private var hovering = false
     @State private var shakeTick = 0
     @State private var nudged = false
@@ -558,12 +652,33 @@ private struct GroupSheetItem: View {
         VStack(spacing: 4) {
             icon
                 .frame(width: carriedSide, height: carriedSide)
-            Text(name)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(width: side + 8)
+            if editing {
+                TextField(tr("名称"), text: $draft)
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.center)
+                    .font(.system(size: 13))
+                    .focused($fieldFocused)
+                    .lineLimit(1)
+                    .frame(width: GroupSheet.labelWidth)
+                    .padding(.vertical, 1)
+                    .background {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(Color.primary.opacity(0.10))
+                    }
+                    .onAppear { fieldFocused = true }
+                    .onSubmit(commitRename)
+                    .onChange(of: fieldFocused) { _, focused in if !focused { commitRename() } }
+            } else if showsName {
+                // 放不下先折成两行，再长才在尾部省略（不在中间省略，开头最好认）。
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: GroupSheet.labelWidth)
+            }
         }
         .padding(4)
         .background {
@@ -590,10 +705,12 @@ private struct GroupSheetItem: View {
         .onHover { inside in
             withAnimation(.easeOut(duration: 0.14)) { hovering = inside }
         }
-        .onTapGesture(perform: open)
+        .onTapGesture { if !editing { open() } }
+        .help(fullName)
         .gesture(
             DragGesture(minimumDistance: 8, coordinateSpace: .named(GroupSheet.space))
                 .onChanged { value in
+                    guard !editing else { return }
                     guard ShelfLock.allows(.dragOutOfGroup, locked: locked) else {
                         if ShelfLock.shouldShake(locked: true, alreadyNudged: nudged) {
                             nudged = true
@@ -619,6 +736,7 @@ private struct GroupSheetItem: View {
                     }
                 }
                 .onEnded { value in
+                    guard !editing else { return }
                     let wasNudged = nudged
                     nudged = false
                     if wasNudged { return }
@@ -644,11 +762,18 @@ private struct GroupSheetItem: View {
         )
         .lockShake(shakeTick)
         .contextMenu {
+            // 只是显示名，锁定扩展栏时也能改。
+            Button(tr("重命名…"), action: startRename)
+            if hasCustomName {
+                Button(tr("恢复原名"), action: restoreName)
+            }
+            Toggle(tr("显示名字"), isOn: Binding(get: { showsNames }, set: { _ in toggleNames() }))
+            Divider()
             Button("从分组中移除") { remove() }
                 .disabled(!ShelfLock.allows(.removeInGroup, locked: locked))
         }
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(name)
+        .accessibilityLabel(fullName)
     }
 
     @ViewBuilder
@@ -662,14 +787,6 @@ private struct GroupSheetItem: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.secondary.opacity(0.3))
         }
-    }
-
-    private var name: String {
-        if let url = item.fileRef?.resolve() {
-            return url.deletingPathExtension().lastPathComponent
-        }
-        if case .link(_, _, let title) = item { return title }
-        return tr("项目")
     }
 }
 

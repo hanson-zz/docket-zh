@@ -466,6 +466,18 @@ public final class AppState {
         mutateItems { AppGroups.renaming(groupID, to: name, in: $0) }
     }
 
+    /// 分组窗口里给一项起显示名，nil 或空就是恢复原名。只是显示名，锁定扩展栏时也能改。
+    public func renameItem(_ itemID: UUID, inGroup groupID: UUID, to name: String?,
+                           original: String? = nil) {
+        mutateItems { AppGroups.renamingItem(itemID, inGroup: groupID, to: name,
+                                             original: original, in: $0) }
+    }
+
+    /// 分组窗口里显示还是隐藏名字。
+    public func setShowsNames(_ shows: Bool, inGroup groupID: UUID) {
+        mutateItems { AppGroups.settingShowsNames(shows, inGroup: groupID, in: $0) }
+    }
+
     /// 小组件库「文件夹分组」：在扩展栏末尾放一个空的文件夹分组，名字避开重名。
     /// 返回新组的 id，没有扩展栏配置时为 nil。
     @discardableResult

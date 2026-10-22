@@ -1295,7 +1295,16 @@ struct DockShelfView: View {
                 app.renameGroup(groupID, to: name)
                 if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
             },
-            add: { urls in addApps(urls, toGroup: groupID) })
+            add: { urls in addApps(urls, toGroup: groupID) },
+            // 显示名和「显示名字」开关只是显示，锁定扩展栏时也能改。
+            renameItem: { item, name, original in
+                app.renameItem(item.id, inGroup: groupID, to: name, original: original)
+                if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
+            },
+            showNames: { shows in
+                app.setShowsNames(shows, inGroup: groupID)
+                if let fresh = app.group(groupID) { GroupWindow.shared.refresh(fresh) }
+            })
     }
 
     /// 选好的、拖进来的 App 加进组，组窗口开着就原地刷新。
@@ -1778,6 +1787,14 @@ struct DockShelfView: View {
             }
             if let group = entry.item.group {
                 Button("重命名分组…") { rename(group) }
+                if !group.isFolderGroup {
+                    Toggle(tr("显示名字"), isOn: Binding(
+                        get: { group.showsNames },
+                        set: { shows in
+                            app.setShowsNames(shows, inGroup: group.id)
+                            if let fresh = app.group(group.id) { GroupWindow.shared.refresh(fresh) }
+                        }))
+                }
                 Menu("色调") {
                     ForEach(GroupTint.allCases, id: \.self) { tint in
                         Button(tint.title) {

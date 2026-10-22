@@ -112,4 +112,61 @@ public enum AppGroups {
     public static func isAppBundle(_ url: URL) -> Bool {
         url.pathExtension.lowercased() == "app"
     }
+
+    // MARK: 条目显示名
+
+    /// 给组里一项起名字（只是显示名）。空名字或和原名一样就是恢复原名。
+    /// 顺手清掉已经不在组里的条目留下的名字。找不到组或这一项时原样返回。
+    /// - Parameter original: 这一项原来的名字，起的名字和它一样时不存。
+    public static func renamingItem(_ itemID: UUID, inGroup groupID: UUID, to name: String?,
+                                    original: String? = nil, in items: [DockItem]) -> [DockItem] {
+        guard let slot = items.firstIndex(where: { $0.id == groupID }),
+              var group = items[slot].group,
+              group.items.contains(where: { $0.id == itemID }) else { return items }
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let present = Set(group.items.map(\.id.uuidString))
+        var names = (group.itemNames ?? [:]).filter { present.contains($0.key) }
+        if trimmed.isEmpty || trimmed == original?.trimmingCharacters(in: .whitespacesAndNewlines) {
+            names[itemID.uuidString] = nil
+        } else {
+            names[itemID.uuidString] = trimmed
+        }
+        group.itemNames = names.isEmpty ? nil : names
+        var result = items
+        result[slot] = .group(group)
+        return result
+    }
+
+    /// 分组窗口里显示还是隐藏名字。显示时存 nil，和旧配置一样。
+    public static func settingShowsNames(_ shows: Bool, inGroup groupID: UUID,
+                                         in items: [DockItem]) -> [DockItem] {
+        guard let slot = items.firstIndex(where: { $0.id == groupID }),
+              var group = items[slot].group else { return items }
+        group.hidesNames = shows ? nil : true
+        var result = items
+        result[slot] = .group(group)
+        return result
+    }
+
+    /// 组里每一项在分组窗口里显示的名字：自定义名优先，App 用短名（同组撞名时
+    /// 保留能区分的部分），文件、文件夹、链接用原名。
+    /// - Parameter original: 每一项的原名（App 的文件名、链接标题）。
+    public static func displayNames(in group: DockGroup,
+                                    original: (DockItem) -> String) -> [UUID: String] {
+        var custom: [UUID: String] = [:]
+        var apps: [(id: UUID, name: String)] = []
+        var result: [UUID: String] = [:]
+        for item in group.items {
+            if let own = group.customName(for: item.id) {
+                custom[item.id] = own
+                apps.append((item.id, original(item)))
+            } else if case .app = item {
+                apps.append((item.id, original(item)))
+            } else {
+                result[item.id] = original(item)
+            }
+        }
+        for (id, name) in AppShortNames.displayNames(apps, custom: custom) { result[id] = name }
+        return result
+    }
 }
