@@ -121,7 +121,7 @@ final class WeatherTipsTests: XCTestCase {
     }
 
     func testSnowSaysSnow() {
-        let tip = WeatherTips.rain(input(now: local(hour: 9), hours: [hour(end: local(hour: 22), chance: 70, code: 73)]))
+        let tip = WeatherTips.rain(input(now: local(hour: 9), hours: [hour(end: local(hour: 21), chance: 70, code: 73)]))
         XCTAssertEqual(tip?.text, "晚上有雪，注意保暖防滑")
     }
 

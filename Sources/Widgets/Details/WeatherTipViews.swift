@@ -32,7 +32,7 @@ enum WeatherTipSource {
     }
 }
 
-/// 面板顶上：小熊猫说一句（最高优先级的那句），气泡跟随浅色 / 深色。
+/// 面板顶上：小熊猫说一句（最高优先级的那句），液态玻璃气泡，跟随浅色 / 深色。
 struct WeatherTipBubble: View {
     var tip: WeatherTips.Tip
 
@@ -61,15 +61,38 @@ struct WeatherTipBubble: View {
                 .padding(.leading, 14)
                 .padding(.trailing, 11)
                 .padding(.vertical, 7)
-                .background {
-                    WeatherTipBubbleShape()
-                        .fill(.panelFill)
-                        .overlay { WeatherTipBubbleShape().stroke(.panelStroke, lineWidth: 0.5) }
-                }
+                .background { WeatherTipGlass() }
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tr("暖心提示") + " " + tip.text)
+    }
+}
+
+/// 气泡的液态玻璃：和面板里的玻璃小块（`glassPane`）同一套做法，一块更亮的玻璃加
+/// 顶上亮、往下渐隐的细亮边，只是形状带尖角。面板本身已是系统 `glassEffect`，
+/// 玻璃上不再叠一层系统玻璃（会发灰发糊），用半透明亮层透出下面的面板和天色。
+///
+/// 底比 `panelFill` 亮一档，保证天色透上来时字仍清楚：浅色白 0.55（近黑字
+/// #18161C 在偏暗的天色上也约 10 以上），深色白 0.10（白字在较亮的天色上也约 5，常见约 11），都过正文 4.5。字用
+/// panelPrimary，不用次级色。
+struct WeatherTipGlass: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let light = scheme == .light
+        let shape = WeatherTipBubbleShape()
+        shape
+            .fill(Color.white.opacity(light ? 0.55 : 0.10))
+            .overlay {
+                shape.stroke(
+                    LinearGradient(colors: light
+                                   ? [.white.opacity(0.95), .white.opacity(0.4)]
+                                   : [.white.opacity(0.22), .white.opacity(0.04)],
+                                   startPoint: .top, endPoint: .bottom),
+                    lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(light ? 0.06 : 0), radius: 3, y: 1)
     }
 }
 
