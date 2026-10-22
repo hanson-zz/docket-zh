@@ -214,4 +214,75 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertTrue(WidgetCatalog.configurableKeys(.music).contains(CassetteLook.key))
         XCTAssertFalse(WidgetCatalog.configurableKeys(.music).contains(MusicCard.layoutKey))
     }
+
+    // MARK: 紧凑（216 宽的小磁带）
+
+    private func compact(_ look: CassetteLook) -> WidgetConfig {
+        var config = medium(look)
+        config.set(MusicCard.compactKey, .bool(true))
+        return config
+    }
+
+    func testCompactIsATapeOptionOfTheMediumCard() {
+        XCTAssertTrue(MusicCard.isCompact(compact(.tape)))
+        XCTAssertFalse(MusicCard.isCompact(medium(.tape)), "默认不紧凑")
+        var wide = compact(.tape)
+        wide.set(MusicCard.layoutKey, .string(MusicCard.wide))
+        XCTAssertFalse(MusicCard.isCompact(wide), "只在中卡上有")
+        var mini = compact(.tape)
+        mini.set("mini", .bool(true))
+        XCTAssertFalse(MusicCard.isCompact(mini))
+        // 设置里：中卡选了磁带才列，已经开着的换了外观也列，好关掉。
+        XCTAssertTrue(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.tape), kind: .music))
+        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.portable), kind: .music))
+        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.plain), kind: .music))
+        XCTAssertTrue(WidgetCatalog.applies(MusicCard.compactKey, to: compact(.boombox), kind: .music))
+        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: wide, kind: .music))
+    }
+
+    func testCompactCardIs216WideWhateverTheLook() {
+        for look in CassetteLook.allCases {
+            let card = WidgetCatalog.make(.music, overrides: compact(look).values)!
+            XCTAssertEqual(WidgetCatalog.naturalSize(card), CGSize(width: 216, height: 104), "\(look)")
+            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .bottom).width, 216)
+            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .left).width, WidgetCatalog.columnWidth,
+                           "竖排还是竖条")
+        }
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: compact(.tape), kind: .music), "中",
+                       "紧凑是中卡的开关，样式菜单不多一档")
+        XCTAssertFalse(ProFeatures.isPro(WidgetInstance(kind: .music, config: compact(.plain))))
+    }
+
+    func testCompactDrawsTapeForTheBodiesThatDoNotFit() {
+        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: true, vertical: false), .tape)
+        XCTAssertEqual(CassetteLook.shown(config: compact(.portable), unlocked: true, vertical: false), .tape,
+                       "随身听放不进 216×58，画磁带")
+        XCTAssertEqual(CassetteLook.shown(config: compact(.boombox), unlocked: true, vertical: false), .tape)
+        XCTAssertEqual(CassetteLook.shown(config: compact(.plain), unlocked: true, vertical: false), .plain)
+        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: false, vertical: false), .plain,
+                       "没解锁退回默认样式")
+        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: true, vertical: true), .plain)
+        XCTAssertEqual(CassetteLook.stored(compact(.portable)), .portable, "配置不改写")
+    }
+
+    // MARK: 面板外观条
+
+    func testLookPickerOnlyOnTheHorizontalMediumCard() {
+        XCTAssertTrue(MusicCard.showsLookPicker(medium(.plain), vertical: false, preview: false))
+        XCTAssertTrue(MusicCard.showsLookPicker(compact(.tape), vertical: false, preview: false))
+        XCTAssertFalse(MusicCard.showsLookPicker(medium(.tape), vertical: true, preview: false), "竖排不画卡带")
+        XCTAssertFalse(MusicCard.showsLookPicker(medium(.tape), vertical: false, preview: true))
+        XCTAssertFalse(MusicCard.showsLookPicker(WidgetCatalog.make(.music)!.config, vertical: false, preview: false),
+                       "完整卡片不显示")
+        XCTAssertFalse(MusicCard.showsLookPicker(WidgetConfig(["mini": .bool(true)]), vertical: false, preview: false))
+    }
+
+    func testPickingALookAppliesOrAsksForPro() {
+        XCTAssertEqual(CassetteLook.pick(.plain, unlocked: false), .apply)
+        XCTAssertEqual(CassetteLook.pick(.plain, unlocked: true), .apply)
+        for look in [CassetteLook.tape, .portable, .boombox] {
+            XCTAssertEqual(CassetteLook.pick(look, unlocked: false), .paywall)
+            XCTAssertEqual(CassetteLook.pick(look, unlocked: true), .apply)
+        }
+    }
 }

@@ -9,6 +9,10 @@ import Foundation
 /// - 没解锁 Pro 时卡带退回默认样式显示，不盖锁、不改写配置，解锁或试用时自动回来
 ///   （和收音机皮肤一样，见 `ProLicenseGate.musicCassette`）。
 /// - 机身是实物质感，颜色不随浅深色变；只印小熊猫小标或「DOCKLING」，不出现品牌名。
+/// - 中卡可以开「紧凑」（`compactKey`）：卡片收窄到 216 宽，只画一盒精简磁带加歌名歌手。
+///   紧凑开着时随身听、收录机也画成磁带（216×58 放不下机身和按键）；没解锁时退回
+///   默认样式，按 216 宽排。卡片宽度只看 `layout` 和紧凑，不看外观和解锁，
+///   在面板里换外观不会让卡片忽宽忽窄。
 public enum MusicCard {
     public static let layoutKey = "layout"
     /// 完整（原来的宽卡片）。
@@ -28,6 +32,29 @@ public enum MusicCard {
     /// 中卡：不是迷你，且 `layout` 为 medium。
     public static func isMedium(_ config: WidgetConfig) -> Bool {
         !config.bool("mini") && config.string(layoutKey, default: wide) == medium
+    }
+
+    /// 中卡的「紧凑」开关：216 宽的小磁带卡。
+    public static let compactKey = "cassetteCompact"
+    /// 紧凑卡片的宽度（效果图小卡 216×104，扩展栏里内容高 58）。
+    public static let compactWidth = 216.0
+
+    /// 紧凑：中卡上开了紧凑开关。
+    public static func isCompact(_ config: WidgetConfig) -> Bool {
+        isMedium(config) && config.bool(compactKey)
+    }
+
+    /// 设置里列不列「紧凑」：中卡选了磁带时列出；已经开着的（之后换了外观）也列，
+    /// 好让人关掉。
+    public static func offersCompact(_ config: WidgetConfig) -> Bool {
+        guard isMedium(config) else { return false }
+        return CassetteLook.stored(config) == .tape || config.bool(compactKey)
+    }
+
+    /// 面板底部的外观选择条：只在横排扩展栏的中卡（含紧凑）上有，别的卡片不画卡带，
+    /// 选了也看不到，干脆不显示。
+    public static func showsLookPicker(_ config: WidgetConfig, vertical: Bool, preview: Bool) -> Bool {
+        isMedium(config) && !vertical && !preview
     }
 }
 
@@ -62,11 +89,23 @@ public enum CassetteLook: String, CaseIterable, Sendable {
     }
 
     /// 卡片上实际画哪种：只有横排的中卡画卡带；没解锁时 Pro 外观退回默认。
+    /// 紧凑卡片放不下随身听和收录机的机身，这两种画成磁带。
     public static func shown(config: WidgetConfig, unlocked: Bool, vertical: Bool) -> CassetteLook {
         guard MusicCard.isMedium(config), !vertical else { return .plain }
         let look = stored(config)
         if look.isPro, !unlocked { return .plain }
+        if MusicCard.isCompact(config), look != .plain { return .tape }
         return look
+    }
+
+    /// 面板外观条上点了一种：直接换，或者先弹付费墙（Pro 外观、没解锁）。
+    public enum PickResult: Equatable, Sendable {
+        case apply
+        case paywall
+    }
+
+    public static func pick(_ look: CassetteLook, unlocked: Bool) -> PickResult {
+        look.isPro && !unlocked ? .paywall : .apply
     }
 }
 

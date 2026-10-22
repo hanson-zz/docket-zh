@@ -11910,6 +11910,17 @@
         }
       }
     },
+    "卡带外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cassette look"
+          }
+        }
+      }
+    },
     "卡片大小" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -42426,6 +42437,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compact"
+          }
+        }
+      }
+    },
+    "紧凑卡片上随身听和收录机画成磁带" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the compact card, Portable Player and Boombox are drawn as Tape"
+          }
+        }
+      }
+    },
+    "紧凑卡片（216 宽）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compact card (216 wide)"
           }
         }
       }

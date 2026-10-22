@@ -172,7 +172,9 @@ public enum WidgetCatalog {
                            // 卡片三档：完整、迷你、中卡（MusicCard）。没存 layout 的老卡片按完整读。
                            MusicCard.layoutKey: .string(MusicCard.wide),
                            // 中卡的外观：默认免费，磁带、随身听、收录机是 Pro（CassetteLook）。
-                           CassetteLook.key: .string(CassetteLook.fallback.rawValue)]),
+                           CassetteLook.key: .string(CassetteLook.fallback.rawValue),
+                           // 中卡选磁带时可开「紧凑」：216 宽的小磁带卡（MusicCard.compactKey）。
+                           MusicCard.compactKey: .bool(false)]),
               variants: [(tr("完整"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.wide)]),
                          (tr("迷你"), ["mini": .bool(true), MusicCard.layoutKey: .string(MusicCard.wide)]),
                          (tr("中"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])],
@@ -730,6 +732,9 @@ public enum WidgetCatalog {
         // 卡带外观只画在中卡上，完整和迷你不列。
         case (.music, CassetteLook.key):
             MusicCard.isMedium(config)
+        // 紧凑只给磁带：中卡选了磁带才列，已经开着的也列出来好关掉。
+        case (.music, MusicCard.compactKey):
+            MusicCard.offersCompact(config)
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"
@@ -970,6 +975,8 @@ public enum WidgetCatalog {
         case .music:
             if cfg.bool("mini") { return CGSize(width: 64, height: 62) }
             // 中卡和 Codex 用量的中卡一样宽（404），卡带外观只在这一档。
+            // 紧凑的中卡收到 216 宽，宽度只看样式和紧凑开关，不看外观和解锁。
+            if MusicCard.isCompact(cfg) { return CGSize(width: MusicCard.compactWidth, height: 104) }
             return MusicCard.isMedium(cfg) ? CGSize(width: 404, height: 104) : CGSize(width: 264, height: 132)
         case .battery:
             // The single-device 电量 card keeps its size: connected

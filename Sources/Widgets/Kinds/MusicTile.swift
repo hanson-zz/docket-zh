@@ -21,6 +21,8 @@ struct MusicTile: View {
 
     /// 中卡的外观：磁带、随身听、收录机只画在横排的中卡上，没解锁 Pro 时退回默认
     /// （`ProLicenseGate.musicCassette`）。竖排的中卡回退成默认的竖条样式，不缩放机身。
+    /// 紧凑的中卡（216 宽）只画磁带，随身听、收录机也画成磁带；退回默认时是 216 宽的
+    /// 完整样式那一条。
     /// 预览按存着的外观画，静止不转。
     private var cassette: CassetteLook {
         ProLicenseGate.musicCassette(config: config, unlocked: context.isPreview || ProAccess.isUnlocked,
@@ -127,7 +129,8 @@ struct MusicTile: View {
         Group {
             if cassette != .plain, let deck = cassetteTrack {
                 CassetteCard(look: cassette, track: deck, actions: cassetteActions,
-                             visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
+                             visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
+                             compact: MusicCard.isCompact(config))
             } else {
                 WidgetSurface(image: cover) {
                     content
@@ -180,7 +183,7 @@ struct MusicTile: View {
         }
     }
 
-    // MARK: Cassette, 404×58
+    // MARK: Cassette, 404×58（紧凑 216×58）
 
     /// 卡带卡片上的这首歌。没在播放时机身照样摆着，写「未在播放」，转轮停在开头；
     /// 要授权时回退默认卡片，那里有「连接」按钮。

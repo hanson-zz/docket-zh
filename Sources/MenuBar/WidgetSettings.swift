@@ -705,6 +705,7 @@ struct WidgetSettingsSections: View {
         "microphone.notifyCamera": tr("摄像头亮起时提醒"),
         "microphone.redWhenMuted": tr("静音时卡片变红"),
         "music.cassette": tr("外观"),
+        "music.cassetteCompact": tr("紧凑卡片（216 宽）"),
     ]
 
     static func label(_ key: String) -> String {

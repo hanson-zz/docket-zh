@@ -12,7 +12,14 @@ import SwiftUI
 //
 // 动画：转轮和收录机纸盆各用一个 `TimelineView`，只在「在播 + 扩展栏卡片看得见
 // + 没开减少动态效果」时走（`CassetteMotion.framesPerSecond`），其余时刻和预览
-// 都静止；没有常驻的 repeatForever。
+// 都静止；没有常驻的 repeatForever。收录机的喇叭网罩画一次就缓存，播放时每帧
+// 只给纸盆做缩放变换。
+//
+// 紧凑（`MusicCard.isCompact`）：216×58，左边一盒精简磁带（两个转轮、卷带量），
+// 右边歌名、歌手两行 13pt；点磁带播放暂停。随身听、收录机在紧凑卡片上画成磁带
+// （`CassetteLook.shown`）。
+//
+// 面板底部的外观选择条（`CassetteLookPicker`）在这个文件末尾，缩略图是静态小图。
 
 /// 卡带卡片要画的一首歌，和来源无关。
 struct CassetteTrack {
@@ -42,9 +49,13 @@ struct CassetteCard: View {
     var actions: CassetteActions
     /// 扩展栏卡片看得见、而且不是预览：转轮才可能转。
     var visible: Bool
+    /// 紧凑的 216 宽卡片：只有磁带（`CassetteLook.shown` 已经把另外两种换成磁带）。
+    var compact = false
 
     var body: some View {
         switch look {
+        case _ where compact:
+            WidgetSurface { CompactTapeFace(track: track, actions: actions, visible: visible) }
         case .tape, .plain:
             WidgetSurface { TapeFace(track: track, actions: actions, visible: visible) }
         case .portable:
@@ -411,10 +422,70 @@ private struct TapeFace: View {
     }
 }
 
+// MARK: - 1b. 紧凑磁带（216×58）
+
+/// 紧凑卡片：左边一盒精简磁带（两个转轮、卷带量随进度），右边歌名、歌手两行 13pt。
+/// 没有按键和进度条（216 宽放不下），点磁带播放暂停，点右边照常打开面板。
+private struct CompactTapeFace: View {
+    var track: CassetteTrack
+    var actions: CassetteActions
+    var visible: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            shell
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if !track.artist.isEmpty {
+                    HStack(spacing: 4) {
+                        if let icon = track.sourceIcon {
+                            Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
+                                .frame(width: 13, height: 13)
+                                .accessibilityHidden(true)
+                        }
+                        Text(track.artist)
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(WidgetStyle.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 3)
+    }
+
+    /// 80×50（效果图磁带 154×96 的比例）。能播放暂停时整盒磁带是一个键。
+    @ViewBuilder
+    private var shell: some View {
+        let art = CassetteShell(track: track, visible: visible, simplified: true)
+            .frame(width: 80, height: 50)
+        if let toggle = actions.toggle {
+            art
+                .contentShape(.rect)
+                .onTapGesture(perform: toggle)
+                .help(track.isPlaying ? tr("暂停") : tr("播放"))
+                .accessibilityElement()
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+        } else {
+            art
+        }
+    }
+}
+
 /// 磁带外壳，按效果图 154×96 的坐标画，再整体缩放到给定的框里。外壳上不印字。
 private struct CassetteShell: View {
     var track: CassetteTrack
     var visible: Bool
+    /// 精简：紧凑卡片和外观缩略图用，只留外壳、封面标签、小窗里的两个转轮和磁头口，
+    /// 不画螺丝、手写线和小熊猫（缩到 0.5 倍以下时这些只剩噪点）。
+    var simplified = false
 
     private static let size = CGSize(width: 154, height: 96)
 
@@ -442,27 +513,43 @@ private struct CassetteShell: View {
                 .strokeBorder(CassettePalette.rgb(255, 226, 190, 0.27), lineWidth: 0.6)
                 .padding(2.2)
             // 透出来的两卷带盘外圈。
-            ForEach([57.0, 97.0], id: \.self) { cx in
-                Circle().stroke(CassettePalette.rgb(60, 36, 20, 0.24), lineWidth: 0.8)
-                    .frame(width: 54, height: 54)
-                    .position(x: cx, y: 44)
+            if !simplified {
+                ForEach([57.0, 97.0], id: \.self) { cx in
+                    Circle().stroke(CassettePalette.rgb(60, 36, 20, 0.24), lineWidth: 0.8)
+                        .frame(width: 54, height: 54)
+                        .position(x: cx, y: 44)
+                }
             }
-            // 标签贴纸：上面一条留白（两道手写线），下面是封面。
-            ZStack(alignment: .topLeading) {
-                CassettePalette.label
-                CoverFill(image: track.artwork)
-                    .frame(width: 140, height: 38)
-                    .clipped()
-                    .offset(y: 18)
-                Rectangle().fill(CassettePalette.rgb(60, 40, 30, 0.35)).frame(width: 140, height: 0.5).offset(y: 18)
-                RoundedRectangle(cornerRadius: 3).fill(CassettePalette.rgb(60, 44, 36))
-                    .frame(width: 13, height: 13).offset(x: 3, y: 2.5)
-                Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.55)).frame(width: 52, height: 1.6).offset(x: 22, y: 7)
-                Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.35)).frame(width: 34, height: 1.4).offset(x: 22, y: 12)
+            if simplified {
+                // 精简标签：整张就是封面，上沿一条留白。
+                ZStack(alignment: .topLeading) {
+                    CassettePalette.label
+                    CoverFill(image: track.artwork)
+                        .frame(width: 140, height: 46)
+                        .clipped()
+                        .offset(y: 10)
+                }
+                .frame(width: 140, height: 56)
+                .clipShape(label)
+                .offset(x: 7, y: 6)
+            } else {
+                // 标签贴纸：上面一条留白（两道手写线），下面是封面。
+                ZStack(alignment: .topLeading) {
+                    CassettePalette.label
+                    CoverFill(image: track.artwork)
+                        .frame(width: 140, height: 38)
+                        .clipped()
+                        .offset(y: 18)
+                    Rectangle().fill(CassettePalette.rgb(60, 40, 30, 0.35)).frame(width: 140, height: 0.5).offset(y: 18)
+                    RoundedRectangle(cornerRadius: 3).fill(CassettePalette.rgb(60, 44, 36))
+                        .frame(width: 13, height: 13).offset(x: 3, y: 2.5)
+                    Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.55)).frame(width: 52, height: 1.6).offset(x: 22, y: 7)
+                    Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.35)).frame(width: 34, height: 1.4).offset(x: 22, y: 12)
+                }
+                .frame(width: 140, height: 56)
+                .clipShape(label)
+                .offset(x: 7, y: 6)
             }
-            .frame(width: 140, height: 56)
-            .clipShape(label)
-            .offset(x: 7, y: 6)
             // 小窗：茶色透明，里面两个转轮。
             ZStack {
                 CassettePalette.rgb(36, 24, 18, 0.84)
@@ -481,6 +568,13 @@ private struct CassetteShell: View {
                 p.addLine(to: CGPoint(x: 132, y: 94.5)); p.addLine(to: CGPoint(x: 22, y: 94.5)); p.closeSubpath()
             }
             .fill(CassettePalette.rgb(92, 58, 32, 0.82))
+            if !simplified { shellDetails }
+        }
+    }
+
+    /// 磁头口的孔、四角螺丝和小熊猫小标，精简版不画。
+    private var shellDetails: some View {
+        ZStack(alignment: .topLeading) {
             ForEach([50.0, 104.0], id: \.self) { hx in
                 Circle().fill(CassettePalette.rgb(28, 18, 12)).frame(width: 6.8, height: 6.8).position(x: hx, y: 82)
             }
@@ -495,6 +589,7 @@ private struct CassetteShell: View {
             }
             PandaMark(height: 13).offset(x: 12, y: 72)
         }
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
     }
 }
 
@@ -698,6 +793,9 @@ private struct BoomboxFace: View {
 }
 
 /// 铜圈喇叭：网罩加中心纸盆，播放时纸盆小幅胀缩（不读音量）。
+///
+/// 网罩（几百个小孔）和铜圈不随时间变，画一次就合成一层缓存（`drawingGroup`），
+/// 不进 `TimelineView`；每帧只重算纸盆的缩放，纸盆本身也只画一次，缩放是渲染变换。
 private struct Speaker: View {
     var diameter: CGFloat
     var playing: Bool
@@ -707,50 +805,300 @@ private struct Speaker: View {
 
     var body: some View {
         let fps = CassetteMotion.framesPerSecond(playing: playing, visible: visible, reduceMotion: reduceMotion)
-        TimelineView(.animation(minimumInterval: 1 / (fps ?? CassetteMotion.fps), paused: fps == nil)) { timeline in
-            let scale = CassetteMotion.coneScale(t: timeline.date.timeIntervalSinceReferenceDate,
-                                                 animating: fps != nil)
-            Canvas { ctx, size in
-                let c = CGPoint(x: size.width / 2, y: size.height / 2)
-                let r = min(size.width, size.height) / 2 - 1.5
-                func circle(_ radius: CGFloat) -> Path {
-                    Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
-                }
-                ctx.fill(circle(r + 1.5), with: .color(CassettePalette.rgb(52, 58, 38)))
-                ctx.fill(circle(r), with: .color(CassettePalette.rgb(40, 40, 36)))
-                // 网罩上的小孔。
-                let step = max(2.6, r / 9)
-                let dot = step * 0.24
-                var holes = Path()
-                var row = 0
-                var y = c.y - r
-                while y <= c.y + r {
-                    var x = c.x - r + (row % 2 == 1 ? step / 2 : 0)
-                    while x <= c.x + r {
-                        if (x - c.x) * (x - c.x) + (y - c.y) * (y - c.y) < (r - 2.5) * (r - 2.5) {
-                            holes.addEllipse(in: CGRect(x: x - dot, y: y - dot, width: dot * 2, height: dot * 2))
-                        }
-                        x += step
-                    }
-                    y += step * 0.87
-                    row += 1
-                }
-                ctx.fill(holes, with: .color(CassettePalette.rgb(86, 84, 76)))
-                let cone = r * 0.34 * CGFloat(scale)
-                ctx.fill(circle(cone + 1.5), with: .color(CassettePalette.rgb(30, 30, 28, 0.9)))
-                ctx.fill(circle(cone), with: .color(CassettePalette.rgb(58, 56, 52)))
-                ctx.fill(circle(cone * 0.42), with: .color(CassettePalette.rgb(24, 24, 22)))
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - cone * 0.29, y: c.y - cone * 0.32,
-                                                width: cone * 0.28, height: cone * 0.28)),
-                         with: .color(.white.opacity(0.2)))
-                ctx.stroke(circle(r + 0.2), with: .color(CassettePalette.copper), lineWidth: 2.2)
-                var glint = Path()
-                glint.addArc(center: c, radius: r - 0.6, startAngle: .degrees(200), endAngle: .degrees(300),
-                             clockwise: false)
-                ctx.stroke(glint, with: .color(CassettePalette.rgb(255, 230, 170, 0.63)), lineWidth: 0.8)
+        ZStack {
+            SpeakerGrille(diameter: diameter)
+                .equatable()
+                .drawingGroup()
+            TimelineView(.animation(minimumInterval: 1 / (fps ?? CassetteMotion.fps), paused: fps == nil)) { timeline in
+                let scale = CassetteMotion.coneScale(t: timeline.date.timeIntervalSinceReferenceDate,
+                                                     animating: fps != nil)
+                SpeakerCone(radius: SpeakerGrille.coneRadius(diameter))
+                    .equatable()
+                    .scaleEffect(CGFloat(scale))
             }
         }
         .frame(width: diameter, height: diameter)
         .accessibilityHidden(true)
+    }
+}
+
+/// 喇叭不动的部分：外圈、网罩小孔、铜圈和高光。输入只有直径，`Equatable` 让
+/// 卡片每次读到新进度时也不重画。
+private struct SpeakerGrille: View, Equatable {
+    var diameter: CGFloat
+
+    nonisolated static func == (a: SpeakerGrille, b: SpeakerGrille) -> Bool { a.diameter == b.diameter }
+
+    /// 网罩半径（铜圈内沿）。
+    static func radius(_ diameter: CGFloat) -> CGFloat { diameter / 2 - 1.5 }
+    /// 纸盆静止时的半径。
+    static func coneRadius(_ diameter: CGFloat) -> CGFloat { radius(diameter) * 0.34 }
+
+    var body: some View {
+        Canvas { ctx, size in
+            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+            let r = min(size.width, size.height) / 2 - 1.5
+            func circle(_ radius: CGFloat) -> Path {
+                Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
+            }
+            ctx.fill(circle(r + 1.5), with: .color(CassettePalette.rgb(52, 58, 38)))
+            ctx.fill(circle(r), with: .color(CassettePalette.rgb(40, 40, 36)))
+            // 网罩上的小孔。
+            let step = max(2.6, r / 9)
+            let dot = step * 0.24
+            var holes = Path()
+            var row = 0
+            var y = c.y - r
+            while y <= c.y + r {
+                var x = c.x - r + (row % 2 == 1 ? step / 2 : 0)
+                while x <= c.x + r {
+                    if (x - c.x) * (x - c.x) + (y - c.y) * (y - c.y) < (r - 2.5) * (r - 2.5) {
+                        holes.addEllipse(in: CGRect(x: x - dot, y: y - dot, width: dot * 2, height: dot * 2))
+                    }
+                    x += step
+                }
+                y += step * 0.87
+                row += 1
+            }
+            ctx.fill(holes, with: .color(CassettePalette.rgb(86, 84, 76)))
+            ctx.stroke(circle(r + 0.2), with: .color(CassettePalette.copper), lineWidth: 2.2)
+            var glint = Path()
+            glint.addArc(center: c, radius: r - 0.6, startAngle: .degrees(200), endAngle: .degrees(300),
+                         clockwise: false)
+            ctx.stroke(glint, with: .color(CassettePalette.rgb(255, 230, 170, 0.63)), lineWidth: 0.8)
+        }
+        .frame(width: diameter, height: diameter)
+    }
+}
+
+/// 中心纸盆，按静止半径画一次；胀缩由外面的 `scaleEffect` 做。
+private struct SpeakerCone: View, Equatable {
+    var radius: CGFloat
+
+    nonisolated static func == (a: SpeakerCone, b: SpeakerCone) -> Bool { a.radius == b.radius }
+
+    var body: some View {
+        let cone = radius
+        ZStack {
+            Circle().fill(CassettePalette.rgb(30, 30, 28, 0.9)).frame(width: (cone + 1.5) * 2, height: (cone + 1.5) * 2)
+            Circle().fill(CassettePalette.rgb(58, 56, 52)).frame(width: cone * 2, height: cone * 2)
+            Circle().fill(CassettePalette.rgb(24, 24, 22)).frame(width: cone * 0.84, height: cone * 0.84)
+            // 左上角一点高光。
+            Circle().fill(.white.opacity(0.2))
+                .frame(width: cone * 0.28, height: cone * 0.28)
+                .offset(x: -cone * 0.15, y: -cone * 0.18)
+        }
+        .frame(width: (cone + 1.5) * 2, height: (cone + 1.5) * 2)
+    }
+}
+
+// MARK: - 面板外观选择条
+
+/// 「正在播放」面板底部的外观选择条：默认 / 磁带 / 随身听 / 收录机四张静态小图，
+/// 下面 13pt 名称，点选即改这张卡片的 `cassette`。三种卡带带 Pro 角标，没解锁时
+/// 点了弹付费墙、配置不动（`CassetteLook.pick`）。只在横排扩展栏的中卡上出现
+/// （`MusicCard.showsLookPicker`），别的卡片不画卡带，面板里也不放这一条。
+///
+/// 标题叫「卡带外观」而不是「外观」：面板外框最底下已经有一行「外观」（主题色和背景），
+/// 两个同名入口叠在一起分不清。
+struct CassetteLookPicker: View {
+    var instance: WidgetInstance
+    var context: WidgetContext
+
+    /// 刚点的那一项：写回配置后面板不一定马上拿到新的一份，先按点的显示。
+    @State private var picked: CassetteLook?
+
+    private var config: WidgetConfig { (WidgetWriter.current(instance.id) ?? instance).config }
+    private var selected: CassetteLook { picked ?? CassetteLook.stored(config) }
+    private var unlocked: Bool { ProAccess.isUnlocked }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(tr("卡带外观"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
+            HStack(alignment: .top, spacing: 6) {
+                ForEach(CassetteLook.allCases, id: \.self) { look in
+                    cell(look)
+                }
+            }
+            if MusicCard.isCompact(config) {
+                // 紧凑卡片只有磁带的位置，选随身听、收录机也画磁带。
+                Text(tr("紧凑卡片上随身听和收录机画成磁带"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func cell(_ look: CassetteLook) -> some View {
+        let on = look == selected
+        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        return Button {
+            choose(look)
+        } label: {
+            VStack(spacing: 5) {
+                CassetteLookThumb(look: look)
+                    .frame(width: 58, height: 36)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(shape.fill(on ? Color.panelSelected : Color.panelFill))
+                    .overlay(shape.strokeBorder(on ? Color.panelPrimary.opacity(0.75) : .clear, lineWidth: 1.5))
+                    .overlay(alignment: .topTrailing) {
+                        if look.isPro {
+                            ProBadge()
+                                .offset(x: 3, y: -7)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                Text(look.title)
+                    .font(.system(size: 13, weight: on ? .semibold : .regular))
+                    .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help(look.title)
+        .accessibilityLabel(look.title)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private func choose(_ look: CassetteLook) {
+        guard !context.isPreview else { return }
+        switch CassetteLook.pick(look, unlocked: unlocked) {
+        case .paywall:
+            PaywallWindow.shared.show()
+        case .apply:
+            guard look != CassetteLook.stored(config) else { picked = look; return }
+            picked = look
+            // 写之前取一次存着的最新一份，免得盖掉面板打开后别处的改动。
+            let latest = WidgetWriter.current(instance.id) ?? instance
+            WidgetWriter.write(latest) { config in
+                config.set(CassetteLook.key, .string(look.rawValue))
+            }
+        }
+    }
+}
+
+/// 外观缩略图：按 58×36 画的静态小图，不转、不读播放状态。机身颜色和卡片一样写死。
+struct CassetteLookThumb: View {
+    var look: CassetteLook
+
+    private static let still = CassetteTrack(title: "", artist: "", isPlaying: false, progress: 0.35,
+                                             elapsed: 0, duration: 0, artwork: nil, sourceIcon: nil,
+                                             showsTime: false)
+
+    var body: some View {
+        Group {
+            switch look {
+            case .plain: plain
+            case .tape:
+                CassetteShell(track: Self.still, visible: false, simplified: true)
+                    .frame(width: 56, height: 35)
+            case .portable: portable
+            case .boombox: boombox
+            }
+        }
+        .frame(width: 58, height: 36)
+        .accessibilityHidden(true)
+    }
+
+    /// 默认：深色小卡片，左边封面方块，右边两道字和一条进度。
+    private var plain: some View {
+        let card = RoundedRectangle(cornerRadius: 7, style: .continuous)
+        return HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(CassettePalette.dusk)
+                .frame(width: 16, height: 16)
+            VStack(alignment: .leading, spacing: 3) {
+                Capsule().fill(.white.opacity(0.9)).frame(width: 24, height: 3)
+                Capsule().fill(.white.opacity(0.5)).frame(width: 16, height: 2.5)
+                Capsule().fill(.white.opacity(0.35)).frame(width: 26, height: 1.6)
+            }
+        }
+        .frame(width: 58, height: 34)
+        .background(card.fill(LinearGradient(colors: [CassettePalette.rgb(64, 44, 70), CassettePalette.rgb(30, 24, 36)],
+                                             startPoint: .top, endPoint: .bottom)))
+        .overlay(card.strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
+    }
+
+    /// 随身听：奶油色机身，左边深色小窗两个转轮，右边三个小键（中间珊瑚色）。
+    private var portable: some View {
+        let casing = RoundedRectangle(cornerRadius: 7, style: .continuous)
+        return HStack(spacing: 4) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CassettePalette.rgb(40, 32, 28))
+                HStack(spacing: 5) { StillReel(radius: 6); StillReel(radius: 4.5) }
+            }
+            .frame(width: 34, height: 24)
+            VStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                        .fill(i == 1 ? CassettePalette.coral : CassettePalette.rgb(232, 224, 210))
+                        .overlay(RoundedRectangle(cornerRadius: 1.5).strokeBorder(.black.opacity(0.18), lineWidth: 0.4))
+                        .frame(width: 12, height: 6.5)
+                }
+            }
+        }
+        .frame(width: 58, height: 34)
+        .background(casing.fill(LinearGradient(colors: [CassettePalette.creamTop, CassettePalette.creamBottom],
+                                               startPoint: .top, endPoint: .bottom)))
+        .overlay(casing.strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
+    }
+
+    /// 收录机：苔绿色机身，提手，左右铜圈喇叭，中间小磁带仓。
+    private var boombox: some View {
+        let casing = RoundedRectangle(cornerRadius: 6, style: .continuous)
+        return HStack(spacing: 3) {
+            StillSpeaker(diameter: 16)
+            ZStack {
+                RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(CassettePalette.rgb(34, 30, 26))
+                HStack(spacing: 3) { StillReel(radius: 3.6); StillReel(radius: 3) }
+            }
+            .frame(width: 16, height: 11)
+            .padding(.top, 6)
+            StillSpeaker(diameter: 16)
+        }
+        .frame(width: 58, height: 32)
+        .background(casing.fill(LinearGradient(colors: [CassettePalette.oliveTop, CassettePalette.oliveBottom],
+                                               startPoint: .top, endPoint: .bottom)))
+        .overlay(alignment: .top) {
+            Capsule().fill(CassettePalette.olivePlate).frame(width: 22, height: 2).padding(.top, 1.5)
+        }
+        .overlay(casing.strokeBorder(.black.opacity(0.18), lineWidth: 0.5))
+    }
+}
+
+/// 缩略图里不转的一卷带盘。
+private struct StillReel: View {
+    var radius: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().fill(CassettePalette.tape)
+            Circle().fill(CassettePalette.hub).padding(radius * 0.45)
+            Circle().fill(CassettePalette.hubHole).padding(radius * 0.72)
+        }
+        .frame(width: radius * 2, height: radius * 2)
+    }
+}
+
+/// 缩略图里的小喇叭：深色网罩加铜圈和纸盆，不画小孔。
+private struct StillSpeaker: View {
+    var diameter: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().fill(CassettePalette.rgb(40, 40, 36))
+            Circle().strokeBorder(CassettePalette.copper, lineWidth: 1.2)
+            Circle().fill(CassettePalette.rgb(58, 56, 52)).frame(width: diameter * 0.36, height: diameter * 0.36)
+        }
+        .frame(width: diameter, height: diameter)
     }
 }
