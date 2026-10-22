@@ -196,7 +196,9 @@ final class AINotchLayoutTests: XCTestCase {
         let screen = laptopScreen()
         let entry = AINotchLayout.entry(for: screen, shiduoRunning: false)!.frame
         let panel = AINotchLayout.panelFrame(below: entry, screen: screen.frame)
-        let blend = AINotchLayout.notchBlend(entry: entry, panel: panel)!
+        guard let blend = AINotchLayout.notchBlend(entry: entry, panel: panel) else {
+            return XCTFail("刘海下面应有黑色过渡")
+        }
         // 和刘海同宽、正对刘海，从面板顶边往下。
         XCTAssertEqual(blend.width, entry.width, accuracy: 0.001)
         XCTAssertEqual(blend.minX, entry.minX - panel.minX, accuracy: 0.001)
@@ -205,10 +207,12 @@ final class AINotchLayoutTests: XCTestCase {
         XCTAssertEqual(blend.height, AINotchLayout.notchBlendHeight)
         XCTAssertTrue((8 ... 12).contains(AINotchLayout.notchBlendHeight))
         // 面板被推开时跟着刘海走，超出面板的部分裁掉。
-        let shifted = CGRect(x: entry.minX + 300, y: panel.minY, width: panel.width, height: panel.height)
-        let clipped = AINotchLayout.notchBlend(entry: entry, panel: shifted)!
-        XCTAssertEqual(clipped.minX, 0)
-        XCTAssertEqual(clipped.width, entry.width - 300, accuracy: 0.001)
+        // 刘海 185 宽：面板左边推到刘海里 100 处，只剩右边 85 在面板里。
+        XCTAssertEqual(entry.width, 185, accuracy: 0.001)
+        let shifted = CGRect(x: entry.minX + 100, y: panel.minY, width: panel.width, height: panel.height)
+        let clipped = AINotchLayout.notchBlend(entry: entry, panel: shifted)
+        XCTAssertEqual(clipped?.minX, 0)
+        XCTAssertEqual(clipped?.width ?? 0, entry.width - 100, accuracy: 0.001)
         let away = CGRect(x: entry.maxX + 10, y: panel.minY, width: panel.width, height: panel.height)
         XCTAssertNil(AINotchLayout.notchBlend(entry: entry, panel: away))
         // 外接屏胶囊下面没有黑色过渡。
