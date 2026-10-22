@@ -10,6 +10,7 @@ struct TodoCheer: View {
     var compact = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         // 减少动态效果：不弹、不跳、不撒星点，只按同一条曲线淡入淡出，帧率也降下来。
@@ -68,6 +69,10 @@ struct TodoCheer: View {
         let dot = compact ? 2.0 : 3.6
         let warm = Color(hex: ShelfColor.redPanda.hex)
         let gold = Color(hex: PaletteColor.yellow.hex)
+        // 三颗里有一颗原来是白的，浅色玻璃上看不见：浅色外观下换成面板次级文字的
+        // 深灰（同 `.panelSecondary` 的浅色值），深色照旧是白。Canvas 里直接给定值，
+        // 不靠动态色解析。
+        let light = scheme == .light ? Color(red: 0.094, green: 0.086, blue: 0.11).opacity(0.68) : Color.white
         for index in 0..<CheerMotion.sparks {
             let spark = CheerMotion.spark(index: index, t: t)
             guard spark.opacity > 0.02 else { continue }
@@ -75,7 +80,7 @@ struct TodoCheer: View {
             layer.opacity = spark.opacity
             let point = CGPoint(x: center.x + spark.x * radius, y: center.y + spark.y * radius)
             let r = dot * spark.size
-            let color = index % 3 == 0 ? Color.white : (index % 3 == 1 ? warm : gold)
+            let color = index % 3 == 0 ? light : (index % 3 == 1 ? warm : gold)
             if index.isMultiple(of: 2) {
                 layer.fill(star(at: point, radius: r * 1.6), with: .color(color))
             } else {

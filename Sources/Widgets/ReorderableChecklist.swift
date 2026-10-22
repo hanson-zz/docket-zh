@@ -220,9 +220,12 @@ struct ReorderableChecklist: View {
         }
     }
 
+    /// 勾选圆（实心强调色）里的对勾。设置窗口用系统给「强调色控件上的字」的语义色
+    /// （`alternateSelectedControlTextColor`），跟着系统外观、高对比度和强调色走，
+    /// 不再写死白；深浅两种外观下它都是白，所以观感不变。
     private var ink: Color {
         switch look {
-        case .settings: .white
+        case .settings: Color(nsColor: .alternateSelectedControlTextColor)
         case .panel(_, let ink): ink
         }
     }

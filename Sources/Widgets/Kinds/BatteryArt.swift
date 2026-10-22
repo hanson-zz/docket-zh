@@ -66,6 +66,7 @@ struct BatteryGauge: View {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
     /// Bumped when a flourish ends, so the frame rate is worked out again
     /// and the timeline can drop back to its idle pace.
     @State private var flourishEnded = 0
@@ -131,6 +132,17 @@ struct BatteryGauge: View {
                                present: state.present, liquid: look == .liquid, theme: theme)
     }
 
+    /// 充电气泡、插电绕圈的光点、充电弧上的光点原来写死白色，深色卡片上是亮点；
+    /// 面板跟着浅色外观换成浅色玻璃后，白点就看不见了。只在面板、浅色外观下
+    /// 换成电量色（或主题色）压深一档（`PanelContrast.readable`，同主题色当文字），
+    /// 扩展栏卡片和深色外观照旧是白。
+    private func sparkColor(_ tint: BatteryColorMap.Tint) -> Color {
+        guard inPanel, scheme == .light else { return .white }
+        let c = tint.color
+        let deep = PanelContrast.readable(ColorCode(red: c.red, green: c.green, blue: c.blue))
+        return Color(red: deep.red, green: deep.green, blue: deep.blue)
+    }
+
     // MARK: Flourishes
 
     private var flourishKey: String {
@@ -187,13 +199,14 @@ struct BatteryGauge: View {
             let mid = CGPoint(x: size.width / 2, y: size.height / 2)
             let eased = 1 - pow(1 - p, 2.2)
             let fade = p > 0.8 ? (1 - p) / 0.2 : 1
+            let spark = sparkColor(frame.tint)
             for k in 0..<8 {
                 let angle = -Double.pi / 2 + 2 * .pi * eased - Double(k) * 0.13
                 let point = CGPoint(x: mid.x + radius * cos(angle), y: mid.y + radius * sin(angle))
                 let r = max(1, diameter * (0.055 - 0.005 * Double(k)))
                 let opacity = (1 - Double(k) / 8) * fade
                 context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: 2 * r, height: 2 * r)),
-                             with: .color(.white.opacity(opacity)))
+                             with: .color(spark.opacity(opacity)))
             }
         }
         .allowsHitTesting(false)
@@ -346,6 +359,7 @@ struct BatteryGauge: View {
         // charger, and fade as they reach the surface.
         if state.charging, frame.moving {
             let count = max(4, Int(diameter / 9))
+            let spark = sparkColor(tint)
             for i in 0..<count {
                 let seed = Double(i) * 0.618_034
                 let fx = frac(seed) * 0.7 + 0.15
@@ -358,7 +372,7 @@ struct BatteryGauge: View {
                 let r = rect.width * (0.022 + 0.02 * frac(seed * 7.1))
                 let alpha = min(1, (1 - p) * 3) * 0.7
                 context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r)),
-                             with: .color(.white.opacity(alpha)))
+                             with: .color(spark.opacity(alpha)))
             }
         }
 
@@ -474,6 +488,7 @@ struct BatteryGauge: View {
                     let radius = size.width / 2 - line / 2
                     let speed = BatteryMotion.chargeSpeed(watts: state.watts)
                     let count = 12
+                    let spark = sparkColor(tint)
                     for i in 0..<count {
                         let phase = frac(frame.t * 0.3 * speed + Double(i) / Double(count))
                         let angle = -Double.pi / 2 + 2 * .pi * phase
@@ -484,7 +499,7 @@ struct BatteryGauge: View {
                         let r = line * (inArc ? 0.32 : 0.22)
                         let opacity = inArc ? 0.95 : 0.4
                         context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: 2 * r, height: 2 * r)),
-                                     with: .color(.white.opacity(opacity)))
+                                     with: .color(spark.opacity(opacity)))
                     }
                 }
                 .allowsHitTesting(false)
