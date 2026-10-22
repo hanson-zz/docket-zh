@@ -149,7 +149,7 @@ public enum AIAPISetup {
     ]
 
     public static func keyPage(_ serviceID: String) -> URL? {
-        keyPages[serviceID].flatMap(URL.init(string:))
+        keyPages[serviceID].flatMap { URL(string: $0) }
     }
 
     /// 展开区底部的一行说明：API 实际由谁提供、模型名要填什么。
