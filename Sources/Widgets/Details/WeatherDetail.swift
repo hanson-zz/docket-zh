@@ -8,20 +8,24 @@ import AppKit
 ///   降水条和一句“约 40 分钟后有雨，持续半小时”，和风、湿度、日出、日落；指数是
 ///   生活指数三格（穿衣、紫外线、空气质量，可关）；逐小时是接下来 12 小时（横向
 ///   滚动，打开时停在现在；按住左右拖，大字和天色跟着那一小时走）；7 天是未来 7 天。
-/// - 城市：搜索添加（内置城市表，表里没有的走天气自己的地图查找）、拖把手排序、
-///   左滑或右键删除，下面是面板显示开关（降水提示、生活指数、°F）。
+/// - 城市：搜索添加（内置城市表，表里没有的走天气自己的地图查找）、拖右侧把手排序、
+///   点红色减号露出“删除”（也可左滑或右键），至少留 1 个，“当前位置”保留不删；
+///   下面是面板显示开关（降水提示、生活指数、°F）。
 ///
 /// 第 1 个城市就是卡片的 `city`，数据照旧来自 MET（当前、逐小时）和 Open-Meteo
 /// （每日）。第 2 个城市起是 Pro，数据全部来自 Open-Meteo，因为共用的 MET 位置只有
 /// 一个；没解锁时列表不删，只显示第 1 个。降水条、紫外线和空气质量来自
 /// Open-Meteo（`WeatherExtrasService`），接口失败时这几块藏起来，别的不受影响。
 ///
-/// 多城市样式的面板保持原样：每个城市一行，读数和今天的范围。
+/// 多城市样式的面板：每个城市一行，读数和今天的范围；右上“编辑”进去增删排序
+/// （同世界时钟：红色减号滑出“删除”、拖把手排序、“＋ 添加城市”走同一个搜索），
+/// 最多 8 个、至少 1 个，排在前 3 的显示在卡片上（见 `WeatherCityList`）。
 struct WeatherDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private enum Mode { case browse, edit }
+    /// 多城市样式另有“添加”：编辑里点“＋ 添加城市”进去搜索。
+    private enum Mode { case browse, edit, add }
 
     @State private var mode: Mode = .browse
     /// 正在看第几个城市（在能看的城市里数）。
@@ -98,8 +102,14 @@ struct WeatherDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 if layout == WeatherStyle.citiesLayout {
-                    citiesList
-                    attribution
+                    citiesHeader
+                    switch mode {
+                    case .browse:
+                        citiesList
+                        attribution
+                    case .edit: citiesEditor
+                    case .add: citiesAdder
+                    }
                 } else if mode == .edit {
                     editor
                 } else {
@@ -1013,7 +1023,7 @@ struct WeatherDetail: View {
 
     private func switchTo(_ next: Mode) {
         // 要打字：先让面板成为 key，搜索框才接得住光标。
-        if next == .edit { WidgetDetailWindow.shared.focusField {} }
+        if next == (isMultiCity ? .add : .edit) { WidgetDetailWindow.shared.focusField {} }
         withAnimation(.snappy(duration: 0.25)) {
             mode = next
             query = ""
@@ -1034,7 +1044,7 @@ struct WeatherDetail: View {
                     Text(tr("城市"))
                         .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(.panelPrimary)
-                    Text(tr("拖动排序 · 左滑删除"))
+                    Text(tr("拖动把手排序 · 点红色减号删除"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.panelSecondary)
                 }
@@ -1056,6 +1066,9 @@ struct WeatherDetail: View {
 
             sectionTitle(tr("我的城市 \(places.count)"))
             cityRows
+            if !WeatherPlaces.hasCurrentLocation(places), places.count < WeatherPlaces.maxCount {
+                WeatherDashedButton(title: tr("＋ 添加当前位置")) { add(WeatherPlaces.currentLocation) }
+            }
             Text(tr("第 2 个城市起需要 Pro；面板上左右滑切换"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.panelSecondary)
@@ -1142,8 +1155,8 @@ struct WeatherDetail: View {
     }
 
     private func resultRow(name: String, detail: String, primary: Bool, action: @escaping () -> Void) -> some View {
-        let added = WeatherPlaces.contains(name, in: places)
-        let full = places.count >= WeatherPlaces.maxCount
+        let added = isMultiCity ? WeatherCityList.contains(name, in: cities) : WeatherPlaces.contains(name, in: places)
+        let full = isMultiCity ? cities.count >= WeatherCityList.maxCount : places.count >= WeatherPlaces.maxCount
         return HStack(spacing: 8) {
             Text(verbatim: name)
                 .font(.system(size: 15, weight: .semibold))
@@ -1184,7 +1197,7 @@ struct WeatherDetail: View {
             add(known.name)
             return
         }
-        guard gateAdding() else { return }
+        guard isMultiCity || gateAdding() else { return }
         lookingUp = true
         lookupFailed = false
         Task {
@@ -1208,6 +1221,14 @@ struct WeatherDetail: View {
     }
 
     private func add(_ name: String) {
+        if isMultiCity {
+            // 多城市样式整个是 Pro，加城市不再单独拦；加完回到编辑。
+            guard !context.isPreview, WeatherCityList.canAdd(name, to: cities) else { return }
+            saveCities(WeatherCityList.adding(name, to: cities))
+            query = ""
+            switchTo(.edit)
+            return
+        }
         guard !context.isPreview, WeatherPlaces.canAdd(name, to: places), gateAdding() else { return }
         save(WeatherPlaces.adding(name, to: places))
         query = ""
@@ -1243,7 +1264,7 @@ struct WeatherDetail: View {
 
     private func cityRow(_ entry: String, index: Int, list: [String]) -> some View {
         let revealing = pendingDelete == entry
-        let canDelete = list.count > 1
+        let canDelete = WeatherPlaces.canRemove(at: index, in: list)
         let locked = ProLicenseGate.isWeatherCityLocked(at: index, unlocked: unlocked)
         let lifted = dragging == entry
         let offset: CGFloat = revealing ? -Self.deleteWidth : (swipeRow == entry ? min(0, swipeOffset) : 0)
@@ -1260,22 +1281,15 @@ struct WeatherDetail: View {
                 }
                 .buttonStyle(.plain)
                 .opacity(offset < 0 ? 1 : 0)
+                // 没露出来时不接点按，免得透明的按钮吃掉点击。
+                .allowsHitTesting(revealing)
             }
             HStack(spacing: 10) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.panelPrimary.opacity(lifted ? 0.9 : 0.55))
-                    .frame(width: 24, height: Self.rowHeight)
-                    .contentShape(.rect)
-                    .gesture(reorder(entry, index: index, list: list))
-                    .help(tr("拖动调整顺序"))
-                    .accessibilityLabel(tr("调整\(displayName(entry))的顺序"))
-                    .accessibilityAction(named: tr("上移")) {
-                        save(WeatherPlaces.moving(from: index, to: index - 1, in: list))
-                    }
-                    .accessibilityAction(named: tr("下移")) {
-                        save(WeatherPlaces.moving(from: index, to: index + 1, in: list))
-                    }
+                WeatherMinusButton(revealing: revealing, enabled: canDelete,
+                                   help: entry.isEmpty ? tr("当前位置保留，不能删除")
+                                       : (canDelete ? tr("删除这个城市") : tr("至少留 1 个城市"))) {
+                    withAnimation(.snappy(duration: 0.22)) { pendingDelete = revealing ? nil : entry }
+                }
                 Text(verbatim: displayName(entry).isEmpty ? tr("正在定位…") : PlaceName.short(displayName(entry)))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.panelPrimary)
@@ -1294,11 +1308,28 @@ struct WeatherDetail: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.panelPrimary.opacity(locked ? 0.5 : 1))
                     .monospacedDigit()
+                // 把手在右边（同世界时钟）；露出“删除”时收起来。
+                if !revealing {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.panelPrimary.opacity(lifted ? 0.9 : 0.55))
+                        .frame(width: 28, height: Self.rowHeight)
+                        .contentShape(.rect)
+                        .gesture(reorder(entry, index: index, list: list))
+                        .help(tr("拖动调整顺序"))
+                        .accessibilityLabel(tr("调整\(displayName(entry))的顺序"))
+                        .accessibilityAction(named: tr("上移")) {
+                            save(WeatherPlaces.moving(from: index, to: index - 1, in: list))
+                        }
+                        .accessibilityAction(named: tr("下移")) {
+                            save(WeatherPlaces.moving(from: index, to: index + 1, in: list))
+                        }
+                }
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .padding(.leading, 8)
-            .padding(.trailing, 14)
+            .padding(.trailing, 4)
             .frame(height: Self.rowHeight)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -1309,7 +1340,8 @@ struct WeatherDetail: View {
                     }
                     .shadow(color: .black.opacity(lifted ? 0.35 : 0), radius: 6, y: 4)
             }
-            .offset(x: offset)
+            // 点按、左滑区域要先定再挪：放在 offset 后面时它还罩在原位置，
+            // 正好盖住露出来的「删除」，点删除只会把它收回去（同世界时钟 aecc7b6）。
             .contentShape(.rect)
             .gesture(swipe(entry, canDelete: canDelete))
             .onTapGesture {
@@ -1324,6 +1356,7 @@ struct WeatherDetail: View {
                     Button(tr("删除"), role: .destructive) { delete(at: index, from: list) }
                 }
             }
+            .offset(x: offset)
         }
         .frame(height: Self.rowHeight)
         .clipShape(.rect(cornerRadius: 12, style: .continuous))
@@ -1451,9 +1484,12 @@ struct WeatherDetail: View {
 
     // MARK: - 多城市样式
 
+    /// 多城市样式的全部城市（最多 8 个）；卡片只显示前 3 个。
     private var cities: [String] {
-        WeatherLayout.cities(config.strings("cities", default: WeatherLayout.defaultCities))
+        WeatherCityList.list(config)
     }
+
+    private var isMultiCity: Bool { layout == WeatherStyle.citiesLayout }
 
     /// The multi-city card's panel: each place with its reading now and
     /// today's range. The shared city is not this card's, so it is not shown.
@@ -1496,6 +1532,281 @@ struct WeatherDetail: View {
                 .glassPane()
             }
         }
+    }
+
+    // MARK: 多城市：头部、编辑、添加
+
+    private static let multiRowHeight: CGFloat = 50
+
+    /// 多城市面板顶上：标题、一句说明，右上角浏览时“编辑”，编辑时“完成”，添加时“取消”。
+    /// 小组件库的预览里不能写配置，不显示按钮。
+    private var citiesHeader: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(verbatim: multiTitle)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
+                Text(verbatim: multiSubtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+            if !context.isPreview { multiHeaderButton }
+        }
+    }
+
+    private var multiTitle: String {
+        switch mode {
+        case .browse: tr("多城市")
+        case .edit: tr("编辑城市")
+        case .add: tr("添加城市")
+        }
+    }
+
+    private var multiSubtitle: String {
+        switch mode {
+        case .browse: tr("\(cities.count) 个城市")
+        case .edit: tr("拖动把手调整顺序，卡片显示前 3 个")
+        case .add: tr("点「添加」加到列表最后")
+        }
+    }
+
+    @ViewBuilder private var multiHeaderButton: some View {
+        switch mode {
+        case .browse:
+            Button { switchTo(.edit) } label: {
+                Text(tr("编辑"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .padding(.horizontal, 14)
+                    .frame(height: 28)
+                    .glassPane(cornerRadius: 14)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(tr("增删城市、调整顺序"))
+        case .edit:
+            Button { switchTo(.browse) } label: {
+                Text(tr("完成"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Self.accentInk)
+                    .padding(.horizontal, 16)
+                    .frame(height: 28)
+                    .background(Capsule().fill(Self.accent))
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        case .add:
+            Button { switchTo(.edit) } label: {
+                Text(tr("取消"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+                    .frame(height: 28)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var citiesEditor: some View {
+        let list = cities
+        let from = dragging.flatMap { name in list.firstIndex(of: name) }
+        let target = from.map {
+            WeatherCityList.dropIndex(from: $0, translation: dragOffset,
+                                      rowHeight: Self.multiRowHeight, count: list.count)
+        }
+        let full = list.count >= WeatherCityList.maxCount
+        return VStack(spacing: 12) {
+            VStack(spacing: 0) {
+                ForEach(Array(list.enumerated()), id: \.element) { index, name in
+                    multiRow(name, index: index, list: list)
+                        .offset(y: multiShift(index, from: from, target: target))
+                        .zIndex(name == dragging ? 1 : 0)
+                }
+            }
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.panelFill)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(.panelStroke, lineWidth: 0.5)
+                    }
+            }
+
+            WeatherDashedButton(title: full ? tr("已有 8 个城市") : tr("＋ 添加城市"), enabled: !full) {
+                switchTo(.add)
+            }
+
+            Text(tr("最多 8 个城市，至少留 1 个"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
+        }
+    }
+
+    /// 拖动时：被拖的那行跟着手走，经过的行让开一格。
+    private func multiShift(_ index: Int, from: Int?, target: Int?) -> CGFloat {
+        guard let from, let target else { return 0 }
+        if index == from { return dragOffset }
+        if from < target, (from + 1...target).contains(index) { return -Self.multiRowHeight }
+        if target < from, (target..<from).contains(index) { return Self.multiRowHeight }
+        return 0
+    }
+
+    private func multiRow(_ name: String, index: Int, list: [String]) -> some View {
+        let lifted = dragging == name
+        let revealing = pendingDelete == name
+        let canDelete = WeatherCityList.canRemove(at: index, in: list)
+        let place: DailyForecast? = context.isPreview
+            ? WeatherTile.sampleCityForecast(index, now: context.now)
+            : ForecastService.shared.forecast(city: name)
+        return ZStack(alignment: .trailing) {
+            if revealing {
+                Button { deleteCity(at: index, from: list) } label: {
+                    Text(tr("删除"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Self.deleteInk)
+                        .frame(width: Self.deleteWidth, height: Self.multiRowHeight)
+                        .background(Self.deleteRed)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
+            }
+            HStack(spacing: 10) {
+                WeatherMinusButton(revealing: revealing, enabled: canDelete,
+                                   help: canDelete ? tr("删除这个城市") : tr("至少留 1 个城市")) {
+                    withAnimation(.snappy(duration: 0.22)) { pendingDelete = revealing ? nil : name }
+                }
+
+                Image(systemName: place?.current.map { WMOWeather.symbol($0.code, isDay: $0.isDay) }
+                      ?? "cloud.sun.fill")
+                    .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 17))
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
+                    Text(WeatherCityList.isOnTile(index) ? tr("在卡片上") : tr("只在面板里"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+                Spacer(minLength: 4)
+
+                Text(place?.current.map { degrees($0.temperatureC) } ?? "--°")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+
+                if !revealing {
+                    multiHandle(name, index: index, list: list, lifted: lifted)
+                }
+            }
+            .padding(.leading, 10)
+            .padding(.trailing, revealing ? 8 : 4)
+            .frame(height: Self.multiRowHeight)
+            // 点按区域要先定再挪：放在 offset 后面时它还罩在原位置，
+            // 正好盖住露出来的「删除」，点删除只会把它收回去（同世界时钟 aecc7b6）。
+            .contentShape(.rect)
+            .onTapGesture {
+                if pendingDelete != nil { withAnimation(.snappy(duration: 0.22)) { pendingDelete = nil } }
+            }
+            .contextMenu {
+                if canDelete {
+                    Button(tr("删除"), role: .destructive) { deleteCity(at: index, from: list) }
+                }
+            }
+            .offset(x: revealing ? -Self.deleteWidth : 0)
+        }
+        .frame(height: Self.multiRowHeight)
+        .clipped()
+        .background {
+            if lifted {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Self.liftedRow)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(Self.accent.opacity(0.6), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.35), radius: 6, y: 4)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if index < list.count - 1, !lifted {
+                Rectangle().fill(.panelSeparator).frame(height: 0.5).padding(.leading, 72)
+            }
+        }
+    }
+
+    /// 右侧把手：按住拖动排序，松手时落到最近的一格。
+    private func multiHandle(_ name: String, index: Int, list: [String], lifted: Bool) -> some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(.panelPrimary.opacity(lifted ? 0.85 : 0.5))
+            .frame(width: 32, height: Self.multiRowHeight)
+            .contentShape(.rect)
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { value in
+                        if dragging != name {
+                            dragging = name
+                            pendingDelete = nil
+                        }
+                        dragOffset = value.translation.height
+                    }
+                    .onEnded { value in
+                        let to = WeatherCityList.dropIndex(from: index, translation: value.translation.height,
+                                                           rowHeight: Self.multiRowHeight, count: list.count)
+                        saveCities(WeatherCityList.moving(from: index, to: to, in: list))
+                        withAnimation(.snappy(duration: 0.2)) {
+                            dragging = nil
+                            dragOffset = 0
+                        }
+                    }
+            )
+            .help(tr("拖动调整顺序"))
+            .accessibilityLabel(tr("调整\(name)的顺序"))
+            .accessibilityAction(named: tr("上移")) {
+                saveCities(WeatherCityList.moving(from: index, to: index - 1, in: list))
+            }
+            .accessibilityAction(named: tr("下移")) {
+                saveCities(WeatherCityList.moving(from: index, to: index + 1, in: list))
+            }
+    }
+
+    /// 添加：和单城市面板同一个搜索（内置城市表，表里没有的在地图上查找）。
+    private var citiesAdder: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            searchField
+            if trimmedQuery.isEmpty {
+                Text(tr("输入城市名，内置城市表里没有的会在地图上查找"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                results
+            }
+        }
+    }
+
+    private func deleteCity(at index: Int, from list: [String]) {
+        withAnimation(.snappy(duration: 0.22)) {
+            saveCities(WeatherCityList.removing(at: index, from: list))
+            pendingDelete = nil
+        }
+    }
+
+    private func saveCities(_ list: [String]) {
+        guard !context.isPreview else { return }
+        WidgetWriter.write(current) { WeatherCityList.write(list, to: &$0) }
     }
 
     // MARK: - Empty states
@@ -1593,5 +1904,62 @@ struct WeatherDetail: View {
         }
         return WeatherNowcast(hours: [WeatherNowcast.Hour(time: now.addingTimeInterval(-600), uvIndex: 2)],
                               slots: slots)
+    }
+}
+
+// MARK: - 编辑用的小部件
+
+/// 编辑列表左边的红色减号：点一下露出“删除”，再点收回（减号转成竖线）。
+/// 不能删的那行（至少留 1 个、当前位置）半透明、点不动，悬停说明为什么。
+struct WeatherMinusButton: View {
+    var revealing: Bool
+    var enabled: Bool
+    var help: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle().fill(Color(red: 1, green: 0.27, blue: 0.23))
+                Capsule().fill(.white).frame(width: 9.6, height: 2.4)
+                    .rotationEffect(.degrees(revealing ? 90 : 0))
+            }
+            .frame(width: 18, height: 18)
+            .opacity(enabled ? 1 : 0.3)
+            .frame(width: 24, height: 24)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .help(help)
+        .accessibilityLabel(help)
+    }
+}
+
+/// 虚线框的整行按钮：“＋ 添加城市”“＋ 添加当前位置”。
+struct WeatherDashedButton: View {
+    var title: String
+    var enabled: Bool = true
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(verbatim: title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary.opacity(enabled ? 0.92 : 0.45))
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .background {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.panelFill)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                }
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 }

@@ -716,6 +716,17 @@
         }
       }
     },
+    "%@ 个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cities: %@"
+          }
+        }
+      }
+    },
     "%@ 个复刻" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15811,6 +15822,17 @@
         }
       }
     },
+    "只在面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panel only"
+          }
+        }
+      }
+    },
     "只开了一项：达标算铜叶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18362,6 +18384,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cities & Time Zones"
+          }
+        }
+      }
+    },
+    "城市列表（卡片显示前 3 个，最多 8 个）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cities (card shows the first 3, up to 8)"
           }
         }
       }
@@ -22332,6 +22365,17 @@
         }
       }
     },
+    "已有 8 个城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8 cities added"
+          }
+        }
+      }
+    },
     "已有许可证或兑换码？输入激活 ›" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24003,6 +24047,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Current location"
+          }
+        }
+      }
+    },
+    "当前位置保留，不能删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current location stays and can't be deleted"
           }
         }
       }
@@ -26661,6 +26716,17 @@
         }
       }
     },
+    "拖动把手排序 · 点红色减号删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the handle to reorder · Tap the red minus to delete"
+          }
+        }
+      }
+    },
     "拖动把手调整顺序，卡片显示前 3 个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28890,6 +28956,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to 12 cities, at least 1"
+          }
+        }
+      }
+    },
+    "最多 8 个城市，至少留 1 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 8 cities, keep at least 1"
           }
         }
       }
@@ -39269,6 +39346,17 @@
         }
       }
     },
+    "点「添加」加到列表最后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Add to put it at the end of the list"
+          }
+        }
+      }
+    },
     "点一下停" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -48332,6 +48420,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type to search windows"
+          }
+        }
+      }
+    },
+    "输入城市名，内置城市表里没有的会在地图上查找" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a city name. Places not in the built-in list are looked up on the map."
           }
         }
       }
@@ -58187,6 +58286,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Boombox"
+          }
+        }
+      }
+    },
+    "＋ 添加当前位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ Add Current Location"
           }
         }
       }

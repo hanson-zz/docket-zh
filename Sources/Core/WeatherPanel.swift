@@ -471,9 +471,19 @@ public enum WeatherPlaces {
         return list + [name]
     }
 
-    /// 删掉第 `index` 个，至少留 1 个。
+    /// 第 `index` 个能不能删：至少留 1 个，“当前位置”那项保留不删。
+    public static func canRemove(at index: Int, in list: [String]) -> Bool {
+        list.count > 1 && list.indices.contains(index) && list[index] != currentLocation
+    }
+
+    /// 列表里有没有“当前位置”。
+    public static func hasCurrentLocation(_ list: [String]) -> Bool {
+        list.contains(currentLocation)
+    }
+
+    /// 删掉第 `index` 个，至少留 1 个；“当前位置”不删。
     public static func removing(at index: Int, from list: [String]) -> [String] {
-        guard list.count > 1, list.indices.contains(index) else { return list }
+        guard canRemove(at: index, in: list) else { return list }
         var copy = list
         copy.remove(at: index)
         return copy

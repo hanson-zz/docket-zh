@@ -585,7 +585,7 @@ struct WidgetSettingsSections: View {
     private static let labels: [String: String] = [
         "fahrenheit": tr("以华氏度显示温度"),
         "city": tr("城市"),
-        "cities": tr("城市列表（最多 3 个）"),
+        "cities": tr("城市列表（卡片显示前 3 个，最多 8 个）"),
         "skip": tr("快进/快退秒数"),
         "mini": tr("紧凑布局"),
         "chart": tr("显示图表"),
