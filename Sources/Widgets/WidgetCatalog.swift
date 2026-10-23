@@ -508,9 +508,11 @@ public enum WidgetCatalog {
 
         // Dates of its own under `events`, counted down or up, by the solar
         // or the lunar calendar; the single card's event is `pinned`, chosen
-        // in the panel. See Anniversary.
+        // in the panel. See Anniversary. 单个卡片的样式存在 `hourglass`：defaults 里的撕页
+        // 只给没存这个键的老卡片，新放的写线条沙漏（AnniversaryLook）。
         Entry(kind: .anniversary, name: tr("纪念日"), category: .todo,
-              defaults: c(["layout": .string("single"), "showRing": .bool(true)]),
+              defaults: c(["layout": .string("single"), "showRing": .bool(true),
+                           AnniversaryLook.key: .string(AnniversaryLook.legacy.rawValue)]),
               variants: [(tr("单个"), ["layout": .string("single")]),
                          (tr("多个"), ["layout": .string("multi")])],
               supportsCompact: false, selfContained: true),
@@ -789,8 +791,11 @@ public enum WidgetCatalog {
             WeatherStyle.layout(config) == WeatherStyle.currentLayout
         case (.weather, WeatherStyle.daysKey):
             WeatherStyle.layout(config) == WeatherStyle.forecastLayout
-        // 旧键名 showRing，现在管单个卡片左边那页撕页；多个是时间轴，没有撕页。
+        // 旧键名 showRing，现在管单个卡片左边那页撕页，只在撕页样式下列；多个是时间轴，
+        // 没有撕页也不分样式。
         case (.anniversary, "showRing"):
+            config.string("layout", default: "single") == "single" && AnniversaryLook.stored(config) == .leaf
+        case (.anniversary, AnniversaryLook.key):
             config.string("layout", default: "single") == "single"
         // The Wi-Fi rings read the signal, not throughput, so the direction
         // and the chart mean nothing there.
@@ -938,6 +943,8 @@ public enum WidgetCatalog {
         if kind == .progress { config.set(TimeProgress.layoutKey, .string(TimeProgress.newWidgetLayout)) }
         // 新放的喝水默认圆环（免费）；defaults 里的角色只给没存 layout 的老卡片。
         if kind == .water { config.set(WaterLayout.key, .string(WaterLayout.newWidget.rawValue)) }
+        // 新放的纪念日默认线条沙漏（免费）；defaults 里的撕页只给老卡片。
+        if kind == .anniversary { config.set(AnniversaryLook.key, .string(AnniversaryLook.newWidget.rawValue)) }
         // 截图工具新卡片「两者」+ 录区域、算新卡片带千分位；defaults 里是老卡片升级前的样子。
         if kind == .capture { CaptureNewWidget.apply(to: &config) }
         if kind == .calculator { CalcNumberStyle.applyNewWidget(to: &config) }

@@ -398,7 +398,7 @@ struct WidgetDetailChrome: View {
             .environment(\.panelTint, panelTint)
             // Room for the tail on whichever side the shelf is.
             .padding(tailSide, PanelShape.arrowDepth)
-            .frame(width: WidgetDetail.width(instance.kind), alignment: .leading)
+            .frame(width: WidgetDetail.width(instance), alignment: .leading)
             .background(surface(WidgetDetailBody.ground(instance, context)))
             .fixedSize()
             // Rises a little and fades in. It used to scale up out of the
@@ -480,7 +480,7 @@ struct WidgetDetailChrome: View {
 
     /// 内容区宽度：面板宽减两侧内边距，尾巴在左右两侧时再让出尾巴。
     private var contentWidth: CGFloat {
-        DetailPanelWidth.content(panel: WidgetDetail.width(instance.kind),
+        DetailPanelWidth.content(panel: WidgetDetail.width(instance),
                                  tailDepth: PanelShape.arrowDepth, tailOnSide: !edge.isHorizontal)
     }
 
@@ -615,6 +615,15 @@ enum WidgetDetail {
         }
     }
 
+    /// 按这张卡片定的面板宽：纪念日单个卡片 340、多个卡片 328
+    /// （`Anniversary.panelWidth`），其余按种类。
+    static func width(_ instance: WidgetInstance) -> CGFloat {
+        if instance.kind == .anniversary {
+            return CGFloat(Anniversary.panelWidth(layout: instance.config.string("layout", default: "single")))
+        }
+        return width(instance.kind)
+    }
+
     static func width(_ kind: WidgetKind) -> CGFloat {
         switch kind {
         case .stripe, .paddle, .shopify: 340
@@ -672,7 +681,8 @@ enum WidgetDetail {
         // 麦克风与摄像头：谁在用、全局静音、输入设备和音量，和第二批面板一样 320。
         case .microphone: 320
         case .radio: 340
-        case .anniversary: 360
+        // 实际按卡片样式分 340 / 328，见 width(_ instance:)。
+        case .anniversary: 340
         case .water: 360
         case .pet: 340
         case .podcast: 340

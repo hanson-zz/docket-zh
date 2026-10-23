@@ -1,13 +1,11 @@
 import SwiftUI
 
-/// Every date on a timeline, latest at the top, with a red line at today
-/// between what is still to come and what has passed. Click a date to edit
-/// it; the button at the bottom adds one. A date can be pinned to the single
-/// card from its editor or its context menu.
+/// 纪念日面板。时间线一页从今天往后排，最近的在最上面，过去不会再来的收在“已经过去”；
+/// 点一行进它的专属页，右键编辑、固定到单个卡片或删除，底部添加。
 ///
 /// 单个卡片和多个卡片点开不一样：单个卡片开它显示的那一个的专属页
-/// （`AnniversaryEventPage`），多个卡片开时间线，顶部有“这个月”的小概览；在多个
-/// 卡片里点某一列，直接开那一列的专属页。开哪一页记在 `AnniversaryRoute`。
+/// （`AnniversaryEventPage`），多个卡片开时间线；在多个卡片里点某个图标或胶囊，
+/// 直接开那一个的专属页。开哪一页记在 `AnniversaryRoute`。
 struct AnniversaryDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
@@ -31,6 +29,7 @@ struct AnniversaryDetail: View {
 
     @State private var tab: Tab = .all
     @State private var draft: Draft?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var titleFocused: Bool
 
     private var events: [AnniversaryEvent] {
@@ -82,7 +81,8 @@ struct AnniversaryDetail: View {
 
     private func eventScreen(_ reading: AnniversaryReading, all: [AnniversaryEvent]) -> some View {
         DetailCard {
-            MeshBackdrop(color: AnniversaryTile.base(reading.event), fixed: true)
+            // 角上一抹沙色，不用事件色：深色下不要大面积的蓝。
+            MeshBackdrop(color: AnniversarySandColor.sand, fixed: true)
         } content: {
             Group {
                 if let draft {
@@ -94,6 +94,7 @@ struct AnniversaryDetail: View {
                     AnniversaryEventPage(
                         reading: reading, events: all, pinned: pinned,
                         showsSwitcher: !isMulti, now: context.now, isPreview: context.isPreview,
+                        look: hourglassLook,
                         onBack: { showTimeline() },
                         onEdit: { begin(reading.event) },
                         onPick: { id in
@@ -120,6 +121,9 @@ struct AnniversaryDetail: View {
 
     // MARK: Timeline page
 
+    /// 多个卡片点开的样子（单个卡片点“时间线”回到这里也是）：顶上“纪念日”和全部 /
+    /// 倒数 / 正数分段，今天一枚红胶囊，下面一根竖向时间轴，还会来的从近到远，最近一个
+    /// 是玻璃高亮行，带一只小沙漏；过去不会再来的放进“已经过去”。点一行进它的专属页。
     private func timelineScreen(_ all: [AnniversaryEvent]) -> some View {
         let shown = all.filter { event in
             switch tab {
@@ -128,238 +132,238 @@ struct AnniversaryDetail: View {
             case .countup: event.kind == .countup
             }
         }
-        let line = Anniversary.timeline(shown, today: context.now)
+        let line = Anniversary.agenda(shown, today: context.now)
         return DetailCard {
             MeshBackdrop(color: accent)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                header(all)
-                if !all.isEmpty, draft == nil { monthOverview(all) }
-                Picker("", selection: $tab) {
-                    Text("时间线").tag(Tab.all)
-                    Text("倒数").tag(Tab.countdown)
-                    Text("正数").tag(Tab.countup)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-
+                header
                 if let draft {
                     editor(draft)
                 } else if all.isEmpty {
                     PandaEmptyState(empty: .anniversary, title: tr("添加纪念日"), panel: true) { beginNew() }
                 } else {
+                    todayChip
                     timeline(line)
+                    footer(count: all.count)
                 }
-
-                if draft == nil, !all.isEmpty { addButton(count: all.count) }
             }
         }
         .animation(.snappy(duration: 0.25), value: draft)
     }
 
-    // MARK: This month
-
-    /// 这个月：10 月有 2 个纪念日，最近的「生日」还有 12 天。
-    private func monthOverview(_ all: [AnniversaryEvent]) -> some View {
-        let summary = Anniversary.monthSummary(all, today: context.now)
-        let text: String
-        if summary.count == 0 {
-            text = tr("\(summary.month) 月没有纪念日")
-        } else if let nearest = summary.nearest, let days = summary.nearestDays {
-            text = days == 0
-                ? tr("\(summary.month) 月有 \(summary.count) 个纪念日，「\(nearest.title)」就是今天")
-                : tr("\(summary.month) 月有 \(summary.count) 个纪念日，最近的「\(nearest.title)」还有 \(days) 天")
-        } else {
-            text = tr("\(summary.month) 月有 \(summary.count) 个纪念日，都已经过去了")
-        }
-        return Button {
-            if let nearest = summary.nearest { showEvent(nearest.id) }
-        } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("这个月")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.panelSecondary)
-                Text(text)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.panelPrimary)
-                    .monospacedDigit()
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassPane(cornerRadius: 10)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .disabled(context.isPreview || summary.nearest == nil)
-        .help(summary.nearest == nil ? "" : tr("点按打开最近的这个纪念日"))
-    }
-
     // MARK: Header
 
-    private func header(_ all: [AnniversaryEvent]) -> some View {
-        let next = Anniversary.featured(all, pinned: nil, today: context.now)
-        return HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("纪念日")
-                    .font(.system(size: 13, weight: .semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(.panelSecondary)
-                Text(next.map { "\($0.event.title) \($0.sentence)" } ?? tr("添加第一个纪念日"))
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.panelPrimary)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+    private var header: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text("纪念日")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Picker("", selection: $tab) {
+                Text("全部").tag(Tab.all)
+                Text("倒数").tag(Tab.countdown)
+                Text("正数").tag(Tab.countup)
             }
-            Spacer()
-            Text("\(all.count)/\(Anniversary.maxEvents)")
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(.panelTertiary)
-                .monospacedDigit()
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.small)
+            .fixedSize()
         }
+    }
+
+    /// 今天 10月22日 周四：红点加红字的淡红胶囊，压在时间轴的顶头。
+    private var todayChip: some View {
+        let today = Anniversary.calendar.startOfDay(for: context.now)
+        return HStack(spacing: 6) {
+            Circle()
+                .fill(Self.todayRed)
+                .frame(width: 7, height: 7)
+            Text(tr("今天 \(Anniversary.monthDayText(today)) \(Anniversary.weekdayShort(today))"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Self.todayRed.panelReadable)
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 9)
+        .frame(height: 24)
+        .background(Capsule().fill(Self.todayRed.opacity(0.14)))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Timeline
 
-    private func timeline(_ line: (future: [AnniversaryReading], past: [AnniversaryReading])) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 6) {
-                    section(line.future)
-                    todayLine.id("today")
-                    section(line.past)
-                }
-                .padding(.vertical, 2)
-            }
-            .frame(maxHeight: 420)
-            .scrollIndicators(.never)
-            .onAppear { proxy.scrollTo("today", anchor: .center) }
-        }
-    }
+    /// 时间轴竖线的横坐标（图标的中心）。
+    private static let railX: CGFloat = 12
 
-    /// Rows with a year heading wherever the year changes.
-    private func section(_ readings: [AnniversaryReading]) -> some View {
-        let calendar = Anniversary.calendar
-        return ForEach(Array(readings.enumerated()), id: \.element.event.id) { index, reading in
-            let year = calendar.component(.year, from: reading.timelineDate)
-            let previous = index > 0 ? calendar.component(.year, from: readings[index - 1].timelineDate) : nil
-            VStack(alignment: .leading, spacing: 6) {
-                if year != previous {
-                    Text(tr("\(String(year)) 年"))
-                        .font(WidgetStyle.label(13))
+    private func timeline(_ line: (upcoming: [AnniversaryAgendaItem], past: [AnniversaryReading])) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                if line.upcoming.isEmpty, line.past.isEmpty {
+                    Text(tab == .countup ? tr("还没有正数日") : tr("还没有倒数日"))
+                        .font(.system(size: 13))
                         .foregroundStyle(.panelSecondary)
-                        .padding(.top, index > 0 ? 4 : 0)
+                        .padding(.leading, Self.railX * 2 + 6)
+                        .padding(.vertical, 8)
                 }
-                row(reading)
+                ForEach(Array(line.upcoming.enumerated()), id: \.element.id) { index, item in
+                    agendaRow(item, lead: index == 0)
+                }
+                if !line.past.isEmpty {
+                    Rectangle()
+                        .fill(.panelSeparator)
+                        .frame(height: 1)
+                        .padding(.leading, Self.railX * 2 + 6)
+                        .padding(.vertical, 4)
+                    Text("已经过去")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelSecondary)
+                        .padding(.leading, Self.railX * 2 + 6)
+                    ForEach(line.past, id: \.event.id) { reading in pastRow(reading) }
+                }
             }
-        }
-    }
-
-    private var todayLine: some View {
-        HStack(spacing: 6) {
-            Text("今天")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Self.todayRed.panelReadable)
-                .frame(width: 34, alignment: .trailing)
-            Circle()
-                .fill(Self.todayRed)
-                .frame(width: 7, height: 7)
-                .frame(width: 12)
-            Rectangle()
-                .fill(Self.todayRed.opacity(0.8))
-                .frame(height: 1)
-        }
-        .padding(.vertical, 2)
-        .accessibilityLabel("今天")
-    }
-
-    private func row(_ reading: AnniversaryReading) -> some View {
-        let calendar = Anniversary.calendar
-        let event = reading.event
-        let tint = AnniversaryTile.tint(event)
-        return HStack(spacing: 6) {
-            VStack(spacing: -1) {
-                Text("\(calendar.component(.day, from: reading.timelineDate))")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(.panelPrimary)
-                    .monospacedDigit()
-                Text(tr("\(calendar.component(.month, from: reading.timelineDate))月"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.panelTertiary)
-            }
-            .frame(width: 34)
-
-            ZStack {
+            .background(alignment: .topLeading) {
                 Rectangle()
                     .fill(.panelSeparator)
-                    .frame(width: 1)
-                Circle()
-                    .fill(reading.isToday ? Self.todayRed : Color.panelTertiary)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 1.5)
+                    .padding(.vertical, 6)
+                    .offset(x: Self.railX - 0.75)
             }
-            .frame(width: 12)
+            .padding(.vertical, 2)
+        }
+        .frame(maxHeight: 400)
+        .scrollIndicators(.never)
+    }
 
+    /// 还会来的一行：线上事件图标，名字（事件色）和一行日期，右边天数。最近一个是玻璃
+    /// 高亮行，左边一道事件色竖条，右边一只小沙漏。
+    private func agendaRow(_ item: AnniversaryAgendaItem, lead: Bool) -> some View {
+        let event = item.reading.event
+        let tint = AnniversaryTile.tint(event)
+        return HStack(spacing: 10) {
+            AnniversaryIconChip(event: event, diameter: lead ? 20 : 16, ring: true)
+                .frame(width: Self.railX * 2)
             Button {
-                begin(event)
+                showEvent(event.id)
             } label: {
-                card(reading, tint: tint)
+                HStack(spacing: 8) {
+                    if lead {
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(AnniversaryTile.base(event))
+                            .frame(width: 3, height: 34)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(event.title)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(tint.panelReadable)
+                                .lineLimit(1)
+                            if pinned == event.id {
+                                Image(systemName: "pin.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.panelSecondary)
+                                    .help("显示在单个卡片上")
+                            }
+                        }
+                        Text(Anniversary.agendaLine(item))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelSecondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    Spacer(minLength: 4)
+                    daysLabel(item.daysLeft, tint: tint, size: lead ? 22 : 17)
+                    if lead {
+                        AnniversaryHourglass(look: hourglassLook,
+                                             sand: Anniversary.sand(item.reading, today: context.now),
+                                             cap: AnniversaryTile.base(event), animate: !reduceMotion)
+                            .frame(width: 18, height: 32)
+                    }
+                }
+                .padding(.horizontal, lead ? 8 : 4)
+                .padding(.vertical, lead ? 8 : 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    if lead {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(AnniversaryTile.base(event).opacity(0.08))
+                    }
+                }
+                .modifier(LeadGlass(active: lead))
+                .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .disabled(context.isPreview)
-            .help("点按编辑")
+            .help("点按打开专属页")
+            .contextMenu { menu(event) }
+            .accessibilityLabel(tr("\(event.title)，\(Anniversary.agendaLine(item))，\(Self.daysPhrase(item.daysLeft))"))
+        }
+    }
+
+    /// 71 天；今天的写“就是今天”。
+    @ViewBuilder
+    private func daysLabel(_ days: Int, tint: Color, size: CGFloat) -> some View {
+        if days == 0 {
+            Text("就是今天")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(tint.panelReadable)
+                .fixedSize()
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(days.formatted())
+                    .font(.system(size: size, weight: .bold, design: .rounded))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                Text("天")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .fixedSize()
+        }
+    }
+
+    private static func daysPhrase(_ days: Int) -> String {
+        days == 0 ? tr("就是今天") : tr("还有 \(days) 天")
+    }
+
+    /// 已经过去的一行：小图标、名字、几天前。
+    private func pastRow(_ reading: AnniversaryReading) -> some View {
+        let event = reading.event
+        return HStack(spacing: 10) {
+            AnniversaryIconChip(event: event, diameter: 14, ring: true)
+                .opacity(0.8)
+                .frame(width: Self.railX * 2)
+            Button {
+                showEvent(event.id)
+            } label: {
+                HStack(spacing: 8) {
+                    Text(event.title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(tr("\(reading.days) 天前"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .monospacedDigit()
+                        .fixedSize()
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 5)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(context.isPreview)
+            .help("点按打开专属页")
             .contextMenu { menu(event) }
         }
     }
 
-    private func card(_ reading: AnniversaryReading, tint: Color) -> some View {
-        let event = reading.event
-        return HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(event.title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(tint.panelReadable)
-                        .lineLimit(1)
-                    Image(systemName: event.kind == .countdown ? "arrow.down" : "arrow.up")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle((event.kind == .countdown ? Self.todayRed : Color(hex: PaletteColor.green.hex)).panelReadable)
-                        .help(event.kind.title)
-                    if pinned == event.id {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.panelTertiary)
-                            .help("显示在单个卡片上")
-                    }
-                }
-                Text(Anniversary.subtitle(reading))
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.panelSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            Spacer(minLength: 4)
-            Text(reading.anniversaryNote.map { tr("\($0) · 今天") } ?? reading.sentence)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(tint.panelReadable)
-                .monospacedDigit()
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassPane(cornerRadius: 10)
-        .overlay {
-            if reading.isToday {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(tint.opacity(0.8), lineWidth: 1)
-            }
-        }
-        .contentShape(.rect)
+    /// 最近一个的沙漏：跟卡片选的样式，撕页卡片画线条沙漏，玻璃没解锁时也是线条。
+    private var hourglassLook: AnniversaryLook {
+        AnniversaryLook.hourglass(config: instance.config, unlocked: context.isPreview || ProAccess.isUnlocked)
     }
 
     @ViewBuilder
@@ -377,21 +381,33 @@ struct AnniversaryDetail: View {
         }
     }
 
-    private func addButton(count: Int) -> some View {
-        Button {
-            beginNew()
-        } label: {
-            Label(count >= Anniversary.maxEvents ? tr("最多 \(Anniversary.maxEvents) 个纪念日") : tr("添加纪念日"),
-                  systemImage: "plus")
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(count >= Anniversary.maxEvents ? Color.panelTertiary : Color.panelPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 32)
-                .glassPane(cornerRadius: 10)
+    /// 底部：红色加号“添加纪念日”，右边一句“点一行进它的专属页”。
+    private func footer(count: Int) -> some View {
+        let full = count >= Anniversary.maxEvents
+        return HStack(spacing: 8) {
+            Button {
+                beginNew()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 17))
+                        .foregroundStyle(full ? Color.panelTertiary : Self.todayRed)
+                    Text(full ? tr("最多 \(Anniversary.maxEvents) 个纪念日") : tr("添加纪念日"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(full ? Color.panelSecondary : Color.panelPrimary)
+                        .lineLimit(1)
+                }
                 .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(context.isPreview || full)
+            Spacer(minLength: 4)
+            Text("点一行进它的专属页")
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
         }
-        .buttonStyle(.plain)
-        .disabled(context.isPreview || count >= Anniversary.maxEvents)
+        .padding(.top, 2)
     }
 
     // MARK: Editor
@@ -609,5 +625,18 @@ struct AnniversaryDetail: View {
             AnniversaryLog.change(instance) { Anniversary.removing(id, from: $0) }
         }
         draft = nil
+    }
+}
+
+/// 最近一个的那一行：一块液态玻璃小块（和面板里其他玻璃小块同一套）。
+private struct LeadGlass: ViewModifier {
+    var active: Bool
+
+    func body(content: Content) -> some View {
+        if active {
+            content.glassPane(cornerRadius: 12)
+        } else {
+            content
+        }
     }
 }

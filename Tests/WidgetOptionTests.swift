@@ -112,7 +112,7 @@ final class WidgetOptionTests: XCTestCase {
             .week: ["allDay", "calendars", "eventDots", "eventDotsColor", "highlightDays", "monthOutline", "weekNumbers"],
             .crypto: ["coins", "currency", "colors", "chart"],
             .radio: ["skin", "volume"],
-            .anniversary: ["showRing"],
+            .anniversary: ["showRing", "hourglass"],
             .water: ["cupSize", "remindEvery", "start", "end", "unit", "character", "dryUp"],
             .clipboard: ["pasteOnClick"],
             .fileShelf: ["expire"],
@@ -309,6 +309,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "ai-usage.soundWaiting", "ai-usage.soundDone", "ai-usage.soundQuota", "ai-usage.tone",
         // 小熊猫的竹篮：卡片大小只在三环样式下有（竹叶 / 液态在默认的竹篮样式下照常列出）。
         "perfect-day.ringsCard",
+        // 纪念日：样式只给单个卡片，撕页开关只在撕页样式下列（AnniversaryLook）。
+        "anniversary.hourglass", "anniversary.showRing",
     ]
 
     func testStockOptionsFollowTheList() {

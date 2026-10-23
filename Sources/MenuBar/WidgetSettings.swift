@@ -744,6 +744,7 @@ struct WidgetSettingsSections: View {
         "microphone.redWhenMuted": tr("静音时卡片变红"),
         "music.cassette": tr("外观"),
         "music.cassetteCompact": tr("紧凑卡片（216 宽）"),
+        "anniversary.hourglass": tr("样式"),
     ]
 
     static func label(_ key: String) -> String {
@@ -914,6 +915,8 @@ struct WidgetSettingsSections: View {
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
         // 正在播放中卡：默认免费，磁带、随身听、收录机标“（Pro 专属）”，没解锁时选了弹付费墙。
         "music.cassette": CassetteLook.allCases.map { ($0.title, $0.rawValue) },
+        // 纪念日单个卡片：线条沙漏免费（新卡片默认），玻璃沙漏标 Pro，撕页日历是老卡片的样子。
+        "anniversary.hourglass": AnniversaryLook.allCases.map { ($0.title, $0.rawValue) },
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
         "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
         "posture.awayAfter": PostureAway.minuteChoices.map { (tr("\($0) 分钟"), "\($0)") },

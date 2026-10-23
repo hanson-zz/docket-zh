@@ -21045,13 +21045,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、正在播放 3 种卡带外观；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、正在播放 3 种卡带外观、纪念日玻璃沙漏；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks and 3 Now Playing cassette looks; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks, 3 Now Playing cassette looks and the Anniversary Glass Hourglass; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
           }
         }
       }
@@ -60046,6 +60046,226 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ Add Current Location"
+          }
+        }
+      }
+    },
+    "线条沙漏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Line Hourglass"
+          }
+        }
+      }
+    },
+    "玻璃沙漏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glass Hourglass"
+          }
+        }
+      }
+    },
+    "撕页日历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tear-off Calendar"
+          }
+        }
+      }
+    },
+    "第 %@ 个周年 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversary %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "不重复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doesn't repeat"
+          }
+        }
+      }
+    },
+    "每年 · 农历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every year · Lunar"
+          }
+        }
+      }
+    },
+    "每年 · 公历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every year · Gregorian"
+          }
+        }
+      }
+    },
+    "%@，临近" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, coming up"
+          }
+        }
+      }
+    },
+    "临近" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soon"
+          }
+        }
+      }
+    },
+    "一年内暂无" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None this year"
+          }
+        }
+      }
+    },
+    "今天 %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "还没有正数日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No count-ups yet"
+          }
+        }
+      }
+    },
+    "还没有倒数日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No countdowns yet"
+          }
+        }
+      }
+    },
+    "已经过去" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already passed"
+          }
+        }
+      }
+    },
+    "点按打开专属页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to open its page"
+          }
+        }
+      }
+    },
+    "点一行进它的专属页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a row to open its page"
+          }
+        }
+      }
+    },
+    "这一轮已过 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of this round gone"
+          }
+        }
+      }
+    },
+    "类型" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type"
+          }
+        }
+      }
+    },
+    "重复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat"
+          }
+        }
+      }
+    },
+    "接下来几次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Few Times"
           }
         }
       }

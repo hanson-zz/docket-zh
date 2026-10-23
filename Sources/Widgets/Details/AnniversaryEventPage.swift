@@ -50,8 +50,10 @@ final class AnniversaryRoute {
     }
 }
 
-/// 一个纪念日的专属页：大圆环和大数字，里程碑，接下来几个周年，底部编辑、分享图和
-/// 回到时间线。数都来自 Core 的 `Anniversary`。
+/// 一个纪念日的专属页（单个卡片点开，340 宽）：一大块液态玻璃里是大沙漏、大字天数和
+/// 天 / 时 / 分三格；下面这一轮的进度条和起止日子，日期 / 类型 / 重复三行，接下来三次，
+/// 底部编辑、分享图和回到时间线。临近时沙漏和三格一起变暖；当天沙漏换成小熊猫捧场。
+/// 数都来自 Core 的 `Anniversary`。
 struct AnniversaryEventPage: View {
     var reading: AnniversaryReading
     var events: [AnniversaryEvent]
@@ -60,16 +62,22 @@ struct AnniversaryEventPage: View {
     var showsSwitcher: Bool
     var now: Date
     var isPreview: Bool
+    /// 画哪种沙漏（线条或玻璃），跟卡片选的样式走。
+    var look: AnniversaryLook
     var onBack: () -> Void
     var onEdit: () -> Void
     var onPick: (String) -> Void
 
     @State private var sharing = false
     @State private var notice: String?
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var event: AnniversaryEvent { reading.event }
     private var tint: Color { AnniversaryTile.tint(event) }
-    private static let green = Color(hex: PaletteColor.green.hex)
+    private var dark: Bool { scheme == .dark }
+    private var near: Bool { Anniversary.isNear(reading, today: now) }
+    private var celebrating: Bool { Anniversary.isCelebrating(reading) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -78,8 +86,9 @@ struct AnniversaryEventPage: View {
                 sharePane
             } else {
                 hero
-                milestoneSection
-                anniversarySection
+                cycleSection
+                factsSection
+                nextSection
                 actions
             }
         }
@@ -124,220 +133,237 @@ struct AnniversaryEventPage: View {
 
     // MARK: Hero
 
-    private var upcoming: [AnniversaryOccurrence] {
-        Anniversary.upcomingAnniversaries(event, today: now)
-    }
-
-    private var isToday: Bool {
-        reading.phase == .today || (reading.isToday && event.kind == .countdown)
-    }
-
     private var hero: some View {
-        let percent = Int((reading.progress * 100).rounded())
-        return HStack(spacing: 16) {
-            MetricProgressRing(progress: reading.progress, tint: tint, track: .panelTrack,
-                               diameter: 84, lineWidth: 7) {
-                VStack(spacing: 1) {
-                    if let year = yearLabel {
-                        Text(year)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.panelSecondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    Text(verbatim: "\(percent)%")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.panelPrimary)
-                        .monospacedDigit()
-                }
+        HStack(alignment: .center, spacing: 14) {
+            if celebrating {
+                pandaCheer
+            } else {
+                AnniversaryHourglass(look: look, sand: Anniversary.sand(reading, today: now),
+                                     cap: AnniversaryTile.base(event), animate: !reduceMotion)
+                    .frame(width: 66, height: 140)
             }
-            .help(event.kind == .countup ? tr("距上一个周年已过 \(percent)%") : tr("这一年已过 \(percent)%"))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(tint.panelReadable)
-                    .lineLimit(1)
-                bigNumber
-                ForEach(heroLines, id: \.self) { line in
-                    Text(line)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    AnniversaryIconChip(event: event, diameter: 18)
+                    Text(event.title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(tint.panelReadable)
+                        .lineLimit(1)
+                }
+                if celebrating {
+                    Text(reading.anniversaryNote.map { tr("\($0)啦") } ?? tr("就是今天"))
+                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text(Anniversary.cardLine(reading, today: now))
                         .font(.system(size: 13))
                         .foregroundStyle(.panelSecondary)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                        .lineLimit(2)
+                } else {
+                    Text(reading.word)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(verbatim: reading.days.formatted(.number))
+                            .font(.system(size: 52, weight: .heavy, design: .rounded))
+                            .foregroundStyle(near ? AnniversarySandColor.warmInk(dark: dark) : Color.panelPrimary)
+                            .monospacedDigit()
+                            .rollingValue(reading.days)
+                        Text("天")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    clockCells
                 }
             }
             Spacer(minLength: 0)
         }
-    }
-
-    /// 第 8 年：正数日已经开始以后才有。
-    private var yearLabel: String? {
-        guard event.kind == .countup, reading.phase == .past else { return nil }
-        return tr("第 \(reading.years + 1) 年")
-    }
-
-    @ViewBuilder
-    private var bigNumber: some View {
-        if isToday {
-            Text("就是今天")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.panelPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-        } else {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(verbatim: reading.days.formatted(.number))
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .rollingValue(reading.days)
-                Text(AnniversaryShareCard.unit(reading))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-            }
-            .foregroundStyle(.panelPrimary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-        }
-    }
-
-    /// 大数字下面的一两行：哪天起或哪天到，离下一个周年还有几天。
-    private var heroLines: [String] {
-        let calendar = Anniversary.calendar
-        var lines: [String] = []
-        switch event.kind {
-        case .countup:
-            let day = reading.original
-            lines.append(tr("\(Anniversary.longText(day)) \(Anniversary.weekdayShort(day)) 起"))
-            if reading.phase == .past, let next = upcoming.first {
-                lines.append(next.daysLeft == 0
-                             ? tr("今天是第 \(next.ordinal) 个周年")
-                             : tr("离第 \(next.ordinal) 个周年还有 \(next.daysLeft) 天"))
-            }
-        case .countdown:
-            let day = reading.next ?? reading.original
-            var text = "\(Anniversary.longText(day)) \(Anniversary.weekdayShort(day))"
-            if event.lunar { text += " · " + tr("农历\(Anniversary.lunarShort(day, calendar: calendar))") }
-            lines.append(text)
-            if event.yearly { lines.append(tr("每年重复")) }
-        }
-        return lines
-    }
-
-    // MARK: Milestones
-
-    @ViewBuilder
-    private var milestoneSection: some View {
-        let stones = Anniversary.milestones(event, today: now)
-        if !stones.isEmpty {
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline) {
-                    sectionTitle(tr("里程碑"))
-                    Spacer(minLength: 4)
-                    Text("圆点是下一个，打勾是已经过了")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelTertiary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                    ForEach(stones) { stone in milestoneCell(stone) }
-                }
-            }
-        }
-    }
-
-    private func milestoneCell(_ stone: AnniversaryMilestone) -> some View {
-        let title = stone.kind == .daysSince
-            ? tr("\(stone.days.formatted(.number)) 天")
-            : tr("还有 \(stone.days) 天")
-        return VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.panelPrimary)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
-                Spacer(minLength: 0)
-                if stone.isPassed {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(Self.green)
-                } else if stone.isNext {
-                    Circle()
-                        .fill(tint)
-                        .frame(width: 5, height: 5)
-                }
-            }
-            Text(stone.isToday ? tr("就是今天")
-                 : "\(Anniversary.dotText(stone.date)) \(Anniversary.weekdayShort(stone.date))")
-                .font(.system(size: 13))
-                .foregroundStyle(.panelTertiary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 6)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            if stone.isNext {
-                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(tint.opacity(0.16))
+            if near {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(AnniversarySandColor.warm.opacity(dark ? 0.14 : 0.1))
             }
         }
-        .glassPane(cornerRadius: 9)
-        .opacity(stone.isPassed ? 0.55 : 1)
+        .glassPane(cornerRadius: 16)
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Anniversaries
-
+    /// 当天：小熊猫捧场，头上几片彩纸。
     @ViewBuilder
-    private var anniversarySection: some View {
-        let next = upcoming
-        if !next.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                sectionTitle(tr("接下来几个周年"))
-                ForEach(next) { item in anniversaryRow(item) }
+    private var pandaCheer: some View {
+        Group {
+            if let image = PandaArt.image("pet-panda-cheer") {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
             }
+        }
+        .frame(width: 92, height: 100)
+        .overlay(alignment: .top) {
+            AnniversaryConfetti()
+                .frame(width: 100, height: 26)
+                .offset(y: -8)
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// 天、时、分三格，精确到分钟。临近时一起变暖。
+    private var clockCells: some View {
+        let clock = Anniversary.clock(reading, now: now)
+        return HStack(spacing: 6) {
+            clockCell(clock.days, unit: tr("天"))
+            clockCell(clock.hours, unit: tr("时"), pad: true)
+            clockCell(clock.minutes, unit: tr("分"), pad: true)
         }
     }
 
-    private func anniversaryRow(_ item: AnniversaryOccurrence) -> some View {
-        var date = "\(Anniversary.longText(item.date)) \(Anniversary.weekdayShort(item.date))"
-        if event.lunar { date += " · " + tr("农历\(Anniversary.lunarShort(item.date))") }
-        return HStack(spacing: 8) {
-            Text(tr("第 \(item.ordinal) 个周年"))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.panelPrimary)
+    private func clockCell(_ value: Int, unit: String, pad: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            Text(verbatim: pad ? String(format: "%02d", value) : value.formatted(.number))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(near ? AnniversarySandColor.warmInk(dark: dark) : Color.panelPrimary)
+                .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(width: 78, alignment: .leading)
-            Text(date)
+                .minimumScaleFactor(0.8)
+            Text(unit)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+        .background {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(near ? AnniversarySandColor.warm.opacity(dark ? 0.22 : 0.14) : Color.panelFill)
+        }
+    }
+
+    // MARK: Cycle
+
+    @ViewBuilder
+    private var cycleSection: some View {
+        if let cycle = Anniversary.cycle(reading, today: now) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(tr("这一轮已过 \(cycle.percent)%"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
+                    Spacer(minLength: 4)
+                    Text(verbatim: "\(cycle.elapsed) / \(cycle.total)")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .monospacedDigit()
+                }
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(.panelTrack)
+                        Capsule()
+                            .fill(AnniversarySandColor.bar(near: near, dark: dark))
+                            .frame(width: max(6, proxy.size.width * cycle.fraction))
+                    }
+                }
+                .frame(height: 6)
+                HStack {
+                    Text(Anniversary.longText(cycle.start))
+                    Spacer(minLength: 4)
+                    Text(Anniversary.longText(cycle.end))
+                }
                 .font(.system(size: 13))
                 .foregroundStyle(.panelSecondary)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Spacer(minLength: 4)
-            Text(item.daysLeft == 0 ? tr("就是今天") : tr("还有 \(item.daysLeft) 天"))
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    // MARK: Facts
+
+    private var factsSection: some View {
+        let date = reading.kindDate
+        var dateText = "\(Anniversary.longText(date)) \(Anniversary.weekdayShort(date))"
+        if event.lunar { dateText += " · " + tr("农历\(Anniversary.lunarShort(date))") }
+        return VStack(spacing: 0) {
+            factRow(tr("日期"), dateText)
+            Divider().overlay(.panelSeparator)
+            factRow(tr("类型"), event.kind.title)
+            Divider().overlay(.panelSeparator)
+            factRow(tr("重复"), Anniversary.repeatText(event))
+        }
+        .padding(.horizontal, 12)
+        .glassPane(cornerRadius: 12)
+    }
+
+    private func factRow(_ title: String, _ value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
                 .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(height: 34)
+    }
+
+    // MARK: Next times
+
+    @ViewBuilder
+    private var nextSection: some View {
+        let next = Anniversary.nextTimes(event, today: now)
+        if !next.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("接下来几次")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
+                ForEach(next) { item in nextRow(item) }
+            }
+        }
+    }
+
+    private func nextRow(_ item: AnniversaryOccurrence) -> some View {
+        var date = "\(Anniversary.longText(item.date)) \(Anniversary.weekdayShort(item.date))"
+        if event.lunar { date += " · " + tr("农历\(Anniversary.lunarShort(item.date))") }
+        return HStack(spacing: 8) {
+            Image(systemName: "hourglass")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AnniversarySandColor.bar(near: false, dark: dark))
+                .frame(width: 16)
+            Text(date)
+                .font(.system(size: 13))
+                .foregroundStyle(.panelPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if item.ordinal > 0 {
+                Text(tr("第 \(item.ordinal) 个周年"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            Spacer(minLength: 4)
+            Text(item.daysLeft == 0 ? tr("就是今天") : tr("\(item.daysLeft) 天"))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(item.daysLeft == 0 ? tint.panelReadable : .panelSecondary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .glassPane(cornerRadius: 8)
-    }
-
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.panelSecondary)
+        .frame(minHeight: 22)
     }
 
     // MARK: Actions
@@ -346,18 +372,8 @@ struct AnniversaryEventPage: View {
         HStack(spacing: 8) {
             pill(tr("编辑"), symbol: "pencil", action: onEdit)
             pill(tr("分享图"), symbol: "square.and.arrow.up") { sharing = true }
-            Spacer(minLength: 4)
-            Button(action: onBack) {
-                HStack(spacing: 2) {
-                    Text("管理全部纪念日")
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
-                }
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.panelSecondary)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
+            pill(tr("时间线"), symbol: "list.bullet", action: onBack)
+            Spacer(minLength: 0)
         }
     }
 
@@ -366,9 +382,10 @@ struct AnniversaryEventPage: View {
             Label(title, systemImage: symbol)
                 .font(WidgetStyle.label(13))
                 .foregroundStyle(.panelPrimary)
-                .padding(.horizontal, 14)
-                .frame(height: 28)
-                .glassPane(cornerRadius: 8)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
+                .glassPane(cornerRadius: 15)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)

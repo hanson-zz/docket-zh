@@ -163,6 +163,11 @@ public enum ProLicenseGate {
         CassetteLook.shown(config: config, unlocked: unlocked, vertical: vertical)
     }
 
+    /// 纪念日单个卡片实际画哪种样式：没解锁时玻璃沙漏退回线条沙漏，撕页照旧。
+    public static func anniversaryLook(config: WidgetConfig, unlocked: Bool) -> AnniversaryLook {
+        AnniversaryLook.shown(config: config, unlocked: unlocked)
+    }
+
     // MARK: 习惯打卡
 
     /// 这张卡片最多能有几个习惯：没解锁时 3 个，解锁后 `HabitTracker.maxHabits` 个。
