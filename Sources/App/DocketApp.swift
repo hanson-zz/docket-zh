@@ -289,6 +289,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 码头 Pro：从钥匙串算出试用或激活状态，按需联网校验。不会自动开始试用。
         ProLicenseManager.shared.start()
+        // 卡带外观搬出正在播放：授权状态算好后跑一遍，已解锁的换成复古卡带对应机型，
+        // 没解锁的回到默认样式，卡片都不丢（CassetteMigration，跑过一次再跑不变）。
+        state.migrateCassetteLooks(unlocked: ProAccess.isUnlocked)
 
         SystemDockSettings.shared.start()
         // Reads the wallpaper, not the screen, so it needs no permission.

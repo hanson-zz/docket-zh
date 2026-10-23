@@ -1,25 +1,15 @@
 import AppKit
 import SwiftUI
 
-// 「正在播放」中卡的三种卡带外观：磁带、随身听、收录机（`CassetteLook`）。
+// 「复古卡带」小组件（`CassetteWidget`）共用的实物零件：配色、转轮、磁带外壳、
+// 喇叭和玻璃键帽。卡片在 CassetteTile.swift，面板在 Details/CassetteDetail.swift。
 //
-// 中卡在扩展栏上是 404×58（和 Codex 用量的中卡一样），效果图 404×104 的比例
-// 按 58 高重新排过：字最小 13pt，所以机身上的小字（磁带标签上的 A 面、歌名）
-// 不再印，歌名歌手放在旁边的正文或液晶上。
+// 机身是放在玻璃上的实物，颜色写死，不随浅深色变；底板、按键和字跟着浅色 / 深色
+// （`GlassKeyStyle`、面板语义色）。只印小熊猫小标，不出现任何品牌名。
 //
-// 机身是实物质感，颜色写死，不随浅深色变；磁带外观的卡片底还是普通玻璃卡片，
-// 旁边的字跟着外观走。只印小熊猫小标，不出现任何品牌名。
-//
-// 动画：转轮和收录机纸盆各用一个 `TimelineView`，只在「在播 + 扩展栏卡片看得见
-// + 没开减少动态效果」时走（`CassetteMotion.framesPerSecond`），其余时刻和预览
-// 都静止；没有常驻的 repeatForever。收录机的喇叭网罩画一次就缓存，播放时每帧
-// 只给纸盆做缩放变换。
-//
-// 紧凑（`MusicCard.isCompact`）：216×58，左边一盒精简磁带（两个转轮、卷带量），
-// 右边歌名、歌手两行 13pt；点磁带播放暂停。随身听、收录机在紧凑卡片上画成磁带
-// （`CassetteLook.shown`）。
-//
-// 面板底部的外观选择条（`CassetteLookPicker`）在这个文件末尾，缩略图是静态小图。
+// 动画：转轮和收录机纸盆各用一个 `TimelineView`，只在「在播 + 看得见 + 没开减少
+// 动态效果」时走（`CassetteMotion.framesPerSecond`），其余时刻和预览都静止；没有
+// 常驻的 repeatForever。收录机的喇叭网罩画一次就缓存，播放时每帧只给纸盆做缩放。
 
 /// 卡带卡片要画的一首歌，和来源无关。
 struct CassetteTrack {
@@ -40,34 +30,6 @@ struct CassetteActions {
     var previous: (() -> Void)?
     var toggle: (() -> Void)?
     var next: (() -> Void)?
-}
-
-/// 中卡上的卡带外观。`look` 不会是 `.plain`（默认样式由 `MusicTile` 自己画）。
-struct CassetteCard: View {
-    var look: CassetteLook
-    var track: CassetteTrack
-    var actions: CassetteActions
-    /// 扩展栏卡片看得见、而且不是预览：转轮才可能转。
-    var visible: Bool
-    /// 紧凑的 216 宽卡片：只有磁带（`CassetteLook.shown` 已经把另外两种换成磁带）。
-    var compact = false
-
-    var body: some View {
-        switch look {
-        case _ where compact:
-            WidgetSurface { CompactTapeFace(track: track, actions: actions, visible: visible) }
-        case .tape, .plain:
-            WidgetSurface { TapeFace(track: track, actions: actions, visible: visible) }
-        case .portable:
-            WidgetSurface(fill: CassettePalette.creamBottom) {
-                PortableFace(track: track, actions: actions, visible: visible)
-            }
-        case .boombox:
-            WidgetSurface(fill: CassettePalette.oliveBottom) {
-                BoomboxFace(track: track, actions: actions, visible: visible)
-            }
-        }
-    }
 }
 
 // MARK: - 配色（按效果图脚本 design/cassette-player.py）
@@ -103,13 +65,19 @@ enum CassettePalette {
     static let copper = rgb(205, 170, 104)
     static let amber = rgb(236, 150, 72)
 
+    // 玻璃键帽里的珊瑚播放键（不发光，只有实色渐变和底边投影）。
+    static let coralTop = rgb(240, 120, 82)
+    static let coralBottom = rgb(214, 84, 48)
+    /// 调台条的红指针、紧凑卡片和列表行的珊瑚小竖条。
+    static let needle = rgb(222, 70, 46)
+
     /// 没有封面时标签贴纸上的暮色渐变。
     static let dusk = LinearGradient(colors: [rgb(255, 186, 102), rgb(238, 108, 112), rgb(120, 58, 140)],
                                      startPoint: .top, endPoint: .bottom)
 }
 
 /// 小熊猫小标（现成的 Resources/Pet 素材）。
-private struct PandaMark: View {
+struct PandaMark: View {
     var height: CGFloat
 
     var body: some View {
@@ -126,7 +94,7 @@ private struct PandaMark: View {
 }
 
 /// 封面（或暮色渐变）铺满给定的框。
-private struct CoverFill: View {
+struct CoverFill: View {
     var image: NSImage?
 
     var body: some View {
@@ -216,104 +184,8 @@ private final class ReelSpins {
     }
 }
 
-// MARK: - 实体按键
-
-/// 实体按键：抬起有底边投影，按下（或播放键锁住在播时）下沉、颜色压暗。
-private struct PhysicalKey: View {
-    var symbol: String
-    var face: Color
-    var ink: Color
-    var latched: Bool
-    var corner: CGFloat
-    var glyph: CGFloat
-    var label: String
-    var action: (() -> Void)?
-
-    var body: some View {
-        Button(action: { action?() }) { EmptyView() }
-            .buttonStyle(KeyStyle(symbol: symbol, face: face, ink: ink, latched: latched,
-                                  corner: corner, glyph: glyph))
-            .disabled(action == nil)
-            .accessibilityLabel(label)
-    }
-}
-
-private struct KeyStyle: ButtonStyle {
-    var symbol: String
-    var face: Color
-    var ink: Color
-    var latched: Bool
-    var corner: CGFloat
-    var glyph: CGFloat
-    @Environment(\.isEnabled) private var enabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        let down = latched || configuration.isPressed
-        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        return GeometryReader { geo in
-            let depth: CGFloat = 2.2
-            let h = geo.size.height - depth
-            ZStack(alignment: .top) {
-                if !down {
-                    shape.fill(face.mix(with: .black, by: 0.38))
-                        .frame(height: h)
-                        .offset(y: depth)
-                }
-                shape
-                    .fill(LinearGradient(colors: [face.mix(with: .white, by: down ? 0 : 0.12),
-                                                  face.mix(with: .black, by: down ? 0.14 : 0)],
-                                         startPoint: .top, endPoint: .bottom))
-                    .overlay(shape.strokeBorder(.black.opacity(0.2), lineWidth: 0.5))
-                    .overlay(alignment: .top) {
-                        if !down {
-                            Capsule().fill(.white.opacity(0.45))
-                                .frame(height: 0.6)
-                                .padding(.horizontal, corner)
-                                .padding(.top, 0.8)
-                        }
-                    }
-                    .overlay {
-                        Image(systemName: symbol)
-                            .font(.system(size: glyph, weight: .bold))
-                            .foregroundStyle(ink.opacity(enabled ? 1 : 0.4))
-                    }
-                    .frame(height: h)
-                    .offset(y: down ? 1.6 : 0)
-            }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
-        }
-        .contentShape(Rectangle())
-        .animation(.easeOut(duration: 0.08), value: down)
-    }
-}
-
-/// 上一首、播放暂停、下一首三个实体键。
-private struct KeyRow: View {
-    var track: CassetteTrack
-    var actions: CassetteActions
-    var face: Color
-    var ink: Color
-    var playFace: Color
-    var playInk: Color
-    var spacing: CGFloat
-    var corner: CGFloat
-    var glyph: CGFloat
-
-    var body: some View {
-        HStack(spacing: spacing) {
-            PhysicalKey(symbol: "backward.end.fill", face: face, ink: ink, latched: false, corner: corner,
-                        glyph: glyph, label: tr("上一首"), action: actions.previous)
-            PhysicalKey(symbol: "playpause.fill", face: playFace, ink: playInk, latched: track.isPlaying,
-                        corner: corner, glyph: glyph, label: track.isPlaying ? tr("暂停") : tr("播放"),
-                        action: actions.toggle)
-            PhysicalKey(symbol: "forward.end.fill", face: face, ink: ink, latched: false, corner: corner,
-                        glyph: glyph, label: tr("下一首"), action: actions.next)
-        }
-    }
-}
-
 /// 细细一条进度。
-private struct ThinBar: View {
+struct ThinBar: View {
     var progress: Double
     var track: Color
     var fill: Color
@@ -330,164 +202,20 @@ private struct ThinBar: View {
     }
 }
 
-// MARK: - 1. 磁带
-
-/// 普通玻璃卡片上放一盒茶色半透明磁带，旁边是歌名、歌手、控制和进度。
-private struct TapeFace: View {
-    var track: CassetteTrack
-    var actions: CassetteActions
-    var visible: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            CassetteShell(track: track, visible: visible)
-                .frame(width: 88, height: 55)
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 8) {
-                    Text(track.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Spacer(minLength: 4)
-                    transport
-                }
-                HStack(spacing: 5) {
-                    if let icon = track.sourceIcon {
-                        Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
-                            .frame(width: 15, height: 15)
-                            .accessibilityHidden(true)
-                    }
-                    Text(track.artist)
-                        .font(WidgetStyle.caption(13))
-                        .foregroundStyle(WidgetStyle.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                if track.showsTime {
-                    HStack(spacing: 7) {
-                        clock(track.elapsed)
-                        ThinBar(progress: track.progress, track: WidgetStyle.secondary.opacity(0.3),
-                                fill: WidgetStyle.primary, height: 4)
-                        clock(track.duration)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    private func clock(_ seconds: TimeInterval) -> some View {
-        Text(MusicTime.clock(seconds))
-            .font(WidgetStyle.caption(13))
-            .monospacedDigit()
-            .foregroundStyle(WidgetStyle.secondary)
-            .lineLimit(1)
-            .fixedSize()
-    }
-
-    private var transport: some View {
-        HStack(spacing: 9) {
-            glyph("backward.end.fill", size: 13, label: tr("上一首"), action: actions.previous)
-            Button(action: { actions.toggle?() }) {
-                ZStack {
-                    Circle().fill(WidgetStyle.primary)
-                    Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
-                        .playPauseMorph(track.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.background)
-                        .offset(x: track.isPlaying ? 0 : 1)
-                }
-                .frame(width: 22, height: 22)
-                .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .disabled(actions.toggle == nil)
-            .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-            glyph("forward.end.fill", size: 13, label: tr("下一首"), action: actions.next)
-        }
-    }
-
-    private func glyph(_ symbol: String, size: CGFloat, label: String, action: (() -> Void)?) -> some View {
-        Button(action: { action?() }) {
-            Image(systemName: symbol)
-                .font(.system(size: size, weight: .medium))
-                .foregroundStyle(WidgetStyle.primary.opacity(action == nil ? 0.35 : 1))
-                .frame(minWidth: size)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(action == nil)
-        .accessibilityLabel(label)
-    }
-}
-
-// MARK: - 1b. 紧凑磁带（216×58）
-
-/// 紧凑卡片：左边一盒精简磁带（两个转轮、卷带量随进度），右边歌名、歌手两行 13pt。
-/// 没有按键和进度条（216 宽放不下），点磁带播放暂停，点右边照常打开面板。
-private struct CompactTapeFace: View {
-    var track: CassetteTrack
-    var actions: CassetteActions
-    var visible: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            shell
-            VStack(alignment: .leading, spacing: 2) {
-                Text(track.title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                if !track.artist.isEmpty {
-                    HStack(spacing: 4) {
-                        if let icon = track.sourceIcon {
-                            Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
-                                .frame(width: 13, height: 13)
-                                .accessibilityHidden(true)
-                        }
-                        Text(track.artist)
-                            .font(WidgetStyle.caption(13))
-                            .foregroundStyle(WidgetStyle.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.vertical, 3)
-    }
-
-    /// 80×50（效果图磁带 154×96 的比例）。能播放暂停时整盒磁带是一个键。
-    @ViewBuilder
-    private var shell: some View {
-        let art = CassetteShell(track: track, visible: visible, simplified: true)
-            .frame(width: 80, height: 50)
-        if let toggle = actions.toggle {
-            art
-                .contentShape(.rect)
-                .onTapGesture(perform: toggle)
-                .help(track.isPlaying ? tr("暂停") : tr("播放"))
-                .accessibilityElement()
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-        } else {
-            art
-        }
-    }
-}
-
 /// 磁带外壳，按效果图 154×96 的坐标画，再整体缩放到给定的框里。外壳上不印字。
-private struct CassetteShell: View {
+struct CassetteShell: View {
     var track: CassetteTrack
     var visible: Bool
     /// 精简：紧凑卡片和外观缩略图用，只留外壳、封面标签、小窗里的两个转轮和磁头口，
     /// 不画螺丝、手写线和小熊猫（缩到 0.5 倍以下时这些只剩噪点）。
     var simplified = false
+    /// 面板的大磁带：标签上沿留一条干净的白，歌名和时间由外面按实际字号盖上去
+    /// （`labelStrip`），不画手写线和小方块。
+    var labeled = false
 
-    private static let size = CGSize(width: 154, height: 96)
+    static let size = CGSize(width: 154, height: 96)
+    /// 标签上沿那条白在 154×96 坐标里的位置（左上角 7,6，宽 140，高 18）。
+    static let labelStrip = CGRect(x: 7, y: 6, width: 140, height: 18)
 
     var body: some View {
         GeometryReader { geo in
@@ -541,10 +269,12 @@ private struct CassetteShell: View {
                         .clipped()
                         .offset(y: 18)
                     Rectangle().fill(CassettePalette.rgb(60, 40, 30, 0.35)).frame(width: 140, height: 0.5).offset(y: 18)
-                    RoundedRectangle(cornerRadius: 3).fill(CassettePalette.rgb(60, 44, 36))
-                        .frame(width: 13, height: 13).offset(x: 3, y: 2.5)
-                    Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.55)).frame(width: 52, height: 1.6).offset(x: 22, y: 7)
-                    Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.35)).frame(width: 34, height: 1.4).offset(x: 22, y: 12)
+                    if !labeled {
+                        RoundedRectangle(cornerRadius: 3).fill(CassettePalette.rgb(60, 44, 36))
+                            .frame(width: 13, height: 13).offset(x: 3, y: 2.5)
+                        Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.55)).frame(width: 52, height: 1.6).offset(x: 22, y: 7)
+                        Capsule().fill(CassettePalette.rgb(40, 30, 60, 0.35)).frame(width: 34, height: 1.4).offset(x: 22, y: 12)
+                    }
                 }
                 .frame(width: 140, height: 56)
                 .clipShape(label)
@@ -593,210 +323,11 @@ private struct CassetteShell: View {
     }
 }
 
-// MARK: - 2. 随身听
-
-/// 奶油色机身：左边小窗看得见转轮，中间灰绿反射式液晶写歌名和进度，右边三个实体键。
-private struct PortableFace: View {
-    var track: CassetteTrack
-    var actions: CassetteActions
-    var visible: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            window.frame(width: 96, height: 46)
-            lcd.frame(maxWidth: .infinity).frame(height: 46)
-            KeyRow(track: track, actions: actions, face: CassettePalette.rgb(232, 224, 210),
-                   ink: CassettePalette.rgb(60, 52, 46), playFace: CassettePalette.coral,
-                   playInk: CassettePalette.rgb(255, 248, 240), spacing: 4, corner: 5, glyph: 11)
-                .frame(width: 98, height: 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            ZStack {
-                LinearGradient(colors: [CassettePalette.creamTop, CassettePalette.creamBottom],
-                               startPoint: .top, endPoint: .bottom)
-                RoundedRectangle(cornerRadius: WidgetStyle.corner - 1.5, style: .continuous)
-                    .strokeBorder(.white.opacity(0.43), lineWidth: 0.6)
-                    .padding(1.5)
-            }
-            .padding(.horizontal, -WidgetStyle.inset)
-        }
-    }
-
-    private var window: some View {
-        let inner = RoundedRectangle(cornerRadius: 9, style: .continuous)
-        return ZStack(alignment: .top) {
-            CassettePalette.rgb(40, 32, 28)
-            CoverFill(image: track.artwork)
-                .frame(height: 15)
-                .clipped()
-                .opacity(0.55)
-                .padding(.horizontal, 6)
-                .padding(.top, 4)
-            Capsule().fill(CassettePalette.rgb(26, 20, 18))
-                .frame(height: 16)
-                .padding(.horizontal, 5)
-                .offset(y: 21)
-            ReelPair(progress: track.progress, minRadius: 5.2, maxRadius: 13.5, hubRadius: 4.4,
-                     spacing: 40, playing: track.isPlaying, visible: visible)
-                .frame(height: 30)
-                .offset(y: 14)
-            Path { p in
-                p.move(to: CGPoint(x: 53, y: 0)); p.addLine(to: CGPoint(x: 69, y: 0))
-                p.addLine(to: CGPoint(x: 38, y: 46)); p.addLine(to: CGPoint(x: 22, y: 46)); p.closeSubpath()
-            }
-            .fill(.white.opacity(0.09))
-        }
-        .clipShape(inner)
-        .padding(2.5)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(CassettePalette.rgb(70, 60, 52)))
-        .accessibilityHidden(true)
-    }
-
-    private var lcd: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Text(track.title)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(CassettePalette.lcdInk)
-                    .lineLimit(1)
-                    .layoutPriority(1)
-                Text(track.artist)
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(CassettePalette.lcdInk.opacity(0.75))
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                PandaMark(height: 14)
-            }
-            if track.showsTime {
-                HStack(spacing: 6) {
-                    clock(track.elapsed, opacity: 1)
-                    ThinBar(progress: track.progress, track: CassettePalette.lcdInk.opacity(0.24),
-                            fill: CassettePalette.lcdInk)
-                    clock(track.duration, opacity: 0.67)
-                }
-            }
-        }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(LinearGradient(colors: [CassettePalette.lcdTop, CassettePalette.lcdBottom],
-                                 startPoint: .top, endPoint: .bottom)))
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(CassettePalette.rgb(96, 86, 74)))
-    }
-
-    private func clock(_ seconds: TimeInterval, opacity: Double) -> some View {
-        Text(MusicTime.clock(seconds))
-            .font(WidgetStyle.caption(13))
-            .monospacedDigit()
-            .foregroundStyle(CassettePalette.lcdInk.opacity(opacity))
-            .lineLimit(1)
-            .fixedSize()
-    }
-}
-
-// MARK: - 3. 收录机
-
-/// 苔绿色横机身：左右两个铜圈喇叭，中间调台条写歌名，下面磁带仓和三个键。
-private struct BoomboxFace: View {
-    var track: CassetteTrack
-    var actions: CassetteActions
-    var visible: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Speaker(diameter: 50, playing: track.isPlaying, visible: visible)
-            VStack(spacing: 4) {
-                strip
-                HStack(spacing: 8) {
-                    deck.frame(width: 96, height: 26)
-                    VStack(spacing: 4) {
-                        KeyRow(track: track, actions: actions, face: CassettePalette.rgb(214, 206, 186),
-                               ink: CassettePalette.rgb(50, 46, 36), playFace: CassettePalette.amber,
-                               playInk: CassettePalette.rgb(255, 248, 238), spacing: 4, corner: 4, glyph: 9)
-                            .frame(height: 18)
-                        if track.showsTime {
-                            ThinBar(progress: track.progress, track: CassettePalette.rgb(30, 34, 20, 0.55),
-                                    fill: CassettePalette.rgb(255, 196, 120))
-                        }
-                    }
-                }
-            }
-            .padding(.top, 6)
-            Speaker(diameter: 50, playing: track.isPlaying, visible: visible)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            ZStack(alignment: .top) {
-                LinearGradient(colors: [CassettePalette.oliveTop, CassettePalette.oliveBottom],
-                               startPoint: .top, endPoint: .bottom)
-                RoundedRectangle(cornerRadius: WidgetStyle.corner - 1.5, style: .continuous)
-                    .strokeBorder(CassettePalette.rgb(220, 230, 190, 0.27), lineWidth: 0.6)
-                    .padding(1.5)
-                // 提手。
-                Capsule().fill(CassettePalette.olivePlate)
-                    .frame(width: 120, height: 4)
-                    .padding(.top, 1.5)
-            }
-            .padding(.horizontal, -WidgetStyle.inset)
-        }
-    }
-
-    private var strip: some View {
-        HStack(spacing: 6) {
-            Text(track.title)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(CassettePalette.stripInk)
-                .lineLimit(1)
-                .layoutPriority(1)
-            Text(track.artist)
-                .font(WidgetStyle.caption(13))
-                .foregroundStyle(CassettePalette.stripInk.opacity(0.69))
-                .lineLimit(1)
-            Spacer(minLength: 2)
-            if track.showsTime {
-                Text(MusicTime.clock(track.elapsed))
-                    .font(WidgetStyle.caption(13))
-                    .monospacedDigit()
-                    .foregroundStyle(CassettePalette.stripInk.opacity(0.8))
-                    .lineLimit(1)
-                    .fixedSize()
-            }
-            PandaMark(height: 13)
-        }
-        .padding(.horizontal, 7)
-        .frame(height: 20)
-        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(CassettePalette.strip))
-    }
-
-    private var deck: some View {
-        let inner = RoundedRectangle(cornerRadius: 5, style: .continuous)
-        return ZStack(alignment: .top) {
-            CassettePalette.rgb(34, 30, 26)
-            CoverFill(image: track.artwork)
-                .frame(height: 7)
-                .clipped()
-                .opacity(0.5)
-                .padding(.horizontal, 4)
-                .padding(.top, 2)
-            ReelPair(progress: track.progress, minRadius: 4, maxRadius: 9.5, hubRadius: 3.4,
-                     spacing: 40, playing: track.isPlaying, visible: visible)
-                .frame(height: 22)
-                .offset(y: 5)
-        }
-        .clipShape(inner)
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(CassettePalette.rgb(44, 48, 32)))
-        .accessibilityHidden(true)
-    }
-}
-
 /// 铜圈喇叭：网罩加中心纸盆，播放时纸盆小幅胀缩（不读音量）。
 ///
 /// 网罩（几百个小孔）和铜圈不随时间变，画一次就合成一层缓存（`drawingGroup`），
 /// 不进 `TimelineView`；每帧只重算纸盆的缩放，纸盆本身也只画一次，缩放是渲染变换。
-private struct Speaker: View {
+struct Speaker: View {
     var diameter: CGFloat
     var playing: Bool
     var visible: Bool
@@ -892,213 +423,171 @@ private struct SpeakerCone: View, Equatable {
     }
 }
 
-// MARK: - 面板外观选择条
+// MARK: - 玻璃键帽
 
-/// 「正在播放」面板底部的外观选择条：默认 / 磁带 / 随身听 / 收录机四张静态小图，
-/// 下面 13pt 名称，点选即改这张卡片的 `cassette`。三种卡带带 Pro 角标，没解锁时
-/// 点了弹付费墙、配置不动（`CassetteLook.pick`）。只在横排扩展栏的中卡上出现
-/// （`MusicCard.showsLookPicker`），别的卡片不画卡带，面板里也不放这一条。
-///
-/// 标题叫「卡带外观」而不是「外观」：面板外框最底下已经有一行「外观」（主题色和背景），
-/// 两个同名入口叠在一起分不清。
-struct CassetteLookPicker: View {
-    var instance: WidgetInstance
-    var context: WidgetContext
+/// 玻璃键帽：抬起时是一块亮一点的玻璃加底边投影，按下（或播放键在播时锁住）
+/// 下沉 1pt、投影收短。珊瑚色只给播放键，是实色渐变，不发光。浅色、深色各一套，
+/// 卡片和面板共用；字跟着外观走（浅色近黑、深色白），珊瑚键上是白字形。
+struct GlassKeyStyle: ButtonStyle {
+    var coral = false
+    /// 播放键在播时锁住在下沉的位置。
+    var latched = false
+    /// 随机、循环开着时字形用珊瑚色（浅色下加深到能读）。
+    var lit = false
+    var corner: CGFloat = 10
 
-    /// 刚点的那一项：写回配置后面板不一定马上拿到新的一份，先按点的显示。
-    @State private var picked: CassetteLook?
-
-    private var config: WidgetConfig { (WidgetWriter.current(instance.id) ?? instance).config }
-    private var selected: CassetteLook { picked ?? CassetteLook.stored(config) }
-    private var unlocked: Bool { ProAccess.isUnlocked }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(tr("卡带外观"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.panelSecondary)
-            HStack(alignment: .top, spacing: 6) {
-                ForEach(CassetteLook.allCases, id: \.self) { look in
-                    cell(look)
-                }
-            }
-            if MusicCard.isCompact(config) {
-                // 紧凑卡片只有磁带的位置，选随身听、收录机也画磁带。
-                Text(tr("紧凑卡片上随身听和收录机画成磁带"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func cell(_ look: CassetteLook) -> some View {
-        let on = look == selected
-        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
-        return Button {
-            choose(look)
-        } label: {
-            VStack(spacing: 5) {
-                CassetteLookThumb(look: look)
-                    .frame(width: 58, height: 36)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(shape.fill(on ? Color.panelSelected : Color.panelFill))
-                    .overlay(shape.strokeBorder(on ? Color.panelPrimary.opacity(0.75) : .clear, lineWidth: 1.5))
-                    .overlay(alignment: .topTrailing) {
-                        if look.isPro {
-                            ProBadge()
-                                .offset(x: 3, y: -7)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                Text(look.title)
-                    .font(.system(size: 13, weight: on ? .semibold : .regular))
-                    .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .help(look.title)
-        .accessibilityLabel(look.title)
-        .accessibilityAddTraits(on ? .isSelected : [])
-    }
-
-    private func choose(_ look: CassetteLook) {
-        guard !context.isPreview else { return }
-        switch CassetteLook.pick(look, unlocked: unlocked) {
-        case .paywall:
-            PaywallWindow.shared.show()
-        case .apply:
-            guard look != CassetteLook.stored(config) else { picked = look; return }
-            picked = look
-            // 写之前取一次存着的最新一份，免得盖掉面板打开后别处的改动。
-            let latest = WidgetWriter.current(instance.id) ?? instance
-            WidgetWriter.write(latest) { config in
-                config.set(CassetteLook.key, .string(look.rawValue))
-            }
-        }
+    func makeBody(configuration: Configuration) -> some View {
+        GlassKeyCap(label: configuration.label, coral: coral, down: latched || configuration.isPressed,
+                    lit: lit, corner: corner)
     }
 }
 
-/// 外观缩略图：按 58×36 画的静态小图，不转、不读播放状态。机身颜色和卡片一样写死。
-struct CassetteLookThumb: View {
-    var look: CassetteLook
+private struct GlassKeyCap<Label: View>: View {
+    var label: Label
+    var coral: Bool
+    var down: Bool
+    var lit: Bool
+    var corner: CGFloat
 
-    private static let still = CassetteTrack(title: "", artist: "", isPlaying: false, progress: 0.35,
-                                             elapsed: 0, duration: 0, artwork: nil, sourceIcon: nil,
-                                             showsTime: false)
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.isEnabled) private var enabled
 
     var body: some View {
-        Group {
-            switch look {
-            case .plain: plain
-            case .tape:
-                CassetteShell(track: Self.still, visible: false, simplified: true)
-                    .frame(width: 56, height: 35)
-            case .portable: portable
-            case .boombox: boombox
+        let light = scheme == .light
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+        let fill: LinearGradient = coral
+            ? LinearGradient(colors: [CassettePalette.coralTop.mix(with: .black, by: down ? 0.08 : 0),
+                                      CassettePalette.coralBottom.mix(with: .black, by: down ? 0.1 : 0)],
+                             startPoint: .top, endPoint: .bottom)
+            : LinearGradient(colors: light
+                             ? [.white.opacity(down ? 0.62 : 0.9), .white.opacity(down ? 0.5 : 0.66)]
+                             : [.white.opacity(down ? 0.1 : 0.18), .white.opacity(down ? 0.06 : 0.09)],
+                             startPoint: .top, endPoint: .bottom)
+        let rim = LinearGradient(colors: coral
+                                 ? [.white.opacity(0.45), .white.opacity(0.05)]
+                                 : (light ? [.white, .white.opacity(0.35)] : [.white.opacity(0.28), .white.opacity(0.04)]),
+                                 startPoint: .top, endPoint: .bottom)
+        let ink: Color = coral ? .white
+            : (lit ? CassettePalette.coralBottom.mix(with: .black, by: light ? 0.18 : 0)
+                   : (light ? Color(.sRGB, red: 0.094, green: 0.086, blue: 0.11) : .white))
+        return label
+            .foregroundStyle(ink.opacity(enabled ? 1 : 0.38))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                shape.fill(fill)
+                    .overlay(shape.strokeBorder(rim, lineWidth: 0.7))
+                    .overlay(shape.strokeBorder(.black.opacity(light ? 0.06 : 0.25), lineWidth: 0.5).padding(-0.5))
+                    .shadow(color: .black.opacity(down ? (light ? 0.08 : 0.25) : (light ? 0.16 : 0.4)),
+                            radius: down ? 0.8 : 2, y: down ? 0.5 : 1.6)
             }
-        }
-        .frame(width: 58, height: 36)
-        .accessibilityHidden(true)
+            .offset(y: down ? 1 : 0)
+            .contentShape(shape)
+            .animation(.easeOut(duration: 0.08), value: down)
     }
+}
 
-    /// 默认：深色小卡片，左边封面方块，右边两道字和一条进度。
-    private var plain: some View {
-        let card = RoundedRectangle(cornerRadius: 7, style: .continuous)
-        return HStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(CassettePalette.dusk)
-                .frame(width: 16, height: 16)
-            VStack(alignment: .leading, spacing: 3) {
-                Capsule().fill(.white.opacity(0.9)).frame(width: 24, height: 3)
-                Capsule().fill(.white.opacity(0.5)).frame(width: 16, height: 2.5)
-                Capsule().fill(.white.opacity(0.35)).frame(width: 26, height: 1.6)
-            }
-        }
-        .frame(width: 58, height: 34)
-        .background(card.fill(LinearGradient(colors: [CassettePalette.rgb(64, 44, 70), CassettePalette.rgb(30, 24, 36)],
-                                             startPoint: .top, endPoint: .bottom)))
-        .overlay(card.strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
-    }
+/// 一个玻璃键：SF Symbol 或一两个字。
+struct GlassKey: View {
+    var symbol: String?
+    var text: String?
+    var label: String
+    var coral = false
+    var latched = false
+    var lit = false
+    var glyph: CGFloat = 15
+    var corner: CGFloat = 10
+    var action: (() -> Void)?
 
-    /// 随身听：奶油色机身，左边深色小窗两个转轮，右边三个小键（中间珊瑚色）。
-    private var portable: some View {
-        let casing = RoundedRectangle(cornerRadius: 7, style: .continuous)
-        return HStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CassettePalette.rgb(40, 32, 28))
-                HStack(spacing: 5) { StillReel(radius: 6); StillReel(radius: 4.5) }
-            }
-            .frame(width: 34, height: 24)
-            VStack(spacing: 2) {
-                ForEach(0..<3, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                        .fill(i == 1 ? CassettePalette.coral : CassettePalette.rgb(232, 224, 210))
-                        .overlay(RoundedRectangle(cornerRadius: 1.5).strokeBorder(.black.opacity(0.18), lineWidth: 0.4))
-                        .frame(width: 12, height: 6.5)
+    var body: some View {
+        Button(action: { action?() }) {
+            Group {
+                if let symbol {
+                    Image(systemName: symbol)
+                        .font(.system(size: glyph, weight: .bold))
+                        .contentTransition(.symbolEffect(.replace))
+                } else if let text {
+                    Text(text)
+                        .font(.system(size: max(13, glyph - 1), weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
                 }
             }
         }
-        .frame(width: 58, height: 34)
-        .background(casing.fill(LinearGradient(colors: [CassettePalette.creamTop, CassettePalette.creamBottom],
-                                               startPoint: .top, endPoint: .bottom)))
-        .overlay(casing.strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
-    }
-
-    /// 收录机：苔绿色机身，提手，左右铜圈喇叭，中间小磁带仓。
-    private var boombox: some View {
-        let casing = RoundedRectangle(cornerRadius: 6, style: .continuous)
-        return HStack(spacing: 3) {
-            StillSpeaker(diameter: 16)
-            ZStack {
-                RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(CassettePalette.rgb(34, 30, 26))
-                HStack(spacing: 3) { StillReel(radius: 3.6); StillReel(radius: 3) }
-            }
-            .frame(width: 16, height: 11)
-            .padding(.top, 6)
-            StillSpeaker(diameter: 16)
-        }
-        .frame(width: 58, height: 32)
-        .background(casing.fill(LinearGradient(colors: [CassettePalette.oliveTop, CassettePalette.oliveBottom],
-                                               startPoint: .top, endPoint: .bottom)))
-        .overlay(alignment: .top) {
-            Capsule().fill(CassettePalette.olivePlate).frame(width: 22, height: 2).padding(.top, 1.5)
-        }
-        .overlay(casing.strokeBorder(.black.opacity(0.18), lineWidth: 0.5))
+        .buttonStyle(GlassKeyStyle(coral: coral, latched: latched, lit: lit, corner: corner))
+        .disabled(action == nil)
+        .help(label)
+        .accessibilityLabel(label)
     }
 }
 
-/// 缩略图里不转的一卷带盘。
-private struct StillReel: View {
-    var radius: CGFloat
+// MARK: - 和正在播放共用的读数
 
-    var body: some View {
-        ZStack {
-            Circle().fill(CassettePalette.tape)
-            Circle().fill(CassettePalette.hub).padding(radius * 0.45)
-            Circle().fill(CassettePalette.hubHole).padding(radius * 0.72)
+/// 复古卡带读正在播放同一个「当前显示来源」（服务的 `display`，Core `MusicDisplay.pick`），
+/// 卡片、面板和正在播放显示的是同一首；控制也调同一套服务。
+@MainActor
+enum MusicNow {
+    static func playing(browsersEnabled: Bool) -> Playing? {
+        switch MusicService.shared.display {
+        case .native(let source): return MusicService.shared.track(for: source).map(Playing.init(native:))
+        case .browser: return browserTrack(browsersEnabled: browsersEnabled)
+        case .none: return nil
         }
-        .frame(width: radius * 2, height: radius * 2)
     }
-}
 
-/// 缩略图里的小喇叭：深色网罩加铜圈和纸盆，不画小孔。
-private struct StillSpeaker: View {
-    var diameter: CGFloat
-
-    var body: some View {
-        ZStack {
-            Circle().fill(CassettePalette.rgb(40, 40, 36))
-            Circle().strokeBorder(CassettePalette.copper, lineWidth: 1.2)
-            Circle().fill(CassettePalette.rgb(58, 56, 52)).frame(width: diameter * 0.36, height: diameter * 0.36)
+    static func browserTrack(browsersEnabled: Bool) -> Playing? {
+        guard browsersEnabled else { return nil }
+        return BrowserMedia.shared.track.map {
+            Playing(browser: $0, artwork: BrowserMedia.shared.artwork,
+                    icon: BrowserMedia.shared.siteIcon, tint: BrowserMedia.shared.tint)
         }
-        .frame(width: diameter, height: diameter)
+    }
+
+    static func needsPermission(browsersEnabled: Bool) -> Bool {
+        MusicService.shared.needsAutomationPermission
+            || (browsersEnabled && BrowserMedia.shared.needsPermission)
+    }
+
+    /// 只弹系统的「自动化」授权，并且只在用户点了「连接」时。
+    static func requestPermission(browsersEnabled: Bool) {
+        MusicService.shared.requestAutomationPermission()
+        if browsersEnabled { BrowserMedia.shared.requestPermission() }
+    }
+
+    /// 播放暂停：网页标签页交给浏览器，播放器交给它自己的来源。
+    static func toggle(_ track: Playing) {
+        if track.isBrowser { BrowserMedia.shared.playPause() }
+        else if let source = track.source { MusicService.shared.playPause(on: source) }
+        else { MusicService.shared.playPause() }
+    }
+
+    /// 来源的小图标：浏览器是站点图标，其余是 App 图标。
+    static func icon(_ track: Playing) -> NSImage? {
+        track.icon ?? AppCatalog.shared.icon(forBundleID: track.sourceBundleID)
+    }
+
+    /// 卡片上画的这首；没在播放时机身照样摆着，写「未在播放」，转轮停在开头。
+    static func cassetteTrack(_ track: Playing?, preview: Bool) -> CassetteTrack {
+        guard let track else {
+            return CassetteTrack(title: tr("未在播放"), artist: "", isPlaying: false, progress: 0,
+                                 elapsed: 0, duration: 0, artwork: nil, sourceIcon: nil, showsTime: false)
+        }
+        return CassetteTrack(title: track.title, artist: track.artist, isPlaying: track.isPlaying,
+                             progress: track.progress, elapsed: track.elapsed, duration: track.duration,
+                             artwork: preview ? nil : track.artwork, sourceIcon: preview ? nil : icon(track),
+                             showsTime: track.duration > 0)
+    }
+
+    /// 三个键：和正在播放卡片一样的媒体控制；网页视频只有播放暂停，设置里关掉的
+    /// 上一首、下一首按不动。
+    static func actions(_ track: Playing?, config: WidgetConfig, preview: Bool) -> CassetteActions {
+        guard !preview, let track else { return CassetteActions() }
+        let source = track.source
+        let skips = track.hasSkipControls && source != nil
+        return CassetteActions(
+            previous: skips && config.bool("previous", default: true)
+                ? { if let source { MusicService.shared.previous(on: source) } } : nil,
+            toggle: { toggle(track) },
+            next: skips && config.bool("next", default: true)
+                ? { if let source { MusicService.shared.next(on: source) } } : nil)
     }
 }

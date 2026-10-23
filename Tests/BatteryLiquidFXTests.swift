@@ -179,6 +179,6 @@ final class BatteryLiquidFXTests: XCTestCase {
         XCTAssertTrue(ProFeatures.isProChoice(kind: .battery, key: BatteryLook.key, value: BatteryLook.liquid.rawValue))
         XCTAssertEqual(ProLicenseGate.batteryLook(config: WidgetConfig([BatteryLook.key: .string("liquid")]),
                                                   unlocked: false), .classic)
-        XCTAssertEqual(ProFeatures.proKinds.count, 14)
+        XCTAssertEqual(ProFeatures.proKinds.count, 15)
     }
 }

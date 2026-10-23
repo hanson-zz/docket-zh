@@ -1,12 +1,21 @@
 import Foundation
 import XCTest
 
-/// 正在播放的中卡和三种卡带外观：磁带量随进度、转速、外观和 Pro 的划分。
+/// 复古卡带（Pro 小组件）：磁带量随进度、转速、机型、卡片尺寸、面板上的几样东西，
+/// 以及卡带外观搬出正在播放时的迁移。
 final class CassetteLookTests: XCTestCase {
 
+    /// 正在播放的中卡，带上以前的卡带外观。
     private func medium(_ look: CassetteLook? = nil) -> WidgetConfig {
         var config = WidgetConfig(["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])
         if let look { config.set(CassetteLook.key, .string(look.rawValue)) }
+        return config
+    }
+
+    private func cassette(_ model: CassetteModel, compact: Bool = false) -> WidgetConfig {
+        var config = WidgetCatalog.make(.cassette)!.config
+        config.set(CassetteModel.key, .string(model.rawValue))
+        config.set(CassetteWidget.compactKey, .bool(compact))
         return config
     }
 
@@ -124,165 +133,281 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertGreaterThan(Set(samples).count, 5, "播放时纸盆真的在动")
     }
 
-    // MARK: 外观
+    // MARK: 机型和小组件
 
-    func testLooksAndTheirPro() {
-        XCTAssertEqual(CassetteLook.allCases, [.plain, .tape, .portable, .boombox])
-        XCTAssertFalse(CassetteLook.plain.isPro)
-        XCTAssertTrue(CassetteLook.tape.isPro && CassetteLook.portable.isPro && CassetteLook.boombox.isPro)
-        XCTAssertEqual(CassetteLook.stored(WidgetConfig()), .plain)
-        XCTAssertEqual(CassetteLook.stored(WidgetConfig([CassetteLook.key: .string("bogus")])), .plain)
-        XCTAssertEqual(CassetteLook.plain.title, "默认")
-        for look in CassetteLook.allCases {
-            XCTAssertFalse(look.title.isEmpty)
+    func testModelsAndTheirTitles() {
+        XCTAssertEqual(CassetteModel.allCases, [.tape, .portable, .boombox])
+        XCTAssertEqual(CassetteModel.tape.title, "磁带")
+        XCTAssertEqual(CassetteModel.portable.title, "随身听")
+        XCTAssertEqual(CassetteModel.boombox.title, "收录机")
+        XCTAssertEqual(CassetteModel.stored(WidgetConfig()), .tape, "没存按磁带读")
+        XCTAssertEqual(CassetteModel.stored(WidgetConfig([CassetteModel.key: .string("bogus")])), .tape)
+        XCTAssertEqual(CassetteModel.stored(WidgetConfig([CassetteModel.key: .string("boombox")])), .boombox)
+    }
+
+    func testCassetteIsAProMediaWidgetWithThreeModels() throws {
+        let entry = try XCTUnwrap(WidgetCatalog.entry(.cassette))
+        XCTAssertEqual(entry.name, "复古卡带")
+        XCTAssertEqual(entry.category, .media)
+        XCTAssertEqual(entry.variants.map(\.title), ["磁带", "随身听", "收录机"], "库里三种机型各占一格")
+        XCTAssertEqual(WidgetKind.cassette.rawValue, "cassette")
+        XCTAssertTrue(ProFeatures.isProKind(.cassette), "整种 Pro")
+        for variant in entry.variants {
+            XCTAssertTrue(ProFeatures.isPro(.cassette, overrides: variant.overrides), variant.title)
+            XCTAssertFalse(ProLicenseGate.canAdd(.cassette, overrides: variant.overrides, unlocked: false))
+            XCTAssertTrue(ProLicenseGate.canAdd(.cassette, overrides: variant.overrides, unlocked: true))
         }
+        XCTAssertNil(WidgetCatalog.openTarget(.cassette), "点卡片打开面板")
+        XCTAssertTrue(WidgetLibraryGroups.isNew(.cassette))
+        XCTAssertEqual(WidgetLibraryGroups.note(.cassette), "3 种机型，各占一格")
+        XCTAssertGreaterThan(WidgetLibraryGroups.rank(.cassette), WidgetLibraryGroups.rank(.music),
+                             "排在正在播放后面")
+        let locked = WidgetCatalog.make(.cassette)!
+        XCTAssertTrue(ProLicenseGate.needsLockOverlay(locked, unlocked: false), "没解锁时和别的 Pro 小组件一样盖锁")
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(locked, unlocked: true))
     }
 
-    func testCassetteIsOnlyDrawnOnTheHorizontalMediumCard() {
-        XCTAssertEqual(CassetteLook.shown(config: medium(.tape), unlocked: true, vertical: false), .tape)
-        XCTAssertEqual(CassetteLook.shown(config: medium(.boombox), unlocked: true, vertical: false), .boombox)
-        XCTAssertEqual(CassetteLook.shown(config: medium(.portable), unlocked: true, vertical: true), .plain,
-                       "竖排回退默认样式")
-        var wide = medium(.tape)
-        wide.set(MusicCard.layoutKey, .string(MusicCard.wide))
-        XCTAssertEqual(CassetteLook.shown(config: wide, unlocked: true, vertical: false), .plain)
-        var mini = medium(.tape)
-        mini.set("mini", .bool(true))
-        XCTAssertEqual(CassetteLook.shown(config: mini, unlocked: true, vertical: false), .plain,
-                       "迷你优先，不画卡带")
-    }
-
-    func testLockedProLookFallsBackWithoutRewritingTheConfig() {
-        let config = medium(.portable)
-        XCTAssertEqual(ProLicenseGate.musicCassette(config: config, unlocked: false, vertical: false), .plain)
-        XCTAssertEqual(ProLicenseGate.musicCassette(config: config, unlocked: true, vertical: false), .portable)
-        XCTAssertEqual(CassetteLook.stored(config), .portable, "配置照旧存着，解锁后自动回来")
-        let instance = WidgetInstance(kind: .music, config: config)
-        XCTAssertFalse(ProLicenseGate.needsLockOverlay(instance, unlocked: false), "退回默认样式，不盖锁")
-    }
-
-    func testProChoicesInSettings() {
-        XCTAssertFalse(ProFeatures.isProChoice(kind: .music, key: CassetteLook.key, value: "plain"))
-        for look in [CassetteLook.tape, .portable, .boombox] {
-            XCTAssertTrue(ProFeatures.isProChoice(kind: .music, key: CassetteLook.key, value: look.rawValue))
-            XCTAssertFalse(ProLicenseGate.canChoose(.music, [CassetteLook.key: .string(look.rawValue)], unlocked: false))
-            XCTAssertTrue(ProLicenseGate.canChoose(.music, [CassetteLook.key: .string(look.rawValue)], unlocked: true))
+    func testVariantsMatchTheStoredModel() {
+        for model in CassetteModel.allCases {
+            XCTAssertEqual(WidgetCatalog.variantTitle(matching: cassette(model), kind: .cassette), model.title)
         }
-        XCTAssertTrue(ProLicenseGate.canChoose(.music, [CassetteLook.key: .string("plain")], unlocked: false))
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetCatalog.make(.cassette)!.config, kind: .cassette),
+                       "磁带", "新放的默认磁带")
+    }
+
+    func testMediumCardIs404AndCompactIs216ForTapeOnly() {
+        for model in CassetteModel.allCases {
+            let card = WidgetInstance(kind: .cassette, config: cassette(model))
+            XCTAssertEqual(WidgetCatalog.naturalSize(card), CGSize(width: 404, height: 104), "\(model)")
+            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .bottom), CGSize(width: 404, height: 58),
+                           "扩展栏里内容高 58")
+            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .left).width, WidgetCatalog.columnWidth)
+            XCTAssertEqual(WidgetCatalog.verticalHeight(card), CassetteWidget.columnHeight)
+        }
+        let compactTape = WidgetInstance(kind: .cassette, config: cassette(.tape, compact: true))
+        XCTAssertEqual(WidgetCatalog.naturalSize(compactTape).width, 216)
+        XCTAssertEqual(WidgetCatalog.contentSize(compactTape, position: .bottom).width, 216)
+        XCTAssertTrue(CassetteWidget.isCompact(compactTape.config))
+        for model in [CassetteModel.portable, .boombox] {
+            let card = WidgetInstance(kind: .cassette, config: cassette(model, compact: true))
+            XCTAssertFalse(CassetteWidget.isCompact(card.config), "\(model) 的机身放不进 216")
+            XCTAssertEqual(WidgetCatalog.naturalSize(card).width, 404)
+        }
+        XCTAssertFalse(CassetteWidget.isCompact(cassette(.tape)), "默认不紧凑")
+    }
+
+    func testSettingsListOnlyWhatTheSettingsPageCanChange() {
+        let keys = WidgetCatalog.configurableKeys(.cassette)
+        for key in CassetteWidget.sharedMusicKeys {
+            XCTAssertTrue(keys.contains(key), key)
+            XCTAssertEqual(WidgetCatalog.entry(.cassette)?.defaults.values[key],
+                           WidgetCatalog.entry(.music)?.defaults.values[key], "\(key) 的默认和正在播放一样")
+        }
+        XCTAssertFalse(WidgetCatalog.applies(CassetteModel.key, to: cassette(.tape), kind: .cassette),
+                       "机型在样式和面板里选")
+        XCTAssertFalse(WidgetCatalog.applies(MusicSourceSwitch.pinnedKey, to: cassette(.tape), kind: .cassette))
+        XCTAssertTrue(WidgetCatalog.applies(CassetteWidget.compactKey, to: cassette(.tape), kind: .cassette))
+        XCTAssertFalse(WidgetCatalog.applies(CassetteWidget.compactKey, to: cassette(.portable), kind: .cassette))
+        XCTAssertTrue(WidgetCatalog.applies(CassetteWidget.compactKey, to: cassette(.boombox, compact: true),
+                                            kind: .cassette), "已经开着的也列出来好关掉")
+        XCTAssertTrue(WidgetCatalog.applies("spotify", to: cassette(.boombox), kind: .cassette))
+    }
+
+    func testMusicNoLongerOffersCassetteLooks() {
+        let keys = WidgetCatalog.configurableKeys(.music)
+        XCTAssertFalse(keys.contains(CassetteLook.key))
+        XCTAssertFalse(keys.contains(CassetteLook.legacyCompactKey))
+        XCTAssertNil(WidgetCatalog.make(.music)!.config.values[CassetteLook.key])
         XCTAssertFalse(ProFeatures.isProKind(.music), "正在播放整种免费")
+        XCTAssertFalse(ProFeatures.isPro(WidgetInstance(kind: .music, config: medium(.tape))),
+                       "旧值不再算 Pro 样式")
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(WidgetInstance(kind: .music, config: medium(.tape)),
+                                                       unlocked: false))
     }
 
-    // MARK: 卡片三档
+    func testFollowsNowPlayingVisibility() {
+        XCTAssertTrue(WidgetVisibility.supportsCondition(.cassette))
+        XCTAssertEqual(WidgetVisibility.conditionTitle(.cassette, config: WidgetConfig()), "正在播放时显示")
+        let card = WidgetInstance(kind: .cassette, config: WidgetConfig([WidgetVisibility.modeKey: .string("conditional")]))
+        XCTAssertEqual(WidgetVisibility.conditionHolds(card, WidgetConditions(musicPlaying: true)), true)
+        XCTAssertEqual(WidgetVisibility.conditionHolds(card, WidgetConditions(musicPlaying: false)), false)
+    }
 
-    func testMediumCardIsANewSizeAndTheOldOnesStay() {
+    // MARK: 卡带的三档（正在播放）
+
+    func testNowPlayingKeepsItsThreeSizes() {
         let wide = WidgetCatalog.make(.music)!
         let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
         let mid = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.medium)])!
         XCTAssertEqual(WidgetCatalog.naturalSize(wide), CGSize(width: 264, height: 132))
         XCTAssertEqual(WidgetCatalog.naturalSize(mini), CGSize(width: 64, height: 62))
         XCTAssertEqual(WidgetCatalog.naturalSize(mid), CGSize(width: 404, height: 104))
-        XCTAssertEqual(WidgetCatalog.contentSize(mid, position: .bottom).width, 404)
-        XCTAssertEqual(WidgetCatalog.contentSize(wide, position: .bottom).width, 264)
-        XCTAssertEqual(WidgetCatalog.contentSize(mid, position: .left).width, WidgetCatalog.columnWidth,
-                       "竖排还是 76 宽的竖条")
-        XCTAssertFalse(MusicCard.isMedium(wide.config))
+        XCTAssertEqual(WidgetCatalog.contentSize(mid, position: .left).width, WidgetCatalog.columnWidth)
         XCTAssertTrue(MusicCard.isMedium(mid.config))
-        XCTAssertEqual(CassetteLook.stored(mid.config), .plain, "新放的中卡默认样式，免费")
-        XCTAssertFalse(ProFeatures.isPro(mid), "中卡本身免费")
+        XCTAssertFalse(MusicCard.isMedium(wide.config))
+        // 迁移前存着紧凑的中卡也按 404 量，紧凑只属于复古卡带。
+        var leftover = medium(.tape)
+        leftover.set(CassetteLook.legacyCompactKey, .bool(true))
+        XCTAssertEqual(WidgetCatalog.naturalSize(WidgetInstance(kind: .music, config: leftover)).width, 404)
     }
 
     func testVariantsMatchIncludingCardsSavedBeforeTheMediumSize() {
-        let wide = WidgetCatalog.make(.music)!
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: wide.config, kind: .music), "完整")
-        let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: mini.config, kind: .music), "迷你")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetCatalog.make(.music)!.config, kind: .music), "完整")
         let mid = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.medium)])!
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: mid.config, kind: .music), "中")
-        // 中卡之前存的卡片没有 layout，按完整读。
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(false)]), kind: .music), "完整")
         XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(true)]), kind: .music), "迷你")
-        XCTAssertFalse(MusicCard.isMedium(WidgetConfig(["mini": .bool(false)])))
         XCTAssertNil(WidgetCatalog.variantTitle(matching: WidgetConfig(), kind: .music), "空配置照旧谁都不匹配")
-        // 库里默认放的还是完整。
-        XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.first?.title, "完整")
     }
 
-    func testLookOptionOnlyOnTheMediumCard() {
-        XCTAssertTrue(WidgetCatalog.applies(CassetteLook.key, to: medium(), kind: .music))
-        XCTAssertFalse(WidgetCatalog.applies(CassetteLook.key, to: WidgetConfig(), kind: .music))
-        XCTAssertFalse(WidgetCatalog.applies(CassetteLook.key, to: WidgetConfig(["mini": .bool(true)]), kind: .music))
-        XCTAssertTrue(WidgetCatalog.configurableKeys(.music).contains(CassetteLook.key))
-        XCTAssertFalse(WidgetCatalog.configurableKeys(.music).contains(MusicCard.layoutKey))
+    // MARK: 面板
+
+    func testUpNextShowsThreeAndOffersShowAll() {
+        XCTAssertEqual(CassetteWidget.upNextShown(count: 5, expanded: false), 3)
+        XCTAssertEqual(CassetteWidget.upNextShown(count: 5, expanded: true), 5)
+        XCTAssertEqual(CassetteWidget.upNextShown(count: 2, expanded: false), 2)
+        XCTAssertEqual(CassetteWidget.upNextShown(count: -1, expanded: true), 0)
+        XCTAssertFalse(CassetteWidget.offersShowAll(count: 3))
+        XCTAssertTrue(CassetteWidget.offersShowAll(count: 4))
+        XCTAssertEqual(CassetteWidget.upNextSummary(count: 3), "B 面 · 3 首")
+        XCTAssertNil(CassetteWidget.upNextSummary(count: 0))
     }
 
-    // MARK: 紧凑（216 宽的小磁带）
-
-    private func compact(_ look: CassetteLook) -> WidgetConfig {
-        var config = medium(look)
-        config.set(MusicCard.compactKey, .bool(true))
-        return config
+    func testTrackNumbersAreTwoDigits() {
+        XCTAssertEqual(CassetteWidget.trackNumber(offset: 0), "01")
+        XCTAssertEqual(CassetteWidget.trackNumber(offset: 0, current: 3), "04")
+        XCTAssertEqual(CassetteWidget.trackNumber(offset: 2, current: 3), "06")
+        XCTAssertEqual(CassetteWidget.trackNumber(offset: 1, current: 9), "11")
+        XCTAssertEqual(CassetteWidget.trackNumber(offset: -5), "01", "不会出现 00 或负数")
     }
 
-    func testCompactIsATapeOptionOfTheMediumCard() {
-        XCTAssertTrue(MusicCard.isCompact(compact(.tape)))
-        XCTAssertFalse(MusicCard.isCompact(medium(.tape)), "默认不紧凑")
-        var wide = compact(.tape)
-        wide.set(MusicCard.layoutKey, .string(MusicCard.wide))
-        XCTAssertFalse(MusicCard.isCompact(wide), "只在中卡上有")
-        var mini = compact(.tape)
-        mini.set("mini", .bool(true))
-        XCTAssertFalse(MusicCard.isCompact(mini))
-        // 设置里：中卡选了磁带才列，已经开着的换了外观也列，好关掉。
-        XCTAssertTrue(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.tape), kind: .music))
-        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.portable), kind: .music))
-        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: medium(.plain), kind: .music))
-        XCTAssertTrue(WidgetCatalog.applies(MusicCard.compactKey, to: compact(.boombox), kind: .music))
-        XCTAssertFalse(WidgetCatalog.applies(MusicCard.compactKey, to: wide, kind: .music))
+    func testCounterReadsLikeATapeDeck() {
+        XCTAssertEqual(CassetteWidget.counter(102), "01:42")
+        XCTAssertEqual(CassetteWidget.counter(245), "04:05")
+        XCTAssertEqual(CassetteWidget.counter(0), "00:00")
+        XCTAssertEqual(CassetteWidget.counter(-3), "00:00")
+        XCTAssertEqual(CassetteWidget.counter(.nan), "00:00")
+        XCTAssertEqual(CassetteWidget.counter(3723), "1:02:03")
+        XCTAssertEqual(CassetteWidget.counterLine(elapsed: 102, duration: 245), "01:42 · 04:05")
+        XCTAssertEqual(CassetteWidget.counterLine(elapsed: 102, duration: 0), "01:42", "直播没有总长")
     }
 
-    func testCompactCardIs216WideWhateverTheLook() {
-        for look in CassetteLook.allCases {
-            let card = WidgetCatalog.make(.music, overrides: compact(look).values)!
-            XCTAssertEqual(WidgetCatalog.naturalSize(card), CGSize(width: 216, height: 104), "\(look)")
-            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .bottom).width, 216)
-            XCTAssertEqual(WidgetCatalog.contentSize(card, position: .left).width, WidgetCatalog.columnWidth,
-                           "竖排还是竖条")
+    func testPickingAModelAppliesOrAsksForPro() {
+        XCTAssertEqual(CassetteWidget.pick(.portable, current: .tape, unlocked: true), .apply)
+        XCTAssertEqual(CassetteWidget.pick(.tape, current: .tape, unlocked: true), .unchanged)
+        for model in CassetteModel.allCases {
+            XCTAssertEqual(CassetteWidget.pick(model, current: .tape, unlocked: false), .paywall)
         }
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: compact(.tape), kind: .music), "中",
-                       "紧凑是中卡的开关，样式菜单不多一档")
-        XCTAssertFalse(ProFeatures.isPro(WidgetInstance(kind: .music, config: compact(.plain))))
+        let compact = cassette(.tape, compact: true)
+        let portable = CassetteWidget.choosing(.portable, in: compact)
+        XCTAssertEqual(CassetteModel.stored(portable), .portable)
+        XCTAssertFalse(portable.bool(CassetteWidget.compactKey), "换成随身听时关掉紧凑")
+        let back = CassetteWidget.choosing(.tape, in: compact)
+        XCTAssertTrue(back.bool(CassetteWidget.compactKey), "换回磁带不动紧凑")
+        XCTAssertEqual(back.values["spotify"], compact.values["spotify"], "别的键不动")
     }
 
-    func testCompactDrawsTapeForTheBodiesThatDoNotFit() {
-        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: true, vertical: false), .tape)
-        XCTAssertEqual(CassetteLook.shown(config: compact(.portable), unlocked: true, vertical: false), .tape,
-                       "随身听放不进 216×58，画磁带")
-        XCTAssertEqual(CassetteLook.shown(config: compact(.boombox), unlocked: true, vertical: false), .tape)
-        XCTAssertEqual(CassetteLook.shown(config: compact(.plain), unlocked: true, vertical: false), .plain)
-        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: false, vertical: false), .plain,
-                       "没解锁退回默认样式")
-        XCTAssertEqual(CassetteLook.shown(config: compact(.tape), unlocked: true, vertical: true), .plain)
-        XCTAssertEqual(CassetteLook.stored(compact(.portable)), .portable, "配置不改写")
+    // MARK: 迁移
+
+    private func music(_ config: WidgetConfig) -> WidgetInstance {
+        WidgetInstance(kind: .music, config: config)
     }
 
-    // MARK: 面板外观条
-
-    func testLookPickerOnlyOnTheHorizontalMediumCard() {
-        XCTAssertTrue(MusicCard.showsLookPicker(medium(.plain), vertical: false, preview: false))
-        XCTAssertTrue(MusicCard.showsLookPicker(compact(.tape), vertical: false, preview: false))
-        XCTAssertFalse(MusicCard.showsLookPicker(medium(.tape), vertical: true, preview: false), "竖排不画卡带")
-        XCTAssertFalse(MusicCard.showsLookPicker(medium(.tape), vertical: false, preview: true))
-        XCTAssertFalse(MusicCard.showsLookPicker(WidgetCatalog.make(.music)!.config, vertical: false, preview: false),
-                       "完整卡片不显示")
-        XCTAssertFalse(MusicCard.showsLookPicker(WidgetConfig(["mini": .bool(true)]), vertical: false, preview: false))
-    }
-
-    func testPickingALookAppliesOrAsksForPro() {
-        XCTAssertEqual(CassetteLook.pick(.plain, unlocked: false), .apply)
-        XCTAssertEqual(CassetteLook.pick(.plain, unlocked: true), .apply)
+    func testUnlockedCassetteCardsBecomeTheNewWidgetInPlace() {
         for look in [CassetteLook.tape, .portable, .boombox] {
-            XCTAssertEqual(CassetteLook.pick(look, unlocked: false), .paywall)
-            XCTAssertEqual(CassetteLook.pick(look, unlocked: true), .apply)
+            var config = medium(look)
+            config.set("spotify", .bool(false))
+            config.set(MusicSourceSwitch.autoKey, .bool(false))
+            config.set(MusicSourceSwitch.pinnedKey, .string("appleMusic"))
+            config.set("previous", .bool(false))
+            config.set(WidgetTint.key, .string("blue"))
+            config.set(WidgetVisibility.modeKey, .string("conditional"))
+            config.set("skip", .number(30))
+            let old = music(config)
+            let new = CassetteMigration.migrated(old, unlocked: true)
+            XCTAssertEqual(new.kind, .cassette, "\(look)")
+            XCTAssertEqual(new.id, old.id, "同一个 id，位置不变")
+            XCTAssertEqual(CassetteModel.stored(new.config), look.model)
+            XCTAssertFalse(new.config.bool("spotify"), "来源照搬")
+            XCTAssertFalse(MusicSourceSwitch.autoSwitch(new.config))
+            XCTAssertEqual(new.config.string(MusicSourceSwitch.pinnedKey, default: ""), "appleMusic")
+            XCTAssertFalse(new.config.bool("previous", default: true))
+            XCTAssertEqual(new.config.values[WidgetTint.key], .string("blue"), "颜色照搬")
+            XCTAssertEqual(WidgetVisibility.mode(new.config), .conditional, "按条件显示照搬")
+            for key in ["mini", MusicCard.layoutKey, "skip", "backward", "forward",
+                        CassetteLook.key, CassetteLook.legacyCompactKey] {
+                XCTAssertNil(new.config.values[key], "\(key) 只属于正在播放")
+            }
+            XCTAssertEqual(WidgetCatalog.naturalSize(new).width, 404)
         }
+    }
+
+    func testCompactTapeStaysCompactAndOthersDoNot() {
+        var tape = medium(.tape)
+        tape.set(CassetteLook.legacyCompactKey, .bool(true))
+        let migratedTape = CassetteMigration.migrated(music(tape), unlocked: true)
+        XCTAssertTrue(CassetteWidget.isCompact(migratedTape.config))
+        XCTAssertEqual(WidgetCatalog.naturalSize(migratedTape).width, 216, "紧凑磁带还是 216 宽")
+        var portable = medium(.portable)
+        portable.set(CassetteLook.legacyCompactKey, .bool(true))
+        let migratedPortable = CassetteMigration.migrated(music(portable), unlocked: true)
+        XCTAssertEqual(migratedPortable.kind, .cassette)
+        XCTAssertFalse(migratedPortable.config.bool(CassetteWidget.compactKey), "紧凑只给磁带")
+    }
+
+    func testLockedCardsStayInNowPlayingWithTheDefaultLook() {
+        var config = medium(.boombox)
+        config.set(CassetteLook.legacyCompactKey, .bool(true))
+        config.set("spotify", .bool(false))
+        let old = music(config)
+        let new = CassetteMigration.migrated(old, unlocked: false)
+        XCTAssertEqual(new.kind, .music, "没解锁不换种类，卡片不丢")
+        XCTAssertEqual(new.id, old.id)
+        XCTAssertNil(new.config.values[CassetteLook.key])
+        XCTAssertNil(new.config.values[CassetteLook.legacyCompactKey])
+        XCTAssertTrue(MusicCard.isMedium(new.config), "还是中卡，画默认样式")
+        XCTAssertFalse(new.config.bool("spotify"), "别的设置不动")
+        XCTAssertFalse(CassetteMigration.needsMigration(new))
+    }
+
+    func testCardsThatNeverShowedACassetteOnlyLoseTheOldKeys() {
+        var wide = medium(.tape)
+        wide.set(MusicCard.layoutKey, .string(MusicCard.wide))
+        let wideNew = CassetteMigration.migrated(music(wide), unlocked: true)
+        XCTAssertEqual(wideNew.kind, .music, "完整卡片上没画过卡带")
+        XCTAssertNil(wideNew.config.values[CassetteLook.key])
+        var mini = medium(.portable)
+        mini.set("mini", .bool(true))
+        XCTAssertEqual(CassetteMigration.migrated(music(mini), unlocked: true).kind, .music)
+        let plain = CassetteMigration.migrated(music(medium(.plain)), unlocked: true)
+        XCTAssertEqual(plain.kind, .music, "默认样式本来就免费")
+        XCTAssertNil(plain.config.values[CassetteLook.key])
+    }
+
+    func testMigrationIsOneTimeAndLeavesOthersAlone() {
+        let fresh = WidgetCatalog.make(.music)!
+        XCTAssertFalse(CassetteMigration.needsMigration(fresh), "新卡片没有旧键")
+        XCTAssertEqual(CassetteMigration.migrated(fresh, unlocked: true), fresh)
+        let clock = WidgetCatalog.make(.clock)!
+        XCTAssertEqual(CassetteMigration.migrated(clock, unlocked: true), clock)
+        let once = CassetteMigration.migrated(music(medium(.tape)), unlocked: true)
+        XCTAssertEqual(CassetteMigration.migrated(once, unlocked: true), once, "再跑一遍不变")
+        XCTAssertEqual(CassetteMigration.migrated(once, unlocked: false), once, "迁过去的不会因为后来没解锁再迁回来")
+    }
+
+    func testMigratesEveryItemIncludingGroups() throws {
+        let tape = music(medium(.tape))
+        let locked = music(medium(.portable))
+        let clock = WidgetCatalog.make(.clock)!
+        let group = DockGroup(id: UUID(), name: "媒体", tint: .graphite, items: [.widget(locked)])
+        let items: [DockItem] = [.widget(clock), .widget(tape), .group(group)]
+        let result = try XCTUnwrap(CassetteMigration.migrated(items, unlocked: true))
+        XCTAssertEqual(result.count, 3)
+        XCTAssertEqual(result[0].widget, clock)
+        XCTAssertEqual(result[1].widget?.kind, .cassette)
+        XCTAssertEqual(result[1].id, tape.id)
+        XCTAssertEqual(result[2].group?.items.first?.widget?.kind, .cassette, "文件夹里的也迁")
+        XCTAssertNil(CassetteMigration.migrated(result, unlocked: true), "没有要迁的返回 nil，不写")
+        XCTAssertNil(CassetteMigration.migrated([.widget(clock), .widget(WidgetCatalog.make(.music)!)], unlocked: false))
     }
 }

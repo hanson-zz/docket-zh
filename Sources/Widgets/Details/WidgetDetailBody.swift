@@ -119,6 +119,8 @@ struct WidgetDetailBody: View {
             SlackerDetail(instance: instance, context: context)
         case .aiAssistant:
             AIAssistantDetail(instance: instance, context: context)
+        case .cassette:
+            CassetteDetail(instance: instance, context: context)
         case .emoji:
             EmojiDetail(instance: instance, context: context)
         case .toggles:

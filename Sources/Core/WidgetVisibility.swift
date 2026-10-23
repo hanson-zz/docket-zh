@@ -78,7 +78,7 @@ public enum WidgetVisibility {
     /// Kinds with a condition of their own to show on.
     public static func supportsCondition(_ kind: WidgetKind) -> Bool {
         switch kind {
-        case .music, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary, .water,
+        case .music, .cassette, .battery, .microphone, .mail, .aiUsage, .todo, .ambient, .radio, .anniversary, .water,
              .github, .pet: true
         default: false
         }
@@ -92,7 +92,7 @@ public enum WidgetVisibility {
     /// The condition in words, for menus and settings.
     public static func conditionTitle(_ kind: WidgetKind, config: WidgetConfig) -> String? {
         switch kind {
-        case .music: return tr("正在播放时显示")
+        case .music, .cassette: return tr("正在播放时显示")
         case .microphone: return tr("麦克风使用中时显示")
         case .mail: return tr("有未读邮件时显示")
         case .aiUsage: return tr("Codex 工作中或等你确认时显示")
@@ -115,7 +115,8 @@ public enum WidgetVisibility {
                                       _ conditions: WidgetConditions,
                                       now: Date = Date()) -> Bool? {
         switch instance.kind {
-        case .music:
+        // 复古卡带读的是正在播放同一套服务，条件也一样。
+        case .music, .cassette:
             return conditions.musicPlaying
         case .microphone:
             return conditions.micInUse

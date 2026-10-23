@@ -1937,6 +1937,39 @@
         }
       }
     },
+    "3 种机型，各占一格" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 models, one card each"
+          }
+        }
+      }
+    },
+    "A 面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Side A"
+          }
+        }
+      }
+    },
+    "A 面 · 自动翻面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Side A · Auto reverse"
+          }
+        }
+      }
+    },
     "API %@，现在先用%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1955,6 +1988,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App · browser if not installed"
+          }
+        }
+      }
+    },
+    "B 面 · %@ 首" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Side B · %@ songs"
           }
         }
       }
@@ -2190,6 +2234,17 @@
         }
       }
     },
+    "单曲" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One"
+          }
+        }
+      }
+    },
     "去网页问" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2421,6 +2476,28 @@
         }
       }
     },
+    "复古卡带" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retro Cassette"
+          }
+        }
+      }
+    },
+    "夏末合集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Late Summer Mix"
+          }
+        }
+      }
+    },
     "完成 %@ 项，共 %@ 项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2553,6 +2630,17 @@
         }
       }
     },
+    "循环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat"
+          }
+        }
+      }
+    },
     "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2670,6 +2758,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to reorder; drag into Today to do it today"
+          }
+        }
+      }
+    },
+    "拖动跳到这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to jump here"
           }
         }
       }
@@ -21045,13 +21144,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、正在播放 3 种卡带外观、纪念日玻璃沙漏；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、纪念日玻璃沙漏；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks, 3 Now Playing cassette looks and the Anniversary Glass Hourglass; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks and the Anniversary Glass Hourglass; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
           }
         }
       }
@@ -28113,6 +28212,61 @@
         }
       }
     },
+    "放首歌，这里就会出现" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play a song and it will show up here"
+          }
+        }
+      }
+    },
+    "晚风轻拂" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening Breeze"
+          }
+        }
+      }
+    },
+    "机型" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model"
+          }
+        }
+      }
+    },
+    "林间乐队" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Woodland Band"
+          }
+        }
+      }
+    },
+    "查看全部" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All"
+          }
+        }
+      }
+    },
     "正在读取歌单" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28120,6 +28274,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading playlist"
+          }
+        }
+      }
+    },
+    "海边的晚风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sea Breeze at Dusk"
+          }
+        }
+      }
+    },
+    "灯塔与船" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lighthouse and Boat"
+          }
+        }
+      }
+    },
+    "点开换来源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to change the source"
+          }
+        }
+      }
+    },
+    "紧凑卡片（216 宽，只有磁带）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compact card (216 wide, Tape only)"
+          }
+        }
+      }
+    },
+    "进度" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        }
+      }
+    },
+    "退潮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low Tide"
           }
         }
       }

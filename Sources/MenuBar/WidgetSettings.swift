@@ -742,8 +742,7 @@ struct WidgetSettingsSections: View {
         "microphone.notifyMic": tr("有 App 开始用麦克风时提醒"),
         "microphone.notifyCamera": tr("摄像头亮起时提醒"),
         "microphone.redWhenMuted": tr("静音时卡片变红"),
-        "music.cassette": tr("外观"),
-        "music.cassetteCompact": tr("紧凑卡片（216 宽）"),
+        "cassette.compact": tr("紧凑卡片（216 宽，只有磁带）"),
         "anniversary.hourglass": tr("样式"),
     ]
 
@@ -913,8 +912,6 @@ struct WidgetSettingsSections: View {
         "perfect-day.basketStyle": PerfectDayStyle.allCases.map { ($0.title, $0.rawValue) },
         "perfect-day.ringsCard": TodayRingsCard.allCases.map { ($0.title, $0.rawValue) },
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
-        // 正在播放中卡：默认免费，磁带、随身听、收录机标“（Pro 专属）”，没解锁时选了弹付费墙。
-        "music.cassette": CassetteLook.allCases.map { ($0.title, $0.rawValue) },
         // 纪念日单个卡片：线条沙漏免费（新卡片默认），玻璃沙漏标 Pro，撕页日历是老卡片的样子。
         "anniversary.hourglass": AnniversaryLook.allCases.map { ($0.title, $0.rawValue) },
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },

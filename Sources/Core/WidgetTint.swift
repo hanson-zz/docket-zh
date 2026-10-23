@@ -284,6 +284,8 @@ public enum WidgetTint {
         case .perfectDay: Palette("#C8642F", "#6DBE45")
         case .slacker: Palette("#F5A524", "#4FB7FF")
         case .aiAssistant: Palette("#D9663A", "#5B5BD6")
+        // 复古卡带：播放键的珊瑚色，对比色是收录机的苔绿。
+        case .cassette: Palette("#E4623A", "#7A865E")
         }
     }
 

@@ -33,7 +33,7 @@ final class WidgetConditionMonitor {
     /// 没有这样的卡片是 nil。卡片藏着时没人替它同步这个开关。
     static func musicBrowsersAllowed(in items: [DockItem]) -> Bool? {
         let music = items.compactMap(\.widget).filter {
-            $0.kind == .music && WidgetVisibility.mode($0.config) == .conditional
+            ($0.kind == .music || $0.kind == .cassette) && WidgetVisibility.mode($0.config) == .conditional
         }
         guard !music.isEmpty else { return nil }
         return music.contains { $0.config.bool("browsers", default: true) }
@@ -49,7 +49,8 @@ final class WidgetConditionMonitor {
         // The services are idempotent and shared with the tiles; starting
         // one the user already has a tile for costs nothing.
         // 浏览器标签页在播也算「正在播放」，卡片藏着时也得有人读它。
-        if kinds.contains(.music) { MusicService.shared.start(); BrowserMedia.shared.start() }
+        // 复古卡带读同一套服务，条件也是「正在播放」。
+        if kinds.contains(.music) || kinds.contains(.cassette) { MusicService.shared.start(); BrowserMedia.shared.start() }
         if kinds.contains(.battery) { BatteryMetrics.shared.start() }
         if kinds.contains(.mail) { MailService.shared.start() }
         if kinds.contains(.microphone) { MicrophoneMonitor.shared.start() }
@@ -66,7 +67,7 @@ final class WidgetConditionMonitor {
 
     private func sample() {
         var next = WidgetConditions()
-        if watched.contains(.music) {
+        if watched.contains(.music) || watched.contains(.cassette) {
             let music = MusicService.shared
             // Waiting on consent is not "nothing playing": the tile has to
             // stay up so its connect button can be pressed.

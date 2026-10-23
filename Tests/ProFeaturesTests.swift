@@ -9,9 +9,9 @@ final class ProFeaturesTests: XCTestCase {
             .slacker, .ambient, .podcast, .trash,
             .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
             .appVolume, .stock, .watchlist,
-            .fileShelf, .translate,
+            .fileShelf, .translate, .cassette,
         ])
-        XCTAssertEqual(ProFeatures.proKinds.count, 14)
+        XCTAssertEqual(ProFeatures.proKinds.count, 15)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))

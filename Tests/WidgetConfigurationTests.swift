@@ -553,7 +553,7 @@ final class WidgetConfigurationTests: XCTestCase {
         let selfDriven: Set<WidgetKind> = [.music, .progress, .clipboard,
                                           .emoji, .search, .appSwitcher, .bookmarks,
                                           .calculator, .github, .posture, .aiUsage,
-                                          .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio, .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant]
+                                          .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio, .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette]
         for entry in WidgetCatalog.entries where !selfDriven.contains(entry.kind) {
             XCTAssertNotNil(WidgetCatalog.openTarget(entry.kind),
                             "\(entry.kind) is in the library but opens nothing")

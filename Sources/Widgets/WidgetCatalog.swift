@@ -176,14 +176,26 @@ public enum WidgetCatalog {
                            // browser tab when no native player has anything.
                            "browsers": .bool(true),
                            // 卡片三档：完整、迷你、中卡（MusicCard）。没存 layout 的老卡片按完整读。
-                           MusicCard.layoutKey: .string(MusicCard.wide),
-                           // 中卡的外观：默认免费，磁带、随身听、收录机是 Pro（CassetteLook）。
-                           CassetteLook.key: .string(CassetteLook.fallback.rawValue),
-                           // 中卡选磁带时可开「紧凑」：216 宽的小磁带卡（MusicCard.compactKey）。
-                           MusicCard.compactKey: .bool(false)]),
+                           // 卡带外观搬成了单独的「复古卡带」，旧的 cassette 键由 CassetteMigration 迁走。
+                           MusicCard.layoutKey: .string(MusicCard.wide)]),
               variants: [(tr("完整"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.wide)]),
                          (tr("迷你"), ["mini": .bool(true), MusicCard.layoutKey: .string(MusicCard.wide)]),
                          (tr("中"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])],
+              supportsCompact: false, selfContained: true),
+
+        // 复古卡带（Pro）：磁带、随身听、收录机三种机型，库里各占一格（model 键）。
+        // 播放数据和控制走正在播放同一套服务，所以来源、自动切换、固定来源、浏览器
+        // 和上一首下一首按钮这几个键和正在播放一样（CassetteWidget.sharedMusicKeys）。
+        // 紧凑（216 宽）只给磁带（CassetteWidget.compactKey）。
+        Entry(kind: .cassette, name: tr("复古卡带"), category: .media,
+              defaults: c(["previous": .bool(true), "next": .bool(true),
+                           "spotify": .bool(true), "apple": .bool(true), "netease": .bool(true),
+                           "xiaoyuzhou": .bool(true), "qqmusic": .bool(true),
+                           MusicSourceSwitch.autoKey: .bool(true), MusicSourceSwitch.pinnedKey: .string(""),
+                           "browsers": .bool(true),
+                           CassetteModel.key: .string(CassetteModel.fallback.rawValue),
+                           CassetteWidget.compactKey: .bool(false)]),
+              variants: CassetteModel.allCases.map { (title: $0.title, overrides: [CassetteModel.key: .string($0.rawValue)]) },
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .battery, name: tr("电池"), category: .system,
@@ -675,7 +687,7 @@ public enum WidgetCatalog {
         case .aiAssistant: ShelfColor.redPanda.hex
         // Neutral: a clock, a battery or a player is not "about" a colour.
         case .clock, .world, .stopwatch, .timer, .progress, .countdown,
-             .alarm, .music, .battery, .shortcut, .airdrop, .weather:
+             .alarm, .music, .cassette, .battery, .shortcut, .airdrop, .weather:
             nil
         // A photo or a file is its own colour; a tint behind it competes.
         case .photos, .screenshots, .downloads, .fileShelf, .clipboard,
@@ -746,12 +758,12 @@ public enum WidgetCatalog {
         // 固定的来源在面板的来源列表里点选，设置页不给文字框。
         case (.music, MusicSourceSwitch.pinnedKey):
             false
-        // 卡带外观只画在中卡上，完整和迷你不列。
-        case (.music, CassetteLook.key):
-            MusicCard.isMedium(config)
-        // 紧凑只给磁带：中卡选了磁带才列，已经开着的也列出来好关掉。
-        case (.music, MusicCard.compactKey):
-            MusicCard.offersCompact(config)
+        // 复古卡带：机型在「样式」和面板的机型分段里选，固定来源在面板的来源列表里点选，
+        // 设置页都不列；紧凑只给磁带，选了磁带才列，已经开着的也列出来好关掉。
+        case (.cassette, CassetteModel.key), (.cassette, MusicSourceSwitch.pinnedKey):
+            false
+        case (.cassette, CassetteWidget.compactKey):
+            CassetteWidget.offersCompact(config)
         // Finding files asks Spotlight, not a search engine.
         case (.search, "engine"):
             config.string("layout", default: "web") == "web"
@@ -927,7 +939,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette:
             nil
         }
     }
@@ -1000,10 +1012,11 @@ public enum WidgetCatalog {
         case .notes: return CGSize(width: 160, height: 100)
         case .music:
             if cfg.bool("mini") { return CGSize(width: 64, height: 62) }
-            // 中卡和 Codex 用量的中卡一样宽（404），卡带外观只在这一档。
-            // 紧凑的中卡收到 216 宽，宽度只看样式和紧凑开关，不看外观和解锁。
-            if MusicCard.isCompact(cfg) { return CGSize(width: MusicCard.compactWidth, height: 104) }
+            // 中卡和 Codex 用量的中卡一样宽（404）。
             return MusicCard.isMedium(cfg) ? CGSize(width: 404, height: 104) : CGSize(width: 264, height: 132)
+        // 复古卡带：中卡 404，磁带开紧凑时 216；宽度只看机型和紧凑，不看解锁。
+        case .cassette:
+            return CGSize(width: CassetteWidget.width(cfg), height: CassetteWidget.cardHeight)
         case .battery:
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
@@ -1252,6 +1265,9 @@ public enum WidgetCatalog {
         case .aiAssistant:
             return AIServices.columnHeight(count: AIServices.enabled(in: cfg).count,
                                            square: AIServices.isSquare(cfg))
+        // 一盒小磁带、歌名和播放键。
+        case .cassette:
+            return CassetteWidget.columnHeight
         default:
             return 76
         }

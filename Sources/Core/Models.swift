@@ -250,6 +250,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case perfectDay = "perfect-day"
     case slacker
     case aiAssistant = "ai-assistant"
+    case cassette
 }
 
 /// What a widget opens when its card is clicked.

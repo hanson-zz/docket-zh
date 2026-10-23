@@ -29,6 +29,16 @@ extension AppState {
         return nil
     }
 
+    /// 正在播放上的卡带外观迁走（`CassetteMigration`）：每个布局都看，文件夹里的也算，
+    /// 没有要迁的布局不写。
+    func migrateCassetteLooks(unlocked: Bool) {
+        for index in state.profiles.indices {
+            if let items = CassetteMigration.migrated(state.profiles[index].items, unlocked: unlocked) {
+                state.profiles[index].items = items
+            }
+        }
+    }
+
     /// 写回一个小组件：当前布局里有就写那里，否则写到它所在的布局。
     func writeWidgetAnywhere(_ instance: WidgetInstance) {
         let active = state.customDock.profileID

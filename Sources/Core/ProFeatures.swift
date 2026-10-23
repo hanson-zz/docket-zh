@@ -17,10 +17,10 @@ import Foundation
 /// - 只属于某一种小组件的 Pro 样式，见 `isKindProStyle`：天气的多城市、电池的
 ///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
 ///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
-///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）、正在播放
-///   中卡的三种卡带外观（`cassette` 为磁带、随身听、收录机；默认免费，见 `CassetteLook`）、
+///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）、
 ///   纪念日单个卡片的玻璃沙漏（`hourglass` 为 glass；线条沙漏和撕页免费，见 `AnniversaryLook`）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
+///   正在播放原来中卡上的三种卡带外观 2026-10-23 起搬成整种 Pro 的「复古卡带」。
 /// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
 /// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
 /// - 邮件面板的多账户筛选（`MailInbox`），见 `ProLicenseGate.canFilterMailAccounts`。
@@ -53,9 +53,10 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 14 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// 整种都是 Pro 的小组件，共 15 种：摸鱼时钟、环境音、播客、废纸篓、
     /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
-    /// 应用音量、股票、自选股、文件暂存、翻译。
+    /// 应用音量、股票、自选股、文件暂存、翻译、复古卡带（磁带、随身听、收录机三种机型，
+    /// 原来是正在播放中卡的卡带外观）。
     /// 壁纸切换 2026-10-20 起改为免费，按时间自动换是 Pro。
     /// 加密货币行情 2026-10-20 起改为免费，到价提醒是 Pro（见
     /// `ProLicenseGate.canUseCryptoAlerts`）。
@@ -68,7 +69,7 @@ public enum ProFeatures {
         .slacker, .ambient, .podcast, .trash,
         .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
         .appVolume, .stock, .watchlist,
-        .fileShelf, .translate,
+        .fileShelf, .translate, .cassette,
     ]
 
     /// 有液态外观的小组件，共 8 种：电池、系统活动、专注计时、时间进度、喝水、
@@ -186,11 +187,6 @@ public enum ProFeatures {
         case .radio:
             // 收音机整种免费，经典免费，其余 8 款外观是 Pro。
             if case .string(let raw) = overrides[RadioSkin.key] { return RadioSkin(stored: raw).isPro }
-        case .music:
-            // 正在播放的三种卡带外观是 Pro，默认样式免费。
-            if case .string(let raw) = overrides[CassetteLook.key] {
-                return (CassetteLook(rawValue: raw) ?? .plain).isPro
-            }
         case .anniversary:
             // 纪念日的玻璃沙漏是 Pro，线条沙漏和撕页日历免费。
             if case .string(let raw) = overrides[AnniversaryLook.key] {

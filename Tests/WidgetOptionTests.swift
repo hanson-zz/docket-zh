@@ -80,7 +80,10 @@ final class WidgetOptionTests: XCTestCase {
             .notes: ["text", "color", "font", "fontSize"],
             .music: ["mini", "previous", "next", "backward", "forward",
                      "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers",
-                     "qqmusic", "autoSwitch", "pinned", "cassette", "cassetteCompact"],
+                     "qqmusic", "autoSwitch", "pinned"],
+            // 复古卡带：来源这几项和正在播放一样，机型和紧凑是自己的（CassetteWidget）。
+            .cassette: ["previous", "next", "spotify", "apple", "netease", "xiaoyuzhou", "qqmusic",
+                        "browsers", "autoSwitch", "pinned", "model", "compact"],
             .battery: ["devices", "bluetooth", "look"],
             .system: ["chart", "metrics"],
             .network: ["display", "chart", "unit"],
@@ -276,10 +279,9 @@ final class OptionApplicabilityTests: XCTestCase {
         "music.previous", "music.next", "music.backward", "music.forward", "music.skip",
         // 固定的来源在面板的来源列表里选，设置页不列。
         "music.pinned",
-        // 卡带外观只画在中卡上（MusicCard），完整和迷你不列。
-        "music.cassette",
-        // 紧凑只在中卡选了磁带（或已经开着）时列出（MusicCard.offersCompact）。
-        "music.cassetteCompact",
+        // 复古卡带：机型在样式和面板里选、固定来源在面板里点，设置不列；紧凑只给磁带
+        // （选了磁带或已经开着时列出，CassetteWidget.offersCompact）。
+        "cassette.model", "cassette.pinned", "cassette.compact",
         "search.engine",
         "weather.city", "weather.cities",
         // 副标题只有“当前”有，天数只有“多日预报”有（WeatherStyle）。

@@ -15,7 +15,7 @@ public enum WidgetLibraryGroups {
     /// 按 git 历史挑的：上一个正式版 v0.6.0（2026-10-13）的目录里还没有、之后
     /// 才加进来的 kind。下一个正式版发布后应当清空或换成那之后新增的。
     public static let newKinds: [WidgetKind] = [
-        .slacker, .aiAssistant, .translate, .water, .pet, .perfectDay, .podcast,
+        .slacker, .aiAssistant, .translate, .water, .pet, .perfectDay, .podcast, .cassette,
     ]
 
     public static func isNew(_ kind: WidgetKind) -> Bool { newKinds.contains(kind) }
@@ -39,7 +39,7 @@ public enum WidgetLibraryGroups {
         .water, .posture, .habit, .timer, .perfectDay, .pet,
         .aiAssistant, .aiUsage, .translate, .clipboard, .search, .bookmarks, .github, .mail,
         .calculator, .colorPicker, .capture, .emoji, .toggles,
-        .music, .podcast, .radio, .ambient, .recorder, .photos, .volume, .appVolume,
+        .music, .cassette, .podcast, .radio, .ambient, .recorder, .photos, .volume, .appVolume,
         .downloads, .trash, .fileShelf, .screenshots, .airdrop,
         .battery, .system, .network, .gauges, .microphone, .wallpaper,
         .weather,
@@ -73,6 +73,8 @@ public enum WidgetLibraryGroups {
         case .volume: tr("换输出设备和总音量")
         case .appVolume: tr("每个应用各调各的")
         case .music: tr("只管这首歌")
+        // 复古卡带：三种机型各占一格，直接添加。
+        case .cassette: tr("3 种机型，各占一格")
         default: nil
         }
     }

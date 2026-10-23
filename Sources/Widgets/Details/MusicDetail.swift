@@ -8,8 +8,8 @@ import SwiftUI
 /// （白色实心钮、深色字形；Apple 音乐和 Spotify 两侧加随机、循环），音量条，再往下是
 /// Apple 音乐的「接下来」或 Spotify 的「刚才听过」3 首（方案 A，design/music-queue-2.png：
 /// 有这块时封面 128、控制键收紧，内容底约 520，不再落进底部渐隐带；点「全部 N 首」
-/// 延展成迷你播放条吸顶加整张列表，判断在 Core `MusicQueue`）。中卡再往下是「卡带外观」选择条
-/// （`CassetteLookPicker`）。底部「外观」行由面板外框画。
+/// 延展成迷你播放条吸顶加整张列表，判断在 Core `MusicQueue`）。底部「外观」行由面板外框画。
+/// 卡带外观搬成了单独的「复古卡带」小组件，面板里不再有「卡带外观」选择条。
 ///
 /// 原来是一张铺满封面的卡片，往外多画 10pt（`bleed`），超出面板内边距，右边贴着面板
 /// 边缘露出一条亮边；现在不再越界，背景改成深色玻璃加封面主色光晕（外框按
@@ -118,14 +118,6 @@ struct MusicDetail: View {
                     topRow(nil)
                     idle
                 }
-            }
-            // 中卡的卡带外观：点选即改这张卡片（`CassetteLookPicker`）。完整、迷你和竖排
-            // 不画卡带，不放这一条；要授权时先连接。
-            if page != .sources, expandedBlock == nil, !(playing == nil && needsPermission),
-               MusicCard.showsLookPicker(config, vertical: context.position.isVertical,
-                                         preview: context.isPreview) {
-                CassetteLookPicker(instance: current, context: context)
-                    .padding(.top, 18)
             }
         }
         .foregroundStyle(ink)
