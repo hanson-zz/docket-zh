@@ -75,9 +75,11 @@ final class MusicSourcesTests: XCTestCase {
     // MARK: 接下来
 
     func testUpNextFollowsThePlaylist() {
-        XCTAssertEqual(MusicUpNext.indices(current: 3, count: 20, wrap: false), [4, 5, 6, 7, 8])
+        XCTAssertEqual(MusicUpNext.indices(current: 3, count: 20, limit: 5, wrap: false), [4, 5, 6, 7, 8])
         XCTAssertEqual(MusicUpNext.indices(current: 18, count: 20, wrap: false), [19, 20])
-        XCTAssertEqual(MusicUpNext.indices(current: 18, count: 20, wrap: true), [19, 20, 1, 2, 3])
+        XCTAssertEqual(MusicUpNext.indices(current: 18, count: 20, limit: 5, wrap: true), [19, 20, 1, 2, 3])
+        XCTAssertEqual(MusicUpNext.limit, 25, "延展态最多读 25 首")
+        XCTAssertEqual(MusicUpNext.indices(current: 1, count: 100, wrap: false), Array(2...26))
         XCTAssertEqual(MusicUpNext.indices(current: 2, count: 3, wrap: true), [3, 1], "不绕回当前这首")
         XCTAssertEqual(MusicUpNext.indices(current: 20, count: 20, wrap: false), [])
         XCTAssertEqual(MusicUpNext.indices(current: 0, count: 20, wrap: false), [], "找不到当前这首")

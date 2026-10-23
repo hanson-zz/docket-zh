@@ -311,9 +311,11 @@ public enum MusicVolumeRoute: Equatable, Sendable {
 
 /// Apple 音乐「接下来」：按当前歌单顺序取后面几首。
 ///
-/// 读不到系统真正的待播清单，只能按歌单顺序；开随机时顺序没有意义，面板隐藏。
+/// 读不到系统真正的待播清单，只能按歌单顺序；开随机时顺序没有意义，面板改写
+/// 「顺序由 Apple 音乐决定」（见 `MusicQueue`）。最多读 25 首，只在延展态读满，
+/// 收起态只读 3 首（`MusicQueue.readLimit`）。
 public enum MusicUpNext {
-    public static let limit = 5
+    public static let limit = 25
 
     /// 当前是第 `current` 首（从 1 数，AppleScript 的下标），歌单共 `count` 首，
     /// 后面最多 `limit` 首的下标。循环全部时到尾接回开头，不会绕回当前这首。
@@ -335,6 +337,13 @@ public enum MusicUpNext {
     }
 
     public static func visible(shuffle: Bool) -> Bool { !shuffle }
+
+    /// 当前这首后面一共还有几首：「全部 N 首」和延展态「还有 N 首」用。循环全部时
+    /// 是除当前外的整张歌单；找不到当前这首为 0。
+    public static func remaining(current: Int, count: Int, wrap: Bool) -> Int {
+        guard current >= 1, current <= count else { return 0 }
+        return wrap ? count - 1 : count - current
+    }
 }
 
 /// Spotify「刚才听过」：只存在本机，最多 20 条，新的在前。
@@ -346,15 +355,19 @@ public struct MusicRecent: Codable, Equatable, Sendable {
         public var artist: String
         public var duration: Double
         public var artworkURL: String?
+        /// 什么时候开始放的，行尾写「几分钟前」。升级前记的没有。
+        public var playedAt: Date?
 
         public var id: String { uri }
 
-        public init(uri: String, title: String, artist: String, duration: Double, artworkURL: String? = nil) {
+        public init(uri: String, title: String, artist: String, duration: Double, artworkURL: String? = nil,
+                    playedAt: Date? = nil) {
             self.uri = uri
             self.title = title
             self.artist = artist
             self.duration = duration
             self.artworkURL = artworkURL
+            self.playedAt = playedAt
         }
     }
 

@@ -75,6 +75,10 @@ public final class MusicService {
         }
         public var playlist: String
         public var items: [Item]
+        /// 当前这首后面一共还有几首（「全部 N 首」，见 `MusicUpNext.remaining`）。
+        public var remaining: Int = 0
+        /// 放的是整个资料库（AppleScript `library playlist`），标题写「资料库」。
+        public var isLibrary = false
     }
 
     /// The track of the source on screen (`current`). A failed poll leaves it
@@ -119,13 +123,28 @@ public final class MusicService {
 
     /// Apple 音乐的「接下来」，面板开着时才读。
     public private(set) var upNext: UpNext?
+    /// 正在读「接下来」：面板在已有几首下面画灰色占位行。
+    public private(set) var upNextReading = false
+    /// 这首连读两次都读不到歌单（电台、在线流这类没有歌单的）：面板整块不出现。
+    public private(set) var upNextUnreadable = false
+    @ObservationIgnored private var upNextFailures = 0
     /// 面板开着时才读「接下来」，关着时不为它多发 Apple Event。
     @ObservationIgnored private var wantsUpNext = false
+    /// 面板列表展开（延展态）时读满 25 首，收起态只读 3 首（`MusicQueue.readLimit`）。
+    @ObservationIgnored private var upNextExpanded = false
 
     public func setWantsUpNext(_ on: Bool) {
         guard on != wantsUpNext else { return }
         wantsUpNext = on
+        if !on { upNextExpanded = false }
         if on { upNextKey = nil; refreshUpNext() }
+    }
+
+    /// 面板「全部」展开 / 收起。展开时要的比手上的多才再读一次；收起不重读。
+    public func setUpNextExpanded(_ on: Bool) {
+        guard on != upNextExpanded else { return }
+        upNextExpanded = on
+        refreshUpNext()
     }
 
     @ObservationIgnored private var timer: Timer?
@@ -144,6 +163,10 @@ public final class MusicService {
     /// 上次记进「刚才听过」的 Spotify 曲目。
     @ObservationIgnored private var lastRecorded: String?
     @ObservationIgnored private var upNextKey: String?
+    /// `upNextKey` 那次读了几首。
+    @ObservationIgnored private var upNextLimit = 0
+    /// 读失败的那首，换歌后重新数失败次数。
+    @ObservationIgnored private var upNextFailedKey: String?
     @ObservationIgnored private var upNextLoading = false
     /// 随机、循环、音量、喜欢刚点过时，读数先不盖掉它。
     @ObservationIgnored private var heldExtras: (until: Date, apply: (inout NowPlaying) -> Void)?
@@ -410,7 +433,8 @@ public final class MusicService {
         lastRecorded = uri
         var list = recent
         list.record(.init(uri: uri, title: track.title, artist: track.artist,
-                          duration: track.duration, artworkURL: track.artworkURL?.absoluteString))
+                          duration: track.duration, artworkURL: track.artworkURL?.absoluteString,
+                          playedAt: Date()))
         guard list != recent else { return }
         recent = list
         UserDefaults.standard.set(list.encoded(), forKey: MusicRecent.defaultsKey)
@@ -439,15 +463,43 @@ public final class MusicService {
         }
         let wrap = track.repeatMode == .all
         let key = "\(id)|\(wrap)"
-        guard key != upNextKey, !upNextLoading else { return }
+        let limit = MusicQueue.readLimit(expanded: upNextExpanded)
+        // 同一首、同一种循环，手上读过的够用就不再读（收起时不为少读几首重读）。
+        if key == upNextKey, upNextLimit >= limit { return }
+        guard !upNextLoading else { return }
+        // 换了歌，旧的几首不再作数：先清掉，面板画占位；只是要的更多时留着已有几首。
+        if key != upNextKey { upNext = nil }
+        if key != upNextFailedKey { upNextFailures = 0; upNextUnreadable = false }
+        guard !upNextUnreadable else { return }
         upNextLoading = true
+        upNextReading = true
         Task {
-            let list = await withTimeout(seconds: 4) { await Bridge.upNext(wrap: wrap) }
+            let list = await withTimeout(seconds: limit > MusicQueue.collapsedRows ? 8 : 4) {
+                await Bridge.upNext(wrap: wrap, limit: limit)
+            }
             self.upNextLoading = false
+            self.upNextReading = false
             // 读的时候歌已经换了就作废，下一次轮询再读。
             guard self.nowPlaying?.trackID == id else { return }
+            guard let found = list ?? nil else {
+                // 展开后读 25 首超时：留着手上的几首，不再为它重读（面板写「还有 N 首」）。
+                if key == self.upNextKey, self.upNext != nil {
+                    self.upNextLimit = limit
+                    return
+                }
+                // 读不到（超时或没有歌单）：不记 key，下一次轮询再试；连续两次就当没有队列。
+                self.upNextFailedKey = key
+                self.upNextFailures += 1
+                if self.upNextFailures >= 2 { self.upNextUnreadable = true }
+                return
+            }
+            self.upNextFailures = 0
+            self.upNextUnreadable = false
             self.upNextKey = key
-            self.upNext = list ?? nil
+            self.upNextLimit = limit
+            self.upNext = found
+            // 读的时候面板展开了：要的更多，接着读。
+            if MusicQueue.readLimit(expanded: self.upNextExpanded) > limit { self.refreshUpNext() }
         }
     }
 
@@ -623,6 +675,18 @@ public final class MusicService {
         let body = source == .appleMusic ? "set shuffle enabled to \(on)" : "set shuffling to \(on)"
         lastCommand = .now
         Bridge.send(body, to: source)
+    }
+
+    /// 「从头循环」：歌单放到最后一首时直接切到循环全部。
+    public func setRepeat(_ mode: MusicRepeat) {
+        guard let track = nowPlaying, track.source.hasShuffleAndRepeat else { return }
+        let chosen: MusicRepeat = mode == .one && !track.source.hasRepeatOne ? .all : mode
+        hold { $0.repeatMode = chosen }
+        let body = track.source == .appleMusic
+            ? "set song repeat to \(chosen.rawValue)"
+            : "set repeating to \(chosen != .off)"
+        lastCommand = .now
+        Bridge.send(body, to: track.source)
     }
 
     public func cycleRepeat() {
@@ -815,8 +879,9 @@ enum Bridge {
         }
     }
 
-    /// 当前歌单名、当前这首在歌单里第几首、歌单共几首，再按 `MusicUpNext` 取后面几首。
-    static func upNext(wrap: Bool) async -> MusicService.UpNext? {
+    /// 当前歌单名、当前这首在歌单里第几首、歌单共几首、是不是整个资料库，再按
+    /// `MusicUpNext` 取后面最多 `limit` 首。
+    static func upNext(wrap: Bool, limit: Int) async -> MusicService.UpNext? {
         await offMain {
             guard isRunning(.appleMusic) else { return nil }
             let locate = """
@@ -828,14 +893,21 @@ enum Bridge {
                 try
                     set i to index of (first track of p whose database ID is did)
                 end try
-                return (name of p) & tab & (i as text) & tab & ((count of tracks of p) as text)
+                set lib to false
+                try
+                    set lib to (class of p is library playlist)
+                end try
+                return (name of p) & tab & (i as text) & tab & ((count of tracks of p) as text) & tab & (lib as text)
             end tell
             """
             guard case .value(let found) = script(locate), let raw = found.stringValue else { return nil }
             let f = raw.components(separatedBy: "\t")
-            guard f.count == 3, let index = Int(f[1]), let count = Int(f[2]) else { return nil }
-            let indices = MusicUpNext.indices(current: index, count: count, wrap: wrap)
-            guard !indices.isEmpty else { return MusicService.UpNext(playlist: f[0], items: []) }
+            guard f.count >= 3, let index = Int(f[1]), let count = Int(f[2]) else { return nil }
+            let isLibrary = f.count > 3 && f[3] == "true"
+            let remaining = MusicUpNext.remaining(current: index, count: count, wrap: wrap)
+            let empty = MusicService.UpNext(playlist: f[0], items: [], remaining: remaining, isLibrary: isLibrary)
+            let indices = MusicUpNext.indices(current: index, count: count, limit: limit, wrap: wrap)
+            guard !indices.isEmpty else { return empty }
             let list = indices.map(String.init).joined(separator: ", ")
             let body = """
             tell application id "com.apple.Music"
@@ -849,14 +921,14 @@ enum Bridge {
             end tell
             """
             guard case .value(let rows) = script(body, cache: false), let text = rows.stringValue else {
-                return MusicService.UpNext(playlist: f[0], items: [])
+                return empty
             }
             let items = text.split(separator: "\n").compactMap { line -> MusicService.UpNext.Item? in
                 let c = line.components(separatedBy: "\t")
                 guard c.count >= 4, !c[1].isEmpty else { return nil }
                 return .init(id: c[0], title: c[1], artist: c[2], duration: Double(c[3]) ?? 0)
             }
-            return MusicService.UpNext(playlist: f[0], items: items)
+            return MusicService.UpNext(playlist: f[0], items: items, remaining: remaining, isLibrary: isLibrary)
         }
     }
 
