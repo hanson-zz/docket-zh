@@ -162,6 +162,11 @@ public enum ProLicenseGate {
         AnniversaryLook.shown(config: config, unlocked: unlocked)
     }
 
+    /// 世界时钟多城市卡片实际画哪种格子：没解锁时天空退回普通，配置照存。
+    public static func worldClockLook(config: WidgetConfig, unlocked: Bool) -> WorldClockLook {
+        WorldClockLook.shown(config: config, unlocked: unlocked)
+    }
+
     // MARK: 习惯打卡
 
     /// 这张卡片最多能有几个习惯：没解锁时 3 个，解锁后 `HabitTracker.maxHabits` 个。

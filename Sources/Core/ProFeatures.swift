@@ -18,7 +18,9 @@ import Foundation
 ///   电池格（原百分比圆环）、便签除最浅五种以外的纸色、时间进度的四格、喝水的
 ///   角色样式（`layout` 为 character；圆环免费，液态本来就是 Pro）、收音机的
 ///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）、
-///   纪念日单个卡片的玻璃沙漏（`hourglass` 为 glass；线条沙漏和撕页免费，见 `AnniversaryLook`）。喝水卡片
+///   纪念日单个卡片的玻璃沙漏（`hourglass` 为 glass；线条沙漏和撕页免费，见 `AnniversaryLook`）、
+///   世界时钟多城市卡片的天空格子（`look` 为 sky；普通格子免费，世界时钟整种、联系状态圆点、
+///   科普卡、菜单栏第二时区都免费，见 `WorldClockLook`）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 ///   正在播放原来中卡上的三种卡带外观 2026-10-23 起搬成整种 Pro 的「复古卡带」。
 /// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
@@ -191,6 +193,11 @@ public enum ProFeatures {
             // 纪念日的玻璃沙漏是 Pro，线条沙漏和撕页日历免费。
             if case .string(let raw) = overrides[AnniversaryLook.key] {
                 return (AnniversaryLook(rawValue: raw) ?? AnniversaryLook.legacy).isPro
+            }
+        case .world:
+            // 世界时钟的天空格子是 Pro，普通格子免费。
+            if case .string(let raw) = overrides[WorldClockLook.key] {
+                return (WorldClockLook(rawValue: raw) ?? WorldClockLook.legacy).isPro
             }
         case .water:
             // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。

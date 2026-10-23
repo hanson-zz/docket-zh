@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-// 世界时钟改版共用的小零件：联系状态的圆点和胶囊、扩展栏卡片的天空格子。
+// 世界时钟改版共用的小零件：联系状态的圆点和胶囊、扩展栏卡片的城市格子（天空或普通）。
 // 颜色、分段和判断都在 Core（`WorldClockSky`、`WorldClockContact`），这里只负责画。
 
 extension Color {
@@ -56,9 +56,12 @@ struct ContactCapsule: View {
     }
 }
 
-/// 扩展栏卡片的一个城市格：当地此刻的天空渐变做底（夜里加几颗星），右下角
-/// 一枚小地标线稿，名字旁是联系状态圆点。字按底色用白或深灰（`WorldClockSky.ink`），
-/// 对比度不低于 4.5。
+/// 扩展栏卡片的一个城市格，名字旁是联系状态圆点（一直免费）。
+///
+/// - 天空（Pro，`WorldClockLook.sky`）：当地此刻的天空渐变做底（夜里加几颗星），右下角
+///   一枚小地标线稿，字按底色用白或深灰（`WorldClockSky.ink`），对比度不低于 4.5。
+/// - 普通（免费，`WorldClockLook.plain`）：不画底，透出卡片本身的液态玻璃，没有星星和
+///   地标，字用浅色 / 深色的主文字语义色。
 struct WorldClockSkyCell: View {
     enum Arrangement {
         /// 名字在上、时间在下，居中：横排三列、竖排每行一个。
@@ -74,15 +77,21 @@ struct WorldClockSkyCell: View {
     /// 此处本身不画圆点。
     var showsDot: Bool
     var dayBadge: String?
+    /// 画天空（Pro）还是普通格子，见 `WorldClockLook`。
+    var look: WorldClockLook = .sky
+
+    private var sky: Bool { look == .sky }
 
     var body: some View {
         let phase = WorldClockSky.phase(city, now: now)
-        let ink = Color(sky: WorldClockSky.ink(phase))
+        let ink = sky ? Color(sky: WorldClockSky.ink(phase)) : WidgetStyle.primary
         ZStack {
-            LinearGradient(colors: WorldClockSky.colors(phase).map { Color(sky: $0) },
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            if phase.hasStars { stars }
-            landmark(ink)
+            if sky {
+                LinearGradient(colors: WorldClockSky.colors(phase).map { Color(sky: $0) },
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                if phase.hasStars { stars }
+                landmark(ink)
+            }
             switch shape {
             case .stacked: stacked(ink)
             case .row: row(ink)
@@ -125,9 +134,9 @@ struct WorldClockSkyCell: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        // 右边留出地标的位置，时间不压在线稿上。
+        // 天空格子右边留出地标的位置，时间不压在线稿上；普通格子没有地标。
         .padding(.leading, 10)
-        .padding(.trailing, 26)
+        .padding(.trailing, sky ? 26 : 10)
     }
 
     /// 名字、不是同一天时的 “+1”、联系状态圆点。字号不小于 13，太长时才缩。

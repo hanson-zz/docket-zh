@@ -70,7 +70,7 @@ final class WidgetOptionTests: XCTestCase {
     /// here means committing to read it, and the failure message says so.
     func testNoWidgetOffersAnOptionItDoesNotRead() {
         let expected: [WidgetKind: Set<String>] = [
-            .world: ["city", "zone"],
+            .world: ["city", "look", "zone"],
             .progress: ["period", "liquidMotion"],
             .timer: ["look"],
             .countdown: ["duration", "name", "presets", "look", "sound"],
@@ -301,8 +301,9 @@ final class OptionApplicabilityTests: XCTestCase {
         "stock.metalUnit", "stock.rotate", "watchlist.metalUnit", "watchlist.symbols",
         // 四格没有周期可选；旧的单个闹钟才有时间和名称；倒计时的预设在面板里改。
         "progress.period", "alarm.time", "alarm.name", "countdown.presets",
-        // 世界时钟的城市名跟着城市列表走，设置里只改列表。
-        "world.city",
+        // 世界时钟的城市名跟着城市列表走，设置里只改列表；多城市外观只在卡片有
+        // 多个城市时列（WorldClockLook.applies）。
+        "world.city", "world.look",
         // 收音机的皮肤在“样式”里选，设置里不单列。
         "radio.skin",
         // 麦克风的静音快捷键在面板里录，设置里不给文字框。

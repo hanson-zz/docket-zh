@@ -745,6 +745,7 @@ struct WidgetSettingsSections: View {
         "microphone.redWhenMuted": tr("静音时卡片变红"),
         "cassette.compact": tr("紧凑卡片（216 宽，只有磁带）"),
         "anniversary.hourglass": tr("样式"),
+        "world.look": tr("多城市外观"),
     ]
 
     static func label(_ key: String) -> String {
@@ -915,6 +916,8 @@ struct WidgetSettingsSections: View {
         "countdown.look": FoldFlip.CountdownLook.allCases.map { ($0.title, $0.rawValue) },
         // 纪念日单个卡片：线条沙漏免费（新卡片默认），玻璃沙漏标 Pro，撕页日历是老卡片的样子。
         "anniversary.hourglass": AnniversaryLook.allCases.map { ($0.title, $0.rawValue) },
+        // 世界时钟多城市格子：普通免费（新卡片默认），天空标 Pro。
+        "world.look": WorldClockLook.allCases.map { ($0.title, $0.rawValue) },
         "weather.caption": WeatherStyle.Caption.allCases.map { ($0.title, $0.rawValue) },
         "weather.days": WeatherStyle.dayChoices.map { (tr("\($0) 天"), "\($0)") },
         "posture.awayAfter": PostureAway.minuteChoices.map { (tr("\($0) 分钟"), "\($0)") },

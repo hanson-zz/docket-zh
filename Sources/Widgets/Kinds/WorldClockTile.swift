@@ -8,14 +8,26 @@ import SwiftUI
 ///
 /// 城市列表（`WorldClockList`）有多个时，卡片显示前 2 到 3 个，顺序和面板
 /// 一样：扩展栏 168×58 三个以上分三列，两个时上下两行；竖排最多三个，上下排。
-/// 多个城市时每个城市一格，底色是当地此刻的天空（`WorldClockSkyCell`），右下角
-/// 小地标线稿，名字旁红黄绿圆点说明现在适不适合联系。只有一个时保持原来的
-/// 样子，收起的窄卡片只显示第一个。
+/// 多个城市时每个城市一格（`WorldClockSkyCell`），名字旁红黄绿圆点说明现在适不适合
+/// 联系。格子外观存在 `look`（`WorldClockLook`）：普通免费、新卡片默认，透出卡片的
+/// 液态玻璃；天空是 Pro，底色是当地此刻的天空，右下角小地标线稿。没解锁时天空画成
+/// 普通，不盖锁、不改配置，解锁或试用后自动回来。只有一个城市时保持原来的样子，
+/// 收起的窄卡片只显示第一个。
 struct WorldClockTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
+    // 和纪念日一样读 @AppStorage：购买或试用到期时卡片马上换外观。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
+
     private var cities: [WorldCity] { WorldClockList.tileCities(instance.config) }
+
+    /// 实际画的格子外观。库里的预览按卡片自己的配置画（新卡片是普通）。
+    private var look: WorldClockLook {
+        ProLicenseGate.worldClockLook(config: instance.config,
+                                      unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
+    }
 
     var body: some View {
         let list = cities
@@ -53,11 +65,13 @@ struct WorldClockTile: View {
 
     // MARK: 三列
 
-    /// 每个城市一格，底色是当地此刻的天空，格子铺满卡片（不留卡片内边距）。
+    /// 每个城市一格，格子铺满卡片（不留卡片内边距）。天空格子靠底色分开，普通格子
+    /// 之间画一条细分隔线。
     private func threeColumns(_ list: [WorldCity]) -> some View {
         skySurface {
             HStack(spacing: 0) {
-                ForEach(list) { city in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, city in
+                    if index > 0 { separator(vertical: true) }
                     cell(city, shape: .stacked, timeSize: 18)
                 }
             }
@@ -69,7 +83,8 @@ struct WorldClockTile: View {
     private func twoRows(_ list: [WorldCity]) -> some View {
         skySurface {
             VStack(spacing: 0) {
-                ForEach(list) { city in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, city in
+                    if index > 0 { separator(vertical: false) }
                     cell(city, shape: .row, timeSize: 16)
                 }
             }
@@ -81,17 +96,19 @@ struct WorldClockTile: View {
     private func column(_ list: [WorldCity]) -> some View {
         skySurface {
             VStack(spacing: 0) {
-                ForEach(list) { city in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, city in
+                    if index > 0 { separator(vertical: false) }
                     cell(city, shape: .stacked, timeSize: 16)
                 }
             }
         }
     }
 
-    /// 卡片外壳照旧（圆角、描边、悬停），里面的天空格子抵消掉卡片的左右内边距，
-    /// 一直铺到卡片边上。
+    /// 卡片外壳照旧（圆角、描边、悬停），里面的格子抵消掉卡片的左右内边距，
+    /// 一直铺到卡片边上。天空格子自己有底，卡片底透明；普通格子用卡片本身的
+    /// 液态玻璃底（和一个城市的卡片、颜色与背景一致）。
     private func skySurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        WidgetSurface(fill: .clear) {
+        WidgetSurface(fill: look == .sky ? .clear : nil) {
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 // 先按卡片的圆角裁，再抵消内边距，天空格子的四角跟卡片一样圆。
@@ -103,8 +120,20 @@ struct WorldClockTile: View {
     private func cell(_ city: WorldCity, shape: WorldClockSkyCell.Arrangement, timeSize: CGFloat) -> some View {
         WorldClockSkyCell(city: city, now: context.now, shape: shape, timeSize: timeSize,
                           showsDot: city.id != WorldCities.reference()?.id,
-                          dayBadge: Self.dayBadge(context.now, zone: city.timeZone ?? .current))
+                          dayBadge: Self.dayBadge(context.now, zone: city.timeZone ?? .current),
+                          look: look)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 普通格子之间的细线（主文字色 12%，浅色深色都看得见又不抢字）；天空格子不画。
+    @ViewBuilder
+    private func separator(vertical: Bool) -> some View {
+        if look == .plain {
+            Rectangle()
+                .fill(WidgetStyle.primary.opacity(0.12))
+                .frame(width: vertical ? 1 : nil, height: vertical ? nil : 1)
+                .padding(vertical ? .vertical : .horizontal, 8)
+        }
     }
 
     // MARK: 零件

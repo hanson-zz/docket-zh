@@ -69,8 +69,11 @@ public enum WidgetCatalog {
               variants: ClockStyles.all.map { (title: $0.title, overrides: ["layout": .string($0.id)]) },
               supportsCompact: true, selfContained: true),
 
+        // 多城市格子的外观存在 `look`：defaults 里的天空只给没存这个键的老卡片，
+        // 新放的写普通（WorldClockLook）。
         Entry(kind: .world, name: tr("世界时钟"), category: .time,
-              defaults: c(["city": .string(tr("伦敦")), "zone": .string("Europe/London")]),
+              defaults: c(["city": .string(tr("伦敦")), "zone": .string("Europe/London"),
+                           WorldClockLook.key: .string(WorldClockLook.legacy.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
         Entry(kind: .stopwatch, name: tr("秒表"), category: .time, defaults: c([:]),
@@ -785,6 +788,9 @@ public enum WidgetCatalog {
         // 第一项同步回 city），不再单独给一个文字框。
         case (.world, "city"):
             false
+        // 格子外观只在卡片有多个城市时有意义。
+        case (.world, WorldClockLook.key):
+            WorldClockLook.applies(config)
         // 圆环仪表的警戒线只列卡片上有的圆环。
         case (.gauges, let alertKey) where GaugeAlert.keys.contains(alertKey):
             GaugeReading.rings(config).contains { GaugeAlert.key($0) == alertKey }
@@ -958,6 +964,8 @@ public enum WidgetCatalog {
         if kind == .water { config.set(WaterLayout.key, .string(WaterLayout.newWidget.rawValue)) }
         // 新放的纪念日默认线条沙漏（免费）；defaults 里的撕页只给老卡片。
         if kind == .anniversary { config.set(AnniversaryLook.key, .string(AnniversaryLook.newWidget.rawValue)) }
+        // 新放的世界时钟默认普通格子（免费）；defaults 里的天空只给老卡片。
+        if kind == .world { config.set(WorldClockLook.key, .string(WorldClockLook.newWidget.rawValue)) }
         // 截图工具新卡片「两者」+ 录区域、算新卡片带千分位；defaults 里是老卡片升级前的样子。
         if kind == .capture { CaptureNewWidget.apply(to: &config) }
         if kind == .calculator { CalcNumberStyle.applyNewWidget(to: &config) }
