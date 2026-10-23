@@ -106,7 +106,7 @@ final class ProFeaturesTests: XCTestCase {
     func testFreeAndProCountsOfTheLibrary() {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
-        XCTAssertEqual(pro.count, 14)
+        XCTAssertEqual(pro.count, 15, "复古卡带是第 15 个")
         XCTAssertEqual(kinds.count - pro.count, 44, "官网和 README 写的免费小组件数量")
     }
 
