@@ -108,6 +108,36 @@ public enum StickyStack {
             return next
         }
 
+        /// 这张纸上写了字（不算空白）。空白的纸撕掉不进垃圾桶。
+        public var frontHasWords: Bool {
+            !front.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        /// 能撕：叠着不止一张，或者只剩一张但上面有字（撕掉后换一张同色的空白纸）。
+        public var canTear: Bool { count > 1 || frontHasWords }
+
+        /// 撕掉最上面那张：返回撕完的一叠、撕下来的那张和它原来是第几张（从 0 起）。
+        /// 只剩一张时留一张同色的空白纸。撕不了时是 nil。
+        public func tearingFront() -> (pile: Pile, sheet: StickySheet, index: Int)? {
+            guard canTear else { return nil }
+            let sheet = front
+            if count == 1 {
+                return (Pile(sheets: [StickySheet(color: sheet.color)]), sheet, 0)
+            }
+            return (removingFront(), sheet, page)
+        }
+
+        /// 把一张纸放回第 `index` 张并翻到它（撤销、从垃圾桶恢复）。只剩一张空白纸时
+        /// 直接换掉它；满了放不下是 nil。
+        public func inserting(_ sheet: StickySheet, at index: Int) -> Pile? {
+            if count == 1 && !frontHasWords { return Pile(sheets: [sheet]) }
+            guard canAdd else { return nil }
+            var list = sheets
+            let at = min(max(0, index), list.count)
+            list.insert(sheet, at: at)
+            return Pile(sheets: list, page: at)
+        }
+
         /// 撕掉最上面那张，露出下一张。只剩一张时不动（清空字就好）。
         public func removingFront() -> Pile {
             guard canRemove else { return self }

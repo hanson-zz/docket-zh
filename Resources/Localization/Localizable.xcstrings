@@ -1596,6 +1596,17 @@
         }
       }
     },
+    "%@ 张便签会被彻底删除，不能恢复。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ notes will be deleted permanently. This can't be undone."
+          }
+        }
+      }
+    },
     "%@ 提醒" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2003,6 +2014,17 @@
         }
       }
     },
+    "不用了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No thanks"
+          }
+        }
+      }
+    },
     "今天也辛苦啦，去喝口水歇一歇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2058,6 +2080,28 @@
         }
       }
     },
+    "便签已经叠满 %@ 张，先撕掉一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The note already has %@ sheets. Tear one off first."
+          }
+        }
+      }
+    },
+    "保留 7 天或最近 30 张，过期自动删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kept for 7 days, up to the last 30. Older ones are deleted automatically."
+          }
+        }
+      }
+    },
     "元宝的 API 由腾讯混元提供，模型名见混元文档。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2076,6 +2120,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paste a key first."
+          }
+        }
+      }
+    },
+    "全部取消勾选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uncheck All"
           }
         }
       }
@@ -2186,6 +2241,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unmark as Important"
+          }
+        }
+      }
+    },
+    "变成清单" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert"
           }
         }
       }
@@ -2355,6 +2421,17 @@
         }
       }
     },
+    "完成 %@ 项，共 %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ done"
+          }
+        }
+      }
+    },
     "密钥" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2421,6 +2498,61 @@
         }
       }
     },
+    "已完成 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done %@"
+          }
+        }
+      }
+    },
+    "已完成沉到底部" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Done to Bottom"
+          }
+        }
+      }
+    },
+    "已撕掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torn off"
+          }
+        }
+      }
+    },
+    "已清除 %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleared %@ items"
+          }
+        }
+      }
+    },
+    "彻底删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Permanently"
+          }
+        }
+      }
+    },
     "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2428,6 +2560,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
+          }
+        }
+      }
+    },
+    "恢复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore"
           }
         }
       }
@@ -2450,6 +2593,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore Original Name"
+          }
+        }
+      }
+    },
+    "恢复的便签放回最上面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restored notes go back on top."
           }
         }
       }
@@ -2483,6 +2637,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag a to-do here to do it today"
+          }
+        }
+      }
+    },
+    "把这一行变成可勾项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn this line into a checkbox"
           }
         }
       }
@@ -2582,6 +2747,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The endpoint must start with https://"
+          }
+        }
+      }
+    },
+    "撕掉的便签会在这里待 7 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torn-off notes stay here for 7 days."
+          }
+        }
+      }
+    },
+    "撕掉这张，放进垃圾桶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tear off this sheet into the trash"
           }
         }
       }
@@ -28762,6 +28949,17 @@
         }
       }
     },
+    "放回最上面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put back on top"
+          }
+        }
+      }
+    },
     "放过的歌会记在这里，点一下重放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28923,6 +29121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sri Lanka"
+          }
+        }
+      }
+    },
+    "新一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
           }
         }
       }
@@ -29616,6 +29825,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recently Deleted"
+          }
+        }
+      }
+    },
+    "最近撕掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Torn"
+          }
+        }
+      }
+    },
+    "最近撕掉，%@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently torn, %@"
           }
         }
       }
@@ -31292,6 +31523,28 @@
         }
       }
     },
+    "清单" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklist"
+          }
+        }
+      }
+    },
+    "清单 %@/%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklist %@/%@"
+          }
+        }
+      }
+    },
     "清单空空的" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31325,6 +31578,17 @@
         }
       }
     },
+    "清空垃圾桶？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty the trash?"
+          }
+        }
+      }
+    },
     "清空最近用过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31354,6 +31618,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chiang Mai"
+          }
+        }
+      }
+    },
+    "清除已完成项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Done Items"
           }
         }
       }
@@ -43764,6 +44039,17 @@
         }
       }
     },
+    "第 %@ 张，共 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sheet %@ of %@"
+          }
+        }
+      }
+    },
     "第 %@ 张，共 %@ 张，翻到下一张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49685,6 +49971,17 @@
         }
       }
     },
+    "返回便签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to Note"
+          }
+        }
+      }
+    },
     "还不错" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50433,6 +50730,17 @@
         }
       }
     },
+    "这 %@ 行变成可勾项？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make these %@ lines checkboxes?"
+          }
+        }
+      }
+    },
     "这一年%@只有 29 天，按廿九过" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50950,6 +51258,17 @@
         }
       }
     },
+    "这行变成可勾项？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make this a checkbox?"
+          }
+        }
+      }
+    },
     "这里的照片都排除了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -50957,6 +51276,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every photo here is skipped"
+          }
+        }
+      }
+    },
+    "这里空空的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing here"
           }
         }
       }

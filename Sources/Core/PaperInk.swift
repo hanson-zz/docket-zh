@@ -52,6 +52,24 @@ public enum PaperInk {
         return best.hex
     }
 
+    /// 勾掉的清单项用的淡墨：从这张纸的墨往纸色里调淡，淡到对比度约 5.0 为止，
+    /// 不低于正文的 4.5。墨本来就不到 5.0 的纸（中间色）不调淡，只靠划线。
+    public static let fadedContrast = 5.0
+
+    public static func faded(on paper: String) -> String {
+        let base = ink(on: paper)
+        guard let fill = ColorCode(hex: paper), let start = ColorCode(hex: base) else { return base }
+        var best = start
+        var amount = 0.0
+        while amount < 1 {
+            amount = min(1, amount + 0.02)
+            let next = start.mixed(with: fill, by: amount)
+            if WidgetTint.contrastRatio(fill, next) < fadedContrast { break }
+            best = next
+        }
+        return best.hex
+    }
+
     /// 墨是浅色的（纸是深色的）。胶带和卷角的高光跟着它调。
     public static func inkIsLight(on paper: String) -> Bool {
         guard let ink = ColorCode(hex: ink(on: paper)) else { return false }

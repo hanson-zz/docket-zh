@@ -285,6 +285,35 @@ enum StickyLog {
 
     static func tearOff(_ instance: WidgetInstance) { change(instance) { $0.removingFront() } }
 
+    /// 直接改配置：撕掉、撤销、垃圾桶这些要同时动叠放和垃圾桶的。
+    static func mutate(_ instance: WidgetInstance, _ edit: (inout WidgetConfig) -> Void) {
+        WidgetWriter.write(latest(instance), edit)
+    }
+
+    /// 「已完成沉到底部」。
+    static func setSink(_ on: Bool, in instance: WidgetInstance) {
+        WidgetWriter.write(latest(instance)) { config in config.set(StickyChecklist.sinkKey, .bool(on)) }
+    }
+
+    /// 打开垃圾桶时把过期的真的清掉；没有过期的不写。
+    static func purgeTrash(_ instance: WidgetInstance) {
+        var probe = latest(instance).config
+        guard StickyTrash.purge(&probe, now: Date()) else { return }
+        mutate(instance) { config in _ = StickyTrash.purge(&config, now: Date()) }
+    }
+
+    static func restore(_ id: String, in instance: WidgetInstance) {
+        mutate(instance) { config in _ = StickyTrash.restore(id, in: &config, now: Date()) }
+    }
+
+    static func deleteForever(_ id: String, in instance: WidgetInstance) {
+        mutate(instance) { config in StickyTrash.delete(id, in: &config, now: Date()) }
+    }
+
+    static func emptyTrash(_ instance: WidgetInstance) {
+        mutate(instance) { config in StickyTrash.empty(&config) }
+    }
+
     /// 字体、字号：整张便签一起改，不动纸和字。
     static func style(_ key: String, _ value: String, in instance: WidgetInstance) {
         WidgetWriter.write(latest(instance)) { config in config.set(key, .string(value)) }
