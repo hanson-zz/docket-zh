@@ -468,7 +468,9 @@ private struct GlassKeyCap<Label: View>: View {
                                  : (light ? [.white, .white.opacity(0.35)] : [.white.opacity(0.28), .white.opacity(0.04)]),
                                  startPoint: .top, endPoint: .bottom)
         let ink: Color = coral ? .white
-            : (lit ? CassettePalette.coralBottom.mix(with: .black, by: light ? 0.18 : 0)
+            // 开着的随机、循环：浅色下珊瑚压深（近白玻璃上约 5:1），深色下提亮（深玻璃上约 5:1），
+            // 13pt 的字都过 4.5。
+            : (lit ? (light ? CassettePalette.coralBottom.mix(with: .black, by: 0.18) : CassettePalette.rgb(255, 158, 128))
                    : (light ? Color(.sRGB, red: 0.094, green: 0.086, blue: 0.11) : .white))
         return label
             .foregroundStyle(ink.opacity(enabled ? 1 : 0.38))
