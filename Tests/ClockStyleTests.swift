@@ -112,10 +112,14 @@ final class ClockStyleTests: XCTestCase {
         XCTAssertTrue(WidgetCatalog.applies(ClockStyles.Key.weight, to: standard, kind: .clock))
         XCTAssertFalse(WidgetCatalog.applies(ClockStyles.Key.dial, to: standard, kind: .clock))
         XCTAssertFalse(WidgetCatalog.applies(ClockStyles.Key.flip, to: standard, kind: .clock))
-        XCTAssertTrue(WidgetCatalog.applies("seconds", to: standard, kind: .clock))
+        // 标准样式只列「表盘秒针」，其他样式只列「显示秒」。
+        XCTAssertFalse(WidgetCatalog.applies("seconds", to: standard, kind: .clock))
+        XCTAssertTrue(WidgetCatalog.applies("secondHand", to: standard, kind: .clock))
 
         let analog = config(["layout": .string("analog")])
         XCTAssertTrue(WidgetCatalog.applies(ClockStyles.Key.dial, to: analog, kind: .clock))
+        XCTAssertTrue(WidgetCatalog.applies("seconds", to: analog, kind: .clock))
+        XCTAssertFalse(WidgetCatalog.applies("secondHand", to: analog, kind: .clock))
         XCTAssertFalse(WidgetCatalog.applies(ClockStyles.Key.size, to: analog, kind: .clock))
 
         let flip = config(["layout": .string("flip")])
@@ -131,7 +135,7 @@ final class ClockStyleTests: XCTestCase {
         }
         // 设置里按字母排：大小在粗细前，卡片在翻法前。
         let keys = WidgetCatalog.configurableKeys(.clock)
-        XCTAssertEqual(keys, ["clockCard", "clockDial", "clockFlip", "clockSize", "clockWeight", "seconds"])
+        XCTAssertEqual(keys, ["clockCard", "clockDial", "clockFlip", "clockSize", "clockWeight", "secondHand", "seconds"])
         XCTAssertFalse(keys.contains("layout"))
     }
 

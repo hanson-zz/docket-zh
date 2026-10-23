@@ -64,7 +64,8 @@ public enum WidgetCatalog {
         // 新增样式只改那里和绘制视图，这里不用动。
         Entry(kind: .clock, name: tr("时钟"), category: .time,
               defaults: c(ClockStyles.defaultOptionValues.merging(
-                  ["layout": .string(ClockStyles.defaultStyleID), "seconds": .bool(true)]) { _, new in new }),
+                  ["layout": .string(ClockStyles.defaultStyleID), "seconds": .bool(true),
+                   ClockHands.secondHandKey: .bool(true)]) { _, new in new }),
               variants: ClockStyles.all.map { (title: $0.title, overrides: ["layout": .string($0.id)]) },
               supportsCompact: true, selfContained: true),
 

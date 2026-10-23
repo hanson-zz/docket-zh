@@ -273,8 +273,12 @@ struct ClockPanelSky: View {
 struct AnalogClockPanel: View {
     var input: ClockPanelInput
 
+    @Environment(\.colorScheme) private var scheme
+
     private var theme: ClockPanelTheme {
-        let accent = input.model.tint.accent(or: .orange)
+        // 没选颜色时和卡片小表盘秒针同一个默认色（时钟琥珀，`ClockHands.defaultColor`），
+        // 不再是系统橙。
+        let accent = input.model.tint.accent(or: Color(code: ClockHands.defaultColor))
         // 液态玻璃：跟着浅色/深色走（ClockPanelCard(forceDark: false)）。
         return ClockPanelTheme(ink: .panelPrimary, dim: .panelSecondary, rule: .panelSeparator,
                                tile: .panelFill, tileStroke: .panelStroke,
@@ -290,7 +294,8 @@ struct AnalogClockPanel: View {
         } content: {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 16) {
-                    PanelDial(now: model.now, diameter: 112, accent: theme.accent)
+                    PanelDial(now: model.now, diameter: 112,
+                              accent: model.secondHand.resolved(dark: scheme == .dark, on: .panel))
                     VStack(alignment: .leading, spacing: 4) {
                         Text(verbatim: ClockPanelWeekday.of(model.now, zone: .current))
                             .font(.system(size: 17, weight: .semibold))
@@ -324,7 +329,8 @@ struct AnalogClockPanel: View {
     }
 }
 
-/// 面板头部的大表盘：十二个刻度、12/3/6/9 四个数字、时分针，秒针和中心点用强调色。
+/// 面板头部的大表盘：十二个刻度、12/3/6/9 四个数字、时分针，秒针和中心点用
+/// 和卡片小表盘同一个来源的颜色（`ClockHands.source`，按面板底调明暗）。
 struct PanelDial: View {
     var now: Date
     var diameter: CGFloat

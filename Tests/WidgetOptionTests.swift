@@ -126,7 +126,7 @@ final class WidgetOptionTests: XCTestCase {
             .toggles: ["actions", "keepAwakeFor", "showNames"],
             .appSwitcher: ["sort"],
             // 时钟的子选项来自样式注册表，各由 ClockStyles.face 读（见 ClockStyleTests）。
-            .clock: Set(["seconds"] + ClockStyles.optionKeys),
+            .clock: Set(["seconds", "secondHand"] + ClockStyles.optionKeys),
             .aiAssistant: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
@@ -292,6 +292,8 @@ final class OptionApplicabilityTests: XCTestCase {
         "progress.liquidMotion",
         // 时钟的子选项只在所属样式下列出（ClockStyles.applies）。
         "clock.clockSize", "clock.clockWeight", "clock.clockDial", "clock.clockCard", "clock.clockFlip",
+        // 两个秒开关按画法分开：标准（带小表盘）列「表盘秒针」，其他列「显示秒」（ClockHands.applies）。
+        "clock.seconds", "clock.secondHand",
         // 调休提醒关掉时，提醒提前几天没有意义。
         "lunar.workAlertLead",
         // 黄金白银单位只在列表里有贵金属时有用；只有一只股票时没有可轮播的；

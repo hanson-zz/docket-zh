@@ -110,6 +110,12 @@ public enum ClockFace: Equatable, Sendable {
     case neon
     case nixie
     case lcd
+
+    /// 画成标准：时间旁边一只小表盘（时钟「标准」卡片秒针画在它上面）。
+    public var hasSmallDial: Bool {
+        if case .standard = self { return true }
+        return false
+    }
 }
 
 /// 一张卡片现在的样式和选项。
@@ -276,10 +282,13 @@ public enum ClockStyles {
     }
 
     /// 设置里这个键对现在的样式有没有意义：是这个样式的选项，且没被别的选项藏起来。
-    /// 不是时钟选项的键（如 seconds）一律算有意义。
+    /// 两个秒开关按画法分开列（`ClockHands.applies`）：画成标准（带小表盘）时列
+    /// 「表盘秒针」，其他画法（含标准样式选了大号数字）列「显示秒」。其余不是
+    /// 时钟选项的键一律算有意义。
     public static func applies(_ key: String, to config: WidgetConfig) -> Bool {
-        guard option(key) != nil else { return true }
         let look = resolve(config)
+        if let seconds = ClockHands.applies(key, isStandard: look.face.hasSmallDial) { return seconds }
+        guard option(key) != nil else { return true }
         guard let current = style(look.styleID),
               let option = current.options.first(where: { $0.key == key }) else { return false }
         return isShown(option, look.options)

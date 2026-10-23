@@ -20,6 +20,8 @@ struct ClockPanelModel {
     var colonOn: Bool
     /// 颜色面板选的强调色，没选过是各面板自己的颜色。
     var tint: PanelTint?
+    /// 大表盘秒针的颜色来源，和卡片小表盘同一个（`ClockHands.source`）。
+    var secondHand: ClockHands.SecondHandSource = .color(ClockHands.defaultColor)
 
     var zoneLabel: String { ClockPanelFormat.gmt(.current, at: now) }
     var fullDate: String { ClockPanelFormat.fullDate(now, zone: .current) }

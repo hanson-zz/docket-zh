@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Analog face on the left, digital time and date on the right.
@@ -18,7 +19,7 @@ struct ClockTile: View {
         ClockStyles.face(instance.config, unlocked: ProAccess.isUnlocked, preview: context.isPreview)
     }
 
-    private var seconds: Bool { instance.config.bool("seconds", default: true) }
+    private var seconds: Bool { instance.config.bool(ClockHands.secondsKey, default: true) }
     private var vertical: Bool { context.position.isVertical }
 
     var body: some View {
@@ -71,9 +72,11 @@ struct ClockTile: View {
             expanded: instance.expanded,
             vertical: vertical,
             bold: bold,
-            // 小表盘的秒针跟卡片的「显示秒」开关走；颜色由表盘从卡片的
-            // 颜色主题里读（`AnalogClockFace.secondColor`）。
-            secondHand: seconds
+            // 小表盘秒针读标准样式自己的「表盘秒针」（secondHand，默认开），
+            // 不再看数字样式的「显示秒」：老配置里的 seconds=false 曾把它藏掉。
+            secondHand: ClockHands.showsSecondHand(instance.config),
+            // 和时钟面板大表盘同一个颜色来源（`ClockHands.source`）。
+            secondSource: ClockHands.source(instance.config, unlocked: ProAccess.isUnlocked)
         )
     }
 }
@@ -98,6 +101,8 @@ struct ClockReadout: View {
     var bold: Bool = false
     /// 小表盘画秒针。只有时钟「标准」卡片打开；世界时钟不画。
     var secondHand: Bool = false
+    /// 秒针颜色来源，见 `ClockHands.source`。
+    var secondSource: ClockHands.SecondHandSource = .color(ClockHands.defaultColor)
 
     var body: some View {
         WidgetSurface {
@@ -108,7 +113,8 @@ struct ClockReadout: View {
                 // the tile beside it share one left edge for their pictures.
                 HStack(spacing: WidgetStyle.rowSpacing) {
                     TileBadge {
-                        AnalogClockFace(now: now, zone: zone, diameter: 26, showsSeconds: secondHand)
+                        AnalogClockFace(now: now, zone: zone, diameter: 26, showsSeconds: secondHand,
+                                        secondSource: secondSource)
                     }
                     TileReading(value: ClockFormat.time(now, zone: zone), caption: caption,
                                 valueWeight: bold ? .heavy : .semibold)
@@ -128,7 +134,7 @@ struct ClockReadout: View {
     private var column: some View {
         let parts = ClockFormat.compactTime(now, zone: zone)
         return VStack(spacing: 2) {
-            AnalogClockFace(now: now, zone: zone, showsSeconds: secondHand)
+            AnalogClockFace(now: now, zone: zone, showsSeconds: secondHand, secondSource: secondSource)
             HStack(alignment: .firstTextBaseline, spacing: 1.5) {
                 Text(parts.time)
                     .font(.system(size: 15, weight: bold ? .heavy : .bold))
@@ -237,20 +243,15 @@ struct AnalogClockFace: View {
     var zone: TimeZone
     var diameter: CGFloat = 30
     var showsSeconds: Bool = false
-    /// 秒针颜色；nil 时按卡片颜色主题取（`secondColor`）。
-    var secondTint: Color? = nil
+    /// 秒针颜色来源，和时钟面板大表盘同一个（`ClockHands.source`）。
+    var secondSource: ClockHands.SecondHandSource = .color(ClockHands.defaultColor)
 
-    @Environment(\.widgetTint) private var tint
     @Environment(\.colorScheme) private var scheme
 
-    /// 颜色面板里选了颜色就用选的（跟随系统时是系统强调色），没选用时钟
-    /// 自己的琥珀色；都调到在当前卡片外观上看得清。不在扩展栏上（环境里
-    /// 没有颜色主题）时用时钟默认色。
+    /// 秒针和徽章那层淡底是同一个颜色，按徽章底调明暗到对比度够（`ClockHands.cardColor`），
+    /// 色相不变。
     private var secondColor: Color {
-        if let secondTint { return secondTint }
-        let dark = scheme == .dark
-        if let tint { return tint.main(dark: dark) }
-        return Color(code: WidgetTint.readable(WidgetTint.defaultPalette(.clock).main, dark: dark))
+        secondSource.resolved(dark: scheme == .dark, on: .card)
     }
 
     var body: some View {
@@ -295,5 +296,28 @@ struct AnalogClockFace: View {
             .frame(width: width, height: length)
             .offset(y: -length / 2)
             .rotationEffect(.degrees(degrees))
+    }
+}
+
+// MARK: - Second hand colour
+
+extension ClockHands.SecondHandSource {
+    /// 秒针画在哪：卡片的淡色徽章上，还是面板的玻璃上。
+    enum Surface { case card, panel }
+
+    /// 解成这一刻的颜色。跟随系统时取此刻的系统强调色再调可读性，取不到就用系统强调色本身。
+    func resolved(dark: Bool, on surface: Surface) -> Color {
+        let base: ColorCode
+        switch self {
+        case .color(let code): base = code
+        case .system:
+            guard let rgb = NSColor.controlAccentColor.usingColorSpace(.sRGB) else { return .accentColor }
+            base = ColorCode(red: Double(rgb.redComponent), green: Double(rgb.greenComponent),
+                             blue: Double(rgb.blueComponent))
+        }
+        switch surface {
+        case .card: return Color(code: ClockHands.cardColor(base, dark: dark))
+        case .panel: return Color(code: ClockHands.panelColor(base, dark: dark))
+        }
     }
 }

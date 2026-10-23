@@ -50,7 +50,8 @@ struct ClockDetail: View {
             alarm: alarm,
             // 冒号奇数秒灭；减少动态效果时不闪。
             colonOn: reduceMotion || second % 2 == 0,
-            tint: panelTint)
+            tint: panelTint,
+            secondHand: ClockHands.source(instance.config, unlocked: ProAccess.isUnlocked))
     }
 
     /// 每分钟一次：农历这些一天的读数，下一个日程（没有日历权限是 nil，那一行
