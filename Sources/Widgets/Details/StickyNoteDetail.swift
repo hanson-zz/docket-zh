@@ -117,7 +117,8 @@ struct StickyNoteDetail: View {
         }
     }
 
-    private static let space = "sticky-note"
+    // 几何回调是 Sendable 闭包，名字不随主线程隔离。
+    nonisolated private static let space = "sticky-note"
 
     // MARK: 顶栏
 
