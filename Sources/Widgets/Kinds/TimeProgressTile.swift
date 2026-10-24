@@ -170,6 +170,7 @@ struct TimeProgressTile: View {
                 percentText(24)
                 periodLabel(11, text: label)
             }
+            .liquidTextInset()
         }
     }
 
@@ -246,6 +247,7 @@ struct TimeProgressTile: View {
                     .minimumScaleFactor(0.6)
                 periodLabel(10, text: label)
             }
+            .liquidTextInset()
         }
     }
 

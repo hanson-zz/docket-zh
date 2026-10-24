@@ -89,11 +89,15 @@ struct PerfectDayTile: View {
                         tint: theme?.isChosen == true ? theme!.main(dark: scheme == .dark) : Color(hex: PerfectDay.bambooHex),
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
                 .fillingCard()
-            if vertical {
-                column(items, tier: tier)
-            } else {
-                wide(items, tier: tier)
+            Group {
+                if vertical {
+                    column(items, tier: tier)
+                } else {
+                    wide(items, tier: tier)
+                }
             }
+            // 水铺满到卡片边，字离边至少 12pt。
+            .liquidTextInset()
         }
     }
 

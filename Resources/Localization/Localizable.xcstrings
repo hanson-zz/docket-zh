@@ -9182,6 +9182,17 @@
         }
       }
     },
+    "今天达标啦 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal met · %@%%"
+          }
+        }
+      }
+    },
     "今天还剩 %@ 个" : {
       "extractionState" : "manual",
       "localizations" : {

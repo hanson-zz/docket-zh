@@ -235,54 +235,123 @@ struct WaterTile: View {
 
     // MARK: 液态
 
+    /// 液态水用的主题色，和其他卡片一样按外观调过亮度（`WidgetTintStyle.main`）；
+    /// 跟随系统强调色时读系统的强调色。不在扩展栏上时是喝水自己的蓝。
+    private var liquidTint: ColorCode {
+        let dark = scheme == .dark
+        if let theme {
+            if let palette = theme.palette { return WidgetTint.readable(palette.main, dark: dark) }
+            if let accent = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
+                return ColorCode(red: accent.redComponent, green: accent.greenComponent, blue: accent.blueComponent)
+            }
+        }
+        return ColorCode(hex: WidgetCatalog.accentHex(.water) ?? PaletteColor.blue.hex)
+            ?? ColorCode(red: 0, green: 0.53, blue: 1)
+    }
+
     /// 整张卡片是一杯水：水位是今天的进度，满了水面盖过上沿、顶上一道高光，
-    /// 达标的那一刻起水面闪几秒金光。点 + 时水面晃一下溅几颗水珠。数字和 +
-    /// 浮在水上，白字带一圈淡黑描边，水多水少都看得清。
+    /// 达标的那一刻起水面闪几秒金光。点 + 时水面晃一下溅几颗水珠。
+    ///
+    /// 水铺满卡片圆角里（`fillingCard`），字和 + 离卡片左右边 12pt
+    /// （`LiquidLooks.waterTextInset`）。字色按水面上方和水里的实际底色分别挑，
+    /// 两块都过 4.5:1（`WaterLiquidInk`）：浅色外观整张卡同色相深字；深色外观
+    /// 水面上方白字，水里水色浅用深字、深用白字，字在水面处换色。描边只是一圈
+    /// 很淡的辅助。+ 是实心圆底白加号，水上水下都清楚。
     private func liquid(_ day: WaterDay, done: Bool) -> some View {
         let level = LiquidLooks.waterLevel(total: day.total, goal: day.goal)
         let vertical = context.position.isVertical
+        let look = WaterLiquidInk.look(tint: liquidTint, dark: scheme == .dark)
         return ZStack {
-            // 液态的水用卡片的颜色主题（喝水默认青蓝，见 `WidgetTint`）。
-            LiquidWater(level: level, tint: theme?.main(dark: scheme == .dark) ?? WaterStyle.water,
+            LiquidWater(level: level, tint: Color(code: look.water),
                         visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen,
                         golden: done && mood == .drink, shine: true, bubbles: vertical ? 4 : 6,
                         density: LiquidLooks.waterDensity, sloshAt: loggedAt,
                         splashOrigin: LiquidLooks.waterSplashOrigin(vertical: vertical),
-                        fullHighlight: true)
-                .fillingCard()
+                        fullHighlight: true,
+                        ink: { underwater in
+                            AnyView(liquidReading(day, done: done, vertical: vertical,
+                                                  ink: underwater ? look.wet : look.dry))
+                        })
+            // 能点的 + 只有这一个，摆在和字同样的位置上；字那两遍不接点击。
+            liquidControls(day, done: done, vertical: vertical, look: look)
+        }
+        .fillingCard()
+    }
+
+    /// 字（和给 + 留的位置），整张卡片大小。`ink` 是这一遍的字色。
+    private func liquidReading(_ day: WaterDay, done: Bool, vertical: Bool, ink: ColorCode) -> some View {
+        let color = Color(code: ink)
+        let halo = WaterLiquidInk.isLight(ink) ? Color.black : Color.white
+        return liquidLayout(vertical: vertical) {
+            liquidTexts(day, done: done, vertical: vertical)
+        } button: {
+            Color.clear.frame(width: liquidButtonSize(vertical) * 2, height: liquidButtonSize(vertical) * 2)
+        }
+        .foregroundStyle(color)
+        // 描边只是辅助：对比度靠字色本身。
+        .shadow(color: halo.opacity(0.18), radius: 0.6)
+    }
+
+    /// 能点的那层：字的位置用看不见的同样的字占着，+ 落在一样的地方。
+    private func liquidControls(_ day: WaterDay, done: Bool, vertical: Bool,
+                                look: WaterLiquidInk.Look) -> some View {
+        liquidLayout(vertical: vertical) {
+            liquidTexts(day, done: done, vertical: vertical).hidden()
+        } button: {
+            drinkButton(size: liquidButtonSize(vertical), liquid: look)
+        }
+    }
+
+    private func liquidButtonSize(_ vertical: Bool) -> CGFloat { vertical ? 10 : 12 }
+
+    /// 横排：字在左、+ 在右；竖排：字在上、+ 在下。左右都留 12pt。
+    private func liquidLayout<Texts: View, Control: View>(
+        vertical: Bool, @ViewBuilder texts: () -> Texts, @ViewBuilder button: () -> Control
+    ) -> some View {
+        Group {
             if vertical {
                 VStack(spacing: 3) {
-                    Text(WaterIntake.figure(day.total, ounces: ounces))
-                        .font(.system(size: 17, weight: .semibold))
-                        .monospacedDigit()
-                        .rollingValue(day.total)
-                        .liquidInk()
-                    Text(done ? tr("达标啦") : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
-                        .font(WidgetStyle.caption(11))
-                        .monospacedDigit()
-                        .liquidInk(0.85)
-                    drinkButton(size: 10, onWater: true)
+                    texts()
+                    button()
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
             } else {
                 HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
-                            .font(.system(size: 17, weight: .semibold))
-                            .monospacedDigit()
-                            .rollingValue(day.total)
-                            .liquidInk()
-                        Text(done ? tr("今天达标啦") : "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: day.total, goal: day.goal))%")
-                            .font(.system(size: 13))
-                            .liquidInk(0.85)
-                    }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    texts()
                     Spacer(minLength: 0)
-                    drinkButton(size: 12, onWater: true)
+                    button()
                 }
             }
+        }
+        .padding(.horizontal, LiquidLooks.waterTextInset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func liquidTexts(_ day: WaterDay, done: Bool, vertical: Bool) -> some View {
+        if vertical {
+            VStack(spacing: 3) {
+                Text(WaterIntake.figure(day.total, ounces: ounces))
+                    .font(.system(size: 17, weight: .semibold))
+                    .monospacedDigit()
+                    .rollingValue(day.total)
+                Text(done ? tr("达标啦") : "\(WaterIntake.percent(total: day.total, goal: day.goal))%")
+                    .font(WidgetStyle.caption(11))
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+        } else {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(WaterIntake.figure(day.total, ounces: ounces)) / \(WaterIntake.figure(day.goal, ounces: ounces))")
+                    .font(.system(size: 17, weight: .semibold))
+                    .monospacedDigit()
+                    .rollingValue(day.total)
+                Text(LiquidLooks.waterCaption(total: day.total, goal: day.goal, ounces: ounces))
+                    .font(.system(size: 13, weight: done ? .medium : .regular))
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
         }
     }
 
@@ -314,15 +383,22 @@ struct WaterTile: View {
     /// One cup of water. The number rolling (and the character's sip, the
     /// liquid's slosh) is the confirmation, so the write is animated rather
     /// than the press. 角色和液态另外飘一个 +N；减少动态效果时不飘、不举竹筒。
-    private func drinkButton(size: CGFloat, onWater: Bool = false) -> some View {
+    private func drinkButton(size: CGFloat, liquid: WaterLiquidInk.Look? = nil) -> some View {
         let cup = WaterIntake.cupSize(instance.config)
-        return TileGlyph(symbol: "plus", size: size, tint: onWater ? .white : WaterStyle.water,
-                         action: context.isPreview ? nil : {
+        let action: (() -> Void)? = context.isPreview ? nil : {
             withAnimation(.snappy(duration: 0.35)) {
                 WaterLog.drink(.water, amount: cup, in: instance)
             }
             if layout != .ring, !reduceMotion { startGulp(WaterIntake.figure(cup, ounces: ounces)) }
-        })
+        }
+        return Group {
+            if let liquid {
+                LiquidDrinkGlyph(size: size, disc: Color(code: liquid.button),
+                                 ink: Color(code: liquid.buttonInk), action: action)
+            } else {
+                TileGlyph(symbol: "plus", size: size, tint: WaterStyle.water, action: action)
+            }
+        }
         .overlay(alignment: .top) {
             if let gulp {
                 Text("+\(gulp)")
@@ -331,7 +407,7 @@ struct WaterTile: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1.5)
-                    .background(Capsule().fill(WaterStyle.water))
+                    .background(Capsule().fill(liquid.map { Color(code: $0.button) } ?? WaterStyle.water))
                     .fixedSize()
                     .offset(y: -size * 1.55)
                     .transition(.asymmetric(insertion: .offset(y: 6).combined(with: .opacity),
@@ -478,11 +554,46 @@ struct BambooRow: View {
     }
 }
 
+/// 液态的 + ：实心圆底（水色同色相压到白加号够 4.5，见 `WaterLiquidInk.buttonDisc`）
+/// 加白色加号，水里水面上方都看得清。按下时圆底再暗一点。
+private struct LiquidDrinkGlyph: View {
+    var size: CGFloat
+    var disc: Color
+    var ink: Color
+    var action: (() -> Void)?
+
+    var body: some View {
+        if let action {
+            Button(action: action) { Image(systemName: "plus") }
+                .buttonStyle(LiquidDrinkButton(size: size, disc: disc, ink: ink))
+        } else {
+            Image(systemName: "plus").liquidDisc(size: size, disc: disc, ink: ink, pressed: false)
+        }
+    }
+}
+
+private struct LiquidDrinkButton: ButtonStyle {
+    var size: CGFloat
+    var disc: Color
+    var ink: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.liquidDisc(size: size, disc: disc, ink: ink, pressed: configuration.isPressed)
+    }
+}
+
 private extension View {
-    /// 浮在液态水上的白字：一圈淡黑描边（阴影），水多水少都看得清。
-    func liquidInk(_ opacity: Double = 1) -> some View {
-        foregroundStyle(Color.white.opacity(opacity))
-            .shadow(color: .black.opacity(0.3), radius: 0.8)
+    func liquidDisc(size: CGFloat, disc: Color, ink: Color, pressed: Bool) -> some View {
+        font(.system(size: size, weight: .bold))
+            .foregroundStyle(ink)
+            .frame(width: size * 2, height: size * 2)
+            .background {
+                Circle()
+                    .fill(disc)
+                    .overlay(Circle().fill(Color.black.opacity(pressed ? 0.2 : 0)))
+                    .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5))
+            }
+            .contentShape(Circle())
     }
 }
 

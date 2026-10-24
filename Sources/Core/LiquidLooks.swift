@@ -57,6 +57,25 @@ public enum LiquidLooks {
     /// 竖排在正中。
     public static func waterSplashOrigin(vertical: Bool) -> Double { vertical ? 0.5 : 0.82 }
 
+    /// 液态卡片（喝水、时间进度、小熊猫竹篮）上浮在水上的字离卡片左右边的
+    /// 最小距离。水铺满整张卡片到边，字至少留 12pt，不会贴着水边。
+    public static let liquidTextInset: Double = 12
+
+    /// 喝水液态的字和 + 按钮离卡片左右边的距离。水铺满整张卡片（抵消了
+    /// `WidgetSurface` 的 10pt 内边距），字自己再留 12pt，不会贴着水边。
+    public static let waterTextInset: Double = liquidTextInset
+
+    /// 喝水液态横排的副标题：没达标是「毫升 · 60%」，刚好达标「今天达标啦」，
+    /// 超过目标「今天达标啦 · 144%」（四舍五入，到 101% 才写）。主数字照旧
+    /// 「2300 / 1600」。
+    public static func waterCaption(total: Int, goal: Int, ounces: Bool) -> String {
+        guard goal > 0, total >= goal else {
+            return "\(WaterIntake.unitLabel(ounces: ounces)) · \(WaterIntake.percent(total: total, goal: goal))%"
+        }
+        let over = Int((Double(total) / Double(goal) * 100).rounded())
+        return over > 100 ? tr("今天达标啦 · \(over)%") : tr("今天达标啦")
+    }
+
     /// 喝水的水位：今天喝的除以目标，超过目标也只到满。
     public static func waterLevel(total: Int, goal: Int) -> Double {
         guard goal > 0 else { return 0 }
