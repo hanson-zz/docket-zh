@@ -227,21 +227,22 @@ extension LiquidWater {
         let tilt = now.flatMap { activeSlosh($0) }.map { BatteryLiquidFX.slosh(.plugged, elapsed: $0) } ?? 0
         return wave(layer: 0, in: rect, t: t, tilt: tilt).0
     }
+}
 
+extension View {
     /// 铺满整张卡片：先撑满可用的地方（不然水只有中间文字那么大，左右和
     /// 上下会露出底色），按卡片圆角裁切，再抵消 `WidgetSurface` 的左右内边距。
     ///
     /// 顺序不能反：原来先抵消内边距再裁切，裁切按的是抵消前那块（左右各缩进
     /// 10pt）的大小，水左右各少 10pt、四个角按缩进后的圆角切掉，露出一圈卡片
-    /// 底色（浅色外观下是奶白的厚边）。喝水、时间进度、小熊猫竹篮的液态都用它。
+    /// 底色（浅色外观下是奶白的厚边）。喝水、时间进度、小熊猫竹篮的液态都用它；
+    /// 放在 `View` 上，喝水液态的水和字整组（ZStack）也能直接用。
     func fillingCard() -> some View {
         self.frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipShape(.rect(cornerRadius: WidgetStyle.corner, style: .continuous))
             .padding(.horizontal, -WidgetStyle.inset)
     }
-}
 
-extension View {
     /// 浮在液态水上的字离卡片左右边至少 `LiquidLooks.liquidTextInset`（12pt）：
     /// `WidgetSurface` 已经留了 10pt，这里补差的那 2pt。水铺满到卡片边，字不贴水边。
     func liquidTextInset() -> some View {
