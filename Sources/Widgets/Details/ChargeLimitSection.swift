@@ -9,6 +9,9 @@ struct ChargeLimitSection: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
     var now: Date
+    /// 电池格沙漏样式面板的品牌沙色（`BatterySand.color`）：有值时开关、滑块用沙色，
+    /// Pro 标识换成沙色胶囊；不传是 nil，和原来一样。
+    var sand: Color? = nil
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -28,7 +31,11 @@ struct ChargeLimitSection: View {
                 Text("充电上限")
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(.panelSecondary)
-                ProBadge()
+                if sand != nil {
+                    BatterySand.ProCapsule()
+                } else {
+                    ProBadge()
+                }
                 Spacer()
                 if !unlocked {
                     Image(systemName: "lock.fill")
@@ -43,7 +50,7 @@ struct ChargeLimitSection: View {
                                              service.update { $0.enabled = on }
                                          }))
                     .toggleStyle(.switch)
-                    .tint(panelTint.control)
+                    .tint(sand ?? panelTint.control)
                     .controlSize(.mini)
                     .labelsHidden()
                     .accessibilityLabel("充电上限")
@@ -61,7 +68,7 @@ struct ChargeLimitSection: View {
                                           set: { v in service.update { $0.limit = Int(v) } }),
                            in: 50...100, step: 5)
                         .controlSize(.mini)
-                        .tint(panelTint.accent(or: .panelPrimary))
+                        .tint(sand ?? panelTint.accent(or: .panelPrimary))
                 }
                 HStack(spacing: 6) {
                     Text("低于")

@@ -18,6 +18,9 @@ struct BatteryHourglassCell: View {
     var theme: ColorCode?
     /// 右下角的闪电角标；很小的沙漏（竖排扩展栏的多台设备）不画，免得糊成一团。
     var showsBolt = true
+    /// 面板头部的大沙漏：浅色外观下沙色压到 3 : 1（`BatteryHourglassPanel.heroSand`），
+    /// 闪电角标换成白底；深色和卡片一样。
+    var panel = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
@@ -113,8 +116,11 @@ struct BatteryHourglassCell: View {
     private func draw(_ context: inout GraphicsContext, size: CGSize, t: Double) {
         let s = Outline(size: size, badge: showsBolt)
         guard s.h > 4 else { return }
-        let rgb = BatteryHourglass.sandColor(level: level, charging: charging, lowPower: lowPower, present: present,
-                                             theme: theme)
+        let rgb = panel
+            ? BatteryHourglassPanel.heroSand(level: level, charging: charging, lowPower: lowPower, present: present,
+                                             theme: theme, dark: scheme == .dark)
+            : BatteryHourglass.sandColor(level: level, charging: charging, lowPower: lowPower, present: present,
+                                         theme: theme)
         let sand = rgb.swiftUI
         let sandHi = rgb.mixed(with: .white, 0.28).swiftUI
         let sandLo = rgb.mixed(with: BatteryRGB(0, 0, 0), 0.28).swiftUI
@@ -238,8 +244,11 @@ struct BatteryHourglassCell: View {
             let br = s.h * 0.17
             let center = CGPoint(x: s.cx + s.w * 0.42, y: s.yb - br * 0.55)
             let disc = Path(ellipseIn: CGRect(x: center.x - br, y: center.y - br, width: br * 2, height: br * 2))
-            context.fill(disc, with: .color(Color(red: 0x16 / 255, green: 0x16 / 255, blue: 0x1A / 255).opacity(0.92)))
-            context.stroke(disc, with: .color(sand.opacity(0.55)), lineWidth: max(s.h * 0.012, 0.6))
+            // 面板浅色下白底：深色小圆压在浅玻璃上太重。
+            let lightDisc = panel && scheme == .light
+            context.fill(disc, with: .color(lightDisc ? Color.white.opacity(0.96)
+                                            : Color(red: 0x16 / 255, green: 0x16 / 255, blue: 0x1A / 255).opacity(0.92)))
+            context.stroke(disc, with: .color(sand.opacity(lightDisc ? 0.7 : 0.55)), lineWidth: max(s.h * 0.012, 0.6))
             context.fill(boltPath(center: center, radius: br * 1.05), with: .color(sand))
         }
     }

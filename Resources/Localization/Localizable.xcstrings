@@ -2080,6 +2080,17 @@
         }
       }
     },
+    "今天每小时的电量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's hourly charge"
+          }
+        }
+      }
+    },
     "今天要做" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2157,6 +2168,17 @@
         }
       }
     },
+    "充电 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charged %@"
+          }
+        }
+      }
+    },
     "先粘贴密钥。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2219,6 +2241,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "List: %@"
+          }
+        }
+      }
+    },
+    "刚开始记录，每 5 分钟落一粒沙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just started: one grain every 5 minutes"
           }
         }
       }
@@ -21155,13 +21188,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、纪念日玻璃沙漏、世界时钟多城市天空格子；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格（含专属沙漏面板）、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、纪念日玻璃沙漏、世界时钟多城市天空格子；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style, the Time Progress grid, the red panda Water character, 8 Pro Radio looks, the Anniversary Glass Hourglass and the World Clock sky cells for several cities; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style (with its own hourglass panel), the Time Progress grid, the red panda Water character, 8 Pro Radio looks, the Anniversary Glass Hourglass and the World Clock sky cells for several cities; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only)"
           }
         }
       }
@@ -28245,6 +28278,17 @@
         }
       }
     },
+    "最低 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low %@%%"
+          }
+        }
+      }
+    },
     "机型" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28318,6 +28362,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to change the source"
+          }
+        }
+      }
+    },
+    "稍后这里会堆出今天每小时的电量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each hour's charge will pile up here"
           }
         }
       }
