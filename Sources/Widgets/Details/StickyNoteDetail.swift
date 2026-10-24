@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The sticky note at length: the same paper the shelf shows, at a size a note
@@ -37,9 +38,11 @@ struct StickyNoteDetail: View {
     /// written once the sentence is finished rather than once per keystroke.
     @State private var draft = ""
     @FocusState private var writing: Bool
-    /// 输入框里的选区，清单键按它找要转的几行。
-    @State private var selection: TextSelection?
     /// 最近一次选区落在的几行：点「清单」按钮时输入框可能已经失焦。
+    ///
+    /// 选区不再用 `TextField(selection:)` 绑成 `TextSelection`：输入法组字时它带的
+    /// `String.Index` 属于另一版字（比 `draft` 长），拿去算位置会越界崩溃（beta.32
+    /// 真机崩溃，见 `selectedLines()`）。现在从系统的字段编辑器读 `NSRange`，只是整数。
     @State private var lastLines: ClosedRange<Int>?
     @State private var showingTrash = false
     @State private var undo: StickyUndo?
@@ -206,7 +209,7 @@ struct StickyNoteDetail: View {
     }
 
     private var field: some View {
-        TextField("", text: $draft, selection: $selection, axis: .vertical)
+        TextField("", text: $draft, axis: .vertical)
             .textFieldStyle(.plain)
             .focused($writing)
             .font(StickyFont.font(noteFont, size: pointSize))
@@ -223,9 +226,12 @@ struct StickyNoteDetail: View {
                     writing = false
                 }
             }
-            .onChange(of: writing) { _, active in if !active { commit() } }
-            .onChange(of: selection) { _, _ in
-                if let lines = selectedLines() { lastLines = lines }
+            .onChange(of: writing) { _, active in if !active { commitLater() } }
+            // 选区一动就记下落在哪几行（只读整数，组字时也安全）。
+            .onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { note in
+                guard writing, let editor = note.object as? NSTextView, editor === activeEditor(),
+                      let lines = selectedLines() else { return }
+                lastLines = lines
             }
             // One panel serves every note in turn, and flipping hands it
             // another sheet; take that sheet's words unless the caret is
@@ -239,7 +245,7 @@ struct StickyNoteDetail: View {
             // Closing the panel hides its window rather than tearing this
             // view down, so whichever of the two happens first, the words
             // are already saved.
-            .onDisappear { commit() }
+            .onDisappear { commitLater() }
             .accessibilityLabel(tr("便签"))
             // The caret has to be ink like the words, or it is the accent
             // colour on paper.
@@ -483,22 +489,25 @@ struct StickyNoteDetail: View {
         if next.hasSuffix("[ ] ") { beginWriting() }
     }
 
-    /// 选区落在第几行到第几行。选区按 UTF-16 位置换成字符数，免得旧的下标越界。
-    private func selectedLines() -> ClosedRange<Int>? {
-        guard let selection else { return nil }
-        switch selection.indices {
-        case .selection(let range):
-            return StickyChecklist.lineRange(in: draft, from: characters(before: range.lowerBound),
-                                             to: characters(before: range.upperBound))
-        default:
-            return nil
-        }
+    /// 正在写字的那个系统字段编辑器（面板里只有这一个输入框）。
+    private func activeEditor() -> NSTextView? {
+        guard writing else { return nil }
+        return NSApp.keyWindow?.firstResponder as? NSTextView
     }
 
-    private func characters(before index: String.Index) -> Int {
-        let utf16 = Array(draft.utf16)
-        let offset = min(max(0, index.utf16Offset(in: draft)), utf16.count)
-        return String(decoding: utf16[..<offset], as: UTF16.self).count
+    /// 选区落在第几行到第几行。
+    ///
+    /// beta.32 的闪退就在这里：原来从 `TextSelection` 拿 `String.Index`，再对 `draft` 调
+    /// `utf16Offset(in:)`；输入法组字（marked text）时 onChange(of: selection) 先到，
+    /// 那个 index 属于更长的另一版字，`UTF16View.distance` 越界断言，夹 min/max 在调用之后
+    /// 已经来不及。现在只读字段编辑器的 `NSRange`（整数），换算和夹范围都在 Core
+    /// （`StickyChecklist.lineRange(in:utf16Location:length:)`），不再碰外来的 index。
+    private func selectedLines() -> ClosedRange<Int>? {
+        guard let editor = activeEditor() else { return nil }
+        let range = editor.selectedRange()
+        guard range.location != NSNotFound else { return nil }
+        // 按字段编辑器自己的字算（组字时比 draft 多出未上屏的拼音，行号一样）。
+        return StickyChecklist.lineRange(in: editor.string, utf16Location: range.location, length: range.length)
     }
 
     /// 清除已完成项：5 秒内可以撤销。
@@ -717,6 +726,16 @@ struct StickyNoteDetail: View {
     private func commit() {
         guard !context.isPreview, draft != stored else { return }
         StickyLog.write(draft, in: instance)
+    }
+
+    /// 失焦和消失时的保存放到下一轮：这两个回调在 SwiftUI 更新视图的中途触发，
+    /// 当场写会同步换掉面板的根视图（`WidgetDetailWindow.refresh`），让 AppKit 重入布局。
+    /// 写的是当时的字，写进去的是那时最上面那张（`StickyLog` 按现在保存着的那份改）。
+    private func commitLater() {
+        guard !context.isPreview, draft != stored else { return }
+        let words = draft
+        let target = instance
+        Task { @MainActor in StickyLog.write(words, in: target) }
     }
 }
 

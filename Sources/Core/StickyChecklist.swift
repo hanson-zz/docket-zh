@@ -376,6 +376,32 @@ public enum StickyChecklist {
         return rows.joined(separator: "\n")
     }
 
+    /// 第 `utf16` 个 UTF-16 单位之前有几个字符（按 Character 数）。只用整数算，不碰
+    /// 别的字符串的 `String.Index`：输入法组字时系统给的选区可能属于另一版字，比现在的长，
+    /// 拿它去 `utf16Offset(in:)` 会越界直接崩（beta.32 真机崩溃）。负数按 0，超出按末尾，
+    /// 落在一个字的中间（emoji 代理对、组合字符）算到这个字之前。
+    public static func characterOffset(in text: String, utf16 offset: Int) -> Int {
+        guard offset > 0 else { return 0 }
+        var units = 0
+        var count = 0
+        for character in text {
+            units += character.utf16.count
+            if units > offset { return count }
+            count += 1
+        }
+        return count
+    }
+
+    /// 输入框的系统选区（`NSRange`，UTF-16 位置和长度）落在第几行到第几行。
+    /// 位置是 `NSNotFound`、长度是负数或加起来溢出的都夹住，不会越界。
+    public static func lineRange(in text: String, utf16Location location: Int, length: Int) -> ClosedRange<Int> {
+        let start = max(0, location == Int.max ? 0 : location)
+        let (end, overflow) = start.addingReportingOverflow(max(0, length))
+        let upper = overflow ? Int.max : end
+        return lineRange(in: text, from: characterOffset(in: text, utf16: start),
+                         to: characterOffset(in: text, utf16: upper))
+    }
+
     /// 选区（按字符数，从 0 起）落在第几行到第几行。越界的夹到首尾。
     public static func lineRange(in text: String, from start: Int, to end: Int) -> ClosedRange<Int> {
         func line(at offset: Int) -> Int {

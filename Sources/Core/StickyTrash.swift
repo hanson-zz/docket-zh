@@ -57,6 +57,7 @@ public enum StickyTrash {
     public static func entries(_ config: WidgetConfig, now: Date) -> [Entry] {
         guard case .list(let items) = config[key] else { return [] }
         var list: [Entry] = []
+        var used: Set<String> = []
         for item in items {
             guard case .list(let fields) = item, fields.count >= 3,
                   case .string(let color) = fields[0],
@@ -64,6 +65,14 @@ public enum StickyTrash {
                   case .number(let seconds) = fields[2], seconds.isFinite else { continue }
             var id = "\(seconds)-\(list.count)"
             if fields.count > 3, case .string(let stored) = fields[3], !stored.isEmpty { id = stored }
+            // 编号重复（老数据、同步拷贝）时后面那张换个编号：列表按编号认行，重复的
+            // 编号会让恢复、删除认错或一次删两张。
+            if used.contains(id) {
+                var n = 2
+                while used.contains("\(id)-\(n)") { n += 1 }
+                id = "\(id)-\(n)"
+            }
+            used.insert(id)
             list.append(Entry(id: id, sheet: StickySheet(text: text, color: color),
                               tornAt: Date(timeIntervalSince1970: seconds)))
         }
