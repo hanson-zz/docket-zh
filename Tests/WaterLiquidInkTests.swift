@@ -120,7 +120,8 @@ final class WaterLiquidInkTests: XCTestCase {
         let ink = WaterLiquidInk.deepInk(pink, on: card)!
         XCTAssertGreaterThanOrEqual(WaterLiquidInk.worstContrast(ink, on: card), WaterLiquidInk.targetContrast)
         XCTAssertLessThan(WaterLiquidInk.worstContrast(ink, on: card), WaterLiquidInk.targetContrast + 0.2)
-        XCTAssertNil(WaterLiquidInk.deepInk(pink, on: [ColorCode(red: 0, green: 0, blue: 0)]))
+        // 中灰底（亮度约 0.1）：粉色本身不够，压到纯黑也不够，返回 nil。
+        XCTAssertNil(WaterLiquidInk.deepInk(pink, on: [ColorCode(red: 0.35, green: 0.35, blue: 0.35)]))
     }
 
     func testButtonDiscKeepsWhitePlusReadable() {
