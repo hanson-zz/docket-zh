@@ -7,13 +7,18 @@ import SwiftUI
 ///
 /// 卡片只显示最后一次（或固定的那一条）的结果，输入在面板里：底栏收不了
 /// 键盘，卡片上放输入框会吃掉打开面板的那一下。点结果的数字就复制它，点
-/// 卡片别处照旧打开面板。汇率的结果跟着汇率表实时重算，所以固定一条
-/// `1 USD` 就能一直看着汇率。
+/// 卡片别处照旧打开面板（打开就能直接打字）。汇率的结果跟着汇率表实时重算，
+/// 所以固定一条 `1 USD` 就能一直看着汇率。
+///
+/// 收藏了两组以上换算、又没固定别的时，Pro 的卡片每 6 秒轮到下一组（右上角一排
+/// 小点），指针停在卡片上时停住，见 `CurrencyDesk.rotation`。
 struct CalculatorTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var copied = false
+    @State private var hovering = false
+    @State private var tick = 0
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -25,7 +30,30 @@ struct CalculatorTile: View {
                                                   source: "100.00 USD", sourceUnit: "USD", rate: 7.124,
                                                   category: nil)
 
-    private var input: String { context.isPreview ? "100 USD" : SmartCalc.shown(instance.config) }
+    /// 轮播的几条：Pro、收藏两条以上、没有固定别的。
+    private var rotation: [String] {
+        guard !context.isPreview else { return [] }
+        return CurrencyDesk.rotation(instance.config,
+                                     unlocked: ProLicenseGate.canRotateCalcFavorites(unlocked: ProAccess.isUnlocked))
+    }
+
+    private var rotationSlot: Int? {
+        let list = rotation
+        guard !list.isEmpty else { return nil }
+        return ((tick % list.count) + list.count) % list.count
+    }
+
+    private var input: String {
+        if context.isPreview { return "100 USD" }
+        if let slot = rotationSlot { return rotation[slot] }
+        return SmartCalc.shown(instance.config)
+    }
+
+    /// 上面那一小行：汇率写短的 `100 USD → CNY`，其余照输入原样。
+    private var inputLabel: String {
+        guard !input.isEmpty else { return tr("点按开始计算") }
+        return CurrencyDesk.label(input)
+    }
 
     private var reading: Result<SmartCalc.Outcome, SmartCalc.Failure>? {
         if context.isPreview { return .success(Self.sample) }
@@ -105,12 +133,15 @@ struct CalculatorTile: View {
                     badge(size: WidgetStyle.badge)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 4) {
-                            Text(input.isEmpty ? tr("点按开始计算") : input)
+                            Text(verbatim: inputLabel)
                                 .font(WidgetStyle.note)
                                 .foregroundStyle(WidgetStyle.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             Spacer(minLength: 0)
+                            if let slot = rotationSlot {
+                                pageDots(count: rotation.count, current: slot)
+                            }
                             if copied {
                                 tag(tr("已复制"), color: accent)
                             } else if let kind {
@@ -142,8 +173,39 @@ struct CalculatorTile: View {
             }
         }
         .help(hint)
+        .onHover { hovering = $0 }
         .onAppear { startRatesIfNeeded() }
         .onChange(of: input) { _, _ in startRatesIfNeeded() }
+        .task(id: rotation.count) { await rotate() }
+    }
+
+    /// 轮播：按钟点对齐到下一个 6 秒，几张卡片一起换；指针停着时不换。
+    /// 只在有轮播时跑，没有收藏或没解锁时这个任务立刻结束。
+    private func rotate() async {
+        let count = rotation.count
+        guard count > 1 else { return }
+        tick = CurrencyDesk.rotationIndex(now: .now, count: count)
+        while !Task.isCancelled {
+            let period = CurrencyDesk.rotationPeriod
+            let wait = period - Date.now.timeIntervalSince1970.truncatingRemainder(dividingBy: period)
+            try? await Task.sleep(for: .seconds(max(0.2, wait)))
+            guard !Task.isCancelled else { return }
+            if hovering || copied { continue }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                tick = CurrencyDesk.rotationIndex(now: .now, count: count)
+            }
+        }
+    }
+
+    private func pageDots(count: Int, current: Int) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<min(count, 6), id: \.self) { index in
+                Circle()
+                    .fill(WidgetStyle.primary.opacity(index == current % 6 ? 0.9 : 0.3))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     private func badge(size: CGFloat) -> some View {

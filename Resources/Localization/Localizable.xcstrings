@@ -221,6 +221,17 @@
         }
       }
     },
+    "%@ %@，点按设为「从」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@, click to make it the From currency"
+          }
+        }
+      }
+    },
     "%@ / %@ 毫升" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2014,6 +2025,28 @@
         }
       }
     },
+    "↑↓ 选择 · ↩ 确定" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ to choose · ↩ to confirm"
+          }
+        }
+      }
+    },
+    "⌘1 汇率，⌘2 计算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘1 Currency, ⌘2 Math"
+          }
+        }
+      }
+    },
     "⌘Tab 不受影响，系统的 App 切换照常用。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2032,6 +2065,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "⌘Tab is the system app switcher. Pick another shortcut."
+          }
+        }
+      }
+    },
+    "一个金额同时换成多种货币" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One amount in several currencies at once"
           }
         }
       }
@@ -2113,6 +2157,46 @@
         }
       }
     },
+    "从 %@，点按换币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %@, click to change the currency"
+          }
+        }
+      }
+    },
+    "从 (currency)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從"
+          }
+        }
+      }
+    },
     "会打开 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2190,6 +2274,17 @@
         }
       }
     },
+    "全部 %@ 种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All %@"
+          }
+        }
+      }
+    },
     "全部取消勾选" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2252,6 +2347,68 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just started: one grain every 5 minutes"
+          }
+        }
+      }
+    },
+    "到 %@，点按换币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To %@, click to change the currency"
+          }
+        }
+      }
+    },
+    "到 (currency)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到"
+          }
+        }
+      }
+    },
+    "刷新汇率" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh rates"
+          }
+        }
+      }
+    },
+    "刷新汇率（⌘R）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh rates (⌘R)"
           }
         }
       }
@@ -2322,6 +2479,17 @@
         }
       }
     },
+    "取消收藏（⌘D）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Favorites (⌘D)"
+          }
+        }
+      }
+    },
     "取消重要" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2388,6 +2556,17 @@
         }
       }
     },
+    "固定到卡片，汇率跟着更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin to the card, with the rate kept up to date"
+          }
+        }
+      }
+    },
     "在刘海对话的“常用”菜单里点一条，就把输入框里的文字（空着时用剪贴板）套进去发给当前服务：API 直接回答，网页复制提示词到网页里粘贴，App 复制后打开 App（没装时用浏览器）。内容里写 {文本} 的地方换成那段文字，没写时文字接在内容后面。最多 %@ 条。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2395,6 +2574,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick one from the \"Prompts\" menu in the notch chat to wrap the text in the input box (or the clipboard when empty) and send it to the current service: API answers directly, Web copies the prompt for you to paste, App copies it and opens the app (or the browser if it is not installed). {文本} in the content is replaced by that text; without it, the text goes after the content. Up to %@ prompts."
+          }
+        }
+      }
+    },
+    "在计算页再算一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work it out again on the Math page"
           }
         }
       }
@@ -2531,6 +2721,28 @@
         }
       }
     },
+    "多币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multi-currency"
+          }
+        }
+      }
+    },
+    "多币种列表是码头 Pro 专属。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The multi-currency list is part of Dockling Pro. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
     "完成 %@ 项，共 %@ 项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2597,6 +2809,28 @@
         }
       }
     },
+    "对调两种货币" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap the two currencies"
+          }
+        }
+      }
+    },
+    "对调（⌘⇧S）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap (⌘⇧S)"
+          }
+        }
+      }
+    },
     "展开 %@ 的设置" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2652,6 +2886,57 @@
         }
       }
     },
+    "已记下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
+    "带去计算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To Math"
+          }
+        }
+      }
+    },
+    "常用 (currency)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用"
+          }
+        }
+      }
+    },
     "彻底删除" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2670,6 +2955,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repeat"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的多币种列表和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; the multi-currency list and rotating favourites in Calc; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
           }
         }
       }
@@ -2762,6 +3058,17 @@
         }
       }
     },
+    "把结果带到计算页接着算（⌘E）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take the result to the Math page and keep going (⌘E)"
+          }
+        }
+      }
+    },
     "把这一行变成可勾项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2802,6 +3109,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag to jump here"
+          }
+        }
+      }
+    },
+    "拷贝结果（⌘C），整句用 ⌘⇧C" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the result (⌘C); ⌘⇧C copies the whole line"
           }
         }
       }
@@ -2850,6 +3168,28 @@
         }
       }
     },
+    "换到这一条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to this conversion"
+          }
+        }
+      }
+    },
+    "换到这一组；右键取消收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to this pair; right-click to remove it from Favorites"
+          }
+        }
+      }
+    },
     "接入点 ID（ep- 开头）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2883,6 +3223,17 @@
         }
       }
     },
+    "搜名称、代码或符号：港币、hkd、$" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by name, code or symbol: yen, hkd, $"
+          }
+        }
+      }
+    },
     "撕掉的便签会在这里待 7 天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2901,6 +3252,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tear off this sheet into the trash"
+          }
+        }
+      }
+    },
+    "收藏这组换算（⌘D）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add this conversion to Favorites (⌘D)"
           }
         }
       }
@@ -28256,6 +28618,28 @@
         }
       }
     },
+    "收起小键盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide the keypad"
+          }
+        }
+      }
+    },
+    "收起小键盘（⌘K）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide the keypad (⌘K)"
+          }
+        }
+      }
+    },
     "放首歌，这里就会出现" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28263,6 +28647,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Play a song and it will show up here"
+          }
+        }
+      }
+    },
+    "显示小键盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the keypad"
+          }
+        }
+      }
+    },
+    "显示小键盘（⌘K）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the keypad (⌘K)"
           }
         }
       }
@@ -28285,6 +28691,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Low %@%%"
+          }
+        }
+      }
+    },
+    "最多 %@ 种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %@"
           }
         }
       }
@@ -28333,6 +28750,17 @@
         }
       }
     },
+    "汇率到了就会列出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They appear once the rates arrive"
+          }
+        }
+      }
+    },
     "海边的晚风" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28340,6 +28768,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sea Breeze at Dusk"
+          }
+        }
+      }
+    },
+    "添加、删除和拖动排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add, remove and drag to reorder"
+          }
+        }
+      }
+    },
+    "添加到多币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Multi-currency"
+          }
+        }
+      }
+    },
+    "添加币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Currency"
           }
         }
       }
@@ -28355,6 +28816,39 @@
         }
       }
     },
+    "点「编辑」添加想一起看的币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Edit to add currencies to see together"
+          }
+        }
+      }
+    },
+    "点一行把它设为「从」，金额跟着换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a row to make it the From currency; the amount follows"
+          }
+        }
+      }
+    },
+    "点一行设为基准，可增删和拖动排序" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a row to make it the base; add, remove and reorder"
+          }
+        }
+      }
+    },
     "点开换来源" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28362,6 +28856,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to change the source"
+          }
+        }
+      }
+    },
+    "点数字拷贝结果（⌘C）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the number to copy the result (⌘C)"
           }
         }
       }
@@ -28388,6 +28893,39 @@
         }
       }
     },
+    "结果 %@ %@，点按拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Result %@ %@, click to copy"
+          }
+        }
+      }
+    },
+    "记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
+    "设为「从」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make it the From currency"
+          }
+        }
+      }
+    },
     "进度" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28406,6 +28944,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Low Tide"
+          }
+        }
+      }
+    },
+    "选「从」的币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the From Currency"
+          }
+        }
+      }
+    },
+    "选「从」的币种（⌘[）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the From currency (⌘[)"
+          }
+        }
+      }
+    },
+    "选「到」的币种" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the To Currency"
+          }
+        }
+      }
+    },
+    "选「到」的币种（⌘]）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the To currency (⌘])"
+          }
+        }
+      }
+    },
+    "金额，可以写算式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount; a sum works too"
           }
         }
       }

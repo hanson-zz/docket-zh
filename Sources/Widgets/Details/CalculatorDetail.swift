@@ -1,17 +1,27 @@
 import AppKit
 import SwiftUI
 
-/// 「算」的面板：一个输入框，结果跟着每次按键变；回车记下这一条，卡片上
-/// 显示它，最近记录里三种（汇率、单位、计算）混排。识别和计算在
-/// `SmartCalc`，这里只负责画和写配置。
+/// 「算」的面板，顶上分两页：
+/// - 汇率：从 / 到两行、对调、币种搜索、多币种（Pro）、收藏和记录，见 `CalcFXPage`。
+/// - 计算：一个输入框，结果跟着每次按键变；回车记下这一条，卡片上显示它，
+///   最近记录里三种（汇率、单位、计算）混排。识别和计算在 `SmartCalc`。
+/// 两页共用记录和小键盘（⌘K 显示 / 收起），⌘1 / ⌘2 切页，打开在哪页记在
+/// 卡片配置的 `mode`（见 `CurrencyDesk.mode`）。
 struct CalculatorDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
     @State private var draft: String?
     @State private var copied = false
+    @State private var shownMode: CurrencyDesk.Mode?
     @FocusState private var typing: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
+    private var mode: CurrencyDesk.Mode {
+        shownMode ?? (context.isPreview ? .fx : CurrencyDesk.mode(current.config))
+    }
+    private var keypadOn: Bool { !context.isPreview && current.config.bool(CurrencyDesk.keypadKey) }
 
     private var service: CurrencyService { CurrencyService.shared }
     private var preferences: SmartCalc.Preferences { SmartCalc.Preferences(instance.config) }
@@ -33,22 +43,116 @@ struct CalculatorDetail: View {
     }
 
     var body: some View {
-        let reading = evaluate(text)
         DetailCard {
             MeshBackdrop(color: WidgetStyle.tint(.purple))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                field
-                result(reading)
-                actions(reading)
+                header
+                switch mode {
+                case .fx:
+                    CalcFXPage(instance: instance, context: context, keypadOn: keypadOn,
+                               onCarry: { openInCalc($0, commit: false) },
+                               onOpenInCalc: { openInCalc($0, commit: true) })
+                case .calc:
+                    calcPage
+                }
+            }
+        }
+        .background { pageShortcuts }
+    }
+
+    // MARK: 顶栏：两页和小键盘
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            DetailSegmented(pages: CurrencyDesk.Mode.allCases, title: \.title, selected: mode) { choice in
+                switchMode(choice)
+            }
+            .frame(width: 150)
+            .help(tr("⌘1 汇率，⌘2 计算"))
+            Spacer(minLength: 0)
+            Button { toggleKeypad() } label: {
+                Image(systemName: "circle.grid.3x3.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(keypadOn ? Color.panelRaised : Color.panelFill).panelLift(keypadOn))
+                    .overlay { Circle().strokeBorder(.panelStroke, lineWidth: 0.7) }
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .disabled(context.isPreview)
+            .help(keypadOn ? tr("收起小键盘（⌘K）") : tr("显示小键盘（⌘K）"))
+            .accessibilityLabel(keypadOn ? tr("收起小键盘") : tr("显示小键盘"))
+        }
+    }
+
+    @ViewBuilder
+    private var pageShortcuts: some View {
+        if !context.isPreview {
+            ZStack {
+                Button("") { switchMode(.fx) }.keyboardShortcut("1", modifiers: .command)
+                Button("") { switchMode(.calc) }.keyboardShortcut("2", modifiers: .command)
+                Button("") { toggleKeypad() }.keyboardShortcut("k", modifiers: .command)
+                if mode == .calc {
+                    Button("") {
+                        if case .success(let out)? = evaluate(text) { copy(out) }
+                    }
+                    .keyboardShortcut("c", modifiers: .command)
+                }
+            }
+            .buttonStyle(.plain)
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private func switchMode(_ next: CurrencyDesk.Mode) {
+        guard next != mode else { return }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { shownMode = next }
+        guard !context.isPreview else { return }
+        WidgetWriter.write(current) { $0.set(CurrencyDesk.modeKey, .string(next.rawValue)) }
+        if next == .calc { WidgetDetailWindow.shared.focusField { typing = true } }
+    }
+
+    private func toggleKeypad() {
+        guard !context.isPreview else { return }
+        let on = !keypadOn
+        WidgetWriter.write(current) { $0.set(CurrencyDesk.keypadKey, .bool(on)) }
+    }
+
+    /// 汇率页「带去计算」或点了记录里的单位、算式：切到计算页，输入框放这一条。
+    private func openInCalc(_ entry: String, commit commits: Bool) {
+        switchMode(.calc)
+        draft = entry
+        if commits { commit(entry) }
+        WidgetDetailWindow.shared.focusField { typing = true }
+    }
+
+    // MARK: 计算页
+
+    private var calcPage: some View {
+        let reading = evaluate(text)
+        return VStack(alignment: .leading, spacing: 12) {
+            field
+            result(reading)
+            actions(reading)
+            if keypadOn {
+                CalcKeypad(accent: WidgetStyle.tint(.purple)) { key in
+                    draft = CurrencyDesk.pressing(key, in: text)
+                    WidgetDetailWindow.shared.focusField { typing = true }
+                }
+            } else {
                 numberStyle
                 recent
-                footer(reading)
             }
+            footer(reading)
         }
         .onAppear {
             guard !context.isPreview else { return }
-            typing = true
+            WidgetDetailWindow.shared.focusField { typing = true }
             if usesCurrency { service.start() }
         }
         .onChange(of: text) { _, _ in

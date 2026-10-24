@@ -231,6 +231,15 @@ public enum ProLicenseGate {
     /// 改提醒。没解锁时提醒照旧存着，只显示不生效。
     public static func canUseCryptoAlerts(unlocked: Bool) -> Bool { unlocked }
 
+    /// 「算」面板汇率页的多币种列表（Pro）：一个金额同时换成收藏的几种币。没解锁时
+    /// 列表位置换成一行说明，点了弹付费墙；存着的列表不动，解锁或试用后原样回来。
+    /// 从 / 到两行、对调、币种搜索、算式、记录、收藏和小键盘都免费。
+    public static func canUseCurrencyList(unlocked: Bool) -> Bool { unlocked }
+
+    /// 「算」卡片轮播收藏的换算（Pro）：收藏两条以上、没有固定别的时卡片每几秒换一条。
+    /// 没解锁时卡片照旧显示固定的或最后一次那条，收藏照旧存着。见 `CurrencyDesk.rotation`。
+    public static func canRotateCalcFavorites(unlocked: Bool) -> Bool { unlocked }
+
     /// 邮件面板顶部能不能按账户筛选（Pro）。没解锁时按「全部」显示，筛选照旧存着。
     public static func canFilterMailAccounts(unlocked: Bool) -> Bool { unlocked }
 

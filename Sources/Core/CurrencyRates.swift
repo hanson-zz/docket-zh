@@ -79,17 +79,10 @@ public enum CurrencyNames {
         common.first { $0.code == code.uppercased() }?.name ?? code.uppercased()
     }
 
-    /// A converted amount: two decimals for most, none where the unit is so
-    /// small that cents mean nothing (yen, won, dong).
+    /// A converted amount at the currency's own minor units: two decimals for
+    /// most, none for yen, won and dong, three for the Gulf dinars. See
+    /// `CurrencyCatalog.format`.
     public static func format(_ value: Double, code: String) -> String {
-        guard value.isFinite else { return "-" }
-        let wholeUnits: Set<String> = ["JPY", "KRW", "VND", "IDR", "TWD"]
-        let digits = wholeUnits.contains(code.uppercased()) && abs(value) >= 1 ? 0 : (abs(value) < 0.01 && value != 0 ? 6 : 2)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = digits
-        formatter.maximumFractionDigits = digits
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.\(digits)f", value)
+        CurrencyCatalog.format(value, code: code)
     }
 }
