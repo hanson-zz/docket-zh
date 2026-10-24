@@ -21,6 +21,8 @@ final class GroupWindow {
     private var actions: Actions?
     /// 点窗口外面、按 Esc 收起。见 PopupDismisser。
     private let dismisser = PopupDismisser()
+    /// 收起淡出的号：淡出中途又打开时，旧淡出走完不收窗口、把透明度补回 1。
+    private var fade = PopupToggle.Fade()
     /// 窗口里有能先退一步的东西（改名改了一半、展开的选择列表），GroupSheet 报上来。
     private var backable = false
     /// Esc 先退一步：每按一次加一，GroupSheet 看到变化就撤销改名或收起选择列表。
@@ -74,16 +76,29 @@ final class GroupWindow {
     ///   - anchor: the point on the tile to grow away from, in screen coordinates.
     ///   - edge: which way the shelf is docked.
     func toggle(_ group: DockGroup, anchor: CGPoint, edge: DockPosition,
-                iconSide: CGFloat,
+                iconSide: CGFloat, host: CGRect = .zero,
                 open: @escaping (DockItem) -> Void,
                 remove: @escaping (DockItem) -> Void,
                 rename: @escaping (String) -> Void,
                 add: @escaping ([URL]) -> Void,
                 renameItem: @escaping (DockItem, String?, String) -> Void,
                 showNames: @escaping (Bool) -> Void) {
-        if openGroupID == group.id { return close() }
-        // 点外面收起它的正是点这个格子的那一下：结果是收起，不再打开。
-        if dismisser.swallowsOpen(id: group.id) { return }
+        // 只认真的在显示的：记着开着却没显示时直接重新打开，不去「关」一个看不见的
+        // 窗口（以前会一直点不开）。刚打开紧跟着的连点不关；点外面收起它的正是点
+        // 这个格子的那一下，结果是收起，不再打开。见 Core 的 PopupToggle。
+        let decision = PopupToggle.decide(
+            requested: group.id, openID: openGroupID, visible: panel?.isVisible == true,
+            repeatOfOpen: dismisser.isRepeatOfOpen(id: group.id),
+            swallow: { dismisser.swallowsOpen(id: group.id) })
+        switch decision {
+        case .ignore: return
+        case .close: return close()
+        case .open: break
+        }
+        // 没拿到格子位置（指针还没在格子上停过）时从扩展栏外沿正中长出来，
+        // 不跑到屏幕角落或另一块屏幕上。
+        let anchor = anchor == .zero && host != .zero
+            ? DetailPanelFit.fallbackAnchor(edge: edge, shelf: host) : anchor
         show(group, anchor: anchor, edge: edge, iconSide: iconSide,
              actions: Actions(open: open, remove: remove, rename: rename, add: add,
                               renameItem: renameItem, showNames: showNames))
@@ -105,6 +120,10 @@ final class GroupWindow {
 
     /// Whether a group is showing, so the shelf can stay put while it is.
     var isOpen: Bool { openGroupID != nil && panel?.isVisible == true }
+
+    /// 开着的、真的在显示的是不是这个组（两指滑动、新建空组打开前用，
+    /// 记着开着却没显示的不算）。
+    func isShowing(_ id: UUID) -> Bool { isOpen && openGroupID == id }
 
     /// 扩展栏自动隐藏时每次看指针调用，离开窗口和扩展栏 0.5 秒收起。见
     /// PopupDismisser.pointerTick。
@@ -133,21 +152,32 @@ final class GroupWindow {
 
     func close() {
         dismisser.stop()
-        guard panel?.isVisible == true, openGroupID != nil else { return }
+        // 记着的先清掉，窗口没在显示也清：不然下次点这个格子会被当成「再点一次关掉」。
+        guard openGroupID != nil else { return }
         openGroupID = nil
         backable = false
+        guard panel?.isVisible == true else { return }
         // orderOut alone is a vanish. The window fades while the sheet inside
         // it scales back toward the tile it came from.
+        let token = fade.begin()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.16
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             panel?.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             MainActor.assumeIsolated {
-                // Only if nothing reopened it while the fade was running.
-                guard let self, self.openGroupID == nil else { return }
-                self.panel?.orderOut(nil)
-                self.panel?.alphaValue = 1
+                guard let self else { return }
+                // 淡出中途又打开了（连点、从一个组直接点另一个组）：不收，透明度
+                // 补回 1，旧淡出可能已经把它落到 0，窗口开着却看不见。
+                switch self.fade.finish(token, isOpen: self.openGroupID != nil) {
+                case .orderOut:
+                    self.panel?.orderOut(nil)
+                    self.panel?.alphaValue = 1
+                case .restore:
+                    self.panel?.alphaValue = 1
+                case .nothing:
+                    break
+                }
             }
         }
     }
@@ -193,14 +223,44 @@ final class GroupWindow {
         openGroupID = group.id
         backable = false
 
-        guard place(panel, anchor: anchor, edge: edge) else { return }
-        panel.alphaValue = 1
+        present(panel, group: group.id, attempt: 1)
+    }
+
+    /// 摆上去并显示。内容这一轮还量不出大小时下一轮再试一次，还不行就放弃并
+    /// 清掉「开着的是谁」（以前直接返回，记着开着却没显示，之后一直点不开）。
+    private func present(_ panel: PopupPanel, group id: UUID, attempt: Int) {
+        guard openGroupID == id, let placement else { return }
+        guard place(panel, anchor: placement.anchor, edge: placement.edge) else {
+            switch PopupToggle.Placement.afterFailure(attempt: attempt) {
+            case .retry:
+                Task { @MainActor [weak self] in
+                    self?.present(panel, group: id, attempt: attempt + 1)
+                }
+            case .giveUp:
+                openGroupID = nil
+                backable = false
+            }
+            return
+        }
+        // 作废还没走完的收起淡出（连点、从一个组直接点另一个组时同一个窗口
+        // 正在淡出）：新的透明度动画顶掉旧的，旧淡出走完时也会补回 1。
+        let wasVisible = panel.isVisible
+        fade.cancel()
+        if wasVisible {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.08
+                panel.animator().alphaValue = 1
+            }
+        } else {
+            panel.alphaValue = 1
+        }
         panel.orderFrontRegardless()
         // Needed for the name field; the shelf itself still never takes key,
         // so clicking a tile does not pull focus out of the user's app.
         // 也是 Esc 能收到的前提。
         panel.makeKey()
         dismisser.start()
+        dismisser.noteOpened(id: id)
     }
 
     /// 按现在的内容把窗口放到格子旁边。内容还量不出大小时返回 false。

@@ -31,10 +31,12 @@ public enum PopupDismissal {
         public var modalOpen: Bool
         /// 正在把东西拖进、拖出小窗。
         public var dragging: Bool
+        /// 刚打开小窗紧跟着的连点（双击格子的第二下），见 `PopupToggle.OpenGrace`。
+        public var repeatOfOpen: Bool
 
         public init(button: Button = .primary, inPopup: Bool = false, inQuickLook: Bool = false,
                     quickLookOpen: Bool = false, menuOpen: Bool = false, modalOpen: Bool = false,
-                    dragging: Bool = false) {
+                    dragging: Bool = false, repeatOfOpen: Bool = false) {
             self.button = button
             self.inPopup = inPopup
             self.inQuickLook = inQuickLook
@@ -42,6 +44,7 @@ public enum PopupDismissal {
             self.menuOpen = menuOpen
             self.modalOpen = modalOpen
             self.dragging = dragging
+            self.repeatOfOpen = repeatOfOpen
         }
     }
 
@@ -58,6 +61,8 @@ public enum PopupDismissal {
     /// 按下鼠标时怎么办。点击本身照常交给被点的东西，这里只决定小窗收不收。
     public static func press(_ press: Press) -> PressDecision {
         if press.inPopup || press.inQuickLook { return .ignore }
+        // 双击格子的第二下：不是「点外面」，不收（否则第一下打开、第二下收起，只闪一下）。
+        if press.repeatOfOpen { return .ignore }
         // 快速查看开着时整个不收：点空白处是在和快速查看打交道，关它也不连带收小窗。
         if press.quickLookOpen || press.menuOpen || press.modalOpen || press.dragging { return .ignore }
         return press.button == .primary ? .dismissOnRelease : .dismissNow

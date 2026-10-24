@@ -65,9 +65,13 @@ final class FolderBrowserWindow {
 
     /// 打开 `folder`；已经开着同一个格子就关上。
     func toggle(id: UUID, folder: URL, anchor: CGPoint, edge: DockPosition, host: CGRect) {
-        if openFolderID == id, isOpen { return close() }
-        // 点外面收起它的正是点这个格子的那一下：结果是收起，不再打开。
-        if dismisser.swallowsOpen(id: id) { return }
+        // 刚打开紧跟着的连点（双击）不关；点外面收起它的正是点这个格子的那一下，
+        // 结果是收起，不再打开。见 Core 的 PopupToggle。
+        switch decide(id) {
+        case .ignore: return
+        case .close: return close()
+        case .open: break
+        }
         groupActions = nil
         show(id: id, source: .folder(folder), anchor: anchor, edge: edge, host: host)
     }
@@ -75,10 +79,19 @@ final class FolderBrowserWindow {
     /// 打开文件夹分组：顶部多一排文件夹标签，打开上次看的那个；已经开着同一个组就关上。
     func toggleGroup(_ group: DockGroup, anchor: CGPoint, edge: DockPosition, host: CGRect,
                      actions: FolderGroupActions) {
-        if openFolderID == group.id, isOpen { return close() }
-        if dismisser.swallowsOpen(id: group.id) { return }
+        switch decide(group.id) {
+        case .ignore: return
+        case .close: return close()
+        case .open: break
+        }
         groupActions = actions
         show(id: group.id, source: .group(group), anchor: anchor, edge: edge, host: host)
+    }
+
+    private func decide(_ id: UUID) -> PopupToggle.Decision {
+        PopupToggle.decide(requested: id, openID: openFolderID, visible: panel?.isVisible == true,
+                           repeatOfOpen: dismisser.isRepeatOfOpen(id: id),
+                           swallow: { dismisser.swallowsOpen(id: id) })
     }
 
     /// 扩展栏上的组变了（加了、移除了、挪了文件夹）：开着的就原地换标签，
@@ -142,7 +155,12 @@ final class FolderBrowserWindow {
             panel?.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, self.openFolderID == nil else { return }
+                guard let self else { return }
+                // 淡出中途又打开了：不收，透明度补回 1（旧淡出可能把它落到 0）。
+                guard self.openFolderID == nil else {
+                    self.panel?.alphaValue = 1
+                    return
+                }
                 self.panel?.orderOut(nil)
                 self.panel?.alphaValue = 1
             }
@@ -204,6 +222,7 @@ final class FolderBrowserWindow {
             panel.animator().alphaValue = 1
         }
         dismisser.start()
+        dismisser.noteOpened(id: id)
     }
 
     private func view() -> FolderBrowserView {

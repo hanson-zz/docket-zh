@@ -1233,7 +1233,7 @@ struct DockShelfView: View {
         if let widget = entry.item.widget, WidgetDetailWindow.shared.openWidgetID == widget.id,
            WidgetDetailWindow.shared.isOpen { return }
         if let group = entry.item.group,
-           GroupWindow.shared.openGroupID == group.id || FolderBrowserWindow.shared.openFolderID == group.id {
+           GroupWindow.shared.isShowing(group.id) || FolderBrowserWindow.shared.openFolderID == group.id {
             return
         }
         if case .folder(let folderID, _, _) = entry.item, FolderBrowserWindow.shared.openFolderID == folderID {
@@ -1283,6 +1283,7 @@ struct DockShelfView: View {
             anchor: anchor,
             edge: position,
             iconSide: iconGeometry.icon,
+            host: shelfWindow?.frame ?? .zero,
             open: { AppCatalog.shared.open($0) },
             remove: { item in
                 let landing = lastIncoming
@@ -1334,7 +1335,7 @@ struct DockShelfView: View {
     /// 几条扩展栏都有它时只开一次。
     private func openRequestedGroup(_ note: Notification, _ solved: Solved) {
         guard let raw = note.userInfo?["id"] as? String, let id = UUID(uuidString: raw),
-              GroupWindow.shared.openGroupID != id,
+              !GroupWindow.shared.isShowing(id),
               FolderBrowserWindow.shared.openFolderID != id,
               let window = shelfWindow, window.isVisible,
               let index = solved.slots.indices.first(where: { index in

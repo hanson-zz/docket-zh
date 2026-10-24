@@ -34,6 +34,8 @@ final class PopupDismisser {
     private var pending: (start: CGPoint, timer: Timer)?
     private var reopen = PopupDismissal.ReopenGuard()
     private var leave = PopupDismissal.LeaveTimer()
+    /// 刚打开时的连点宽限：双击格子的第二下不收起。见 `PopupToggle.OpenGrace`。
+    private var grace = PopupToggle.OpenGrace()
 
     /// 小窗打开时调用：开始看点击。重复调用会先清掉上一轮。
     func start() {
@@ -58,6 +60,19 @@ final class PopupDismisser {
         monitors.removeAll()
         cancelPending()
         leave.reset()
+        grace.clear()
+    }
+
+    /// 小窗打开了 `id`（在 `start()` 之后调用）：记下这一下的位置和时间，
+    /// 紧跟着的连点（双击的第二下）不当成「再点一次」或「点外面」。
+    func noteOpened(id: UUID) {
+        grace.noteOpened(id: id, at: Date(), point: NSEvent.mouseLocation,
+                         doubleClickInterval: NSEvent.doubleClickInterval)
+    }
+
+    /// 点格子 `id` 想收起它：是不是刚打开紧跟着的连点，是就别收。
+    func isRepeatOfOpen(id: UUID) -> Bool {
+        grace.isRepeat(id: id, at: Date(), point: NSEvent.mouseLocation)
     }
 
     // MARK: 指针离开
@@ -133,7 +148,8 @@ final class PopupDismisser {
             quickLookOpen: qlOpen,
             menuOpen: MenuTracking.isOpen,
             modalOpen: blockedByModal,
-            dragging: Self.dragging)
+            dragging: Self.dragging,
+            repeatOfOpen: grace.isRepeat(at: Date(), point: point))
         switch PopupDismissal.press(press) {
         case .ignore:
             return
