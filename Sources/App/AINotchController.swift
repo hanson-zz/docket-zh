@@ -14,7 +14,8 @@ import SwiftUI
 /// 拾掇在运行时码头不在刘海上放任何入口窗口，刘海的点击和悬停都让给拾掇，
 /// 入口改为快捷键和货架上 AI 卡片的小熊猫。
 ///
-/// 和灵动提示共处：灵动提示出现在同一块屏幕时入口淡出让位，收起后恢复。
+/// 和灵动提示共处：灵动提示出现在同一块屏幕时入口淡出让位，收起后恢复。消息灵动岛的
+/// 卡片展开时同样让位（下沿提示条会压在卡片顶上），见 `NotchMessagePriority`。
 ///
 /// 刘海对话是码头 Pro 的功能：没解锁时入口照常显示，点刘海、按快捷键都只弹
 /// 付费墙，不展开对话；货架上 AI 卡片的小熊猫退回原来的提问面板，跳转到网页
@@ -61,6 +62,9 @@ final class AINotchController {
         observers.append(center.addObserver(forName: IslandOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.layout() }
         })
+        observers.append(center.addObserver(forName: NotchMessageOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.layout() }
+        })
         let workspace = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             workspaceObservers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
@@ -98,11 +102,15 @@ final class AINotchController {
     private func layout() {
         let wanted = settings.enabled ? AINotchLayout.screens(described, mainOnly: settings.mainScreenOnly) : []
         let island = IslandOccupancy.shared.frame
+        let messageCard = NotchMessageOccupancy.shared.frame
         var placed: [UInt32: (AINotchEntry, Bool)] = [:]
         for screen in wanted {
             guard let entry = AINotchLayout.entry(for: screen, shiduoRunning: shiduoRunning) else { continue }
             let islandHere = island.map { $0.intersects(screen.frame) } ?? false
-            placed[screen.id] = (entry, AINotchLayout.isVisible(enabled: settings.enabled, islandShowing: islandHere))
+            let cardHere = messageCard.map { $0.intersects(screen.frame) } ?? false
+            placed[screen.id] = (entry, NotchMessagePriority.aiEntryVisible(enabled: settings.enabled,
+                                                                            islandShowing: islandHere,
+                                                                            cardExpanded: cardHere))
         }
         for (id, window) in entries where placed[id] == nil {
             window.orderOut(nil)

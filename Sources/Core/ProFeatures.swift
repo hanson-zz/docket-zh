@@ -44,6 +44,8 @@ import Foundation
 ///   已经放好的分组没解锁时照常显示、打开、增删，只是不能再从库里新建。
 /// - 加密货币面板的到价提醒（高于、低于，存在卡片的 `alerts`），见
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
+/// - 消息灵动岛（信息、WhatsApp、微信的消息卡，`NotchMessageSettings`），见
+///   `ProLicenseGate.notchMessageActive`。
 /// - 截图编辑工具条的截图翻译（译文盖在截图上，翻译面板的「截图翻译」同一个）和贴图，
 ///   见 `ShotFeature`、`ProLicenseGate.canUseShotFeature`。标注、取字、存文件、拷贝免费。
 public enum ProFeatures {
@@ -140,6 +142,9 @@ public enum ProFeatures {
         case shotTranslate
         /// 截图编辑工具条里的「贴图」：把截图钉在屏幕最上层的小窗里。
         case shotPin
+        /// 设置 ▸ 通用「消息灵动岛」：信息、WhatsApp、微信的通知在刘海下展开成消息卡，
+        /// 信息可在刘海里快速回复，见 `NotchMessageSettings`、`ProLicenseGate.notchMessageActive`。
+        case notchMessage
     }
 
     // MARK: 判断

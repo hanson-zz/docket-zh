@@ -45,6 +45,8 @@ import Foundation
 /// - 加密货币整种免费，到价提醒是 Pro：没解锁时提醒照样列出，带 Pro 标，打开开关、
 ///   改价弹付费墙；不判断、不发通知、卡片不变色、不标铃铛，提醒不改写，解锁或
 ///   试用时自动回来，见 `canUseCryptoAlerts`。
+/// - 消息灵动岛：设置里开关旁是 Pro 胶囊，没解锁时打开开关弹付费墙；已经打开的
+///   不观察横幅、不弹卡片，设置不改写，解锁或试用时自动回来，见 `notchMessageActive`。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -315,6 +317,14 @@ public enum ProLicenseGate {
     /// 开关照旧存着，解锁或试用后自动恢复。
     public static func windowPreviewActive(_ settings: CustomDockSettings, unlocked: Bool) -> Bool {
         settings.hoverWindowPreview && canUse(.windowPreview, unlocked: unlocked)
+    }
+
+    // MARK: 消息灵动岛
+
+    /// 消息灵动岛在不在生效：设置里打开，且 Pro 已解锁。没解锁时不观察横幅、不弹卡片，
+    /// 开关和选的 App、位置照旧存着，解锁或试用后自动恢复。
+    public static func notchMessageActive(_ settings: NotchMessageSettings, unlocked: Bool) -> Bool {
+        settings.enabled && !settings.apps.isEmpty && canUse(.notchMessage, unlocked: unlocked)
     }
 
     // MARK: 从小组件库新建分组

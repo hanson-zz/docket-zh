@@ -2674,13 +2674,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
           }
         }
       }
@@ -60585,6 +60585,361 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next Few Times"
+          }
+        }
+      }
+    },
+    "信息 (app)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信息"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信息"
+          }
+        }
+      }
+    },
+    "自动让位" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make Way Automatically"
+          }
+        }
+      }
+    },
+    "刘海下方" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Below the Notch"
+          }
+        }
+      }
+    },
+    "刘海旁小胶囊" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capsule Beside the Notch"
+          }
+        }
+      }
+    },
+    "还有 %@ 条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more"
+          }
+        }
+      }
+    },
+    "收到一条消息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New message"
+          }
+        }
+      }
+    },
+    "下一条：%@ · %@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next: %@ · %@ · %@"
+          }
+        }
+      }
+    },
+    "%@关闭了通知预览，打开%@查看内容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hides notification previews. Open %@ to read it"
+          }
+        }
+      }
+    },
+    "在%@设置里打开预览后可显示内容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on previews in %@ settings to see the message here"
+          }
+        }
+      }
+    },
+    "在「信息」里没找到这个联系人，已为你打开「信息」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't find this contact in Messages, so Messages is open for you"
+          }
+        }
+      }
+    },
+    "有同名的联系人，为免发错人，已为你打开「信息」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More than one contact has this name. To avoid sending to the wrong person, Messages is open for you"
+          }
+        }
+      }
+    },
+    "需要允许码头控制「信息」：系统设置 ▸ 隐私与安全性 ▸ 自动化" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Dockling to control Messages in System Settings ▸ Privacy & Security ▸ Automation"
+          }
+        }
+      }
+    },
+    "没发出去，已为你打开「信息」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The reply wasn't sent, so Messages is open for you"
+          }
+        }
+      }
+    },
+    "第一次发送时 macOS 会问是否允许码头控制「信息」，允许后才能在刘海里回复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The first time you send, macOS asks whether Dockling may control Messages. Allow it to reply from the notch"
+          }
+        }
+      }
+    },
+    "稍后 (later)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
+          }
+        }
+      }
+    },
+    "回复" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply"
+          }
+        }
+      }
+    },
+    "回复%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply to %@"
+          }
+        }
+      }
+    },
+    "回车发送，Esc 收起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to send, Esc to close"
+          }
+        }
+      }
+    },
+    "%@ %@ 条未读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@ unread"
+          }
+        }
+      }
+    },
+    "消息灵动岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Island"
+          }
+        }
+      }
+    },
+    "信息、WhatsApp、微信的通知到达时，在刘海下方展开消息卡：头像、发件人、两行预览。信息可以在刘海里直接回复，WhatsApp 和微信点一下跳到对应 App。几秒后收起成刘海两侧的未读数，指针停在卡片上时不收。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When Messages, WhatsApp or WeChat notifies you, a message card opens below the notch with the avatar, sender and a two-line preview. Reply to Messages right from the notch; WhatsApp and WeChat open with one click. After a few seconds it folds into unread counts beside the notch, and stays open while the pointer rests on it."
+          }
+        }
+      }
+    },
+    "自动收起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close After"
+          }
+        }
+      }
+    },
+    "%@ 秒后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seconds"
+          }
+        }
+      }
+    },
+    "码头通过辅助功能读取系统通知横幅，只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling reads the system notification banners through Accessibility. It only reads them and never blocks or changes a notification. The system banner and the message card both appear: setting these apps' notification style to None removes the duplicate, but Dockling cannot see a message when no banner appears, which also happens during a Focus, Do Not Disturb, a full-screen presentation or screen sharing. No card appears over full-screen apps or presentations. Replies in Messages are sent through Automation (AppleScript), and the first time you send, macOS asks whether Dockling may control Messages."
+          }
+        }
+      }
+    },
+    "拾掇等刘海 App 在刘海附近时，消息卡落在它们下面；它们的面板正展开时先排队，最多等 8 秒，之后改用刘海旁的小胶囊。只读取窗口属于哪个 App 和位置，不需要屏幕录制权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When Shiduo or another notch app is at the notch, the card drops below it; while its panel is open, the card waits up to 8 seconds and then becomes a capsule beside the notch. Only which app owns a window and where it is are read, so no Screen Recording permission is needed."
+          }
+        }
+      }
+    },
+    "消息卡总是接在刘海正下方，不管别的刘海 App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The card always hangs right below the notch, whatever other notch apps are doing."
+          }
+        }
+      }
+    },
+    "只在刘海右边显示一个小胶囊和未读数，完全不占刘海中间，点一下再展开消息卡。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only a small capsule with unread counts appears to the right of the notch, leaving its middle free; click it to open the card."
+          }
+        }
+      }
+    },
+    "辅助功能权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility Permission"
+          }
+        }
+      }
+    },
+    "读系统通知横幅需要辅助功能权限，没给时不会弹出消息卡。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading notification banners needs Accessibility. Without it, no card appears."
           }
         }
       }

@@ -36,25 +36,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dockling controls music playback from shelf widgets, reads the media playing in browser tabs, reads the Mail inbox unread count for the Mail widget, and empties the Trash and ejects disks through Finder."
+            "value" : "Dockling controls music playback from shelf widgets, reads the media playing in browser tabs, reads the Mail inbox unread count for the Mail widget, empties the Trash and ejects disks through Finder, and sends the replies you type in the Message Island card through Messages."
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，并通过访达清空废纸篓、推出磁盘。"
+            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，通过访达清空废纸篓、推出磁盘，并通过“信息”发送你在消息灵动岛卡片里输入的回复。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，并通过访达清空废纸篓、推出磁盘。"
+            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，通过访达清空废纸篓、推出磁盘，并通过“信息”发送你在消息灵动岛卡片里输入的回复。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，并通过访达清空废纸篓、推出磁盘。"
+            "value" : "码头通过程序坞小组件控制音乐播放，读取浏览器标签页中正在播放的媒体，在“邮件”小组件中读取“邮件”App 收件箱的未读数量，通过访达清空废纸篓、推出磁盘，并通过“信息”发送你在消息灵动岛卡片里输入的回复。"
           }
         }
       }

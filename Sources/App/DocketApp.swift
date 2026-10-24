@@ -216,6 +216,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         IslandController.shared.apply(state.state.island)
         state.onIslandChanged = { island in IslandController.shared.apply(island) }
 
+        // 消息灵动岛（码头 Pro，默认关）：观察系统通知横幅，信息、WhatsApp、微信的
+        // 消息在刘海下展开成卡片。没解锁或没打开时什么都不做。
+        NotchMessageController.shared.apply(state.state.notchMessage)
+
         // AI 助手的刘海对话：入口、展开面板和快捷键。会话状态和货架上的
         // AI 卡片共用一份。
         AIChatCenter.shared.app = state

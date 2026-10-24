@@ -20,7 +20,7 @@
 	<key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoadsForMedia</key><true/></dict>
 	<key>NSCalendarsFullAccessUsageDescription</key><string>Dockling shows your upcoming events in shelf widgets.</string>
 	<key>NSRemindersFullAccessUsageDescription</key><string>Dockling shows your reminders in shelf widgets and can mark them as done.</string>
-	<key>NSAppleEventsUsageDescription</key><string>Dockling controls music playback from shelf widgets, reads the media playing in browser tabs, reads the Mail inbox unread count for the Mail widget, and empties the Trash and ejects disks through Finder.</string>
+	<key>NSAppleEventsUsageDescription</key><string>Dockling controls music playback from shelf widgets, reads the media playing in browser tabs, reads the Mail inbox unread count for the Mail widget, empties the Trash and ejects disks through Finder, and sends the replies you type in the Message Island card through Messages.</string>
 	<key>NSLocationWhenInUseUsageDescription</key><string>Dockling uses your location for the Weather widget.</string>
 	<key>NSDesktopFolderUsageDescription</key><string>Dockling reads your Desktop folder to show screenshots in the Screenshots widget.</string>
 	<key>NSDownloadsFolderUsageDescription</key><string>Dockling reads your Downloads folder to show recent downloads in the Downloads widget.</string>

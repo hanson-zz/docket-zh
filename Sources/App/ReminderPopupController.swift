@@ -56,6 +56,9 @@ final class ReminderPopupCenter {
         }
     }
 
+    /// 卡片正显示着（消息灵动岛排队等它收起，见 `NotchMessagePriority`）。
+    var isShowing: Bool { panel?.isVisible == true && queue.front != nil }
+
     func shows(_ kind: ReminderSoundKind) -> Bool {
         ReminderPopupDecision.shows(kind, settings: settings)
     }

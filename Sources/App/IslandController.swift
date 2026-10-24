@@ -30,8 +30,20 @@ final class IslandController {
     private var flashGeneration = 0
     private var hideGeneration = 0
     private var screenObserver: NSObjectProtocol?
+    private var messageObserver: NSObjectProtocol?
 
-    private init() {}
+    /// 消息灵动岛的卡片展开时小胶囊让位（音量、亮度只闪一下，会议倒计时等卡片收起后
+    /// 回来），见 `NotchMessagePriority.islandYields`。
+    private init() {
+        messageObserver = NotificationCenter.default.addObserver(
+            forName: NotchMessageOccupancy.didChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.model.yielded = NotchMessagePriority.islandYields(
+                    cardExpanded: NotchMessageOccupancy.shared.cardExpanded)
+            }
+        }
+    }
 
     func apply(_ next: IslandSettings) {
         settings = next
@@ -276,9 +288,11 @@ final class IslandModel {
     /// True for a moment while a top shelf steps aside, so the capsule
     /// makes its entrance into space that is already clear.
     var held = false
+    /// 消息灵动岛的卡片正展开着：胶囊先不画，卡片收起后回来。
+    var yielded = false
 
     var content: IslandContent? { IslandContent.resolve(flash: flash, meeting: meeting) }
-    var shown: IslandContent? { held ? nil : content }
+    var shown: IslandContent? { held || yielded ? nil : content }
 }
 
 // MARK: - The capsule

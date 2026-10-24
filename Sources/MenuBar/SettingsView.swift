@@ -560,6 +560,8 @@ struct SettingsView: View {
 
             islandSection
 
+            NotchMessageSettingsSection(settings: $state.notchMessage)
+
             Section {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)
