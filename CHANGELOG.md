@@ -3,6 +3,44 @@
 The 0.1.0 entry was written by hand. Everything after it is generated from the
 commits on `main`, which is why the voice changes partway down.
 
+## [0.7.1](https://github.com/hanson-zz/docket-zh/compare/v0.7.0...v0.7.1) (2026-10-25)
+
+
+### Features
+
+* a shelf rising out of the edge, as a layered macOS 26 icon ([6d369c8](https://github.com/hanson-zz/docket-zh/commit/6d369c86056fb532870bf8d2ddc0534088d60cd7))
+* a shelf that carries widgets and nothing else ([58694c6](https://github.com/hanson-zz/docket-zh/commit/58694c6f6d91115c2b9007e8d9499c9842cacdab))
+* every panel is one graphite card with its reading on it ([cf709da](https://github.com/hanson-zz/docket-zh/commit/cf709da868d76414eb14e24c1861bfe043bae3b9))
+* every tile leads with the same badge and reads the same way ([163fdd6](https://github.com/hanson-zz/docket-zh/commit/163fdd6f0e851e112df8ffe56aaf8b73a1b86996))
+* graphite card panels, one tile structure, and the shelf stays out for the library ([10ac5a9](https://github.com/hanson-zz/docket-zh/commit/10ac5a907b57850d74b5f0f092f3a9018ab3839c))
+* Now Playing on any site, a picture-first panel, and settings that show their choices ([09ac35b](https://github.com/hanson-zz/docket-zh/commit/09ac35bb1e083d22c02342d6708fc607a09bb727))
+* Now Playing reads any site and stands on its picture ([14ae33a](https://github.com/hanson-zz/docket-zh/commit/14ae33a0efd10b4cfc77f8743ac4cc52f3fd4a3f))
+* settings and the menu show what each choice does ([4c1c446](https://github.com/hanson-zz/docket-zh/commit/4c1c446947aa3e0e89c94e3608930237f7fbae0f))
+* the cover is the music card, not a stamp on it ([00c1947](https://github.com/hanson-zz/docket-zh/commit/00c19473205292a2d60ed60e2b8b0a5afc4c6f4e))
+* the shelf rides the Mission Control swipe instead of chasing it ([56f0fe0](https://github.com/hanson-zz/docket-zh/commit/56f0fe09f50f641651fae84b29b40f8d36c3a0b6))
+* the weather strip shows rain, not five copies of the same number ([738af53](https://github.com/hanson-zz/docket-zh/commit/738af53263efa4a1d4cc4414bc201aba6fabe3f8))
+* weather leads with now, and the rings say which way they are going ([35cc3c5](https://github.com/hanson-zz/docket-zh/commit/35cc3c596f2a7d94617fd2f28750f45d3df32db4))
+
+
+### Bug Fixes
+
+* a press stays pressed until the player says otherwise ([96a7050](https://github.com/hanson-zz/docket-zh/commit/96a7050294d0d3a8fb3d7bb9ae800dc508aa7397))
+* a removed widget takes its open panel with it, and the note and watchlist panels fit in ([9f7d80f](https://github.com/hanson-zz/docket-zh/commit/9f7d80f818db4af8b24783e73a662f22cef5b411))
+* a slow player is waited out, not turned into a Connect button ([f956b38](https://github.com/hanson-zz/docket-zh/commit/f956b38f666ff09468dfe293c3fcdc20974b7203))
+* choosing a setup takes effect without a relaunch ([82f0dd6](https://github.com/hanson-zz/docket-zh/commit/82f0dd682d74dc39c5b36905ced84780866fb73c))
+* give the panel's transport a primary control and a pressed state ([9e2ec27](https://github.com/hanson-zz/docket-zh/commit/9e2ec27a1ece5e101ead1a5f021d587526669961))
+* players keep syncing when slow, and panels close with their widget ([eb5af34](https://github.com/hanson-zz/docket-zh/commit/eb5af3430c1814fae86c210268689b2333c07f75))
+* stop spending a row on one button ([6e94a33](https://github.com/hanson-zz/docket-zh/commit/6e94a339cfa771b0c7716600fc4cc04b041b2434))
+* stop the music widget mistaking its own traffic for a refusal ([affc28a](https://github.com/hanson-zz/docket-zh/commit/affc28a52fd54f63047c76fb84dd0aa1e0676375))
+* the mini music chip is the control and nothing else ([f070edd](https://github.com/hanson-zz/docket-zh/commit/f070edd518089bb46af8a0c952d3f64a34623efa))
+* the panel's tail is part of its outline, not drawn over it ([2d8fbbb](https://github.com/hanson-zz/docket-zh/commit/2d8fbbb548801ed761bfc80d50f201f28a17aa8e))
+* the panel's tail is part of its outline, not drawn over it ([159763c](https://github.com/hanson-zz/docket-zh/commit/159763cfe68e9f0176db0ca84aecdb68e97864bd))
+* the shelf answers to the wallpaper it is standing on ([cfe5203](https://github.com/hanson-zz/docket-zh/commit/cfe520376ffef42f697bc49ed25abe3ce2b27853))
+* the shelf leaves Mission Control with the swipe, not after it ([ca2d62c](https://github.com/hanson-zz/docket-zh/commit/ca2d62c84c69ffaa04b27cdca34f2f635c68b248))
+* the shelf leaves Mission Control with the swipe, not after it ([2b53e4f](https://github.com/hanson-zz/docket-zh/commit/2b53e4fadfc11203b57fe8655ad8d91d159f76bb))
+* the shelf stays out while the widget library is open ([545987f](https://github.com/hanson-zz/docket-zh/commit/545987fe87cab555c09762e5b635af419d9dface))
+* use the system's text token instead of a dimmer copy of it ([5b2a4a9](https://github.com/hanson-zz/docket-zh/commit/5b2a4a9f2ba118cf199cf469d16968dd0cc0796f))
+
 ## [0.1.9](https://github.com/nparashar150/dockset/compare/v0.1.8...v0.1.9) (2026-10-01)
 
 
