@@ -994,10 +994,10 @@ struct CalcFXPage: View {
         working = next
     }
 
-    /// 普通版打字：在末尾打字或删字时补千分位（`10000` → `10,000`）。
+    /// 普通版打字：在末尾打字或删字时补千分位（`10000` → `10,000`）。金额栏输入始终补，
+    /// 不跟卡片的千分位设置（老卡片默认关，打大数时不好读）；卡片和结果仍按设置显示。
     private func typeAmount(_ text: String) {
-        let grouping = preferences.number.grouping ?? CalcNumberStyle.defaultGrouping
-        setAmount(CurrencyDesk.regrouping(text, after: desk.amount, grouping: grouping))
+        setAmount(CurrencyDesk.regrouping(text, after: desk.amount, grouping: true))
     }
 
     /// 普通版存起来：两行和金额，卡片显示这一次换算（不进记录）。没改过就不写。
