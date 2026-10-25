@@ -65,7 +65,6 @@ struct CalculatorDetail: View {
                 switch mode {
                 case .fx:
                     CalcFXPage(instance: instance, context: context, keypadOn: keypadOn, layout: layout,
-                               onLayout: { switchLayout($0) },
                                onCarry: { openInCalc($0, commit: false) },
                                onOpenInCalc: { openInCalc($0, commit: true) })
                 case .calc:
@@ -83,15 +82,71 @@ struct CalculatorDetail: View {
             DetailSegmented(pages: CurrencyDesk.Mode.allCases, title: \.title, selected: mode) { choice in
                 switchMode(choice)
             }
-            .frame(width: 150)
+            .frame(width: 112)
             .help(tr("⌘1 汇率，⌘2 计算"))
             Spacer(minLength: 0)
+            if mode == .fx {
+                layoutPill
+            }
             if keypadAvailable {
                 keypadButton
             } else {
                 refreshButton
             }
         }
+    }
+
+    /// 汇率页顶栏中间：「普通 / 完整」两段。没解锁时「完整」带 Pro 标，点了走付费墙，不盖锁。
+    private var layoutPill: some View {
+        let canFull = ProLicenseGate.canUseFullCurrencyPage(unlocked: ProAccess.isUnlocked)
+        return HStack(spacing: 0) {
+            ForEach(CurrencyDesk.Layout.allCases, id: \.self) { choice in
+                let on = choice == layout
+                Button {
+                    guard !context.isPreview else { return }
+                    if choice == .full, !canFull {
+                        PaywallWindow.shared.show()
+                    } else {
+                        switchLayout(choice)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(choice == .simple ? tr("普通") : tr("完整"))
+                            .font(.system(size: 13, weight: on ? .bold : .semibold))
+                            .foregroundStyle(.panelPrimary.opacity(on ? 1 : 0.66))
+                            .lineLimit(1)
+                        if choice == .full, !canFull { ProBadge() }
+                    }
+                    .padding(.horizontal, 9)
+                    .frame(maxHeight: .infinity)
+                    .background {
+                        if on {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(.panelRaised).panelLift()
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .strokeBorder(.panelStroke, lineWidth: 0.8)
+                                }
+                                .padding(2)
+                        }
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? [.isSelected] : [])
+                .help(choice == .simple
+                      ? tr("换成普通版：只留输入金额和换成两行")
+                      : (canFull ? tr("换成完整版：多币种、收藏、固定、记录和小键盘")
+                                 : tr("完整版是码头 Pro 专属：多币种、收藏、固定、记录和小键盘。点一下购买、输入激活码或开始试用。")))
+            }
+        }
+        .frame(height: 28)
+        .fixedSize()
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.panelStroke, lineWidth: 0.6)
+        }
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: layout)
     }
 
     private var keypadButton: some View {
@@ -161,7 +216,7 @@ struct CalculatorDetail: View {
         if next == .calc { WidgetDetailWindow.shared.focusField { typing = true } }
     }
 
-    /// 面板里切普通版 / 完整版，记在卡片配置里，下次打开照这个。只有解锁时会调到。
+    /// 顶栏切普通版 / 完整版，记在卡片配置里，下次打开照这个。只有解锁时会调到。
     private func switchLayout(_ next: CurrencyDesk.Layout) {
         guard !context.isPreview, next != layout else { return }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { shownLayout = next }

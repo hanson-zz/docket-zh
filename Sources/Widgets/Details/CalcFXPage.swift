@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 「算」面板的汇率页，分两版（见 `CurrencyDesk.Layout`）：
 /// - 普通版（免费）：「输入金额」「换成」两行，大号数字，中间一个对调键，打字就换算；
-///   下面是正反两向汇率、更新时间、「拷贝结果」「带去计算」，底部一个低调的「完整版」入口。
+///   下面是正反两向汇率、更新时间、「拷贝结果」「带去计算」，顶栏「普通 / 完整」切换（在 CalculatorDetail）。
 /// - 完整版（Pro）：从 / 到两行、汇率、操作（收藏、固定）、多币种、收藏、记录和小键盘。
 /// 两版都是点币种在面板里打开可搜索的选择器。
 ///
@@ -20,8 +20,6 @@ struct CalcFXPage: View {
     var keypadOn: Bool
     /// 普通版还是完整版，外层按解锁和存的选择算好。
     var layout: CurrencyDesk.Layout = .full
-    /// 解锁时在面板底部切换两版。
-    var onLayout: (CurrencyDesk.Layout) -> Void = { _ in }
     /// 带去计算页：切到计算页，输入框放这个数。
     var onCarry: (String) -> Void
     /// 点了记录里不是汇率的一条：切到计算页重算它。
@@ -247,51 +245,10 @@ struct CalcFXPage: View {
 
     // MARK: 底部：来源和普通 / 完整切换
 
-    /// 数据来源，加一个低调的切换：没解锁时「完整版 Pro」走付费墙，解锁后在两版之间切。
+    /// 数据来源。普通版 / 完整版的切换在顶栏（`CalculatorDetail.layoutPill`）。
     private var footer: some View {
-        HStack(alignment: .top, spacing: 10) {
-            attribution
-                .frame(maxWidth: .infinity, alignment: .leading)
-            layoutSwitch
-        }
-    }
-
-    @ViewBuilder
-    private var layoutSwitch: some View {
-        if !context.isPreview || simple {
-            let target: CurrencyDesk.Layout = simple ? .full : .simple
-            Button {
-                guard !context.isPreview else { return }
-                if target == .full, !ProLicenseGate.canUseFullCurrencyPage(unlocked: ProAccess.isUnlocked) {
-                    PaywallWindow.shared.show()
-                } else {
-                    onLayout(target)
-                }
-            } label: {
-                HStack(spacing: 5) {
-                    Text(target.title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.panelPrimary)
-                    if target == .full { ProBadge() }
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.panelSecondary)
-                }
-                .padding(.leading, 11)
-                .padding(.trailing, 9)
-                .frame(height: 28)
-                .background(Capsule().fill(.panelFill))
-                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
-                .contentShape(.capsule)
-                .fixedSize()
-            }
-            .buttonStyle(.plain)
-            .help(target == .full
-                  ? (ProAccess.isUnlocked ? tr("换成完整版：多币种、收藏、固定、记录和小键盘")
-                                          : tr("完整版是码头 Pro 专属：多币种、收藏、固定、记录和小键盘。点一下购买、输入激活码或开始试用。"))
-                  : tr("换成普通版：只留输入金额和换成两行"))
-            .accessibilityLabel(target == .full ? tr("完整版，码头 Pro") : tr("换成普通版"))
-        }
+        attribution
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: 从 / 到
