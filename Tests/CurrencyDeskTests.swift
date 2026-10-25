@@ -414,13 +414,134 @@ final class CurrencyDeskTests: XCTestCase {
     }
 }
 
-/// 汇率页的 Pro 划分：多币种列表和卡片轮播是 Pro，其余免费。
+/// 汇率页的 Pro 划分：普通版免费，完整版（含多币种列表）和卡片轮播是 Pro。
 final class CurrencyDeskProTests: XCTestCase {
-    func testOnlyTheListAndTheRotationArePro() {
+    func testTheFullPageAndTheRotationArePro() {
+        XCTAssertFalse(ProLicenseGate.canUseFullCurrencyPage(unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canUseFullCurrencyPage(unlocked: true))
         XCTAssertFalse(ProLicenseGate.canUseCurrencyList(unlocked: false))
         XCTAssertTrue(ProLicenseGate.canUseCurrencyList(unlocked: true))
         XCTAssertFalse(ProLicenseGate.canRotateCalcFavorites(unlocked: false))
         XCTAssertTrue(ProLicenseGate.canRotateCalcFavorites(unlocked: true))
         XCTAssertFalse(ProFeatures.isProKind(.calculator), "the calculator itself stays free")
+    }
+}
+
+/// 汇率页的普通版（免费）和完整版（Pro）。
+final class CurrencyDeskLayoutTests: XCTestCase {
+
+    func testLockedAlwaysGetsTheSimplePage() {
+        XCTAssertEqual(CurrencyDesk.layout(WidgetConfig(), unlocked: false), .simple)
+        let choseFull = WidgetConfig([CurrencyDesk.layoutKey: .string("full")])
+        XCTAssertEqual(CurrencyDesk.layout(choseFull, unlocked: false), .simple, "trial over: back to simple, no lock")
+        XCTAssertEqual(choseFull.string(CurrencyDesk.layoutKey), "full", "the choice is kept for later")
+    }
+
+    func testUnlockedDefaultsToFullAndRemembersTheChoice() {
+        XCTAssertEqual(CurrencyDesk.layout(WidgetConfig(), unlocked: true), .full)
+        XCTAssertEqual(CurrencyDesk.layout(WidgetConfig([CurrencyDesk.layoutKey: .string("simple")]), unlocked: true),
+                       .simple)
+        XCTAssertEqual(CurrencyDesk.layout(WidgetConfig([CurrencyDesk.layoutKey: .string("full")]), unlocked: true),
+                       .full)
+        XCTAssertEqual(CurrencyDesk.layout(WidgetConfig([CurrencyDesk.layoutKey: .string("odd")]), unlocked: true),
+                       .full, "an unknown value falls back to full")
+        XCTAssertEqual(CurrencyDesk.Layout.allCases, [.simple, .full])
+    }
+
+    func testOldCardsKeepTheirDataWhateverTheLayout() {
+        let config = WidgetConfig([
+            SmartCalc.expressionKey: .string("100 USD to CNY"),
+            SmartCalc.historyKey: .list([.string("5 km"), .string("100 USD to CNY")]),
+            SmartCalc.pinnedKey: .string("1 EUR to CNY"),
+            CurrencyDesk.favoritesKey: .list([.string("100 USD to CNY"), .string("1 EUR to CNY")]),
+            CurrencyDesk.listKey: .list([.string("GBP"), .string("JPY")]),
+        ])
+        XCTAssertEqual(CurrencyDesk.layout(config, unlocked: false), .simple)
+        let state = CurrencyDesk.State(config)
+        XCTAssertEqual(state.from, "EUR", "an old card opens on what it shows, the pinned line")
+        XCTAssertEqual(state.to, "CNY")
+        XCTAssertEqual(state.favorites, ["100 USD to CNY", "1 EUR to CNY"])
+        XCTAssertEqual(state.list, ["GBP", "JPY"])
+    }
+
+    func testTheKeypadButtonGivesWayToRefreshOnlyOnTheSimpleCurrencyPage() {
+        XCTAssertFalse(CurrencyDesk.keypadAvailable(mode: .fx, layout: .simple))
+        XCTAssertTrue(CurrencyDesk.keypadAvailable(mode: .fx, layout: .full))
+        XCTAssertTrue(CurrencyDesk.keypadAvailable(mode: .calc, layout: .simple), "the Math page keypad stays free")
+        XCTAssertTrue(CurrencyDesk.keypadAvailable(mode: .calc, layout: .full))
+    }
+
+    private func group(_ typed: String, after previous: String, grouping: Bool = true) -> String {
+        CurrencyDesk.regrouping(typed, after: previous, grouping: grouping)
+    }
+
+    func testTypingAtTheEndAddsThousandsSeparators() {
+        XCTAssertEqual(group("1000", after: "100"), "1,000")
+        XCTAssertEqual(group("1,0000", after: "1,000"), "10,000")
+        XCTAssertEqual(group("1234567", after: "123456"), "1,234,567")
+        XCTAssertEqual(group("10,000.", after: "10,000"), "10,000.")
+        XCTAssertEqual(group("10,000.5", after: "10,000."), "10,000.5")
+        XCTAssertEqual(group("1000.25", after: "1000.2"), "1,000.25")
+        XCTAssertEqual(group("100", after: "10"), "100")
+        XCTAssertEqual(group("", after: "1"), "")
+    }
+
+    func testDeletingAtTheEndRegroups() {
+        XCTAssertEqual(group("10,00", after: "10,000"), "1,000")
+        XCTAssertEqual(group("1,00", after: "1,000"), "100")
+    }
+
+    func testEditsInTheMiddleAndSumsAreLeftAlone() {
+        XCTAssertEqual(group("15,000", after: "1,000"), "15,000")
+        XCTAssertEqual(group("1,5000", after: "1,000"), "1,5000", "inserted mid-number: keep the cursor where it is")
+        XCTAssertEqual(group("1299*3", after: "1299*"), "1299*3")
+        XCTAssertEqual(group("100 eur", after: "100 eu"), "100 eur")
+        XCTAssertEqual(group("1.2.3", after: "1.2."), "1.2.3")
+        XCTAssertEqual(group(".5", after: "."), ".5")
+        XCTAssertEqual(group("10000", after: "1000", grouping: false), "10000", "no grouping when it is off")
+    }
+
+    func testGroupedAmountsStillConvert() {
+        let rates = CurrencyRates(base: "CNY", rates: ["CNY": 1, "JPY": 21.0, "USD": 0.14],
+                                  updated: Date(timeIntervalSince1970: 1_760_000_000))
+        let state = CurrencyDesk.State(from: "JPY", to: "CNY", amount: "10,000")
+        let out = CurrencyDesk.convert(state, rates: rates)
+        XCTAssertEqual(out.reading.amount, 10_000)
+        XCTAssertEqual(out.result?.text, "476.19")
+        XCTAssertFalse(out.reading.isExpression)
+    }
+
+    func testSavingTheSimplePageUpdatesTheCardButNotHistory() {
+        var config = WidgetConfig([
+            SmartCalc.historyKey: .list([.string("5 km")]),
+            SmartCalc.pinnedKey: .string("1 EUR to CNY"),
+            CurrencyDesk.favoritesKey: .list([.string("1 EUR to CNY")]),
+            CurrencyDesk.listKey: .list([.string("GBP")]),
+            CurrencyDesk.layoutKey: .string("full"),
+        ])
+        let state = CurrencyDesk.State(from: "JPY", to: "CNY", amount: "10,000", list: ["GBP"],
+                                       favorites: ["1 EUR to CNY"])
+        CurrencyDesk.savingSimple(state, into: &config)
+        XCTAssertEqual(config.string(SmartCalc.expressionKey), "10000 JPY to CNY")
+        XCTAssertEqual(config.strings(SmartCalc.historyKey), ["5 km"], "no history on the simple page")
+        XCTAssertEqual(config.string(SmartCalc.pinnedKey), "1 EUR to CNY")
+        XCTAssertEqual(config.strings(CurrencyDesk.favoritesKey), ["1 EUR to CNY"])
+        XCTAssertEqual(config.strings(CurrencyDesk.listKey), ["GBP"])
+        XCTAssertEqual(config.string(CurrencyDesk.layoutKey), "full", "the Pro choice survives")
+        XCTAssertEqual(CurrencyDesk.State(config).amount, "10,000")
+    }
+
+    func testSavingTypedCurrenciesSettlesTheRows() {
+        var config = WidgetConfig()
+        CurrencyDesk.savingSimple(CurrencyDesk.State(from: "USD", to: "CNY", amount: "100 eur to jpy"), into: &config)
+        XCTAssertEqual(config.string(CurrencyDesk.fromKey), "EUR")
+        XCTAssertEqual(config.string(CurrencyDesk.toKey), "JPY")
+        XCTAssertEqual(config.string(SmartCalc.expressionKey), "100 EUR to JPY")
+    }
+
+    func testNothingToConvertLeavesTheCardAlone() {
+        var config = WidgetConfig([SmartCalc.expressionKey: .string("5 km")])
+        CurrencyDesk.savingSimple(CurrencyDesk.State(from: "USD", to: "CNY", amount: ""), into: &config)
+        XCTAssertEqual(config.string(SmartCalc.expressionKey), "5 km")
     }
 }

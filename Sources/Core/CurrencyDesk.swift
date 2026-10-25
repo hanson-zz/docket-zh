@@ -198,6 +198,8 @@ public enum CurrencyCatalog {
 /// - `fxFavorites`：收藏的换算，写法和记录一样（`100 USD to CNY`），卡片轮播也读它。
 /// - `mode`：面板打开在汇率页还是计算页；没存过时看卡片上那条是不是单位或算式。
 /// - `keypad`：小键盘开着没有。
+/// - `fxLayout`：汇率页用普通版（`simple`）还是完整版（`full`）。没存过时解锁了是完整版；
+///   没解锁一律普通版，存的选择和收藏、列表、记录、固定都不动，解锁后原样回来。
 ///
 /// 这些键都不进设置页（`WidgetCatalog` 的默认值里没有），只在面板里改。
 public enum CurrencyDesk {
@@ -209,6 +211,7 @@ public enum CurrencyDesk {
     public static let favoritesKey = "fxFavorites"
     public static let modeKey = "mode"
     public static let keypadKey = "keypad"
+    public static let layoutKey = "fxLayout"
 
     public static let defaultAmount = "100"
     public static let defaultList = ["JPY", "EUR", "HKD", "GBP"]
@@ -235,6 +238,68 @@ public enum CurrencyDesk {
         switch SmartCalc.parse(shown).kind {
         case .currency: return .fx
         case .unit, .math: return .calc
+        }
+    }
+
+    // MARK: 普通版 / 完整版
+
+    /// 汇率页的两种样子。
+    /// - 普通版（免费）：输入金额、换成两行，对调，汇率和更新时间，拷贝结果、带去计算。
+    ///   打字就换算，不显示小键盘、多币种、收藏、固定和记录。
+    /// - 完整版（Pro）：再加算式提示、收藏、固定、记录、多币种列表、小键盘和全部快捷键。
+    public enum Layout: String, CaseIterable, Sendable {
+        case simple, full
+
+        public var title: String {
+            switch self {
+            case .simple: tr("普通版")
+            case .full: tr("完整版")
+            }
+        }
+    }
+
+    /// 汇率页用哪一版：没解锁一律普通版（不盖锁、不改写存的选择）；解锁或试用中照存的，
+    /// 没存过是完整版。
+    public static func layout(_ config: WidgetConfig, unlocked: Bool) -> Layout {
+        guard ProLicenseGate.canUseFullCurrencyPage(unlocked: unlocked) else { return .simple }
+        return Layout(rawValue: config.string(layoutKey)) ?? .full
+    }
+
+    /// 顶栏右边那颗键：计算页和完整版汇率页是小键盘（⌘K），普通版汇率页换成刷新汇率（⌘R）。
+    public static func keypadAvailable(mode: Mode, layout: Layout) -> Bool {
+        mode == .calc || layout == .full
+    }
+
+    /// 普通版金额栏打字时补千分位：`10000` 显示成 `10,000`。只在纯数字（可带一个小数点）
+    /// 并且是在末尾打字或删字时补，改中间的数字时照原样留着，免得光标跳走。
+    /// 不带千分位的设置下不补。
+    public static func regrouping(_ typed: String, after previous: String, grouping: Bool) -> String {
+        guard grouping else { return typed }
+        let raw = typed.replacingOccurrences(of: ",", with: "")
+        let old = previous.replacingOccurrences(of: ",", with: "")
+        guard !raw.isEmpty, raw.allSatisfy({ $0.isASCII && ($0.isNumber || $0 == ".") }),
+              raw.filter({ $0 == "." }).count <= 1, raw.first != "."
+        else { return typed }
+        guard raw.hasPrefix(old) || old.hasPrefix(raw) else { return typed }
+        let parts = raw.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
+        let whole = Array(parts[0])
+        var grouped = ""
+        for (index, digit) in whole.enumerated() {
+            if index > 0, (whole.count - index) % 3 == 0 { grouped.append(",") }
+            grouped.append(digit)
+        }
+        return parts.count > 1 ? grouped + "." + parts[1] : grouped
+    }
+
+    /// 普通版存起来：两行和金额照存，卡片显示这一次换算（不进记录）。收藏、多币种列表、
+    /// 记录和固定的那条都不碰。金额栏空着或算不出来时卡片不动。
+    public static func savingSimple(_ state: State, into config: inout WidgetConfig,
+                                    codes: Set<String> = SmartCalc.commonCodes) {
+        let settled = settled(state, codes: codes)
+        settled.write(into: &config)
+        guard !settled.amount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if let entry = entry(settled, codes: codes) {
+            config.set(SmartCalc.expressionKey, .string(entry))
         }
     }
 

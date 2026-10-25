@@ -231,9 +231,14 @@ public enum ProLicenseGate {
     /// 改提醒。没解锁时提醒照旧存着，只显示不生效。
     public static func canUseCryptoAlerts(unlocked: Bool) -> Bool { unlocked }
 
-    /// 「算」面板汇率页的多币种列表（Pro）：一个金额同时换成收藏的几种币。没解锁时
-    /// 列表位置换成一行说明，点了弹付费墙；存着的列表不动，解锁或试用后原样回来。
-    /// 从 / 到两行、对调、币种搜索、算式、记录、收藏和小键盘都免费。
+    /// 「算」面板汇率页的完整版（Pro）：收藏、固定、记录、多币种列表、小键盘和全部快捷键。
+    /// 没解锁时汇率页是普通版（输入金额、选币种、对调、汇率、拷贝结果、带去计算），不盖锁；
+    /// 底部一个低调的「完整版」入口走付费墙。存着的收藏、列表、记录和固定都不动，解锁后
+    /// 原样回来。计算页（算式、单位、记录、固定、小键盘）照旧免费。见 `CurrencyDesk.layout`。
+    public static func canUseFullCurrencyPage(unlocked: Bool) -> Bool { unlocked }
+
+    /// 「算」面板汇率页的多币种列表（Pro）：一个金额同时换成收藏的几种币。存着的
+    /// 列表在没解锁时不动，解锁或试用后原样回来。只在完整版里出现，完整版本身也是 Pro。
     public static func canUseCurrencyList(unlocked: Bool) -> Bool { unlocked }
 
     /// 「算」卡片轮播收藏的换算（Pro）：收藏两条以上、没有固定别的时卡片每几秒换一条。

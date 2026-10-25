@@ -2,11 +2,13 @@ import AppKit
 import SwiftUI
 
 /// 「算」的面板，顶上分两页：
-/// - 汇率：从 / 到两行、对调、币种搜索、多币种（Pro）、收藏和记录，见 `CalcFXPage`。
+/// - 汇率：普通版（免费）输入金额、选币种直接换算；完整版（Pro）再加多币种、收藏、
+///   固定、记录和小键盘，见 `CalcFXPage`、`CurrencyDesk.layout`。
 /// - 计算：一个输入框，结果跟着每次按键变；回车记下这一条，卡片上显示它，
 ///   最近记录里三种（汇率、单位、计算）混排。识别和计算在 `SmartCalc`。
-/// 两页共用记录和小键盘（⌘K 显示 / 收起），⌘1 / ⌘2 切页，打开在哪页记在
-/// 卡片配置的 `mode`（见 `CurrencyDesk.mode`）。
+/// 计算页和完整版汇率页共用记录和小键盘（⌘K 显示 / 收起）；普通版汇率页顶栏右边是
+/// 刷新汇率（⌘R）。⌘1 / ⌘2 切页，打开在哪页记在卡片配置的 `mode`（见 `CurrencyDesk.mode`），
+/// 汇率页用哪一版记在 `fxLayout`。
 struct CalculatorDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -14,6 +16,7 @@ struct CalculatorDetail: View {
     @State private var draft: String?
     @State private var copied = false
     @State private var shownMode: CurrencyDesk.Mode?
+    @State private var shownLayout: CurrencyDesk.Layout?
     @FocusState private var typing: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -22,6 +25,17 @@ struct CalculatorDetail: View {
         shownMode ?? (context.isPreview ? .fx : CurrencyDesk.mode(current.config))
     }
     private var keypadOn: Bool { !context.isPreview && current.config.bool(CurrencyDesk.keypadKey) }
+
+    /// 汇率页用哪一版：没解锁一律普通版（不盖锁），解锁或试用照存的选择，没选过是完整版。
+    /// 库里的预览是普通版，和所有人默认看到的一样。
+    private var layout: CurrencyDesk.Layout {
+        guard !context.isPreview else { return .simple }
+        let unlocked = ProAccess.isUnlocked
+        guard ProLicenseGate.canUseFullCurrencyPage(unlocked: unlocked) else { return .simple }
+        return shownLayout ?? CurrencyDesk.layout(current.config, unlocked: unlocked)
+    }
+
+    private var keypadAvailable: Bool { CurrencyDesk.keypadAvailable(mode: mode, layout: layout) }
 
     private var service: CurrencyService { CurrencyService.shared }
     private var preferences: SmartCalc.Preferences { SmartCalc.Preferences(instance.config) }
@@ -50,7 +64,8 @@ struct CalculatorDetail: View {
                 header
                 switch mode {
                 case .fx:
-                    CalcFXPage(instance: instance, context: context, keypadOn: keypadOn,
+                    CalcFXPage(instance: instance, context: context, keypadOn: keypadOn, layout: layout,
+                               onLayout: { switchLayout($0) },
                                onCarry: { openInCalc($0, commit: false) },
                                onOpenInCalc: { openInCalc($0, commit: true) })
                 case .calc:
@@ -71,20 +86,47 @@ struct CalculatorDetail: View {
             .frame(width: 150)
             .help(tr("⌘1 汇率，⌘2 计算"))
             Spacer(minLength: 0)
-            Button { toggleKeypad() } label: {
-                Image(systemName: "circle.grid.3x3.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(keypadOn ? Color.panelRaised : Color.panelFill).panelLift(keypadOn))
-                    .overlay { Circle().strokeBorder(.panelStroke, lineWidth: 0.7) }
-                    .contentShape(.circle)
+            if keypadAvailable {
+                keypadButton
+            } else {
+                refreshButton
             }
-            .buttonStyle(.plain)
-            .disabled(context.isPreview)
-            .help(keypadOn ? tr("收起小键盘（⌘K）") : tr("显示小键盘（⌘K）"))
-            .accessibilityLabel(keypadOn ? tr("收起小键盘") : tr("显示小键盘"))
         }
+    }
+
+    private var keypadButton: some View {
+        Button { toggleKeypad() } label: {
+            Image(systemName: "circle.grid.3x3.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(keypadOn ? Color.panelRaised : Color.panelFill).panelLift(keypadOn))
+                .overlay { Circle().strokeBorder(.panelStroke, lineWidth: 0.7) }
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .help(keypadOn ? tr("收起小键盘（⌘K）") : tr("显示小键盘（⌘K）"))
+        .accessibilityLabel(keypadOn ? tr("收起小键盘") : tr("显示小键盘"))
+    }
+
+    /// 普通版汇率页顶栏右边：刷新汇率，取的时候转半圈。
+    private var refreshButton: some View {
+        Button { service.refresh(force: true) } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.panelPrimary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.panelFill))
+                .overlay { Circle().strokeBorder(.panelStroke, lineWidth: 0.7) }
+                .contentShape(.circle)
+                .rotationEffect(.degrees(service.loading && !reduceMotion ? 180 : 0))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: service.loading)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview || service.loading)
+        .help(tr("刷新汇率（⌘R）"))
+        .accessibilityLabel(tr("刷新汇率"))
     }
 
     @ViewBuilder
@@ -93,7 +135,9 @@ struct CalculatorDetail: View {
             ZStack {
                 Button("") { switchMode(.fx) }.keyboardShortcut("1", modifiers: .command)
                 Button("") { switchMode(.calc) }.keyboardShortcut("2", modifiers: .command)
-                Button("") { toggleKeypad() }.keyboardShortcut("k", modifiers: .command)
+                if keypadAvailable {
+                    Button("") { toggleKeypad() }.keyboardShortcut("k", modifiers: .command)
+                }
                 if mode == .calc {
                     Button("") {
                         if case .success(let out)? = evaluate(text) { copy(out) }
@@ -115,6 +159,13 @@ struct CalculatorDetail: View {
         guard !context.isPreview else { return }
         WidgetWriter.write(current) { $0.set(CurrencyDesk.modeKey, .string(next.rawValue)) }
         if next == .calc { WidgetDetailWindow.shared.focusField { typing = true } }
+    }
+
+    /// 面板里切普通版 / 完整版，记在卡片配置里，下次打开照这个。只有解锁时会调到。
+    private func switchLayout(_ next: CurrencyDesk.Layout) {
+        guard !context.isPreview, next != layout else { return }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { shownLayout = next }
+        WidgetWriter.write(current) { $0.set(CurrencyDesk.layoutKey, .string(next.rawValue)) }
     }
 
     private func toggleKeypad() {

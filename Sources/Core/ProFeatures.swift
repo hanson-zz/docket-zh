@@ -46,9 +46,10 @@ import Foundation
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 /// - 消息灵动岛（信息、WhatsApp、微信的消息卡，`NotchMessageSettings`），见
 ///   `ProLicenseGate.notchMessageActive`。
-/// - 「算」汇率页的多币种列表和卡片轮播收藏的换算，见
-///   `ProLicenseGate.canUseCurrencyList`、`canRotateCalcFavorites`。从 / 到换算、对调、
-///   币种搜索、算式、记录、收藏和小键盘免费。
+/// - 「算」汇率页的完整版（收藏、固定、记录、多币种列表、小键盘、全部快捷键）和卡片轮播
+///   收藏的换算，见 `ProLicenseGate.canUseFullCurrencyPage`、`canUseCurrencyList`、
+///   `canRotateCalcFavorites`。普通版汇率页（输入金额、选币种、对调、汇率、拷贝结果、
+///   带去计算）和整个计算页免费。
 /// - 截图编辑工具条的截图翻译（译文盖在截图上，翻译面板的「截图翻译」同一个）和贴图，
 ///   见 `ShotFeature`、`ProLicenseGate.canUseShotFeature`。标注、取字、存文件、拷贝免费。
 public enum ProFeatures {

@@ -2069,17 +2069,6 @@
         }
       }
     },
-    "一个金额同时换成多种货币" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "One amount in several currencies at once"
-          }
-        }
-      }
-    },
     "上一个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2413,6 +2402,127 @@
         }
       }
     },
+    "普通版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple"
+          }
+        }
+      }
+    },
+    "完整版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full"
+          }
+        }
+      }
+    },
+    "输入金额" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount"
+          }
+        }
+      }
+    },
+    "换成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted to"
+          }
+        }
+      }
+    },
+    "打字就换算，不用按回车" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converts as you type, no need to press Return"
+          }
+        }
+      }
+    },
+    "拷贝结果（⌘C）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy result (⌘C)"
+          }
+        }
+      }
+    },
+    "换成完整版：多币种、收藏、固定、记录和小键盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to Full: multi-currency list, favourites, pinning, history and keypad"
+          }
+        }
+      }
+    },
+    "完整版是码头 Pro 专属：多币种、收藏、固定、记录和小键盘。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Full page is part of Dockling Pro: multi-currency list, favourites, pinning, history and keypad. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
+    "换成普通版：只留输入金额和换成两行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to Simple: just Amount and Converted to"
+          }
+        }
+      }
+    },
+    "完整版，码头 Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full, Dockling Pro"
+          }
+        }
+      }
+    },
+    "换成普通版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch to Simple"
+          }
+        }
+      }
+    },
     "包含已最小化、已隐藏的窗口" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2732,17 +2842,6 @@
         }
       }
     },
-    "多币种列表是码头 Pro 专属。点一下购买、输入激活码或开始试用。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The multi-currency list is part of Dockling Pro. Click to buy, enter a license key or start a trial."
-          }
-        }
-      }
-    },
     "完成 %@ 项，共 %@ 项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2959,13 +3058,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的多币种列表和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; the multi-currency list and rotating favourites in Calc; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders"
           }
         }
       }
@@ -28834,17 +28933,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click a row to make it the From currency; the amount follows"
-          }
-        }
-      }
-    },
-    "点一行设为基准，可增删和拖动排序" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click a row to make it the base; add, remove and reorder"
           }
         }
       }

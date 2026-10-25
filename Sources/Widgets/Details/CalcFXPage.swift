@@ -1,8 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// 「算」面板的汇率页：从 / 到两行，大号数字，中间一个对调键；点币种在面板里
-/// 打开可搜索的选择器；下面是汇率本身和更新时间、操作、多币种（Pro）、收藏和记录。
+/// 「算」面板的汇率页，分两版（见 `CurrencyDesk.Layout`）：
+/// - 普通版（免费）：「输入金额」「换成」两行，大号数字，中间一个对调键，打字就换算；
+///   下面是正反两向汇率、更新时间、「拷贝结果」「带去计算」，底部一个低调的「完整版」入口。
+/// - 完整版（Pro）：从 / 到两行、汇率、操作（收藏、固定）、多币种、收藏、记录和小键盘。
+/// 两版都是点币种在面板里打开可搜索的选择器。
 ///
 /// 金额栏可以写算式（`1299*3+50`），也可以连币种一起写（`100 eur to jpy`），两行跟着变。
 /// 判断和换算都在 Core 的 `CurrencyDesk`，这里只负责画、接键盘和写配置。
@@ -10,10 +13,15 @@ import SwiftUI
 /// 键盘：↩ 记下这一条（卡片显示它，进记录），⌘C 拷贝结果，⌘⇧C 拷贝整句，
 /// ⌘⇧S 对调，⌘D 收藏，⌘E 带去计算页，⌘R 刷新汇率，⌘[ / ⌘] 选「从」/「到」的币种，
 /// 金额栏里 ↑ ↓ 在「到」和多币种列表之间换。选择器里 ↑ ↓ 选、↩ 确定。
+/// 普通版只接 ⌘C、⌘⇧S、⌘E、⌘R、⌘[ / ⌘]（⌘1 / ⌘2 在外层），↩ 只把这一条放到卡片上，不进记录。
 struct CalcFXPage: View {
     var instance: WidgetInstance
     var context: WidgetContext
     var keypadOn: Bool
+    /// 普通版还是完整版，外层按解锁和存的选择算好。
+    var layout: CurrencyDesk.Layout = .full
+    /// 解锁时在面板底部切换两版。
+    var onLayout: (CurrencyDesk.Layout) -> Void = { _ in }
     /// 带去计算页：切到计算页，输入框放这个数。
     var onCarry: (String) -> Void
     /// 点了记录里不是汇率的一条：切到计算页重算它。
@@ -41,6 +49,7 @@ struct CalcFXPage: View {
     private var gold: Color { Color(hex: "#F5C451") }
     private var unlocked: Bool { context.isPreview || ProAccess.isUnlocked }
     private var listOn: Bool { ProLicenseGate.canUseCurrencyList(unlocked: unlocked) }
+    private var simple: Bool { layout == .simple }
 
     /// 写过之后面板拿到的可能还是打开时那份，写之前读最新存着的。
     private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
@@ -79,6 +88,8 @@ struct CalcFXPage: View {
         VStack(alignment: .leading, spacing: 12) {
             if let picking {
                 picker(picking)
+            } else if simple {
+                simplePage(out)
             } else {
                 rows(out)
                 rateLine(out)
@@ -90,7 +101,7 @@ struct CalcFXPage: View {
                     favorites
                     tape
                 }
-                attribution
+                footer
             }
         }
         .background { shortcuts(out) }
@@ -99,7 +110,188 @@ struct CalcFXPage: View {
             service.start()
             WidgetDetailWindow.shared.focusField { focus = .amount }
         }
-        .onDisappear { persist() }
+        .onDisappear {
+            if simple { saveSimple() } else { persist() }
+        }
+    }
+
+    // MARK: 普通版
+
+    /// 普通版：输入金额、换成两行，汇率，两个按钮。打字就换算，不用按回车。
+    private func simplePage(_ out: CurrencyDesk.Conversion) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(spacing: 8) {
+                simpleInputRow(out)
+                simpleResultRow(out)
+            }
+            .overlay { swapButton }
+            simpleRateLine(out)
+            HStack(spacing: 8) {
+                PanelButton(title: flash == "copy" ? tr("已复制") : tr("拷贝结果"),
+                            symbol: flash == "copy" ? "checkmark" : "doc.on.doc", prominent: true) {
+                    copy(out.copyText)
+                }
+                .disabled(out.result == nil)
+                .help(tr("拷贝结果（⌘C）"))
+                PanelButton(title: tr("带去计算"), symbol: "plus.forwardslash.minus") { carry(out) }
+                    .disabled(out.result == nil)
+                    .help(tr("把结果带到计算页接着算（⌘E）"))
+            }
+            Text(tr("打字就换算，不用按回车"))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+                .frame(maxWidth: .infinity)
+            footer
+        }
+    }
+
+    private func simpleInputRow(_ out: CurrencyDesk.Conversion) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text(tr("输入金额"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                Spacer(minLength: 4)
+                // 写错了或写了算式时，在这一行右边小字说一声，两行高度不跳。
+                if let failure = out.reading.failure {
+                    Text(failure.message)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                } else if out.reading.isExpression {
+                    Text(verbatim: "= " + out.amountText)
+                        .font(.system(size: 13, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.panelSecondary)
+                }
+            }
+            .lineLimit(1)
+            HStack(alignment: .center, spacing: 10) {
+                currencyButton(out.reading.from, side: .from)
+                TextField("", text: Binding(get: { desk.amount }, set: { typeAmount($0) }),
+                          prompt: Text(verbatim: "1").foregroundStyle(.panelTertiary))
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                    .font(.system(size: 32, weight: .bold).monospacedDigit())
+                    .foregroundStyle(.panelPrimary)
+                    .focused($focus, equals: .amount)
+                    .onSubmit { saveSimple() }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .accessibilityLabel(tr("输入金额"))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .frame(height: 96, alignment: .top)
+        .glassPane(cornerRadius: 16)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(focus == .amount ? accent.panelGraphic.opacity(0.9) : Color.clear, lineWidth: 1.4)
+        }
+        .contentShape(.rect)
+        .onTapGesture { WidgetDetailWindow.shared.focusField { focus = .amount } }
+    }
+
+    private func simpleResultRow(_ out: CurrencyDesk.Conversion) -> some View {
+        let code = out.reading.to
+        let text = out.result?.text ?? "-"
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(tr("换成"))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+            HStack(alignment: .center, spacing: 10) {
+                currencyButton(code, side: .to)
+                Button { copy(out.copyText) } label: {
+                    Text(verbatim: text)
+                        .font(.system(size: 32, weight: .bold).monospacedDigit())
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.45)
+                        .rollingValue(text)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(out.result == nil)
+                .help(tr("点数字拷贝结果（⌘C）"))
+                .accessibilityLabel(tr("结果 \(text) \(code)，点按拷贝"))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .frame(height: 96, alignment: .top)
+        .glassPane(cornerRadius: 16)
+    }
+
+    /// 正反两向汇率在左，更新时间（离线时橙色写日期）在右；刷新键在顶栏。
+    private func simpleRateLine(_ out: CurrencyDesk.Conversion) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: out.rateLine ?? tr("暂时没有 \(out.reading.to) 的汇率"))
+                    .font(.system(size: 15, weight: .bold).monospacedDigit())
+                    .foregroundStyle(.panelPrimary)
+                if let inverse = out.inverseLine {
+                    Text(verbatim: inverse)
+                        .font(.system(size: 13, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.panelSecondary)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            Spacer(minLength: 4)
+            Text(status)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(offline ? Color(hex: "#FF9F0A").panelReadable : Color.panelSecondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    // MARK: 底部：来源和普通 / 完整切换
+
+    /// 数据来源，加一个低调的切换：没解锁时「完整版 Pro」走付费墙，解锁后在两版之间切。
+    private var footer: some View {
+        HStack(alignment: .top, spacing: 10) {
+            attribution
+                .frame(maxWidth: .infinity, alignment: .leading)
+            layoutSwitch
+        }
+    }
+
+    @ViewBuilder
+    private var layoutSwitch: some View {
+        if !context.isPreview || simple {
+            let target: CurrencyDesk.Layout = simple ? .full : .simple
+            Button {
+                guard !context.isPreview else { return }
+                if target == .full, !ProLicenseGate.canUseFullCurrencyPage(unlocked: ProAccess.isUnlocked) {
+                    PaywallWindow.shared.show()
+                } else {
+                    onLayout(target)
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Text(target.title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
+                    if target == .full { ProBadge() }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.panelSecondary)
+                }
+                .padding(.leading, 11)
+                .padding(.trailing, 9)
+                .frame(height: 28)
+                .background(Capsule().fill(.panelFill))
+                .overlay { Capsule().strokeBorder(.panelStroke, lineWidth: 0.6) }
+                .contentShape(.capsule)
+                .fixedSize()
+            }
+            .buttonStyle(.plain)
+            .help(target == .full
+                  ? (ProAccess.isUnlocked ? tr("换成完整版：多币种、收藏、固定、记录和小键盘")
+                                          : tr("完整版是码头 Pro 专属：多币种、收藏、固定、记录和小键盘。点一下购买、输入激活码或开始试用。"))
+                  : tr("换成普通版：只留输入金额和换成两行"))
+            .accessibilityLabel(target == .full ? tr("完整版，码头 Pro") : tr("换成普通版"))
+        }
     }
 
     // MARK: 从 / 到
@@ -352,7 +544,7 @@ struct CalcFXPage: View {
                 }
             }
             if !listOn {
-                lockedList
+                EmptyView()
             } else if editingList {
                 editList
             } else if out.list.isEmpty {
@@ -403,38 +595,6 @@ struct CalcFXPage: View {
         .disabled(context.isPreview)
         .help(tr("设为「从」"))
         .accessibilityLabel(tr("\(CurrencyCatalog.name(line.code)) \(line.text)，点按设为「从」"))
-    }
-
-    /// 没解锁：一行说明，点了弹付费墙。存着的列表不动。
-    private var lockedList: some View {
-        Button {
-            guard !context.isPreview else { return }
-            PaywallWindow.shared.show()
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(tr("一个金额同时换成多种货币"))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.panelPrimary)
-                    Text(tr("点一行设为基准，可增删和拖动排序"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.panelSecondary)
-                }
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 60)
-            .contentShape(.rect)
-            .glassPane(cornerRadius: 12)
-        }
-        .buttonStyle(.plain)
-        .help(tr("多币种列表是码头 Pro 专属。点一下购买、输入激活码或开始试用。"))
     }
 
     private var editList: some View {
@@ -807,13 +967,16 @@ struct CalcFXPage: View {
         if picking == nil, !context.isPreview {
             ZStack {
                 Button("") { copy(out.copyText) }.keyboardShortcut("c", modifiers: .command)
-                Button("") { copy(out.sentence, flashKey: "copy") }.keyboardShortcut("c", modifiers: [.command, .shift])
                 Button("") { swapRows() }.keyboardShortcut("s", modifiers: [.command, .shift])
-                Button("") { toggleFavorite() }.keyboardShortcut("d", modifiers: .command)
                 Button("") { carry(out) }.keyboardShortcut("e", modifiers: .command)
                 Button("") { service.refresh(force: true) }.keyboardShortcut("r", modifiers: .command)
                 Button("") { open(.from) }.keyboardShortcut("[", modifiers: .command)
                 Button("") { open(.to) }.keyboardShortcut("]", modifiers: .command)
+                // 完整版（Pro）才有的：拷贝整句、收藏。
+                if !simple {
+                    Button("") { copy(out.sentence, flashKey: "copy") }.keyboardShortcut("c", modifiers: [.command, .shift])
+                    Button("") { toggleFavorite() }.keyboardShortcut("d", modifiers: .command)
+                }
             }
             .buttonStyle(.plain)
             .opacity(0)
@@ -829,6 +992,20 @@ struct CalcFXPage: View {
         var next = desk
         next.amount = text
         working = next
+    }
+
+    /// 普通版打字：在末尾打字或删字时补千分位（`10000` → `10,000`）。
+    private func typeAmount(_ text: String) {
+        let grouping = preferences.number.grouping ?? CalcNumberStyle.defaultGrouping
+        setAmount(CurrencyDesk.regrouping(text, after: desk.amount, grouping: grouping))
+    }
+
+    /// 普通版存起来：两行和金额，卡片显示这一次换算（不进记录）。没改过就不写。
+    private func saveSimple() {
+        guard !context.isPreview, let working else { return }
+        let known = self.codes
+        WidgetWriter.write(current) { CurrencyDesk.savingSimple(working, into: &$0, codes: known) }
+        self.working = CurrencyDesk.settled(working, codes: known)
     }
 
     private func press(_ key: CurrencyDesk.Key) {
