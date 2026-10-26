@@ -2402,6 +2402,72 @@
         }
       }
     },
+    "发到快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to Quick To-Do"
+          }
+        }
+      }
+    },
+    "回车接着写下一条，Shift 加回车换行，Command 加回车收起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return adds the next item, Shift-Return starts a new line, Command-Return finishes"
+          }
+        }
+      }
+    },
+    "字体、字号和纸色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font, Size and Paper Color"
+          }
+        }
+      }
+    },
+    "已保存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
+    "已发到快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to Quick To-Do"
+          }
+        }
+      }
+    },
+    "扩展栏上没有快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Quick To-Do yet"
+          }
+        }
+      }
+    },
     "普通版" : {
       "extractionState" : "manual",
       "localizations" : {

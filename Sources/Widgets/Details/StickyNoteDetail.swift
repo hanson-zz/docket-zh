@@ -4,15 +4,17 @@ import SwiftUI
 /// The sticky note at length: the same paper the shelf shows, at a size a note
 /// can be written on rather than glanced at.
 ///
-/// 从上到下：顶栏（叠放「2/3」、带角标的垃圾桶）、最上面那张纸（能直接写，字体和
-/// 字号按这张便签的设置）、工具条（「清单」⌘⇧L 和「⋯」菜单）、字体、字号、这张纸的
-/// 颜色（免费五种，其余带锁的是 Pro）、底栏（上一张 ⌘[、下一张 ⌘] 两个纯图标，
-/// 「新一张」「撕掉」图标加短字，13pt，中英文都不截断）。
+/// 便签 v3（瘦身）：便签是「随手纸」，没有日期、没有提醒，不做待办那一套。
 ///
-/// 清单：行首的各种框（见 `StickyChecklist`）不在写字时画成可点的圆圈，点一下即完成，
-/// 划线、换成淡墨（对比度约 5.0，不低于 4.5），默认沉到「已完成」下面（「⋯」里可关），
-/// 标题旁显示进度 2/5。这一版保留 `TextField`：写字时照原样显示框子的字，失焦后才画圆圈。
-/// 认不出的框（`[1]`）不偷改，纸底问一次「变成清单」。
+/// 从上到下：顶栏（叠放「2/3」、一闪而过的「已保存」、带角标的垃圾桶）、最上面那张纸
+/// （固定高度，长了在纸里滚，工具条不被推走）、工具条（「清单」⌘⇧L、「Aa」弹层收着
+/// 字体字号纸色、清单进度、「⋯」菜单）、底栏（上一张 ⌘[、下一张 ⌘]、「新一张」⌘N、
+/// 「撕掉」）。
+///
+/// 打开面板光标就在末尾（有清单也一样），新一张、翻页后同样直接能写。清单项写字时也是
+/// 圆圈（见 `StickyNoteEditor`），点圆圈即勾，勾掉的淡墨划线，不挪位置、不弹撤销。
+/// 回车在这一条后面接下一条，⇧↩ 普通换行，⌘↩ 收起编辑。停手半秒自动保存，顶栏淡淡
+/// 显示一下「已保存」。右键一行「发到快速待办」，原行保留。
 ///
 /// 撕掉：不弹确认，纸从胶带下撕开、右下角卷起、飞进顶栏的垃圾桶（约 0.5 秒，减少
 /// 动态效果时直接淡出），底部 5 秒撤销；撕下的纸在垃圾桶里留 7 天、最多 30 张。
@@ -20,6 +22,13 @@ import SwiftUI
 struct StickyNoteDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
+
+    init(instance: WidgetInstance, context: WidgetContext) {
+        self.instance = instance
+        self.context = context
+        // 一开始就是这张的字：编辑器造出来时就把光标放到真正的末尾。
+        _draft = State(initialValue: StickyStack.pile(instance.config).front.text)
+    }
 
     private var unlocked: Bool { ProAccess.isUnlocked || context.isPreview }
 
@@ -31,23 +40,23 @@ struct StickyNoteDetail: View {
     /// Every `PaperColor` but the two dark ones is a light swatch, so the ink
     /// is fixed rather than semantic, which would go white and vanish.
     private var ink: Color { Color(hex: swatch.inkHex) }
-    /// 勾掉的项用的淡墨，对比度约 5.0（见 `PaperInk.faded`）。
-    private var fadedInk: Color { Color(hex: PaperInk.faded(on: swatch.hex)) }
 
     /// What is being typed, kept apart from the stored note so the profile is
     /// written once the sentence is finished rather than once per keystroke.
+    /// 输入法组字时编辑器不往外报字，这里永远没有没上屏的拼音。
     @State private var draft = ""
-    @FocusState private var writing: Bool
-    /// 最近一次选区落在的几行：点「清单」按钮时输入框可能已经失焦。
-    ///
-    /// 选区不再用 `TextField(selection:)` 绑成 `TextSelection`：输入法组字时它带的
-    /// `String.Index` 属于另一版字（比 `draft` 长），拿去算位置会越界崩溃（beta.32
-    /// 真机崩溃，见 `selectedLines()`）。现在从系统的字段编辑器读 `NSRange`，只是整数。
-    @State private var lastLines: ClosedRange<Int>?
+    /// 光标在不在纸上（编辑器报上来的）。
+    @State private var editing = false
+    /// 换一个就把光标放到纸的末尾：新一张、翻页、撕掉之后。
+    @State private var focusToken = UUID()
+    @State private var editor = StickyEditorHandle()
     @State private var showingTrash = false
+    @State private var showingStyle = false
     @State private var undo: StickyUndo?
     /// 每记一步换一个，撤销提示从最后一次改动起停 5 秒。
     @State private var undoToken = UUID()
+    /// 顶栏一闪而过的小字：「已保存」「已发到快速待办」。
+    @State private var hint: StickyHint?
     /// 正在飞进垃圾桶的那张纸。
     @State private var flight: StickyFlight?
     /// 认不出的框问过、点了“✕”的那几张（按第几张记，这次打开面板里不再问）。
@@ -62,10 +71,9 @@ struct StickyNoteDetail: View {
     private var noteFont: StickyNoteFont { StickyNoteFont.of(instance.config) }
     private var noteSize: StickyNoteSize { StickyNoteSize.of(instance.config) }
     private var pointSize: CGFloat { CGFloat(StickyNoteType.panel(noteFont, noteSize)) }
-    private var sinkDone: Bool { StickyChecklist.sinksDone(instance.config) }
 
-    /// 有清单项、又没在写字时，纸上画成能点的圆圈。
-    private var showsChecklist: Bool { !writing && StickyChecklist.hasItems(draft) }
+    /// 纸里写字的那块固定高，长文本在里面滚。
+    static let paperHeight: CGFloat = 236
 
     private var trash: [StickyTrash.Entry] {
         context.isPreview ? [] : StickyTrash.entries(instance.config, now: Date())
@@ -88,8 +96,6 @@ struct StickyNoteDetail: View {
             topBar
             sheet
             toolbar
-            styleRows
-            colorRow
             stackRow
             if let undo {
                 StickyUndoBar(caption: undo.caption) { revert(undo) }
@@ -105,6 +111,25 @@ struct StickyNoteDetail: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
+        }
+        .onAppear { draft = stored }
+        .onDisappear { commitLater() }
+        // One panel serves every note in turn, and flipping hands it
+        // another sheet; take that sheet's words unless the caret is
+        // still mid-sentence in this one.
+        .onChange(of: stored) { _, note in if !editing { draft = note } }
+        // 边打边存：停手半秒就写进去，不只等失焦。每次写都是一次配置保存，所以等停手，
+        // 不逐字写；组字时编辑器不报字，拼音不会存进去。存了顶栏淡淡显示「已保存」。
+        .task(id: draft) {
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, !editor.isComposing, commit() else { return }
+            flash(.saved)
+        }
+        .task(id: hint?.id) {
+            guard let hint else { return }
+            try? await Task.sleep(for: .seconds(hint.kind.seconds))
+            guard !Task.isCancelled, self.hint?.id == hint.id else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.4)) { self.hint = nil }
         }
         .task(id: undoToken) {
             guard undo != nil else { return }
@@ -140,10 +165,19 @@ struct StickyNoteDetail: View {
                     .accessibilityLabel(tr("第 \(pile.page + 1) 张，共 \(pile.count) 张"))
             }
             Spacer(minLength: 0)
+            if let hint {
+                Label(hint.kind.title, systemImage: hint.kind.symbol)
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .transition(.opacity)
+                    .id(hint.id)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
             Button {
                 guard !context.isPreview else { return }
                 commit()
-                writing = false
                 StickyLog.purgeTrash(instance)
                 withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { showingTrash = true }
             } label: {
@@ -186,18 +220,22 @@ struct StickyNoteDetail: View {
                 StickyPaper(color: swatch, tape: true, curl: true, curlSize: 26)
             }
         } content: {
-            // Return finishes the note and Shift-Return breaks the line, which
-            // is the vertical field's own behaviour: a note is usually one
-            // thought, and the panel is open to be written in, not read.
             VStack(alignment: .leading, spacing: 10) {
-                ZStack(alignment: .topLeading) {
-                    if showsChecklist { checklist }
-                    field
-                }
-                .overlay(alignment: .topTrailing) {
-                    // 第一行就是清单项、没有标题时，进度放右上角。
-                    if showsChecklist, StickyChecklist.titleLine(draft) == nil { progressPill }
-                }
+                StickyNoteEditor(
+                    text: $draft,
+                    look: .init(font: noteFont, size: pointSize, ink: swatch.inkHex,
+                                faded: PaperInk.faded(on: swatch.hex), paper: swatch.hex),
+                    editable: !context.isPreview,
+                    focusToken: focusToken,
+                    handle: editor,
+                    onEditingChanged: { focused in
+                        editing = focused
+                        if !focused { commitLater() }
+                    },
+                    onCollapse: collapse,
+                    onSend: send)
+                .frame(maxWidth: .infinity)
+                .frame(height: Self.paperHeight)
                 askBar
             }
         }
@@ -208,182 +246,28 @@ struct StickyNoteDetail: View {
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { sheetFrame = $0 }
     }
 
-    private var field: some View {
-        TextField("", text: $draft, axis: .vertical)
-            .textFieldStyle(.plain)
-            .focused($writing)
-            .font(StickyFont.font(noteFont, size: pointSize))
-            .foregroundStyle(ink)
-            .lineSpacing(4)
-            .onSubmit {
-                // 在清单项上回车接着下一项；空的一项上再回车收尾，和备忘录一样。
-                let next = StickyChecklist.submitting(draft)
-                draft = next.text
-                if next.keepWriting {
-                    Task { @MainActor in writing = true }
-                } else {
-                    commit()
-                    writing = false
-                }
-            }
-            .onChange(of: writing) { _, active in if !active { commitLater() } }
-            // 边打边存：停手半秒就写进去，不只等失焦。以前粘贴一大段，卡片上一直是旧字，
-            // 要点到面板外面才更新，期间退出码头就丢了。每次写都是一次配置保存，所以等停手，
-            // 不逐字写；输入法还在选字时不写，免得把拼音存进去。
-            .task(id: draft) {
-                try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled, writing, activeEditor()?.hasMarkedText() != true else { return }
-                commit()
-            }
-            // 选区一动就记下落在哪几行（只读整数，组字时也安全）。
-            .onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { note in
-                guard writing, let editor = note.object as? NSTextView, editor === activeEditor(),
-                      let lines = selectedLines() else { return }
-                lastLines = lines
-            }
-            // One panel serves every note in turn, and flipping hands it
-            // another sheet; take that sheet's words unless the caret is
-            // still mid-sentence in this one.
-            .onChange(of: stored) { _, note in if !writing { draft = note } }
-            .onAppear {
-                draft = stored
-                // 有清单项时先让人看见圆圈、能直接勾；点纸上的空白再写。
-                if !StickyChecklist.hasItems(stored) { beginWriting() }
-            }
-            // Closing the panel hides its window rather than tearing this
-            // view down, so whichever of the two happens first, the words
-            // are already saved.
-            .onDisappear { commitLater() }
-            .accessibilityLabel(tr("便签"))
-            // The caret has to be ink like the words, or it is the accent
-            // colour on paper.
-            .tint(ink)
-            .padding(.top, 6)
-            // Tall enough that a short note leaves the rest of the sheet
-            // blank, the way paper does.
-            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-            // 画清单时输入框藏起来（还在，焦点和保存照旧），点纸上空白处回来写。
-            .opacity(showsChecklist ? 0 : 1)
-            .allowsHitTesting(!showsChecklist)
-            .background {
-                Color.clear
-                    .contentShape(.rect)
-                    .onTapGesture { beginWriting() }
-            }
-    }
-
-    // MARK: 清单
-
-    /// 不在写字时的样子：清单项一行一个圆圈，点圆圈即完成；勾掉的划线、变淡，
-    /// 默认沉到「已完成」下面。点字或空白处开始写。
-    private var checklist: some View {
-        let layout = StickyChecklist.layout(draft, sinkDone: sinkDone)
-        let title = StickyChecklist.titleLine(draft)
-        return VStack(alignment: .leading, spacing: 4) {
-            ForEach(layout.open, id: \.index) { row in
-                rowView(row, isTitle: row.index == title)
-            }
-            if !layout.done.isEmpty {
-                HStack(spacing: 8) {
-                    Text(tr("已完成 \(layout.done.count)"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(fadedInk)
-                    Rectangle()
-                        .fill(ink.opacity(0.18))
-                        .frame(height: 1)
-                }
-                .padding(.top, 6)
-                .accessibilityAddTraits(.isHeader)
-                ForEach(layout.done, id: \.index) { row in
-                    rowView(row, isTitle: false)
-                }
-            }
-        }
-        .padding(.top, 6)
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-        .background {
-            Color.clear
-                .contentShape(.rect)
-                .onTapGesture { beginWriting() }
-        }
-    }
-
-    @ViewBuilder
-    private func rowView(_ row: StickyChecklist.Row, isTitle: Bool) -> some View {
-        switch row.line {
-        case .text(let words):
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(verbatim: words.isEmpty ? " " : words)
-                    .font(StickyFont.font(noteFont, size: pointSize))
-                    .foregroundStyle(ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                if isTitle { progressPill }
-                Spacer(minLength: 0)
-            }
-            .contentShape(.rect)
-            .onTapGesture { beginWriting() }
-        case .item(let done, let words):
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Button { toggle(row.index) } label: {
-                    checkCircle(done)
-                }
-                .buttonStyle(.plain)
-                .disabled(context.isPreview)
-                .accessibilityLabel(done ? tr("已完成：\(words)") : tr("未完成：\(words)"))
-                Text(verbatim: words.isEmpty ? " " : words)
-                    .font(StickyFont.font(noteFont, size: pointSize))
-                    .foregroundStyle(done ? fadedInk : ink)
-                    .strikethrough(done, color: fadedInk)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(.rect)
-                    .onTapGesture { beginWriting() }
-            }
-        }
-    }
-
-    private var circleSide: CGFloat { max(14, pointSize * 0.72) }
-
-    private func checkCircle(_ done: Bool) -> some View {
-        let side = circleSide
-        return Circle()
-            .fill(done ? fadedInk : .clear)
-            .overlay {
-                Circle().strokeBorder(ink.opacity(done ? 0 : 0.75), lineWidth: 1.5)
-            }
-            .overlay {
-                if done {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: side * 0.55, weight: .bold))
-                        .foregroundStyle(Color(hex: swatch.hex))
-                }
-            }
-            .frame(width: side, height: side)
-            .padding(3)
-            .contentShape(.circle)
-    }
-
-    /// 标题旁的进度「2/5」。
-    private var progressPill: some View {
-        let progress = StickyChecklist.progress(draft)
-        return Text(verbatim: "\(progress.done)/\(progress.total)")
-            .font(.system(size: 13, weight: .bold))
-            .monospacedDigit()
-            .foregroundStyle(ink)
-            .padding(.horizontal, 7)
-            .frame(height: 20)
-            .background(Capsule().fill(ink.opacity(0.1)))
-            .accessibilityLabel(tr("完成 \(progress.done) 项，共 \(progress.total) 项"))
-    }
-
-    /// 勾上或取消第几行，只改那一行的框。
-    private func toggle(_ index: Int) {
+    /// ⌘↩：存好，收起编辑（光标离开纸，面板留着）。
+    private func collapse() {
         guard !context.isPreview else { return }
-        let next = StickyChecklist.toggling(line: index, in: draft)
-        guard next != draft else { return }
-        // 沉底时轻轻挪过去；减少动态效果时直接换。
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { draft = next }
-        StickyLog.write(next, in: instance)
+        if commit() { flash(.saved) }
+        NSApp.keyWindow?.makeFirstResponder(nil)
+    }
+
+    /// 右键「发到快速待办」：加到扩展栏上第一个快速待办（和全局快捷键小框同一个，
+    /// 见 `QuickTodoCapture.target()`），便签上原行保留。
+    private func send(_ line: Int) {
+        guard !context.isPreview, let words = StickyEditing.sendable(line: line, in: draft) else { return }
+        guard let target = QuickTodoCapture.shared.target() else {
+            NSSound.beep()
+            flash(.noTodo)
+            return
+        }
+        TodoLog.add(words, to: target)
+        flash(.sent)
+    }
+
+    private func flash(_ kind: StickyHint.Kind) {
+        withAnimation(reduceMotion ? nil : .easeIn(duration: 0.15)) { hint = StickyHint(kind: kind) }
     }
 
     // MARK: 认不出的框
@@ -448,15 +332,28 @@ struct StickyNoteDetail: View {
             .keyboardShortcut("l", modifiers: [.command, .shift])
             .disabled(context.isPreview)
             .help(tr("把这一行变成可勾项") + "  ⌘⇧L")
+            Button { showingStyle.toggle() } label: {
+                Text(verbatim: "Aa")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .frame(width: 34, height: 30)
+                    .background(Capsule().fill(showingStyle ? Color.panelSelected : Color.panelFill))
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .disabled(context.isPreview)
+            .help(tr("字体、字号和纸色"))
+            .accessibilityLabel(tr("字体、字号和纸色"))
+            .popover(isPresented: $showingStyle, arrowEdge: .bottom) { stylePopover }
+            if progress.total > 0 {
+                Text(verbatim: "\(progress.done)/\(progress.total)")
+                    .font(.system(size: 13, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.panelSecondary)
+                    .accessibilityLabel(tr("完成 \(progress.done) 项，共 \(progress.total) 项"))
+            }
             Spacer(minLength: 0)
             Menu {
-                Toggle(tr("已完成沉到底部"), isOn: Binding(
-                    get: { sinkDone },
-                    set: { on in
-                        guard !context.isPreview else { return }
-                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { StickyLog.setSink(on, in: instance) }
-                    }))
-                Divider()
                 Button(tr("全部取消勾选")) {
                     let next = StickyChecklist.uncheckingAll(draft)
                     draft = next
@@ -483,39 +380,18 @@ struct StickyNoteDetail: View {
         }
     }
 
-    /// 清单键：选中的几行（没在写字时用最近一次选区，都没有就最后一行）变成清单项，
+    /// 清单键：选中的几行（编辑器失焦时用最近一次选区，都没有就最后一行）变成清单项，
     /// 都已经是清单项时去掉框子。空纸或空行上放一个空框，接着写。
     private func makeChecklist() {
         guard !context.isPreview else { return }
         let rows = draft.split(separator: "\n", omittingEmptySubsequences: false).count
         let fallback: ClosedRange<Int> = (rows - 1)...(rows - 1)
-        let lines = (writing ? selectedLines() : nil) ?? lastLines ?? fallback
+        let lines = editor.selectedLines() ?? fallback
         let next = StickyChecklist.togglingItems(draft, lines: lines)
         guard next != draft else { return }
         draft = next
         StickyLog.write(next, in: instance)
-        if next.hasSuffix("[ ] ") { beginWriting() }
-    }
-
-    /// 正在写字的那个系统字段编辑器（面板里只有这一个输入框）。
-    private func activeEditor() -> NSTextView? {
-        guard writing else { return nil }
-        return NSApp.keyWindow?.firstResponder as? NSTextView
-    }
-
-    /// 选区落在第几行到第几行。
-    ///
-    /// beta.32 的闪退就在这里：原来从 `TextSelection` 拿 `String.Index`，再对 `draft` 调
-    /// `utf16Offset(in:)`；输入法组字（marked text）时 onChange(of: selection) 先到，
-    /// 那个 index 属于更长的另一版字，`UTF16View.distance` 越界断言，夹 min/max 在调用之后
-    /// 已经来不及。现在只读字段编辑器的 `NSRange`（整数），换算和夹范围都在 Core
-    /// （`StickyChecklist.lineRange(in:utf16Location:length:)`），不再碰外来的 index。
-    private func selectedLines() -> ClosedRange<Int>? {
-        guard let editor = activeEditor() else { return nil }
-        let range = editor.selectedRange()
-        guard range.location != NSNotFound else { return nil }
-        // 按字段编辑器自己的字算（组字时比 draft 多出未上屏的拼音，行号一样）。
-        return StickyChecklist.lineRange(in: editor.string, utf16Location: range.location, length: range.length)
+        if next.hasSuffix("[ ] ") { focusToken = UUID() }
     }
 
     /// 清除已完成项：5 秒内可以撤销。
@@ -524,7 +400,7 @@ struct StickyNoteDetail: View {
         let before = draft
         let result = StickyChecklist.removingDone(draft)
         guard result.removed > 0 else { return }
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { draft = result.text }
+        draft = result.text
         StickyLog.write(result.text, in: instance)
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             undo = .cleared(before: before, after: result.text, count: result.removed)
@@ -532,10 +408,13 @@ struct StickyNoteDetail: View {
         undoToken = UUID()
     }
 
-    // MARK: 字体和字号
+    // MARK: Aa 弹层：字体、字号、纸色
 
-    private var styleRows: some View {
-        VStack(spacing: 8) {
+    /// 字体、字号、这张纸的颜色收进一个弹层，面板主体留给纸。颜色免费五种，其余带锁的是
+    /// Pro（划分不变）。
+    private var stylePopover: some View {
+        let chosen = PaperColor(rawValue: pile.front.color) ?? .yellow
+        return VStack(alignment: .leading, spacing: 12) {
             styleRow(tr("字体")) {
                 DetailSegmented(pages: StickyNoteFont.allCases, title: \.title, selected: noteFont) { choice in
                     setStyle(StickyNoteFont.key, choice.rawValue)
@@ -546,7 +425,20 @@ struct StickyNoteDetail: View {
                     setStyle(StickyNoteSize.key, choice.rawValue)
                 }
             }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("这张纸的颜色"))
+                    .font(WidgetStyle.label(13))
+                    .foregroundStyle(.panelPrimary)
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(22), spacing: 6), count: 8),
+                          alignment: .leading, spacing: 6) {
+                    ForEach(PaperColor.picker, id: \.self) { color in
+                        swatchButton(color, selected: color == chosen)
+                    }
+                }
+            }
         }
+        .padding(14)
+        .frame(width: 268)
     }
 
     private func styleRow<Control: View>(_ title: String, @ViewBuilder control: () -> Control) -> some View {
@@ -563,24 +455,6 @@ struct StickyNoteDetail: View {
         guard !context.isPreview else { return }
         commit()
         StickyLog.style(key, value, in: instance)
-    }
-
-    // MARK: 颜色
-
-    /// 这张纸的颜色：十五种，免费五种，其余带锁的是 Pro。
-    private var colorRow: some View {
-        let chosen = PaperColor(rawValue: pile.front.color) ?? .yellow
-        return VStack(alignment: .leading, spacing: 6) {
-            Text(tr("这张纸的颜色"))
-                .font(WidgetStyle.label(13))
-                .foregroundStyle(.panelPrimary)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(22), spacing: 6), count: 8),
-                      alignment: .leading, spacing: 6) {
-                ForEach(PaperColor.picker, id: \.self) { color in
-                    swatchButton(color, selected: color == chosen)
-                }
-            }
-        }
     }
 
     private func swatchButton(_ color: PaperColor, selected: Bool) -> some View {
@@ -648,9 +522,10 @@ struct StickyNoteDetail: View {
                 StickyPill(symbol: "plus", title: tr("新一张"))
             }
             .buttonStyle(.plain)
+            .keyboardShortcut("n", modifiers: .command)
             .disabled(!pile.canAdd || context.isPreview)
             .opacity(pile.canAdd ? 1 : 0.45)
-            .help(pile.canAdd ? tr("再贴一张，最多 \(StickyStack.limit) 张") : tr("最多 \(StickyStack.limit) 张"))
+            .help(pile.canAdd ? tr("再贴一张，最多 \(StickyStack.limit) 张") + "  ⌘N" : tr("最多 \(StickyStack.limit) 张"))
             Button { tear() } label: {
                 StickyPill(symbol: "scissors", title: tr("撕掉"))
             }
@@ -677,7 +552,6 @@ struct StickyNoteDetail: View {
             torn = StickyTrash.tear(&config, now: Date(), id: UUID().uuidString)
         }
         guard let torn else { return }
-        writing = false
         draft = WidgetWriter.current(instance.id).map { StickyStack.pile($0.config).front.text } ?? ""
         if frame.width > 0 {
             let target = CGSize(width: binFrame.midX - frame.midX, height: binFrame.midY - frame.midY)
@@ -686,6 +560,7 @@ struct StickyNoteDetail: View {
         }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { undo = .tore(torn) }
         undoToken = UUID()
+        focusToken = UUID()
     }
 
     /// 撤销最近的一步。
@@ -718,22 +593,17 @@ struct StickyNoteDetail: View {
             StickyLog.change(instance) { current in edit(current.writing(draft)) }
         }
         draft = after.front.text
-        writing = false
-        lastLines = nil
-    }
-
-    /// The panel takes key status as it opens and the caret may as well be in
-    /// the paper: there is nothing else here to click.
-    private func beginWriting() {
-        guard !context.isPreview else { return }
-        writing = true
+        // 新一张、翻页之后直接能写：光标放到这张的末尾。
+        focusToken = UUID()
     }
 
     /// Focus leaves the paper far more often than the words change, and every
-    /// write is a profile save.
-    private func commit() {
-        guard !context.isPreview, draft != stored else { return }
+    /// write is a profile save. 真写了返回 true（顶栏据此闪一下「已保存」）。
+    @discardableResult
+    private func commit() -> Bool {
+        guard !context.isPreview, draft != stored else { return false }
         StickyLog.write(draft, in: instance)
+        return true
     }
 
     /// 失焦和消失时的保存放到下一轮：这两个回调在 SwiftUI 更新视图的中途触发，
@@ -745,6 +615,37 @@ struct StickyNoteDetail: View {
         let target = instance
         Task { @MainActor in StickyLog.write(words, in: target) }
     }
+}
+
+// MARK: - 顶栏小字
+
+/// 顶栏一闪而过的小字。每次换一个 `id`，连着存几次也重新计时。
+struct StickyHint: Equatable {
+    enum Kind: Equatable {
+        case saved, sent, noTodo
+
+        var title: String {
+            switch self {
+            case .saved: tr("已保存")
+            case .sent: tr("已发到快速待办")
+            case .noTodo: tr("扩展栏上没有快速待办")
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .saved: "checkmark"
+            case .sent: "paperplane"
+            case .noTodo: "exclamationmark.circle"
+            }
+        }
+
+        /// 「已保存」淡淡一下就走，另外两句多留一会儿好读完。
+        var seconds: Double { self == .saved ? 1.4 : 2.6 }
+    }
+
+    var kind: Kind
+    var id = UUID()
 }
 
 // MARK: - 撤销

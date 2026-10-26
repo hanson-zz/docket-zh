@@ -243,6 +243,27 @@ enum StickyFont {
         }
     }
 
+    /// 面板编辑器（AppKit）用的同一套字体。
+    @MainActor
+    static func nsFont(_ kind: StickyNoteFont, size: CGFloat) -> NSFont {
+        switch kind {
+        case .hand:
+            if let name = handName, let font = NSFont(name: name, size: size) { return font }
+            let base = NSFont.systemFont(ofSize: size, weight: .semibold)
+            return base.fontDescriptor.withDesign(.rounded).flatMap { NSFont(descriptor: $0, size: size) } ?? base
+        case .regular: return .systemFont(ofSize: size, weight: .medium)
+        case .mono: return .monospacedSystemFont(ofSize: size, weight: .medium)
+        }
+    }
+
+    @MainActor private static var handName: String? {
+        if resolved == nil {
+            let installed = Set(NSFontManager.shared.availableFonts)
+            resolved = .some(names.first { installed.contains($0) })
+        }
+        return resolved ?? nil
+    }
+
     @MainActor
     static func hand(size: CGFloat) -> Font {
         if resolved == nil {
