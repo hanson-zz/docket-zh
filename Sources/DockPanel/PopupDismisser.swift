@@ -248,4 +248,9 @@ class PopupPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) {
         _ = onEscape?()
     }
+
+    /// 搜索框、改名框的 ⌘A ⌘C ⌘X ⌘V ⌘Z ⌘⇧Z，见 `EditKeyRouting`。
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        EditKeyRouting.perform(event, in: self) { super.performKeyEquivalent(with: event) }
+    }
 }

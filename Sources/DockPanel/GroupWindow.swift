@@ -228,13 +228,13 @@ final class GroupWindow {
 
     /// 摆上去并显示。内容这一轮还量不出大小时下一轮再试一次，还不行就放弃并
     /// 清掉「开着的是谁」（以前直接返回，记着开着却没显示，之后一直点不开）。
-    private func present(_ panel: PopupPanel, group id: UUID, attempt: Int) {
+    private func present(_ panel: PopupPanel, group id: UUID, attempt: Int, rebuilt: Bool = false) {
         guard openGroupID == id, let placement else { return }
         guard place(panel, anchor: placement.anchor, edge: placement.edge) else {
             switch PopupToggle.Placement.afterFailure(attempt: attempt) {
             case .retry:
                 Task { @MainActor [weak self] in
-                    self?.present(panel, group: id, attempt: attempt + 1)
+                    self?.present(panel, group: id, attempt: attempt + 1, rebuilt: rebuilt)
                 }
             case .giveUp:
                 openGroupID = nil
@@ -255,6 +255,17 @@ final class GroupWindow {
             panel.alphaValue = 1
         }
         panel.orderFrontRegardless()
+        // 系统把窗口钉在了另一个桌面（设了出现在所有桌面也会）：在这个桌面点开
+        // 等于没反应。丢掉旧窗口、新建一个重摆，新窗口落在当前桌面。
+        if PanelSpaceRescue.shouldRebuild(isOnActiveSpace: panel.isOnActiveSpace, alreadyRebuilt: rebuilt),
+           let group = hosting?.rootView.group {
+            panel.orderOut(nil)
+            self.panel = nil
+            hosting = nil
+            let fresh = existingOrNew()
+            hosting?.rootView = sheet(for: group)
+            return present(fresh, group: id, attempt: attempt, rebuilt: true)
+        }
         // Needed for the name field; the shelf itself still never takes key,
         // so clicking a tile does not pull focus out of the user's app.
         // 也是 Esc 能收到的前提。

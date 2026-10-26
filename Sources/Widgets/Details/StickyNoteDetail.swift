@@ -227,6 +227,14 @@ struct StickyNoteDetail: View {
                 }
             }
             .onChange(of: writing) { _, active in if !active { commitLater() } }
+            // 边打边存：停手半秒就写进去，不只等失焦。以前粘贴一大段，卡片上一直是旧字，
+            // 要点到面板外面才更新，期间退出码头就丢了。每次写都是一次配置保存，所以等停手，
+            // 不逐字写；输入法还在选字时不写，免得把拼音存进去。
+            .task(id: draft) {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled, writing, activeEditor()?.hasMarkedText() != true else { return }
+                commit()
+            }
             // 选区一动就记下落在哪几行（只读整数，组字时也安全）。
             .onReceive(NotificationCenter.default.publisher(for: NSTextView.didChangeSelectionNotification)) { note in
                 guard writing, let editor = note.object as? NSTextView, editor === activeEditor(),

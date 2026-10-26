@@ -46,6 +46,8 @@ final class WidgetDetailWindow {
     private var fit: (instance: WidgetInstance, anchor: CGPoint, natural: CGSize,
                       viewport: CGFloat, overflows: Bool)?
     private var screenObserver: NSObjectProtocol?
+    /// 收起时的淡出领号，淡出途中又打开就作废，见 `PopupToggle.Fade`。
+    private var fade = PopupToggle.Fade()
 
     private init() {}
 
@@ -269,22 +271,33 @@ final class WidgetDetailWindow {
         shown = nil
         fit = nil
         stopWatching()
-        guard panel?.isVisible == true else { return }
+        guard let closing = panel, closing.isVisible else { return }
+        let token = fade.begin()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.14
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel?.animator().alphaValue = 0
+            closing.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, self.openWidgetID == nil else { return }
-                self.panel?.orderOut(nil)
-                self.panel?.alphaValue = 1
+                guard let self, let current = self.panel else { return }
+                // 淡出途中又点开了（同一个或另一个小组件）：不收，透明度补回 1。
+                // 以前这里直接返回，旧淡出已经把窗口落到 0，面板开着却看不见。
+                switch self.fade.finish(token, isOpen: self.openWidgetID != nil) {
+                case .orderOut:
+                    current.orderOut(nil)
+                    current.alphaValue = 1
+                case .restore:
+                    current.alphaValue = 1
+                case .nothing:
+                    break
+                }
             }
         }
     }
 
     private func show(_ instance: WidgetInstance, context: WidgetContext,
-                      anchor: CGPoint, edge: DockPosition, host: CGRect, floating: Bool) {
+                      anchor: CGPoint, edge: DockPosition, host: CGRect, floating: Bool,
+                      rebuilt: Bool = false) {
         let panel = existingOrNew()
         session = UUID()
         self.host = host
@@ -312,12 +325,31 @@ final class WidgetDetailWindow {
         // DetailPanelFit。
         place(instance, context: context, edge: edge, anchor: anchor, natural: size)
 
-        panel.alphaValue = 1
+        // 上一次收起的淡出可能还在走：作废它的号，并用一段零时长动画顶掉它，
+        // 不然面板摆好、排到最前，最后却停在透明度 0。
+        fade.cancel()
+        panel.showOpaqueCancellingFade()
         panel.orderFrontRegardless()
+        // 系统把窗口钉在了另一个桌面：丢掉它，在新窗口里重摆，新窗口落在当前桌面。
+        if PanelSpaceRescue.shouldRebuild(isOnActiveSpace: panel.isOnActiveSpace, alreadyRebuilt: rebuilt) {
+            discardPanel()
+            return show(instance, context: context, anchor: anchor, edge: edge, host: host,
+                        floating: floating, rebuilt: true)
+        }
         // A panel carrying a text field or a slider needs the keyboard, and a
         // borderless window is refused key status without the override.
         panel.makeKey()
         watchForDismissal()
+    }
+
+    /// 收走并放掉当前窗口，下次 `existingOrNew` 造一个新的。用 orderOut 不用
+    /// close：close 掉的面板可能被 AppKit 释放，而这里还拿着它。
+    private func discardPanel() {
+        panel?.orderOut(nil)
+        panel = nil
+        hosting = nil
+        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
+        screenObserver = nil
     }
 
     private func existingOrNew() -> NSPanel {

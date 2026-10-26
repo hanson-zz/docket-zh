@@ -26,7 +26,7 @@ class HostedWindow {
             : AnyView(view)
 
         let controller = NSHostingController(rootView: root)
-        let window = NSWindow(contentViewController: controller)
+        let window = EditKeyWindow(contentViewController: controller)
         window.title = title
         window.setContentSize(size)
 
@@ -73,6 +73,14 @@ class HostedWindow {
     func close() {
         window?.close()
         window = nil
+    }
+}
+
+/// 设置、小组件库这类普通窗口：码头没有「编辑」菜单，搜索框、API 密钥框里的
+/// ⌘A ⌘C ⌘X ⌘V ⌘Z ⌘⇧Z 由窗口自己派给输入框，见 `EditKeyRouting`。
+final class EditKeyWindow: NSWindow {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        EditKeyRouting.perform(event, in: self) { super.performKeyEquivalent(with: event) }
     }
 }
 

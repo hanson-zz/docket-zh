@@ -286,7 +286,58 @@ public final class KeyablePanel: NSPanel {
             onCancel?()
             return true
         }
-        return super.performKeyEquivalent(with: event)
+        // ⌘A ⌘C ⌘X ⌘V ⌘Z ⌘⇧Z：没有「编辑」菜单，由窗口自己派给输入框。
+        return EditKeyRouting.perform(event, in: self) { super.performKeyEquivalent(with: event) }
+    }
+}
+
+/// 把编辑快捷键沿响应链派给正在输入的框。
+///
+/// 码头没有「编辑」菜单（菜单栏应用），⌘A、⌘V 这些原本由菜单派发，于是面板里的
+/// 输入框能打字却不认这几个键。能打字的窗口在 performKeyEquivalent 里调这个：
+/// 哪个键对应哪个动作、先给输入框还是先给面板自己的快捷键见 `EditShortcut`。
+/// 动作用 sendAction 发给第一响应者，谁有焦点谁接；没人接就原样放过。
+@MainActor
+public enum EditKeyRouting {
+    public static func shortcut(for event: NSEvent) -> EditShortcut? {
+        guard event.type == .keyDown else { return nil }
+        let flags = event.modifierFlags
+        return EditShortcut.resolve(characters: event.charactersIgnoringModifiers,
+                                    keyCode: event.keyCode,
+                                    command: flags.contains(.command), shift: flags.contains(.shift),
+                                    option: flags.contains(.option), control: flags.contains(.control))
+    }
+
+    /// - Parameter passOn: 窗口原本的处理（通常是 `super.performKeyEquivalent`），
+    ///   面板自己用 SwiftUI 声明的快捷键在这里面。
+    /// - Returns: 这个键有没有被处理。
+    public static func perform(_ event: NSEvent, in window: NSWindow, passOn: () -> Bool) -> Bool {
+        guard let shortcut = shortcut(for: event) else { return passOn() }
+        let text = window.firstResponder as? NSText
+        let route = EditShortcut.route(shortcut, textFocused: text != nil,
+                                       hasSelection: (text?.selectedRange.length ?? 0) > 0)
+        let send = {
+            NSApplication.shared.sendAction(Selector(shortcut.selectorName), to: nil, from: window)
+        }
+        switch route {
+        case .fieldFirst: return send() || passOn()
+        case .panelFirst: return passOn() || send()
+        }
+    }
+}
+
+public extension NSWindow {
+    /// 立刻完全不透明，顶掉还在走的淡出。
+    ///
+    /// 收起时用 animator 把透明度淡到 0；淡出途中又打开，只写 `alphaValue = 1`
+    /// 停不住那段动画，它照样走到 0，面板「开着、摆好了、排在最前」却是透明的，
+    /// 点不开也关不掉。一段时长为 0 的透明度动画会替换掉正在走的那段。
+    func showOpaqueCancellingFade() {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0
+            animator().alphaValue = 1
+        }
+        alphaValue = 1
     }
 }
 

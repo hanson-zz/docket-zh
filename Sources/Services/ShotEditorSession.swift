@@ -462,6 +462,12 @@ final class ShotEditorWindow: NSWindow {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+
+    /// 正在往图上打字时的 ⌘A ⌘C ⌘X ⌘V ⌘Z ⌘⇧Z（见 `EditKeyRouting`）。没在打字时 ⌘Z、⌘C
+    /// 在键盘监听里就被当成撤销标注、拷贝截图接走了，到不了这里。
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        EditKeyRouting.perform(event, in: self) { super.performKeyEquivalent(with: event) }
+    }
 }
 
 /// 第一下点击就生效（窗口刚出来还没成为焦点时也一样）。

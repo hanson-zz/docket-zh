@@ -232,7 +232,8 @@ final class AINotchController {
         panelModel.notchBlend = AINotchLayout.notchBlend(entry: entry, panel: frame)
         panelModel.isOpen = true
         panelModel.session = UUID()
-        panel.alphaValue = 1
+        // 收起的淡出可能还在走（刚收起又点开）：顶掉它，不然停在透明度 0。
+        panel.showOpaqueCancellingFade()
         panel.orderFrontRegardless()
         panel.makeKey()
         watchForDismissal()
@@ -250,7 +251,12 @@ final class AINotchController {
             panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, !self.panelModel.isOpen else { return }
+                guard let self else { return }
+                // 淡出途中又打开了：不收，透明度补回 1。
+                guard !self.panelModel.isOpen else {
+                    self.panel?.alphaValue = 1
+                    return
+                }
                 self.panel?.orderOut(nil)
                 self.panel?.alphaValue = 1
             }
