@@ -451,7 +451,7 @@ struct AppSwitcherDetail: View {
     private func menu(_ app: AppSwitcherItem) -> some View {
         if !context.isPreview {
             if app.isRunning {
-                Button("切换到此应用") { _ = catalog.activate(bundleID: app.id) }
+                Button("切换到此应用") { catalog.bringForward(bundleID: app.id, savedURL: nil) }
             } else {
                 Button("打开") { open(app) }
             }

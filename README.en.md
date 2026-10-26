@@ -189,7 +189,7 @@ More than fifty widgets, grouped by use. Mix them freely on one shelf.
 
 ## In development (next version)
 
-Nothing yet; new features are listed here as they land.
+- **Fix: clicking an app that is already open on the shelf sometimes showed no window**: clicking a running app used to only bring it to the front, so Calendar, Mail, Notes, Music, Messages, Finder and other apps that keep running after their last window closes showed nothing, fully minimised windows were not restored, and sometimes the system refused the switch altogether. It now behaves like clicking Apple's Dock: an app with no windows opens a new one, a minimised window is restored, an app with windows comes to the front, a full-screen app switches to its Space, and an app hidden with ⌘H comes back; a running app still does not bounce. The app switcher card and panel, and widgets that open an app, work the same way. Not yet verified on a physical Mac.
 
 ## New in v0.7.0: Dockling Pro, the message island, Calc currency Simple and Full, the AI assistant, retro cassettes and more
 

@@ -110,10 +110,54 @@ public final class AppCatalog {
 
     // MARK: Actions
 
+    /// 只把开着的 App 切到前台，不开窗口。点图标请用 `bringForward`，这个只是它的兜底。
     public func activate(bundleID: String) -> Bool {
         guard let app = NSRunningApplication
             .runningApplications(withBundleIdentifier: bundleID).first else { return false }
+        if app.isHidden { app.unhide() }
         return app.activate(options: [])
+    }
+
+    /// 点图标打开或叫醒一个 App，和点系统程序坞一样（规则见 Core 的 `AppReopen`）。
+    ///
+    /// 在运行的也走 `openApplication`：系统给它发 reopen，没窗口的开一个新窗口，
+    /// 全最小化的还原一个，有窗口的就切到前台（全屏的会切到它那个桌面）。
+    /// 单纯 `activate` 做不到前两件，从不激活的扩展栏面板里调还可能被协作式激活
+    /// 静默拒绝，这就是以前「点了日历、邮件没反应」的原因。reopen 报错时再单纯激活一次兜底。
+    ///
+    /// `completion` 在系统回话后调用，参数是 App 有没有起来或叫醒。
+    public func bringForward(bundleID: String, savedURL: URL?,
+                             completion: (@MainActor @Sendable (Bool) -> Void)? = nil) {
+        let process = bundleID.isEmpty ? nil
+            : NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
+        let registered = bundleID.isEmpty ? nil
+            : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        let plan = AppReopen.plan(isRunning: process != nil,
+                                  runningURL: process?.bundleURL,
+                                  savedURL: savedURL,
+                                  registeredURL: registered)
+        switch plan {
+        case .unavailable:
+            completion?(false)
+        case .activateOnly:
+            completion?(activate(bundleID: bundleID))
+        case .launch(let url), .reopen(let url):
+            // 藏起来的 App（⌘H）reopen 也会带出来，先取消隐藏更稳。
+            if let process, process.isHidden { process.unhide() }
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
+            if case .reopen = plan { configuration.addsToRecentItems = false }
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration) { app, error in
+                let ok = app != nil && error == nil
+                Task { @MainActor in
+                    if AppReopen.fallsBackToActivate(after: plan, succeeded: ok) {
+                        completion?(self.activate(bundleID: bundleID))
+                    } else {
+                        completion?(ok)
+                    }
+                }
+            }
+        }
     }
 
     /// Opens an item, reporting when the launch has settled.
@@ -130,13 +174,8 @@ public final class AppCatalog {
 
         switch item {
         case .app(_, let bundleID, let ref):
-            // Already running? Bring it forward rather than bouncing a new launch.
-            if !bundleID.isEmpty, activate(bundleID: bundleID) { return done(true) }
-            guard let url = ref.resolve() else { return done(false) }
-            NSWorkspace.shared.openApplication(at: url, configuration: .init()) { app, _ in
-                let launched = app != nil
-                Task { @MainActor in completion?(launched) }
-            }
+            // 开着的发 reopen（没窗口开窗、最小化还原），没开的启动；弹不弹跳由扩展栏按是否在运行决定。
+            bringForward(bundleID: bundleID, savedURL: ref.resolve(), completion: completion)
         case .folder(_, let ref, _), .file(_, let ref):
             guard let url = ref.resolve() else { return done(false) }
             NSWorkspace.shared.open(url)
@@ -154,10 +193,7 @@ public final class AppCatalog {
     public func open(_ target: WidgetTarget) {
         switch target {
         case .app(let bundleID):
-            if activate(bundleID: bundleID) { return }
-            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
-            else { return }
-            NSWorkspace.shared.openApplication(at: url, configuration: .init())
+            bringForward(bundleID: bundleID, savedURL: nil)
         case .settings:
             guard let url = target.settingsURL else { return }
             NSWorkspace.shared.open(url)
