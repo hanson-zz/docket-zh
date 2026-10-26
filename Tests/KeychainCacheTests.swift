@@ -49,6 +49,23 @@ final class KeychainCacheTests: XCTestCase {
         XCTAssertEqual(calls, 1)
     }
 
+    func testLockedKeychainIsNotRememberedAndIsReadAgain() {
+        // errSecInteractionNotAllowed：钥匙串锁着、系统没弹框，不是用户拒绝。
+        XCTAssertTrue(KeychainRead.failed(-25308).isTransient)
+        XCTAssertFalse(KeychainRead.failed(-25293).isTransient)
+        XCTAssertFalse(KeychainRead.failed(-128).isTransient)
+        XCTAssertFalse(KeychainRead.missing.isTransient)
+        XCTAssertFalse(KeychainRead.found("x").isTransient)
+        var cache = KeychainReadCache()
+        var calls = 0
+        XCTAssertEqual(cache.read("token") { calls += 1; return .failed(-25308) }, .failed(-25308))
+        XCTAssertNil(cache.cached("token"), "锁着时读不到不记住")
+        // 解锁后再用到：重新读一次，读到了就记住。
+        XCTAssertEqual(cache.read("token") { calls += 1; return .found("t") }, .found("t"))
+        XCTAssertEqual(cache.read("token") { calls += 1; return .found("other") }, .found("t"))
+        XCTAssertEqual(calls, 2)
+    }
+
     func testCacheKeepsNamesApart() {
         var cache = KeychainReadCache()
         XCTAssertEqual(cache.read("a") { .found("1") }, .found("1"))
@@ -169,6 +186,34 @@ final class KeychainCacheTests: XCTestCase {
         XCTAssertEqual(legacyCalls, 0)
         XCTAssertEqual(load, ProLicenseLoad(snapshot: ProLicenseSnapshot(), trusted: false, writeRecord: false, deleteLegacy: false))
         XCTAssertFalse(ProLicenseStorePlan.canStartTrial(load.snapshot, trusted: load.trusted))
+    }
+
+    func testLockedRecordIsRetriedLaterButDenialIsNot() {
+        let locked = ProLicenseStorePlan.load(record: .failed(-25308)) { [:] }
+        XCTAssertFalse(locked.trusted)
+        XCTAssertTrue(locked.retryLater, "钥匙串锁着：下次算状态时再读，不能整次运行都当未激活")
+        XCTAssertFalse(ProLicenseStorePlan.canStartTrial(locked.snapshot, trusted: locked.trusted))
+        let denied = ProLicenseStorePlan.load(record: .failed(-25293)) { [:] }
+        XCTAssertFalse(denied.retryLater, "点了拒绝的这次运行不再问")
+    }
+
+    func testLockedLegacyIsRetriedOnlyWhenNothingWasRead() {
+        var allLocked: [ProLicenseLegacyField: KeychainRead] = [:]
+        for field in ProLicenseLegacyField.allCases { allLocked[field] = .failed(-25308) }
+        allLocked[.lastValidated] = .missing
+        let locked = ProLicenseStorePlan.load(record: .missing) { allLocked }
+        XCTAssertFalse(locked.trusted)
+        XCTAssertFalse(locked.writeRecord)
+        XCTAssertFalse(locked.deleteLegacy)
+        XCTAssertTrue(locked.retryLater)
+        // 有一项读出来了（可能是用户点「允许」放行的），重读会再弹：不重试。
+        var mixed = allLocked
+        mixed[.licenseKey] = .found("KEY")
+        XCTAssertFalse(ProLicenseStorePlan.load(record: .missing) { mixed }.retryLater)
+        // 有一项是拒绝：不重试。
+        var denied = allLocked
+        denied[.trialStart] = .failed(-25293)
+        XCTAssertFalse(ProLicenseStorePlan.load(record: .missing) { denied }.retryLater)
     }
 
     func testCorruptRecordFallsBackToLegacy() {

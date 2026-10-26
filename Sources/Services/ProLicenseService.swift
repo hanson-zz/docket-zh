@@ -35,9 +35,12 @@ enum ProLicenseKeychain {
         load().snapshot
     }
 
-    /// 内存里的值是不是钥匙串里的完整真相（用户拒绝读取时为 false）。
-    static var isTrusted: Bool {
-        load().trusted
+    /// 授权信息和它可不可信（是不是钥匙串里的完整真相，用户拒绝读取时为 false），
+    /// 取自同一次读取。钥匙串暂时锁着时每次调用都会重读，分两次取可能一次没读到、
+    /// 一次读到，拼出「空授权但可信」，已购用户的付费墙上就会出现「开始试用」。
+    static func current() -> (snapshot: ProLicenseSnapshot, trusted: Bool) {
+        let result = load()
+        return (result.snapshot, result.trusted)
     }
 
     private static func load() -> ProLicenseLoad {
@@ -58,6 +61,12 @@ enum ProLicenseKeychain {
             }
             result.writeRecord = false
             result.deleteLegacy = false
+        }
+        if result.retryLater {
+            // 钥匙串暂时锁着（锁屏、登录时还没解锁）：这次按读不到算，不记住，
+            // 下次算状态（每小时、唤醒）时再读，读到了就恢复，不用等重启。
+            proLicenseLog.error("Keychain license locked; will retry")
+            return result
         }
         if !result.trusted {
             proLicenseLog.error("Keychain license read failed; not retrying this run")
@@ -265,14 +274,14 @@ final class ProLicenseManager {
 
     /// 根据钥匙串里的信息重新计算状态（不联网）。
     func refreshState() {
-        let snapshot = ProLicenseKeychain.snapshot()
+        let (snapshot, trusted) = ProLicenseKeychain.current()
         let now = Date()
         state = ProLicenseLogic.state(snapshot, now: now)
         isActivated = snapshot.isActivated
         maskedKey = snapshot.isActivated ? snapshot.licenseKey.map(ProLicenseText.mask) : nil
         lastValidated = snapshot.lastValidated
         trialEndDate = snapshot.trialStart.map(ProLicenseLogic.trialEndDate)
-        canStartTrial = ProLicenseStorePlan.canStartTrial(snapshot, trusted: ProLicenseKeychain.isTrusted)
+        canStartTrial = ProLicenseStorePlan.canStartTrial(snapshot, trusted: trusted)
         let unlocked = state.isUnlocked
         if UserDefaults.standard.bool(forKey: ProAccess.licenseKey) != unlocked {
             UserDefaults.standard.set(unlocked, forKey: ProAccess.licenseKey)
@@ -328,8 +337,8 @@ final class ProLicenseManager {
 
     /// 用户在付费墙点“开始试用”时开始 7 天试用。开始过就不会再重置。
     func startTrial() {
-        let snapshot = ProLicenseKeychain.snapshot()
-        guard ProLicenseStorePlan.canStartTrial(snapshot, trusted: ProLicenseKeychain.isTrusted) else { return }
+        let (snapshot, trusted) = ProLicenseKeychain.current()
+        guard ProLicenseStorePlan.canStartTrial(snapshot, trusted: trusted) else { return }
         ProLicenseKeychain.update { $0.trialStart = Date() }
         refreshState()
     }

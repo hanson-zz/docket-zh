@@ -11,13 +11,17 @@ public enum KeychainRead: Equatable, Sendable {
     /// 钥匙串里没有这一项（errSecItemNotFound）。
     case missing
     /// 读失败：用户点了拒绝（errSecAuthFailed、errSecUserCanceled）、不允许交互
-    /// （errSecInteractionNotAllowed）等。这次运行不再重试。
+    /// （errSecInteractionNotAllowed）等。用户拒绝的这次运行不再重试；不允许交互
+    /// 是暂时的（见 `isTransient`），下次用到时再读。
     case failed(Int32)
 
     /// errSecSuccess
     public static let statusSuccess: Int32 = 0
     /// errSecItemNotFound
     public static let statusItemNotFound: Int32 = -25300
+    /// errSecInteractionNotAllowed：钥匙串锁着、又不能弹框（锁屏、登录时钥匙串还没解锁、
+    /// 没有图形会话）。不是用户点了拒绝，系统根本没问，过一会儿再读通常就好了。
+    public static let statusInteractionNotAllowed: Int32 = -25308
 
     /// 由 SecItemCopyMatching 的返回码和读出来的数据归类。成功但数据不是 UTF-8 文字时当失败。
     public static func classify(status: Int32, data: Data?) -> KeychainRead {
@@ -42,6 +46,14 @@ public enum KeychainRead: Equatable, Sendable {
         return false
     }
 
+    /// 暂时读不了（钥匙串锁着、不能弹框），不是用户拒绝：不记住，下次用到时再读，
+    /// 不会多弹框（这种情况系统本来就不弹）。以前也记住，锁屏时自动重启的码头整次
+    /// 运行都读不到授权，已购用户一直显示未激活、Pro 功能被锁，直到手动重启。
+    public var isTransient: Bool {
+        if case .failed(let status) = self { return status == Self.statusInteractionNotAllowed }
+        return false
+    }
+
     /// 钥匙串项是否存在（读失败时算存在，只是读不到）。
     public var exists: Bool {
         if case .missing = self { return false }
@@ -56,11 +68,11 @@ public struct KeychainReadCache: Equatable, Sendable {
     public init() {}
 
     /// 读过（不论结果）就返回记住的结果；没读过时调 `load` 读一次并记住。
-    /// 失败也记住，这次运行不再弹第二次。
+    /// 失败也记住，这次运行不再弹第二次；暂时读不了的（`isTransient`）不记，下次再读。
     public mutating func read(_ name: String, load: () -> KeychainRead) -> KeychainRead {
         if let known = reads[name] { return known }
         let result = load()
-        reads[name] = result
+        if !result.isTransient { reads[name] = result }
         return result
     }
 
@@ -142,12 +154,17 @@ public struct ProLicenseLoad: Equatable, Sendable {
     public var writeRecord: Bool
     /// 写成功后删掉旧的四个项。
     public var deleteLegacy: Bool
+    /// 读失败全是暂时的（钥匙串锁着、不能弹框，见 `KeychainRead.isTransient`）：
+    /// 这次结果不要记住，下次用到时再读一遍。有一项是用户点了拒绝就为 false，免得再弹。
+    public var retryLater: Bool
 
-    public init(snapshot: ProLicenseSnapshot, trusted: Bool, writeRecord: Bool, deleteLegacy: Bool) {
+    public init(snapshot: ProLicenseSnapshot, trusted: Bool, writeRecord: Bool, deleteLegacy: Bool,
+                retryLater: Bool = false) {
         self.snapshot = snapshot
         self.trusted = trusted
         self.writeRecord = writeRecord
         self.deleteLegacy = deleteLegacy
+        self.retryLater = retryLater
     }
 }
 
@@ -165,8 +182,10 @@ public enum ProLicenseStorePlan {
             // 内容坏了：看看旧项还在不在，在就迁过来覆盖。
             return migrate(legacy())
         case .failed:
-            // 用户拒绝或读不出：这次运行按读不到处理，不写、不删、不重试。
-            return ProLicenseLoad(snapshot: ProLicenseSnapshot(), trusted: false, writeRecord: false, deleteLegacy: false)
+            // 用户拒绝或读不出：这次运行按读不到处理，不写、不删、不重试；
+            // 只是钥匙串暂时锁着的，下次用到时再读。
+            return ProLicenseLoad(snapshot: ProLicenseSnapshot(), trusted: false, writeRecord: false, deleteLegacy: false,
+                                  retryLater: record.isTransient)
         case .missing:
             return migrate(legacy())
         }
@@ -186,8 +205,11 @@ public enum ProLicenseStorePlan {
         let anyExists = reads.values.contains { $0.exists }
         if anyFailed {
             // 有旧项读不到：不写新项（写了下次就不再读旧项，读不到的那项就永远丢了），
-            // 也不删旧项，下次启动再迁。
-            return ProLicenseLoad(snapshot: snapshot, trusted: false, writeRecord: false, deleteLegacy: false)
+            // 也不删旧项，下次启动再迁。只有暂时读不了、又一项都没读出来时（钥匙串整个锁着）
+            // 才下次用到时再试：读出过的项可能是用户点「允许」放行的，重读会再弹。
+            let retry = reads.values.allSatisfy { $0.isTransient || $0 == .missing }
+            return ProLicenseLoad(snapshot: snapshot, trusted: false, writeRecord: false, deleteLegacy: false,
+                                  retryLater: retry)
         }
         // 全新安装：什么都没有，什么都不用写。
         guard anyExists else {
