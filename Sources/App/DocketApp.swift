@@ -220,6 +220,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 消息在刘海下展开成卡片。没解锁或没打开时什么都不做。
         NotchMessageController.shared.apply(state.state.notchMessage)
 
+        // 输入法自动切换（默认关）：切到某个 App 时按规则换输入法，从刘海落下提示。
+        // 按 App 规则是码头 Pro，总开关和其余设置免费。
+        InputSourceController.shared.apply(state.state.inputSource)
+
         // AI 助手的刘海对话：入口、展开面板和快捷键。会话状态和货架上的
         // AI 卡片共用一份。
         AIChatCenter.shared.app = state

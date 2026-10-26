@@ -66,6 +66,9 @@ public final class AppState {
             if state.notchMessage != oldValue.notchMessage {
                 NotchMessageController.shared.apply(state.notchMessage)
             }
+            if state.inputSource != oldValue.inputSource {
+                InputSourceController.shared.apply(state.inputSource)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them

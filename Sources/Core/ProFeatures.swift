@@ -46,6 +46,9 @@ import Foundation
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 /// - 消息灵动岛（信息、WhatsApp、微信的消息卡，`NotchMessageSettings`），见
 ///   `ProLicenseGate.notchMessageActive`。
+/// - 输入法自动切换的「按 App 规则」（`InputSourceSettings.rules`），见
+///   `ProLicenseGate.inputSourceRulesActive`。总开关、没有规则的 App 用默认输入法或记住
+///   上次、切换提示免费。
 /// - 「算」汇率页的完整版（收藏、固定、记录、多币种列表、小键盘、全部快捷键）和卡片轮播
 ///   收藏的换算，见 `ProLicenseGate.canUseFullCurrencyPage`、`canUseCurrencyList`、
 ///   `canRotateCalcFavorites`。普通版汇率页（输入金额、选币种、对调、汇率、拷贝结果、
@@ -149,6 +152,10 @@ public enum ProFeatures {
         /// 设置 ▸ 通用「消息灵动岛」：信息、WhatsApp、微信的通知在刘海下展开成消息卡，
         /// 信息可在刘海里快速回复，见 `NotchMessageSettings`、`ProLicenseGate.notchMessageActive`。
         case notchMessage
+        /// 设置 ▸ 输入法的「按 App 规则」：切到某个 App 时换成它自己的输入法。总开关、
+        /// 默认输入法 / 记住上次、切换提示免费，见 `InputSourceSettings`、
+        /// `ProLicenseGate.inputSourceRulesActive`。
+        case inputSourceRules
     }
 
     // MARK: 判断

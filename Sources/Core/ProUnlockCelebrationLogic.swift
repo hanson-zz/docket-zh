@@ -275,6 +275,7 @@ public enum ProUnlockHighlights {
         case .setting(.shotTranslate): tr("截图翻译")
         case .setting(.shotPin): tr("截图贴图")
         case .setting(.notchMessage): tr("消息灵动岛")
+        case .setting(.inputSourceRules): tr("输入法规则")
         case .kind(.pet): tr("电子宠物")
         case .tool(.textCapture): tr("截图识字")
         case .kind(let kind): WidgetCatalog.entry(kind)?.name ?? kind.rawValue
@@ -294,6 +295,7 @@ public enum ProUnlockHighlights {
         case .setting(.shotTranslate): "translate"
         case .setting(.shotPin): "pin.fill"
         case .setting(.notchMessage): "message.fill"
+        case .setting(.inputSourceRules): "keyboard"
         case .kind(.pet): "pawprint.fill"
         case .tool(.textCapture): "text.viewfinder"
         default: "star.fill"

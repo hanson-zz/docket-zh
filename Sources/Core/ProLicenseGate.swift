@@ -47,6 +47,9 @@ import Foundation
 ///   试用时自动回来，见 `canUseCryptoAlerts`。
 /// - 消息灵动岛：设置里开关旁是 Pro 胶囊，没解锁时打开开关弹付费墙；已经打开的
 ///   不观察横幅、不弹卡片，设置不改写，解锁或试用时自动回来，见 `notchMessageActive`。
+/// - 输入法自动切换的按 App 规则：规则区盖模糊遮罩和小锁，「解锁码头 Pro」弹付费墙，
+///   不改配置；已有的规则不生效（那些 App 按没有规则处理），解锁或试用时自动回来，见
+///   `inputSourceRulesActive`。
 /// - 充电上限：开关和安装助手弹付费墙；已打开的不再生效（写给助手的设置里关掉，
 ///   电池照常充电），用户的选择另外记着，解锁后恢复。
 public enum ProLicenseGate {
@@ -339,6 +342,14 @@ public enum ProLicenseGate {
     /// 开关和选的 App、位置照旧存着，解锁或试用后自动恢复。
     public static func notchMessageActive(_ settings: NotchMessageSettings, unlocked: Bool) -> Bool {
         settings.enabled && !settings.apps.isEmpty && canUse(.notchMessage, unlocked: unlocked)
+    }
+
+    // MARK: 输入法自动切换
+
+    /// 按 App 规则在不在生效：要 Pro 已解锁。没解锁时规则照旧存着，切 App 时按「没有规则
+    /// 的 App」处理，解锁或试用后自动恢复。总开关和其余设置免费，不受这里管。
+    public static func inputSourceRulesActive(unlocked: Bool) -> Bool {
+        canUse(.inputSourceRules, unlocked: unlocked)
     }
 
     // MARK: 从小组件库新建分组

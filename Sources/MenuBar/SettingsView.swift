@@ -143,6 +143,8 @@ struct SettingsView: View {
         // AI 和快捷键各自一页，不再堆在“通用”里。
         ("AI", "AI", "sparkles"),
         ("Shortcuts", tr("快捷键"), "command"),
+        // 输入法自动切换，夹在快捷键和通用之间。
+        ("InputSource", tr("输入法"), "keyboard"),
         ("General", tr("通用"), "gearshape"),
         ("Pro", tr("码头 Pro"), "crown"),
     ]
@@ -186,6 +188,7 @@ struct SettingsView: View {
         case "Layouts": layouts
         case "AI": ai
         case "Shortcuts": shortcuts
+        case "InputSource": InputSourceSettingsPane(settings: $state.inputSource)
         case "General": general
         case "Pro": ProSettingsPane()
         default: shelf

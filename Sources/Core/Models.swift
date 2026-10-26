@@ -1160,6 +1160,9 @@ public struct PersistedState: Codable, Sendable {
     public var windowSwitcher = WindowSwitcherSettings()
     /// 消息灵动岛（码头 Pro）：开关、启用的 App、位置和自动收起秒数。默认关。
     public var notchMessage = NotchMessageSettings()
+    /// 输入法自动切换：总开关（默认关）、没有规则的 App 怎么办、默认输入法、按 App 规则
+    /// （码头 Pro）和切换提示。见 `InputSourceSettings`。
+    public var inputSource = InputSourceSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1194,6 +1197,7 @@ public struct PersistedState: Codable, Sendable {
         shotHotKeys = (try? c.decodeIfPresent(ShotHotKeys.self, forKey: .shotHotKeys)) ?? ShotHotKeys()
         windowSwitcher = (try? c.decodeIfPresent(WindowSwitcherSettings.self, forKey: .windowSwitcher)) ?? WindowSwitcherSettings()
         notchMessage = (try? c.decodeIfPresent(NotchMessageSettings.self, forKey: .notchMessage)) ?? NotchMessageSettings()
+        inputSource = (try? c.decodeIfPresent(InputSourceSettings.self, forKey: .inputSource)) ?? InputSourceSettings()
     }
 
     public init() {}
