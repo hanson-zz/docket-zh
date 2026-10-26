@@ -43,7 +43,8 @@ final class GitHubService {
     private(set) var states: [String: RepoState] = [:]
     private(set) var seen: [String: GitHubSeen] = [:]
     private(set) var notifications: Int?
-    private(set) var hasToken = KeychainStore.read(GitHubService.tokenAccount) != nil
+    /// 只看钥匙串里有没有这一项，不读内容，启动时不会弹钥匙串授权框。
+    private(set) var hasToken = KeychainStore.exists(GitHubService.tokenAccount)
     private(set) var loading: Set<String> = []
     /// Set while GitHub has refused for the rate; nothing is asked before it.
     private(set) var limitedUntil: Date?

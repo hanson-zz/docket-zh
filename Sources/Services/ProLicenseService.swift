@@ -11,62 +11,126 @@ private let proLicenseLog = Logger(subsystem: "com.docket-zh.app", category: "li
 
 /// 码头 Pro 的授权信息存在钥匙串里，重装码头也不会丢，试用期也不会被重置。
 ///
-/// 用码头自己的 bundle 前缀做 service 名，和拾掇（io.github.hansonzz.shiduo.license）
-/// 以及码头存 GitHub 令牌的 com.docket-zh.app 都分开。
+/// 四样东西（许可证、实例 ID、上次校验、试用开始）合成一个钥匙串项，内容是 JSON
+/// （`ProLicenseRecord`）。码头是 ad-hoc 签名，每次更新签名都会变，macOS 读旧项时会弹
+/// 钥匙串授权框；以前四项分开存、每次算状态都重读四项、写的时候先删再加，一次能弹好几个。
+/// 现在每次运行只在第一次用到时读一次，之后都读内存；值真的变了才写，写用
+/// SecItemUpdate，没有才 Add。读失败（用户点了拒绝）也记住，这次运行不再读。
+///
+/// 旧版的四个项（service 是 `legacyService`）在第一次读不到新项时读一次、合并写进新项，
+/// 成功后一次删掉。判断都在 Core 的 `ProLicenseStorePlan`。
+@MainActor
 enum ProLicenseKeychain {
-    static let service = "com.docket-zh.app.license"
+    /// 新的合并项。和旧项分开 service，按 service 一次删光旧项时不会碰到新项。
+    /// 和拾掇（io.github.hansonzz.shiduo.license）以及码头存 GitHub 令牌的 com.docket-zh.app 都分开。
+    nonisolated static let service = "com.docket-zh.app.license.v2"
+    nonisolated static let account = "license"
+    /// 旧版四个独立项的 service。
+    nonisolated static let legacyService = "com.docket-zh.app.license"
 
-    enum Account: String, CaseIterable {
-        case licenseKey
-        case instanceID
-        case lastValidated
-        case trialStart
+    private static var loaded: ProLicenseLoad?
+
+    /// 这次运行的授权信息：第一次调用时读钥匙串（必要时迁移旧项），之后只读内存。
+    static func snapshot() -> ProLicenseSnapshot {
+        load().snapshot
     }
 
-    static func get(_ account: Account) -> String? {
+    /// 内存里的值是不是钥匙串里的完整真相（用户拒绝读取时为 false）。
+    static var isTrusted: Bool {
+        load().trusted
+    }
+
+    private static func load() -> ProLicenseLoad {
+        if let loaded { return loaded }
+        var result = ProLicenseStorePlan.load(record: read(service: service, account: account)) {
+            var reads: [ProLicenseLegacyField: KeychainRead] = [:]
+            for field in ProLicenseLegacyField.allCases {
+                reads[field] = read(service: legacyService, account: field.rawValue)
+            }
+            return reads
+        }
+        if result.writeRecord {
+            if write(ProLicenseRecord.encode(result.snapshot)) {
+                if result.deleteLegacy { deleteLegacy() }
+            } else {
+                // 写不进去时内存照用；旧项留着，下次启动再迁。
+                proLicenseLog.error("Keychain migration write failed")
+            }
+            result.writeRecord = false
+            result.deleteLegacy = false
+        }
+        if !result.trusted {
+            proLicenseLog.error("Keychain license read failed; not retrying this run")
+        }
+        loaded = result
+        return result
+    }
+
+    /// 改授权信息。值没变就不碰钥匙串。
+    static func update(_ change: (inout ProLicenseSnapshot) -> Void) {
+        var current = load()
+        var next = current.snapshot
+        change(&next)
+        next = ProLicenseStorePlan.prepared(next, trusted: current.trusted)
+        guard ProLicenseStorePlan.needsWrite(current: current.snapshot, next: next) else { return }
+        if write(ProLicenseRecord.encode(next)) {
+            // 写成功后钥匙串里就是这一份，之后可以放心按它算。
+            current.trusted = true
+        }
+        // 写失败时内存照样更新，这次运行按新状态走。
+        current.snapshot = next
+        loaded = current
+    }
+
+    nonisolated private static func read(service: String, account: String) -> KeychainRead {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account.rawValue,
+            kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
         var result: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        let read = KeychainRead.classify(status: status, data: result as? Data)
+        if read.isFailed {
+            proLicenseLog.error("Keychain read \(account, privacy: .public) failed: \(status, privacy: .public)")
+        }
+        return read
     }
 
-    static func set(_ value: String?, for account: Account) {
-        let base: [String: Any] = [
+    /// 写新项：先 SecItemUpdate，没有这一项才 SecItemAdd。
+    nonisolated private static func write(_ text: String) -> Bool {
+        let data = Data(text.utf8)
+        let match: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account.rawValue,
+            kSecAttrAccount as String: account,
         ]
-        SecItemDelete(base as CFDictionary)
-        guard let value else { return }
-        var item = base
-        item[kSecValueData as String] = Data(value.utf8)
-        item[kSecAttrLabel as String] = tr("码头 Pro 授权")
-        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        let status = SecItemAdd(item as CFDictionary, nil)
-        if status != errSecSuccess {
-            proLicenseLog.error("Keychain write \(account.rawValue, privacy: .public) failed: \(status, privacy: .public)")
+        var status = SecItemUpdate(match as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if status == errSecItemNotFound {
+            var item = match
+            item[kSecValueData as String] = data
+            item[kSecAttrLabel as String] = tr("码头 Pro 授权")
+            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            status = SecItemAdd(item as CFDictionary, nil)
         }
+        if status != errSecSuccess {
+            proLicenseLog.error("Keychain write failed: \(status, privacy: .public)")
+        }
+        return status == errSecSuccess
     }
 
-    static func date(_ account: Account) -> Date? {
-        guard let text = get(account), let seconds = Double(text) else { return nil }
-        return Date(timeIntervalSince1970: seconds)
-    }
-
-    static func setDate(_ date: Date?, for account: Account) {
-        set(date.map { String($0.timeIntervalSince1970) }, for: account)
-    }
-
-    static func snapshot() -> ProLicenseSnapshot {
-        ProLicenseSnapshot(licenseKey: get(.licenseKey), instanceID: get(.instanceID),
-                           lastValidated: date(.lastValidated), trialStart: date(.trialStart))
+    /// 旧的四个项按 service 一次删掉（macOS 上 SecItemDelete 删除所有匹配项）。
+    nonisolated private static func deleteLegacy() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: legacyService,
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            proLicenseLog.error("Keychain legacy delete failed: \(status, privacy: .public)")
+        }
     }
 }
 
@@ -208,7 +272,7 @@ final class ProLicenseManager {
         maskedKey = snapshot.isActivated ? snapshot.licenseKey.map(ProLicenseText.mask) : nil
         lastValidated = snapshot.lastValidated
         trialEndDate = snapshot.trialStart.map(ProLicenseLogic.trialEndDate)
-        canStartTrial = ProLicenseLogic.canStartTrial(snapshot)
+        canStartTrial = ProLicenseStorePlan.canStartTrial(snapshot, trusted: ProLicenseKeychain.isTrusted)
         let unlocked = state.isUnlocked
         if UserDefaults.standard.bool(forKey: ProAccess.licenseKey) != unlocked {
             UserDefaults.standard.set(unlocked, forKey: ProAccess.licenseKey)
@@ -265,8 +329,8 @@ final class ProLicenseManager {
     /// 用户在付费墙点“开始试用”时开始 7 天试用。开始过就不会再重置。
     func startTrial() {
         let snapshot = ProLicenseKeychain.snapshot()
-        guard ProLicenseLogic.canStartTrial(snapshot) else { return }
-        ProLicenseKeychain.setDate(Date(), for: .trialStart)
+        guard ProLicenseStorePlan.canStartTrial(snapshot, trusted: ProLicenseKeychain.isTrusted) else { return }
+        ProLicenseKeychain.update { $0.trialStart = Date() }
         refreshState()
     }
 
@@ -281,10 +345,12 @@ final class ProLicenseManager {
         case .keep:
             break
         case .confirmed:
-            ProLicenseKeychain.setDate(Date(), for: .lastValidated)
+            ProLicenseKeychain.update { $0.lastValidated = Date() }
         case .revoked(let message):
-            ProLicenseKeychain.set(nil, for: .instanceID)
-            ProLicenseKeychain.set(nil, for: .lastValidated)
+            ProLicenseKeychain.update {
+                $0.instanceID = nil
+                $0.lastValidated = nil
+            }
             errorMessage = message
             proLicenseLog.error("License revalidation rejected, status: \(response?.status ?? "-", privacy: .public)")
         }
@@ -311,9 +377,11 @@ final class ProLicenseManager {
             let response = try await ProLicenseAPI.activate(key: key, instanceName: Self.instanceName)
             switch ProLicenseLogic.activation(response) {
             case .success(let instance):
-                ProLicenseKeychain.set(key, for: .licenseKey)
-                ProLicenseKeychain.set(instance, for: .instanceID)
-                ProLicenseKeychain.setDate(Date(), for: .lastValidated)
+                ProLicenseKeychain.update {
+                    $0.licenseKey = key
+                    $0.instanceID = instance
+                    $0.lastValidated = Date()
+                }
                 refreshState()
                 // 第一次激活成功时播放解锁庆祝动画（只自动播一次，见 ProUnlockFirstRun）。
                 ProUnlockCelebration.shared.activationSucceeded()
@@ -336,8 +404,9 @@ final class ProLicenseManager {
 
     /// 解绑这台 Mac，把激活名额留给别的 Mac（兑换码同样一码一机，解绑后可换机）。
     func deactivate() async {
-        guard let key = ProLicenseKeychain.get(.licenseKey) else { return }
-        guard let instance = ProLicenseKeychain.get(.instanceID) else {
+        let snapshot = ProLicenseKeychain.snapshot()
+        guard let key = snapshot.licenseKey else { return }
+        guard let instance = snapshot.instanceID else {
             clearActivation()
             return
         }
@@ -357,9 +426,11 @@ final class ProLicenseManager {
     }
 
     private func clearActivation() {
-        ProLicenseKeychain.set(nil, for: .licenseKey)
-        ProLicenseKeychain.set(nil, for: .instanceID)
-        ProLicenseKeychain.set(nil, for: .lastValidated)
+        ProLicenseKeychain.update {
+            $0.licenseKey = nil
+            $0.instanceID = nil
+            $0.lastValidated = nil
+        }
         refreshState()
     }
 

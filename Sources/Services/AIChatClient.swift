@@ -156,10 +156,13 @@ extension AIChatClient {
 /// service 是 bundle id 加服务 id。绝不写进 UserDefaults、状态文件或日志。
 ///
 /// “有没有密钥”只读属性不读内容，不会触发钥匙串的授权弹窗；真正发请求
-/// 时才读内容。结果按服务缓存，改动后刷新。
+/// 时才读内容。内容每个服务每次运行最多读一次，之后用内存里的（码头是 ad-hoc
+/// 签名，每次更新后读旧项都会弹授权框）；用户点了拒绝也记住，这次运行不再读，
+/// 重新保存密钥会覆盖。
 @MainActor
 enum AIKeyStore {
     private static var known: [String: Bool] = [:]
+    private static var values = KeychainReadCache()
 
     private static var bundleID: String { Bundle.main.bundleIdentifier ?? "com.docket-zh.app" }
 
@@ -172,6 +175,7 @@ enum AIKeyStore {
     }
 
     static func hasKey(_ serviceID: String) -> Bool {
+        if let read = values.cached(serviceID) { return read.exists }
         if let cached = known[serviceID] { return cached }
         var lookup = query(serviceID)
         lookup[kSecReturnAttributes as String] = true
@@ -183,14 +187,15 @@ enum AIKeyStore {
     }
 
     static func read(_ serviceID: String) -> String? {
-        var lookup = query(serviceID)
-        lookup[kSecReturnData as String] = true
-        lookup[kSecMatchLimit as String] = kSecMatchLimitOne
-        var result: CFTypeRef?
-        guard SecItemCopyMatching(lookup as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data,
-              let key = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !key.isEmpty else { return nil }
+        let read = values.read(serviceID) {
+            var lookup = query(serviceID)
+            lookup[kSecReturnData as String] = true
+            lookup[kSecMatchLimit as String] = kSecMatchLimitOne
+            var result: CFTypeRef?
+            let status = SecItemCopyMatching(lookup as CFDictionary, &result)
+            return KeychainRead.classify(status: status, data: result as? Data)
+        }
+        guard let key = read.value?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else { return nil }
         return key
     }
 
@@ -198,6 +203,8 @@ enum AIKeyStore {
     static func write(_ key: String, for serviceID: String) -> Bool {
         let value = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return false }
+        // 和这次运行读到的一样就不再碰钥匙串。
+        guard values.needsWrite(value, for: serviceID) else { return true }
         let data = Data(value.utf8)
         let match = query(serviceID)
         var status = SecItemUpdate(match as CFDictionary, [kSecValueData as String: data] as CFDictionary)
@@ -208,6 +215,7 @@ enum AIKeyStore {
             add[kSecAttrLabel as String] = tr("码头 AI 助手密钥（\(serviceID)）")
             status = SecItemAdd(add as CFDictionary, nil)
         }
+        values.wrote(value, for: serviceID, succeeded: status == errSecSuccess)
         known[serviceID] = nil
         changed()
         return status == errSecSuccess
@@ -215,6 +223,7 @@ enum AIKeyStore {
 
     static func delete(_ serviceID: String) {
         SecItemDelete(query(serviceID) as CFDictionary)
+        values.deleted(serviceID)
         known[serviceID] = nil
         changed()
     }
