@@ -60,9 +60,4 @@ final class RegionalDefaultsTests: XCTestCase {
         XCTAssertEqual(dollars.currencySymbol, "$")
         XCTAssertEqual(SlackerClock.Settings(currencySymbol: "  ").currencySymbol, "¥")
     }
-
-    func testCalculatorBadgeIsASymbolInEnglish() {
-        XCTAssertEqual(SmartCalc.badge(english: false), .character("算"))
-        XCTAssertEqual(SmartCalc.badge(english: true), .symbol("plus.forwardslash.minus"))
-    }
 }

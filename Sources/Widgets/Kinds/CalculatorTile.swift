@@ -104,7 +104,7 @@ struct CalculatorTile: View {
         }
     }
 
-    /// 字牌上「算」的颜色：卡片的主题色，面板和引导里没有主题色时用默认的紫。
+    /// 卡片的主题色（「已复制」小标签用），面板和引导里没有主题色时用默认的紫。
     private var accent: Color {
         if let theme { return theme.main(dark: scheme == .dark) }
         let palette = WidgetTint.defaultPalette(.calculator)
@@ -208,20 +208,20 @@ struct CalculatorTile: View {
         .accessibilityHidden(true)
     }
 
+    /// 字牌：小熊猫脸框的拟人计算器（`CalcBadgeFace`），中英文界面同一张图。
+    /// 辅助功能照旧不读字牌，卡片名和结果按钮已经说清楚了。
     private func badge(size: CGFloat) -> some View {
         TileBadge(size: size) {
-            switch SmartCalc.badge(english: L10n.isEnglish) {
-            case .character(let glyph):
-                Text(verbatim: glyph)
-                    .font(.system(size: size * 0.48, weight: .heavy))
-                    .foregroundStyle(accent)
-            case .symbol(let name):
-                Image(systemName: name)
-                    .font(.system(size: size * 0.42, weight: .heavy))
-                    .foregroundStyle(accent)
-            }
+            CalcBadgeFace(size: size, keyColor: keyColor)
         }
         .accessibilityHidden(true)
+    }
+
+    /// 字牌前三个键的颜色：卡片的主题色（和 `accent` 同一个），跟随系统强调色时是 nil。
+    private var keyColor: ColorCode? {
+        let dark = scheme == .dark
+        if let theme { return theme.palette.map { WidgetTint.readable($0.main, dark: dark) } }
+        return WidgetTint.readable(WidgetTint.defaultPalette(.calculator).main, dark: dark)
     }
 
     /// 三类各一个颜色：汇率绿、单位黄、计算橙，和效果图一致，只是小标签。

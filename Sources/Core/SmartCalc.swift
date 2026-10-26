@@ -13,16 +13,7 @@ public enum SmartCalc {
 
     // MARK: 字牌
 
-    /// 卡片左边的字牌：中文界面是汉字「算」，英文界面换成加减乘除的符号
-    /// （SF Symbols 的 `plus.forwardslash.minus`），不让英文用户看到一个汉字。
-    public enum Badge: Equatable, Sendable {
-        case character(String)
-        case symbol(String)
-    }
-
-    public static func badge(english: Bool) -> Badge {
-        english ? .symbol("plus.forwardslash.minus") : .character("算")
-    }
+    // 字牌不再分中英：两种界面都是 `CalcBadge` 的小熊猫脸框计算器，见 CalcBadge.swift。
 
     // MARK: 结果
 
