@@ -157,8 +157,9 @@ extension QuickTodo {
                 }
                 continue
             }
-            if let at = item.remindAt {
-                let day = TodoDay.key(at, calendar: calendar)
+            // 重复待办生成的下一次没有提醒时间时，按排到的那天升上来。
+            if let at = item.remindAt.map({ TodoDay.key($0, calendar: calendar) }) ?? item.planDay {
+                let day = at
                 if day < today {
                     item.today = true
                     item.todaySince = day

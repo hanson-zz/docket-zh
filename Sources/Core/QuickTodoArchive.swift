@@ -40,6 +40,9 @@ extension QuickTodo {
             var kept = item
             kept.today = false
             kept.remindAt = nil
+            // 重复已经生成过下一次了，收起来的这条恢复时只是一条普通待办。
+            kept.repeatRule = nil
+            kept.planDay = nil
             return kept
         }
     }

@@ -55,6 +55,9 @@ import Foundation
 ///   带去计算）和整个计算页免费。
 /// - 截图编辑工具条的截图翻译（译文盖在截图上，翻译面板的「截图翻译」同一个）和贴图，
 ///   见 `ShotFeature`、`ProLicenseGate.canUseShotFeature`。标注、取字、存文件、拷贝免费。
+/// - 快速待办的橙黄绿紫四色标签和按颜色筛选、重复待办（每天 / 每周 / 工作日），见
+///   `ProLicenseGate.canTagTodo`、`canFilterTodoTags`、`canRepeatTodos`。红色标签（原来的
+///   「重要」）、勾选手感、撤销、拖动排序、今天清空庆祝都免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。

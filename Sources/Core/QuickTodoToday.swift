@@ -212,10 +212,11 @@ public struct TodoStreak: Equatable, Sendable {
 }
 
 extension QuickTodo {
-    /// 勾掉最后一条时记一笔连续清空。
+    /// 「今天」一组清空时记一笔连续清空，也记进最近 7 天的小圆点。
     public static func recordCleared(in config: inout WidgetConfig, today: String,
                                      calendar: Calendar = .current) {
         TodoStreak(config).recording(today, calendar: calendar).store(in: &config)
+        TodoStreak.recordHistory(today, in: &config)
     }
 
     public static func streak(_ config: WidgetConfig, today: String, calendar: Calendar = .current) -> Int {

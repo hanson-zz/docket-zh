@@ -255,6 +255,19 @@ public enum ProLicenseGate {
     /// 已经打开的开关照旧存着只是不同步，解锁后接着同步；逐条“转成提醒事项”一直免费。
     public static func canSyncTodoReminders(unlocked: Bool) -> Bool { unlocked }
 
+    /// 快速待办的橙黄绿紫四色标签（Pro；红色免费，就是原来的「重要」）。没解锁时已设的
+    /// 四色照旧存着、画成没有颜色，点了弹付费墙。见 `TodoTag.canChoose`。
+    public static func canTagTodo(_ tag: TodoTag?, unlocked: Bool) -> Bool {
+        TodoTag.canChoose(tag, unlocked: unlocked)
+    }
+
+    /// 快速待办按颜色筛选（Pro）。没解锁时不筛，点了弹付费墙。
+    public static func canFilterTodoTags(unlocked: Bool) -> Bool { unlocked }
+
+    /// 快速待办的重复待办（每天 / 每周 / 工作日，Pro）。没解锁时规则照旧存着，
+    /// 勾掉不再生成下一次，设置时弹付费墙。
+    public static func canRepeatTodos(unlocked: Bool) -> Bool { unlocked }
+
     // MARK: 天气城市
 
     /// 天气面板最多能切换几个城市：没解锁时 1 个，解锁后列表上限个。

@@ -92,7 +92,8 @@ public struct TodoUndoStack: Equatable, Sendable {
         case .completed:
             // 撤销完成时这一项要是已经被删了，就不凭空变回来：那是另一步的事。
             guard items.contains(where: { $0.id == step.item.id }) else { return QuickTodo.ordered(items) }
-            let rest = items.filter { $0.id != step.item.id }
+            // 重复待办勾掉时生成的下一次一起收回。
+            let rest = items.filter { $0.id != step.item.id && !($0.repeatOf == step.item.id && !$0.done) }
             return QuickTodo.restoring(step.item, at: step.index, in: rest)
         }
     }

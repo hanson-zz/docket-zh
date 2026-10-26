@@ -165,8 +165,8 @@ final class ReminderPopupCenter {
             guard let id = alert.widgetID, let instance = WidgetWriter.current(id) else { break }
             let items = QuickTodo.items(instance.config)
             guard let item = items.first(where: { $0.id == alert.itemID }), !item.done else { break }
-            let finishing = QuickTodo.finishesAll(toggling: item.id, in: items)
-            // 和卡片上勾掉一样：勾掉最后一项时记下庆祝，卡片上的小熊猫跟着欢呼。
+            let finishing = QuickTodo.clearsToday(toggling: item.id, in: items)
+            // 和卡片上勾掉一样：「今天」一组清空时记下庆祝，卡片上的小熊猫跟着欢呼。
             TodoLog.toggle(item.id, in: instance, cheering: finishing)
         case .water, .countdown, .alarm:
             break

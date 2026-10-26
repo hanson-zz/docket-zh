@@ -13,7 +13,9 @@ import Foundation
 ///
 /// 分组、拖进来的链接和当天清用到的几样东西跟在后面，每样一段
 /// `键=值`（`s=1` 在「今天」分组、`u=` 链接或文件地址、`a=` 记下的那天、`d=` 做完的那天、
-/// `r=` 提醒时间，1970 年起的秒数；`p=` 放进「今天」的那天、`f=1` 重要；`x=` 同步到的
+/// `r=` 提醒时间，1970 年起的秒数；`p=` 放进「今天」的那天、`f=1` 红色标签（原来的「重要」）、
+/// `c=` 另外四色标签（o 橙、y 黄、g 绿、p 紫）；`e=` 重复规则（d 每天、w 每周、k 工作日）、
+/// `n=` 排到哪天（重复待办生成的下一次）、`o=` 由哪一条重复生成；`x=` 同步到的
 /// 系统提醒事项标识、`h=` 上次同步时的指纹）。一样都没有时写出来和原来一模一样，旧数据
 /// 读出来就是没有提醒时间。旧版本的星标（“今天三件事”）也是 `s=1`，升级后就是「今天」。
 public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
@@ -33,8 +35,14 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
     /// 放进「今天」的那天。比今天早而还没做完，就是昨天（或更早）没做完顺下来的，
     /// 截止胶囊标红。旧数据没有这一段，按 `addedDay` 算。
     public var todaySince: String?
-    /// 重要：行尾一面小红旗，只有一级。
-    public var important: Bool
+    /// 彩色标签（红橙黄绿紫），没有时为 nil。红色就是原来的「重要」。
+    public var tag: TodoTag?
+    /// 重复规则（Pro）：勾掉后按它生成下一次。
+    public var repeatRule: TodoRepeat?
+    /// 排到哪天（`TodoDay`）：重复生成的下一次没有提醒时间时，到了这天升进「今天」。
+    public var planDay: String?
+    /// 由哪一条重复生成（那一条的 id）：重新打开或撤销那一条时，把生成的这条收回。
+    public var repeatOf: String?
     /// 同步到系统“提醒事项”里的那一条（`calendarItemIdentifier`），没同步过是 nil。
     public var externalID: String?
     /// 上次同步时两边一致的指纹（见 `TodoReminderSync.fingerprint`），用来分辨哪边改过。
@@ -44,7 +52,9 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
                 today: Bool = false, link: String? = nil,
                 addedDay: String? = nil, doneDay: String? = nil, remindAt: Date? = nil,
                 todaySince: String? = nil, important: Bool = false,
-                externalID: String? = nil, syncMark: String? = nil) {
+                externalID: String? = nil, syncMark: String? = nil,
+                tag: TodoTag? = nil, repeatRule: TodoRepeat? = nil,
+                planDay: String? = nil, repeatOf: String? = nil) {
         self.id = id
         self.text = text
         self.done = done
@@ -54,9 +64,21 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         self.doneDay = doneDay
         self.remindAt = remindAt.map { Date(timeIntervalSince1970: $0.timeIntervalSince1970.rounded(.down)) }
         self.todaySince = todaySince
-        self.important = important
+        self.tag = tag ?? (important ? .red : nil)
         self.externalID = externalID
         self.syncMark = syncMark
+        self.repeatRule = repeatRule
+        self.planDay = planDay
+        self.repeatOf = repeatOf
+    }
+
+    /// 重要：就是红色标签。同步到系统提醒事项时映射成旗标（优先级“高”）。
+    /// 设成重要就是标红；取消重要只拿掉红色，别的颜色不动。
+    public var important: Bool {
+        get { tag == .red }
+        set {
+            if newValue { tag = .red } else if tag == .red { tag = nil }
+        }
     }
 
     public static func newID() -> String {
@@ -77,7 +99,11 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
         if let doneDay { fields.append("d=\(doneDay)") }
         if let remindAt { fields.append("r=\(Int(remindAt.timeIntervalSince1970))") }
         if let todaySince { fields.append("p=\(todaySince)") }
-        if important { fields.append("f=1") }
+        if tag == .red { fields.append("f=1") }
+        else if let tag { fields.append("c=\(tag.code)") }
+        if let repeatRule { fields.append("e=\(repeatRule.rawValue)") }
+        if let planDay { fields.append("n=\(planDay)") }
+        if let repeatOf, !repeatOf.isEmpty { fields.append("o=\(repeatOf)") }
         if let externalID, !externalID.isEmpty { fields.append("x=\(externalID)") }
         if let syncMark, !syncMark.isEmpty { fields.append("h=\(syncMark)") }
         return fields.joined(separator: "\t")
@@ -99,6 +125,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             var remind: Date?
             var since: String?
             var flagged = false
+            var color: TodoTag?
+            var rule: TodoRepeat?
+            var plan: String?
+            var origin: String?
             var external: String?
             var mark: String?
             for field in parts.dropFirst(3) {
@@ -111,6 +141,10 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
                 }
                 else if field.hasPrefix("p="), TodoDay.isKey(String(field.dropFirst(2))) { since = String(field.dropFirst(2)) }
                 else if field == "f=1" { flagged = true }
+                else if field.hasPrefix("c="), let known = TodoTag(code: String(field.dropFirst(2))) { color = known }
+                else if field.hasPrefix("e="), let known = TodoRepeat(rawValue: String(field.dropFirst(2))) { rule = known }
+                else if field.hasPrefix("n="), TodoDay.isKey(String(field.dropFirst(2))) { plan = String(field.dropFirst(2)) }
+                else if field.hasPrefix("o="), field.count > 2 { origin = String(field.dropFirst(2)) }
                 else if field.hasPrefix("x="), field.count > 2 { external = String(field.dropFirst(2)) }
                 else if field.hasPrefix("h="), field.count > 2 { mark = String(field.dropFirst(2)) }
                 else { words.append(field) }
@@ -121,7 +155,8 @@ public struct TodoItem: Equatable, Hashable, Sendable, Identifiable {
             self.init(id: id.isEmpty ? fallbackID : id, text: text, done: parts[1] == "1",
                       today: today, link: link?.isEmpty == true ? nil : link,
                       addedDay: added, doneDay: finished, remindAt: remind,
-                      todaySince: since, important: flagged, externalID: external, syncMark: mark)
+                      todaySince: since, important: false, externalID: external, syncMark: mark,
+                      tag: flagged ? .red : color, repeatRule: rule, planDay: plan, repeatOf: origin)
         } else {
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
@@ -200,11 +235,22 @@ public enum QuickTodo {
     /// open list, which is where a task you just put back belongs.
     ///
     /// - Parameter day: 勾掉的那天，记在这一条上，第二天据此收起；重新打开时清掉。
-    public static func toggling(_ id: String, in items: [TodoItem], day: String? = nil) -> [TodoItem] {
+    ///
+    /// 重复待办（Pro）：`repeats` 为真时勾掉一条带重复规则的，按规则在「稍后」最后生成
+    /// 下一次（见 `nextOccurrence`）；重新打开时把它生成的、还没做的那条收回，不会多出一条。
+    public static func toggling(_ id: String, in items: [TodoItem], day: String? = nil,
+                                repeats: Bool = false, nextID: String = TodoItem.newID(),
+                                calendar: Calendar = .current) -> [TodoItem] {
         guard var item = items.first(where: { $0.id == id }) else { return ordered(items) }
         item.done.toggle()
         item.doneDay = item.done ? day : nil
-        let rest = ordered(items.filter { $0.id != id })
+        var rest = ordered(items.filter { $0.id != id })
+        if !item.done {
+            rest = rest.filter { !($0.repeatOf == id && !$0.done) }
+        } else if repeats, let next = nextOccurrence(of: item, finishedOn: day, id: nextID, calendar: calendar),
+                  !rest.contains(where: { $0.repeatOf == id && !$0.done }), rest.count < maxItems {
+            rest = open(rest) + [next] + rest.filter(\.done)
+        }
         return open(rest) + (item.done ? [] : [item]) + rest.filter(\.done) + (item.done ? [item] : [])
     }
 
