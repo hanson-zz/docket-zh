@@ -628,7 +628,9 @@ final class StickyCircleCell: NSTextAttachmentCell {
     }
 
     let box: StickyEditing.Box
-    var look: Look
+    /// 排版问尺寸（`cellSize`、`cellBaselineOffset`）的那两个方法不随主线程隔离；
+    /// 实际只在主线程上排版和改它。
+    nonisolated(unsafe) var look: Look
 
     init(box: StickyEditing.Box, look: Look) {
         self.box = box
