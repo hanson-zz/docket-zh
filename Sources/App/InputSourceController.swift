@@ -89,13 +89,14 @@ final class InputSourceController {
 
     // MARK: 记住上次
 
-    /// 把现在的输入法记到前台 App 名下（码头自己不记）。
+    /// 把现在的输入法记到前台 App 名下（码头自己不记）。输入法没变也要记一次，把这个 App
+    /// 挪到最近用过，满 200 个时才不会先丢常用的；记录真的变了（值或先后）才写盘。
     private func rememberCurrent() {
         guard running, let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
               !InputSourceResolver.isOwn(front) else { return }
-        let current = InputSourceService.currentID()
-        guard memory.source(for: front) != current else { return }
-        memory.record(current, for: front)
+        let before = memory
+        memory.record(InputSourceService.currentID(), for: front)
+        guard memory != before else { return }
         if let data = try? JSONEncoder().encode(memory) {
             UserDefaults.standard.set(data, forKey: Self.memoryKey)
         }
@@ -111,8 +112,11 @@ final class InputSourceController {
         let current = InputSourceService.currentID()
         let target = InputSourceResolver.target(for: bundleID, settings: settings, rulesActive: rulesActive,
                                                 memory: memory, available: available)
-        guard InputSourceResolver.shouldSwitch(current: current, target: target), let target else { return }
-        InputSourceService.select(target.sourceID)
+        guard InputSourceResolver.shouldSwitch(current: current, target: target), let target else {
+            // 不用切：也算用过一次，挪到「记住上次」的最近。
+            return rememberCurrent()
+        }
+        let selected = InputSourceService.select(target.sourceID)
         // 有的输入法（多见于中日韩）在 App 刚激活时切了不立刻生效：稍等再看一眼，没变就再切一次。
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
@@ -121,7 +125,8 @@ final class InputSourceController {
             if InputSourceService.currentID() != target.sourceID { InputSourceService.select(target.sourceID) }
             self.rememberCurrent()
         }
-        guard let source = InputSourceCatalog.find(target.sourceID, in: available) else { return }
+        // 系统拒绝了就不提示「已切换」（上面 0.15 秒后还会再试一次）。
+        guard selected, let source = InputSourceCatalog.find(target.sourceID, in: available) else { return }
         let app = pid.flatMap { NSRunningApplication(processIdentifier: $0) }
         hint.show(source: source, appIcon: app?.icon, pid: pid)
     }
@@ -175,6 +180,8 @@ final class InputSourceHintController {
             try? await Task.sleep(for: .milliseconds(120))
             let caret = await Task.detached { InputSourceCaret.rect(pid: pid, primaryHeight: primaryHeight) }.value
             guard let self, self.generation == generation, let screen = NSScreen.screens.first else { return }
+            // 等光标的这一会儿更高一档的刘海内容可能出来了：再看一眼，占着就不显示。
+            guard !self.occupancy(windows: windows, screen: screen).blocked else { return }
             self.present(source: source, appIcon: self.pendingIcon, caret: caret, trusted: AppWindows.isTrusted,
                          windows: windows, screen: screen, generation: generation)
         }
@@ -182,8 +189,14 @@ final class InputSourceHintController {
 
     private func present(source: InputSourceInfo, appIcon: NSImage?, caret: CGRect?, trusted: Bool,
                          windows: [NotchForeignWindow], screen: NSScreen, generation: Int) {
-        let described = AINotchController.describe(screen, isMain: true)
         let position = InputSourceHint.effectivePosition(settings.hint, trusted: trusted, caret: caret)
+        // 光标旁：光标在哪块屏幕就按哪块收边，不然副屏上的光标会被收到主屏边上。
+        var target = screen
+        if position == .cursor, let caret,
+           let caretScreen = NSScreen.screens.first(where: { $0.frame.contains(CGPoint(x: caret.midX, y: caret.midY)) }) {
+            target = caretScreen
+        }
+        let described = AINotchController.describe(target, isMain: target == NSScreen.screens.first)
         let nameWidth = (source.name as NSString).size(withAttributes: [
             .font: NSFont.systemFont(ofSize: 15, weight: .semibold)]).width.rounded(.up)
         let width = InputSourceHint.capsuleWidth(nameWidth: nameWidth)

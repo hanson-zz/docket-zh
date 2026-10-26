@@ -197,6 +197,23 @@ final class InputSourceSwitchTests: XCTestCase {
         XCTAssertEqual(memory.source(for: "app.6"), pinyin.id, "刚用过的不丢")
     }
 
+    func testRecordingSameSourceStillRefreshesOrder() {
+        // 常用的 App 输入法一直没变，也得算「最近用过」，满了不先丢它。
+        var memory = InputSourceMemory()
+        for index in 0..<InputSourceMemory.limit { memory.record(abc.id, for: "app.\(index)") }
+        let before = memory
+        memory.record(abc.id, for: "app.0")
+        XCTAssertNotEqual(memory, before, "同一个输入法再记一次要挪到最近")
+        XCTAssertEqual(memory.order.last, "app.0")
+        memory.record(kana.id, for: "app.new")
+        XCTAssertEqual(memory.source(for: "app.0"), abc.id)
+        XCTAssertNil(memory.source(for: "app.1"))
+        // 已经在最近、值也没变：记录不变（不写盘）。
+        let settled = memory
+        memory.record(kana.id, for: "app.new")
+        XCTAssertEqual(memory, settled)
+    }
+
     // MARK: 规则卡片
 
     func testRuleStatusCaption() {
