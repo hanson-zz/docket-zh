@@ -578,7 +578,7 @@ private struct DCCryptoCard: View {
 
 // MARK: - 自选股
 
-/// 小：涨跌统计和比例条，领涨领跌各一只。中：分组名（点了换组）、统计、今日盈亏，两列四只。
+/// 小：涨跌统计和比例条，排前两只。中：分组名（点了换组）、统计、今日盈亏，一列 3 只。
 /// 大：同样的头，一列 7 只带名字和当日走势。
 private struct DCWatchlistCard: View {
     var widget: WidgetInstance
@@ -677,7 +677,7 @@ private struct DCWatchlistCard: View {
         }
     }
 
-    private func row(_ symbol: String, named: Bool) -> some View {
+    private func row(_ symbol: String, named: Bool, trend: Bool = true) -> some View {
         let quote = quote(symbol)
         let ink = StockInk.color(quote?.changePercent, colors: colors, scheme: scheme)
         return HStack(spacing: 8) {
@@ -693,7 +693,7 @@ private struct DCWatchlistCard: View {
             }
             .lineLimit(1)
             .frame(width: named ? 92 : 52, alignment: .leading)
-            if named {
+            if trend {
                 MiniTrend(samples: quote?.history ?? [], tint: ink, baseline: quote?.previousClose, lineWidth: 1.3)
                     .frame(height: 18)
             } else {
@@ -741,33 +741,20 @@ private struct DCWatchlistCard: View {
         }
     }
 
+    /// 中号一列 3 只：代码、当日走势、现价、涨跌色块（两列放不下现价）。
     private var medium: some View {
         let fit = DesktopCardsDataPlan.overflow(count: symbols.count,
                                                 capacity: DesktopCardsDataPlan.rows(.watchlist, size: .medium))
-        let shown = Array(symbols.prefix(fit.shown))
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             header
             BreadthBar(breadth: breadth, colors: colors, height: 4)
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(0..<2, id: \.self) { column in
-                    VStack(spacing: 6) {
-                        ForEach(0..<2, id: \.self) { line in
-                            let slot = column * 2 + line
-                            Group {
-                                if slot < shown.count {
-                                    row(shown[slot], named: false)
-                                } else if slot == shown.count, fit.hidden > 0 {
-                                    DCMore(text: StockBoard.moreText(fit.hidden))
-                                } else {
-                                    Color.clear
-                                }
-                            }
-                            .frame(height: 28)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 2) {
+                ForEach(Array(symbols.prefix(fit.shown)), id: \.self) { symbol in
+                    row(symbol, named: false, trend: true).frame(height: 26)
                 }
+                if fit.hidden > 0 { DCMore(text: StockBoard.moreText(fit.hidden)).frame(height: 26) }
             }
+            .frame(maxHeight: .infinity, alignment: .top)
         }
     }
 

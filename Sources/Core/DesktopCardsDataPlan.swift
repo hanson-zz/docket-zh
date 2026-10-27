@@ -29,7 +29,7 @@ public enum DesktopCardsDataPlan {
         case (.crypto, .medium): 3
         case (.crypto, .large): 6
         case (.watchlist, .small): 2
-        case (.watchlist, .medium): 4
+        case (.watchlist, .medium): 3
         case (.watchlist, .large): 7
         case (.stock, .large): 6
         case (.mail, .medium): 2
