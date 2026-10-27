@@ -1,0 +1,611 @@
+import AppKit
+import SwiftUI
+
+// MARK: - 桌面卡片的内容
+//
+// 钉在桌面的卡片是同一个小组件的另一个视图：每次从 AppState 读它现在的样子
+// （`widgetAnywhere`），改动照旧走 `WidgetWriter`，扩展栏和桌面两边同步。
+//
+// 第一批专门做过的：便签（摊开整张纸，纸里滚动，点一下就写）、算（小号直接输入，中 / 大
+// 是完整面板）、时钟（小 / 中是大字时间）、快速待办 / 天气 / 专注 / 倒计时 / 秒表（小号是
+// 放大的卡片，能直接点；中 / 大是面板）。其余能钉的小组件通用展开：卡片里显示面板内容，可以滚。
+
+/// 一张桌面卡片窗口的根视图。
+struct DesktopCardHost: View {
+    let pinID: UUID
+    var app: AppState
+    var ui: DesktopPinUI
+
+    var body: some View {
+        let settings = app.state.desktopPins
+        if let pin = settings.pin(pinID), let widget = app.widgetAnywhere(pin.widgetID) {
+            DesktopCard(pin: pin, widget: widget,
+                        size: DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked),
+                        ui: ui)
+        } else {
+            Color.clear
+        }
+    }
+}
+
+/// 卡片本身：液态玻璃（便签是纸）、内容、悬停时右上角的小操作条、排列时左上角的「−」。
+struct DesktopCard: View {
+    var pin: DesktopPin
+    var widget: WidgetInstance
+    var size: DesktopPinSize
+    var ui: DesktopPinUI
+
+    @State private var hovering = false
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    static let corner: CGFloat = 22
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Self.corner, style: .continuous) }
+    private var isNote: Bool { widget.kind == .notes }
+
+    /// 静止时降低刷新：时钟按分钟（设了秒针每秒），专注计时开着才每秒。
+    private var cadence: TimeInterval {
+        let running: Bool = {
+            guard widget.kind == .timer else { return false }
+            let timer = TimerStateProvider.shared.state
+            return timer.deadline != nil && timer.paused == nil
+        }()
+        return DesktopPinCadence.interval(widget.kind, secondHand: ClockHands.showsSecondHand(widget.config),
+                                          running: running)
+    }
+
+    var body: some View {
+        // 从固定的起点数，整分整秒对齐；重画时不重新起算。
+        TimelineView(.periodic(from: Date(timeIntervalSinceReferenceDate: 0), by: cadence)) { timeline in
+            content(now: timeline.date)
+        }
+        .frame(width: size.width, height: size.height)
+        .background { if !isNote { surface } }
+        .clipShape(shape)
+        .overlay {
+            shape.strokeBorder(Color.primary.opacity(scheme == .dark ? 0.16 : 0.10), lineWidth: 0.5)
+        }
+        .overlay {
+            if ui.editing { arrangeOverlay }
+        }
+        .overlay(alignment: .topTrailing) {
+            if hovering, !ui.editing, ui.draggingPin == nil {
+                DesktopCardToolbar(pin: pin, kind: widget.kind, shown: size, ui: ui)
+                    .padding(8)
+                    .transition(.opacity)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if ui.editing {
+                Button { DesktopPinController.shared.unpin(pin.id) } label: {
+                    Image(systemName: "minus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color.panelPrimary)
+                        .frame(width: 24, height: 24)
+                        .background(Circle().fill(Color.panelRaised))
+                        .overlay(Circle().strokeBorder(Color.panelStroke, lineWidth: 0.5))
+                        .contentShape(.circle)
+                }
+                .buttonStyle(.plain)
+                .padding(6)
+                .help(tr("取消钉"))
+                .accessibilityLabel(tr("取消钉"))
+            }
+        }
+        .onHover { inside in
+            withAnimation(.easeOut(duration: 0.15)) { hovering = inside }
+        }
+        .environment(\.panelTint, PanelTint(kind: widget.kind, config: widget.config))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(WidgetCatalog.entry(widget.kind)?.name ?? widget.kind.rawValue)
+    }
+
+    @ViewBuilder
+    private func content(now: Date) -> some View {
+        let context = WidgetContext(position: .bottom, now: now)
+        switch (widget.kind, size) {
+        case (.notes, _):
+            DesktopNoteSheet(widget: widget, sheetID: pin.sheetID, size: size)
+        case (.clock, .small), (.clock, .medium):
+            DesktopClockFace(now: now, size: size)
+        case (.calculator, .small):
+            DesktopQuickCalc(widget: widget)
+        case (_, .small):
+            DesktopTileFit(widget: widget, context: context, box: size.size)
+        default:
+            DesktopPanelBody(widget: widget, context: context)
+        }
+    }
+
+    /// 液态玻璃，跟着卡片的浅色 / 深色走；降低透明度时换实心底。
+    @ViewBuilder private var surface: some View {
+        if reduceTransparency {
+            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
+        } else {
+            Color.clear.glassEffect(.regular, in: shape)
+        }
+    }
+
+    /// 排列时整张卡片都能拖，内容不接点击；橙色虚线框说明它能动。
+    private var arrangeOverlay: some View {
+        shape
+            .fill(Color.black.opacity(0.001))
+            .overlay {
+                shape.strokeBorder(Color(hex: ShelfColor.redPanda.hex).opacity(0.8),
+                                   style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+            }
+            .contentShape(shape)
+            .gesture(DesktopPinController.shared.moveGesture(pin.id))
+    }
+}
+
+// MARK: - 悬停操作条
+
+/// 卡片右上角：小 / 中 / 大、拖动、取消钉、设置。不悬停时什么都不露。
+struct DesktopCardToolbar: View {
+    var pin: DesktopPin
+    var kind: WidgetKind
+    var shown: DesktopPinSize
+    var ui: DesktopPinUI
+
+    private var sizes: [DesktopPinSize] {
+        DesktopPinSupport.sizes(DesktopPinController.shared.mode(for: kind))
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            if shown == .small {
+                // 小卡只有 160 宽，三档放不下，收成一个菜单。
+                Menu {
+                    ForEach(sizes, id: \.self) { size in
+                        let locked = DesktopPinGate.lockedSizes(unlocked: ui.unlocked).contains(size)
+                        Button(ProFeatures.menuTitle(size.label, isPro: locked)) {
+                            DesktopPinController.shared.resize(pin.id, to: size)
+                        }
+                    }
+                } label: {
+                    Text(shown.title)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color.panelPrimary)
+                        .padding(.horizontal, 8)
+                        .frame(minWidth: 28, minHeight: 24)
+                        .background(Capsule().fill(Color.panelRaised).panelLift())
+                        .contentShape(.capsule)
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help(shown.label)
+            } else {
+                ForEach(sizes, id: \.self) { size in
+                    let selected = size == shown
+                    let locked = DesktopPinGate.lockedSizes(unlocked: ui.unlocked).contains(size)
+                    Button { DesktopPinController.shared.resize(pin.id, to: size) } label: {
+                        Text(size.title)
+                            .font(.system(size: 13, weight: selected ? .bold : .medium))
+                            .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
+                            .lineLimit(1)
+                            .fixedSize()
+                            .padding(.horizontal, 8)
+                            .frame(minWidth: 28, minHeight: 24)
+                            .background {
+                                if selected { Capsule().fill(Color.panelRaised).panelLift() }
+                            }
+                            .contentShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .help(locked ? "\(size.label) · \(ProFeatures.label)" : size.label)
+                    .accessibilityLabel(size.label)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+            Rectangle().fill(Color.panelSeparator).frame(width: 0.5, height: 14).padding(.horizontal, 3)
+            icon("arrow.up.and.down.and.arrow.left.and.right", help: tr("拖动换位置"))
+                .gesture(DesktopPinController.shared.moveGesture(pin.id))
+            Button { DesktopPinController.shared.unpin(pin.id) } label: {
+                icon("pin.slash", help: tr("取消钉"))
+            }
+            .buttonStyle(.plain)
+            Menu {
+                Button(tr("排列桌面卡片")) { DesktopPinController.shared.setEditing(true) }
+                Button(tr("桌面卡片设置…")) { DesktopPinController.shared.openSettings() }
+                Divider()
+                Button(tr("取消钉"), role: .destructive) { DesktopPinController.shared.unpin(pin.id) }
+            } label: {
+                icon("gearshape", help: tr("设置"))
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+        }
+        .padding(3)
+        .background { Color.clear.glassEffect(.regular, in: Capsule()) }
+    }
+
+    private func icon(_ symbol: String, help: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.panelPrimary)
+            .frame(width: 26, height: 24)
+            .contentShape(.rect)
+            .help(help)
+            .accessibilityLabel(help)
+    }
+}
+
+// MARK: - 内容
+
+/// 中 / 大：小组件的面板内容，卡片里竖向滚动。
+struct DesktopPanelBody: View {
+    var widget: WidgetInstance
+    var context: WidgetContext
+
+    var body: some View {
+        ScrollView(.vertical) {
+            WidgetDetailBody(instance: widget, context: context)
+                .padding(DetailPanelWidth.padding)
+        }
+        .scrollIndicators(.never)
+        .scrollBounceBehavior(.basedOnSize)
+    }
+}
+
+/// 小号：扩展栏上那张卡片放大摆在中间，卡片上的按钮照样能点（待办勾、计时开始）。
+struct DesktopTileFit: View {
+    var widget: WidgetInstance
+    var context: WidgetContext
+    var box: CGSize
+
+    var body: some View {
+        let natural = WidgetCatalog.contentSize(widget, position: .bottom)
+        let fit = natural.width > 0 && natural.height > 0
+            ? min((box.width - 24) / natural.width, (box.height - 24) / natural.height, 2.2)
+            : 1
+        WidgetTile(instance: widget, context: context)
+            .environment(\.widgetPlateHidden, true)
+            .frame(width: natural.width, height: natural.height)
+            .scaleEffect(fit)
+            .frame(width: box.width, height: box.height)
+    }
+}
+
+/// 时钟的小 / 中：日期一行、大字时间。
+struct DesktopClockFace: View {
+    var now: Date
+    var size: DesktopPinSize
+
+    var body: some View {
+        VStack(spacing: size == .small ? 6 : 8) {
+            Text(ClockFormat.time(now, zone: .current))
+                .font(.system(size: size == .small ? 40 : 64, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(Color.panelPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            Text(now.formatted(.dateTime.weekday(.abbreviated).month().day()))
+                .font(.system(size: size == .small ? 13 : 15, weight: .medium))
+                .foregroundStyle(Color.panelSecondary)
+                .lineLimit(1)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// 「算」小号：打字就出结果。算式存进卡片配置，和扩展栏、面板是同一份。
+struct DesktopQuickCalc: View {
+    var widget: WidgetInstance
+
+    @State private var draft: String
+    @FocusState private var focused: Bool
+
+    init(widget: WidgetInstance) {
+        self.widget = widget
+        _draft = State(initialValue: widget.config.string(SmartCalc.expressionKey))
+    }
+
+    private var stored: String { widget.config.string(SmartCalc.expressionKey) }
+
+    private var outcome: SmartCalc.Outcome? {
+        guard !draft.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return try? SmartCalc.evaluate(draft, rates: CurrencyService.shared.rates,
+                                       preferences: SmartCalc.Preferences(widget.config)).get()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(WidgetCatalog.entry(.calculator)?.name ?? tr("算"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.panelSecondary)
+            TextField("", text: $draft, prompt: Text(verbatim: "100 usd").foregroundStyle(Color.panelTertiary))
+                .textFieldStyle(.plain)
+                .font(.system(size: 15))
+                .foregroundStyle(Color.panelPrimary)
+                .focused($focused)
+                .padding(.horizontal, 8)
+                .frame(height: 30)
+                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.panelFill))
+                .onSubmit { commit() }
+            Spacer(minLength: 0)
+            if let outcome {
+                Text(outcome.text)
+                    .font(.system(size: 28, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.panelPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.45)
+                    .textSelection(.enabled)
+                if !outcome.unit.isEmpty {
+                    Text(outcome.unit)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.panelSecondary)
+                        .lineLimit(1)
+                }
+            } else {
+                Text(tr("打字就出结果"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear { CurrencyService.shared.refresh(force: false) }
+        .onChange(of: stored) { _, value in if !focused { draft = value } }
+        .task(id: draft) {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            commit()
+        }
+    }
+
+    private func commit() {
+        guard draft != stored else { return }
+        let latest = WidgetWriter.current(widget.id) ?? widget
+        WidgetWriter.write(latest) { $0.set(SmartCalc.expressionKey, .string(draft)) }
+    }
+}
+
+/// 便签的一张纸摊开：整张纸显示全文、纸里滚动、点一下就写，停手半秒自动保存。
+/// 叠着的每一张都能单独钉出来，各自认 `StickySheet.id`，翻页不影响。
+struct DesktopNoteSheet: View {
+    var widget: WidgetInstance
+    var sheetID: String?
+    var size: DesktopPinSize
+
+    @State private var draft: String
+    @State private var editing = false
+    /// 先不可编辑地造出编辑器，进窗口后再打开：可编辑的编辑器一造出来就把光标和滚动放到
+    /// 末尾，桌面上的纸应该从头摊开。
+    @State private var armed = false
+    @State private var editor = StickyEditorHandle()
+    @State private var hint: String?
+    /// 不换：光标只在点纸时落下，不自己跳到末尾。
+    private static let focusToken = UUID()
+
+    init(widget: WidgetInstance, sheetID: String?, size: DesktopPinSize) {
+        self.widget = widget
+        self.sheetID = sheetID
+        self.size = size
+        _draft = State(initialValue: Self.locate(widget.config, sheetID)?.sheet.text ?? "")
+    }
+
+    /// 这一张在叠里第几张、现在的样子。钉的是整张便签（没有标识）时按最上面那张。
+    static func locate(_ config: WidgetConfig, _ id: String?) -> (index: Int, count: Int, sheet: StickySheet)? {
+        let pile = StickyStack.pile(config)
+        if let id {
+            guard let index = pile.index(ofSheet: id) else { return nil }
+            return (index, pile.count, pile.sheets[index])
+        }
+        return (pile.page, pile.count, pile.front)
+    }
+
+    private var located: (index: Int, count: Int, sheet: StickySheet)? { Self.locate(widget.config, sheetID) }
+    private var stored: String { located?.sheet.text ?? "" }
+    private var unlocked: Bool { ProAccess.isUnlocked }
+    private var swatch: PaperColor { located?.sheet.paper(unlocked: unlocked) ?? .yellow }
+    private var noteFont: StickyNoteFont { StickyNoteFont.of(widget.config) }
+    private var pointSize: CGFloat {
+        let panel = CGFloat(StickyNoteType.panel(noteFont, StickyNoteSize.of(widget.config)))
+        return size == .small ? max(13, panel - 2) : panel
+    }
+
+    var body: some View {
+        let ink = Color(hex: swatch.inkHex)
+        ZStack(alignment: .topLeading) {
+            Color(hex: swatch.hex)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if let hint {
+                        Text(hint)
+                            .font(.system(size: 13))
+                            .lineLimit(1)
+                            .transition(.opacity)
+                    }
+                }
+                .foregroundStyle(ink.opacity(0.78))
+                StickyNoteEditor(
+                    text: $draft,
+                    look: .init(font: noteFont, size: pointSize, ink: swatch.inkHex,
+                                faded: PaperInk.faded(on: swatch.hex), paper: swatch.hex),
+                    editable: armed,
+                    focusToken: Self.focusToken,
+                    handle: editor,
+                    onEditingChanged: { focused in
+                        editing = focused
+                        if !focused { commitLater() }
+                    },
+                    onCollapse: {
+                        commitLater()
+                        DesktopPinController.shared.releaseFocus()
+                    },
+                    onSend: send)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(80))
+            armed = true
+        }
+        .onChange(of: stored) { _, note in if !editing { draft = note } }
+        .task(id: draft) {
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, !editor.isComposing else { return }
+            commit()
+        }
+        .task(id: hint) {
+            guard hint != nil else { return }
+            try? await Task.sleep(for: .seconds(1.6))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.3)) { hint = nil }
+        }
+    }
+
+    private var title: String {
+        let name = WidgetCatalog.entry(.notes)?.name ?? tr("便签")
+        guard let located, located.count > 1 else { return name }
+        return name + " · " + tr("第 \(located.index + 1) 张")
+    }
+
+    private func commit() {
+        guard draft != stored else { return }
+        write(draft)
+    }
+
+    /// 失焦时的保存放到下一轮，回调在 SwiftUI 更新视图的中途触发。
+    private func commitLater() {
+        guard draft != stored else { return }
+        let words = draft
+        Task { @MainActor in write(words) }
+    }
+
+    /// 写回这一张（按标识找，不翻页）；找不到这张时（刚被撕掉）什么都不写。
+    private func write(_ words: String) {
+        let id = sheetID
+        StickyLog.change(widget) { pile in
+            if let id {
+                guard let index = pile.index(ofSheet: id) else { return pile }
+                return pile.writing(words, at: index)
+            }
+            return pile.writing(words)
+        }
+    }
+
+    private func send(_ line: Int) {
+        guard let words = StickyEditing.sendable(line: line, in: draft) else { return }
+        guard let target = QuickTodoCapture.shared.target() else {
+            NSSound.beep()
+            withAnimation(.easeIn(duration: 0.15)) { hint = tr("没有快速待办") }
+            return
+        }
+        TodoLog.add(words, to: target)
+        withAnimation(.easeIn(duration: 0.15)) { hint = tr("已发到快速待办") }
+    }
+}
+
+// MARK: - 拖动和排列时的网格
+
+/// 拖动时铺在整块屏幕上的网格点和橙色虚线空位；不接鼠标。
+struct DesktopPinGridView: View {
+    var ui: DesktopPinUI
+    /// 网格所在屏幕的可用区域，换成本窗口里的坐标（左上原点）。
+    var visible: CGRect
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Canvas { context, _ in
+                let step = CGFloat(DesktopPinLayout.grid)
+                let left = CGFloat(DesktopPinLayout.margin)
+                var y = CGFloat(DesktopPinLayout.margin)
+                let dot = Color.primary.opacity(0.22)
+                while y <= visible.height - left + 0.5 {
+                    var x = left
+                    while x <= visible.width - left + 0.5 {
+                        context.fill(Path(ellipseIn: CGRect(x: visible.minX + x - 1, y: visible.minY + y - 1,
+                                                            width: 2, height: 2)), with: .color(dot))
+                        x += step
+                    }
+                    y += step
+                }
+            }
+            if let slot = ui.slot {
+                let orange = Color(hex: ShelfColor.redPanda.hex)
+                RoundedRectangle(cornerRadius: DesktopCard.corner, style: .continuous)
+                    .fill(orange.opacity(0.14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: DesktopCard.corner, style: .continuous)
+                            .strokeBorder(orange, style: StrokeStyle(lineWidth: 1.5, dash: [7, 5]))
+                    }
+                    .overlay {
+                        VStack(spacing: 4) {
+                            if ui.slotIsNew {
+                                Text(tr("松手钉在这里"))
+                                    .font(.system(size: 15, weight: .bold))
+                            }
+                            Text(ui.slotSize.label)
+                                .font(.system(size: 13, weight: .medium))
+                                .monospacedDigit()
+                        }
+                        .foregroundStyle(Color.panelPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(Color.panelRaised.opacity(0.9)))
+                    }
+                    .frame(width: slot.width, height: slot.height)
+                    .offset(x: slot.minX, y: slot.minY)
+                    .animation(.snappy(duration: 0.16), value: slot)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .allowsHitTesting(false)
+    }
+}
+
+/// 排列模式顶上的横条：「排列桌面卡片  拖动换位置 · 点 − 取消钉  [完成]」。
+struct DesktopPinArrangeBar: View {
+    @Environment(\.colorScheme) private var scheme
+
+    static let size = CGSize(width: 520, height: 52)
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Text(tr("排列桌面卡片"))
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Color.panelPrimary)
+                .lineLimit(1)
+            Text(tr("拖动换位置 · 点 − 取消钉"))
+                .font(.system(size: 13))
+                .foregroundStyle(Color.panelSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+            Button { DesktopPinController.shared.setEditing(false) } label: {
+                Text(tr("完成"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.panelOnPrimary)
+                    .padding(.horizontal, 16)
+                    .frame(height: 30)
+                    .background(Capsule().fill(Color.panelPrimary))
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(.leading, 20)
+        .padding(.trailing, 11)
+        .frame(width: Self.size.width, height: Self.size.height)
+        .background { Color.clear.glassEffect(.regular, in: Capsule()) }
+    }
+}

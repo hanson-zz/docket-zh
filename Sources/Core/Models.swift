@@ -1163,6 +1163,9 @@ public struct PersistedState: Codable, Sendable {
     /// 输入法自动切换：总开关（默认关）、没有规则的 App 怎么办、默认输入法、按 App 规则
     /// （码头 Pro）和切换提示。见 `InputSourceSettings`。
     public var inputSource = InputSourceSettings()
+    /// 钉在桌面：总开关、所有桌面 / 仅当前、窗口盖住时、外观，和已钉的卡片（位置按
+    /// 屏幕 displayID + 相对坐标）。见 `DesktopPinSettings`。
+    public var desktopPins = DesktopPinSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1198,6 +1201,7 @@ public struct PersistedState: Codable, Sendable {
         windowSwitcher = (try? c.decodeIfPresent(WindowSwitcherSettings.self, forKey: .windowSwitcher)) ?? WindowSwitcherSettings()
         notchMessage = (try? c.decodeIfPresent(NotchMessageSettings.self, forKey: .notchMessage)) ?? NotchMessageSettings()
         inputSource = (try? c.decodeIfPresent(InputSourceSettings.self, forKey: .inputSource)) ?? InputSourceSettings()
+        desktopPins = (try? c.decodeIfPresent(DesktopPinSettings.self, forKey: .desktopPins)) ?? DesktopPinSettings()
     }
 
     public init() {}

@@ -2102,6 +2102,17 @@
         }
       }
     },
+    "仅当前桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Desktop Only"
+          }
+        }
+      }
+    },
     "今天也辛苦啦，去喝口水歇一歇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2142,6 +2153,281 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ left today · %@ done"
+          }
+        }
+      }
+    },
+    "全部取消钉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin All"
+          }
+        }
+      }
+    },
+    "取消钉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin"
+          }
+        }
+      }
+    },
+    "取消钉在桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin from Desktop"
+          }
+        }
+      }
+    },
+    "大尺寸和第 2 张起的卡片需要码头 Pro。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The large size and a second card onward need Dockling Pro."
+          }
+        }
+      }
+    },
+    "已钉 %lld 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Pinned"
+          }
+        }
+      }
+    },
+    "所有桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Desktops"
+          }
+        }
+      }
+    },
+    "所有桌面：切换桌面（空间）时卡片跟着走。全屏 App 的桌面上不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Desktops: cards follow you when you switch desktops (Spaces). They stay off full-screen app spaces."
+          }
+        }
+      }
+    },
+    "打字就出结果" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type to see the result"
+          }
+        }
+      }
+    },
+    "把扩展栏里的卡片拖到桌面，或右键选「钉在桌面」。关掉后桌面卡片全部收起，位置记着。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag a card from the shelf onto the desktop, or right-click it and choose Pin to Desktop. Turning this off puts all desktop cards away and remembers where they were."
+          }
+        }
+      }
+    },
+    "把这张钉在桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin This Sheet to Desktop"
+          }
+        }
+      }
+    },
+    "拖动换位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to Move"
+          }
+        }
+      }
+    },
+    "拖动换位置 · 点 − 取消钉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to move · click − to unpin"
+          }
+        }
+      }
+    },
+    "排列…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrange…"
+          }
+        }
+      }
+    },
+    "排列桌面卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrange Desktop Cards"
+          }
+        }
+      }
+    },
+    "显示在" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show On"
+          }
+        }
+      }
+    },
+    "松手钉在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to pin here"
+          }
+        }
+      }
+    },
+    "桌面卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Cards"
+          }
+        }
+      }
+    },
+    "桌面卡片设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Card Settings…"
+          }
+        }
+      }
+    },
+    "没有快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Quick To-Do"
+          }
+        }
+      }
+    },
+    "照常留在窗口后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay Behind Windows"
+          }
+        }
+      }
+    },
+    "空白" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blank"
+          }
+        }
+      }
+    },
+    "窗口盖住桌面时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When Windows Cover Them"
+          }
+        }
+      }
+    },
+    "第 %lld 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sheet %lld"
+          }
+        }
+      }
+    },
+    "自动隐藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Automatically"
+          }
+        }
+      }
+    },
+    "自动隐藏：被窗口盖住时收起，窗口挪开或最小化后再出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Automatically: cards hide while a window covers them and come back when it moves away or is minimized."
           }
         }
       }
@@ -2256,6 +2542,17 @@
         }
       }
     },
+    "跟随码头的外观设置，也可以单独选。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follows Dockling's appearance setting, or choose one just for desktop cards."
+          }
+        }
+      }
+    },
     "还有劲？拖一件到今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2263,6 +2560,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Still going? Drag one into Today"
+          }
+        }
+      }
+    },
+    "还没有钉在桌面的卡片。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cards pinned to the desktop yet."
           }
         }
       }
@@ -2285,6 +2593,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All clear today!"
+          }
+        }
+      }
+    },
+    "这张已钉在桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Sheet Is on the Desktop"
           }
         }
       }
@@ -2318,6 +2637,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repeats: %@"
+          }
+        }
+      }
+    },
+    "钉在桌面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin to Desktop"
           }
         }
       }
@@ -3531,13 +3861,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays)"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size"
           }
         }
       }

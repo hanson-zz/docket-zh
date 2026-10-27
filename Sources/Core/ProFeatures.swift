@@ -159,6 +159,8 @@ public enum ProFeatures {
         /// 默认输入法 / 记住上次、切换提示免费，见 `InputSourceSettings`、
         /// `ProLicenseGate.inputSourceRulesActive`。
         case inputSourceRules
+        /// 钉在桌面：第 2 张起和大号（340×340）。免费钉 1 张、小 / 中两档，见 `DesktopPinGate`。
+        case desktopPins
     }
 
     // MARK: 判断

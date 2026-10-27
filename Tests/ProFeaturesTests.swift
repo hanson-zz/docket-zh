@@ -423,7 +423,7 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertEqual(ProFeatures.menuTitle("标准", isPro: false), "标准")
         XCTAssertEqual(Set(ProFeatures.Setting.allCases), [.aiNotch, .chargeLimit, .windowPreview, .shelfGroups,
                                                               .shotTranslate, .shotPin, .notchMessage,
-                                                              .inputSourceRules])
+                                                              .inputSourceRules, .desktopPins])
     }
 
     // MARK: 付费墙上的数量

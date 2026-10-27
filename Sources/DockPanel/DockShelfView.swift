@@ -32,6 +32,8 @@ struct DockShelfView: View {
     @State private var shelfShakeTick = 0
     /// 这次拖动已经抖过了，松手前不再抖。
     @State private var lockNudged = false
+    /// 这次拖动把小组件拖离了扩展栏，松手就钉在桌面（见 `DesktopPinController`）。
+    @State private var pinCarrying = false
     /// Arms `groupTarget` once the dragged tile has rested over another.
     @State private var dwell: Task<Void, Never>?
     /// What that timer is currently counting down for.
@@ -834,6 +836,27 @@ struct DockShelfView: View {
         DragGesture(minimumDistance: 6, coordinateSpace: .named("shelf"))
             .onChanged { value in
                 guard entry.isDraggable else { return }
+                // 小组件拖离扩展栏够远：变成「钉在桌面」，网格和空位跟着指针走，原卡片
+                // 回到栏里原位；拖回来照常排序。
+                if let widget = entry.item.widget, app.state.desktopPins.enabled,
+                   pinDragAway(value.translation) > Self.pinDragThreshold,
+                   DesktopPinController.shared.offers(widget) {
+                    if !pinCarrying {
+                        pinCarrying = true
+                        dwell?.cancel()
+                        dwell = nil
+                        dwellOver = nil
+                        withAnimation(.snappy(duration: 0.2)) {
+                            drag = nil
+                            dragTranslation = 0
+                        }
+                    }
+                    DesktopPinController.shared.shelfDragChanged(widget)
+                    return
+                } else if pinCarrying {
+                    pinCarrying = false
+                    DesktopPinController.shared.shelfDragCancelled()
+                }
                 // 锁定时不动，只在刚开始拖时轻轻抖一下。
                 guard app.shelfAllows(.reorder) else {
                     if ShelfLock.shouldShake(locked: true, alreadyNudged: lockNudged) {
@@ -885,6 +908,15 @@ struct DockShelfView: View {
             }
             .onEnded { _ in
                 lockNudged = false
+                if pinCarrying {
+                    pinCarrying = false
+                    if let widget = entry.item.widget {
+                        DesktopPinController.shared.shelfDragEnded(widget)
+                    }
+                    drag = nil
+                    dragTranslation = 0
+                    return
+                }
                 guard let current = drag else { return }
                 dwell?.cancel()
                 dwell = nil
@@ -917,6 +949,48 @@ struct DockShelfView: View {
                 }
                 dragTranslation = 0
             }
+    }
+
+    /// 拖离扩展栏多远算「钉在桌面」：比一张卡片的厚度再多一截，沿着栏排序时手抖不会误触。
+    private static let pinDragThreshold: CGFloat = 90
+
+    /// 指针离开扩展栏、朝屏幕里面走了多远（底部的往上、顶部的往下、两侧的往里）。
+    private func pinDragAway(_ translation: CGSize) -> CGFloat {
+        switch position {
+        case .bottom: -translation.height
+        case .top: translation.height
+        case .left: translation.width
+        case .right: -translation.width
+        }
+    }
+
+    /// 右键「钉在桌面」：子菜单选小 / 中 / 大，钉到第一个空位。叠了几张的便签列出每一张，
+    /// 每张单独钉出来。
+    @ViewBuilder
+    private func desktopPinMenu(_ widget: WidgetInstance) -> some View {
+        let controller = DesktopPinController.shared
+        let pile = StickyStack.pile(widget.config)
+        if widget.kind == .notes, pile.count > 1 {
+            Menu(tr("钉在桌面")) {
+                ForEach(pile.sheets.indices, id: \.self) { index in
+                    let title = DesktopPinSheet.label(index: index, text: pile.sheets[index].text)
+                    Button(controller.isPinned(widget, sheet: index) ? title + " ✓" : title) {
+                        controller.pin(widget, sheet: index, size: .medium)
+                    }
+                }
+            }
+        } else {
+            Menu(tr("钉在桌面")) {
+                ForEach(DesktopPinSupport.sizes(controller.mode(for: widget.kind)), id: \.self) { size in
+                    Button(ProFeatures.menuTitle(size.label, isPro: size.isPro && !ProAccess.isUnlocked)) {
+                        controller.pin(widget, size: size)
+                    }
+                }
+            }
+        }
+        if controller.isPinned(widget) {
+            Button(tr("取消钉在桌面")) { controller.unpin(widget: widget) }
+        }
     }
 
     /// The tile the dragged one is sitting on top of, if it is far enough on.
@@ -1865,6 +1939,10 @@ struct DockShelfView: View {
             Divider()
             Button("打开提问面板") { showAIPanel(entry, mode: .ask) }
             Button("管理字牌…") { showAIPanel(entry, mode: .manage) }
+        }
+        if let widget = entry.item.widget, DesktopPinController.shared.offers(widget) {
+            Divider()
+            desktopPinMenu(widget)
         }
         // Top level, not tucked under Options: grouping is a primary action
         // here, and Options is where the Dock keeps its pin and file commands.

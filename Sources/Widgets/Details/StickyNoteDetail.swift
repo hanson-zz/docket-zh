@@ -362,6 +362,17 @@ struct StickyNoteDetail: View {
                 .disabled(progress.done == 0)
                 Button(tr("清除已完成项"), role: .destructive) { clearDone() }
                     .disabled(progress.done == 0)
+                // 叠着的每一张都能单独钉到桌面，桌面上并排摊开整张纸。
+                if DesktopPinController.shared.offers(instance) {
+                    Divider()
+                    let page = pile.page
+                    let pinned = DesktopPinController.shared.isPinned(instance, sheet: page)
+                    Button(pinned ? tr("这张已钉在桌面") : tr("把这张钉在桌面")) {
+                        commit()
+                        DesktopPinController.shared.pin(instance, sheet: page, size: .medium)
+                    }
+                    .disabled(pinned)
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 14, weight: .semibold))

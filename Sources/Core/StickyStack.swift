@@ -5,10 +5,14 @@ import Foundation
 public struct StickySheet: Equatable, Sendable {
     public var text: String
     public var color: String
+    /// 这张纸自己的标识，单独钉到桌面时才分配（见 `DesktopPinSheet`），平时是空的。
+    /// 翻页、撕掉别的、加新一张都跟着这张纸走。
+    public var id: String
 
-    public init(text: String = "", color: String = PaperColor.yellow.rawValue) {
+    public init(text: String = "", color: String = PaperColor.yellow.rawValue, id: String = "") {
         self.text = text
         self.color = color
+        self.id = id
     }
 
     /// 画出来的纸色：认不出的按柠檬黄；没解锁码头 Pro 时 Pro 纸色也退回柠檬黄。
@@ -33,6 +37,9 @@ public enum StickyStack {
     public static let colorKey = ProFeatures.noteColorKey
     public static let stackKey = "stack"
     public static let pageKey = "page"
+    /// 最上面那张的标识（`StickySheet.id`），没有时不写。其余几张的标识是 `stack` 里
+    /// 每项的第三个元素。
+    public static let sheetIDKey = "sheetID"
     /// 最多叠几张。原来 3 张，2026-10-20 提到 10 张（叠放翻页不变）。
     public static let limit = 10
 
@@ -138,6 +145,29 @@ public enum StickyStack {
             return Pile(sheets: list, page: at)
         }
 
+        /// 标识是 `id` 的那一张在第几张（从 0 起），撕掉了是 nil。
+        public func index(ofSheet id: String) -> Int? {
+            guard !id.isEmpty else { return nil }
+            return sheets.firstIndex { $0.id == id }
+        }
+
+        /// 给第 `index` 张一个标识（已经有就用原来的），单独钉到桌面前调用。
+        public func identifying(at index: Int, newID: String) -> (pile: Pile, id: String)? {
+            guard sheets.indices.contains(index) else { return nil }
+            if !sheets[index].id.isEmpty { return (self, sheets[index].id) }
+            var next = self
+            next.sheets[index].id = newID
+            return (next, newID)
+        }
+
+        /// 改第 `index` 张的字（桌面上摊开的那张），不翻页。
+        public func writing(_ text: String, at index: Int) -> Pile {
+            guard sheets.indices.contains(index) else { return self }
+            var next = self
+            next.sheets[index].text = text
+            return next
+        }
+
         /// 撕掉最上面那张，露出下一张。只剩一张时不动（清空字就好）。
         public func removingFront() -> Pile {
             guard canRemove else { return self }
@@ -150,16 +180,19 @@ public enum StickyStack {
     /// 读出来。旧便签只有 `text`、`color`，就是一张。
     public static func pile(_ config: WidgetConfig) -> Pile {
         let front = StickySheet(text: config.string(textKey),
-                                color: config.string(colorKey, default: PaperColor.yellow.rawValue))
+                                color: config.string(colorKey, default: PaperColor.yellow.rawValue),
+                                id: config.string(sheetIDKey))
         var rest: [StickySheet] = []
         if case .list(let items) = config[stackKey] {
             for item in items {
                 guard case .list(let pair) = item else { continue }
                 var color = PaperColor.yellow.rawValue
                 var text = ""
+                var id = ""
                 if pair.count > 0, case .string(let c) = pair[0] { color = c }
                 if pair.count > 1, case .string(let t) = pair[1] { text = t }
-                rest.append(StickySheet(text: text, color: color))
+                if pair.count > 2, case .string(let i) = pair[2] { id = i }
+                rest.append(StickySheet(text: text, color: color, id: id))
             }
         }
         let cyclic = Array(([front] + rest).prefix(limit))
@@ -179,8 +212,17 @@ public enum StickyStack {
     public static func store(_ pile: Pile, in config: inout WidgetConfig) {
         config.set(textKey, .string(pile.front.text))
         config.set(colorKey, .string(pile.front.color))
+        if pile.front.id.isEmpty {
+            config.values.removeValue(forKey: sheetIDKey)
+        } else {
+            config.set(sheetIDKey, .string(pile.front.id))
+        }
         if pile.count > 1 {
-            config.set(stackKey, .list(pile.behind.map { .list([.string($0.color), .string($0.text)]) }))
+            config.set(stackKey, .list(pile.behind.map { sheet in
+                sheet.id.isEmpty
+                    ? .list([.string(sheet.color), .string(sheet.text)])
+                    : .list([.string(sheet.color), .string(sheet.text), .string(sheet.id)])
+            }))
             config.set(pageKey, .number(Double(pile.page + 1)))
         } else {
             config.values.removeValue(forKey: stackKey)

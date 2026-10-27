@@ -69,6 +69,12 @@ public final class AppState {
             if state.inputSource != oldValue.inputSource {
                 InputSourceController.shared.apply(state.inputSource)
             }
+            // 钉在桌面：设置或卡片变了重摆窗口；布局里的小组件变了也看一眼，删掉的小组件
+            // （撕掉的便签那张）跟着取消钉。
+            if state.desktopPins != oldValue.desktopPins
+                || (!state.desktopPins.pins.isEmpty && state.profiles != oldValue.profiles) {
+                DesktopPinController.shared.apply(state.desktopPins)
+            }
             // A panel open on a widget that has just left the shelf. Removing
             // one goes through the shelf's menu, the Settings list, a drag
             // off the shelf or a change of layout, and every one of them

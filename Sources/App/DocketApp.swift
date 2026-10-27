@@ -228,6 +228,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 按 App 规则是码头 Pro，总开关和其余设置免费。
         InputSourceController.shared.apply(state.state.inputSource)
 
+        // 钉在桌面：扩展栏的卡片拖到桌面或右键「钉在桌面」变成桌面卡片，在所有窗口之后。
+        DesktopPinController.shared.start(app: state)
+
         // AI 助手的刘海对话：入口、展开面板和快捷键。会话状态和货架上的
         // AI 卡片共用一份。
         AIChatCenter.shared.app = state
