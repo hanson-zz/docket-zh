@@ -119,6 +119,25 @@ jobs:
             STRIP_STYLE=all \
             COPY_PHASE_STRIP=YES
 
+      # 系统小组件扩展（DocklingWidgets.appex）要在 Contents/PlugIns 里、签过名、带着沙盒
+      # entitlements，不然桌面「编辑小组件」里看不到码头。ad-hoc 时 xcodebuild 已经先签扩展、
+      # 再签 App；这里确认一遍。下面「Sign with the stable identity」重签后也会再查。
+      - name: Check the widget extension
+        run: |
+          APP=build/Build/Products/Release/Dockling.app
+          WIDGETS="$APP/Contents/PlugIns/DocklingWidgets.appex"
+          if [ ! -d "$WIDGETS" ]; then
+            echo "::error::$WIDGETS is missing, the desktop widgets would not ship."
+            ls -la "$APP/Contents" "$APP/Contents/PlugIns" 2>/dev/null || true
+            exit 1
+          fi
+          plutil -p "$WIDGETS/Contents/Info.plist" | grep -E "NSExtensionPointIdentifier|CFBundleIdentifier"
+          codesign --verify --strict --verbose=2 "$WIDGETS"
+          codesign -d --entitlements :- "$WIDGETS"
+          codesign -d --entitlements :- "$WIDGETS" | grep -q "com.apple.security.app-sandbox" \
+            || { echo "::error::The widget extension is not sandboxed."; exit 1; }
+          codesign --verify --strict --verbose=2 "$APP"
+
       # 去掉调试符号表后，程序本体从约 168MB 降到约 50MB，运行行为不变。
       # 符号单独存在 dSYM 里（下一步作为构建产物上传），查崩溃日志时用。
       # 体积超过 100MB 时给出警告，提醒检查是否有大图或漏掉了去符号。
@@ -174,12 +193,26 @@ jobs:
           codesign -d --entitlements :- "$APP" > "$ENT" 2>/dev/null || true
           SIGN=(codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none)
           if [ -s "$ENT" ]; then SIGN+=(--entitlements "$ENT"); fi
-          # Inside out: nested code first, then the app itself.
+          # Inside out: nested code first, then the app itself. Each nested
+          # item keeps its own entitlements: the widget extension
+          # (PlugIns/DocklingWidgets.appex) must stay sandboxed with its
+          # SystemWidgets folder exception, or the system will not load it.
           find "$APP/Contents" -depth \( -name "*.dylib" -o -name "*.framework" -o -name "*.appex" -o -name "*.xpc" -o -name "*.bundle" -o -name "dockling-charge-helper" \) -print0 \
-            | while IFS= read -r -d '' item; do codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none "$item"; done
+            | while IFS= read -r -d '' item; do
+                ITEM_ENT="$RUNNER_TEMP/item-entitlements.plist"
+                rm -f "$ITEM_ENT"
+                codesign -d --entitlements :- "$item" > "$ITEM_ENT" 2>/dev/null || true
+                ITEM_SIGN=(codesign --force --sign "$HASH" --keychain "$KC" --timestamp=none)
+                if [ -s "$ITEM_ENT" ]; then ITEM_SIGN+=(--entitlements "$ITEM_ENT"); fi
+                "${ITEM_SIGN[@]}" "$item"
+              done
           "${SIGN[@]}" "$APP"
           codesign --verify --strict --verbose=2 "$APP"
           codesign -d -r- "$APP"
+          WIDGETS="$APP/Contents/PlugIns/DocklingWidgets.appex"
+          codesign --verify --strict --verbose=2 "$WIDGETS"
+          codesign -d --entitlements :- "$WIDGETS" | grep -q "com.apple.security.app-sandbox" \
+            || { echo "::error::The widget extension lost its sandbox entitlement while re-signing."; exit 1; }
           security delete-keychain "$KC"
 
       # ditto, not zip: an .app is a bundle full of symlinks and executable

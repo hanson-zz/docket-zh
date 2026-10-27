@@ -73,6 +73,9 @@ targets:
         codeSign: false
         copy:
           destination: executables
+      # 系统小组件扩展（桌面右键「编辑小组件」里的「码头」），嵌进 Contents/PlugIns。
+      - target: DocklingWidgets
+        embed: true
     settings:
       base:
         # 应用改名为“码头 / Dockling”：安装包叫 Dockling.app，Finder 和启动台显示“码头”。
@@ -89,6 +92,36 @@ targets:
         # 检查新版本时查询哪个仓库的 Releases，写进 Info.plist 的 DocklingUpdateRepository。
         # 发布构建由 release.yml 按仓库变量 UPDATE_FEED_REPOSITORY 覆盖，没设时就是这里的值。
         DOCKLING_UPDATE_REPOSITORY: hanson-zz/docket-zh
+
+  # 系统小组件扩展（WidgetKit）。必须沙盒；和主 App 不用 App Group（ad-hoc、自签名都没有
+  # Team ID，macOS 15 起组容器不认），而是读写主 App Application Support 下的 SystemWidgets
+  # 文件夹（entitlements 里的 temporary-exception），见 Sources/Core/SystemWidgetSnapshot.swift。
+  # 只编那一个 Core 文件；小熊猫图片和界面文字表跟主 App 共用同一份资源。
+  DocklingWidgets:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Extensions/DocklingWidgets
+      - path: Sources/Core/SystemWidgetSnapshot.swift
+      - path: Resources/Pet
+        buildPhase: resources
+      - path: Resources/Water
+        buildPhase: resources
+      - path: Resources/Localization/Localizable.xcstrings
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: AppIntents.framework
+      - sdk: IOKit.framework
+    settings:
+      base:
+        PRODUCT_NAME: DocklingWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.widgets
+        INFOPLIST_FILE: Resources/DocklingWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/DocklingWidgets/DocklingWidgets.entitlements
+        ENABLE_APP_SANDBOX: YES
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
 
   # 充电上限助手（root 运行的命令行小程序），只编译自己和共享的纯逻辑。
   # SMC 和电源的 C 接口用到 mach_task_self_ 这类 C 全局变量，Swift 6 的

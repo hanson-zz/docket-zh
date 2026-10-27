@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 系统小组件扩展必须沙盒。 -->
+	<key>com.apple.security.app-sandbox</key><true/>
+	<!-- 和主 App 交换数据的文件夹（快照和点按动作），见 Sources/Core/SystemWidgetSnapshot.swift。
+	     不用 App Group：ad-hoc 和自签名都没有 Team ID，macOS 15 起组容器不认。 -->
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+	<array>
+		<string>/Library/Application Support/com.docket-zh.app/SystemWidgets/</string>
+	</array>
+</dict>
+</plist>

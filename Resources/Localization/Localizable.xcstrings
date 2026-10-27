@@ -62632,6 +62632,633 @@
           }
         }
       }
+    },
+    "打开码头一次，就能在这里看到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Dockling once to see this here"
+          }
+        }
+      }
+    },
+    "先在扩展栏添加「%@」卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a \"%@\" card to the shelf first"
+          }
+        }
+      }
+    },
+    "本机时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac"
+          }
+        }
+      }
+    },
+    "码头 · 时钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Clock"
+          }
+        }
+      }
+    },
+    "本机和世界各地的时间。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The time here and around the world."
+          }
+        }
+      }
+    },
+    "选主城市，以及中号小组件下面列哪张世界时钟卡片的城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the main city, and which World Clock card lists its cities on the medium widget"
+          }
+        }
+      }
+    },
+    "主城市（不选为本机时间）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main city (this Mac if not set)"
+          }
+        }
+      }
+    },
+    "世界时钟卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "World Clock card"
+          }
+        }
+      }
+    },
+    "在扩展栏添加「天气」卡片并设好城市" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a Weather card to the shelf and set its city"
+          }
+        }
+      }
+    },
+    "更新于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %@"
+          }
+        }
+      }
+    },
+    "码头 · 天气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Weather"
+          }
+        }
+      }
+    },
+    "码头天气卡片那个城市的实时天气。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current weather for the city on your Dockling Weather card."
+          }
+        }
+      }
+    },
+    "还剩 %@ 件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "今天都做完了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done for today"
+          }
+        }
+      }
+    },
+    "以后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        }
+      }
+    },
+    "交周报" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send weekly report"
+          }
+        }
+      }
+    },
+    "买牛奶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy milk"
+          }
+        }
+      }
+    },
+    "给妈妈打电话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Call Mom"
+          }
+        }
+      }
+    },
+    "码头 · 快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Quick To-do"
+          }
+        }
+      }
+    },
+    "扩展栏上的快速待办，点圆圈就能打勾。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your shelf's quick to-dos. Click a circle to check one off."
+          }
+        }
+      }
+    },
+    "快速待办卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick To-do card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪张快速待办卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which Quick To-do card from the shelf to show"
+          }
+        }
+      }
+    },
+    "勾选待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check off to-do"
+          }
+        }
+      }
+    },
+    "今天喝够了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal reached today"
+          }
+        }
+      }
+    },
+    "还差 %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@ to go"
+          }
+        }
+      }
+    },
+    "一杯 %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cup %@ %@"
+          }
+        }
+      }
+    },
+    "码头 · 喝水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Water"
+          }
+        }
+      }
+    },
+    "今天喝了多少，点一下加一杯。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much you have had today. Click to add a cup."
+          }
+        }
+      }
+    },
+    "喝水卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪张喝水卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which Water card from the shelf to show"
+          }
+        }
+      }
+    },
+    "喝一杯水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drink a cup of water"
+          }
+        }
+      }
+    },
+    "在纪念日卡片里加一个日子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a date to the Anniversaries card"
+          }
+        }
+      }
+    },
+    "圣诞节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Christmas"
+          }
+        }
+      }
+    },
+    "码头 · 纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Anniversaries"
+          }
+        }
+      }
+    },
+    "离重要的日子还有几天、已经几天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Days until, or since, the dates that matter."
+          }
+        }
+      }
+    },
+    "纪念日卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anniversaries card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪张纪念日卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which Anniversaries card from the shelf to show"
+          }
+        }
+      }
+    },
+    "心情很好" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In a great mood"
+          }
+        }
+      }
+    },
+    "码头 · 小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Red Panda"
+          }
+        }
+      }
+    },
+    "看看小熊猫现在怎么样。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how your red panda is doing."
+          }
+        }
+      }
+    },
+    "电子宠物卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Virtual Pet card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪只宠物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which pet from the shelf to show"
+          }
+        }
+      }
+    },
+    "周五前交方案\n☐ 订会议室\n☑ 发邮件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the proposal by Friday\n☐ Book a room\n☑ Send the email"
+          }
+        }
+      }
+    },
+    "码头 · 便签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Sticky Note"
+          }
+        }
+      }
+    },
+    "把一张便签放在桌面上。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep a sticky note on your desktop."
+          }
+        }
+      }
+    },
+    "便签卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sticky Note card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪张便签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which sticky note from the shelf to show"
+          }
+        }
+      }
+    },
+    "码头 · 算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Calc"
+          }
+        }
+      }
+    },
+    "「算」卡片固定的那条算式和结果。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The pinned expression and result from your Calc card."
+          }
+        }
+      }
+    },
+    "「算」卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calc card"
+          }
+        }
+      }
+    },
+    "显示扩展栏上的哪张「算」卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which Calc card from the shelf to show"
+          }
+        }
+      }
+    },
+    "这台 Mac 没有电池" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac has no battery"
+          }
+        }
+      }
+    },
+    "已接通电源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugged in"
+          }
+        }
+      }
+    },
+    "%@ 后充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@"
+          }
+        }
+      }
+    },
+    "剩余 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "码头 · 电池" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Battery"
+          }
+        }
+      }
+    },
+    "电量、是否在充电、还能用多久。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge level, charging state and time left."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

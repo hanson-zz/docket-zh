@@ -114,6 +114,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 小组件，扩展栏隐藏、卡片不在当前布局也照样响、照样弹出卡片。
         TimedAlertDriver.shared.widgets = { [state] in state.allWidgets }
         TimedAlertDriver.shared.start()
+        // 系统小组件（桌面右键「编辑小组件」里的「码头」）：把卡片写成快照给扩展读，
+        // 并把小组件上打的勾、加的一杯合并回卡片。
+        SystemWidgetSync.shared.widgets = { [state] in state.allWidgets }
+        SystemWidgetSync.shared.start()
         // 快速待办和系统提醒事项的双向同步（Pro），没有打开同步的卡片时什么也不做。
         TodoReminderSyncService.shared.start()
         // 久坐提醒的离开检测：锁屏、休眠或很久没碰键盘鼠标满设定时间，自动算一次

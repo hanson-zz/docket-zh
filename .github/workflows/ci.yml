@@ -224,6 +224,26 @@ jobs:
             DEVELOPMENT_TEAM="" \
             ENABLE_HARDENED_RUNTIME=NO
 
+      # 系统小组件扩展要嵌在 Contents/PlugIns 里、签过名、带沙盒 entitlements，
+      # 和 release.yml 里同名的一步一样，在每次构建上先查一遍。
+      - name: Check the widget extension
+        run: |
+          dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
+          app="$dir/Dockling.app"
+          widgets="$app/Contents/PlugIns/DocklingWidgets.appex"
+          if [ ! -d "$widgets" ]; then
+            echo "::error title=Widget extension::$widgets is missing."
+            ls -la "$app/Contents" "$app/Contents/PlugIns" 2>/dev/null || true
+            exit 1
+          fi
+          plutil -p "$widgets/Contents/Info.plist" | grep -E "NSExtensionPointIdentifier|CFBundleIdentifier"
+          codesign --verify --strict --verbose=2 "$widgets"
+          codesign -d --entitlements :- "$widgets"
+          codesign -d --entitlements :- "$widgets" | grep -q "com.apple.security.app-sandbox" \
+            || { echo "::error title=Widget extension::not sandboxed."; exit 1; }
+          ls "$widgets/Contents/Resources" | grep -c "pet-panda" | xargs echo "panda pictures:"
+
       # Following the system language falls back to English for anyone whose
       # preferred languages hold neither Chinese nor English. That rests on the
       # built bundle, not on code the tests can reach: English as the
