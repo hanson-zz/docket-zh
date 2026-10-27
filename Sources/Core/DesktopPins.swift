@@ -390,10 +390,10 @@ public enum DesktopPinSupport {
         .calculator, .notes, .todo, .clock, .weather, .timer, .countdown, .stopwatch,
     ]
 
-    /// 面板离不开扩展栏或本身就是一个按钮的，先不提供：AI 助手（刘海对话和应用选择器）、
-    /// 截图工具（截完后要退开）、音量（没有面板）、相册和壁纸（大图，卡片里看不清）。
+    /// 面板离不开扩展栏的，不提供：AI 助手（刘海对话和应用选择器）。截图工具、音量、相册、
+    /// 壁纸、摸鱼时钟有了桌面专属布局（`DesktopCardsFilesPlan`），不再排除。
     public static let excludedKinds: Set<WidgetKind> = [
-        .aiAssistant, .capture, .volume, .photos, .wallpaper,
+        .aiAssistant,
     ]
 
     /// 面板比 340 宽的放进卡片会被挤窄，先不通用展开。
@@ -401,6 +401,7 @@ public enum DesktopPinSupport {
 
     public static func mode(_ kind: WidgetKind, hasDetail: Bool, panelWidth: Double) -> Mode {
         if dedicatedKinds.contains(kind) { return .dedicated }
+        if DesktopCardsFilesPlan.handles(kind) { return .dedicated }
         guard hasDetail, !excludedKinds.contains(kind), panelWidth <= maxGenericPanelWidth else { return .none }
         return .generic
     }

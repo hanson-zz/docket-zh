@@ -225,8 +225,8 @@ final class DesktopPinTests: XCTestCase {
 
     func testGenericOnlyForPanelsThatFit() {
         XCTAssertEqual(DesktopPinSupport.mode(.battery, hasDetail: true, panelWidth: 330), .generic)
-        XCTAssertEqual(DesktopPinSupport.mode(.slacker, hasDetail: true, panelWidth: 400), .none, "太宽")
-        XCTAssertEqual(DesktopPinSupport.mode(.volume, hasDetail: false, panelWidth: 300), .none, "没有面板")
+        XCTAssertEqual(DesktopPinSupport.mode(.perfectDay, hasDetail: true, panelWidth: 400), .none, "太宽")
+        XCTAssertEqual(DesktopPinSupport.mode(.toggles, hasDetail: false, panelWidth: 300), .none, "没有面板")
         XCTAssertEqual(DesktopPinSupport.mode(.aiAssistant, hasDetail: true, panelWidth: 320), .none)
         XCTAssertEqual(DesktopPinSupport.sizes(.generic), [.small, .medium, .large], "小 / 中是放大的扩展栏卡片")
         XCTAssertEqual(DesktopPinSupport.sizes(.generic, smallFits: false), [.medium, .large])
@@ -274,7 +274,9 @@ final class DesktopPinTests: XCTestCase {
 
     func testEveryWidgetTileFitsTheMediumCardWithoutShrinking() {
         // 中号 340×160 放扩展栏卡片：所有种类默认配置的卡片都不缩小（字不小于 13pt）。
-        for entry in WidgetCatalog.entries where !DesktopPinSupport.excludedKinds.contains(entry.kind) {
+        // 有专属布局的（`DesktopCardsFilesPlan`）不画放大的扩展栏卡片，不在这里算。
+        for entry in WidgetCatalog.entries
+        where !DesktopPinSupport.excludedKinds.contains(entry.kind) && !DesktopCardsFilesPlan.handles(entry.kind) {
             let widget = WidgetInstance(kind: entry.kind, config: entry.defaults)
             let fit = DesktopPinFit.tile(horizontal: WidgetCatalog.contentSize(widget, position: .bottom),
                                          vertical: WidgetCatalog.contentSize(widget, position: .left),

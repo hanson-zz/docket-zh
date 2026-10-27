@@ -2102,6 +2102,17 @@
         }
       }
     },
+    "上一张 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last shot %@"
+          }
+        }
+      }
+    },
     "下一个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2190,6 +2201,17 @@
         }
       }
     },
+    "从暂存中移出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Shelf"
+          }
+        }
+      }
+    },
     "全部取消钉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2208,6 +2230,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset All to 100%%"
+          }
+        }
+      }
+    },
+    "全部输出设备…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Output Devices…"
+          }
+        }
+      }
+    },
+    "其余的在扩展栏的书签面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rest are in the Bookmarks panel on the shelf"
+          }
+        }
+      }
+    },
+    "其余的在扩展栏的壁纸面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rest are in the Wallpaper panel on the shelf"
+          }
+        }
+      }
+    },
+    "其余的在扩展栏的文件暂存面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rest are in the File Shelf panel on the shelf"
+          }
+        }
+      }
+    },
+    "其余的在扩展栏的最近截图面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rest are in the Screenshots panel on the shelf"
           }
         }
       }
@@ -2267,6 +2344,17 @@
         }
       }
     },
+    "只清空清单，原文件不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clears the list only; the files stay where they are"
+          }
+        }
+      }
+    },
     "后退" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2274,6 +2362,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Back"
+          }
+        }
+      }
+    },
+    "在扩展栏的壁纸面板里选文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder in the Wallpaper panel on the shelf"
+          }
+        }
+      }
+    },
+    "在扩展栏的相册面板里选文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder in the Photos panel on the shelf"
+          }
+        }
+      }
+    },
+    "在设置里选截图按钮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose capture buttons in Settings"
           }
         }
       }
@@ -2344,6 +2465,17 @@
         }
       }
     },
+    "截完的图会出现在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your screenshots will show up here"
+          }
+        }
+      }
+    },
     "所有桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2399,6 +2531,17 @@
         }
       }
     },
+    "把文件拖到这里，原文件不动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop files here; the originals stay put"
+          }
+        }
+      }
+    },
     "把这张钉在桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2406,6 +2549,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pin This Sheet to Desktop"
+          }
+        }
+      }
+    },
+    "把链接拖到这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop links here"
           }
         }
       }
@@ -2586,6 +2740,39 @@
         }
       }
     },
+    "点一下在访达中显示，拖出第一个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to show in Finder, drag to take out the first file"
+          }
+        }
+      }
+    },
+    "点一下换下一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click for the next photo"
+          }
+        }
+      }
+    },
+    "点一张设为壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click one to set it as wallpaper"
+          }
+        }
+      }
+    },
     "照常留在窗口后" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2762,6 +2949,17 @@
         }
       }
     },
+    "读不到当前壁纸" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't read the current wallpaper"
+          }
+        }
+      }
+    },
     "跟随码头的外观设置，也可以单独选。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2769,6 +2967,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Follows Dockling's appearance setting, or choose one just for desktop cards."
+          }
+        }
+      }
+    },
+    "还有 %@ 个，在扩展栏的书签面板里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more in the Bookmarks panel on the shelf"
           }
         }
       }

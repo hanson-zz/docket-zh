@@ -166,11 +166,13 @@ enum DesktopCardLayouts {
     static let providers: [@MainActor (WidgetInstance, DesktopPinSize, Date) -> AnyView?] = [
         DesktopCardsTime.view,
         DesktopCardsMedia.view,
+        DesktopCardsFiles.view,
     ]
 
     /// 专属布局总能放下小号的种类：不再按扩展栏卡片能不能塞进 160×160 判断。
     static let kinds: Set<WidgetKind> = DesktopTimeCards.kinds
         .union(DesktopCardsMediaPlan.kinds)
+        .union(DesktopCardsFilesPlan.kinds)
 
     static func view(_ widget: WidgetInstance, size: DesktopPinSize, now: Date) -> AnyView? {
         for provider in providers {
