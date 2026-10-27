@@ -738,6 +738,17 @@
         }
       }
     },
+    "%@ 个在运行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ running"
+          }
+        }
+      }
+    },
     "%@ 个地区 · 约 %@ 台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2201,6 +2212,28 @@
         }
       }
     },
+    "今天上传" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uploaded Today"
+          }
+        }
+      }
+    },
+    "今天下载" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded Today"
+          }
+        }
+      }
+    },
     "今天也辛苦啦，去喝口水歇一歇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2333,6 +2366,17 @@
         }
       }
     },
+    "共找到 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ found"
+          }
+        }
+      }
+    },
     "其余的在扩展栏的书签面板里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2399,6 +2443,17 @@
         }
       }
     },
+    "去选择" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose"
+          }
+        }
+      }
+    },
     "取消钉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2443,6 +2498,17 @@
         }
       }
     },
+    "可用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free"
+          }
+        }
+      }
+    },
     "后退" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2483,6 +2549,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timer restarts when you're back"
+          }
+        }
+      }
+    },
+    "回车就搜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Return to search"
           }
         }
       }
@@ -2626,6 +2703,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of %@ done"
+          }
+        }
+      }
+    },
+    "已运行 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %@"
           }
         }
       }
@@ -2905,6 +2993,17 @@
         }
       }
     },
+    "最占 CPU" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top CPU"
+          }
+        }
+      }
+    },
     "最新单集" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2912,6 +3011,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Latest Episodes"
+          }
+        }
+      }
+    },
+    "最近 12 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 12 Hours"
           }
         }
       }
@@ -2934,6 +3044,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent Recordings"
+          }
+        }
+      }
+    },
+    "最近扔进来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Trashed"
           }
         }
       }
@@ -2993,6 +3114,17 @@
         }
       }
     },
+    "没开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Open"
+          }
+        }
+      }
+    },
     "没有应用在用麦克风" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3022,6 +3154,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Quick To-Do"
+          }
+        }
+      }
+    },
+    "没有用 Wi-Fi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not on Wi-Fi"
           }
         }
       }
@@ -3345,6 +3488,28 @@
         }
       }
     },
+    "读废纸篓要完全磁盘访问权限。授权后这里列出最近扔进来的文件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading the Trash needs Full Disk Access. Once granted, recently trashed files show up here."
+          }
+        }
+      }
+    },
+    "超过警戒线" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over the limit"
+          }
+        }
+      }
+    },
     "跟随码头的外观设置，也可以单独选。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3367,6 +3532,17 @@
         }
       }
     },
+    "还有 %@ 个，打开面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ more, open the panel"
+          }
+        }
+      }
+    },
     "还有劲？拖一件到今天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3374,6 +3550,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Still going? Drag one into Today"
+          }
+        }
+      }
+    },
+    "还没发过文件。拖到上面就能发。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing sent yet. Drop files above to send."
           }
         }
       }
@@ -3396,6 +3583,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No cards pinned to the desktop yet."
+          }
+        }
+      }
+    },
+    "还能用约 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@ left"
           }
         }
       }
@@ -3462,6 +3660,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Go grab some water and take a break"
+          }
+        }
+      }
+    },
+    "选择文件…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Files…"
           }
         }
       }
