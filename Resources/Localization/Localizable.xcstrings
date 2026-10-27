@@ -1992,6 +1992,17 @@
         }
       }
     },
+    "%@%@，放到上面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@, show at top"
+          }
+        }
+      }
+    },
     "%@：点或拖音量条调音量，点图标静音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1999,6 +2010,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@: click or drag the bar to set the volume, click the icon to mute"
+          }
+        }
+      }
+    },
+    "+1 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+1 min"
           }
         }
       }
@@ -2245,6 +2267,17 @@
         }
       }
     },
+    "今天已过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Of today"
+          }
+        }
+      }
+    },
     "今天每小时的电量" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2252,6 +2285,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today's hourly charge"
+          }
+        }
+      }
+    },
+    "今天没有别的日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing else today"
           }
         }
       }
@@ -2487,6 +2531,17 @@
         }
       }
     },
+    "只有这一个闹钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is the only alarm"
+          }
+        }
+      }
+    },
     "只清空清单，原文件不动" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2608,6 +2663,28 @@
         }
       }
     },
+    "在扩展栏的纪念日面板里添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add one in the Anniversary panel on the shelf"
+          }
+        }
+      }
+    },
+    "在扩展栏的闹钟面板里添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add one in the Alarm panel on the shelf"
+          }
+        }
+      }
+    },
     "在扩展栏的面板里添加" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2615,6 +2692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add them in the shelf panel"
+          }
+        }
+      }
+    },
+    "在日历里打开%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@ in Calendar"
           }
         }
       }
@@ -2641,6 +2729,28 @@
         }
       }
     },
+    "在面板里可以再加纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add more dates in the panel"
+          }
+        }
+      }
+    },
+    "在面板里可以再加计时器和日期倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add more timers and date countdowns in the panel"
+          }
+        }
+      }
+    },
     "复制一段文字，点下面翻译" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2659,6 +2769,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The large size and a second card onward need Dockling Pro."
+          }
+        }
+      }
+    },
+    "好好安排自己的时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rest of the day is yours"
+          }
+        }
+      }
+    },
+    "小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hours"
           }
         }
       }
@@ -2736,6 +2868,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apps show up here once they play sound"
+          }
+        }
+      }
+    },
+    "开始倒计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start countdown"
+          }
+        }
+      }
+    },
+    "开始后可以计次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start to record laps"
           }
         }
       }
@@ -2916,6 +3070,17 @@
         }
       }
     },
+    "换一个周期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch period"
+          }
+        }
+      }
+    },
     "排列…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2956,6 +3121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favorite Stations"
+          }
+        }
+      }
+    },
+    "放到上面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show at top"
           }
         }
       }
@@ -3081,6 +3257,39 @@
         }
       }
     },
+    "本周已排" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booked this week"
+          }
+        }
+      }
+    },
+    "本周接下来没有日程" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing else this week"
+          }
+        }
+      }
+    },
+    "本圈 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This lap %@"
+          }
+        }
+      }
+    },
     "松手钉在这里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3110,6 +3319,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desktop Card Settings…"
+          }
+        }
+      }
+    },
+    "此处 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here %@"
           }
         }
       }
@@ -3169,6 +3389,17 @@
         }
       }
     },
+    "点「计次」记下这一圈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Lap to record this lap"
+          }
+        }
+      }
+    },
     "点一下在访达中显示，拖出第一个文件" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3209,6 +3440,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click for the next photo"
+          }
+        }
+      }
+    },
+    "点一个就开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap one to start"
           }
         }
       }
@@ -3572,6 +3814,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No recordings yet. Click the red button to start."
+          }
+        }
+      }
+    },
+    "还没有纪念日" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No dates yet"
           }
         }
       }
