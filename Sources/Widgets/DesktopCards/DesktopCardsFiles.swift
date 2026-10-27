@@ -1636,7 +1636,7 @@ private struct DCFWallpaper: View {
 
 /// 沿用卡片自己的底色、背景图、字体和液态水（设置里选的外观），每秒走。
 /// 小：「距离下班」和大字 02:35:18，右下角小熊猫。
-/// 中：一行大标题、下面一排小格（最多 4 个），右边小熊猫。
+/// 中：一行大标题、下面一排小格（最多 3 个），右边小熊猫。
 /// 大：大字倒计时和小熊猫，上班中加今天的进度条和「已上 · 还有」，工作时间，下面 2×2 小格。
 private struct DCFSlacker: View {
     var widget: WidgetInstance
@@ -1718,8 +1718,8 @@ private struct DCFSlacker: View {
             SlackerMetrics(title: 24, cellWidth: 150, cellHeight: 56, cellLabel: 13, cellValue: 22,
                            cellSpacing: 8, panda: 112, pandaDrop: 0)
         default:
-            SlackerMetrics(title: 24, cellWidth: 50, cellHeight: 46, cellLabel: 13, cellValue: 17,
-                           cellSpacing: 4, panda: 96, pandaDrop: 8)
+            SlackerMetrics(title: 24, cellWidth: 66, cellHeight: 46, cellLabel: 13, cellValue: 17,
+                           cellSpacing: 6, panda: 96, pandaDrop: 8)
         }
     }
 

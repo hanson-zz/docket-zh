@@ -130,11 +130,13 @@ public enum DesktopCardsFilesPlan {
 
     // MARK: 摸鱼时钟
 
-    /// 摸鱼时钟每档摆几个小格（设置里最多 4 个）：小号不摆，中号一排最多 4 个，大号 2×2。
+    /// 摸鱼时钟每档摆几个小格（设置里最多 4 个）：小号不摆；中号右边有小熊猫，一排最多 3 个
+    /// （每格约 66 宽，「6420元」这种 13pt 以上放得下，4 个就得缩到 13pt 以下）；大号 2×2。
     public static func slackerCells(_ size: DesktopPinSize, available: Int) -> Int {
         switch size {
         case .small: 0
-        case .medium, .large: min(max(available, 0), 4)
+        case .medium: min(max(available, 0), 3)
+        case .large: min(max(available, 0), 4)
         }
     }
 

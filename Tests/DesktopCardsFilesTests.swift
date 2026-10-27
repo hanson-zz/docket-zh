@@ -92,7 +92,8 @@ final class DesktopCardsFilesTests: XCTestCase {
 
     func testSlackerCellsAndPhotoTick() {
         XCTAssertEqual(DesktopCardsFilesPlan.slackerCells(.small, available: 4), 0)
-        XCTAssertEqual(DesktopCardsFilesPlan.slackerCells(.medium, available: 3), 3)
+        XCTAssertEqual(DesktopCardsFilesPlan.slackerCells(.medium, available: 2), 2)
+        XCTAssertEqual(DesktopCardsFilesPlan.slackerCells(.medium, available: 4), 3, "中号一排最多 3 个，字不缩到 13pt 以下")
         XCTAssertEqual(DesktopCardsFilesPlan.slackerCells(.large, available: 9), 4)
         XCTAssertEqual(DesktopCardsFilesPlan.photoTick(interval: 30, count: 5, paused: false), 1)
         XCTAssertEqual(DesktopCardsFilesPlan.photoTick(interval: 30, count: 5, paused: true), 60)
