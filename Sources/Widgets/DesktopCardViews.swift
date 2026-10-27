@@ -165,12 +165,14 @@ struct DesktopCard: View {
 enum DesktopCardLayouts {
     static let providers: [@MainActor (WidgetInstance, DesktopPinSize, Date) -> AnyView?] = [
         DesktopCardsTime.view,
+        DesktopCardsTasks.view,
         DesktopCardsMedia.view,
         DesktopCardsFiles.view,
     ]
 
     /// 专属布局总能放下小号的种类：不再按扩展栏卡片能不能塞进 160×160 判断。
     static let kinds: Set<WidgetKind> = DesktopTimeCards.kinds
+        .union(DesktopCardsTasksPlan.kinds)
         .union(DesktopCardsMediaPlan.kinds)
         .union(DesktopCardsFilesPlan.kinds)
 
@@ -485,151 +487,7 @@ struct DesktopQuickCalc: View {
     }
 }
 
-/// 便签的一张纸摊开：整张纸显示全文、纸里滚动、点一下就写，停手半秒自动保存。
-/// 叠着的每一张都能单独钉出来，各自认 `StickySheet.id`，翻页不影响。
-struct DesktopNoteSheet: View {
-    var widget: WidgetInstance
-    var sheetID: String?
-    var size: DesktopPinSize
-
-    @State private var draft: String
-    @State private var editing = false
-    /// 先不可编辑地造出编辑器，进窗口后再打开：可编辑的编辑器一造出来就把光标和滚动放到
-    /// 末尾，桌面上的纸应该从头摊开。
-    @State private var armed = false
-    @State private var editor = StickyEditorHandle()
-    @State private var hint: String?
-    /// 不换：光标只在点纸时落下，不自己跳到末尾。
-    private static let focusToken = UUID()
-
-    init(widget: WidgetInstance, sheetID: String?, size: DesktopPinSize) {
-        self.widget = widget
-        self.sheetID = sheetID
-        self.size = size
-        _draft = State(initialValue: Self.locate(widget.config, sheetID)?.sheet.text ?? "")
-    }
-
-    /// 这一张在叠里第几张、现在的样子。钉的是整张便签（没有标识）时按最上面那张。
-    static func locate(_ config: WidgetConfig, _ id: String?) -> (index: Int, count: Int, sheet: StickySheet)? {
-        let pile = StickyStack.pile(config)
-        if let id {
-            guard let index = pile.index(ofSheet: id) else { return nil }
-            return (index, pile.count, pile.sheets[index])
-        }
-        return (pile.page, pile.count, pile.front)
-    }
-
-    private var located: (index: Int, count: Int, sheet: StickySheet)? { Self.locate(widget.config, sheetID) }
-    private var stored: String { located?.sheet.text ?? "" }
-    private var unlocked: Bool { ProAccess.isUnlocked }
-    private var swatch: PaperColor { located?.sheet.paper(unlocked: unlocked) ?? .yellow }
-    private var noteFont: StickyNoteFont { StickyNoteFont.of(widget.config) }
-    private var pointSize: CGFloat {
-        let panel = CGFloat(StickyNoteType.panel(noteFont, StickyNoteSize.of(widget.config)))
-        return size == .small ? max(13, panel - 2) : panel
-    }
-
-    var body: some View {
-        let ink = Color(hex: swatch.inkHex)
-        ZStack(alignment: .topLeading) {
-            Color(hex: swatch.hex)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Image(systemName: "note.text")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text(title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    if let hint {
-                        Text(hint)
-                            .font(.system(size: 13))
-                            .lineLimit(1)
-                            .transition(.opacity)
-                    }
-                }
-                .foregroundStyle(ink.opacity(0.78))
-                StickyNoteEditor(
-                    text: $draft,
-                    look: .init(font: noteFont, size: pointSize, ink: swatch.inkHex,
-                                faded: PaperInk.faded(on: swatch.hex), paper: swatch.hex),
-                    editable: armed,
-                    focusToken: Self.focusToken,
-                    handle: editor,
-                    onEditingChanged: { focused in
-                        editing = focused
-                        if !focused { commitLater() }
-                    },
-                    onCollapse: {
-                        commitLater()
-                        DesktopPinController.shared.releaseFocus()
-                    },
-                    onSend: send)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-        }
-        .task {
-            try? await Task.sleep(for: .milliseconds(80))
-            armed = true
-        }
-        .onChange(of: stored) { _, note in if !editing { draft = note } }
-        .task(id: draft) {
-            try? await Task.sleep(for: .milliseconds(500))
-            guard !Task.isCancelled, !editor.isComposing else { return }
-            commit()
-        }
-        .task(id: hint) {
-            guard hint != nil else { return }
-            try? await Task.sleep(for: .seconds(1.6))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.3)) { hint = nil }
-        }
-    }
-
-    private var title: String {
-        let name = WidgetCatalog.entry(.notes)?.name ?? tr("便签")
-        guard let located, located.count > 1 else { return name }
-        return name + " · " + tr("第 \(located.index + 1) 张")
-    }
-
-    private func commit() {
-        guard draft != stored else { return }
-        write(draft)
-    }
-
-    /// 失焦时的保存放到下一轮，回调在 SwiftUI 更新视图的中途触发。
-    private func commitLater() {
-        guard draft != stored else { return }
-        let words = draft
-        Task { @MainActor in write(words) }
-    }
-
-    /// 写回这一张（按标识找，不翻页）；找不到这张时（刚被撕掉）什么都不写。
-    private func write(_ words: String) {
-        let id = sheetID
-        StickyLog.change(widget) { pile in
-            if let id {
-                guard let index = pile.index(ofSheet: id) else { return pile }
-                return pile.writing(words, at: index)
-            }
-            return pile.writing(words)
-        }
-    }
-
-    private func send(_ line: Int) {
-        guard let words = StickyEditing.sendable(line: line, in: draft) else { return }
-        guard let target = QuickTodoCapture.shared.target() else {
-            NSSound.beep()
-            withAnimation(.easeIn(duration: 0.15)) { hint = tr("没有快速待办") }
-            return
-        }
-        TodoLog.add(words, to: target)
-        withAnimation(.easeIn(duration: 0.15)) { hint = tr("已发到快速待办") }
-    }
-}
+// 便签的一张纸（`DesktopNoteSheet`）在 DesktopCards/DesktopCardsTasks.swift。
 
 // MARK: - 拖动和排列时的网格
 

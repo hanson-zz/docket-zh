@@ -232,6 +232,17 @@
         }
       }
     },
+    "%@ / %@ 次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / %@ times"
+          }
+        }
+      }
+    },
     "%@ / %@ 毫升" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -250,6 +261,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ / %@ met"
+          }
+        }
+      }
+    },
+    "%@ / %@ 项" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ / %@ done"
           }
         }
       }
@@ -1948,6 +1970,17 @@
         }
       }
     },
+    "%@ 项已过期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ overdue"
+          }
+        }
+      }
+    },
     "%@：点或拖音量条调音量，点图标静音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2113,6 +2146,17 @@
         }
       }
     },
+    "上一杯 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last drink %@"
+          }
+        }
+      }
+    },
     "下一个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2197,6 +2241,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ left today · %@ done"
+          }
+        }
+      }
+    },
+    "今天都打完了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done today"
+          }
+        }
+      }
+    },
+    "今日起身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stood up today"
           }
         }
       }
@@ -2366,6 +2432,50 @@
         }
       }
     },
+    "喝了 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drank %@"
+          }
+        }
+      }
+    },
+    "喝水，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water, %@"
+          }
+        }
+      }
+    },
+    "回来后从头计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer restarts when you're back"
+          }
+        }
+      }
+    },
+    "在上面写一件，回车记下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type one above and press Return"
+          }
+        }
+      }
+    },
     "在扩展栏的壁纸面板里选文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2384,6 +2494,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a folder in the Photos panel on the shelf"
+          }
+        }
+      }
+    },
+    "在扩展栏的面板里添加" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add them in the shelf panel"
           }
         }
       }
@@ -2439,6 +2560,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hr %@ min"
+          }
+        }
+      }
+    },
+    "已完成 %@ / %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ done"
           }
         }
       }
@@ -2520,6 +2652,17 @@
         }
       }
     },
+    "把喝水、习惯打卡或专注计时放进扩展栏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Water, Habits or Focus Timer to the shelf"
+          }
+        }
+      }
+    },
     "把扩展栏里的卡片拖到桌面，或右键选「钉在桌面」。关掉后桌面卡片全部收起，位置记着。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2586,6 +2729,17 @@
         }
       }
     },
+    "拖进扩展栏记一件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop one onto the shelf card"
+          }
+        }
+      }
+    },
     "拿掉%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2641,6 +2795,17 @@
         }
       }
     },
+    "整体 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overall %@"
+          }
+        }
+      }
+    },
     "显示在" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2670,6 +2835,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent Recordings"
+          }
+        }
+      }
+    },
+    "最长连续 %@ 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best streak %@ days"
           }
         }
       }
@@ -2784,6 +2960,28 @@
         }
       }
     },
+    "离开电脑中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away from the Mac"
+          }
+        }
+      }
+    },
+    "稍后 %@ 件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ later"
+          }
+        }
+      }
+    },
     "空白" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2802,6 +3000,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When Windows Cover Them"
+          }
+        }
+      }
+    },
+    "第 %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sheet %@"
           }
         }
       }
@@ -2835,6 +3044,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Automatically: cards hide while a window covers them and come back when it moves away or is minimized."
+          }
+        }
+      }
+    },
+    "记一件事，回车记下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a to-do, press Return"
           }
         }
       }
@@ -3081,6 +3301,17 @@
         }
       }
     },
+    "都还没过期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing overdue"
+          }
+        }
+      }
+    },
     "重复：%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3110,6 +3341,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mute %@"
+          }
+        }
+      }
+    },
+    "项到期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "due"
           }
         }
       }
