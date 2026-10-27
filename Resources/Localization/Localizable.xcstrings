@@ -1948,6 +1948,17 @@
         }
       }
     },
+    "%@：点或拖音量条调音量，点图标静音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: click or drag the bar to set the volume, click the icon to mute"
+          }
+        }
+      }
+    },
     "3 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2080,6 +2091,17 @@
         }
       }
     },
+    "上一台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Station"
+          }
+        }
+      }
+    },
     "下一个" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2087,6 +2109,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next"
+          }
+        }
+      }
+    },
+    "下一台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Station"
           }
         }
       }
@@ -2168,6 +2201,39 @@
         }
       }
     },
+    "全部恢复 100%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset All to 100%%"
+          }
+        }
+      }
+    },
+    "切到 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tune to %@"
+          }
+        }
+      }
+    },
+    "前进" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forward"
+          }
+        }
+      }
+    },
     "取消钉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2190,6 +2256,28 @@
         }
       }
     },
+    "取消静音%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unmute %@"
+          }
+        }
+      }
+    },
+    "后退" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
     "大尺寸和第 2 张起的卡片需要码头 Pro。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2201,6 +2289,39 @@
         }
       }
     },
+    "已 %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min"
+          }
+        }
+      }
+    },
+    "已 %@ 小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr"
+          }
+        }
+      }
+    },
+    "已 %@ 小时 %@ 分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hr %@ min"
+          }
+        }
+      }
+    },
     "已钉 %lld 张" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2208,6 +2329,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Pinned"
+          }
+        }
+      }
+    },
+    "应用开始出声后在这里调音量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps show up here once they play sound"
           }
         }
       }
@@ -2241,6 +2373,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type to see the result"
+          }
+        }
+      }
+    },
+    "打开文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Folder"
           }
         }
       }
@@ -2289,6 +2432,17 @@
         }
       }
     },
+    "拿掉%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@"
+          }
+        }
+      }
+    },
     "排列…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2311,6 +2465,28 @@
         }
       }
     },
+    "播放器开始播放后这里显示歌曲" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The song shows up here once a player starts"
+          }
+        }
+      }
+    },
+    "收藏电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite Stations"
+          }
+        }
+      }
+    },
     "显示在" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2318,6 +2494,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show On"
+          }
+        }
+      }
+    },
+    "最新单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest Episodes"
+          }
+        }
+      }
+    },
+    "最近录音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent Recordings"
           }
         }
       }
@@ -2351,6 +2549,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desktop Card Settings…"
+          }
+        }
+      }
+    },
+    "没有应用在用麦克风" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is using the microphone"
+          }
+        }
+      }
+    },
+    "没有应用在用麦克风 · 摄像头开着" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app is using the microphone · camera on"
           }
         }
       }
@@ -2564,6 +2784,17 @@
         }
       }
     },
+    "还没有录音，点上面的红键开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recordings yet. Click the red button to start."
+          }
+        }
+      }
+    },
     "还没有钉在桌面的卡片。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2608,6 +2839,17 @@
         }
       }
     },
+    "连接后读取正在播放的歌曲" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to read what is playing"
+          }
+        }
+      }
+    },
     "连续 %@ 天 · 去喝口水歇一歇" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2648,6 +2890,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pin to Desktop"
+          }
+        }
+      }
+    },
+    "静音%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mute %@"
           }
         }
       }
