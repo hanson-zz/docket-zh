@@ -407,7 +407,7 @@ private struct DMMusicCard: View {
     private func large(_ track: Playing) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 14) {
-                DMArtwork(image: track.artwork, fallback: MusicNow.icon(track), side: 136)
+                DMArtwork(image: track.artwork, fallback: MusicNow.icon(track), side: 160)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         if let icon = MusicNow.icon(track) {
@@ -441,7 +441,7 @@ private struct DMMusicCard: View {
                             .lineLimit(1)
                     }
                 }
-                .frame(height: 136, alignment: .topLeading)
+                .frame(height: 160, alignment: .topLeading)
             }
             Spacer(minLength: 10)
             if DesktopCardsMediaPlan.showsProgress(size, duration: track.duration) {
