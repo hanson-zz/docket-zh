@@ -3641,6 +3641,39 @@
         }
       }
     },
+    "换汇率" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert"
+          }
+        }
+      }
+    },
+    "把结果带到汇率页换算（⌘E）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the result to the Currency page to convert (⌘E)"
+          }
+        }
+      }
+    },
+    "单位换算的结果不能换汇率" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unit conversions can't be sent to Currency"
+          }
+        }
+      }
+    },
     "把这一行变成可勾项" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -500,6 +500,70 @@ public enum CurrencyDesk {
         return next
     }
 
+    // MARK: 从计算页带过来
+
+    /// 计算页「换汇率」带到汇率页的东西：金额栏放的数（不带千分位），和要换成「从」的币种
+    /// （结果本身就是汇率换算时才有，其余为 nil，币种照汇率页现在的从 / 到）。
+    public struct Carry: Equatable, Sendable {
+        public var amount: String
+        public var code: String?
+
+        public init(amount: String, code: String? = nil) {
+            self.amount = amount
+            self.code = code?.uppercased()
+        }
+    }
+
+    /// 带过去的数最多几位小数：再多金额栏放不下，也没有币种用得上。
+    public static let carryFractionLimit = 10
+
+    /// 计算页的结果能不能带去汇率页、带什么：
+    /// - 算式和纯数字：原始精度优先（不按卡片的小数位设置），最多 10 位小数，去掉没用的零；
+    /// - 汇率换算：换出的金额按目标币种的小数位，连同目标币种一起带过去；
+    /// - 单位换算、算不出数（无穷大）或大到 1e15 以上：不能带，返回 nil。
+    public static func carryAmount(from outcome: SmartCalc.Outcome) -> Carry? {
+        let value = outcome.value
+        guard value.isFinite, abs(value) < 1e15 else { return nil }
+        switch outcome.kind {
+        case .unit:
+            return nil
+        case .currency:
+            let code = outcome.unit.trimmingCharacters(in: .whitespaces)
+            guard !code.isEmpty else { return nil }
+            return Carry(amount: CurrencyCatalog.plain(value, code: code), code: code)
+        case .math:
+            return Carry(amount: carryNumber(value))
+        }
+    }
+
+    /// 不带千分位、不用科学记数的数：`1234.5`、`-12.5`、`0.3333333333`。
+    static func carryNumber(_ value: Double) -> String {
+        guard value.isFinite else { return "0" }
+        var text = String(format: "%.\(carryFractionLimit)f", value)
+        if text.contains(".") {
+            while text.hasSuffix("0") { text.removeLast() }
+            if text.hasSuffix(".") { text.removeLast() }
+        }
+        if text == "-0" { text = "0" }
+        return text
+    }
+
+    /// 汇率页收下带过来的数：金额栏换成它；带了币种就把它放到「从」，和「到」撞了就对调，
+    /// 其余（列表、收藏）不动。金额栏原来写了币种（`100 eur to jpy`）时先落到两行上。
+    public static func receiving(_ carry: Carry, into state: State,
+                                 codes: Set<String> = SmartCalc.commonCodes) -> State {
+        var next = settled(state, codes: codes)
+        if let code = carry.code, !code.isEmpty, code != next.from {
+            if code == next.to {
+                (next.from, next.to) = (next.to, next.from)
+            } else {
+                next.from = code
+            }
+        }
+        next.amount = carry.amount
+        return next
+    }
+
     /// 对调：金额栏不变，100 USD → CNY 变成 100 CNY → USD。
     public static func swapped(_ state: State, codes: Set<String> = SmartCalc.commonCodes) -> State {
         var next = settled(state, codes: codes)

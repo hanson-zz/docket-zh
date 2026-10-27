@@ -11,7 +11,7 @@ import SwiftUI
 /// 判断和换算都在 Core 的 `CurrencyDesk`，这里只负责画、接键盘和写配置。
 ///
 /// 键盘：↩ 记下这一条（卡片显示它，进记录），⌘C 拷贝结果，⌘⇧C 拷贝整句，
-/// ⌘⇧S 对调，⌘D 收藏，⌘E 带去计算页，⌘R 刷新汇率，⌘[ / ⌘] 选「从」/「到」的币种，
+/// ⌘⇧S 对调，⌘D 收藏，⌘E 带去计算页（计算页的 ⌘E「换汇率」反过来把数带到这里），⌘R 刷新汇率，⌘[ / ⌘] 选「从」/「到」的币种，
 /// 金额栏里 ↑ ↓ 在「到」和多币种列表之间换。选择器里 ↑ ↓ 选、↩ 确定。
 /// 普通版只接 ⌘C、⌘⇧S、⌘E、⌘R、⌘[ / ⌘]（⌘1 / ⌘2 在外层），↩ 只把这一条放到卡片上，不进记录。
 struct CalcFXPage: View {
@@ -24,6 +24,9 @@ struct CalcFXPage: View {
     var onCarry: (String) -> Void
     /// 点了记录里不是汇率的一条：切到计算页重算它。
     var onOpenInCalc: (String) -> Void
+    /// 计算页「换汇率」带过来的数：收下后放进金额栏、马上换算，再 `onReceived` 让外层清掉。
+    var incoming: CurrencyDesk.Carry? = nil
+    var onReceived: () -> Void = {}
 
     enum Side: Hashable { case from, to, add }
     enum Field: Hashable { case amount, search }
@@ -107,6 +110,10 @@ struct CalcFXPage: View {
             guard !context.isPreview else { return }
             service.start()
             WidgetDetailWindow.shared.focusField { focus = .amount }
+            if let incoming { receive(incoming) }
+        }
+        .onChange(of: incoming) { _, next in
+            if let next, !context.isPreview { receive(next) }
         }
         .onDisappear {
             if simple { saveSimple() } else { persist() }
@@ -1062,6 +1069,26 @@ struct CalcFXPage: View {
         } else {
             commit()
             WidgetWriter.write(current) { $0.set(SmartCalc.pinnedKey, .string(entry)) }
+        }
+    }
+
+    /// 收下计算页带来的数：金额栏换成它（带了币种就放到「从」），存进配置，金额栏获得焦点、光标在末尾。
+    private func receive(_ carry: CurrencyDesk.Carry) {
+        guard !context.isPreview else { return }
+        picking = nil
+        working = CurrencyDesk.receiving(carry, into: desk, codes: codes)
+        if simple { saveSimple() } else { persist() }
+        onReceived()
+        WidgetDetailWindow.shared.focusField { focus = .amount }
+        caretToEnd()
+    }
+
+    /// 程序给的焦点会全选金额栏：等字段编辑器就位后把光标挪到末尾，接着打字是追加不是覆盖。
+    private func caretToEnd() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard focus == .amount, let editor = NSApp.keyWindow?.firstResponder as? NSTextView else { return }
+            editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
         }
     }
 

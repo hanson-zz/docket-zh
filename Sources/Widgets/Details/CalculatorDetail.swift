@@ -6,6 +6,8 @@ import SwiftUI
 ///   固定、记录和小键盘，见 `CalcFXPage`、`CurrencyDesk.layout`。
 /// - 计算：一个输入框，结果跟着每次按键变；回车记下这一条，卡片上显示它，
 ///   最近记录里三种（汇率、单位、计算）混排。识别和计算在 `SmartCalc`。
+/// 两页互相带数：汇率页「带去计算」（⌘E）把换出的数放进计算页的输入框；计算页「换汇率」（⌘E）
+/// 把结果放进汇率页的金额栏（汇率结果连币种一起带，见 `CurrencyDesk.carryAmount`）。
 /// 计算页和完整版汇率页共用记录和小键盘（⌘K 显示 / 收起）；普通版汇率页顶栏右边是
 /// 刷新汇率（⌘R）。⌘1 / ⌘2 切页，打开在哪页记在卡片配置的 `mode`（见 `CurrencyDesk.mode`），
 /// 汇率页用哪一版记在 `fxLayout`。
@@ -17,6 +19,8 @@ struct CalculatorDetail: View {
     @State private var copied = false
     @State private var shownMode: CurrencyDesk.Mode?
     @State private var shownLayout: CurrencyDesk.Layout?
+    /// 计算页「换汇率」带去的数，汇率页收下后清掉，来回切页不会再填一次。
+    @State private var fxIncoming: CurrencyDesk.Carry?
     @FocusState private var typing: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -66,7 +70,9 @@ struct CalculatorDetail: View {
                 case .fx:
                     CalcFXPage(instance: instance, context: context, keypadOn: keypadOn, layout: layout,
                                onCarry: { openInCalc($0, commit: false) },
-                               onOpenInCalc: { openInCalc($0, commit: true) })
+                               onOpenInCalc: { openInCalc($0, commit: true) },
+                               incoming: fxIncoming,
+                               onReceived: { fxIncoming = nil })
                 case .calc:
                     calcPage
                 }
@@ -198,6 +204,11 @@ struct CalculatorDetail: View {
                         if case .success(let out)? = evaluate(text) { copy(out) }
                     }
                     .keyboardShortcut("c", modifiers: .command)
+                    // 和汇率页「带去计算」对称：⌘E 把结果带去汇率页。
+                    Button("") {
+                        if case .success(let out)? = evaluate(text) { convertInFX(out) }
+                    }
+                    .keyboardShortcut("e", modifiers: .command)
                 }
             }
             .buttonStyle(.plain)
@@ -235,6 +246,14 @@ struct CalculatorDetail: View {
         draft = entry
         if commits { commit(entry) }
         WidgetDetailWindow.shared.focusField { typing = true }
+    }
+
+    /// 计算页「换汇率」：切到汇率页，结果放进金额栏，从 / 到照汇率页现在的（汇率结果换成它的币种）。
+    /// 普通版、完整版都能用，免费。单位换算的结果不带。
+    private func convertInFX(_ out: SmartCalc.Outcome) {
+        guard !context.isPreview, let carry = CurrencyDesk.carryAmount(from: out) else { return }
+        fxIncoming = carry
+        switchMode(.fx)
     }
 
     // MARK: 计算页
@@ -386,17 +405,26 @@ struct CalculatorDetail: View {
 
     // MARK: 操作
 
+    /// 一行三个：拷贝结果（主按钮）、换汇率、固定到卡片（圆形图标，和完整版汇率页的收藏、固定一样），
+    /// 320pt 面板里中英文都不挤。
     private func actions(_ reading: Result<SmartCalc.Outcome, SmartCalc.Failure>?) -> some View {
         let current = text.trimmingCharacters(in: .whitespaces)
         let isPinned = !pinned.isEmpty && pinned == current
+        let outcome = try? reading?.get()
+        let carry = outcome.flatMap(CurrencyDesk.carryAmount(from:))
+        let tint = WidgetStyle.tint(.purple)
         return HStack(spacing: 8) {
             PanelButton(title: copied ? tr("已复制") : tr("拷贝结果"),
                         symbol: copied ? "checkmark" : "doc.on.doc", prominent: true) {
-                if case .success(let out)? = reading { copy(out) }
+                if let outcome { copy(outcome) }
             }
-            .disabled(!isSuccess(reading))
-            PanelButton(title: isPinned ? tr("取消固定") : tr("固定到卡片"),
-                        symbol: isPinned ? "pin.slash" : "pin") {
+            .disabled(outcome == nil)
+            PanelButton(title: tr("换汇率"), symbol: "dollarsign.arrow.circlepath") {
+                if let outcome { convertInFX(outcome) }
+            }
+            .disabled(carry == nil)
+            .help(outcome?.kind == .unit ? tr("单位换算的结果不能换汇率") : tr("把结果带到汇率页换算（⌘E）"))
+            Button {
                 guard !context.isPreview else { return }
                 if isPinned {
                     WidgetWriter.write(instance) { $0.set(SmartCalc.pinnedKey, nil) }
@@ -406,9 +434,21 @@ struct CalculatorDetail: View {
                         $0.set(SmartCalc.pinnedKey, .string(current))
                     }
                 }
+            } label: {
+                Image(systemName: isPinned ? "pin.fill" : "pin")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(isPinned ? tint.panelReadable : Color.panelPrimary)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(isPinned ? tint.opacity(0.2) : Color.panelFill))
+                    .overlay {
+                        Circle().strokeBorder(isPinned ? tint.opacity(0.6) : Color.panelStroke, lineWidth: 0.7)
+                    }
+                    .contentShape(.circle)
             }
-            .disabled(current.isEmpty || (!isPinned && !isSuccess(reading)))
-            .help(tr("固定后卡片一直显示这一条，汇率会跟着更新"))
+            .buttonStyle(.plain)
+            .disabled(current.isEmpty || (!isPinned && outcome == nil))
+            .help(isPinned ? tr("取消固定") : tr("固定后卡片一直显示这一条，汇率会跟着更新"))
+            .accessibilityLabel(isPinned ? tr("取消固定") : tr("固定到卡片"))
         }
     }
 
@@ -461,11 +501,6 @@ struct CalculatorDetail: View {
         case .failure(let failure)?: failure.kind == .currency
         case nil: false
         }
-    }
-
-    private func isSuccess(_ reading: Result<SmartCalc.Outcome, SmartCalc.Failure>?) -> Bool {
-        if case .success? = reading { return true }
-        return false
     }
 
     // MARK: 最近记录
