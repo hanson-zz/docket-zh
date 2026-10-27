@@ -110,6 +110,15 @@ struct DesktopCard: View {
     @ViewBuilder
     private func content(now: Date) -> some View {
         let context = WidgetContext(position: .bottom, now: now)
+        if let card = DesktopCardLayouts.view(widget, size: size, now: now) {
+            card
+        } else {
+            generic(context: context, now: now)
+        }
+    }
+
+    @ViewBuilder
+    private func generic(context: WidgetContext, now: Date) -> some View {
         switch (widget.kind, size) {
         case (.notes, _):
             DesktopNoteSheet(widget: widget, sheetID: pin.sheetID, size: size)
@@ -143,6 +152,29 @@ struct DesktopCard: View {
             }
             .contentShape(shape)
             .gesture(DesktopPinController.shared.moveGesture(pin.id))
+    }
+}
+
+// MARK: - 各组专属布局
+
+/// 为桌面专门排的布局：每组一个文件，在 Sources/Widgets/DesktopCards/DesktopCards<组名>.swift，
+/// 入口 `view(for:size:now:)`。按组的顺序（Time、Tasks、Media、System、Data、Files）问，第一个
+/// 给出视图的就用它；都给 nil 走通用逻辑（放大的扩展栏卡片、面板内容）。每组在 `providers`
+/// 加一行入口、在 `kinds` 并上自己做了小号的种类（Core 里），别处不用改。
+@MainActor
+enum DesktopCardLayouts {
+    static let providers: [@MainActor (WidgetInstance, DesktopPinSize, Date) -> AnyView?] = [
+        DesktopCardsTime.view,
+    ]
+
+    /// 专属布局总能放下小号的种类：不再按扩展栏卡片能不能塞进 160×160 判断。
+    static let kinds: Set<WidgetKind> = DesktopTimeCards.kinds
+
+    static func view(_ widget: WidgetInstance, size: DesktopPinSize, now: Date) -> AnyView? {
+        for provider in providers {
+            if let card = provider(widget, size, now) { return card }
+        }
+        return nil
     }
 }
 

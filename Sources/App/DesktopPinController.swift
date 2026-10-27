@@ -197,7 +197,7 @@ final class DesktopPinController {
     func sizes(for widget: WidgetInstance) -> [DesktopPinSize] {
         let mode = mode(for: widget.kind)
         let special: Set<WidgetKind> = [.notes, .clock, .calculator]
-        let smallFits = special.contains(widget.kind)
+        let smallFits = special.contains(widget.kind) || DesktopCardLayouts.kinds.contains(widget.kind)
             || DesktopTileFit.fit(widget, box: DesktopPinSize.small.size).readable
         return DesktopPinSupport.sizes(mode, smallFits: smallFits)
     }
