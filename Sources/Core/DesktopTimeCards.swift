@@ -25,12 +25,12 @@ public enum DesktopTimeCards {
         case (.stopwatch, .large): 5
         case (.countdown, .large): 3
         case (.alarm, .medium): 2
-        case (.alarm, .large): 4
+        case (.alarm, .large): 3
         case (.anniversary, .medium): 3
-        case (.anniversary, .large): 4
+        case (.anniversary, .large): 3
         case (.calendar, .small): 1
         case (.calendar, .medium): 3
-        case (.calendar, .large): 3
+        case (.calendar, .large): 2
         case (.week, .large): 3
         default: 0
         }
@@ -49,6 +49,13 @@ public enum DesktopTimeCards {
             return zone.identifier != here.identifier
         }
         return (away ?? cities.first).map { [$0] } ?? []
+    }
+
+    /// 格子里放不下「比北京晚 12 小时」时的短写法：「+1 小时」「−12 小时」「+5 小时 30 分」，
+    /// 一样时是「时间相同」。负号用 U+2212，和数字一样粗。
+    public static func shortOffset(_ seconds: Int) -> String {
+        guard seconds != 0 else { return tr("时间相同") }
+        return (seconds > 0 ? "+" : "\u{2212}") + WorldClockText.duration(seconds)
     }
 
     // MARK: 秒表

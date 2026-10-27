@@ -48,7 +48,6 @@ struct TimeDeskFocusCard: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.panelSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
                 .frame(width: 90)
             }
@@ -71,7 +70,6 @@ struct TimeDeskFocusCard: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(standUp ? Color.timerGreen.panelReadable : Color.panelSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                     Text(docketClockString(left))
                         .font(timeDeskNumber(42))
                         .monospacedDigit()
@@ -108,7 +106,6 @@ struct TimeDeskFocusCard: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.85)
                         roundDots(state, color: color)
                             .padding(.top, 2)
                     }
@@ -237,14 +234,14 @@ struct TimeDeskCountdownCard: View {
 
     @ViewBuilder
     private func small(_ timer: CountdownTimer, phase: CountdownRun.Phase) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             TimeDeskHeader(symbol: "hourglass", title: timer.title, tint: accent)
             switch phase {
             case .running(let left, let fraction), .paused(let left, let fraction):
                 let paused = isPaused(phase)
                 Spacer(minLength: 0)
                 Text(docketClockString(left))
-                    .font(timeDeskNumber(38))
+                    .font(timeDeskNumber(34))
                     .monospacedDigit()
                     .foregroundStyle(Color.panelPrimary.opacity(paused ? 0.6 : 1))
                     .lineLimit(1)
@@ -285,7 +282,6 @@ struct TimeDeskCountdownCard: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                     } else {
                         Text(lastLine)
                             .font(.system(size: 13))
@@ -559,7 +555,7 @@ struct TimeDeskAlarmCard: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 8) {
                         bell(headline, diameter: 34)
-                        if let headline { hero(headline, figure: 38, compact: false) }
+                        if let headline { hero(headline, figure: 34, compact: false) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if !rows.isEmpty {
@@ -633,7 +629,6 @@ struct TimeDeskAlarmCard: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(live ? accent.panelReadable : Color.panelSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .opacity(live ? 1 : 0.6)
     }

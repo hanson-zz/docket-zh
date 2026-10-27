@@ -30,10 +30,10 @@ struct TimeDeskProgressCard: View {
         case .small:
             VStack(spacing: 8) {
                 ZStack {
-                    TimeDeskRing(fraction: fraction, tint: accent, lineWidth: 10)
+                    TimeDeskRing(fraction: fraction, tint: accent, lineWidth: 9)
                     VStack(spacing: 0) {
                         Text("\(percent)%")
-                            .font(timeDeskNumber(30))
+                            .font(timeDeskNumber(26))
                             .monospacedDigit()
                             .foregroundStyle(Color.panelPrimary)
                             .lineLimit(1)
@@ -42,11 +42,10 @@ struct TimeDeskProgressCard: View {
                             .font(.system(size: 13))
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
                     }
-                    .frame(width: 78)
+                    .frame(width: 70)
                 }
-                .frame(width: 102, height: 102)
+                .frame(width: 92, height: 92)
                 periodButton(TimeProgress.label(period, now: now))
             }
             .padding(DesktopCardsTime.inset(size))
@@ -133,7 +132,6 @@ struct TimeDeskProgressCard: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.panelPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.panelSecondary)
@@ -279,11 +277,12 @@ private struct DeskEventRow: View {
 
     private func detail(ongoing: Bool) -> String {
         if entry.isAllDay { return tr("全天") }
+        // 正在开的写「进行中 · 到 15:00」，短一点，给「加入」留地方。
+        if ongoing { return tr("进行中") + " · " + tr("到 \(CalendarDay.clock(entry.end))") }
         var text = CalendarDay.range(entry.start, entry.end)
         if showsDay, !Calendar.current.isDate(entry.start, inSameDayAs: now) {
-            text = tr("周\(WeekAgenda.weekdayNames[MonthGrid.weekdayIndex(entry.start)])") + " " + text
+            text = tr("周\(WeekAgenda.weekdayNames[CalendarLook.weekdayIndex(entry.start)])") + " " + text
         }
-        if ongoing { text = tr("进行中") + " · " + text }
         if !entry.location.isEmpty { text += " · \(entry.location)" }
         return text
     }
@@ -352,7 +351,7 @@ struct TimeDeskWeekCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 header(hours: hours, free: free, todayIndex: todayIndex)
                 grid(days, free: free, dates: true)
-                    .frame(height: 150)
+                    .frame(height: 130)
                 TimeDeskRule()
                 if next.isEmpty {
                     Text(tr("本周接下来没有日程"))
@@ -380,7 +379,6 @@ struct TimeDeskWeekCard: View {
             if let free { freeLine(free, todayIndex: todayIndex) }
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.8)
     }
 
     private func freeLine(_ free: FreeAfternoon, todayIndex: Int?) -> some View {
@@ -390,7 +388,6 @@ struct TimeDeskWeekCard: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(freeGreen.panelReadable)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
     }
 
@@ -409,7 +406,6 @@ struct TimeDeskWeekCard: View {
                             .font(.system(size: 13, weight: day.isToday ? .bold : .medium))
                             .foregroundStyle(day.isToday ? accent.panelReadable : Color.panelSecondary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                         if dates {
                             Text("\(WeekAgenda.calendar.component(.day, from: day.date))")
                                 .font(.system(size: 13, weight: day.isToday ? .bold : .regular))
@@ -509,7 +505,6 @@ struct TimeDeskLunarCard: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(reading.isAlert || reading.isCountdown ? red.panelReadable : Color.panelPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
         }
         .padding(DesktopCardsTime.inset(.small))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -524,21 +519,21 @@ struct TimeDeskLunarCard: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.panelPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
                 Text(reading.title)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(reading.isAlert ? red.panelReadable : Color.panelPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
                 Text(reading.caption)
                     .font(.system(size: 13, weight: reading.isCountdown ? .semibold : .regular))
                     .foregroundStyle(reading.isCountdown ? red.panelReadable : Color.panelSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
-                almanacLine(tr("宜"), LunarAlmanac.good(now), color: green)
-                almanacLine(tr("忌"), LunarAlmanac.bad(now), color: red)
+                // 面板里关了宜忌就不写（同一个设置）。
+                if widget.config.bool(LunarPanel.almanacKey, default: true) {
+                    almanacLine(tr("宜"), LunarAlmanac.good(now), color: green)
+                    almanacLine(tr("忌"), LunarAlmanac.bad(now), color: red)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -556,7 +551,6 @@ struct TimeDeskLunarCard: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
         }
     }
 
@@ -596,14 +590,12 @@ struct TimeDeskLunarCard: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.panelSecondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
             }
             Text("\(reading.title) · \(reading.caption)")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(reading.isAlert || reading.isCountdown ? red.panelReadable : Color.panelPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { index in
                     Text(WeekAgenda.weekdayNames[index])
@@ -643,12 +635,11 @@ struct TimeDeskLunarCard: View {
                 .monospacedDigit()
                 .foregroundStyle(cell.isToday ? Color.panelOnPrimary
                                  : (cell.isWeekend || off ? red.panelReadable : Color.panelPrimary))
-            Text(LunarCard.cellName(cell.sub))
+            Text(LunarPanel.cellName(cell.sub))
                 .font(.system(size: 13, weight: cell.subIsSpecial ? .semibold : .regular))
                 .foregroundStyle(cell.isToday ? Color.panelOnPrimary.opacity(0.85)
                                  : (cell.subIsSpecial ? red.panelReadable : Color.panelTertiary))
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
         }
         .padding(.horizontal, 1)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -738,7 +729,6 @@ struct TimeDeskAnniversaryCard: View {
                     .font(.system(size: compact ? 14 : 16, weight: .bold))
                     .foregroundStyle(Color.panelPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
             if Anniversary.isCelebrating(reading) {
@@ -777,7 +767,6 @@ struct TimeDeskAnniversaryCard: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -815,7 +804,6 @@ struct TimeDeskAnniversaryCard: View {
                             .font(.system(size: 13))
                             .foregroundStyle(Color.panelTertiary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                     }
                     TimeDeskBar(fraction: reading.progress, tint: tint, height: 4)
                 }
@@ -990,7 +978,6 @@ struct TimeDeskCalendarCard: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

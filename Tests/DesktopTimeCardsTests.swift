@@ -60,6 +60,13 @@ final class DesktopTimeCardsTests: XCTestCase {
         XCTAssertEqual(DesktopTimeCards.worldCities(many, size: .medium, here: here).count, 3)
     }
 
+    func testShortOffset() {
+        XCTAssertEqual(DesktopTimeCards.shortOffset(3600), "+" + WorldClockText.duration(3600))
+        XCTAssertEqual(DesktopTimeCards.shortOffset(-12 * 3600), "\u{2212}" + WorldClockText.duration(-12 * 3600))
+        XCTAssertEqual(DesktopTimeCards.shortOffset(0), tr("时间相同"))
+        XCTAssertTrue(DesktopTimeCards.shortOffset(19800).hasPrefix("+"))
+    }
+
     // MARK: 秒表
 
     func testLapRowsNewestFirstWithMarks() {

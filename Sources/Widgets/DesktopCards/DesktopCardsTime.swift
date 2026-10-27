@@ -135,7 +135,6 @@ struct TimeDeskPill: View {
                 Text(title)
                     .font(.system(size: fontSize, weight: .semibold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
             }
             .foregroundStyle(prominent ? Color.panelOnPrimary : (highlight?.panelReadable ?? Color.panelPrimary))
             .padding(.horizontal, 10)
@@ -277,9 +276,9 @@ private struct DeskClockCard: View {
         let time = ClockFormat.compactTime(now, zone: .current)
         switch size {
         case .small:
-            VStack(spacing: 8) {
-                DeskDial(widget: widget, now: now, diameter: 78)
-                timeText(time, size: 30)
+            VStack(spacing: 6) {
+                DeskDial(widget: widget, now: now, diameter: 64)
+                timeText(time, size: 28)
                 Text(timeDeskDate(now))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.panelSecondary)
@@ -299,14 +298,13 @@ private struct DeskClockCard: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Color.panelTertiary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                 }
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 22)
         case .large:
             VStack(spacing: 12) {
-                DeskDial(widget: widget, now: now, diameter: 176)
+                DeskDial(widget: widget, now: now, diameter: 156)
                 VStack(spacing: 2) {
                     timeText(time, size: 40)
                     Text(timeDeskDate(now))
@@ -446,7 +444,6 @@ private struct DeskClockFacts: View {
                 .monospacedDigit()
                 .foregroundStyle(Color.panelPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
             Text(label)
                 .font(.system(size: 13))
                 .foregroundStyle(Color.panelSecondary)
@@ -563,6 +560,11 @@ private struct DeskWorldCell: View {
         return dayHint.map { "\($0) · \(line)" } ?? line
     }
 
+    /// 格子窄时的时差：「−12 小时」，此处写「此处」。
+    private var shortOffset: String {
+        isHere ? tr("此处") : DesktopTimeCards.shortOffset(WorldClockText.offsetSeconds(zone, now: now))
+    }
+
     private var hour: Int {
         var calendar = Calendar.current
         calendar.timeZone = zone
@@ -577,17 +579,15 @@ private struct DeskWorldCell: View {
                 nameLine(ink: ink, size: 15)
                 Spacer(minLength: 0)
                 bigTime(ink: ink, soft: soft, size: 44)
-                Text(offsetLine)
+                Text(dayHint.map { "\(shortOffset) · \($0)" } ?? shortOffset)
                     .font(.system(size: 13))
                     .foregroundStyle(soft)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
+                    .lineLimit(1)
                 if !isHere {
                     Text(WorldClockContact.reason(there: zone, now: now).text)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(soft)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
             }
             .padding(14)
@@ -600,11 +600,10 @@ private struct DeskWorldCell: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(soft)
                     .lineLimit(1)
-                Text(WorldClockText.offsetLine(city, now: now))
+                Text(shortOffset)
                     .font(.system(size: 13))
                     .foregroundStyle(soft)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
             }
             .padding(.horizontal, 6)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -616,7 +615,6 @@ private struct DeskWorldCell: View {
                         .font(.system(size: 13))
                         .foregroundStyle(soft)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 4)
                 bigTime(ink: ink, soft: soft, size: 26)
@@ -632,7 +630,6 @@ private struct DeskWorldCell: View {
                 .font(.system(size: size, weight: .bold))
                 .foregroundStyle(ink)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
             if !isHere {
                 ContactDot(level: WorldClockContact.reason(there: zone, now: now).level, size: 8)
             }
@@ -652,7 +649,6 @@ private struct DeskWorldCell: View {
             }
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
     }
 }
 
@@ -681,14 +677,12 @@ private struct DeskStopwatchCard: View {
         switch size {
         case .small:
             VStack(spacing: 8) {
-                TimeDeskHeader(symbol: "stopwatch", title: title, tint: Color.timerGreen)
                 Spacer(minLength: 0)
-                figure(elapsed, size: 34)
+                figure(elapsed, size: 36)
                 Text(StopwatchLaps.caption(running: running, elapsed: elapsed, lapCount: laps.count))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.panelSecondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 HStack(spacing: 8) {
                     if running {

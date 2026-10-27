@@ -2487,6 +2487,17 @@
         }
       }
     },
+    "到 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "until %@"
+          }
+        }
+      }
+    },
     "前进" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3154,6 +3165,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Overall %@"
+          }
+        }
+      }
+    },
+    "时间相同" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same time"
           }
         }
       }
