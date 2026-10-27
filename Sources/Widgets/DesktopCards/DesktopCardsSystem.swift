@@ -114,15 +114,23 @@ private struct DeskNumber: View {
 
     var body: some View {
         // 一段文字：放不下时数字和单位一起缩（最多缩到 0.7），不会只剩单位被截掉。
-        (Text(verbatim: value)
-            .font(.system(size: size, weight: .bold, design: .rounded))
-            .foregroundStyle(tint)
-         + Text(verbatim: unit.isEmpty ? "" : " " + unit)
-            .font(.system(size: max(13, (size * 0.42).rounded()), weight: .semibold))
-            .foregroundStyle(Color.panelSecondary))
+        Text(text)
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.7)
+    }
+
+    /// 显式写 SwiftUI 的属性：同时导入了 AppKit，`.font` 会和 NSFont 那个属性撞名。
+    private var text: AttributedString {
+        typealias UI = AttributeScopes.SwiftUIAttributes
+        var number = AttributedString(value)
+        number[UI.FontAttribute.self] = Font.system(size: size, weight: .bold, design: .rounded)
+        number[UI.ForegroundColorAttribute.self] = tint
+        guard !unit.isEmpty else { return number }
+        var suffix = AttributedString(" " + unit)
+        suffix[UI.FontAttribute.self] = Font.system(size: max(13, (size * 0.42).rounded()), weight: .semibold)
+        suffix[UI.ForegroundColorAttribute.self] = Color.panelSecondary
+        return number + suffix
     }
 }
 
