@@ -3663,6 +3663,28 @@
         }
       }
     },
+    "来自计算" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Calculator"
+          }
+        }
+      }
+    },
+    "金额来自计算页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount from Calculator"
+          }
+        }
+      }
+    },
     "单位换算的结果不能换汇率" : {
       "extractionState" : "manual",
       "localizations" : {

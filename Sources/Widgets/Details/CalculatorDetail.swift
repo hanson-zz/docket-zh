@@ -8,6 +8,8 @@ import SwiftUI
 ///   最近记录里三种（汇率、单位、计算）混排。识别和计算在 `SmartCalc`。
 /// 两页互相带数：汇率页「带去计算」（⌘E）把换出的数放进计算页的输入框；计算页「换汇率」（⌘E）
 /// 把结果放进汇率页的金额栏（汇率结果连币种一起带，见 `CurrencyDesk.carryAmount`）。
+/// 从计算页切到汇率页（顶栏、⌘1、任何入口）也自动带一次，计算结果没变时不再覆盖
+/// （记在 `fxSyncedFrom`，见 `CurrencyDesk.autoSync`）；面板打开就在汇率页不算切换。
 /// 计算页和完整版汇率页共用记录和小键盘（⌘K 显示 / 收起）；普通版汇率页顶栏右边是
 /// 刷新汇率（⌘R）。⌘1 / ⌘2 切页，打开在哪页记在卡片配置的 `mode`（见 `CurrencyDesk.mode`），
 /// 汇率页用哪一版记在 `fxLayout`。
@@ -19,7 +21,7 @@ struct CalculatorDetail: View {
     @State private var copied = false
     @State private var shownMode: CurrencyDesk.Mode?
     @State private var shownLayout: CurrencyDesk.Layout?
-    /// 计算页「换汇率」带去的数，汇率页收下后清掉，来回切页不会再填一次。
+    /// 计算页「换汇率」或切页自动同步带去的数，汇率页收下后清掉，来回切页不会再填一次。
     @State private var fxIncoming: CurrencyDesk.Carry?
     @FocusState private var typing: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -221,6 +223,7 @@ struct CalculatorDetail: View {
 
     private func switchMode(_ next: CurrencyDesk.Mode) {
         guard next != mode else { return }
+        if !context.isPreview, fxIncoming == nil { autoSync(from: mode, to: next) }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { shownMode = next }
         guard !context.isPreview else { return }
         WidgetWriter.write(current) { $0.set(CurrencyDesk.modeKey, .string(next.rawValue)) }
@@ -252,8 +255,27 @@ struct CalculatorDetail: View {
     /// 普通版、完整版都能用，免费。单位换算的结果不带。
     private func convertInFX(_ out: SmartCalc.Outcome) {
         guard !context.isPreview, let carry = CurrencyDesk.carryAmount(from: out) else { return }
+        markSynced(text, carry)
         fxIncoming = carry
         switchMode(.fx)
+    }
+
+    /// 从计算页切到汇率页：计算页现在的结果能带、且和上次同步过去的不一样，就填进汇率页金额栏。
+    /// 计算页空着、出错、单位换算，或结果没变（用户可能在汇率页改过金额）时不动汇率页。
+    private func autoSync(from previous: CurrencyDesk.Mode, to next: CurrencyDesk.Mode) {
+        let input = text
+        let carry = (try? evaluate(input)?.get()).flatMap(CurrencyDesk.carryAmount(from:))
+        guard let sync = CurrencyDesk.autoSync(from: previous, to: next, input: input, carry: carry,
+                                               lastSynced: current.config.string(CurrencyDesk.syncedFromKey))
+        else { return }
+        markSynced(input, sync)
+        fxIncoming = sync
+    }
+
+    /// 记下这次带去汇率页的是哪一份，结果没变时下次切页不再覆盖。
+    private func markSynced(_ input: String, _ carry: CurrencyDesk.Carry) {
+        let signature = CurrencyDesk.syncSignature(input: input, carry: carry)
+        WidgetWriter.write(current) { $0.set(CurrencyDesk.syncedFromKey, .string(signature)) }
     }
 
     // MARK: 计算页

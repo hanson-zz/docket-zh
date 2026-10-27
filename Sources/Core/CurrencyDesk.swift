@@ -200,6 +200,8 @@ public enum CurrencyCatalog {
 /// - `keypad`：小键盘开着没有。
 /// - `fxLayout`：汇率页用普通版（`simple`）还是完整版（`full`）。没存过时解锁了是完整版；
 ///   没解锁一律普通版，存的选择和收藏、列表、记录、固定都不动，解锁后原样回来。
+/// - `fxSyncedFrom`：上次从计算页自动同步到汇率页的那一份（计算输入和带过去的数），
+///   计算结果没变时切过去不再覆盖汇率页，见 `autoSync`。
 ///
 /// 这些键都不进设置页（`WidgetCatalog` 的默认值里没有），只在面板里改。
 public enum CurrencyDesk {
@@ -212,6 +214,7 @@ public enum CurrencyDesk {
     public static let modeKey = "mode"
     public static let keypadKey = "keypad"
     public static let layoutKey = "fxLayout"
+    public static let syncedFromKey = "fxSyncedFrom"
 
     public static let defaultAmount = "100"
     public static let defaultList = ["JPY", "EUR", "HKD", "GBP"]
@@ -562,6 +565,27 @@ public enum CurrencyDesk {
         }
         next.amount = carry.amount
         return next
+    }
+
+    // MARK: 切到汇率页时自动同步
+
+    /// 一次同步的记号：计算页的输入（去掉首尾空白）和带过去的数、币种，存在 `fxSyncedFrom`。
+    public static func syncSignature(input: String, carry: Carry) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        return [trimmed, carry.amount, carry.code ?? ""].joined(separator: "\u{1F}")
+    }
+
+    /// 切页时要不要把计算页的结果自动填进汇率页，要就返回带过去的数：
+    /// - 只有从计算页切到汇率页才算（`previous` 为 nil 是面板刚打开就落在汇率页，不算）；
+    /// - 计算页空着、出错或结果不能带（单位换算等，`carry` 为 nil）时不动汇率页；
+    /// - 和上次同步过去的一样（`lastSynced`）时不再覆盖，用户在汇率页自己改的金额留着。
+    /// 同步后把 `syncSignature` 写进 `fxSyncedFrom`。「换汇率」按钮和 ⌘E 不走这里，总是带过去。
+    public static func autoSync(from previous: Mode?, to next: Mode,
+                                input: String, carry: Carry?, lastSynced: String) -> Carry? {
+        guard previous == .calc, next == .fx, let carry else { return nil }
+        guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard syncSignature(input: input, carry: carry) != lastSynced else { return nil }
+        return carry
     }
 
     /// 对调：金额栏不变，100 USD → CNY 变成 100 CNY → USD。

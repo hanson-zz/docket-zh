@@ -38,6 +38,8 @@ struct CalcFXPage: View {
     @State private var editingList = false
     @State private var drag: (from: Int, offset: CGFloat)?
     @State private var flash: String?
+    /// 收下计算页带来的数后，金额栏旁淡出约 1.4 秒的「来自计算」。
+    @State private var fromCalc = false
     @FocusState private var focus: Field?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -166,6 +168,8 @@ struct CalcFXPage: View {
                     Text(verbatim: "= " + out.amountText)
                         .font(.system(size: 13, weight: .medium).monospacedDigit())
                         .foregroundStyle(.panelSecondary)
+                } else if fromCalc {
+                    fromCalcHint
                 }
             }
             .lineLimit(1)
@@ -296,6 +300,8 @@ struct CalcFXPage: View {
                             .font(.system(size: 13, weight: .medium).monospacedDigit())
                             .foregroundStyle(.panelSecondary)
                             .lineLimit(1)
+                    } else if fromCalc {
+                        fromCalcHint.lineLimit(1)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -1081,6 +1087,26 @@ struct CalcFXPage: View {
         onReceived()
         WidgetDetailWindow.shared.focusField { focus = .amount }
         caretToEnd()
+        showFromCalc()
+    }
+
+    /// 金额栏旁的小字「来自计算」：13pt 次级色，不发光，淡入淡出。
+    private var fromCalcHint: some View {
+        Label(tr("来自计算"), systemImage: "arrow.turn.down.right")
+            .labelStyle(.titleAndIcon)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.panelSecondary)
+            .transition(.opacity)
+            .accessibilityLabel(tr("金额来自计算页"))
+    }
+
+    /// 收下后亮出「来自计算」，约 1.4 秒后淡掉。
+    private func showFromCalc() {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { fromCalc = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1400))
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.35)) { fromCalc = false }
+        }
     }
 
     /// 程序给的焦点会全选金额栏：等字段编辑器就位后把光标挪到末尾，接着打字是追加不是覆盖。

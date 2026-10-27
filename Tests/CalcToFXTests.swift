@@ -115,4 +115,56 @@ final class CalcToFXTests: XCTestCase {
         XCTAssertEqual(next.to, "JPY")
         XCTAssertEqual(next.amount, "8")
     }
+
+    // MARK: 切到汇率页时自动同步
+
+    private func sync(from previous: CurrencyDesk.Mode? = .calc, to next: CurrencyDesk.Mode = .fx,
+                      _ input: String, last: String = "") throws -> CurrencyDesk.Carry? {
+        let carry = CurrencyDesk.carryAmount(from: try outcome(input))
+        return CurrencyDesk.autoSync(from: previous, to: next, input: input, carry: carry, lastSynced: last)
+    }
+
+    func testSwitchingWithAFreshResultSyncs() throws {
+        XCTAssertEqual(try sync("12.5*3"), CurrencyDesk.Carry(amount: "37.5"))
+        XCTAssertEqual(try sync("100 usd to jpy"), CurrencyDesk.Carry(amount: "15000", code: "JPY"),
+                       "a currency result carries its code, same as the button")
+    }
+
+    func testAChangedResultSyncsAgain() throws {
+        let first = try XCTUnwrap(try sync("12.5*3"))
+        let last = CurrencyDesk.syncSignature(input: "12.5*3", carry: first)
+        XCTAssertEqual(try sync("12.5*4", last: last), CurrencyDesk.Carry(amount: "50"))
+    }
+
+    func testAnUnchangedResultDoesNotOverwrite() throws {
+        let first = try XCTUnwrap(try sync("12.5*3"))
+        let last = CurrencyDesk.syncSignature(input: "12.5*3", carry: first)
+        XCTAssertNil(try sync("12.5*3", last: last), "the amount typed on the FX page stays")
+        XCTAssertNil(try sync("  12.5*3 ", last: last), "surrounding spaces are not a change")
+    }
+
+    func testAResultThatCannotBeCarriedDoesNotSync() throws {
+        XCTAssertNil(try sync("5 km"))
+        XCTAssertNil(try sync("100 kg to lb"))
+        XCTAssertNil(CurrencyDesk.autoSync(from: .calc, to: .fx, input: "", carry: nil, lastSynced: ""),
+                     "an empty calculator leaves the FX page alone")
+        XCTAssertNil(CurrencyDesk.autoSync(from: .calc, to: .fx, input: "1+", carry: nil, lastSynced: ""),
+                     "an error leaves the FX page alone")
+        XCTAssertNil(CurrencyDesk.autoSync(from: .calc, to: .fx, input: "  ", carry: CurrencyDesk.Carry(amount: "1"),
+                                           lastSynced: ""))
+    }
+
+    func testOpeningOnTheFXPageDoesNotSync() throws {
+        XCTAssertNil(try sync(from: nil, "12.5*3"), "opening the panel on the FX page is not a switch")
+        XCTAssertNil(try sync(from: .fx, "12.5*3"))
+        XCTAssertNil(try sync(from: .fx, to: .calc, "12.5*3"), "going back to the calculator never syncs")
+    }
+
+    func testTheSignatureTellsInputsAndCodesApart() {
+        let plain = CurrencyDesk.syncSignature(input: "15000", carry: CurrencyDesk.Carry(amount: "15000"))
+        let yen = CurrencyDesk.syncSignature(input: "15000", carry: CurrencyDesk.Carry(amount: "15000", code: "JPY"))
+        XCTAssertNotEqual(plain, yen)
+        let other = CurrencyDesk.syncSignature(input: "3*5000", carry: CurrencyDesk.Carry(amount: "15000"))
+        XCTAssertNotEqual(plain, other, "a new calculation with the same result still counts as new")
+    }
 }
