@@ -2289,6 +2289,17 @@
         }
       }
     },
+    "全部已读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark All Read"
+          }
+        }
+      }
+    },
     "全部恢复 100%%" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2296,6 +2307,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset All to 100%%"
+          }
+        }
+      }
+    },
+    "全部读完了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All caught up"
           }
         }
       }
@@ -2465,6 +2487,17 @@
         }
       }
     },
+    "回车记下一条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Return to save one"
+          }
+        }
+      }
+    },
     "在上面写一件，回车记下" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2509,6 +2542,17 @@
         }
       }
     },
+    "在浏览器中打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Browser"
+          }
+        }
+      }
+    },
     "在设置里选截图按钮" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2516,6 +2560,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose capture buttons in Settings"
+          }
+        }
+      }
+    },
+    "复制一段文字，点下面翻译" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy some text, then click below"
           }
         }
       }
@@ -2652,6 +2707,17 @@
         }
       }
     },
+    "打开邮件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Mail"
+          }
+        }
+      }
+    },
     "把喝水、习惯打卡或专注计时放进扩展栏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2740,6 +2806,17 @@
         }
       }
     },
+    "拷贝过的表情会出现在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emoji you copy show up here"
+          }
+        }
+      }
+    },
     "拿掉%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2817,6 +2894,17 @@
         }
       }
     },
+    "更多…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More…"
+          }
+        }
+      }
+    },
     "最新单集" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2828,6 +2916,17 @@
         }
       }
     },
+    "最近 14 天" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 14 Days"
+          }
+        }
+      }
+    },
     "最近录音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2835,6 +2934,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent Recordings"
+          }
+        }
+      }
+    },
+    "最近记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
           }
         }
       }
@@ -2923,6 +3033,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click to show in Finder, drag to take out the first file"
+          }
+        }
+      }
+    },
+    "点一下拷贝结果" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to copy the result"
+          }
+        }
+      }
+    },
+    "点一下拷贝译文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to copy the translation"
           }
         }
       }
@@ -3026,6 +3158,28 @@
         }
       }
     },
+    "算式、单位、汇率都能直接写" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type math, units or currencies"
+          }
+        }
+      }
+    },
+    "粘贴翻译" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste & Translate"
+          }
+        }
+      }
+    },
     "自动隐藏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3055,6 +3209,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add a to-do, press Return"
+          }
+        }
+      }
+    },
+    "译文在这里，点一下拷贝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The translation shows here, click to copy"
           }
         }
       }

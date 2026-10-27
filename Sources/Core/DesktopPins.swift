@@ -401,6 +401,7 @@ public enum DesktopPinSupport {
 
     public static func mode(_ kind: WidgetKind, hasDetail: Bool, panelWidth: Double) -> Mode {
         if dedicatedKinds.contains(kind) { return .dedicated }
+        if DesktopCardsDataPlan.handles(kind) { return .dedicated }
         if DesktopCardsFilesPlan.handles(kind) { return .dedicated }
         guard hasDetail, !excludedKinds.contains(kind), panelWidth <= maxGenericPanelWidth else { return .none }
         return .generic

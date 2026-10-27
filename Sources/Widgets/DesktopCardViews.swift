@@ -167,6 +167,7 @@ enum DesktopCardLayouts {
         DesktopCardsTime.view,
         DesktopCardsTasks.view,
         DesktopCardsMedia.view,
+        DesktopCardsData.view,
         DesktopCardsFiles.view,
     ]
 
@@ -174,6 +175,7 @@ enum DesktopCardLayouts {
     static let kinds: Set<WidgetKind> = DesktopTimeCards.kinds
         .union(DesktopCardsTasksPlan.kinds)
         .union(DesktopCardsMediaPlan.kinds)
+        .union(DesktopCardsDataPlan.kinds)
         .union(DesktopCardsFilesPlan.kinds)
 
     static func view(_ widget: WidgetInstance, size: DesktopPinSize, now: Date) -> AnyView? {
