@@ -330,7 +330,7 @@ private struct DeskBatteryCard: View {
                 if rows.isEmpty {
                     healthLine
                 } else {
-                    ForEach(rows) { deviceRow($0) }
+                    ForEach(rows) { deviceRow($0, bar: false) }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -392,7 +392,8 @@ private struct DeskBatteryCard: View {
         }
     }
 
-    private func deviceRow(_ device: Device) -> some View {
+    /// 一个蓝牙设备一行。中号右边只有 150 宽，不画电量条，名字放得下。
+    private func deviceRow(_ device: Device, bar: Bool = true) -> some View {
         HStack(spacing: 8) {
             Image(systemName: device.symbol)
                 .font(.system(size: 13, weight: .semibold))
@@ -404,8 +405,10 @@ private struct DeskBatteryCard: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
-            DeskBar(progress: device.level, tint: tint(device), height: 6)
-                .frame(width: 44)
+            if bar {
+                DeskBar(progress: device.level, tint: tint(device), height: 6)
+                    .frame(width: 44)
+            }
             Text(verbatim: "\(BatteryColorMap.percent(device.level))%")
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
@@ -596,13 +599,14 @@ private struct DeskSystemCard: View {
         HStack(spacing: 10) {
             ForEach(shown, id: \.self) { metric in
                 let read = reading(metric)
+                let crowded = shown.count >= 4
                 VStack(alignment: .leading, spacing: 4) {
                     title(metric)
-                    DeskNumber(value: read.value, unit: read.unit, size: shown.count >= 4 ? 26 : 32)
+                    DeskNumber(value: read.value, unit: read.unit, size: crowded ? 22 : 32)
                     Spacer(minLength: 0)
                     trend(metric, height: 36)
                 }
-                .padding(10)
+                .padding(crowded ? 8 : 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .deskBlock(radius: 14)
                 .accessibilityElement(children: .combine)
@@ -984,6 +988,13 @@ private struct DeskGaugesCard: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// 大号每行名字下面那行：存储、电池写原来的说明；CPU、内存名字已经写过，写最近一分钟最高。
+    private func detail(_ ringID: String, _ r: GaugeLive.Reading) -> String {
+        guard ringID == "cpu" || ringID == "memory" else { return r.caption }
+        guard let peak = r.peak else { return tr("正在读取") }
+        return tr("1 分钟内最高 \(GaugeReading.percent(peak))")
+    }
+
     private func row(_ ringID: String) -> some View {
         let r = reading(ringID)
         return HStack(spacing: 12) {
@@ -996,7 +1007,7 @@ private struct DeskGaugesCard: View {
                 Text(verbatim: name(ringID))
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.panelPrimary)
-                Text(verbatim: r.alert ? tr("超过警戒线") : r.caption)
+                Text(verbatim: r.alert ? tr("超过警戒线") : detail(ringID, r))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(r.alert ? GaugeLive.red.panelReadable : .panelSecondary)
             }
@@ -1501,6 +1512,11 @@ private struct DeskTrashCard: View {
         return flies > 0 ? tr("\(monitor.items) 个项目 · 该倒垃圾了") : tr("\(monitor.items) 个项目")
     }
 
+    private var smallCaption: String {
+        guard !locked, !targeted, monitor.items > 0 else { return caption }
+        return tr("\(monitor.items) 个项目")
+    }
+
     private func bin(_ side: CGFloat) -> some View {
         Image(systemName: monitor.items > 0 ? "trash.fill" : "trash")
             .font(.system(size: side * 0.5, weight: .medium))
@@ -1531,8 +1547,9 @@ private struct DeskTrashCard: View {
         }
     }
 
+    /// 中号右边两个按钮并排只有 70 宽，写「打开」；大号写全。
     private var openButton: some View {
-        DeskPill(title: tr("打开废纸篓"), symbol: nil, accent: nil) { monitor.open() }
+        DeskPill(title: size == .medium ? tr("打开") : tr("打开废纸篓"), symbol: nil, accent: nil) { monitor.open() }
     }
 
     private var small: some View {
@@ -1544,7 +1561,8 @@ private struct DeskTrashCard: View {
                 .monospacedDigit()
                 .foregroundStyle(Color.panelPrimary)
                 .lineLimit(1)
-            Text(verbatim: caption)
+            // 小号只写几个项目，「该倒垃圾了」由桶边的苍蝇说。
+            Text(verbatim: smallCaption)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
@@ -1998,18 +2016,23 @@ private struct DeskShortcutCard: View {
                     }
                     .padding(.horizontal, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    VStack(spacing: 6) {
-                        badge(item, side: size == .small ? 44 : 48)
-                        if size != .small {
-                            Text(verbatim: item.name)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.panelPrimary)
-                                .lineLimit(1)
-                        }
+                } else if size == .medium {
+                    // 中号 3、4 个：两列两行，图标在左、名字在右。
+                    HStack(spacing: 10) {
+                        badge(item, side: 34)
+                        Text(verbatim: item.name)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Color.panelPrimary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
                     }
-                    .padding(4)
+                    .padding(.horizontal, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    badge(item, side: 44)
+                        .padding(4)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .deskBlock(radius: 14)

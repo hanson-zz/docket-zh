@@ -119,7 +119,8 @@ public enum DesktopSystemCards {
     // MARK: 快捷指令
 
     /// 小号、中号画卡片上那几个（列表前 4 个）：小号 1 个是一整块大按钮，2 个上下两条，
-    /// 3、4 个 2×2 的大图标；中号一排，2 个以内每块写名字和上次结果。大号一行一个，带上次运行的结果和运行键，最多 5 行，
+    /// 3、4 个 2×2 的大图标；中号 2 个以内左右两块写名字和上次结果，3、4 个两列两行
+    /// （图标 + 名字，一排四个时 70 宽放不下名字）。大号一行一个，带上次运行的结果和运行键，最多 5 行，
     /// 列表里第 5 个以后的也列（卡片上只放得下前 4 个）。
     public static func shortcutGrid(count: Int, size: DesktopPinSize) -> Grid {
         let total = max(0, count)
@@ -131,7 +132,8 @@ public enum DesktopSystemCards {
             return Grid(columns: 2, rows: 2, shown: shown, showsCaption: false)
         case .medium:
             let shown = min(total, 4)
-            return Grid(columns: shown, rows: 1, shown: shown, showsCaption: shown <= 2)
+            if shown <= 2 { return Grid(columns: shown, rows: 1, shown: shown, showsCaption: true) }
+            return Grid(columns: 2, rows: 2, shown: shown, showsCaption: false)
         case .large:
             let shown = min(total, 5)
             return Grid(columns: 1, rows: shown, shown: shown, overflow: total - shown, showsCaption: true)

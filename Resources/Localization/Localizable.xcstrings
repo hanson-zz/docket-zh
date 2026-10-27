@@ -2025,6 +2025,17 @@
         }
       }
     },
+    "1 分钟内最高 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak %@ in the last minute"
+          }
+        }
+      }
+    },
     "3 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {

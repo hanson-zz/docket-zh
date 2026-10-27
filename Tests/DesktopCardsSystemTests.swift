@@ -97,8 +97,11 @@ final class DesktopCardsSystemTests: XCTestCase {
         let four = Plan.shortcutGrid(count: 6, size: .small)
         XCTAssertEqual([four.columns, four.rows, four.shown], [2, 2, 4])
         let medium = Plan.shortcutGrid(count: 3, size: .medium)
-        XCTAssertEqual([medium.columns, medium.rows, medium.shown], [3, 1, 3])
+        XCTAssertEqual([medium.columns, medium.rows, medium.shown], [2, 2, 3])
         XCTAssertFalse(medium.showsCaption)
+        let pair = Plan.shortcutGrid(count: 2, size: .medium)
+        XCTAssertEqual([pair.columns, pair.rows, pair.shown], [2, 1, 2])
+        XCTAssertTrue(pair.showsCaption)
         let large = Plan.shortcutGrid(count: 8, size: .large)
         XCTAssertEqual([large.rows, large.shown, large.overflow], [5, 5, 3])
     }
