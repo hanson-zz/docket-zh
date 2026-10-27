@@ -1471,6 +1471,7 @@ private struct TasksPinWater: View {
                 Spacer(minLength: 0)
             }
             weekBars(week)
+            Spacer(minLength: 0)
             HStack(spacing: 8) {
                 ForEach(Array(DesktopCardsTasksPlan.waterQuickAmounts(cup: cup).enumerated()), id: \.offset) { index, amount in
                     TasksPinPill(title: "+\(WaterIntake.amount(amount, ounces: ounces))", symbol: index == 0 ? "drop.fill" : nil,
@@ -2035,7 +2036,7 @@ private struct TasksPinTriRing: View {
 
 // MARK: - 电子宠物
 
-/// 小：角色、名字和状态，底下一个按钮做眼下最要紧的事（病了看病，否则照顾最低的那项）。
+/// 小：角色、「名字 · 状态」一行，底下一个按钮做眼下最要紧的事（病了看病，否则照顾最低的那项）。
 /// 中：左边角色，右边名字状态和四个需求格（点一格喂、玩、睡、洗）。
 /// 大：角色放大在上，整体几成，四个大格带数值，病了多一个「带它看病」。
 private struct TasksPinPet: View {
@@ -2086,15 +2087,12 @@ private struct TasksPinPet: View {
 
     private func small(_ s: PetState, look: PetLook) -> some View {
         let action = DesktopCardsTasksPlan.petPrimaryAction(s)
-        return VStack(spacing: 4) {
-            figure(s, look: look, height: 70)
-            Text(verbatim: petName)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color.panelPrimary)
-            Text(status(s))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(PetStyle.tint(look: look, health: s.health).panelReadable)
-            Spacer(minLength: 2)
+        return VStack(spacing: 6) {
+            figure(s, look: look, height: 64)
+            Text(verbatim: "\(petName) · \(status(s))")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(PetStyle.headline(look: look, health: s.health).panelReadable)
+            Spacer(minLength: 0)
             TasksPinPill(title: actionTitle(action, s), symbol: action.symbol, tint: PetStyle.accent,
                          filled: action == .heal, height: 30) {
                 act(action)
@@ -2109,7 +2107,7 @@ private struct TasksPinPet: View {
         HStack(spacing: 14) {
             figure(s, look: look, height: 112)
                 .frame(width: 104)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: petName)
                         .font(.system(size: 17, weight: .bold))
@@ -2160,7 +2158,7 @@ private struct TasksPinPet: View {
 
     private func needGrid(_ s: PetState, tall: Bool) -> some View {
         let urgent = WaterPetCards.mostNeeded(s)
-        return Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+        return Grid(horizontalSpacing: 8, verticalSpacing: tall ? 8 : 6) {
             GridRow {
                 needCell(.food, s, urgent: urgent, tall: tall)
                 needCell(.mood, s, urgent: urgent, tall: tall)
@@ -2196,7 +2194,7 @@ private struct TasksPinPet: View {
                 PetBar(value: s[need], height: tall ? 6 : 5, tint: hot ? red : nil)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, tall ? 10 : 7)
+            .padding(.vertical, tall ? 10 : 5)
             .frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(hot ? red.opacity(0.14) : Color.panelFill))
