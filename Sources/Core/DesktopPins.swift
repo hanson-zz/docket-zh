@@ -380,7 +380,7 @@ public enum DesktopPinSupport {
     public enum Mode: Equatable, Sendable {
         /// 第一批专门做过桌面版的：算、便签、快速待办、时钟、天气、专注 / 倒计时 / 秒表。
         case dedicated
-        /// 通用展开：卡片里显示它的面板内容（可以滚），只有中 / 大两档。
+        /// 通用展开：小 / 中是放大的扩展栏卡片，大号是面板内容（见 `DesktopPinFit`）。
         case generic
         /// 不提供「钉在桌面」。
         case none
@@ -405,17 +405,136 @@ public enum DesktopPinSupport {
         return .generic
     }
 
-    /// 这种卡片有哪几档。通用展开的小号太小，放不下面板，只给中 / 大。
-    public static func sizes(_ mode: Mode) -> [DesktopPinSize] {
+    /// 这种卡片有哪几档。小号和中号画放大的扩展栏卡片（`DesktopPinFit.tile`），大号画面板
+    /// （`DesktopPinFit.panel`）。`smallFits` 是这张卡片在 160×160 里能不能不缩小地完整放下
+    /// （横排或竖排任选一种）；放不下就不给小号。中号 340×160 宽一倍，横排卡片都放得下。
+    public static func sizes(_ mode: Mode, smallFits: Bool = true) -> [DesktopPinSize] {
         switch mode {
-        case .dedicated: DesktopPinSize.allCases
-        case .generic: [.medium, .large]
+        case .dedicated, .generic: smallFits ? DesktopPinSize.allCases : [.medium, .large]
         case .none: []
         }
     }
 
+    /// 画出来的尺寸：没解锁时大号按中号画（`DesktopPinGate.effectiveSize`）；存着的那档这张
+    /// 卡片现在不提供（比如改了样式后小号放不下了）时按中号画。存着的不改，能放下了原样回来。
+    public static func drawnSize(_ stored: DesktopPinSize, unlocked: Bool,
+                                 offered: [DesktopPinSize]) -> DesktopPinSize {
+        let size = DesktopPinGate.effectiveSize(stored, unlocked: unlocked)
+        guard !offered.isEmpty, !offered.contains(size) else { return size }
+        return offered.contains(.medium) ? .medium : offered[0]
+    }
+
     /// 拖出来或没指定尺寸时用的那档：中号（免费也能用）。
     public static func defaultSize(_ mode: Mode) -> DesktopPinSize { .medium }
+}
+
+// MARK: - 卡片里怎么摆
+
+/// 桌面卡片必须完整显示：内容铺满整张卡片，放不下先等比缩小，还放不下才在卡片里竖着滚。
+///
+/// 缩小有下限：各小组件里最小的字就是 13pt（全仓的最小字号），按设计尺寸再缩字就小于
+/// 13pt，所以最小缩放是 1（设计尺寸）。往大放有上限，免得字大得像海报。
+///
+/// - 小号、中号：扩展栏上那张卡片放大摆在中间（`tile`）。横排（扩展栏在下面时的样子，
+///   58 高）和竖排（扩展栏在左右时的样子，76 宽）取放得更大的那种。卡片本身就是一眼看完的
+///   设计，放进去总是完整的；面板放进 160 高的卡片里只能露出一截，所以中号不放面板。
+/// - 大号：面板（`panel`）。先按卡片宽把面板放大铺满；高度放得下就是完整；放大后放不下但
+///   设计尺寸放得下，就缩到正好放下；设计尺寸也放不下才滚动，滚动区域按缩放后的高度算，
+///   能滚到底。
+public enum DesktopPinFit {
+    /// 不缩小到设计尺寸以下（最小 13pt 的字不变小）。
+    public static let minScale: Double = 1
+    /// 扩展栏卡片最多放大到 2.2 倍。
+    public static let maxTileScale: Double = 2.2
+    /// 面板最多放大到 1.2 倍。
+    public static let maxPanelScale: Double = 1.2
+    /// 扩展栏卡片离桌面卡片边至少 12pt。
+    public static let tileInset: Double = 12
+    /// 面板在扩展栏上弹出时，内容区比面板窄 2×16，面板卡片（DetailCard）又往外伸 2×10，
+    /// 所以面板卡片的宽是面板宽减 12。桌面卡片里的面板按这个宽排版，里面每一行和原来一样宽。
+    /// 少数面板（正在播放、复古卡带、时钟）不套面板卡片，直接画在面板上：桌面卡片给它们
+    /// 补上 16 的内边距，排版宽就是面板宽（`hasCard` 为 false）。
+    public static let panelTrim: Double = 12
+
+    /// 扩展栏卡片的两种排法。
+    public enum TileAxis: Equatable, Sendable {
+        /// 扩展栏在下面时的横排。
+        case horizontal
+        /// 扩展栏在左右时的竖排。
+        case vertical
+    }
+
+    public struct TileFit: Equatable, Sendable {
+        public var axis: TileAxis
+        public var scale: Double
+        /// 不用缩小就能完整放下（字不小于 13pt）。
+        public var readable: Bool { scale >= DesktopPinFit.minScale - 0.0001 }
+    }
+
+    /// 一种排法放进卡片能放多大（离边 `tileInset`，最多 `maxTileScale`）。尺寸不对时是 0。
+    public static func tileScale(_ natural: CGSize, box: CGSize) -> Double {
+        let w = Double(natural.width), h = Double(natural.height)
+        guard w > 0, h > 0, w.isFinite, h.isFinite else { return 0 }
+        let room = (Double(box.width) - 2 * tileInset, Double(box.height) - 2 * tileInset)
+        guard room.0 > 0, room.1 > 0 else { return 0 }
+        return min(room.0 / w, room.1 / h, maxTileScale)
+    }
+
+    /// 横排、竖排取放得更大的那种；一样大时用横排（和扩展栏在下面时一样）。
+    public static func tile(horizontal: CGSize, vertical: CGSize, box: CGSize) -> TileFit {
+        let across = tileScale(horizontal, box: box)
+        let down = tileScale(vertical, box: box)
+        return down > across + 0.0001 ? TileFit(axis: .vertical, scale: down) : TileFit(axis: .horizontal, scale: across)
+    }
+
+    /// 面板怎么放。
+    public enum PanelMode: Equatable, Sendable {
+        /// 放大到铺满卡片宽，高度也放得下。
+        case fill
+        /// 放大后放不下，缩到正好放下（不小于设计尺寸）。
+        case shrink
+        /// 设计尺寸也放不下：铺满卡片宽，卡片里竖着滚。
+        case scroll
+    }
+
+    public struct PanelFit: Equatable, Sendable {
+        public var mode: PanelMode
+        public var scale: Double
+        /// 面板按多宽排版（缩放前）。乘上铺满时的缩放正好是卡片宽。
+        public var layoutWidth: Double
+        /// 内容不够高时往下撑到多高（缩放前），底色铺满卡片。
+        public var minHeight: Double
+    }
+
+    /// 面板卡片的设计宽（缩放前排版的最窄宽度）。
+    public static func panelLayoutWidth(panelWidth: Double, hasCard: Bool = true) -> Double {
+        max(1, panelWidth - (hasCard ? panelTrim : 0))
+    }
+
+    /// 铺满卡片宽的缩放（最多 `maxPanelScale`）。
+    public static func panelWidthScale(panelWidth: Double, hasCard: Bool = true, box: CGSize) -> Double {
+        let scale = Double(box.width) / panelLayoutWidth(panelWidth: panelWidth, hasCard: hasCard)
+        guard scale.isFinite, scale > 0 else { return 1 }
+        return min(scale, maxPanelScale)
+    }
+
+    /// `naturalHeight` 是面板按 `layoutWidth` 排版后的自然高度；还没量到时是 nil，先按滚动
+    /// 摆（什么都能看到）。排版宽只和面板宽、卡片尺寸有关，不随量到的高度变，所以量一次就定，
+    /// 不会来回跳。
+    public static func panel(naturalHeight: Double?, panelWidth: Double, hasCard: Bool = true,
+                             box: CGSize) -> PanelFit {
+        let widthScale = panelWidthScale(panelWidth: panelWidth, hasCard: hasCard, box: box)
+        let layoutWidth = Double(box.width) / widthScale
+        let boxHeight = Double(box.height)
+        func fit(_ mode: PanelMode, _ scale: Double) -> PanelFit {
+            PanelFit(mode: mode, scale: scale, layoutWidth: layoutWidth, minHeight: boxHeight / scale)
+        }
+        guard let natural = naturalHeight, natural.isFinite, natural > 0 else { return fit(.scroll, widthScale) }
+        if natural * widthScale <= boxHeight + 0.5 { return fit(.fill, widthScale) }
+        let shrink = boxHeight / natural
+        if shrink >= minScale, shrink < widthScale { return fit(.shrink, shrink) }
+        return fit(.scroll, widthScale)
+    }
 }
 
 // MARK: - 刷新节奏

@@ -228,9 +228,103 @@ final class DesktopPinTests: XCTestCase {
         XCTAssertEqual(DesktopPinSupport.mode(.slacker, hasDetail: true, panelWidth: 400), .none, "太宽")
         XCTAssertEqual(DesktopPinSupport.mode(.volume, hasDetail: false, panelWidth: 300), .none, "没有面板")
         XCTAssertEqual(DesktopPinSupport.mode(.aiAssistant, hasDetail: true, panelWidth: 320), .none)
-        XCTAssertEqual(DesktopPinSupport.sizes(.generic), [.medium, .large])
+        XCTAssertEqual(DesktopPinSupport.sizes(.generic), [.small, .medium, .large], "小 / 中是放大的扩展栏卡片")
+        XCTAssertEqual(DesktopPinSupport.sizes(.generic, smallFits: false), [.medium, .large])
+        XCTAssertEqual(DesktopPinSupport.sizes(.dedicated, smallFits: false), [.medium, .large])
         XCTAssertTrue(DesktopPinSupport.sizes(.none).isEmpty)
+        XCTAssertTrue(DesktopPinSupport.sizes(.none, smallFits: true).isEmpty)
         XCTAssertEqual(DesktopPinSupport.defaultSize(.generic), .medium)
+    }
+
+    func testDrawnSizeFallsBackToMediumWhenTheStoredSizeIsNotOffered() {
+        let all = DesktopPinSize.allCases
+        XCTAssertEqual(DesktopPinSupport.drawnSize(.small, unlocked: true, offered: all), .small)
+        XCTAssertEqual(DesktopPinSupport.drawnSize(.small, unlocked: true, offered: [.medium, .large]), .medium)
+        XCTAssertEqual(DesktopPinSupport.drawnSize(.large, unlocked: false, offered: all), .medium, "没解锁大号按中号")
+        XCTAssertEqual(DesktopPinSupport.drawnSize(.large, unlocked: true, offered: [.medium, .large]), .large)
+        XCTAssertEqual(DesktopPinSupport.drawnSize(.small, unlocked: true, offered: []), .small, "不知道时照存的画")
+    }
+
+    // MARK: 卡片里怎么摆
+
+    func testTileUsesTheOrientationThatGrowsMost() {
+        let small = DesktopPinSize.small.size
+        // 横排 168×58 在 160×160 里只能缩到 0.81，竖排 76×92 能放大到 1.48。
+        let fit = DesktopPinFit.tile(horizontal: CGSize(width: 168, height: 58),
+                                     vertical: CGSize(width: 76, height: 92), box: small)
+        XCTAssertEqual(fit.axis, .vertical)
+        XCTAssertEqual(fit.scale, 136.0 / 92.0, accuracy: 0.0001)
+        XCTAssertTrue(fit.readable)
+        // 中号 340×160：横排宽卡片放得更大。
+        let wide = DesktopPinFit.tile(horizontal: CGSize(width: 168, height: 58),
+                                      vertical: CGSize(width: 76, height: 92), box: DesktopPinSize.medium.size)
+        XCTAssertEqual(wide.axis, .horizontal)
+        XCTAssertEqual(wide.scale, min(316.0 / 168.0, 136.0 / 58.0), accuracy: 0.0001)
+    }
+
+    func testTileScaleIsCappedAndNeverBelowDesignWhenReadable() {
+        let tiny = DesktopPinFit.tileScale(CGSize(width: 20, height: 20), box: DesktopPinSize.large.size)
+        XCTAssertEqual(tiny, DesktopPinFit.maxTileScale)
+        let tooBig = DesktopPinFit.tile(horizontal: CGSize(width: 404, height: 58),
+                                        vertical: CGSize(width: 76, height: 200), box: DesktopPinSize.small.size)
+        XCTAssertFalse(tooBig.readable, "两种排法都要缩小，小号不提供")
+        XCTAssertEqual(DesktopPinFit.tileScale(.zero, box: DesktopPinSize.small.size), 0)
+        XCTAssertEqual(DesktopPinFit.tileScale(CGSize(width: 10, height: 10), box: CGSize(width: 20, height: 20)), 0)
+    }
+
+    func testEveryWidgetTileFitsTheMediumCardWithoutShrinking() {
+        // 中号 340×160 放扩展栏卡片：所有种类默认配置的卡片都不缩小（字不小于 13pt）。
+        for entry in WidgetCatalog.entries where !DesktopPinSupport.excludedKinds.contains(entry.kind) {
+            let widget = WidgetInstance(kind: entry.kind, config: entry.defaults)
+            let fit = DesktopPinFit.tile(horizontal: WidgetCatalog.contentSize(widget, position: .bottom),
+                                         vertical: WidgetCatalog.contentSize(widget, position: .left),
+                                         box: DesktopPinSize.medium.size)
+            XCTAssertTrue(fit.readable, "\(entry.kind.rawValue) 在中号里要缩小到 \(fit.scale)")
+        }
+    }
+
+    func testPanelFillsTheCardWidthWhenItFits() {
+        let large = DesktopPinSize.large.size
+        // 320 宽的面板，面板卡片 308 宽，放大到 340 / 308。
+        let plan = DesktopPinFit.panel(naturalHeight: 280, panelWidth: 320, box: large)
+        XCTAssertEqual(plan.mode, .fill)
+        XCTAssertEqual(plan.scale, 340.0 / 308.0, accuracy: 0.0001)
+        XCTAssertEqual(plan.layoutWidth * plan.scale, 340, accuracy: 0.0001, "宽铺满")
+        XCTAssertEqual(plan.minHeight * plan.scale, 340, accuracy: 0.0001, "底色往下铺满")
+    }
+
+    func testPanelShrinksToFitButNotBelowDesignSize() {
+        let large = DesktopPinSize.large.size
+        let plan = DesktopPinFit.panel(naturalHeight: 330, panelWidth: 320, box: large)
+        XCTAssertEqual(plan.mode, .shrink)
+        XCTAssertEqual(plan.scale, 340.0 / 330.0, accuracy: 0.0001)
+        XCTAssertEqual(330 * plan.scale, 340, accuracy: 0.0001, "正好放下")
+        XCTAssertGreaterThanOrEqual(plan.scale, DesktopPinFit.minScale)
+        // 排版宽不跟着缩放变，量到的高度不会因此再变。
+        XCTAssertEqual(plan.layoutWidth, 308, accuracy: 0.0001)
+    }
+
+    func testPanelScrollsWhenEvenTheDesignSizeIsTooTall() {
+        let large = DesktopPinSize.large.size
+        // 久坐提醒的面板约 600 高：设计尺寸也放不下，铺满宽、竖着滚。
+        let plan = DesktopPinFit.panel(naturalHeight: 600, panelWidth: 320, box: large)
+        XCTAssertEqual(plan.mode, .scroll)
+        XCTAssertEqual(plan.scale, 340.0 / 308.0, accuracy: 0.0001)
+        XCTAssertGreaterThan(600 * plan.scale, 340, "滚动区域按缩放后的高度算")
+        let unknown = DesktopPinFit.panel(naturalHeight: nil, panelWidth: 320, box: large)
+        XCTAssertEqual(unknown.mode, .scroll, "还没量到先能滚")
+    }
+
+    func testPanelScaleIsCappedForNarrowPanels() {
+        let plan = DesktopPinFit.panel(naturalHeight: 100, panelWidth: 200, box: DesktopPinSize.large.size)
+        XCTAssertEqual(plan.scale, DesktopPinFit.maxPanelScale)
+        XCTAssertEqual(plan.layoutWidth * plan.scale, 340, accuracy: 0.0001, "封顶后按更宽的宽排版，仍铺满")
+        XCTAssertEqual(DesktopPinFit.panelLayoutWidth(panelWidth: 340), 328)
+        XCTAssertEqual(DesktopPinFit.panelLayoutWidth(panelWidth: 320, hasCard: false), 320, "补了内边距的按面板宽")
+        let bare = DesktopPinFit.panel(naturalHeight: 200, panelWidth: 320, hasCard: false, box: DesktopPinSize.large.size)
+        XCTAssertEqual(bare.scale, 340.0 / 320.0, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPinFit.panelWidthScale(panelWidth: 340, box: DesktopPinSize.large.size),
+                       340.0 / 328.0, accuracy: 0.0001)
     }
 
     // MARK: 刷新节奏

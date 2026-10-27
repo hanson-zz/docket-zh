@@ -15,6 +15,11 @@ import SwiftUI
 /// colorScheme 跟着变），不再强制深色。内容的颜色用 PanelColors.swift 里的语义色。
 /// 收音机、相框、壁纸这类例外传 `forceDark: true`（或外面套 `.panelForceDark()`），
 /// 卡片换回原来的石墨实心底，内容固定深色。系统「降低透明度」时玻璃换成实心底。
+extension EnvironmentValues {
+    /// 面板画在钉在桌面的卡片里，见 `DetailCard.flat`。
+    @Entry var detailCardEmbedded: Bool = false
+}
+
 struct DetailCard<Backdrop: View, Content: View>: View {
     /// 保持原来的暗色石墨卡（例外面板用）。
     var forceDark = false
@@ -39,7 +44,32 @@ struct DetailCard<Backdrop: View, Content: View>: View {
 
     private var dark: Bool { forceDark || inheritedDark }
 
+    /// 钉在桌面的卡片里（`detailCardEmbedded`）：外面那张桌面卡片已经是液态玻璃，
+    /// 这里不再画一层玻璃、不往外伸，内容和底色铺满整张卡片，免得卡片里套一块
+    /// 比卡片窄的玻璃。例外面板（石墨实心底）照样画底，也铺满。
+    @Environment(\.detailCardEmbedded) private var embedded
+
     var body: some View {
+        if embedded { flat } else { card }
+    }
+
+    private var flat: some View {
+        content()
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background {
+                ZStack {
+                    if dark { PanelGlassSurface(cornerRadius: 0, dark: true) }
+                    backdrop()
+                    if let panelTint {
+                        TintGlow(color: panelTint.color, opacity: panelTint.glow, reach: panelTint.reach)
+                    }
+                }
+            }
+            .panelForceDark(dark)
+    }
+
+    private var card: some View {
         content()
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .topLeading)

@@ -6,9 +6,12 @@ import SwiftUI
 // 钉在桌面的卡片是同一个小组件的另一个视图：每次从 AppState 读它现在的样子
 // （`widgetAnywhere`），改动照旧走 `WidgetWriter`，扩展栏和桌面两边同步。
 //
-// 第一批专门做过的：便签（摊开整张纸，纸里滚动，点一下就写）、算（小号直接输入，中 / 大
-// 是完整面板）、时钟（小 / 中是大字时间）、快速待办 / 天气 / 专注 / 倒计时 / 秒表（小号是
-// 放大的卡片，能直接点；中 / 大是面板）。其余能钉的小组件通用展开：卡片里显示面板内容，可以滚。
+// 卡片必须完整显示（怎么摆见 Core 的 `DesktopPinFit`）：
+// - 便签摊开整张纸（纸里滚动，点一下就写）；时钟小 / 中是大字时间；算小 / 中直接输入出结果。
+// - 其余小 / 中：扩展栏上那张卡片放大摆在中间，能直接点（待办勾、计时开始），横排竖排取
+//   放得更大的那种，不缩小到设计尺寸以下。
+// - 大号：面板内容铺满卡片（面板自己那层玻璃不画，用卡片的），放得下就放大铺满，放大后放不下
+//   就缩到正好放下，设计尺寸也放不下才在卡片里竖着滚，能滚到底，底边淡出提示下面还有。
 
 /// 一张桌面卡片窗口的根视图。
 struct DesktopCardHost: View {
@@ -20,7 +23,7 @@ struct DesktopCardHost: View {
         let settings = app.state.desktopPins
         if let pin = settings.pin(pinID), let widget = app.widgetAnywhere(pin.widgetID) {
             DesktopCard(pin: pin, widget: widget,
-                        size: DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked),
+                        size: DesktopPinController.shared.drawnSize(pin),
                         ui: ui)
         } else {
             Color.clear
@@ -69,9 +72,13 @@ struct DesktopCard: View {
             if ui.editing { arrangeOverlay }
         }
         .overlay(alignment: .topTrailing) {
-            if hovering, !ui.editing, ui.draggingPin == nil {
-                DesktopCardToolbar(pin: pin, kind: widget.kind, shown: size, ui: ui)
+            // 拖着这张走的时候操作条不露，但不能移走：拖动手势挂在操作条的拖动键上，
+            // 视图一移走手势就作废，网格和空位会留在桌面上。
+            let dragging = ui.draggingPin == pin.id
+            if (hovering && !ui.editing && ui.draggingPin == nil) || dragging {
+                DesktopCardToolbar(pin: pin, widget: widget, shown: size, ui: ui)
                     .padding(8)
+                    .opacity(dragging ? 0 : 1)
                     .transition(.opacity)
             }
         }
@@ -108,12 +115,12 @@ struct DesktopCard: View {
             DesktopNoteSheet(widget: widget, sheetID: pin.sheetID, size: size)
         case (.clock, .small), (.clock, .medium):
             DesktopClockFace(now: now, size: size)
-        case (.calculator, .small):
+        case (.calculator, .small), (.calculator, .medium):
             DesktopQuickCalc(widget: widget)
-        case (_, .small):
-            DesktopTileFit(widget: widget, context: context, box: size.size)
+        case (_, .small), (_, .medium):
+            DesktopTileFit(widget: widget, now: now, box: size.size)
         default:
-            DesktopPanelBody(widget: widget, context: context)
+            DesktopPanelBody(widget: widget, context: context, box: size.size)
         }
     }
 
@@ -144,12 +151,12 @@ struct DesktopCard: View {
 /// 卡片右上角：小 / 中 / 大、拖动、取消钉、设置。不悬停时什么都不露。
 struct DesktopCardToolbar: View {
     var pin: DesktopPin
-    var kind: WidgetKind
+    var widget: WidgetInstance
     var shown: DesktopPinSize
     var ui: DesktopPinUI
 
     private var sizes: [DesktopPinSize] {
-        DesktopPinSupport.sizes(DesktopPinController.shared.mode(for: kind))
+        DesktopPinController.shared.sizes(for: widget)
     }
 
     var body: some View {
@@ -237,36 +244,109 @@ struct DesktopCardToolbar: View {
 
 // MARK: - 内容
 
-/// 中 / 大：小组件的面板内容，卡片里竖向滚动。
+/// 大号：小组件的面板内容铺满卡片。按 `DesktopPinFit.panel` 放大、缩到正好放下或竖着滚。
+///
+/// 面板按固定的宽排版（只和面板宽、卡片尺寸有关），量到自然高度后再定缩放，缩放不改排版宽，
+/// 所以量一次就定、不会来回跳。缩放用 scaleEffect，外面再按缩放后的大小占位，滚动区域
+/// 因此按缩放后的高度算，能滚到底。始终套着同一个滚动区域，不换结构，面板里正在输入的
+/// 文字、展开的编辑行不会丢。
 struct DesktopPanelBody: View {
-    var widget: WidgetInstance
-    var context: WidgetContext
-
-    var body: some View {
-        ScrollView(.vertical) {
-            WidgetDetailBody(instance: widget, context: context)
-                .padding(DetailPanelWidth.padding)
-        }
-        .scrollIndicators(.never)
-        .scrollBounceBehavior(.basedOnSize)
-    }
-}
-
-/// 小号：扩展栏上那张卡片放大摆在中间，卡片上的按钮照样能点（待办勾、计时开始）。
-struct DesktopTileFit: View {
     var widget: WidgetInstance
     var context: WidgetContext
     var box: CGSize
 
+    /// 面板按排版宽排出来的自然高度（缩放前）。
+    @State private var natural: Double?
+
+    /// 滚动时底边淡出的高度，内容底下也多留这么多，最后一行能完整滚出来。
+    private static let fade: CGFloat = 18
+
+    /// 不套面板卡片（DetailCard）、直接画在面板上的几种：桌面卡片给它们补内边距。
+    static let drawnWithoutCard: Set<WidgetKind> = [.music, .cassette, .clock]
+
+    private var hasCard: Bool { !Self.drawnWithoutCard.contains(widget.kind) }
+
     var body: some View {
-        let natural = WidgetCatalog.contentSize(widget, position: .bottom)
-        let fit = natural.width > 0 && natural.height > 0
-            ? min((box.width - 24) / natural.width, (box.height - 24) / natural.height, 2.2)
-            : 1
-        WidgetTile(instance: widget, context: context)
+        let plan = DesktopPinFit.panel(naturalHeight: natural, panelWidth: Double(WidgetDetail.width(widget)),
+                                       hasCard: hasCard, box: box)
+        let scale = CGFloat(plan.scale)
+        let width = CGFloat(plan.layoutWidth)
+        let tall = CGFloat(max(natural ?? 0, plan.minHeight))
+        let scrolls = plan.mode == .scroll
+        ScrollView(.vertical) {
+            DesktopFillLayout(minHeight: CGFloat(plan.minHeight)) {
+                WidgetDetailBody(instance: widget, context: context)
+                    .environment(\.detailCardEmbedded, true)
+                    .padding(hasCard ? 0 : DetailPanelWidth.padding)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .frame(width: width)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { height in
+                let value = Double(height)
+                if natural.map({ abs($0 - value) > 0.5 }) ?? true { natural = value }
+            }
+            .scaleEffect(scale, anchor: .topLeading)
+            .frame(width: width * scale, height: tall * scale, alignment: .topLeading)
+            .padding(.bottom, scrolls ? Self.fade : 0)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDisabled(!scrolls)
+        .scrollIndicators(.never)
+        .scrollBounceBehavior(.basedOnSize)
+        .mask {
+            VStack(spacing: 0) {
+                Rectangle()
+                if scrolls {
+                    LinearGradient(colors: [.black, .black.opacity(0)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: Self.fade)
+                }
+            }
+        }
+        .frame(width: box.width, height: box.height)
+    }
+}
+
+/// 按内容的自然高度报告自己的大小（量高度用），但把内容按至少 `minHeight` 摆，内容比卡片
+/// 矮时面板的底色往下铺满卡片。多出来的部分画在自己的范围外面，外面另按缩放后的大小占位。
+struct DesktopFillLayout: Layout {
+    var minHeight: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        let ideal = child.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: proposal.width ?? ideal.width, height: ideal.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let child = subviews.first else { return }
+        child.place(at: bounds.origin, anchor: .topLeading,
+                    proposal: ProposedViewSize(width: bounds.width, height: max(bounds.height, minHeight)))
+    }
+}
+
+/// 小号、中号：扩展栏上那张卡片放大摆在中间，卡片上的按钮照样能点（待办勾、计时开始）。
+/// 横排（扩展栏在下面时）和竖排（扩展栏在左右时）取放得更大的那种，见 `DesktopPinFit.tile`。
+struct DesktopTileFit: View {
+    var widget: WidgetInstance
+    var now: Date
+    var box: CGSize
+
+    static func fit(_ widget: WidgetInstance, box: CGSize) -> DesktopPinFit.TileFit {
+        DesktopPinFit.tile(horizontal: WidgetCatalog.contentSize(widget, position: .bottom),
+                           vertical: WidgetCatalog.contentSize(widget, position: .left),
+                           box: box)
+    }
+
+    var body: some View {
+        let fit = Self.fit(widget, box: box)
+        let position: DockPosition = fit.axis == .vertical ? .left : .bottom
+        let natural = WidgetCatalog.contentSize(widget, position: position)
+        WidgetTile(instance: widget, context: WidgetContext(position: position, now: now))
             .environment(\.widgetPlateHidden, true)
             .frame(width: natural.width, height: natural.height)
-            .scaleEffect(fit)
+            .scaleEffect(CGFloat(fit.scale > 0 ? fit.scale : 1))
             .frame(width: box.width, height: box.height)
     }
 }

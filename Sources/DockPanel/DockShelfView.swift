@@ -981,7 +981,7 @@ struct DockShelfView: View {
             }
         } else {
             Menu(tr("钉在桌面")) {
-                ForEach(DesktopPinSupport.sizes(controller.mode(for: widget.kind)), id: \.self) { size in
+                ForEach(controller.sizes(for: widget), id: \.self) { size in
                     Button(ProFeatures.menuTitle(size.label, isPro: size.isPro && !ProAccess.isUnlocked)) {
                         controller.pin(widget, size: size)
                     }

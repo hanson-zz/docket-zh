@@ -48,6 +48,10 @@ final class DesktopPinController {
     private var move: MoveSession?
     /// 从扩展栏拖出来、还没松手的那张。
     private var incoming: (widget: UUID, size: DesktopPinSize)?
+    /// 拖动中盯着松开鼠标。SwiftUI 的拖动手势在发起它的视图被移走时（操作条收起、自动隐藏的
+    /// 扩展栏滑走）直接作废、不调 onEnded，网格和橙色虚线空位就一直留在桌面上、卡片也停在
+    /// 半路。这里另外看一眼鼠标松开，手势没收尾就替它收尾。
+    private var releaseMonitors: [Any] = []
 
     /// 和扩展栏「置于窗口之后」同一层：桌面图标之上一层，在所有普通窗口之后。
     static var desktopLevel: NSWindow.Level {
@@ -108,7 +112,7 @@ final class DesktopPinController {
         for pin in shown {
             let panel = cards[pin.id] ?? makePanel(pin.id)
             configure(panel, settings)
-            let size = DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked)
+            let size = drawnSize(pin)
             if move?.pinID != pin.id, let frame = DesktopPinLayout.frame(for: pin, size: size, screens: screens),
                panel.frame != frame {
                 panel.setFrame(frame, display: panel.isVisible)
@@ -123,6 +127,9 @@ final class DesktopPinController {
         guard let app else { fatalError("DesktopPinController used before start") }
         let hosting = FirstMouseHostingView(rootView: DesktopCardHost(pinID: id, app: app, ui: ui))
         hosting.autoresizingMask = [.width, .height]
+        // 窗口大小只由这里定（尺寸档 + 网格位置），不让 SwiftUI 内容的大小反过来约束窗口，
+        // 免得改尺寸、拖动时窗口和内容各是各的大小。
+        hosting.sizingOptions = []
         let panel = KeyablePanel(contentRect: CGRect(x: 0, y: 0, width: 160, height: 160),
                                      styleMask: [.borderless, .nonactivatingPanel],
                                      backing: .buffered, defer: false)
@@ -171,7 +178,7 @@ final class DesktopPinController {
         let screens = desktopScreens()
         return DesktopPinGate.shown(settings.pins, unlocked: ui.unlocked).compactMap { pin in
             guard pin.id != except, DesktopPinLayout.screen(for: pin, screens: screens)?.id == screen.id else { return nil }
-            return DesktopPinLayout.frame(for: pin, size: DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked),
+            return DesktopPinLayout.frame(for: pin, size: drawnSize(pin),
                                           screens: screens)
         }
     }
@@ -184,6 +191,22 @@ final class DesktopPinController {
     }
 
     func offers(_ widget: WidgetInstance) -> Bool { mode(for: widget.kind) != .none }
+
+    /// 这张卡片能选哪几档：小号要放大的扩展栏卡片在 160×160 里不缩小就放得下
+    /// （便签、时钟、算的小号是专门的布局，总能放下）。
+    func sizes(for widget: WidgetInstance) -> [DesktopPinSize] {
+        let mode = mode(for: widget.kind)
+        let special: Set<WidgetKind> = [.notes, .clock, .calculator]
+        let smallFits = special.contains(widget.kind)
+            || DesktopTileFit.fit(widget, box: DesktopPinSize.small.size).readable
+        return DesktopPinSupport.sizes(mode, smallFits: smallFits)
+    }
+
+    /// 卡片画多大：没解锁时大号按中号，这张卡片不提供的那档按中号（见 `DesktopPinSupport.drawnSize`）。
+    func drawnSize(_ pin: DesktopPin) -> DesktopPinSize {
+        let offered = app?.widgetAnywhere(pin.widgetID).map { sizes(for: $0) } ?? []
+        return DesktopPinSupport.drawnSize(pin.size, unlocked: ui.unlocked, offered: offered)
+    }
 
     func isPinned(_ widget: WidgetInstance) -> Bool { settings.hasPins(widget: widget.id) }
 
@@ -210,7 +233,7 @@ final class DesktopPinController {
         guard let app else { return }
         let mode = mode(for: widget.kind)
         guard mode != .none else { return }
-        let size = DesktopPinSupport.sizes(mode).contains(size) ? size : DesktopPinSupport.defaultSize(mode)
+        let size = sizes(for: widget).contains(size) ? size : DesktopPinSupport.defaultSize(mode)
         let unlocked = ProAccess.isUnlocked
 
         var sheet: String?
@@ -263,7 +286,7 @@ final class DesktopPinController {
         }
         let screens = desktopScreens()
         guard let screen = DesktopPinLayout.screen(for: pin, screens: screens),
-              let current = DesktopPinLayout.frame(for: pin, size: DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked),
+              let current = DesktopPinLayout.frame(for: pin, size: drawnSize(pin),
                                                    screens: screens) else { return }
         let wanted = CGPoint(x: current.minX, y: current.maxY - size.height)
         let origin = DesktopPinLayout.nearestFree(to: wanted, size: size.size,
@@ -331,16 +354,20 @@ final class DesktopPinController {
         if move?.pinID != id {
             move = MoveSession(pinID: id, startMouse: mouse, startOrigin: panel.frame.origin, size: panel.frame.size)
             ui.draggingPin = id
+            watchRelease { DesktopPinController.shared.moveEnded(id) }
         }
         guard let session = move else { return }
         let origin = CGPoint(x: session.startOrigin.x + mouse.x - session.startMouse.x,
                              y: session.startOrigin.y + mouse.y - session.startMouse.y)
         panel.setFrameOrigin(origin)
-        let size = DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked)
+        let size = drawnSize(pin)
         showSlot(for: origin, size: size, around: mouse, except: id, isNew: false, above: panel)
     }
 
     private func moveEnded(_ id: UUID) {
+        // 手势和鼠标松开各来一次，只收一次尾。
+        guard move?.pinID == id else { return }
+        stopWatchingRelease()
         defer {
             move = nil
             ui.draggingPin = nil
@@ -348,7 +375,7 @@ final class DesktopPinController {
         }
         guard let app, let panel = cards[id], let session = move, session.pinID == id,
               let pin = settings.pin(id) else { return }
-        let size = DesktopPinGate.effectiveSize(pin.size, unlocked: ui.unlocked)
+        let size = drawnSize(pin)
         let mouse = NSEvent.mouseLocation
         let screens = desktopScreens()
         guard let screen = DesktopPinLayout.screen(containing: mouse, screens: screens) else { return }
@@ -379,12 +406,21 @@ final class DesktopPinController {
         let mouse = NSEvent.mouseLocation
         let origin = CGPoint(x: mouse.x - size.width / 2, y: mouse.y - size.height / 2)
         showSlot(for: origin, size: size, around: mouse, except: nil, isNew: true, above: nil)
+        if releaseMonitors.isEmpty {
+            let carried = widget
+            watchRelease {
+                let controller = DesktopPinController.shared
+                guard controller.incoming?.widget == carried.id else { return }
+                controller.shelfDragEnded(WidgetWriter.current(carried.id) ?? carried)
+            }
+        }
     }
 
     /// 拖回扩展栏上：收起网格，照常排序。
     func shelfDragCancelled() {
         guard incoming != nil else { return }
         incoming = nil
+        stopWatchingRelease()
         hideGrid()
     }
 
@@ -393,12 +429,34 @@ final class DesktopPinController {
     func shelfDragEnded(_ widget: WidgetInstance) -> Bool {
         guard let carried = incoming, carried.widget == widget.id else { return false }
         incoming = nil
+        stopWatchingRelease()
         hideGrid()
         pin(widget, size: carried.size, at: NSEvent.mouseLocation)
         return true
     }
 
     var isCarryingFromShelf: Bool { incoming != nil }
+
+    /// 鼠标松开时调 `done`：码头自己的窗口里松开（本地）和别的 App 上松开（全局）都算。
+    /// 收尾只做一次（`moveEnded`、`shelfDragEnded` 自己会判断），手势的 onEnded 晚一步再来也没事。
+    private func watchRelease(_ done: @escaping () -> Void) {
+        stopWatchingRelease()
+        let fire: (NSEvent) -> Void = { _ in done() }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp, handler: fire) {
+            releaseMonitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp, handler: { event in
+            fire(event)
+            return event
+        }) {
+            releaseMonitors.append(local)
+        }
+    }
+
+    private func stopWatchingRelease() {
+        for monitor in releaseMonitors { NSEvent.removeMonitor(monitor) }
+        releaseMonitors.removeAll()
+    }
 
     private func frontSheetID(_ widget: WidgetInstance) -> String? {
         let pile = StickyStack.pile(widget.config)
