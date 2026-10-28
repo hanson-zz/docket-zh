@@ -34,11 +34,14 @@ public final class AppCatalog {
 
     private struct CachedIcon {
         var image: NSImage
-        var stamp: AppIconStamp
+        /// nil 表示不用查有没有换过（废纸篓画的是系统固定图）。
+        var stamp: AppIconStamp?
     }
     @ObservationIgnored private var iconCache: [String: CachedIcon] = [:]
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var sweepTimer: Timer?
+    /// 后台正在查修改时间，这一轮没回来前不再起新的一轮。
+    @ObservationIgnored private var sweeping = false
 
     private init() {
         refresh()
@@ -99,26 +102,49 @@ public final class AppCatalog {
         _ = iconRevision
         let key = url.path(percentEncoded: false)
         if let cached = iconCache[key] { return cached.image }
-        let icon = Self.trashIcon(for: url) ?? NSWorkspace.shared.icon(forFile: key)
+        if let trash = Self.trashIcon(for: url) {
+            // 废纸篓的修改时间每扔一次东西都会变，但图是固定的，不记印记、不参与扫描。
+            trash.size = NSSize(width: 128, height: 128)
+            iconCache[key] = CachedIcon(image: trash, stamp: nil)
+            return trash
+        }
+        // 先记印记再取图：取图途中刚好换了图标的话，下一轮扫描还能发现。
+        let stamp = AppIconStamp.read(path: key)
+        let icon = NSWorkspace.shared.icon(forFile: key)
         icon.size = NSSize(width: 128, height: 128)
-        iconCache[key] = CachedIcon(image: icon, stamp: AppIconStamp.read(path: key))
+        iconCache[key] = CachedIcon(image: icon, stamp: stamp)
         return icon
     }
 
     /// 看一遍缓存里的图标有没有换过（比较 bundle、`Icon\r`、Info.plist、Resources
     /// 的修改时间），换过的丢掉，让扩展栏重画时重取。不在画的时候做，免得画到一半改状态。
+    ///
+    /// 查修改时间放在后台：缓存里不只是扩展栏上那几个，打开过「添加 App」列表后
+    /// 装过的 App 全在里面，每个 4 次 stat，每 5 秒加上每次切换 App 都在主线程上做
+    /// 会卡；外接盘、网络卷上的项目一次 stat 就可能等很久。
     public func sweepIcons() {
-        var changed: [String] = []
-        for (key, entry) in iconCache
-        where !AppIconStamp.isFresh(cached: entry.stamp, current: AppIconStamp.read(path: key)) {
-            changed.append(key)
+        guard !sweeping else { return }
+        let snapshot = iconCache.compactMapValues(\.stamp)
+        guard !snapshot.isEmpty else { return }
+        sweeping = true
+        Task.detached(priority: .utility) { [weak self] in
+            let changed = snapshot.compactMap { key, stamp in
+                AppIconStamp.isFresh(cached: stamp, current: AppIconStamp.read(path: key)) ? nil : key
+            }
+            await self?.finishSweep(changed: changed, checked: snapshot)
         }
-        guard !changed.isEmpty else { return }
-        for key in changed {
+    }
+
+    /// 回到主线程丢掉换过的图标。查的这段时间里已经重取过的（印记不同了）留着。
+    private func finishSweep(changed: [String], checked: [String: AppIconStamp]) {
+        sweeping = false
+        var dropped = false
+        for key in changed where iconCache[key]?.stamp == checked[key] {
             iconCache[key] = nil
             NSWorkspace.shared.noteFileSystemChanged(key)
+            dropped = true
         }
-        iconRevision &+= 1
+        if dropped { iconRevision &+= 1 }
     }
 
     /// 右键「刷新图标」：全部丢掉重取。
