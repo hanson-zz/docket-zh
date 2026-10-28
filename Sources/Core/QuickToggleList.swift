@@ -128,9 +128,10 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
     }
 
     /// Room for the round buttons in a row, or a column on a side shelf.
-    /// 圆钮下显示名字时每个按钮占 46pt 宽（名字最多四个字）。
+    /// 圆钮下显示名字时每个按钮占 46pt 宽（名字最多四个字）。不显示名字时每个 36pt：
+    /// 圆钮 28pt（图标 14pt）加 8pt 间距。原来 22pt 圆钮、11pt 图标在深色玻璃上几乎看不清。
     public static func length(count: Int, names: Bool = false) -> Double {
-        Double(max(count, 1)) * (names ? 46 : 30) + 20
+        Double(max(count, 1)) * (names ? 46 : 36) + 20
     }
 
     // MARK: 卡片名字和面板

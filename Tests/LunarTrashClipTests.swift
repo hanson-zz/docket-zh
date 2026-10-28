@@ -304,7 +304,7 @@ final class QuickToggleListTests: XCTestCase {
         var old = WidgetConfig()
         old.set(QuickToggle.key, .list(QuickToggle.emptyFallback.map { .string($0.rawValue) }))
         XCTAssertEqual(QuickToggle.chosen(old), QuickToggle.emptyFallback)
-        XCTAssertEqual(QuickToggle.length(count: 8), 260)
+        XCTAssertEqual(QuickToggle.length(count: 8), 308)
     }
 
     func testEverySwitchIsNamed() {
@@ -313,7 +313,7 @@ final class QuickToggleListTests: XCTestCase {
             XCTAssertFalse(toggle.help.isEmpty)
             XCTAssertFalse(toggle.symbol.isEmpty)
         }
-        XCTAssertEqual(QuickToggle.length(count: 4), 140)
+        XCTAssertEqual(QuickToggle.length(count: 4), 164)
     }
 }
 

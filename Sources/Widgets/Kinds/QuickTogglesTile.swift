@@ -46,8 +46,8 @@ struct QuickTogglesTile: View {
             let on = !context.isPreview && toggle.hasState && actions.isOn(toggle)
             let locked = !ProLicenseGate.canUseTool(toggle, isOn: on, unlocked: unlocked)
             VStack(spacing: 2) {
-                TileGlyph(symbol: toggle.symbol, size: 11,
-                          tint: on ? .orange : (locked ? WidgetStyle.primary.opacity(0.4) : WidgetStyle.primary),
+                TileGlyph(symbol: toggle.symbol, size: 14,
+                          tint: on ? .orange : (locked ? WidgetStyle.primary.opacity(0.55) : WidgetStyle.primary),
                           action: context.isPreview ? nil : {
                               if locked {
                                   PaywallWindow.shared.show()
@@ -88,9 +88,9 @@ struct QuickTogglesTile: View {
     /// Pro 工具没解锁时右下角的小锁。
     private var lockBadge: some View {
         Image(systemName: "lock.fill")
-            .font(.system(size: 6.5, weight: .bold))
+            .font(.system(size: 7.5, weight: .bold))
             .foregroundStyle(.white)
-            .frame(width: 11, height: 11)
+            .frame(width: 13, height: 13)
             .background(Circle().fill(Color(hex: ShelfColor.redPanda.hex)))
             .offset(x: 2, y: 2)
             .allowsHitTesting(false)

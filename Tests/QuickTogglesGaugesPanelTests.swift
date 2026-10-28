@@ -38,7 +38,7 @@ final class QuickTogglesGaugesPanelTests: XCTestCase {
         }
         XCTAssertFalse(QuickToggle.showsNames(WidgetConfig()), "旧卡片照旧不显示名字")
         XCTAssertTrue(QuickToggle.showsNames(WidgetConfig([QuickToggle.showNamesKey: .bool(true)])))
-        XCTAssertEqual(QuickToggle.length(count: 3), 110)
+        XCTAssertEqual(QuickToggle.length(count: 3), 128)
         XCTAssertEqual(QuickToggle.length(count: 3, names: true), 158)
         var named = WidgetCatalog.make(.toggles)!
         let plain = WidgetCatalog.naturalSize(named).width
