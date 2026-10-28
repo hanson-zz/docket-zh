@@ -29,8 +29,16 @@ public final class AppCatalog {
     /// 只记在内存里：码头重启后从当时的前台 App 记起，其余按打开先后。
     public private(set) var recentIDs: [String] = []
 
-    @ObservationIgnored private var iconCache: [String: NSImage] = [:]
+    /// 图标换过一次就加一。扩展栏读图标时顺带读它，所以变了会重画。
+    public private(set) var iconRevision = 0
+
+    private struct CachedIcon {
+        var image: NSImage
+        var stamp: AppIconStamp
+    }
+    @ObservationIgnored private var iconCache: [String: CachedIcon] = [:]
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
+    @ObservationIgnored private var sweepTimer: Timer?
 
     private init() {
         refresh()
@@ -39,9 +47,25 @@ public final class AppCatalog {
                      NSWorkspace.didTerminateApplicationNotification,
                      NSWorkspace.didActivateApplicationNotification] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.refresh() }
+                MainActor.assumeIsolated {
+                    self?.refresh()
+                    // App 退出或启动时最常见换图标（拾掇换完图标会重启自己）。
+                    self?.sweepIcons()
+                }
             })
         }
+        // 码头切到前台时也扫一遍，平时每 5 秒扫一次。
+        observers.append(NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.sweepIcons() }
+        })
+        let timer = Timer(timeInterval: AppIconStamp.sweepInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.sweepIcons() }
+        }
+        timer.tolerance = 2
+        RunLoop.main.add(timer, forMode: .common)
+        sweepTimer = timer
     }
 
     public func refresh() {
@@ -72,12 +96,36 @@ public final class AppCatalog {
     }
 
     public func icon(for url: URL) -> NSImage {
+        _ = iconRevision
         let key = url.path(percentEncoded: false)
-        if let cached = iconCache[key] { return cached }
+        if let cached = iconCache[key] { return cached.image }
         let icon = Self.trashIcon(for: url) ?? NSWorkspace.shared.icon(forFile: key)
         icon.size = NSSize(width: 128, height: 128)
-        iconCache[key] = icon
+        iconCache[key] = CachedIcon(image: icon, stamp: AppIconStamp.read(path: key))
         return icon
+    }
+
+    /// 看一遍缓存里的图标有没有换过（比较 bundle、`Icon\r`、Info.plist、Resources
+    /// 的修改时间），换过的丢掉，让扩展栏重画时重取。不在画的时候做，免得画到一半改状态。
+    public func sweepIcons() {
+        var changed: [String] = []
+        for (key, entry) in iconCache
+        where !AppIconStamp.isFresh(cached: entry.stamp, current: AppIconStamp.read(path: key)) {
+            changed.append(key)
+        }
+        guard !changed.isEmpty else { return }
+        for key in changed {
+            iconCache[key] = nil
+            NSWorkspace.shared.noteFileSystemChanged(key)
+        }
+        iconRevision &+= 1
+    }
+
+    /// 右键「刷新图标」：全部丢掉重取。
+    public func refreshIcons() {
+        for key in iconCache.keys { NSWorkspace.shared.noteFileSystemChanged(key) }
+        iconCache.removeAll()
+        iconRevision &+= 1
     }
 
     /// The Trash needs asking for by name.

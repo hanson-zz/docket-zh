@@ -21478,6 +21478,17 @@
         }
       }
     },
+    "刷新图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh Icons"
+          }
+        }
+      }
+    },
     "在访达中显示或隐藏以“.”开头的文件" : {
       "extractionState" : "manual",
       "localizations" : {

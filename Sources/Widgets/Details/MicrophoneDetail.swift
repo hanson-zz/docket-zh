@@ -800,8 +800,16 @@ struct AppIconSquare: View {
 enum AppIconCache {
     private static var cache: [String: NSImage] = [:]
     private static var missing: Set<String> = []
+    private static var revision = 0
 
     static func icon(url: URL?, bundleID: String?) -> NSImage? {
+        // 扩展栏发现图标换过（或右键刷新图标）时这里也跟着清掉。
+        let current = AppCatalog.shared.iconRevision
+        if current != revision {
+            cache.removeAll()
+            missing.removeAll()
+            revision = current
+        }
         let key = url?.path ?? bundleID ?? ""
         guard !key.isEmpty else { return nil }
         if let image = cache[key] { return image }

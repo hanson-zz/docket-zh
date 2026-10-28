@@ -1934,6 +1934,10 @@ struct DockShelfView: View {
             if entry.item.fileRef != nil {
                 Button("在访达中显示") { AppCatalog.shared.reveal(entry.item) }
             }
+            if case .app = entry.item {
+                // App 换了自定义图标、扩展栏还没跟上时手动刷新。平时会自己发现。
+                Button("刷新图标") { AppCatalog.shared.refreshIcons() }
+            }
         }
         if let widget = entry.item.widget, widget.kind == .aiAssistant {
             Divider()
