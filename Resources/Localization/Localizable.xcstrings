@@ -38521,6 +38521,50 @@
         }
       }
     },
+    "图标样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icon style"
+          }
+        }
+      }
+    },
+    "小熊猫头像" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red panda head"
+          }
+        }
+      }
+    },
+    "趴在扩展栏上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the shelf"
+          }
+        }
+      }
+    },
+    "方框徽章" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badge"
+          }
+        }
+      }
+    },
     "显示菜单栏图标" : {
       "extractionState" : "manual",
       "localizations" : {

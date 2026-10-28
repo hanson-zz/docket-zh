@@ -27,8 +27,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         guard let button = statusItem.button else { return }
         // 小熊猫头像剪影，和应用图标的小熊猫对上；资源缺失时退回系统符号。
-        let panda = Bundle.main.image(forResource: "MenuBarPanda")
-        panda?.size = NSSize(width: 21, height: 18)
+        let style = app.state.menuBar.iconStyle
+        let panda = Bundle.main.image(forResource: style.resourceName)
+        panda?.size = NSSize(width: style.pointSize.width, height: style.pointSize.height)
         panda?.accessibilityDescription = tr("码头")
         button.image = panda ?? NSImage(systemSymbolName: "rectangle.bottomthird.inset.filled",
                                         accessibilityDescription: tr("码头"))

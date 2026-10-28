@@ -555,6 +555,19 @@ struct SettingsView: View {
                     .help(state.setup == .macOSDockOnly
                           ? tr("屏幕上没有扩展栏时，这是访问码头的唯一途径。")
                           : tr("关闭此项后，仍可通过扩展栏自身的菜单打开设置。"))
+                Picker("图标样式", selection: $state.menuBar.iconStyle) {
+                    ForEach(MenuBarIconStyle.allCases, id: \.self) { style in
+                        Label {
+                            Text(iconStyleTitle(style))
+                        } icon: {
+                            if let image = Bundle.main.image(forResource: style.resourceName) {
+                                Image(nsImage: image).renderingMode(.template)
+                            }
+                        }
+                        .tag(style)
+                    }
+                }
+                .disabled(!state.menuBar.showIcon && state.setup != .macOSDockOnly)
                 Picker("在旁边显示", selection: $state.menuBar.label) {
                     ForEach(MenuBarLabelMode.allCases, id: \.self) { Text(title($0)).tag($0) }
                 }
@@ -1283,6 +1296,14 @@ private func title(_ value: DockPosition) -> String {
     case .top: tr("顶部")
     case .bottom: tr("底部")
     case .right: tr("右侧")
+    }
+}
+
+private func iconStyleTitle(_ value: MenuBarIconStyle) -> String {
+    switch value {
+    case .head: tr("小熊猫头像")
+    case .shelf: tr("趴在扩展栏上")
+    case .badge: tr("方框徽章")
     }
 }
 

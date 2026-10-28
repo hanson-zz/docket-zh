@@ -110,6 +110,34 @@ public enum MenuBarLabelMode: String, Codable, Sendable, CaseIterable {
     case none, native, custom, both
 }
 
+/// 菜单栏图标的样式：三款小熊猫剪影，都是模板图，跟随浅色/深色菜单栏。
+public enum MenuBarIconStyle: String, Codable, Sendable, CaseIterable {
+    /// 小熊猫头像（默认），菜单栏里最好认。
+    case head
+    /// 小熊猫趴在扩展栏上，和应用图标同一个姿势。
+    case shelf
+    /// 圆角方框里的小熊猫，像一枚徽章。
+    case badge
+
+    /// bundle 里 Resources/MenuBar 的 PNG 名（不含扩展名，@2x、@3x 同名）。
+    public var resourceName: String {
+        switch self {
+        case .head: "MenuBarPanda-Head"
+        case .shelf: "MenuBarPanda-Shelf"
+        case .badge: "MenuBarPanda-Badge"
+        }
+    }
+
+    /// 菜单栏里的显示尺寸（pt），高 18，宽按原图比例。
+    public var pointSize: (width: Double, height: Double) {
+        switch self {
+        case .head: (23, 18)
+        case .shelf: (19, 18)
+        case .badge: (17, 18)
+        }
+    }
+}
+
 public enum SpacerSize: String, Codable, Sendable, CaseIterable {
     case small, regular
     /// Apple's Dock stores spacers as these tile types.
@@ -1072,6 +1100,8 @@ public struct MacOSDockSettings: Codable, Hashable, Sendable {
 
 public struct MenuBarSettings: Codable, Hashable, Sendable {
     public var showIcon: Bool = true
+    /// 菜单栏图标用哪款小熊猫，默认头像。
+    public var iconStyle: MenuBarIconStyle = .head
     /// Icon only by default: the layout's name is already in the menu's
     /// submenu, and beside the icon it cost menu bar width all day.
     public var label: MenuBarLabelMode = .none
@@ -1097,6 +1127,7 @@ public struct MenuBarSettings: Codable, Hashable, Sendable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         showIcon = try c.decodeIfPresent(Bool.self, forKey: .showIcon) ?? true
+        iconStyle = (try? c.decodeIfPresent(MenuBarIconStyle.self, forKey: .iconStyle)) ?? .head
         let reviewed = try c.decodeIfPresent(Bool.self, forKey: .labelReviewed) ?? false
         let saved: MenuBarLabelMode = try c.decodeIfPresent(MenuBarLabelMode.self, forKey: .label) ?? MenuBarLabelMode.none
         label = reviewed ? saved : MenuBarLabelMode.none
