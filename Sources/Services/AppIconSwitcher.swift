@@ -10,6 +10,10 @@ import AppKit
 @MainActor
 enum AppIconSwitcher {
     private static var observer: NSObjectProtocol?
+    /// `start()` 之后才去动程序坞和访达的图标。
+    private static var started = false
+    /// 最近一次套用到运行时图标的 id，授权变化时据此判断要不要换。
+    private static var appliedID: String?
 
     /// 现在保存的选择，未解锁的赞助者图标按经典处理。
     static var current: AppIconOption {
@@ -20,6 +24,7 @@ enum AppIconSwitcher {
     /// 启动时调用一次：套用保存的选择。码头在需要前台时会临时切成普通应用，
     /// 程序坞图标那时才出现，所以每次被激活再套一遍，免得程序坞先显示经典。
     static func start() {
+        started = true
         apply(current)
         syncFinder(current)
         guard observer == nil else { return }
@@ -39,6 +44,20 @@ enum AppIconSwitcher {
         let shown = AppIconCatalog.shown(option.id, unlocked: ProAccess.isUnlocked)
         apply(shown)
         syncFinder(shown)
+    }
+
+    /// 授权状态重新算过（试用到期、激活、解绑、宽限期过了）后由 ProLicenseManager 调用。
+    ///
+    /// `start()` 比授权检查早跑，读到的是上次退出时记下的解锁状态；运行中试用到期
+    /// 也不会再有人套用图标。选了 Pro 图标而现在没解锁时，这里换回经典并揭掉访达里
+    /// 的自定义图标；重新解锁后再换回所选。和已套用的一样就什么都不做。
+    static func licenseChanged() {
+        guard started,
+              let option = AppIconCatalog.relicensed(UserDefaults.standard.string(forKey: AppIconCatalog.key),
+                                                     unlocked: ProAccess.isUnlocked, applied: appliedID)
+        else { return }
+        apply(option)
+        syncFinder(option)
     }
 
     /// 上次给 Finder 贴图标失败（多半是应用所在文件夹不可写），设置里据此提示。
@@ -78,6 +97,7 @@ enum AppIconSwitcher {
     }
 
     static func apply(_ option: AppIconOption) {
+        appliedID = option.id
         // 设为 nil 交还给系统，显示 bundle 自带的图标。读不到图片也回到经典。
         NSApp.applicationIconImage = image(for: option)
     }

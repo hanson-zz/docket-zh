@@ -82,6 +82,13 @@ public enum AppIconCatalog {
         return chosen.isSupporterOnly && !unlocked ? defaultOption : chosen
     }
 
+    /// 授权状态变了以后要换成哪款图标：选了 Pro 图标而现在没解锁时是经典，重新
+    /// 解锁后是所选；和 `applied`（已套用的 id）一样就返回 nil，不用重换。
+    public static func relicensed(_ id: String?, unlocked: Bool, applied: String?) -> AppIconOption? {
+        let option = shown(id, unlocked: unlocked)
+        return option.id == applied ? nil : option
+    }
+
     /// Finder 里的图标要怎么改。
     public enum FinderAction: Equatable, Sendable { case none, set, clear }
 

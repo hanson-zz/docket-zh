@@ -66,4 +66,18 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.option("classicHalloween"), AppIconCatalog.classicHalloween)
         XCTAssertFalse(AppIconCatalog.classicChristmas.isSupporterOnly)
     }
+
+    func testLicenseChangeSwapsProIconOnlyWhenNeeded() {
+        // 试用到期：选的皇冠图标换回经典。
+        XCTAssertEqual(AppIconCatalog.relicensed("classicGold", unlocked: false, applied: "classicGold"),
+                       AppIconCatalog.classic)
+        // 已经是经典了，不重换。
+        XCTAssertNil(AppIconCatalog.relicensed("classicGold", unlocked: false, applied: "classic"))
+        // 重新解锁：换回所选。
+        XCTAssertEqual(AppIconCatalog.relicensed("classicGold", unlocked: true, applied: "classic"),
+                       AppIconCatalog.classicGold)
+        // 免费图标和授权无关。
+        XCTAssertNil(AppIconCatalog.relicensed("panda", unlocked: false, applied: "panda"))
+        XCTAssertNil(AppIconCatalog.relicensed(nil, unlocked: true, applied: "classic"))
+    }
 }

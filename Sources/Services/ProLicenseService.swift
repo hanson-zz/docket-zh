@@ -297,6 +297,8 @@ final class ProLicenseManager {
         if !ProLicenseGate.canOpenAINotch(unlocked: unlocked), AINotchController.shared.isOpen {
             AINotchController.shared.close()
         }
+        // Pro 专属应用图标：没解锁时换回经典，重新解锁后换回所选。
+        AppIconSwitcher.licenseChanged()
         // 播客、环境音都是 Pro 小组件：锁定后停下并交出系统的“正在播放”会话，
         // 媒体键和控制中心不能再把它们放起来。收音机整种免费，照常播放。
         if !unlocked {
