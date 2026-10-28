@@ -474,6 +474,9 @@ struct DockShelfView: View {
 
     /// Which item the pointer is over, when it is a widget.
     @State private var hoveredID: UUID?
+    /// 上下翻页（Pro）时新的一页滑进来的位移和透明度，见 `ShelfPaging.entryOffset`。
+    @State private var pageSlide: CGFloat = 0
+    @State private var pageFade: Double = 1
 
     private var pointer: CGFloat? {
         guard let cursor else { return nil }
@@ -666,6 +669,28 @@ struct DockShelfView: View {
         magnifies ? app.magnificationRadius * app.magnificationPeak * 2 : 0
     }
 
+    /// 手势翻页后新的一页滑进来。只在上下翻页（Pro）生效、扩展栏横着时；快捷键、菜单
+    /// 切换不滑；系统「减弱动态效果」打开时只淡入。
+    private func slideInPage(from old: UUID?, to new: UUID?) {
+        let step = ScrollRelay.shared.lastPageStep
+        ScrollRelay.shared.lastPageStep = 0
+        guard old != new, !vertical, step != 0,
+              ProLicenseGate.verticalPagingActive(settings, unlocked: ProAccess.isUnlocked) else { return }
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) {
+            pageSlide = CGFloat(ShelfPaging.entryOffset(step: step, reduceMotion: reduceMotion))
+            pageFade = 0.2
+        }
+        DispatchQueue.main.async {
+            withAnimation(.snappy(duration: 0.28)) {
+                pageSlide = 0
+                pageFade = 1
+            }
+        }
+    }
+
     private func shelf(_ solved: Solved) -> some View {
         Group {
             if isOverflowing(solved) {
@@ -683,6 +708,12 @@ struct DockShelfView: View {
                 // Let the layout size itself so the plate matches it exactly.
                 row(solved)
             }
+        }
+        // 上下翻页：图标整排从下方（下一页）或上方（上一页）滑进来，底板不动。
+        .offset(y: vertical ? 0 : pageSlide)
+        .opacity(pageFade)
+        .onChange(of: settings.profileID) { old, new in
+            slideInPage(from: old, to: new)
         }
         // The panel catches the scroll wheel and pushes it here. Applied
         // straight, with no animation, so the row tracks the fingers 1:1 the

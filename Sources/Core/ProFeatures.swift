@@ -58,6 +58,8 @@ import Foundation
 /// - 快速待办的橙黄绿紫四色标签和按颜色筛选、重复待办（每天 / 每周 / 工作日），见
 ///   `ProLicenseGate.canTagTodo`、`canFilterTodoTags`、`canRepeatTodos`。红色标签（原来的
 ///   「重要」）、勾选手感、撤销、拖动排序、今天清空庆祝都免费。
+/// - 扩展栏上下滑动翻页（`CustomDockSettings.pageDirection` 为 vertical），见
+///   `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮切换布局免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -161,6 +163,9 @@ public enum ProFeatures {
         case inputSourceRules
         /// 钉在桌面：第 2 张起和大号（340×340）。免费钉 1 张、小 / 中两档，见 `DesktopPinGate`。
         case desktopPins
+        /// 设置 ▸ 布局 ▸ 翻页方向选「上下」：横着的扩展栏上两指上下滑切换布局，见 `ShelfPaging`、
+        /// `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮免费。
+        case verticalPaging
     }
 
     // MARK: 判断

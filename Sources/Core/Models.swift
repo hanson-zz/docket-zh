@@ -1007,6 +1007,10 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
     /// 指针停在小组件（或分组、文件夹）上，触控板两指沿面板弹出方向滑动打开面板，
     /// 反方向收起，见 `PanelSwipe`。默认开，旧配置里没有这个键时也是开。
     public var swipeOpensPanels: Bool = true
+    /// 两指翻页（切换布局）的方向：左右（默认）或上下（码头 Pro），见 `ShelfPaging`。
+    /// 旧配置里没有这个键、或值认不出时是左右；没解锁时存着上下也按左右，见
+    /// `ProLicenseGate.verticalPagingActive`。
+    public var pageDirection: ShelfPageDirection = .defaultValue
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1067,6 +1071,7 @@ public struct CustomDockSettings: Codable, Hashable, Sendable {
         locked = (try? c.decodeIfPresent(Bool.self, forKey: .locked)) ?? false
         hoverWindowPreview = (try? c.decodeIfPresent(Bool.self, forKey: .hoverWindowPreview)) ?? false
         swipeOpensPanels = (try? c.decodeIfPresent(Bool.self, forKey: .swipeOpensPanels)) ?? true
+        pageDirection = (try? c.decodeIfPresent(ShelfPageDirection.self, forKey: .pageDirection)) ?? .defaultValue
     }
 
     /// 只读不写的旧键。

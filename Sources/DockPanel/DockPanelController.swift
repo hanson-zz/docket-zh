@@ -175,6 +175,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         panel.level = level
         ScrollRelay.shared.switchesLayouts = app.state.customDock.switchLayoutsByGesture
         ScrollRelay.shared.swipeOpensPanels = app.state.customDock.swipeOpensPanels
+        ScrollRelay.shared.pagesVertically = ProLicenseGate.verticalPagingActive(
+            app.state.customDock, unlocked: ProAccess.isUnlocked)
         if app.effectiveAutoHide {
             startPolling()
         } else {

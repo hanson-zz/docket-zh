@@ -316,6 +316,9 @@ struct SettingsView: View {
                           tr("指针位于扩展栏上时生效，在扩展栏布局之间循环切换。扩展栏内容超出屏幕时，左右轻扫仍用于滚动扩展栏。"))
             }
             .disabled(state.setup == .macOSDockOnly)
+            // 两指翻页的方向：左右（免费）或上下（Pro），见 ShelfPaging。
+            ShelfPageDirectionRow(direction: $state.customDock.pageDirection)
+                .disabled(state.setup == .macOSDockOnly || !state.customDock.switchLayoutsByGesture)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("快捷键：点按布局右侧的按钮，然后按下组合键。组合键须包含 ⌃、⌥ 或 ⌘ 之一；按 Esc 取消，按删除键清除。")

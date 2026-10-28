@@ -3345,6 +3345,61 @@
         }
       }
     },
+    "左右" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sideways"
+          }
+        }
+      }
+    },
+    "上下" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up and down"
+          }
+        }
+      }
+    },
+    "翻页方向" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page direction"
+          }
+        }
+      }
+    },
+    "上下翻页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertical paging"
+          }
+        }
+      }
+    },
+    "选上下时，在底部或顶部的扩展栏上两指上滑到下一个布局、下滑回上一个；指针停在小组件上照旧滑开面板，左右滑用来滚动放不下的扩展栏。左右两边的扩展栏照旧左右翻。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With Up and down, swipe up with two fingers on a bottom or top shelf for the next layout and down for the previous one. Over a widget the swipe still opens its panel, and a sideways swipe scrolls a shelf that does not fit. Shelves on the left or right still page sideways."
+          }
+        }
+      }
+    },
     "桌面卡片设置…" : {
       "extractionState" : "manual",
       "localizations" : {

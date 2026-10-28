@@ -37,6 +37,12 @@ final class ScrollRelay {
     /// 扩展栏贴的边（浮动时是当作的顶部或底部），决定面板往哪边弹。
     @ObservationIgnored var swipeEdge: DockPosition = .bottom
     @ObservationIgnored private var panelSwipe = PanelSwipeGesture()
+    /// 上下翻页（Pro）在不在生效，面板的主人写（已经算过解锁）。只在横着的扩展栏上用，
+    /// 判断见 `ShelfPaging`。
+    @ObservationIgnored var pagesVertically = false
+    /// 最近一次手势翻页的方向（+1 下一页，-1 上一页），扩展栏视图读完清零，
+    /// 用来决定新的一页从下方还是上方滑进来。
+    @ObservationIgnored var lastPageStep = 0
 
     /// 两指滑动要打开或收起面板时发出，userInfo 里 `id` 是指针下那一格的 id，
     /// `open` 是 true 打开、false 收起。扩展栏视图接，那里才有锚点和面板。
@@ -74,6 +80,7 @@ final class ScrollRelay {
 
     func feedLayoutGesture(_ delta: CGFloat, precise: Bool, at time: TimeInterval) {
         guard let step = layoutGesture.feed(Double(delta), precise: precise, at: time) else { return }
+        lastPageStep = step
         onLayoutStep?(step)
     }
 
@@ -146,13 +153,17 @@ final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
     private func switchedLayout(_ event: NSEvent) -> Bool {
         let relay = ScrollRelay.shared
         guard relay.switchesLayouts else { return false }
-        let dx = event.scrollingDeltaX
-        let dy = event.scrollingDeltaY
-        let precise = event.hasPreciseScrollingDeltas
-        let command = event.modifierFlags.contains(.command)
-        let sideways = precise && !relay.isOverflowing
-            && LayoutGesture.isSideways(dx: Double(dx), dy: Double(dy))
-        guard command || sideways else { return false }
+        // 左右还是上下翻（上下是 Pro，只在横着的扩展栏上），判断在 Core 的 `ShelfPaging`。
+        let route = ShelfPaging.route(
+            dx: Double(event.scrollingDeltaX),
+            dy: Double(event.scrollingDeltaY),
+            precise: event.hasPreciseScrollingDeltas,
+            inverted: event.isDirectionInvertedFromDevice,
+            command: event.modifierFlags.contains(.command),
+            overflowing: relay.isOverflowing,
+            vertical: relay.pagesVertically && !relay.swipeEdge.isVertical,
+            overPanelTarget: relay.swipeOpensPanels && relay.swipeTargetID != nil)
+        guard case .page(let delta) = route else { return false }
 
         if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
             relay.beginLayoutGesture()
@@ -161,8 +172,8 @@ final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
         // scroll on after the switch, but it never counts towards a step: the
         // fingers have already decided.
         if event.momentumPhase.isEmpty {
-            let delta = command ? (abs(dx) > abs(dy) ? dx : dy) : dx
-            relay.feedLayoutGesture(delta, precise: precise, at: event.timestamp)
+            relay.feedLayoutGesture(CGFloat(delta), precise: event.hasPreciseScrollingDeltas,
+                                    at: event.timestamp)
         }
         return true
     }
