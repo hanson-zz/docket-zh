@@ -46,6 +46,52 @@ final class ShelfPagingTests: XCTestCase {
         XCTAssertEqual(ProUnlockHighlights.title(.setting(.verticalPaging)), "上下翻页")
     }
 
+    func testVerticalPagingActiveByDirectionFollowsUnlock() {
+        // 滚动事件里每次现算：试用到期立刻按左右，解锁立刻恢复上下。
+        XCTAssertTrue(ProLicenseGate.verticalPagingActive(direction: .vertical, unlocked: true))
+        XCTAssertFalse(ProLicenseGate.verticalPagingActive(direction: .vertical, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.verticalPagingActive(direction: .horizontal, unlocked: true))
+        var settings = CustomDockSettings()
+        for direction in ShelfPageDirection.allCases {
+            settings.pageDirection = direction
+            for unlocked in [true, false] {
+                XCTAssertEqual(ProLicenseGate.verticalPagingActive(settings, unlocked: unlocked),
+                               ProLicenseGate.verticalPagingActive(direction: direction, unlocked: unlocked))
+            }
+        }
+    }
+
+    // MARK: 翻页后的尾巴
+
+    func testTailPassesBeforeAnyPage() {
+        let tail = ShelfPagingTail()
+        XCTAssertFalse(tail.swallows(phased: true, momentum: false))
+        XCTAssertFalse(tail.swallows(phased: false, momentum: true))
+    }
+
+    func testTailSwallowsRestOfGestureAndMomentumAfterPage() {
+        var tail = ShelfPagingTail()
+        tail.begin()
+        tail.didPage()
+        // 翻页后指针下变成小组件、或新布局放不下：剩下的手指事件和惯性都不交给滚动。
+        XCTAssertTrue(tail.swallows(phased: true, momentum: false))
+        XCTAssertTrue(tail.swallows(phased: false, momentum: true))
+    }
+
+    func testTailNeverSwallowsMouseWheel() {
+        var tail = ShelfPagingTail()
+        tail.didPage()
+        XCTAssertFalse(tail.swallows(phased: false, momentum: false))
+    }
+
+    func testTailResetsOnNextGesture() {
+        var tail = ShelfPagingTail()
+        tail.didPage()
+        tail.begin()
+        XCTAssertFalse(tail.swallows(phased: true, momentum: false))
+        XCTAssertFalse(tail.swallows(phased: false, momentum: true))
+    }
+
     // MARK: 哪条扩展栏
 
     func testVerticalOnlyOnHorizontalShelves() {

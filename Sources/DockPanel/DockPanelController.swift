@@ -125,7 +125,12 @@ final class DockPanelController: NSObject, NSWindowDelegate {
     /// pointer with nothing else to say which layout it became, and two
     /// layouts can look alike at a glance.
     private func stepLayout(_ step: Int) {
-        guard let profile = app.stepCustomLayout(by: step), let panel else { return }
+        guard let profile = app.stepCustomLayout(by: step) else {
+            // 没换成（只有一个布局）：清掉这一步，免得之后快捷键、菜单换布局时也滑进来。
+            ScrollRelay.shared.lastPageStep = 0
+            return
+        }
+        guard let panel else { return }
         // 布局名小标签开着时由它闪现新名字（refresh 里看到布局变了），不再叠一个。
         guard !LayoutLabelWindow.shared.isAvailable else { return }
         LayoutToast.shared.show(profile.name, beside: panel.frame, edge: app.effectivePosition)
@@ -175,8 +180,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         panel.level = level
         ScrollRelay.shared.switchesLayouts = app.state.customDock.switchLayoutsByGesture
         ScrollRelay.shared.swipeOpensPanels = app.state.customDock.swipeOpensPanels
-        ScrollRelay.shared.pagesVertically = ProLicenseGate.verticalPagingActive(
-            app.state.customDock, unlocked: ProAccess.isUnlocked)
+        ScrollRelay.shared.pageDirection = app.state.customDock.pageDirection
         if app.effectiveAutoHide {
             startPolling()
         } else {

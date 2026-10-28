@@ -354,7 +354,13 @@ public enum ProLicenseGate {
     /// 扩展栏上下滑动翻页在不在生效：翻页方向选了上下，且 Pro 已解锁。没解锁时按左右，
     /// 选择照旧存着，解锁或试用后自动恢复。
     public static func verticalPagingActive(_ settings: CustomDockSettings, unlocked: Bool) -> Bool {
-        settings.pageDirection == .vertical && canUse(.verticalPaging, unlocked: unlocked)
+        verticalPagingActive(direction: settings.pageDirection, unlocked: unlocked)
+    }
+
+    /// 同上，只看方向。滚动事件里每次现算：授权变了（试用到期、刚解锁）不会刷新扩展栏，
+    /// 缓存一个算好的值会一直停在旧状态。
+    public static func verticalPagingActive(direction: ShelfPageDirection, unlocked: Bool) -> Bool {
+        direction == .vertical && canUse(.verticalPaging, unlocked: unlocked)
     }
 
     // MARK: 消息灵动岛

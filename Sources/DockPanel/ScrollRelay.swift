@@ -37,9 +37,15 @@ final class ScrollRelay {
     /// 扩展栏贴的边（浮动时是当作的顶部或底部），决定面板往哪边弹。
     @ObservationIgnored var swipeEdge: DockPosition = .bottom
     @ObservationIgnored private var panelSwipe = PanelSwipeGesture()
-    /// 上下翻页（Pro）在不在生效，面板的主人写（已经算过解锁）。只在横着的扩展栏上用，
-    /// 判断见 `ShelfPaging`。
-    @ObservationIgnored var pagesVertically = false
+    /// 设置里的翻页方向，面板的主人写。只在横着的扩展栏上用，判断见 `ShelfPaging`。
+    @ObservationIgnored var pageDirection: ShelfPageDirection = .defaultValue
+    /// 上下翻页（Pro）在不在生效。每次现算解锁：授权变了不会刷新扩展栏，存一个算好的
+    /// 值会让试用到期后照样能用、刚解锁时又不生效。
+    var pagesVertically: Bool {
+        ProLicenseGate.verticalPagingActive(direction: pageDirection, unlocked: ProAccess.isUnlocked)
+    }
+    /// 这次手势翻过页没有，翻过就把剩下的事件和惯性都吞掉，见 `ShelfPagingTail`。
+    @ObservationIgnored private var pagingTail = ShelfPagingTail()
     /// 最近一次手势翻页的方向（+1 下一页，-1 上一页），扩展栏视图读完清零，
     /// 用来决定新的一页从下方还是上方滑进来。
     @ObservationIgnored var lastPageStep = 0
@@ -78,9 +84,20 @@ final class ScrollRelay {
         layoutGesture.begin()
     }
 
+    /// 新的一次两指手势开始（不管归谁），翻页后的吞尾巴从这里清掉。
+    func beginScrollGesture() {
+        pagingTail.begin()
+    }
+
+    /// 不归翻页的事件，是不是这次已经翻过页的手势剩下的部分。
+    func swallowsPagingTail(phased: Bool, momentum: Bool) -> Bool {
+        pagingTail.swallows(phased: phased, momentum: momentum)
+    }
+
     func feedLayoutGesture(_ delta: CGFloat, precise: Bool, at time: TimeInterval) {
         guard let step = layoutGesture.feed(Double(delta), precise: precise, at: time) else { return }
         lastPageStep = step
+        pagingTail.didPage()
         onLayoutStep?(step)
     }
 
@@ -115,6 +132,9 @@ final class ScrollRelay {
 final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
 
     override func scrollWheel(with event: NSEvent) {
+        if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
+            ScrollRelay.shared.beginScrollGesture()
+        }
         if swipedPanel(event) { return }
         if switchedLayout(event) { return }
         let step = ScrollRelay.step(dx: event.scrollingDeltaX,
@@ -163,7 +183,12 @@ final class ScrollingHostingView<Content: View>: NSHostingView<Content> {
             overflowing: relay.isOverflowing,
             vertical: relay.pagesVertically && !relay.swipeEdge.isVertical,
             overPanelTarget: relay.swipeOpensPanels && relay.swipeTargetID != nil)
-        guard case .page(let delta) = route else { return false }
+        guard case .page(let delta) = route else {
+            // 这次手势已经翻过页：扩展栏换了布局，指针下的格子和放不放得下都变了，
+            // 剩下的滑动和惯性照样吞掉，别让新布局跟着滚。
+            return relay.swallowsPagingTail(phased: !event.phase.isEmpty,
+                                            momentum: !event.momentumPhase.isEmpty)
+        }
 
         if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
             relay.beginLayoutGesture()

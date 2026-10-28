@@ -79,3 +79,26 @@ public enum ShelfPaging {
         return step > 0 ? slideDistance : -slideDistance
     }
 }
+
+/// 一次两指手势翻过页之后，同一手势剩下的事件和惯性尾巴都归翻页、吞掉。
+///
+/// 翻页后扩展栏换成了新布局，指针下的格子（能不能滑开面板）和放不放得下都按新布局算，
+/// 逐个事件重新判断归属会把剩下的滑动和惯性交给滚动，新布局跟着滚一截。手指在翻页那一刻
+/// 已经决定了，这次手势剩下的部分不再重新判断；下一次手势（began / mayBegin）重新开始。
+/// 普通滚轮没有阶段也没有惯性，从来不拦。
+public struct ShelfPagingTail: Sendable {
+    private var paged = false
+
+    public init() {}
+
+    /// 手指刚放上，新的一次手势。
+    public mutating func begin() { paged = false }
+
+    /// 这次手势翻了一页。
+    public mutating func didPage() { paged = true }
+
+    /// 归属判断说不归翻页的事件，还要不要当成这次翻页手势的一部分吞掉。
+    public func swallows(phased: Bool, momentum: Bool) -> Bool {
+        paged && (phased || momentum)
+    }
+}
