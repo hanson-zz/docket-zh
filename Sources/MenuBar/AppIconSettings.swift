@@ -11,7 +11,9 @@ struct AppIconSection: View {
 
     var body: some View {
         Section {
-            HStack(spacing: 10) {
+            // 十款图标排不下一行：按设置窗口宽度自动换行，卡片保持 112pt 方正。
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 112, maximum: 112), spacing: 10, alignment: .leading)],
+                      alignment: .leading, spacing: 10) {
                 ForEach(AppIconCatalog.all) { option in
                     let locked = option.isSupporterOnly && !unlocked
                     AppIconCard(option: option,
@@ -22,8 +24,6 @@ struct AppIconSection: View {
                         choice = option.id
                     }
                 }
-                // 只有两张时别撑满整行，卡片保持方正。
-                Spacer(minLength: 0)
             }
             .padding(.vertical, 2)
         } header: {

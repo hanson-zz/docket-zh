@@ -57,4 +57,12 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.all.filter(\.isBundleIcon).count, 1)
         XCTAssertEqual(AppIconCatalog.key, "appIcon.choice")
     }
+
+    func testClassicColorSetLocksOnlyCrownIcons() {
+        let pro = AppIconCatalog.all.filter(\.isSupporterOnly).map(\.id)
+        XCTAssertEqual(pro, ["classicBlue", "classicRed", "classicGold", "classicRainbow"])
+        XCTAssertEqual(AppIconCatalog.all.count, 10)
+        XCTAssertEqual(AppIconCatalog.option("classicHalloween"), AppIconCatalog.classicHalloween)
+        XCTAssertFalse(AppIconCatalog.classicChristmas.isSupporterOnly)
+    }
 }

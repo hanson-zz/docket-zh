@@ -44,8 +44,29 @@ public enum AppIconCatalog {
     public static let pandaDark = AppIconOption(
         id: "pandaDark", title: tr("小熊猫夜色"), resourceName: "AppIcon-PandaDark", isSupporterOnly: false)
 
+    // 经典扩展栏小熊猫的一套配色（用户 10-28 给的图）：深色和两款节日免费，
+    // 戴皇冠、带 Pro 角标的四款是 Pro 专属。
+
+    public static let classicDark = AppIconOption(
+        id: "classicDark", title: tr("深色"), resourceName: "AppIcon-ClassicDark", isSupporterOnly: false)
+    public static let classicBlue = AppIconOption(
+        id: "classicBlue", title: tr("蓝色皇冠"), resourceName: "AppIcon-ClassicBlue", isSupporterOnly: true)
+    public static let classicRed = AppIconOption(
+        id: "classicRed", title: tr("红色皇冠"), resourceName: "AppIcon-ClassicRed", isSupporterOnly: true)
+    public static let classicGold = AppIconOption(
+        id: "classicGold", title: tr("金色皇冠"), resourceName: "AppIcon-ClassicGold", isSupporterOnly: true)
+    public static let classicRainbow = AppIconOption(
+        id: "classicRainbow", title: tr("炫彩皇冠"), resourceName: "AppIcon-ClassicRainbow", isSupporterOnly: true)
+    public static let classicHalloween = AppIconOption(
+        id: "classicHalloween", title: tr("万圣节"), resourceName: "AppIcon-ClassicHalloween", isSupporterOnly: false)
+    public static let classicChristmas = AppIconOption(
+        id: "classicChristmas", title: tr("圣诞节"), resourceName: "AppIcon-ClassicChristmas", isSupporterOnly: false)
+
     /// 设置里按这个顺序排列，第一项是默认。
-    public static let all: [AppIconOption] = [classic, panda, pandaDark]
+    public static let all: [AppIconOption] = [
+        classic, classicDark, classicBlue, classicRed, classicGold, classicRainbow,
+        classicHalloween, classicChristmas, panda, pandaDark,
+    ]
 
     public static var defaultOption: AppIconOption { classic }
 

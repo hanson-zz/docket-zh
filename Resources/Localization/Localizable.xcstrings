@@ -23860,6 +23860,61 @@
         }
       }
     },
+    "蓝色皇冠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blue Crown"
+          }
+        }
+      }
+    },
+    "红色皇冠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red Crown"
+          }
+        }
+      }
+    },
+    "金色皇冠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold Crown"
+          }
+        }
+      }
+    },
+    "炫彩皇冠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rainbow Crown"
+          }
+        }
+      }
+    },
+    "万圣节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halloween"
+          }
+        }
+      }
+    },
     "小熊猫已经把杯子推到你面前了，还差 %@ 就装满啦。" : {
       "extractionState" : "manual",
       "localizations" : {
