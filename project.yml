@@ -46,6 +46,9 @@ targets:
       # 喝水小组件的小熊猫（作者自己的应用图标形象，抠图缩小），作为普通资源打包。
       - path: Resources/Water
         buildPhase: resources
+      # 菜单栏图标：小熊猫头像剪影（模板图，跟随浅色/深色菜单栏），设计脚本 design/menubar-panda。
+      - path: Resources/MenuBar
+        buildPhase: resources
       # 电子宠物的状态图（吃饭、饿了、生病，以及小熊猫的全身六种），作为普通资源打包。
       - path: Resources/Pet
         buildPhase: resources

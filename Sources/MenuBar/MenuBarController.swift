@@ -26,8 +26,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         statusItem.isVisible = app.state.menuBar.showIcon || !canHideStatusItem
 
         guard let button = statusItem.button else { return }
-        button.image = NSImage(systemSymbolName: "rectangle.bottomthird.inset.filled",
-                               accessibilityDescription: tr("码头"))
+        // 小熊猫头像剪影，和应用图标的小熊猫对上；资源缺失时退回系统符号。
+        let panda = Bundle.main.image(forResource: "MenuBarPanda")
+        panda?.size = NSSize(width: 21, height: 18)
+        panda?.accessibilityDescription = tr("码头")
+        button.image = panda ?? NSImage(systemSymbolName: "rectangle.bottomthird.inset.filled",
+                                        accessibilityDescription: tr("码头"))
         button.image?.isTemplate = true
         button.title = labelText.isEmpty ? "" : " \(labelText)"
     }
