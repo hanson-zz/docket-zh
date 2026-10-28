@@ -95,6 +95,7 @@ final class DockPanelController: NSObject, NSWindowDelegate {
         host.sizingOptions = [.intrinsicContentSize]
         host.onWantedSize = { [weak self] size in self?.resize(to: size) }
         ScrollRelay.shared.onLayoutStep = { [weak self] step in self?.stepLayout(step) }
+        ScrollRelay.shared.isUnlocked = { ProAccess.isUnlocked }
 
         let panel = NSPanel(contentRect: .zero,
                             styleMask: [.borderless, .nonactivatingPanel],

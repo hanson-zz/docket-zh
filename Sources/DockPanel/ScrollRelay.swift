@@ -39,10 +39,12 @@ final class ScrollRelay {
     @ObservationIgnored private var panelSwipe = PanelSwipeGesture()
     /// 设置里的翻页方向，面板的主人写。只在横着的扩展栏上用，判断见 `ShelfPaging`。
     @ObservationIgnored var pageDirection: ShelfPageDirection = .defaultValue
+    /// 码头 Pro 现在解没解锁，面板的主人接上（这个文件也编进测试目标，读不到 `ProAccess`）。
+    @ObservationIgnored var isUnlocked: @MainActor () -> Bool = { false }
     /// 上下翻页（Pro）在不在生效。每次现算解锁：授权变了不会刷新扩展栏，存一个算好的
     /// 值会让试用到期后照样能用、刚解锁时又不生效。
     var pagesVertically: Bool {
-        ProLicenseGate.verticalPagingActive(direction: pageDirection, unlocked: ProAccess.isUnlocked)
+        ProLicenseGate.verticalPagingActive(direction: pageDirection, unlocked: isUnlocked())
     }
     /// 这次手势翻过页没有，翻过就把剩下的事件和惯性都吞掉，见 `ShelfPagingTail`。
     @ObservationIgnored private var pagingTail = ShelfPagingTail()
