@@ -29,7 +29,8 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(dark, AppIconCatalog.pandaDark)
         XCTAssertEqual(dark.resourceName, "AppIcon-PandaDark")
         XCTAssertFalse(dark.isSupporterOnly)
-        XCTAssertEqual(AppIconCatalog.all.map(\.id), ["classic", "panda", "pandaDark"])
+        XCTAssertEqual(AppIconCatalog.all.map(\.id), ["classic", "classicDark", "classicBlue", "classicRed", "classicGold",
+                                                   "classicRainbow", "classicHalloween", "classicChristmas", "panda", "pandaDark"])
     }
 
     func testFinderPlan() {
