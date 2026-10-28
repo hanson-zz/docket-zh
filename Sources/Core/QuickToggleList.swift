@@ -134,6 +134,14 @@ public enum QuickToggle: String, CaseIterable, Sendable, Identifiable {
         Double(max(count, 1)) * (names ? 46 : 36) + 20
     }
 
+    /// 侧边（竖向）扩展栏里一列圆钮的高度。卡片上下不留内边距，所以要装下
+    /// 圆钮本身和它们之间的间距：不显示名字时 28pt 圆钮、间距 6pt，每个按 36pt 算；
+    /// 显示名字时圆钮、2pt 间距和一行 10pt 名字，每个按 46pt 算。另留 8pt。
+    /// 以前按 22pt 圆钮每个 30pt 算，圆钮放大后四个以上就会超出卡片。
+    public static func columnLength(count: Int, names: Bool = false) -> Double {
+        Double(max(count, 1)) * (names ? 46 : 36) + 8
+    }
+
     // MARK: 卡片名字和面板
 
     /// 卡片圆钮下显示名字的开关（设置和面板编辑里都能改）。旧卡片没有这个键，照旧不显示。

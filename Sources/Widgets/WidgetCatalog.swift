@@ -1221,8 +1221,8 @@ public enum WidgetCatalog {
         case .capture:
             return 112
         case .toggles:
-            // 圆钮下显示名字时每个多 16pt。
-            return Double(QuickToggle.chosen(cfg).count * (QuickToggle.showsNames(cfg) ? 46 : 30) + 8)
+            // 圆钮下显示名字时每个更高（见 QuickToggle.columnLength）。
+            return QuickToggle.columnLength(count: QuickToggle.chosen(cfg).count, names: QuickToggle.showsNames(cfg))
         // The badge, the pair and two lines of the last result.
         case .translate:
             return 96

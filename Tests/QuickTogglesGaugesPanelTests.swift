@@ -40,6 +40,12 @@ final class QuickTogglesGaugesPanelTests: XCTestCase {
         XCTAssertTrue(QuickToggle.showsNames(WidgetConfig([QuickToggle.showNamesKey: .bool(true)])))
         XCTAssertEqual(QuickToggle.length(count: 3), 128)
         XCTAssertEqual(QuickToggle.length(count: 3, names: true), 158)
+        // 侧边扩展栏：28pt 圆钮之间隔 6pt，一列八个要 8×28+7×6=266pt，高度不能比这少。
+        XCTAssertEqual(QuickToggle.columnLength(count: 8), 296)
+        XCTAssertGreaterThanOrEqual(QuickToggle.columnLength(count: 8), 8 * 28 + 7 * 6)
+        XCTAssertEqual(QuickToggle.columnLength(count: 3, names: true), 146)
+        XCTAssertEqual(WidgetCatalog.verticalHeight(WidgetCatalog.make(.toggles)!),
+                       QuickToggle.columnLength(count: QuickToggle.defaults.count))
         var named = WidgetCatalog.make(.toggles)!
         let plain = WidgetCatalog.naturalSize(named).width
         named.config.set(QuickToggle.showNamesKey, .bool(true))
