@@ -142,6 +142,13 @@ final class WidgetDetailWindow {
                                    overflows: current.overflows)
     }
 
+    /// 模型里这个小组件变了（`AppState` 每次改动都会调）：配置和面板手里的
+    /// 不一样时才重画，一样时不动，免得每次改模型都换一遍根视图。
+    func follow(_ instance: WidgetInstance) {
+        guard openWidgetID == instance.id, let current = fit, current.instance != instance else { return }
+        refresh(instance)
+    }
+
     /// 面板的根视图，每次都从这里造，免得哪一处漏了滚动区域的高度或回调。
     private func chrome(_ instance: WidgetInstance, context: WidgetContext, edge: DockPosition,
                         arrowOffset: CGFloat, viewport: CGFloat?,

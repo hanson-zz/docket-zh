@@ -67625,6 +67625,72 @@
           }
         }
       }
+    },
+    "收起会话列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse the session list"
+          }
+        }
+      }
+    },
+    "展开会话列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand the session list"
+          }
+        }
+      }
+    },
+    "%@ 个会话 · %@ 个等你确认" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions: %@ · Waiting for you: %@"
+          }
+        }
+      }
+    },
+    "%@ 个会话进行中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions running: %@"
+          }
+        }
+      }
+    },
+    "%@ 个会话已完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions finished: %@"
+          }
+        }
+      }
+    },
+    "现在没有进行中的会话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sessions running right now"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

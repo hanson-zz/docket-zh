@@ -1,9 +1,17 @@
 import AppKit
 import SwiftUI
 
-/// Codex 的详情面板：角落小熊猫和总状态，正在运行的会话（项目、在做什么、
-/// 耗时，等你确认的给「去终端」），5 小时和每周用量，今日 / 本周统计，
-/// 「打开终端」。原来的刷新、网页版用量、近 30 天 token 和代理收进「更多」。
+/// Codex 的详情面板，跟着卡片样式走（`CodexDetailEmphasis`）：
+///
+/// - 小卡（圆环）点开「用量优先」：头部只有状态点和总状态，下面两个大圆环
+///   （外观选了液态时是两只大号液态杯），今日 / 本周统计，正在运行的会话收成
+///   一行摘要，点开展开。
+/// - 中卡（小熊猫）点开「会话优先」：角落小熊猫和总状态，正在运行的会话（项目、
+///   在做什么、耗时，等你确认的给「去终端」）在上，用量是两条粗进度条，统计在下。
+///
+/// 两种都有「打开终端」、提醒声音开关、设置和「更多」（刷新、网页版用量、
+/// 近 30 天 token、代理）。面板拿的是卡片配置的值，设置里换样式时
+/// `WidgetDetailWindow.refresh` 换上新配置，已打开的面板当场跟着变。
 ///
 /// Codex 不把审批交给别的程序，所以这里不画「允许 / 拒绝」，只把开着会话的
 /// 终端叫到前台。读不准的统计项直接不显示。
@@ -14,10 +22,13 @@ struct CodexUsageDetail: View {
     @State private var proxy = ""
     @State private var proxyRejected = false
     @State private var showsMore = false
+    /// 用量优先时会话摘要是否展开。
+    @State private var showsSessions = false
     @Environment(\.colorScheme) private var scheme
 
     private var service: CodexService { CodexService.shared }
     private var showsRemaining: Bool { instance.config.string("show", default: "used") == "remaining" }
+    private var emphasis: CodexDetailEmphasis { CodexDetailEmphasis.from(instance.config) }
 
     private var report: CodexUsageReport? {
         context.isPreview ? CodexSample.report(now: context.now) : service.report
@@ -55,9 +66,15 @@ struct CodexUsageDetail: View {
         } content: {
             VStack(alignment: .leading, spacing: 14) {
                 header
-                sessionsSection(now: now)
-                usageSection(now: now)
-                statsSection(now: now)
+                if emphasis.usageFirst {
+                    gaugesSection(now: now)
+                    statsSection(now: now)
+                    sessionsSummary(now: now)
+                } else {
+                    sessionsSection(now: now)
+                    usageSection(now: now)
+                    statsSection(now: now)
+                }
                 Button {
                     guard !context.isPreview else { return }
                     service.openTerminal(for: CodexSessionList.lead(sessions))
@@ -84,7 +101,17 @@ struct CodexUsageDetail: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 10) {
-            CodexPanda(activity: activity, size: 46)
+            if emphasis.showsPanda {
+                CodexPanda(activity: activity, size: 46)
+            } else {
+                // 用量优先：和小卡一样不画小熊猫，左边一枚仪表盘图标。
+                Image(systemName: "gauge.with.dots.needle.33percent")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color.panelFill))
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "Codex")
                     .font(.system(size: 20, weight: .bold))
@@ -193,24 +220,29 @@ struct CodexUsageDetail: View {
                 .lineLimit(1)
                 .fixedSize()
             if session.state == .waiting {
-                Button {
-                    guard !context.isPreview else { return }
-                    service.openTerminal(for: session)
-                } label: {
-                    Text("去终端")
-                        .font(WidgetStyle.label(13))
-                        .foregroundStyle(.panelPrimary)
-                        .padding(.horizontal, 10)
-                        .frame(height: 26)
-                        .background(Capsule().fill(Color.panelRaised).panelLift(true))
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .help(tr("Codex 不让别的程序替你批准，点按把开着这个会话的终端带到前面。"))
+                goToTerminalButton(session)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
+    }
+
+    private func goToTerminalButton(_ session: CodexSession) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            service.openTerminal(for: session)
+        } label: {
+            Text("去终端")
+                .font(WidgetStyle.label(13))
+                .foregroundStyle(.panelPrimary)
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+                .background(Capsule().fill(Color.panelRaised).panelLift(true))
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .help(tr("Codex 不让别的程序替你批准，点按把开着这个会话的终端带到前面。"))
     }
 
     // MARK: 用量
@@ -230,7 +262,7 @@ struct CodexUsageDetail: View {
             }
             if let report, !report.windows.isEmpty {
                 VStack(spacing: 12) {
-                    ForEach(report.windows) { w in windowRow(w, now: now) }
+                    ForEach(report.windows) { w in windowRow(w, now: now, thick: true) }
                 }
                 .padding(12)
                 .glassPane(cornerRadius: 12)
@@ -259,10 +291,16 @@ struct CodexUsageDetail: View {
         return CodexPace.elapsedFraction(w, now: now) == nil ? nil : tr("照现在的速度，够用到重置")
     }
 
-    private func windowRow(_ w: CodexLimitWindow, now: Date) -> some View {
+    /// 一条额度：名字、百分比、进度条（带匀速参考线）、重置倒计时和时刻。
+    /// `thick` 是会话优先时的粗条（主额度 12、分组 8），用量优先时大圆环下面
+    /// 列的分组额度是细条（8、6）。
+    private func windowRow(_ w: CodexLimitWindow, now: Date, thick: Bool) -> some View {
         let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
         let tint = CodexStyle.tint(used: w.usedFraction)
         let main = w.group == nil
+        let height: CGFloat = thick
+            ? (main ? CodexDetailEmphasis.mainBarHeight : CodexDetailEmphasis.groupBarHeight)
+            : (main ? 8 : 6)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(w.group.map { "\($0) · \(w.label)" } ?? CodexCard.label(w))
@@ -278,16 +316,16 @@ struct CodexUsageDetail: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(.panelTrack)
-                    Capsule().fill(tint.panelGraphic).frame(width: max(8, geo.size.width * fraction))
+                    Capsule().fill(tint.panelGraphic).frame(width: max(height, geo.size.width * fraction))
                     // Where an even pace would be by now.
                     if let elapsed = CodexPace.elapsedFraction(w, now: now) {
                         Rectangle().fill(.panelSecondary)
-                            .frame(width: 1.5)
-                            .offset(x: geo.size.width * (showsRemaining ? 1 - elapsed : elapsed) - 0.75)
+                            .frame(width: thick ? 2 : 1.5)
+                            .offset(x: geo.size.width * (showsRemaining ? 1 - elapsed : elapsed) - (thick ? 1 : 0.75))
                     }
                 }
             }
-            .frame(height: main ? 8 : 6)
+            .frame(height: height)
             if let resets = w.resetsAt {
                 HStack {
                     Text(tr("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置"))
@@ -313,6 +351,203 @@ struct CodexUsageDetail: View {
             f.setLocalizedDateFormatFromTemplate("EEE HH:mm")
         }
         return f.string(from: date)
+    }
+
+    // MARK: 用量优先：大圆环 / 大液态杯
+
+    /// 小卡点开时的用量：5 小时和本周两格，各一个大圆环（或液态杯），中间
+    /// 百分比大字，下面窗口名、重置倒计时和时刻。分组的小额度（没有圆环的）
+    /// 在下面列成细条，数据和会话优先时一样全。
+    @ViewBuilder private func gaugesSection(now: Date) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                sectionTitle(tr("用量"))
+                Spacer(minLength: 4)
+                if let report, let pace = paceText(report, now: now) {
+                    Text(pace)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            if let report, !report.windows.isEmpty {
+                let rings = report.ringWindows
+                let rest = report.windows.filter { w in !rings.contains { $0.id == w.id } }
+                if !rings.isEmpty {
+                    HStack(alignment: .top, spacing: 8) {
+                        ForEach(rings) { w in gaugeCell(w, now: now) }
+                    }
+                    // 两格一样高：倒计时一格折成两行时另一格跟着拉长。
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                if !rest.isEmpty {
+                    VStack(spacing: 12) {
+                        ForEach(rest) { w in windowRow(w, now: now, thick: false) }
+                    }
+                    .padding(12)
+                    .glassPane(cornerRadius: 12)
+                }
+                if let problem = service.problem, !context.isPreview {
+                    Text(problem.message)
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(Color(hex: "#FF9F0A").panelReadable)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                PanelNote(symbol: "network", text: service.problem?.message ?? tr("正在读取…"))
+                    .frame(height: 96)
+                    .glassPane(cornerRadius: 12)
+            }
+        }
+    }
+
+    private func gaugeCell(_ w: CodexLimitWindow, now: Date) -> some View {
+        VStack(spacing: 8) {
+            if emphasis == .usageLiquid {
+                bigCup(w, now: now)
+            } else {
+                bigRing(w, now: now)
+            }
+            VStack(spacing: 2) {
+                Text(CodexCard.label(w))
+                    .font(WidgetStyle.label(15))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                if let resets = w.resetsAt {
+                    Text(tr("\(CodexPace.duration(resets.timeIntervalSince(now)))后重置"))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(resetClock(resets, now: now))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelTertiary)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .glassPane(cornerRadius: 14)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// 圆环中间：百分比大字，下面一行「已用 / 剩余」。
+    private func gaugeCenter(_ fraction: Double, onWater: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            Text(GaugeReading.percent(fraction))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(.panelPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+            Text(showsRemaining ? tr("剩余") : tr("已用"))
+                .font(WidgetStyle.caption(13))
+                .foregroundStyle(onWater ? Color.panelPrimary : Color.panelSecondary)
+                .lineLimit(1)
+        }
+        // 液态杯里的字压在水上：深色外观描一圈淡黑，浅色外观描一圈淡白。
+        .shadow(color: onWater ? (scheme == .dark ? .black.opacity(0.45) : .white.opacity(0.7)) : .clear,
+                radius: 1.5)
+    }
+
+    private func bigRing(_ w: CodexLimitWindow, now: Date) -> some View {
+        let fraction = showsRemaining ? w.remainingFraction : w.usedFraction
+        let tint = CodexStyle.tint(used: w.usedFraction).panelGraphic
+        let d = CGFloat(CodexDetailEmphasis.gaugeDiameter)
+        let line: CGFloat = 10
+        return ZStack {
+            MetricProgressRing(progress: fraction, tint: tint, track: .panelTrack,
+                               diameter: d, lineWidth: line) {
+                gaugeCenter(fraction)
+            }
+            // 匀速参考线：照平均速度到现在该在哪，和进度条上的细线是同一件事。
+            if let elapsed = CodexPace.elapsedFraction(w, now: now) {
+                let sweep = 320.0 / 360
+                let at = sweep * (showsRemaining ? 1 - elapsed : elapsed)
+                Circle()
+                    .trim(from: max(0, at - 0.005), to: min(sweep, at + 0.005))
+                    .stroke(Color.panelSecondary, style: StrokeStyle(lineWidth: line + 4, lineCap: .butt))
+                    .rotationEffect(.degrees(90 + 20))
+                    .frame(width: d, height: d)
+            }
+        }
+    }
+
+    /// 液态外观：一只大号圆杯，复用卡片上的 `LiquidWater`，水位是圆环原来
+    /// 显示的数（`LiquidLooks.codexLevel`），快用完时水波更急。
+    private func bigCup(_ w: CodexLimitWindow, now: Date) -> some View {
+        let level = LiquidLooks.codexLevel(usedFraction: w.usedFraction, showsRemaining: showsRemaining)
+        let tint = CodexStyle.tint(used: w.usedFraction).panelGraphic
+        let d = CGFloat(CodexDetailEmphasis.gaugeDiameter)
+        return ZStack {
+            LiquidWater(level: level, tint: tint, shape: .circle,
+                        visible: !context.isPreview,
+                        speed: LiquidMotion.busySpeed(w.usedFraction))
+            // 匀速参考线：杯子左边沿一道短横线，标在匀速该到的水位上。
+            if let elapsed = CodexPace.elapsedFraction(w, now: now) {
+                let mark = showsRemaining ? 1 - elapsed : elapsed
+                Capsule()
+                    .fill(Color.panelSecondary)
+                    .frame(width: 12, height: 2.5)
+                    .position(x: 4, y: d * (1 - mark))
+            }
+            gaugeCenter(level, onWater: true)
+        }
+        .frame(width: d, height: d)
+    }
+
+    // MARK: 用量优先：会话摘要
+
+    /// 会话列表收成一行：「2 个会话进行中」，点开展开成和会话优先一样的列表。
+    /// 有等你确认的会话时右边直接给「去终端」，不用先展开。
+    @ViewBuilder private func sessionsSummary(now: Date) -> some View {
+        let states = sessions.map(\.state)
+        let waiting = sessions.first { $0.state == .waiting }
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Button {
+                    guard !sessions.isEmpty else { return }
+                    withAnimation(.snappy(duration: 0.2)) { showsSessions.toggle() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Circle().fill(CodexStyle.color(CodexDetailEmphasis.summaryState(states)))
+                            .frame(width: 8, height: 8)
+                        Text(CodexDetailEmphasis.sessionSummary(states))
+                            .font(WidgetStyle.label(14))
+                            .foregroundStyle(.panelPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.9)
+                        Spacer(minLength: 4)
+                        if !sessions.isEmpty {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.panelSecondary)
+                                .rotationEffect(.degrees(showsSessions ? 180 : 0))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 26)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .help(showsSessions ? tr("收起会话列表") : tr("展开会话列表"))
+                if let waiting, !showsSessions {
+                    goToTerminalButton(waiting)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            if showsSessions, !sessions.isEmpty {
+                ForEach(Array(sessions.prefix(5).enumerated()), id: \.element.id) { _, session in
+                    Divider().overlay(.panelSeparator).padding(.horizontal, 12)
+                    sessionRow(session, now: now)
+                }
+            }
+        }
+        .glassPane(cornerRadius: 12)
     }
 
     // MARK: 统计

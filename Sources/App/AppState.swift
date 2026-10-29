@@ -83,11 +83,19 @@ public final class AppState {
             // clicks for a widget that no longer existed.
             // 收在文件夹里的也算在扩展栏上（弹出卡片打开的面板挂在文件夹那一格）；
             // 独立浮动的面板只要小组件还在某个布局里就留着。
+            //
+            // 还在的话把新配置交给面板：设置窗口改样式、外观这些是直接改模型，
+            // 不经过 `WidgetWriter`，以前开着的面板要关了重开才跟上（Codex 用量
+            // 换了小 / 中卡，面板还是原来那套）。配置没变时 `follow` 什么也不做。
             if let open = WidgetDetailWindow.shared.openWidgetID {
-                let gone = WidgetDetailWindow.shared.isFloating
-                    ? widgetAnywhere(open) == nil
-                    : DockItemTree.widget(open, in: effectiveItems) == nil
-                if gone { WidgetDetailWindow.shared.close() }
+                let current = WidgetDetailWindow.shared.isFloating
+                    ? widgetAnywhere(open)
+                    : DockItemTree.widget(open, in: effectiveItems)
+                if let current {
+                    WidgetDetailWindow.shared.follow(current)
+                } else {
+                    WidgetDetailWindow.shared.close()
+                }
             }
         }
     }
