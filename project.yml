@@ -59,6 +59,10 @@ targets:
       # 摸鱼时钟的三张小熊猫（上班敲电脑、下班喝茶、周末码头睡觉，透明 PNG 512x512），作为普通资源打包。
       - path: Resources/Slacker
         buildPhase: resources
+      # 卜卦的小熊猫：每个动作一张整身 3D 毛绒姿势图（签、卦、书），扣地龟甲、铜钱正反面和
+      # 签筒、铜钱皮肤的着色层（@2x、256 色 PNG），作为普通资源打包。
+      - path: Resources/Divination
+        buildPhase: resources
       # 码头 Pro 解锁庆祝动画：小熊猫三种姿势、皇冠、礼盒、PRO 券（透明 PNG），以及
       # scripts/make-unlock-sounds.py 合成的原创音效（WAV），作为普通资源打包。
       - path: Resources/Unlock

@@ -307,14 +307,14 @@ public enum WorryBook {
 // MARK: 解忧书 · 书页排版和翻页节奏
 
 extension WorryBook {
-    /// 答案写在摊开的两页上、跨书脊居中，宋体大字，最多两行。从大到小试这几档字号，
+    /// 答案用宋体大字写在小熊猫捧着的书下面，居中，最多两行。从大到小试这几档字号，
     /// 第一档能排进两行的就用它（最小 17pt，所有答案都排得下，测试守着）。
     public static let pageFonts: [Double] = [22, 21, 20, 19, 18, 17]
-    /// 两页上能写字的宽度（书 258 宽，两边留出页边和左上角的「解忧」印）。
+    /// 答案一行最多占的宽度（面板内容宽 266 里居中，两边留白）。
     public static let spreadTextWidth: Double = 190
-    /// 翻一页的时长（秒）：右页绕书脊翻过去，翻到一半换答案。
-    public static let flipDuration: Double = 0.6
-    public static var flipSwap: Double { flipDuration / 2 }
+    /// 翻一页：合掌默想 → 捧书翻开 → 换答案图（这时换成新的一页）→ 两行答案逐行淡入。
+    public static var flipSwap: Double { wishHold + openHold }
+    public static var flipDuration: Double { flipSwap + 0.05 + lineFade * 2 }
 
     /// 一页上的排法：一行或两行字，加上字号。
     public struct PageLayout: Equatable, Sendable {
@@ -667,19 +667,6 @@ public enum Divination {
     public static let goldTextLightHex = "#8A6414"
     public static let goldTextDarkHex = "#F0CB6A"
 
-    /// 解忧书的纸和墨：浅色米白纸；深色外观换成暖灰米色、压低亮度，不刺眼。
-    /// 墨色、强调红和页码在纸面和书脊阴影上都过 4.5:1（测试守着）。
-    public static let bookPaperLightHex = "#FBF6EA"
-    public static let bookGutterLightHex = "#EADFC8"
-    public static let bookInkLightHex = "#2B211A"
-    public static let bookRedLightHex = "#A8231C"
-    public static let bookPageNumberLightHex = "#6E5E4A"
-    public static let bookPaperDarkHex = "#CFC4AE"
-    public static let bookGutterDarkHex = "#BDB199"
-    public static let bookInkDarkHex = "#2A1F17"
-    public static let bookRedDarkHex = "#7E1915"
-    public static let bookPageNumberDarkHex = "#463A2D"
-
     // MARK: 尺寸
 
     /// 扩展栏横排卡片：小熊猫、今日签级和签号（和同组卡片一样高）。
@@ -714,6 +701,9 @@ public enum DesktopCardsDivinationPlan {
     /// 中号左边签那一列的宽。
     public static let mediumStickWidth: Double = 128
     public static let mediumSpacing: Double = 12
+    /// 大号：上面签那一行的小熊猫高度和各块之间的间距（340 高里给底下「仅供娱乐」留出余量）。
+    public static let largePoseHeight: Double = 72
+    public static let largeSpacing: Double = 8
 
     /// 中号、大号能起卦。
     public static func canCast(_ size: DesktopPinSize) -> Bool { size != .small }

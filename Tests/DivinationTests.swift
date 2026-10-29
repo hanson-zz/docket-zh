@@ -527,29 +527,18 @@ final class DivinationTests: XCTestCase {
         XCTAssertTrue((long ?? []).allSatisfy { $0.count <= 8 })
     }
 
-    func testFlipSwapsHalfway() {
-        XCTAssertEqual(WorryBook.flipSwap, WorryBook.flipDuration / 2, accuracy: 0.0001)
-        XCTAssertLessThan(WorryBook.flipDuration, 1)
+    func testFlipSwapsWhenTheAnswerPoseArrives() {
+        // 默想 → 捧书翻开 → 换答案图时换页，两行字逐行淡入完才算翻完。
+        XCTAssertEqual(WorryBook.flipSwap, WorryBook.wishHold + WorryBook.openHold, accuracy: 0.0001)
+        XCTAssertGreaterThan(WorryBook.flipDuration, WorryBook.flipSwap + WorryBook.lineFade * 2)
+        XCTAssertLessThan(WorryBook.flipDuration, 1.5)
     }
 
-    /// 书页上的墨色、强调红和页码，在纸面和书脊阴影上都过 4.5:1，浅色深色都算。
-    func testBookInkContrastOnPaper() {
-        let pairs: [(paper: String, gutter: String, inks: [String])] = [
-            (Divination.bookPaperLightHex, Divination.bookGutterLightHex,
-             [Divination.bookInkLightHex, Divination.bookRedLightHex, Divination.bookPageNumberLightHex]),
-            (Divination.bookPaperDarkHex, Divination.bookGutterDarkHex,
-             [Divination.bookInkDarkHex, Divination.bookRedDarkHex, Divination.bookPageNumberDarkHex]),
-        ]
-        for pair in pairs {
-            for ink in pair.inks {
-                XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: pair.paper, ink: ink), 4.5, "\(ink) on \(pair.paper)")
-                XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: pair.gutter, ink: ink), 4.5, "\(ink) on \(pair.gutter)")
-            }
+    /// 签纸上的签级、签号字色在米白签纸上过 4.5:1（签纸是图里的，浅色深色外观都一样）。
+    func testSlipInkContrast() {
+        for ink in [DivinationArt.slipLevelInkHex, DivinationArt.slipNumberInkHex] {
+            XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: DivinationArt.slipPaperHex, ink: ink), 4.5, ink)
         }
-        // 深色外观的纸压低了亮度，比浅色纸暗。
-        let dark = ColorCode(hex: Divination.bookPaperDarkHex)!
-        let light = ColorCode(hex: Divination.bookPaperLightHex)!
-        XCTAssertLessThan(WidgetTint.luminance(dark), WidgetTint.luminance(light) * 0.75)
     }
 
     // MARK: 捧龟甲摔卦

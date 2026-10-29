@@ -3,11 +3,12 @@ import SwiftUI
 // MARK: - 钉在桌面 · 小游戏组 · 卜卦
 //
 // 卜卦钉在桌面（Core 的 `DesktopCardsDivinationPlan`）：
-// 小 160×160：小熊猫抱签筒、今日签级和签号；没抽时一个「摇一摇」直接摇。
+// 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号；没抽时一个「摇一摇」直接摇。
 // 中 340×160：左边今日签，右边起卦（一次起完）：本卦和变卦卦画、卦名、白话。
-// 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞。
-// 和扩展栏卡片、面板读写同一份卡片配置（DivinationPlay），三边同时变。卡片底是桌面卡片
-// 自己的液态玻璃，这里只画内容。减少动态效果时签筒不抖、龟壳不晃。
+// 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞，底下留出「仅供娱乐」的余量。
+// 小熊猫和面板是同一套整身姿势图（DivinationScenes）。和扩展栏卡片、面板读写同一份卡片配置
+// （DivinationPlay），三边同时变。卡片底是桌面卡片自己的液态玻璃，这里只画内容。
+// 减少动态效果时不摇不飞，直接换图。
 
 @MainActor
 extension DesktopCardsGames {
@@ -30,7 +31,8 @@ private struct DeskDivinationCard: View {
     @State private var castBusy = false
 
     private var inset: CGFloat { CGFloat(DesktopCardsDivinationPlan.inset(size)) }
-    private var today: Int? { busy ? nil : Divination.todayStick(widget.config, now: now) }
+    private var drawn: Int? { Divination.todayStick(widget.config, now: now) }
+    private var today: Int? { busy ? nil : drawn }
 
     var body: some View {
         Group {
@@ -48,15 +50,15 @@ private struct DeskDivinationCard: View {
 
     // MARK: 签
 
-    private func stickSummary(compact: Bool) -> some View {
-        VStack(spacing: compact ? 2 : 4) {
+    private var stickSummary: some View {
+        VStack(spacing: 2) {
             if let index = today {
                 let stick = FortuneStick.all[index]
                 Text(verbatim: Divination.stickNumber(index))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.panelSecondary)
                 Text(verbatim: stick.level.title)
-                    .font(.custom("Songti SC", size: compact ? 24 : 28).weight(.heavy))
+                    .font(.custom("Songti SC", size: 24).weight(.heavy))
                     .foregroundStyle(DivinationStyle.level(stick.level))
                     .lineLimit(1)
             } else {
@@ -79,10 +81,12 @@ private struct DeskDivinationCard: View {
         busy = true
         shakes += 1
         DivinationPlay.play(.rattle, for: widget)
+        let timing = StickShake.normal
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(860))
-            DivinationPlay.play(.tick, for: widget)
+            try? await Task.sleep(for: .seconds(timing.flyStart))
             DivinationPlay.drawStick(in: widget)
+            DivinationPlay.play(.tick, for: widget)
+            try? await Task.sleep(for: .seconds(timing.total - timing.flyStart))
             busy = false
         }
     }
@@ -147,7 +151,7 @@ private struct DeskDivinationCard: View {
                     .lineLimit(showJudgment ? 2 : 1)
             } else {
                 HStack {
-                    PandaWithShell(size: 58, shakes: shellShakes)
+                    DivinationShellSway(height: 58, shakes: shellShakes)
                     Spacer(minLength: 0)
                 }
                 Text(tr("想好问题，摇六次成一卦"))
@@ -165,8 +169,8 @@ private struct DeskDivinationCard: View {
 
     private var small: some View {
         VStack(spacing: 4) {
-            PandaWithTube(size: 70, shakes: shakes, drop: false, cheering: today != nil)
-            stickSummary(compact: true)
+            stickScene(width: 140, poseHeight: 70)
+            stickSummary
             Spacer(minLength: 0)
         }
     }
@@ -176,8 +180,8 @@ private struct DeskDivinationCard: View {
     private var medium: some View {
         HStack(alignment: .top, spacing: CGFloat(DesktopCardsDivinationPlan.mediumSpacing)) {
             VStack(spacing: 4) {
-                PandaWithTube(size: 64, shakes: shakes, drop: false, cheering: today != nil)
-                stickSummary(compact: true)
+                stickScene(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth), poseHeight: 64)
+                stickSummary
                 Spacer(minLength: 0)
             }
             .frame(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth))
@@ -189,16 +193,32 @@ private struct DeskDivinationCard: View {
     // MARK: 大号
 
     private var large: some View {
-        VStack(spacing: 10) {
+        // 340 高去掉上下 12 的边距只有 316：小熊猫压到 72、间距 8、签级和签号并成一行，
+        // 卦辞两行加白话两行以后底下还剩十几 pt，「仅供娱乐」不贴底、不被按钮挤掉。
+        VStack(spacing: CGFloat(DesktopCardsDivinationPlan.largeSpacing)) {
             HStack(alignment: .center, spacing: 12) {
-                PandaWithTube(size: 80, shakes: shakes, drop: false, cheering: today != nil)
+                stickScene(width: 72, poseHeight: CGFloat(DesktopCardsDivinationPlan.largePoseHeight))
+                // 签级和签号排一行（原来上下两行加两行签诗比小熊猫高出一截，把下面整块往下挤）。
                 VStack(alignment: .leading, spacing: 4) {
-                    stickSummary(compact: false)
                     if let index = today {
-                        Text(verbatim: FortuneStick.all[index].poemLines.prefix(2).joined())
+                        let stick = FortuneStick.all[index]
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(verbatim: stick.level.title)
+                                .font(.custom("Songti SC", size: 24).weight(.heavy))
+                                .foregroundStyle(DivinationStyle.level(stick.level))
+                                .lineLimit(1)
+                                .fixedSize()
+                            Text(verbatim: Divination.stickNumber(index))
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.panelSecondary)
+                                .lineLimit(1)
+                        }
+                        Text(verbatim: stick.poemLines.prefix(2).joined())
                             .font(.custom("Songti SC", size: 13))
                             .foregroundStyle(Color.panelPrimary)
                             .lineLimit(2)
+                    } else {
+                        stickSummary
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -209,6 +229,15 @@ private struct DeskDivinationCard: View {
             Text(tr("仅供娱乐"))
                 .font(.system(size: CGFloat(Divination.disclaimerFont)))
                 .foregroundStyle(Color.panelTertiary)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.bottom, 2)
         }
+    }
+
+    /// 签的小场景：没抽时抱签筒，摇的时候整张图摆、签飞出，抽过展签（纸太小不写字）。
+    private func stickScene(width: CGFloat, poseHeight: CGFloat) -> some View {
+        DivinationStickScene(width: width, height: poseHeight + 4, poseHeight: poseHeight,
+                             index: drawn, shakes: shakes)
     }
 }

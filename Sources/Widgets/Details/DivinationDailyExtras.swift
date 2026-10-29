@@ -9,8 +9,8 @@ import SwiftUI
 
 // MARK: - 皮肤入口（签筒、铜钱共用）
 
-/// 现在该画的签筒和铜钱皮肤。签筒（StickTube）和铜钱（CoinView）只从这里读颜色，
-/// 起卦页、每日一签页、桌面卡片都一样；没解锁时是默认款。
+/// 现在该画的签筒和铜钱皮肤。抱签筒的姿势图（盖一层筒身着色图）和铜钱（DivinationCoin，
+/// 换一套着色好的正反面）只从这里读，起卦页、每日一签页、桌面卡片都一样；没解锁时是默认款。
 struct DivinationSkinChoice: Equatable, Sendable {
     var tube: TubeSkin = .bamboo
     var coin: CoinSkin = .classic
@@ -18,34 +18,6 @@ struct DivinationSkinChoice: Equatable, Sendable {
 
 extension EnvironmentValues {
     @Entry var divinationSkin = DivinationSkinChoice()
-}
-
-struct DivinationTubeColors {
-    var body: Color
-    var shade: Color
-    var band: Color
-    var label: Color
-    var labelInk: Color
-
-    init(_ skin: TubeSkin) {
-        body = Color(hex: skin.bodyHex)
-        shade = Color(hex: skin.shadeHex)
-        band = Color(hex: skin.bandHex)
-        label = Color(hex: skin.labelHex)
-        labelInk = Color(hex: skin.labelInkHex)
-    }
-}
-
-struct DivinationCoinColors {
-    var face: Color
-    var deep: Color
-    var light: Color
-
-    init(_ skin: CoinSkin) {
-        face = Color(hex: skin.faceHex)
-        deep = Color(hex: skin.deepHex)
-        light = Color(hex: skin.lightHex)
-    }
 }
 
 /// 按卡片配置和 Pro 状态把皮肤放进环境。试用到期、激活时立刻重画。
