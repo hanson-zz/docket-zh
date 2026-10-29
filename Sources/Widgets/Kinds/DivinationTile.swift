@@ -264,39 +264,6 @@ enum DivinationStyle {
     }
 }
 
-// MARK: - 小熊猫
-
-/// 码头自己的小熊猫（Resources/Pet），按名字取、缓存着（签卡分享图用）。
-struct DivinationPanda: View {
-    var name: String
-    var size: CGFloat
-
-    @MainActor private static var cache: [String: NSImage] = [:]
-
-    @MainActor private static func image(_ name: String) -> NSImage? {
-        if let cached = cache[name] { return cached }
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
-        cache[name] = image
-        return image
-    }
-
-    var body: some View {
-        Group {
-            if let image = Self.image(name) {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-            } else {
-                Circle().fill(Color(hex: "#E8743B").opacity(0.4))
-            }
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
-    }
-}
-
 // MARK: - 卦画
 
 /// 卦画：上爻在最上面。阳爻一整条，阴爻中间断开；变爻左边一个红点。

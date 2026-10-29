@@ -545,7 +545,7 @@ final class DivinationTests: XCTestCase {
 
     func testShellTossOrder() {
         for toss in [ShellToss.normal, ShellToss.fast] {
-            let marks = [0, toss.liftStart, toss.fallStart, toss.impact, toss.popStart(0), toss.landing(0),
+            let marks = [0, toss.shakeStart, toss.liftStart, toss.fallStart, toss.impact, toss.popStart(0), toss.landing(0),
                          toss.settled, toss.pickupStart, toss.total]
             XCTAssertEqual(marks, marks.sorted())
             XCTAssertEqual(Set(marks).count, marks.count, "每一步都占时间")
@@ -564,7 +564,7 @@ final class DivinationTests: XCTestCase {
         XCTAssertEqual(ShellToss.timing(fast: false), .normal)
     }
 
-    /// 三枚铜钱落在地面线上左中右错开，互不压着，也都在场景（内容宽 266、铜钱 30）里面。
+    /// 三枚铜钱落在小熊猫前面那排左中右错开，互不压着，也都在场景（内容宽 266、铜钱 30）里面。
     func testCoinLandingsAreSpreadAndInside() {
         let coin = 30.0
         let half = Divination.panelContentWidth / 2

@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 // MARK: - 卜卦 · 签卡分享图（Pro）
 //
-// 把当天的签（签号、签级、签诗、宜忌、白话、日期、小熊猫、码头水印；选了星座 / 属相时
+// 把当天的签（签号、签级、签诗、宜忌、白话、日期、捧着展开签纸的小熊猫、码头水印；选了星座 / 属相时
 // 再加徽章和幸运色、幸运数字）画成 360×640 的竖版卡片，ImageRenderer 按 3 倍出
 // 1080×1920 的 PNG。浅色宣纸底、深色墨底两款，配色固定（不跟面板玻璃走），尺寸和
 // 文件名在 Core 的 DivinationShareCard。面板里：预览、浅深切换、存储、拷贝、分享。
@@ -77,7 +77,8 @@ struct DivinationShareCardView: View {
             }
             Spacer(minLength: 12)
             HStack(alignment: .bottom) {
-                DivinationPanda(name: "pet-panda-cheer", size: 96)
+                // 和面板第三拍同一张：小熊猫双手捧着展开的签（卡片上签级已经写得很大，纸上不再写）。
+                DivinationPoseImage(pose: .qianRead, height: 96)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(verbatim: "码头 Dockling")

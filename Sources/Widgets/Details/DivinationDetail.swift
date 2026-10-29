@@ -119,7 +119,7 @@ struct DivinationDetail: View {
         // 外壳加本周寄语、收藏 / 签历 / 签卡入口（见 DivinationDailyExtras）。
         return DivinationStickHost(instance: instance, context: context, index: index) {
             VStack(spacing: 10) {
-                // 摇一摇 → 签飞出 → 展签看；签级写在小熊猫捧着的签纸上。
+                // 摇一摇 → 签蹦出来停在半空、小熊猫仰头看 → 签落进手里展开；签级写在签纸上。
                 DivinationStickScene(width: Self.width, height: 194, poseHeight: 184,
                                      index: todayIndex, shakes: tubeShakes)
                     .frame(maxWidth: .infinity)
@@ -186,7 +186,7 @@ struct DivinationDetail: View {
             DivinationPlay.play(.tick, for: instance)
             return
         }
-        // 摇一摇（哗啦）→ 签飞出那一刻抽签、「嗒」一声 → 展签，结果和下面的签文一起出来。
+        // 摇一摇（哗啦）→ 签蹦出来那一刻抽签、「嗒」一声 → 签落进手里展开，结果和下面的签文一起出来。
         stickBusy = true
         tubeShakes += 1
         DivinationPlay.play(.rattle, for: instance)
@@ -371,16 +371,17 @@ struct DivinationDetail: View {
             DivinationPlay.play(.clink, for: instance)
             return
         }
-        // 捧着摇（叮当）→ 跳起来举高 → 一摔，触地时记下这一爻 → 第一枚铜钱落地时放三声落地声 → 抱回龟甲。
+        // 捧起 → 捧着摇（叮当）→ 跳起来举高 → 一摔，触地时记下这一爻 → 第一枚铜钱落地时放三声落地声 → 抱回龟甲。
         castBusy = true
         tossFast = all
         tossCount += 1
-        DivinationPlay.play(.jingle, for: instance)
         let toss = ShellToss.timing(fast: all)
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(toss.shake))
+            try? await Task.sleep(for: .seconds(toss.shakeStart))
+            DivinationPlay.play(.jingle, for: instance)
+            try? await Task.sleep(for: .seconds(toss.liftStart - toss.shakeStart))
             DivinationSoundPlayer.stop(.jingle)
-            try? await Task.sleep(for: .seconds(toss.impact - toss.shake))
+            try? await Task.sleep(for: .seconds(toss.impact - toss.liftStart))
             DivinationPlay.toss(in: instance, question: question, all: all)
             try? await Task.sleep(for: .seconds(toss.clinkStart - toss.impact))
             DivinationPlay.play(.clink, for: instance)

@@ -369,11 +369,13 @@ extension WorryBook {
 
 // MARK: 起卦 · 捧龟甲、摔卦的节奏
 
-/// 小熊猫双爪捧着古龟甲左右摇（铜钱叮当）→ 举高 → 往地上一摔（越落越快，触地压扁回弹，
-/// 扬起一点土）→ 三枚铜钱按 `DivinationSoundSynth.clinkOffsets` 错开从壳口蹦出，
-/// 抛物线落地、弹两下停住 → 小熊猫把龟甲捡回手里。时间都是从按下起算的秒数。
+/// 照分解图：① 小熊猫双爪捧着古龟甲（轻轻往上一托）→ ② 捧着左右摇（铜钱叮当）→ ③ 蹲一下跳起来
+/// 举过头顶、停一下 → ③ 往地上一摔：落地蹲着把龟甲扣在面前（触地压扁回弹，扬起一点土），三枚铜钱按
+/// `DivinationSoundSynth.clinkOffsets` 错开从壳口蹦出，抛物线落在它前面的地上、弹两下停住 →
+/// ④ 把龟甲抱回来，铜钱留在地上。时间都是从按下起算的秒数，合计和原来一样（叮当、落地声按这里放）。
 /// 「一次起完」节奏快一些；减少动态效果时不走这套，直接出结果。
 public struct ShellToss: Equatable, Sendable {
+    public var hold: Double
     public var shake: Double
     public var lift: Double
     public var fall: Double
@@ -384,17 +386,18 @@ public struct ShellToss: Equatable, Sendable {
     public var rest: Double
     public var pickup: Double
 
-    public static let normal = ShellToss(shake: 0.62, lift: 0.18, fall: 0.2, squash: 0.16, pop: 0.04,
-                                         flight: 0.36, bounce: 0.18, rest: 0.18, pickup: 0.32)
-    public static let fast = ShellToss(shake: 0.34, lift: 0.12, fall: 0.16, squash: 0.12, pop: 0.03,
-                                       flight: 0.3, bounce: 0.14, rest: 0.08, pickup: 0.24)
+    public static let normal = ShellToss(hold: 0.36, shake: 0.42, lift: 0.36, fall: 0.12, squash: 0.12, pop: 0.03,
+                                         flight: 0.24, bounce: 0.1, rest: 0.04, pickup: 0.41)
+    public static let fast = ShellToss(hold: 0.2, shake: 0.2, lift: 0.22, fall: 0.1, squash: 0.1, pop: 0.03,
+                                       flight: 0.24, bounce: 0.1, rest: 0.04, pickup: 0.28)
 
     public static func timing(fast: Bool) -> ShellToss { fast ? .fast : .normal }
 
-    /// 举高开始、往下摔开始、触地。
-    public var liftStart: Double { shake }
-    public var fallStart: Double { shake + lift }
-    public var impact: Double { shake + lift + fall }
+    /// 开始摇（这时放叮当）、举高开始、往下摔开始、触地（这时记下这一爻）。
+    public var shakeStart: Double { hold }
+    public var liftStart: Double { hold + shake }
+    public var fallStart: Double { hold + shake + lift }
+    public var impact: Double { hold + shake + lift + fall }
 
     /// 第 i 枚铜钱出壳口、落地。
     public func popStart(_ i: Int) -> Double { impact + pop + DivinationSoundSynth.clinkOffsets[i] }
@@ -407,7 +410,7 @@ public struct ShellToss: Equatable, Sendable {
     public var pickupStart: Double { settled + rest }
     public var total: Double { pickupStart + pickup }
 
-    /// 三枚铜钱停下的位置：相对场景中心和地面线，按铜钱直径算（x 左右错开，y 前后错开一点）。
+    /// 三枚铜钱停下的位置：相对场景中线和小熊猫前面那排铜钱的中心线，按铜钱直径算（x 左右错开，y 前后错开一点）。
     public static let landings: [(x: Double, y: Double)] = [(-2.85, -0.08), (0.25, 0.22), (3.0, -0.15)]
 }
 
