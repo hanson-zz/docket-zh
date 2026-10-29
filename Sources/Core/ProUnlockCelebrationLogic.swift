@@ -225,6 +225,8 @@ public enum ProUnlockStyle: String, CaseIterable, Sendable {
     case recorderTools
     /// 加密货币的到价提醒。
     case cryptoAlerts
+    /// Codex 用量的精版（小熊猫 + 进度条）。简版免费。
+    case codexDetailed
 }
 
 /// 卡片上的胶囊标签：最有卖点的 5 个功能，第 6 个是“+N”。

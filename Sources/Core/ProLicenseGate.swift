@@ -98,15 +98,15 @@ public enum ProLicenseGate {
     /// 已在扩展栏上的这个小组件要不要盖小锁遮罩。
     ///
     /// 整种是 Pro 的小组件，和用了液态外观的小组件（电池、时间进度、喝水除外）
-    /// 要盖；这三种的液态和原来的赞助者外观有免费外观可退，退回去照常显示，不盖。天气的多城市和
-    /// 电池格要盖。便签的 Pro 纸色退回柠檬黄，不盖。预览（添加面板
+    /// 要盖；这三种的液态和原来的赞助者外观有免费外观可退，退回去照常显示，不盖。天气的多城市、
+    /// 电池格和 Codex 用量的精版要盖。便签的 Pro 纸色退回柠檬黄，不盖。预览（添加面板
     /// 的缩略图）从不盖。
     public static func needsLockOverlay(_ instance: WidgetInstance, unlocked: Bool, isPreview: Bool = false) -> Bool {
         guard !unlocked, !isPreview else { return false }
         if ProFeatures.isProKind(instance.kind) { return true }
         let values = instance.config.values
         switch instance.kind {
-        case .weather, .battery:
+        case .weather, .battery, .aiUsage:
             if ProFeatures.isKindProStyle(instance.kind, values) { return true }
         default:
             break

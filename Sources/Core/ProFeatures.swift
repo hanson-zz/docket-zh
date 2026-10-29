@@ -20,7 +20,8 @@ import Foundation
 ///   三款复古皮肤和五款新外观（`skin` 为经典以外的值；半圆表盘的经典免费）、
 ///   纪念日单个卡片的玻璃沙漏（`hourglass` 为 glass；线条沙漏和撕页免费，见 `AnniversaryLook`）、
 ///   世界时钟多城市卡片的天空格子（`look` 为 sky；普通格子免费，世界时钟整种、联系状态圆点、
-///   科普卡、菜单栏第二时区都免费，见 `WorldClockLook`）。喝水卡片
+///   科普卡、菜单栏第二时区都免费，见 `WorldClockLook`）、Codex 用量的精版（`layout` 为
+///   medium；简版免费，见 `CodexCard`）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
 ///   正在播放原来中卡上的三种卡带外观 2026-10-23 起搬成整种 Pro 的「复古卡带」。
 /// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
@@ -72,10 +73,12 @@ public enum ProFeatures {
     /// 鼠标停在 Pro 标识上时的提示。
     public static let help = tr("码头 Pro 专属，正式版推出后需要激活码解锁。")
 
-    /// 整种都是 Pro 的小组件，共 15 种：摸鱼时钟、环境音、播客、废纸篓、
-    /// GitHub、应用切换器、Codex 用量、小熊猫的竹篮、电子宠物，以及后来加进来的
+    /// 整种都是 Pro 的小组件，共 14 种：摸鱼时钟、环境音、播客、废纸篓、
+    /// GitHub、应用切换器、小熊猫的竹篮、电子宠物，以及后来加进来的
     /// 应用音量、股票、自选股、文件暂存、翻译、复古卡带（磁带、随身听、收录机三种机型，
     /// 原来是正在播放中卡的卡带外观）。
+    /// Codex 用量 2026-10-29 起改为免费：简版（状态 + 两个圆环）免费，精版（小熊猫 +
+    /// 进度条）是 Pro，见 `isKindProStyle`；液态小圆杯照旧是 Pro。
     /// 壁纸切换 2026-10-20 起改为免费，按时间自动换是 Pro。
     /// 加密货币行情 2026-10-20 起改为免费，到价提醒是 Pro（见
     /// `ProLicenseGate.canUseCryptoAlerts`）。
@@ -86,7 +89,7 @@ public enum ProFeatures {
     /// `ProLicenseGate.canUseRecorderTools`）。
     public static let proKinds: Set<WidgetKind> = [
         .slacker, .ambient, .podcast, .trash,
-        .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
+        .github, .appSwitcher, .perfectDay, .pet,
         .appVolume, .stock, .watchlist,
         .fileShelf, .translate, .cassette,
     ]
@@ -228,6 +231,9 @@ public enum ProFeatures {
             if case .string(let raw) = overrides[WorldClockLook.key] {
                 return (WorldClockLook(rawValue: raw) ?? WorldClockLook.legacy).isPro
             }
+        case .aiUsage:
+            // Codex 用量的精版是 Pro，简版（没存 layout 的老卡片也按它）免费。
+            if case .string(let layout) = overrides["layout"] { return layout == CodexCard.medium }
         case .water:
             // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。
             if case .string(let layout) = overrides[WaterLayout.key] { return layout == WaterLayout.character.rawValue }

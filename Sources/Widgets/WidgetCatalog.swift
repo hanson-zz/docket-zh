@@ -650,9 +650,10 @@ public enum WidgetCatalog {
 
         // Codex's own rate limits, read with the sign-in Codex keeps in
         // ~/.codex, and what Codex is doing from its recent session logs.
-        // 卡片两种：小（状态 + 两个圆环，没存 layout 的老卡片也按它）和中（小熊猫、
-        // 项目和正在做什么 + 两条进度条）。声音四项在设置里单独一组「声音」，
-        // 见 CodexChimeSettings。
+        // 卡片两种：简版（存的 layout 仍是 small，状态 + 两个圆环，没存 layout 的老卡片
+        // 也按它，免费）和精版（layout 为 medium，小熊猫、项目和正在做什么 + 两条进度条，
+        // Pro）。样式名用自己的键「简版」「精版」，不和别的小组件共用的「小」「中」混。
+        // 声音四项在设置里单独一组「声音」，见 CodexChimeSettings。
         Entry(kind: .aiUsage, name: tr("Codex 用量"), category: .ai,
               defaults: c(["layout": .string(CodexCard.small), "show": .string("used"), "notify": .bool(true),
                            "alertAt": .number(80), "notifyDone": .bool(true), "extras": .bool(false),
@@ -661,8 +662,8 @@ public enum WidgetCatalog {
                            CodexChimeSettings.waitingKey: .bool(true), CodexChimeSettings.doneKey: .bool(false),
                            CodexChimeSettings.quotaKey: .bool(false),
                            CodexChimeSettings.toneKey: .string(CodexChimeSettings.defaultTone)]),
-              variants: [(tr("小"), ["layout": .string(CodexCard.small)]),
-                         (tr("中"), ["layout": .string(CodexCard.medium)])],
+              variants: [(tr("简版"), ["layout": .string(CodexCard.small)]),
+                         (tr("精版"), ["layout": .string(CodexCard.medium)])],
               supportsCompact: false, selfContained: true),
     ]
 

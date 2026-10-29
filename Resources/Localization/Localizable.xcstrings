@@ -11421,6 +11421,28 @@
         }
       }
     },
+    "简版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple"
+          }
+        }
+      }
+    },
+    "精版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detailed"
+          }
+        }
+      }
+    },
     "中 ⇄ 英" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24989,13 +25011,13 @@
         }
       }
     },
-    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格（含专属沙漏面板）、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、纪念日玻璃沙漏、世界时钟多城市天空格子；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）；快速待办橙黄绿紫四色标签和按颜色筛选" : {
+    "小熊猫橙、樱花粉等底板配色；小组件自定义颜色和渐变背景；便签更多纸色；天气多城市（多城市样式和面板第 2 个城市起）、电池格（含专属沙漏面板）、时间进度四格、喝水小熊猫角色、收音机 8 款 Pro 外观、纪念日玻璃沙漏、世界时钟多城市天空格子、Codex 用量精版；习惯打卡第 4 个起和近七天报告；书签分组文件夹；专注历史统计（免费只看今天）；快速待办橙黄绿紫四色标签和按颜色筛选" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style (with its own hourglass panel), the Time Progress grid, the red panda Water character, 8 Pro Radio looks, the Anniversary Glass Hourglass and the World Clock sky cells for several cities; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only); Quick To-do's orange, yellow, green and purple tags and color filter"
+            "value" : "Shelf colors such as Red Panda Orange and Sakura Pink; custom widget colors and gradient backgrounds; more sticky note papers; multi-city weather (the Multiple cities style and a second city onward in the panel), the Battery Cells style (with its own hourglass panel), the Time Progress grid, the red panda Water character, 8 Pro Radio looks, the Anniversary Glass Hourglass, the World Clock sky cells for several cities and the Detailed Codex Usage card; a fourth habit and beyond, and the 7-day habit report; bookmark group folders; focus history (free shows today only); Quick To-do's orange, yellow, green and purple tags and color filter"
           }
         }
       }

@@ -7,18 +7,18 @@ final class ProFeaturesTests: XCTestCase {
     func testWholeKindsMatchTheAgreedList() {
         XCTAssertEqual(ProFeatures.proKinds, [
             .slacker, .ambient, .podcast, .trash,
-            .github, .appSwitcher, .aiUsage, .perfectDay, .pet,
+            .github, .appSwitcher, .perfectDay, .pet,
             .appVolume, .stock, .watchlist,
             .fileShelf, .translate, .cassette,
         ])
-        XCTAssertEqual(ProFeatures.proKinds.count, 15)
+        XCTAssertEqual(ProFeatures.proKinds.count, 14)
         for kind in ProFeatures.proKinds {
             XCTAssertNotNil(WidgetCatalog.entry(kind), "\(kind) 不在小组件目录里")
             XCTAssertTrue(ProFeatures.isPro(kind, overrides: [:]))
         }
         for kind in [WidgetKind.clock, .water, .battery, .network, .toggles, .calendar,
                      .weather, .notes, .todo, .photos, .aiAssistant, .downloads, .volume,
-                     .progress, .habit, .radio, .recorder, .wallpaper, .crypto] {
+                     .progress, .habit, .radio, .recorder, .wallpaper, .crypto, .aiUsage] {
             XCTAssertFalse(ProFeatures.isProKind(kind), "\(kind) 不是整种 Pro")
             XCTAssertFalse(ProFeatures.isPro(kind, overrides: [:]))
         }
@@ -106,8 +106,44 @@ final class ProFeaturesTests: XCTestCase {
     func testFreeAndProCountsOfTheLibrary() {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
-        XCTAssertEqual(pro.count, 15, "复古卡带是第 15 个")
-        XCTAssertEqual(kinds.count - pro.count, 47, "官网和 README 写的免费小组件数量（卜卦是第 47 个）")
+        XCTAssertEqual(pro.count, 14, "Codex 用量 2026-10-29 起不再整种 Pro")
+        XCTAssertEqual(kinds.count - pro.count, 48, "官网和 README 写的免费小组件数量（Codex 用量简版免费后是 48 个）")
+    }
+
+    func testCodexSimpleIsFreeAndDetailedIsPro() {
+        let entry = WidgetCatalog.entry(.aiUsage)!
+        XCTAssertEqual(entry.variants.map(\.title), ["简版", "精版"])
+        let simple = entry.variants[0].overrides
+        let detailed = entry.variants[1].overrides
+        // 简版：不标 Pro，免费能加、能选，放好了不盖锁。
+        XCTAssertFalse(ProFeatures.isProKind(.aiUsage))
+        XCTAssertFalse(ProFeatures.isPro(.aiUsage, overrides: simple), "简版不是 Pro")
+        XCTAssertFalse(ProFeatures.isProStyle(.aiUsage, simple))
+        XCTAssertTrue(ProLicenseGate.canAdd(.aiUsage, overrides: simple, unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canChoose(.aiUsage, simple, unlocked: false))
+        for config in [WidgetCatalog.make(.aiUsage)!.config, WidgetConfig(),
+                       WidgetConfig(["layout": .string(CodexCard.small)])] {
+            let placed = WidgetInstance(kind: .aiUsage, config: config)
+            XCTAssertFalse(ProFeatures.isPro(placed), "新建、没存 layout 的老卡片都按简版，免费")
+            XCTAssertFalse(ProLicenseGate.needsLockOverlay(placed, unlocked: false))
+        }
+        // 精版照旧是 Pro。
+        XCTAssertTrue(ProFeatures.isPro(.aiUsage, overrides: detailed), "精版是 Pro")
+        XCTAssertFalse(ProLicenseGate.canAdd(.aiUsage, overrides: detailed, unlocked: false))
+        XCTAssertTrue(ProLicenseGate.canAdd(.aiUsage, overrides: detailed, unlocked: true))
+        XCTAssertFalse(ProLicenseGate.canChoose(.aiUsage, detailed, unlocked: false))
+        let medium = WidgetInstance(kind: .aiUsage, config: WidgetConfig(["layout": .string(CodexCard.medium)]))
+        XCTAssertTrue(ProFeatures.isPro(medium))
+        XCTAssertTrue(ProLicenseGate.needsLockOverlay(medium, unlocked: false))
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(medium, unlocked: true))
+        // 简版的液态小圆杯照旧是 Pro，圆环免费。
+        XCTAssertTrue(ProFeatures.isProChoice(kind: .aiUsage, key: LiquidLooks.key, value: "liquid"))
+        XCTAssertFalse(ProFeatures.isProChoice(kind: .aiUsage, key: LiquidLooks.key,
+                                               value: LiquidLooks.CodexLook.ring.rawValue))
+        // 「小」「中」还是别的小组件的样式名，Codex 不再用它们。
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["layout": .string(CodexCard.medium)]),
+                                                  kind: .aiUsage), "精版")
+        XCTAssertTrue(ProUnlockStyle.allCases.contains(.codexDetailed))
     }
 
     func testWeatherCitiesIsPro() {

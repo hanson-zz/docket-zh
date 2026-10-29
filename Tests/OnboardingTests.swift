@@ -62,7 +62,7 @@ final class OnboardingTests: XCTestCase {
     }
 
     func testNoProWidgetsAreAdded() {
-        // 引导只加免费小组件，竹篮、播客、电子宠物、GitHub、Codex 用量等 Pro 小组件都不加。
+        // 引导只加免费小组件，竹篮、播客、电子宠物、GitHub 等 Pro 小组件都不加。
         let kinds = Onboarding.kinds(for: OnboardingUse.allCases, available: catalog)
         for kind in kinds {
             XCTAssertFalse(ProFeatures.isProKind(WidgetKind(rawValue: kind)!), kind)
@@ -74,7 +74,7 @@ final class OnboardingTests: XCTestCase {
         }
         // 就算候选里混进 Pro 的，也会被跳过。
         XCTAssertEqual(Onboarding.kinds(for: [OnboardingUse.developer],
-                                        available: ["github", "ai-usage", "clipboard", "color-picker"]),
+                                        available: ["github", "podcast", "clipboard", "color-picker"]),
                        ["clipboard", "color-picker"])
         XCTAssertTrue(Onboarding.isPro("perfect-day"))
         XCTAssertFalse(Onboarding.isPro("water"))

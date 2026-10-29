@@ -321,7 +321,8 @@ final class CodexSessionsTests: XCTestCase {
         let small = WidgetCatalog.make(.aiUsage)!
         let medium = WidgetCatalog.make(.aiUsage, overrides: ["layout": .string("medium")])!
         XCTAssertGreaterThan(WidgetCatalog.naturalSize(medium).width, WidgetCatalog.naturalSize(small).width)
-        XCTAssertEqual(WidgetCatalog.variantTitle(matching: medium.config, kind: .aiUsage), "中")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: medium.config, kind: .aiUsage), "精版")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: small.config, kind: .aiUsage), "简版")
     }
 
     func testLiquidLookOnlyOnTheSmallCardAndSoundKeysStayOutOfTheList() {
