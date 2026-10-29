@@ -14,6 +14,10 @@ import UniformTypeIdentifiers
 /// 粘贴的网址先读网页标题和图标（`LinkPreviewFetcher`，和卡片上自动读的是
 /// 同一套），读到后出一张预览，点“添加”才加进去。
 ///
+/// 右上“添加”打开添加书签表单（`BookmarkEditorForm`）：网址、名称和图标（网站
+/// 图标 / 文字 / 上传图片）；右键“编辑名称和图标…”或编辑态点图标，用同一张表单改。
+/// 选的图标存在 `icons`（见 `BookmarkIcons`），没选过的照原来画。
+///
 /// 列表照旧存在 `links`（见 `Bookmark`、`BookmarkList`），分组存在 `groups`
 /// （见 `BookmarkGroups`）。没解锁 Pro 时只显示“全部”，分组照旧存着。
 struct BookmarksDetail: View {
@@ -81,6 +85,8 @@ struct BookmarksDetail: View {
     private var entries: [String] { current.config.strings("links") }
     private var links: [Bookmark] { Bookmark.list(entries) }
     private var previews: [String: LinkPreview] { LinkPreview.stored(current.config) }
+    private var icons: [String: BookmarkIcon] { BookmarkIcons.stored(current.config) }
+    private var form: BookmarkFormState { BookmarkFormState.shared }
     private var groups: [BookmarkGroup] { BookmarkGroups.groups(current.config) }
     private var unlocked: Bool { ProAccess.isUnlocked || context.isPreview }
     private var shownTab: String? { BookmarkGroups.selectedTab(tab, groups: groups, unlocked: unlocked) }
@@ -93,10 +99,16 @@ struct BookmarksDetail: View {
             MeshBackdrop(color: WidgetStyle.tint(.orange))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                header
-                switch mode {
-                case .browse: browse
-                case .edit: edit
+                if form.isOpen(for: instance.id) {
+                    BookmarkEditorForm(instance: current, context: context, accent: accent, accentInk: accentInk,
+                                       group: shownTab, unlocked: unlocked) { revision += 1 }
+                        .transition(.opacity)
+                } else {
+                    header
+                    switch mode {
+                    case .browse: browse
+                    case .edit: edit
+                    }
                 }
             }
             // 改名框失去焦点（点了别处）也算改好了。
@@ -145,7 +157,7 @@ struct BookmarksDetail: View {
                 Text(mode == .browse ? tr("书签") : tr("编辑书签"))
                     .font(.system(size: 19, weight: .bold))
                     .foregroundStyle(.panelPrimary)
-                Text(mode == .browse ? tr("\(links.count) 个网址 · 点开用默认浏览器") : tr("拖动排序 · 点名字改名"))
+                Text(mode == .browse ? tr("\(links.count) 个网址") : tr("拖动排序 · 点名字改名"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
@@ -155,6 +167,7 @@ struct BookmarksDetail: View {
             Spacer(minLength: 0)
             if !context.isPreview {
                 if mode == .browse, !links.isEmpty { refreshButton }
+                if mode == .browse { addButton }
                 modeButton
             }
         }
@@ -181,6 +194,43 @@ struct BookmarksDetail: View {
         .disabled(!refreshing.isEmpty)
         .help(tr("刷新全部预览"))
         .accessibilityLabel(tr("刷新全部预览"))
+    }
+
+    /// 打开添加书签表单。
+    private var addButton: some View {
+        Button { openForm(nil) } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .bold))
+                Text(tr("添加"))
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .foregroundStyle(accentInk)
+            .padding(.horizontal, 12)
+            .frame(height: 28)
+            .background(Capsule().fill(accent))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(tr("添加书签：网址、名称和图标"))
+        .accessibilityLabel(tr("添加书签"))
+    }
+
+    /// 打开表单：`link` 为 nil 是新加（带上添加框里已经粘贴的网址），否则编辑那一个。
+    private func openForm(_ link: Bookmark?) {
+        guard !context.isPreview else { return }
+        commitRename()
+        withAnimation(.snappy(duration: 0.2)) {
+            if let link {
+                let key = link.url.absoluteString
+                form.startEditing(in: instance.id, link: link, preview: previews[key],
+                                  icon: BookmarkIcons.icon(for: link.url, in: icons))
+            } else {
+                let typed = newLink.trimmingCharacters(in: .whitespacesAndNewlines)
+                form.startAdding(in: instance.id, address: Bookmark.parseAddress(typed)?.absoluteString ?? "")
+            }
+            pending = nil
+        }
     }
 
     @ViewBuilder
@@ -233,7 +283,7 @@ struct BookmarksDetail: View {
         pendingCard
         if links.isEmpty {
             PandaEmptyState(empty: .bookmarks, title: tr("添加书签"), panel: true) {
-                WidgetDetailWindow.shared.focusField { focus = .add }
+                openForm(nil)
             }
             .frame(height: 120)
         } else if visible.isEmpty {
@@ -441,8 +491,8 @@ struct BookmarksDetail: View {
             let link = Bookmark(parsing: pending.text) ?? Bookmark(title: Bookmark.shortHost(pending.url), url: pending.url)
             let title = link.displayTitle(pending.preview)
             HStack(spacing: 10) {
-                BookmarkSquare(link: Bookmark(title: title, url: pending.url),
-                               icon: pending.preview?.failed == false ? pending.preview?.icon : nil, size: 32)
+                BookmarkSquare(link: Bookmark(title: title, url: pending.url), icon: nil,
+                               pageIcon: pending.preview?.icon, size: 32, autoFetch: !pending.loading)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: title)
                         .font(.system(size: 14, weight: .semibold))
@@ -546,7 +596,9 @@ struct BookmarksDetail: View {
             VStack(spacing: 7) {
                 ZStack(alignment: .topTrailing) {
                     BookmarkSquare(link: Bookmark(title: title, url: link.url),
-                                   icon: preview?.failed == false ? preview?.icon : nil, size: 48)
+                                   icon: BookmarkIcons.icon(for: link.url, in: icons),
+                                   pageIcon: preview?.icon, size: 48,
+                                   autoFetch: !LinkPreview.needsFetch(link.url, stored: preview))
                     if refreshing.contains(key) {
                         ProgressView().controlSize(.mini).offset(x: 6, y: -6)
                     }
@@ -571,6 +623,9 @@ struct BookmarksDetail: View {
     private func menu(_ link: Bookmark) -> some View {
         let key = link.url.absoluteString
         Button(tr("打开")) { NSWorkspace.shared.open(link.url) }
+        if !context.isPreview {
+            Button(tr("编辑名称和图标…")) { openForm(link) }
+        }
         Button(tr("拷贝网址")) {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(key, forType: .string)
@@ -709,8 +764,15 @@ struct BookmarksDetail: View {
             }
             HStack(spacing: 10) {
                 handle(link, index: index, list: list, lifted: lifted)
-                BookmarkSquare(link: Bookmark(title: title, url: link.url),
-                               icon: preview?.failed == false ? preview?.icon : nil, size: 28)
+                Button { openForm(link) } label: {
+                    BookmarkSquare(link: Bookmark(title: title, url: link.url),
+                                   icon: BookmarkIcons.icon(for: link.url, in: icons),
+                                   pageIcon: preview?.icon, size: 28,
+                                   autoFetch: !LinkPreview.needsFetch(link.url, stored: preview))
+                }
+                .buttonStyle(.plain)
+                .help(tr("换图标"))
+                .accessibilityLabel(tr("编辑\(title)的名称和图标"))
                 VStack(alignment: .leading, spacing: 2) {
                     if renaming == key {
                         TextField("", text: $renameText, prompt: Text(verbatim: title))
@@ -935,11 +997,11 @@ struct BookmarksDetail: View {
 
     private func write(_ change: (inout WidgetConfig) -> Void) {
         guard !context.isPreview else { return }
-        WidgetWriter.write(current, change)
+        BookmarkConfigWriter.write(current, change)
         revision += 1
     }
 
-    /// 写回书签列表，顺手清掉已经删掉的书签的预览；解锁时也清掉分组里的旧网址
+    /// 写回书签列表，顺手清掉已经删掉的书签的预览和图标（上传的图片文件一起删）；解锁时也清掉分组里的旧网址
     /// （没解锁时分组一个字不动）。
     private func saveLinks(_ next: [String]) {
         let prune = unlocked
@@ -947,6 +1009,7 @@ struct BookmarksDetail: View {
         write { config in
             config.set("links", .list(next.map { .string($0) }))
             LinkPreview.store([], in: &config)
+            BookmarkIcons.prune(&config)
             if prune, !groupsNow.isEmpty {
                 BookmarkGroups.write(BookmarkGroups.pruned(groupsNow, links: Bookmark.list(next)), into: &config)
             }
@@ -990,46 +1053,16 @@ struct BookmarksDetail: View {
     }
 }
 
-/// 网格里的网站图标：读到网页图标时放在白色圆角方块上，没有时是首字加按
-/// 域名取的颜色。
+/// 网格里的网站图标：圆角方块。画法见 `BookmarkGlyph`：选过的文字图标、上传
+/// 的图片；没选过时有本地缓存的网站图标就放在白色底板上，没有是首字加按域名取的颜色。
 struct BookmarkSquare: View {
     var link: Bookmark
-    var icon: String?
+    var icon: BookmarkIcon?
+    var pageIcon: String?
     var size: CGFloat
-
-    private static let palette: [PaletteColor] = [.blue, .orange, .green, .pink, .purple, .teal, .red, .indigo]
-
-    private var radius: CGFloat { size * 0.27 }
+    var autoFetch: Bool = true
 
     var body: some View {
-        Group {
-            if let icon, let url = URL(string: icon) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-                            .padding(size * 0.18)
-                            .frame(width: size, height: size)
-                            .background(RoundedRectangle(cornerRadius: radius, style: .continuous)
-                                .fill(.white.opacity(0.92)))
-                    } else {
-                        letter
-                    }
-                }
-            } else {
-                letter
-            }
-        }
-        .frame(width: size, height: size)
-        .clipShape(.rect(cornerRadius: radius, style: .continuous))
-        .accessibilityHidden(true)
-    }
-
-    private var letter: some View {
-        let colour = WidgetStyle.tint(Self.palette[link.paletteIndex(count: Self.palette.count)])
-        return Text(link.initial)
-            .font(.system(size: size * 0.5, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(width: size, height: size)
-            .background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(colour.gradient))
+        BookmarkGlyph(link: link, icon: icon, pageIcon: pageIcon, size: size, round: false, autoFetch: autoFetch)
     }
 }

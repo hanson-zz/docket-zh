@@ -991,6 +991,17 @@
         }
       }
     },
+    "%@ 个网址" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ links"
+          }
+        }
+      }
+    },
     "%@ 个议题" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2036,6 +2047,17 @@
         }
       }
     },
+    "1 到 2 个字，空着用名称首字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 or 2 characters; empty uses the name's first letter"
+          }
+        }
+      }
+    },
     "3 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2109,6 +2131,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemini uses Google's OpenAI-compatible endpoint. See the Gemini API docs for model names."
+          }
+        }
+      }
+    },
+    "PNG、JPG、ICO 等，缩小后存在本机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG, JPG, ICO and more, shrunk and kept on this Mac"
           }
         }
       }
@@ -2362,6 +2395,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from Shelf"
+          }
+        }
+      }
+    },
+    "保存并继续" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and Add Another"
+          }
+        }
+      }
+    },
+    "先选一张图片，或者换成文字图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a picture first, or switch to a text icon"
           }
         }
       }
@@ -2773,6 +2828,17 @@
         }
       }
     },
+    "填好网址，回车或点“获取图标”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the address, then press Return or Get Icon"
+          }
+        }
+      }
+    },
     "复制一段文字，点下面翻译" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2850,6 +2916,17 @@
         }
       }
     },
+    "已保存「%@」，接着加下一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved \"%@\". Add the next one"
+          }
+        }
+      }
+    },
     "已完成 %@ / %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2857,6 +2934,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ of %@ done"
+          }
+        }
+      }
+    },
+    "已获取网站图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got the site's icon"
           }
         }
       }
@@ -3103,6 +3191,17 @@
         }
       }
     },
+    "换图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon"
+          }
+        }
+      }
+    },
     "排列…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3165,6 +3264,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Overall %@"
+          }
+        }
+      }
+    },
+    "新书签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Bookmark"
           }
         }
       }
@@ -3367,6 +3477,94 @@
         }
       }
     },
+    "没取到图标，可以用文字或上传" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No icon found. Use text or upload a picture"
+          }
+        }
+      }
+    },
+    "添加书签：网址、名称和图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a bookmark: address, name and icon"
+          }
+        }
+      }
+    },
+    "点“获取图标”读取网站图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Get Icon to read the site's icon"
+          }
+        }
+      }
+    },
+    "用网站自己的图标，存在本机，不会每次联网" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The site's own icon, kept on this Mac, not fetched on every redraw"
+          }
+        }
+      }
+    },
+    "空着就用网页标题" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty uses the page title"
+          }
+        }
+      }
+    },
+    "编辑%@的名称和图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit the name and icon of %@"
+          }
+        }
+      }
+    },
+    "编辑名称和图标…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Name and Icon…"
+          }
+        }
+      }
+    },
+    "网站图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site Icon"
+          }
+        }
+      }
+    },
     "翻页方向" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3385,6 +3583,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vertical paging"
+          }
+        }
+      }
+    },
+    "获取图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Icon"
+          }
+        }
+      }
+    },
+    "读不出这张图片，换一张试试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read that picture. Try another one"
+          }
+        }
+      }
+    },
+    "读网页标题，按顺序试页面图标、apple-touch-icon 和 favicon.ico" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads the page title, then tries the page's icon, apple-touch-icon and favicon.ico in turn"
+          }
+        }
+      }
+    },
+    "这个网站没有可用的图标，卡片上画首字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This site has no usable icon, so the card shows its first letter"
+          }
+        }
+      }
+    },
+    "选一张图片做书签图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a picture for the bookmark icon"
           }
         }
       }
@@ -4067,6 +4320,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "due"
+          }
+        }
+      }
+    },
+    "颜色 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color %@"
           }
         }
       }

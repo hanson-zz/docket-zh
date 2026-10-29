@@ -2,11 +2,13 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A row of links, each a lettered disc; a click opens it in the default
-/// browser.
+/// A row of links, each a disc; a click opens it in the default browser.
 ///
-/// No favicons on the shelf: drawing one means a picture per link on every
-/// redraw. A letter on a colour from the host tells them apart just as well.
+/// 每个圆画书签自己选的图标（文字图标、上传的图片，见 `BookmarkIcons`）；没选过
+/// 时有本地缓存的网站图标就画图标，没有就是原来的首字色块。图片都是
+/// `BookmarkIconStore` 内存里的 `NSImage`，重画不联网、不读盘：第一次见到某个
+/// 网站时读一次缓存文件，没有才联网取一次（网页预览读到之后，先试页面自己写的
+/// icon），取到的缩小存盘，下次启动直接用。
 /// Each page's title and summary are read once, when the link is first seen
 /// (see `LinkPreview`), kept in the widget's config, and shown in the disc's
 /// tooltip and in the panel; a link without a title of its own takes its
@@ -20,6 +22,7 @@ struct BookmarksTile: View {
     }
 
     private var previews: [String: LinkPreview] { LinkPreview.stored(instance.config) }
+    private var icons: [String: BookmarkIcon] { BookmarkIcons.stored(instance.config) }
 
     /// 拖着链接停在卡片上。
     @State private var targeted = false
@@ -42,13 +45,15 @@ struct BookmarksTile: View {
             if links.isEmpty {
                 PandaEmptyTile(empty: .bookmarks, title: tr("添加书签"), instance: instance, context: context)
             } else if column {
+                let stored = previews, chosen = icons
                 LazyVGrid(columns: [GridItem(.fixed(30), spacing: 4), GridItem(.fixed(30), spacing: 4)],
                           spacing: 4) {
-                    ForEach(Array(links.enumerated()), id: \.offset) { _, link in disc(link) }
+                    ForEach(Array(links.enumerated()), id: \.offset) { _, link in disc(link, stored, chosen) }
                 }
             } else {
+                let stored = previews, chosen = icons
                 HStack(spacing: 6) {
-                    ForEach(Array(links.enumerated()), id: \.offset) { _, link in disc(link) }
+                    ForEach(Array(links.enumerated()), id: \.offset) { _, link in disc(link, stored, chosen) }
                 }
             }
         }
@@ -70,7 +75,8 @@ struct BookmarksTile: View {
         }
     }
 
-    private func disc(_ link: Bookmark) -> some View {
+    private func disc(_ link: Bookmark, _ previews: [String: LinkPreview],
+                      _ icons: [String: BookmarkIcon]) -> some View {
         let preview = previews[link.url.absoluteString]
         let title = link.displayTitle(preview)
         let summary = preview?.hasContent == true ? preview?.summary : nil
@@ -78,7 +84,9 @@ struct BookmarksTile: View {
             guard !context.isPreview else { return }
             NSWorkspace.shared.open(link.url)
         } label: {
-            BookmarkBadge(link: Bookmark(title: title, url: link.url), size: 30)
+            BookmarkBadge(link: Bookmark(title: title, url: link.url), size: 30,
+                          icon: BookmarkIcons.icon(for: link.url, in: icons), pageIcon: preview?.icon,
+                          autoFetch: !context.isPreview && !LinkPreview.needsFetch(link.url, stored: preview))
         }
         .buttonStyle(.plain)
         .help([title, summary, link.url.absoluteString].compactMap { $0 }.joined(separator: "\n"))
@@ -94,20 +102,15 @@ enum BookmarkPreviews {
     }
 }
 
-/// A link's letter on its colour.
+/// 卡片上的一个圆：书签选的图标、缓存的网站图标，或者首字色块（见 `BookmarkGlyph`）。
 struct BookmarkBadge: View {
     var link: Bookmark
     var size: CGFloat
-
-    private static let palette: [PaletteColor] = [.blue, .orange, .green, .pink, .purple, .teal, .red, .indigo]
+    var icon: BookmarkIcon? = nil
+    var pageIcon: String? = nil
+    var autoFetch: Bool = false
 
     var body: some View {
-        let colour = WidgetStyle.tint(Self.palette[link.paletteIndex(count: Self.palette.count)])
-        Text(link.initial)
-            .font(.system(size: size * 0.46, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(width: size, height: size)
-            .background(Circle().fill(colour.gradient))
-            .contentShape(Circle())
+        BookmarkGlyph(link: link, icon: icon, pageIcon: pageIcon, size: size, round: true, autoFetch: autoFetch)
     }
 }

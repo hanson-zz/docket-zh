@@ -881,6 +881,14 @@ private struct DCFBookmarks: View {
 
     private var links: [Bookmark] { Bookmark.list(widget.config.strings("links")) }
     private var previews: [String: LinkPreview] { LinkPreview.stored(widget.config) }
+    private var icons: [String: BookmarkIcon] { BookmarkIcons.stored(widget.config) }
+
+    /// 书签选的图标或缓存的网站图标（见 `BookmarkGlyph`），只读缓存，联网由扩展栏卡片和面板做。
+    private func badge(_ link: Bookmark, name: String, size: CGFloat, icons: [String: BookmarkIcon]) -> some View {
+        BookmarkBadge(link: Bookmark(title: name, url: link.url), size: size,
+                      icon: BookmarkIcons.icon(for: link.url, in: icons),
+                      pageIcon: previews[link.url.absoluteString]?.icon)
+    }
 
     var body: some View {
         Group {
@@ -914,6 +922,7 @@ private struct DCFBookmarks: View {
     private var grid: some View {
         let plan = DesktopCardsFilesPlan.bookmarkGrid(size)
         let all = links
+        let chosen = icons
         let slots = DesktopCardsFilesPlan.slots(total: all.count, capacity: plan.capacity)
         let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: plan.columns)
         return LazyVGrid(columns: columns, spacing: 8) {
@@ -921,7 +930,7 @@ private struct DCFBookmarks: View {
                 let name = title(link)
                 Button { open(link) } label: {
                     VStack(spacing: 4) {
-                        BookmarkBadge(link: Bookmark(title: name, url: link.url), size: 40)
+                        badge(link, name: name, size: 40, icons: chosen)
                         Text(verbatim: name)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.panelPrimary)
@@ -949,6 +958,7 @@ private struct DCFBookmarks: View {
     private var list: some View {
         let plan = DesktopCardsFilesPlan.bookmarkGrid(.large)
         let all = links
+        let chosen = icons
         let slots = DesktopCardsFilesPlan.slots(total: all.count, capacity: plan.rows)
         return VStack(alignment: .leading, spacing: 5) {
             DCFHeader(symbol: "bookmark.fill", title: tr("书签"), accent: accent, big: true,
@@ -959,7 +969,7 @@ private struct DCFBookmarks: View {
                 let name = title(link)
                 Button { open(link) } label: {
                     HStack(spacing: 10) {
-                        BookmarkBadge(link: Bookmark(title: name, url: link.url), size: 30)
+                        badge(link, name: name, size: 30, icons: chosen)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(verbatim: name)
                                 .font(.system(size: 14, weight: .semibold))
