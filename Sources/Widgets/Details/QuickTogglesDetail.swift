@@ -38,8 +38,9 @@ struct QuickTogglesDetail: View {
         // 每 30 秒重画一次，保持唤醒的剩余时间跟着走。
         TimelineView(.periodic(from: .now, by: 30)) { tick in
             DetailCard {
+                // 液态玻璃跟随浅色/深色：原来这里铺了一层固定的深色实心底，
+                // 浅色模式下文字变深色，整块看不见。只留角上一抹主题色。
                 ZStack {
-                    Color(hex: SystemActivityStyle.base)
                     RadialGradient(colors: [accent.opacity(0.13), .clear],
                                    center: UnitPoint(x: 0.95, y: 0), startRadius: 0, endRadius: 200)
                 }
