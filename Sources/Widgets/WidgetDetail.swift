@@ -689,6 +689,8 @@ enum WidgetDetail {
         case .minesweeper: CGFloat(Minesweeper.panelWidth)
         // 拔牙：和同组的扫雷一样 340，河马按卡片真实内容宽画（PullTooth.panelContentWidth）。
         case .pullTooth: CGFloat(PullTooth.panelWidth)
+        // 卜卦：和同组的扫雷、拔牙一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
+        case .divination: CGFloat(Divination.panelWidth)
         // 相册按第二批效果图改成 320。
         case .photos: 320
         // 最近截图改版：搜索、筛选、多选和标注，和下载一样 320。

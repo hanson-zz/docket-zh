@@ -290,6 +290,8 @@ public enum WidgetTint {
         case .minesweeper: Palette("#E8743B", "#6DBE45")
         // 拔牙：大数字的树莓粉，对比色是河马的淡紫。
         case .pullTooth: Palette("#E5487A", "#9C88D8")
+        // 卜卦：签级的喜庆红，对比色是铜钱金。
+        case .divination: Palette("#C8382E", "#D4A63A")
         }
     }
 

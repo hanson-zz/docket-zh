@@ -21,6 +21,7 @@ public enum WidgetSearch {
         "music": ["music", "now playing", "spotify", "音乐", "歌曲", "播放", "网易云", "netease", "cloudmusic", "qq音乐", "qq 音乐", "qqmusic", "小宇宙", "播客", "podcast", "xiaoyuzhou"],
         "minesweeper": ["minesweeper", "mines", "mine", "game", "puzzle", "saolei", "扫雷", "地雷", "游戏", "小游戏", "益智"],
         "pull-tooth": ["pull a tooth", "tooth", "teeth", "hippo", "dentist", "game", "party game", "baya", "拔牙", "牙齿", "河马", "小游戏", "游戏", "派对", "啊呜"],
+        "divination": ["fortune", "fortune stick", "iching", "i ching", "yijing", "zhouyi", "hexagram", "oracle", "divination", "bugua", "卜卦", "抽签", "求签", "每日一签", "签", "易经", "周易", "算卦", "起卦", "六十四卦", "铜钱", "解忧书", "答案", "占卜", "运势"],
         "cassette": ["cassette", "tape", "walkman", "boombox", "retro", "磁带", "卡带", "复古", "随身听", "收录机", "音乐", "播放"],
         "battery": ["battery", "电量", "充电"],
         "system": ["system", "cpu", "memory", "内存", "处理器"],

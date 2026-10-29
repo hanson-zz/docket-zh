@@ -405,6 +405,7 @@ public enum DesktopPinSupport {
         if DesktopCardsFilesPlan.handles(kind) { return .dedicated }
         if DesktopCardsGamesPlan.handles(kind) { return .dedicated }
         if DesktopCardsToothPlan.handles(kind) { return .dedicated }
+        if DesktopCardsDivinationPlan.handles(kind) { return .dedicated }
         guard hasDetail, !excludedKinds.contains(kind), panelWidth <= maxGenericPanelWidth else { return .none }
         return .generic
     }

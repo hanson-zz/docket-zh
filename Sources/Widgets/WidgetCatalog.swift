@@ -420,6 +420,12 @@ public enum WidgetCatalog {
         Entry(kind: .pullTooth, name: tr("拔牙"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 卜卦（免费）：今天的签、起卦记录、解忧书翻过的页、停在哪页和音效开关都由卡片和面板
+        // 写进配置（Divination 的 stickDay、stick、history、casting、bookRecent、page、sound），
+        // 不放进默认值，设置页不列。
+        Entry(kind: .divination, name: tr("卜卦"), category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
         // 收藏和按时间自动换（Pro）在面板里设，存在 favorites、autoChange 这些键里
         // （见 WallpaperSchedule），设置里不列。
@@ -714,7 +720,7 @@ public enum WidgetCatalog {
              .translate,
              .github,
              .microphone, .gauges,
-             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth, .divination:
             nil
         }
     }
@@ -956,7 +962,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth, .divination:
             nil
         }
     }
@@ -1042,6 +1048,9 @@ public enum WidgetCatalog {
         // 拔牙：河马缩略图、已拔几颗和最高连拔、重开键。
         case .pullTooth:
             return CGSize(width: PullTooth.tileWidth, height: PullTooth.tileHeight)
+        // 卜卦：小熊猫、今日签级和签号。
+        case .divination:
+            return CGSize(width: Divination.tileWidth, height: Divination.tileHeight)
         case .battery:
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
@@ -1299,6 +1308,9 @@ public enum WidgetCatalog {
         // 拔牙：缩略图加两行读数。
         case .pullTooth:
             return PullTooth.columnHeight
+        // 卜卦：小熊猫在上，签级在下。
+        case .divination:
+            return Divination.columnHeight
         default:
             return 76
         }

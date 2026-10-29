@@ -125,6 +125,8 @@ struct WidgetDetailBody: View {
             MinesweeperDetail(instance: instance, context: context)
         case .pullTooth:
             PullToothDetail(instance: instance, context: context)
+        case .divination:
+            DivinationDetail(instance: instance, context: context)
         case .emoji:
             EmojiDetail(instance: instance, context: context)
         case .toggles:
