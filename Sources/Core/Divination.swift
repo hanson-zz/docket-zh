@@ -708,8 +708,50 @@ public enum DesktopCardsDivinationPlan {
     public static let largePoseHeight: Double = 72
     public static let largeSpacing: Double = 8
 
-    /// 中号、大号能起卦。
+    /// 中号、大号能起卦（小号 160×160 只放今日签）。
     public static func canCast(_ size: DesktopPinSize) -> Bool { size != .small }
+
+    /// 起卦那一块的宽：中号是卡片宽减边距、签那一列和间距（176），大号整行（316）。
+    public static func castBlockWidth(_ size: DesktopPinSize) -> Double {
+        let inner = size.width - inset(size) * 2
+        return size == .medium ? inner - mediumStickWidth - mediumSpacing : inner
+    }
+
+    /// 起卦小场景：和面板同一套五拍（捧 → 摇 → 跳起举高 → 一摔、铜钱蹦出 → 捡回），按卡片缩小。
+    /// 小熊猫靠左，铜钱在它右边脚底那条线上排成一排、小一号，捡回以后留在地上显示这一爻；
+    /// 右边放卦画。小号不起卦，没有场景。
+    public static func castLayout(_ size: DesktopPinSize) -> ShellToss.Layout? {
+        switch size {
+        case .small: nil
+        case .medium: ShellToss.Layout(sceneWidth: 92, sceneHeight: 56, poseHeight: 45, footY: 53, coin: 12,
+                                       coinRowY: 47, pandaX: 27, coinsInRow: true)
+        case .large: ShellToss.Layout(sceneWidth: 120, sceneHeight: 70, poseHeight: 57, footY: 67, coin: 15,
+                                      coinRowY: 59.5, pandaX: 34, coinsInRow: true)
+        }
+    }
+
+    /// 起卦那一行里场景和卦画之间的间距、卦画（一爻）的宽；块里上下各行的间距。
+    public static func castRowSpacing(_ size: DesktopPinSize) -> Double { size == .large ? 10 : 6 }
+    public static func figureWidth(_ size: DesktopPinSize) -> Double { size == .large ? 30 : 20 }
+    public static func castSpacing(_ size: DesktopPinSize) -> Double { size == .large ? 6 : 4 }
+    /// 卦画（一爻）的高、爻间距，和本卦、箭头、变卦之间的间距。
+    public static let figureLineHeight: Double = 5
+    public static let figureLineSpacing: Double = 3
+    public static func figureGap(_ size: DesktopPinSize) -> Double { size == .large ? 8 : 4 }
+    /// 箭头（11pt）大约的宽。
+    public static let arrowWidth: Double = 11
+
+    /// 本卦 → 变卦两张卦画加箭头的总宽（每张卦画左边还有一个变爻圆点和 4 的间距）。
+    public static func figuresWidth(_ size: DesktopPinSize) -> Double {
+        let one = figureLineHeight * 0.9 + 4 + figureWidth(size)
+        return one * 2 + arrowWidth + figureGap(size) * 2
+    }
+
+    /// 大号卦名写在卦画下面（和场景同一行）；中号那一行只有 76 宽，卦名另起一行。
+    public static func nameBesideFigures(_ size: DesktopPinSize) -> Bool { size == .large }
+
+    /// 一张卦画的高（六爻）。
+    public static var figureHeight: Double { figureLineHeight * 6 + figureLineSpacing * 5 }
 }
 
 // MARK: - 音效合成

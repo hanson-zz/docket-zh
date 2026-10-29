@@ -222,7 +222,7 @@ struct DivinationDetail: View {
             } else {
                 viewingBar(casting)
             }
-            ShellTossScene(width: Self.width, faces: casting.tosses.last, throwCount: tossCount, fast: tossFast,
+            ShellTossScene(faces: casting.tosses.last, throwCount: tossCount, fast: tossFast,
                            tossed: casting.count > 0)
                 .frame(maxWidth: .infinity)
             Text(Divination.castingSummary(casting))
@@ -375,17 +375,9 @@ struct DivinationDetail: View {
         castBusy = true
         tossFast = all
         tossCount += 1
-        let toss = ShellToss.timing(fast: all)
+        let asked = question
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(toss.shakeStart))
-            DivinationPlay.play(.jingle, for: instance)
-            try? await Task.sleep(for: .seconds(toss.liftStart - toss.shakeStart))
-            DivinationSoundPlayer.stop(.jingle)
-            try? await Task.sleep(for: .seconds(toss.impact - toss.liftStart))
-            DivinationPlay.toss(in: instance, question: question, all: all)
-            try? await Task.sleep(for: .seconds(toss.clinkStart - toss.impact))
-            DivinationPlay.play(.clink, for: instance)
-            try? await Task.sleep(for: .seconds(toss.total - toss.clinkStart))
+            await DivinationPlay.performToss(in: instance, question: asked, all: all)
             castBusy = false
         }
     }

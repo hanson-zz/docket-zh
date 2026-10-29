@@ -236,17 +236,25 @@ final class DivinationArtTests: XCTestCase {
     func testCoinsLandInFrontOfThePanda() {
         let l = ShellToss.panelLayout
         let half = Divination.panelContentWidth / 2
+        XCTAssertEqual(l.sceneWidth, Divination.panelContentWidth)
+        XCTAssertEqual(l.pandaX, half, "面板小熊猫在中线上")
+        XCTAssertFalse(l.coinsInRow)
+        XCTAssertEqual(l.scale, 1, accuracy: 0.0001)
+        XCTAssertEqual(l.jumpHeight, 14, accuracy: 0.0001, "面板跳起高度和原来一样")
+        XCTAssertEqual(l.coinArc(0), 40, accuracy: 0.0001)
         for i in 0..<3 {
             let spot = l.landing(i)
             XCTAssertGreaterThan(spot.y - l.coin / 2, l.footY + 2, "铜钱顶边在脚底下面")
             XCTAssertLessThanOrEqual(spot.y + l.coin / 2, l.sceneHeight, "不被场景底边裁掉")
-            XCTAssertLessThanOrEqual(abs(spot.x) + l.coin / 2, half)
+            XCTAssertGreaterThanOrEqual(spot.x - l.coin / 2, 0)
+            XCTAssertLessThanOrEqual(spot.x + l.coin / 2, l.sceneWidth)
+            XCTAssertEqual(spot.x, half + ShellToss.landings[i].x * l.coin, accuracy: 0.0001, "面板落点和原来一样")
         }
         // 跳到最高处（14pt）举着龟甲的那张图顶边也在场景里。
-        XCTAssertGreaterThanOrEqual(l.footY - l.poseHeight * DivinationPose.castRaise.heightScale - 14, 0)
+        XCTAssertGreaterThanOrEqual(l.footY - l.poseHeight * DivinationPose.castRaise.heightScale - l.jumpHeight, 0)
         // 壳口在一摔图里靠下、在小熊猫前面偏右，铜钱从那里往下往前落。
         let mouth = DivinationPose.castSlam.scenePoint(DivinationArt.slamMouth.x, DivinationArt.slamMouth.y,
-                                                       poseHeight: l.poseHeight, centerX: half, bottom: l.footY)
+                                                       poseHeight: l.poseHeight, centerX: l.pandaX, bottom: l.footY)
         XCTAssertGreaterThan(mouth.x, half)
         XCTAssertLessThan(mouth.y, l.footY)
         XCTAssertGreaterThan(mouth.y, l.footY - l.poseHeight * 0.3)
@@ -301,6 +309,168 @@ final class DivinationArtTests: XCTestCase {
         let top = pose.scenePoint(0.5, 0, poseHeight: 136, centerX: 133, bottom: 152)
         XCTAssertEqual(top.y, 152 - 136 * pose.heightScale, accuracy: 0.0001)
         XCTAssertEqual(top.x - 133, pose.centerOffset(poseHeight: 136), accuracy: 0.0001)
+    }
+
+    // MARK: 桌面卡片起卦
+
+    /// 桌面卡片中号、大号的起卦和面板「一次起完」同一套五拍、同样的时长：捧 → 摇 → 跳起举高 →
+    /// 一摔（铜钱蹦出、落地）→ 捡回；界面用面板同一个场景和同一个声音入口，不再是只摇一下的图。
+    func testDesktopCastUsesThePanelBeats() throws {
+        XCTAssertNil(DesktopCardsDivinationPlan.castLayout(.small), "小号只放今日签")
+        let toss = ShellToss.timing(fast: true)
+        XCTAssertEqual(toss.beats.map(\.pose), [.castHold, .castHold, .castRaise, .castSlam, .castPickup])
+        XCTAssertEqual(toss.total, 1.61, accuracy: 0.0001)
+        for size in [DesktopPinSize.medium, .large] {
+            XCTAssertNotNil(DesktopCardsDivinationPlan.castLayout(size), "\(size)")
+            XCTAssertTrue(DesktopCardsDivinationPlan.canCast(size))
+        }
+        let card = try String(contentsOf: root.appendingPathComponent(
+            "Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift"), encoding: .utf8)
+        XCTAssertTrue(card.contains("ShellTossScene(layout: layout"), "桌面卡片用面板同一个起卦场景")
+        XCTAssertTrue(card.contains("throwCount: tossCount, fast: true"), "按一次起完的节奏")
+        XCTAssertTrue(card.contains("DivinationPlay.performToss(in: widget"), "声音和写回跟面板同一套时间")
+        XCTAssertFalse(card.contains("DivinationShellSway"), "不再只是抱着龟甲摇一下")
+        let panel = try String(contentsOf: root.appendingPathComponent(
+            "Sources/Widgets/Details/DivinationDetail.swift"), encoding: .utf8)
+        XCTAssertTrue(panel.contains("DivinationPlay.performToss(in: instance"))
+    }
+
+    /// 桌面卡片起卦小场景不裁切：每一拍的姿势图（连同摇摆、压扁、起跳）、三枚铜钱（连影子、
+    /// 抛起来的最高点）、光点都在场景里；铜钱排成一排、不压小熊猫；场景加卦画放得进那一行，
+    /// 整块放得进卡片。
+    func testDesktopCastSceneFits() throws {
+        for size in [DesktopPinSize.medium, .large] {
+            let l = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(size))
+            let tag = "\(size)"
+            XCTAssertTrue(l.coinsInRow, tag)
+            XCTAssertGreaterThanOrEqual(l.coin, 12, "铜钱小号也看得清：\(tag)")
+            XCTAssertEqual(l.coinRowY + l.coin / 2, l.footY, accuracy: 0.0001, "铜钱躺在脚底那条线上：\(tag)")
+            for pose in [DivinationPose.castHold, .castRaise, .castSlam, .castPickup] {
+                let size = pose.displaySize(poseHeight: l.poseHeight)
+                let sway = pose == .castHold ? size.height * sin(8 * Double.pi / 180) : 0
+                let squash = pose == .castSlam ? ShellToss.Layout.squashWidth : 1.06
+                XCTAssertGreaterThanOrEqual(l.pandaX - size.width * pose.anchorX * squash - sway, 0, "\(tag) \(pose)")
+                XCTAssertLessThanOrEqual(l.pandaX + size.width * (1 - pose.anchorX) * squash + sway, l.sceneWidth,
+                                         "\(tag) \(pose)")
+                let lift = pose == .castRaise ? l.jumpHeight : l.holdLift
+                XCTAssertGreaterThanOrEqual(l.footY - size.height * 1.06 - lift, 0, "\(tag) \(pose) 顶边")
+            }
+            let slam = DivinationPose.castSlam.displaySize(poseHeight: l.poseHeight).width
+            let slamRight = l.pandaX + slam * (1 - DivinationPose.castSlam.anchorX) * ShellToss.Layout.squashWidth
+            let mouth = DivinationPose.castSlam.scenePoint(DivinationArt.slamMouth.x, DivinationArt.slamMouth.y,
+                                                           poseHeight: l.poseHeight, centerX: l.pandaX, bottom: l.footY)
+            for i in 0..<3 {
+                let spot = l.landing(i)
+                XCTAssertEqual(spot.y, l.coinRowY, "一排：\(tag)")
+                XCTAssertGreaterThan(spot.x - l.coin / 2, slamRight, "铜钱在小熊猫右边、不压着：\(tag)")
+                XCTAssertLessThanOrEqual(spot.x + l.coin / 2, l.sceneWidth, "\(tag)")
+                XCTAssertLessThanOrEqual(spot.y + l.coin * 0.42 + l.coin / 12, l.sceneHeight, "铜钱影子：\(tag)")
+                if i > 0 { XCTAssertGreaterThanOrEqual(spot.x - l.landing(i - 1).x, l.coin, "互不压着：\(tag)") }
+                // 抛物线最高点（t = 0.5）也在场景里。
+                let peak = (mouth.y + spot.y) / 2 - l.coinArc(i)
+                XCTAssertGreaterThanOrEqual(peak - l.coin / 2, 0, "\(tag) 第 \(i + 1) 枚抛高")
+            }
+            let c = l.coinsCenter
+            let center = (x: c.x, y: c.y - l.coin * 0.4)
+            let r = DivinationArt.sparkleRadius(center: center, preferred: l.coin * 2.6,
+                                                width: l.sceneWidth, height: l.sceneHeight)
+            XCTAssertGreaterThan(r, l.coin * 0.5, "光点还看得见：\(tag)")
+            for star in DivinationArt.sparkleStars {
+                let x = center.x + star.x * r, y = center.y + star.y * r
+                XCTAssertGreaterThanOrEqual(x - star.size / 2, -0.001, tag)
+                XCTAssertLessThanOrEqual(x + star.size / 2, l.sceneWidth + 0.001, tag)
+                XCTAssertGreaterThanOrEqual(y - star.size / 2, -0.001, tag)
+                XCTAssertLessThanOrEqual(y + star.size / 2, l.sceneHeight + 0.001, tag)
+            }
+            // 那一行：场景 + 间距 + 本卦 → 变卦，放得进起卦块的宽；卦画（大号连卦名）不比场景高。
+            let row = l.sceneWidth + DesktopCardsDivinationPlan.castRowSpacing(size)
+                + DesktopCardsDivinationPlan.figuresWidth(size)
+            XCTAssertLessThanOrEqual(row, DesktopCardsDivinationPlan.castBlockWidth(size), tag)
+            let beside = DesktopCardsDivinationPlan.figureHeight
+                + (DesktopCardsDivinationPlan.nameBesideFigures(size) ? 4 + 19 : 0)
+            XCTAssertLessThanOrEqual(beside, l.sceneHeight, tag)
+        }
+        XCTAssertEqual(DesktopCardsDivinationPlan.castBlockWidth(.medium), 176)
+        XCTAssertEqual(DesktopCardsDivinationPlan.castBlockWidth(.large), 316)
+        // 竖着放得下（15pt 一行约 19、13pt 约 17、宋体 13pt 约 19，按钮 28）：
+        // 中号 160 高去掉边距 136：一行场景、卦名、一行白话、按钮。
+        let m = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.medium))
+        let gm = DesktopCardsDivinationPlan.castSpacing(.medium)
+        XCTAssertLessThanOrEqual(m.sceneHeight + gm + 19 + gm + 17 + gm + 28, 136)
+        // 大号起卦块约 198 高（340 去掉边距、签那行 76、分隔线、「仅供娱乐」和间距）：
+        // 场景一行（卦名在里面）、两行卦辞、两行白话、按钮。
+        let lg = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.large))
+        let gl = DesktopCardsDivinationPlan.castSpacing(.large)
+        let available = 340 - DesktopCardsDivinationPlan.inset(.large) * 2 - 76 - 1
+            - DesktopCardsDivinationPlan.largeSpacing * 3 - 17
+        XCTAssertLessThanOrEqual(lg.sceneHeight + gl + 19 * 2 + gl + 17 * 2 + gl + 28, available)
+    }
+
+    /// 光点半径：地方够时就是想要的半径，不够时缩到每颗星都在场景里。
+    func testSparkleRadiusFits() {
+        XCTAssertEqual(DivinationArt.sparkleRadius(center: (133, 100), preferred: 30, width: 266, height: 198), 30)
+        let r = DivinationArt.sparkleRadius(center: (80, 40), preferred: 40, width: 92, height: 56)
+        XCTAssertLessThan(r, 40)
+        XCTAssertGreaterThanOrEqual(r, 0)
+    }
+
+    /// 每日一签第三拍签条走低路线落进手里：先在小熊猫右边竖着往下落、再横着滑进手里，
+    /// 一路不挡脸、不出场景，最后正好是图里那张签纸；面板和桌面小 / 中 / 大卡片都一样。
+    func testSlipLandingAvoidsTheFace() {
+        let scenes: [(width: Double, height: Double, pose: Double)] = [
+            (Divination.panelContentWidth, 194, 184), (140, 74, 70),
+            (DesktopCardsDivinationPlan.mediumStickWidth, 68, 64),
+            (72, DesktopCardsDivinationPlan.largePoseHeight + 4, DesktopCardsDivinationPlan.largePoseHeight),
+        ]
+        for scene in scenes {
+            let face = StickShake.faceBox(sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+            let hover = DivinationArt.hoverCenter(sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+            for k in 0...200 {
+                let q = Double(k) / 200
+                let f = StickShake.landFrame(q, sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+                let overlaps = f.minX < face.maxX && f.maxX > face.minX && f.minY < face.maxY && f.maxY > face.minY
+                XCTAssertFalse(overlaps, "\(scene) q=\(q) 挡脸")
+                XCTAssertGreaterThanOrEqual(f.minX, 0, "\(scene) q=\(q)")
+                XCTAssertLessThanOrEqual(f.maxX, scene.width, "\(scene) q=\(q)")
+                XCTAssertGreaterThanOrEqual(f.minY, 0, "\(scene) q=\(q)")
+                XCTAssertLessThanOrEqual(f.maxY, scene.height, "\(scene) q=\(q)")
+                if q < StickShake.dropFraction { XCTAssertEqual(f.x, hover.x, accuracy: 0.0001, "先竖着往下落") }
+            }
+            let start = StickShake.landFrame(0, sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+            XCTAssertEqual(start.x, hover.x, accuracy: 0.0001)
+            XCTAssertEqual(start.y, hover.y, accuracy: 0.0001, "从半空接着落，不跳")
+            let end = StickShake.landFrame(1, sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+            let caught = StickShake.caughtFrame(sceneWidth: scene.width, sceneHeight: scene.height, poseHeight: scene.pose)
+            XCTAssertEqual(end.x, caught.x, accuracy: 0.0001, "\(scene)")
+            XCTAssertEqual(end.y, caught.y, accuracy: 0.0001, "\(scene)")
+            XCTAssertEqual(end.width, caught.width, accuracy: 0.0001, "\(scene)")
+            XCTAssertEqual(end.height, caught.height, accuracy: 0.0001, "\(scene)")
+            // 落到的那么低：签条顶边在脸下面。
+            let low = StickShake.landFrame(StickShake.dropFraction, sceneWidth: scene.width, sceneHeight: scene.height,
+                                           poseHeight: scene.pose)
+            XCTAssertGreaterThanOrEqual(low.minY, face.maxY, "\(scene)")
+        }
+        XCTAssertLessThan(StickShake.catchDuration, StickShake.normal.reveal / 2)
+    }
+
+    // MARK: 解忧书第 ② 拍
+
+    /// 解忧书第 ② 拍换成书页朝外、刚翻开的新图（朱红、藏蓝各一张）：在包里、尺寸和第 ③ 拍答案图
+    /// 一样、身子对在同一处（换图时小熊猫不动，只看见书页翻平、亮起来）。
+    func testBookOpenFacesOut() throws {
+        let folder = root.appendingPathComponent("Resources/Divination")
+        for dark in [false, true] {
+            let open = DivinationPose.bookOpen(dark: dark), answer = DivinationPose.bookAnswer(dark: dark)
+            XCTAssertTrue(DivinationArt.allImageNames.contains(open.imageName))
+            let size = try pngSize(folder.appendingPathComponent("\(open.imageName).png"))
+            XCTAssertEqual(size.width, 355, open.imageName)
+            XCTAssertEqual(size.height, 480, open.imageName)
+            XCTAssertEqual(open.pixelSize.width, answer.pixelSize.width)
+            XCTAssertEqual(open.anchorX, answer.anchorX)
+            XCTAssertEqual(open.heightScale, answer.heightScale)
+        }
+        let yml = try String(contentsOf: root.appendingPathComponent("project.yml"), encoding: .utf8)
+        XCTAssertTrue(yml.contains("Resources/Divination"), "整个文件夹打进包")
     }
 
     func testDesktopLargeLeavesRoom() {

@@ -21,7 +21,9 @@ public enum DivinationPose: String, CaseIterable, Sendable {
     case castRaise = "div-cast-3-raise"
     case castSlam = "div-cast-3-slam"
     case castPickup = "div-cast-4-pickup"
-    /// 解忧书：① 合掌默想、② 捧书翻开、③ 书页正对着看答案（浅色朱红封面、深色藏蓝封面）。
+    /// 解忧书：① 合掌默想、② 双手捧着刚翻开的书（书页朝外、页上空白，中间几页还翘着，眯眼笑）、
+    /// ③ 书页正对着看答案（睁眼，页上泛金光、写字）。浅色朱红封面、深色藏蓝封面。②③ 两张图
+    /// 书的位置和小熊猫身子一样大、对在同一处，换图时只看见书页翻平、亮起来。
     case bookWish = "div-book-1-wish"
     case bookOpenRed = "div-book-2-open-red"
     case bookOpenNavy = "div-book-2-open-navy"
@@ -41,7 +43,7 @@ public enum DivinationPose: String, CaseIterable, Sendable {
         case .castSlam: (427, 480)
         case .castPickup: (351, 480)
         case .bookWish: (329, 480)
-        case .bookOpenRed, .bookOpenNavy: (362, 480)
+        case .bookOpenRed, .bookOpenNavy: (355, 480)
         case .bookAnswerRed, .bookAnswerNavy: (355, 480)
         }
     }
@@ -70,8 +72,7 @@ public enum DivinationPose: String, CaseIterable, Sendable {
         case .castSlam: 0.45
         case .castPickup: 0.44
         case .bookWish: 0.6
-        case .bookOpenRed, .bookOpenNavy: 0.48
-        case .bookAnswerRed, .bookAnswerNavy: 0.51
+        case .bookOpenRed, .bookOpenNavy, .bookAnswerRed, .bookAnswerNavy: 0.51
         default: 0.5
         }
     }
@@ -163,6 +164,8 @@ public enum DivinationArt {
 
     /// 「展签看」图上那张空白签纸能写字的地方（按图宽高的比例，x、y 是左上角）。
     public static let slipRect = (x: 0.17, y: 0.475, width: 0.67, height: 0.19)
+    /// 「展签看」图上小熊猫的脸（眼睛到嘴，按图宽高的比例）：签条落进手里时不从这里过。
+    public static let readFaceRect = (x: 0.22, y: 0.15, width: 0.56, height: 0.29)
     /// 「仰头看」图上签筒口（蹦出来的签从这里出发）。
     public static let tubeMouth = (x: 0.8, y: 0.3)
     /// 签蹦出来以后停在半空的位置（按「仰头看」图算，在小熊猫头的右上方，它仰头看着）。
@@ -196,6 +199,25 @@ public enum DivinationArt {
     /// 书页上淡淡的墨字（竖排几列短笔画）每页几列。
     public static let bookInkColumns = 4
 
+    /// 金色四角星光点：每颗相对中心的方向（单位圆上，y 向下）、大小（pt）和起始延迟（按进度算）。
+    public static let sparkleStars: [(x: Double, y: Double, size: Double, delay: Double)] = [
+        (-1, -0.55, 9, 0), (0.95, -0.7, 11, 0.08), (1.1, 0.35, 7, 0.16), (-1.05, 0.45, 8, 0.12), (0.15, -1.1, 7, 0.22),
+    ]
+
+    /// 光点半径：先取 `preferred`，放不下时缩到每颗星（连同大小）都在 `width`×`height` 的场景里，不被裁。
+    public static func sparkleRadius(center: (x: Double, y: Double), preferred: Double,
+                                     width: Double, height: Double) -> Double {
+        var r = preferred
+        for star in sparkleStars {
+            let half = star.size / 2
+            if star.x < 0 { r = min(r, (center.x - half) / -star.x) }
+            if star.x > 0 { r = min(r, (width - center.x - half) / star.x) }
+            if star.y < 0 { r = min(r, (center.y - half) / -star.y) }
+            if star.y > 0 { r = min(r, (height - center.y - half) / star.y) }
+        }
+        return max(0, r)
+    }
+
     /// 签纸上写签级的字号：按纸高取，最大 22pt；算出来不到 13pt（桌面小卡片、扩展栏那么小）
     /// 时返回 nil，纸上不写字，签级照样写在图外面。
     public static func slipFont(slipHeight: Double) -> Double? {
@@ -226,7 +248,10 @@ public struct StickShake: Equatable, Sendable {
     /// 第二拍里签条从筒口蹦到半空用掉的比例，后面停在半空。
     public static let popFraction: Double = 0.45
     /// 第三拍开头签条从半空落进手里、展开成签纸的时长（换图的交叉淡入也在这段里）。
-    public static let catchDuration: Double = 0.14
+    /// 改成先往下落再横着滑进手里以后路线长一点，0.14 改 0.18（还在第三拍的一半以内）。
+    public static let catchDuration: Double = 0.18
+    /// 落进手里那段里，前面这一截在小熊猫右边竖着往下落（大小不变），后面横着滑进手里、展开。
+    public static let dropFraction: Double = 0.45
 
     /// 签蹦出（这时写进今天的签、「嗒」）、换展签图、全部结束。
     public var flyStart: Double { shake }
@@ -274,6 +299,70 @@ public struct StickShake: Equatable, Sendable {
         let p = (t - flyStart) / fly
         if p < Self.popFraction { return .pop(p / Self.popFraction) }
         return .hover((p - Self.popFraction) / (1 - Self.popFraction))
+    }
+
+    /// 签条的位置和大小（中心点、宽高，场景坐标）。
+    public struct SlipFrame: Equatable, Sendable {
+        public var x: Double
+        public var y: Double
+        public var width: Double
+        public var height: Double
+
+        public init(x: Double, y: Double, width: Double, height: Double) {
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
+        }
+
+        public var minX: Double { x - width / 2 }
+        public var maxX: Double { x + width / 2 }
+        public var minY: Double { y - height / 2 }
+        public var maxY: Double { y + height / 2 }
+    }
+
+    /// 签纸在场景里落定的位置（「展签」图上那张签纸）。
+    public static func caughtFrame(sceneWidth: Double, sceneHeight: Double, poseHeight: Double) -> SlipFrame {
+        let s = DivinationArt.slipRect
+        let a = DivinationPose.qianRead.scenePoint(s.x, s.y, poseHeight: poseHeight, centerX: sceneWidth / 2,
+                                                   bottom: sceneHeight - 4)
+        let z = DivinationPose.qianRead.scenePoint(s.x + s.width, s.y + s.height, poseHeight: poseHeight,
+                                                   centerX: sceneWidth / 2, bottom: sceneHeight - 4)
+        return SlipFrame(x: (a.x + z.x) / 2, y: (a.y + z.y) / 2, width: z.x - a.x, height: z.y - a.y)
+    }
+
+    /// 「展签」图上小熊猫的脸在场景里的范围（minX、minY、maxX、maxY）。
+    public static func faceBox(sceneWidth: Double, sceneHeight: Double,
+                               poseHeight: Double) -> (minX: Double, minY: Double, maxX: Double, maxY: Double) {
+        let f = DivinationArt.readFaceRect
+        let a = DivinationPose.qianRead.scenePoint(f.x, f.y, poseHeight: poseHeight, centerX: sceneWidth / 2,
+                                                   bottom: sceneHeight - 4)
+        let z = DivinationPose.qianRead.scenePoint(f.x + f.width, f.y + f.height, poseHeight: poseHeight,
+                                                   centerX: sceneWidth / 2, bottom: sceneHeight - 4)
+        return (a.x, a.y, z.x, z.y)
+    }
+
+    /// 第三拍签条落进手里（`q` 0…1）：原来从头右上方的半空斜着直线落到胸前，半路签条已经展开一半，
+    /// 正好从脸前面过。现在走低路线：先在小熊猫右边竖着往下落（越落越快、大小不变），落到脸下面
+    /// 那么低，再横着滑进手里、同时展开成签纸（位置和大小同一个缓动，先快后慢）；签条顶边一路
+    /// 都在脸的下面，也都在场景里。
+    public static func landFrame(_ q: Double, sceneWidth: Double, sceneHeight: Double,
+                                 poseHeight: Double) -> SlipFrame {
+        let hover = DivinationArt.hoverCenter(sceneWidth: sceneWidth, sceneHeight: sceneHeight, poseHeight: poseHeight)
+        let h = DivinationArt.flyingSlipHeight(poseHeight: poseHeight)
+        let w = h * DivinationArt.flyingSlipAspect
+        let target = caughtFrame(sceneWidth: sceneWidth, sceneHeight: sceneHeight, poseHeight: poseHeight)
+        let face = faceBox(sceneWidth: sceneWidth, sceneHeight: sceneHeight, poseHeight: poseHeight)
+        let low = min(max(target.y, face.maxY + h / 2 + 2, hover.y), sceneHeight - h / 2 - 2)
+        let q = min(1, max(0, q))
+        if q < dropFraction {
+            let p = q / dropFraction
+            return SlipFrame(x: hover.x, y: hover.y + (low - hover.y) * p * p, width: w, height: h)
+        }
+        let p = (q - dropFraction) / (1 - dropFraction)
+        let e = 1 - (1 - p) * (1 - p)
+        return SlipFrame(x: hover.x + (target.x - hover.x) * e, y: low + (target.y - low) * e,
+                         width: w + (target.width - w) * e, height: h + (target.height - h) * e)
     }
 
     /// 签纸上的字此刻的不透明度：签条落定后 0.15 秒淡入；不在动时 1。
@@ -336,23 +425,68 @@ extension ShellToss {
     public var crouch: Double { min(0.08, lift * 0.4) }
     public var rise: Double { min(0.14, lift - crouch) }
 
-    /// 场景里的位置（面板内容宽 266）：小熊猫脚底在 `footY`，铜钱落在它前面的一排（`coinRowY`
-    /// 是铜钱中心），和脚隔开，不压在脚上。
+    /// 场景里的位置：小熊猫身子（脚）在 `pandaX`、脚底在 `footY`。面板（内容宽 266）小熊猫在中线上，
+    /// 铜钱落在它前面的一排（`coinRowY` 是铜钱中心），和脚隔开，不压在脚上；桌面卡片地方小，
+    /// 小熊猫靠左，铜钱在它右边脚底那条线上排成一排（`coinsInRow`），小一号。起跳、托一下、
+    /// 铜钱抛高和扬土都按小熊猫高度跟面板（136）的比例缩。
     public struct Layout: Equatable, Sendable {
+        public var sceneWidth: Double
         public var sceneHeight: Double
         public var poseHeight: Double
         public var footY: Double
         public var coin: Double
         public var coinRowY: Double
+        public var pandaX: Double
+        public var coinsInRow: Bool
+        /// 排成一排时铜钱之间、铜钱和小熊猫之间留的缝。
+        public var coinGap: Double
 
-        /// 第 i 枚铜钱停下的中心（相对场景中线）。
+        public init(sceneWidth: Double, sceneHeight: Double, poseHeight: Double, footY: Double, coin: Double,
+                    coinRowY: Double, pandaX: Double? = nil, coinsInRow: Bool = false, coinGap: Double = 2) {
+            self.sceneWidth = sceneWidth
+            self.sceneHeight = sceneHeight
+            self.poseHeight = poseHeight
+            self.footY = footY
+            self.coin = coin
+            self.coinRowY = coinRowY
+            self.pandaX = pandaX ?? sceneWidth / 2
+            self.coinsInRow = coinsInRow
+            self.coinGap = coinGap
+        }
+
+        /// 和面板小熊猫（136）的比例。
+        public var scale: Double { poseHeight / 136 }
+        /// 跳起来的高度、① 往上一托的高度。
+        public var jumpHeight: Double { 14 * scale }
+        public var holdLift: Double { 4 * scale }
+        /// 第 i 枚铜钱从壳口蹦出来的抛高。
+        public func coinArc(_ i: Int) -> Double { (40 + 8 * Double(i)) * scale }
+        /// 三枚铜钱出壳口时左右错开的距离。
+        public var mouthSpread: Double { 5 * scale }
+        /// 一摔触地压扁时图最多横着胖多少（铜钱排在旁边时要让开）。
+        public static let squashWidth: Double = 1.06
+
+        /// 第 i 枚铜钱停下的中心（场景坐标）。
         public func landing(_ i: Int) -> (x: Double, y: Double) {
+            if coinsInRow {
+                let slam = DivinationPose.castSlam
+                let right = slam.displaySize(poseHeight: poseHeight).width * (1 - slam.anchorX) * Self.squashWidth
+                let first = pandaX + right + coinGap + coin / 2
+                return (first + Double(i) * (coin + coinGap), coinRowY)
+            }
             let spot = ShellToss.landings[i]
-            return (spot.x * coin, coinRowY + spot.y * coin)
+            return (pandaX + spot.x * coin, coinRowY + spot.y * coin)
+        }
+
+        /// 三枚铜钱停下的中间（光点从这里散开）。
+        public var coinsCenter: (x: Double, y: Double) {
+            let spots = (0..<3).map { landing($0) }
+            return (spots.map(\.x).reduce(0, +) / 3, spots.map(\.y).reduce(0, +) / 3)
         }
     }
 
-    public static let panelLayout = Layout(sceneHeight: 198, poseHeight: 136, footY: 152, coin: 30, coinRowY: 176)
+    public static let panelLayout = Layout(sceneWidth: Divination.panelContentWidth, sceneHeight: 198,
+                                           poseHeight: 136, footY: 152, coin: 30, coinRowY: 176)
 }
 
 // MARK: - 解忧书：默想 → 捧书翻开 → 答案

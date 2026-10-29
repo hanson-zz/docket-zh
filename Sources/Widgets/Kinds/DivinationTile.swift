@@ -152,6 +152,21 @@ enum DivinationPlay {
         return result
     }
 
+    /// 起卦动画期间的声音和写回，面板和桌面卡片同一套时间（Core 的 `ShellToss`）：开始摇时放叮当、
+    /// 跳起来时停，一摔触地时记下这一爻，第一枚铜钱落地时放三声落地声，抱回龟甲后返回。
+    static func performToss(in instance: WidgetInstance, question: String, all: Bool) async {
+        let timing = ShellToss.timing(fast: all)
+        try? await Task.sleep(for: .seconds(timing.shakeStart))
+        play(.jingle, for: instance)
+        try? await Task.sleep(for: .seconds(timing.liftStart - timing.shakeStart))
+        DivinationSoundPlayer.stop(.jingle)
+        try? await Task.sleep(for: .seconds(timing.impact - timing.liftStart))
+        toss(in: instance, question: question, all: all)
+        try? await Task.sleep(for: .seconds(timing.clinkStart - timing.impact))
+        play(.clink, for: instance)
+        try? await Task.sleep(for: .seconds(timing.total - timing.clinkStart))
+    }
+
     static func resetCasting(in instance: WidgetInstance) {
         write(instance) { Divination.resetCasting(in: &$0) }
     }

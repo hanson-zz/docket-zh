@@ -137,23 +137,20 @@ struct DivinationSparkles: View {
 
     @Environment(\.colorScheme) private var scheme
 
-    /// 每颗星相对中心的方向（单位圆上）、大小和起始延迟（按进度算）。
-    private static let stars: [(x: CGFloat, y: CGFloat, size: CGFloat, delay: Double)] = [
-        (-1, -0.55, 9, 0), (0.95, -0.7, 11, 0.08), (1.1, 0.35, 7, 0.16), (-1.05, 0.45, 8, 0.12), (0.15, -1.1, 7, 0.22),
-    ]
-
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(0..<Self.stars.count, id: \.self) { i in
-                let star = Self.stars[i]
+        // 每颗星的方向、大小、延迟在 Core（`DivinationArt.sparkleStars`），放不下时按它缩半径。
+        let stars = DivinationArt.sparkleStars
+        return ZStack(alignment: .topLeading) {
+            ForEach(0..<stars.count, id: \.self) { i in
+                let star = stars[i]
                 let p = min(1, max(0, (progress - star.delay) / (1 - star.delay)))
                 let s = sin(p * .pi)
                 SparkleShape()
                     .fill(DivinationStyle.gold)
-                    .frame(width: star.size, height: star.size)
+                    .frame(width: CGFloat(star.size), height: CGFloat(star.size))
                     .scaleEffect(s)
                     .opacity(s * (scheme == .dark ? 0.8 : 1))
-                    .position(x: center.x + star.x * radius, y: center.y + star.y * radius)
+                    .position(x: center.x + CGFloat(star.x) * radius, y: center.y + CGFloat(star.y) * radius)
             }
         }
         .allowsHitTesting(false)
@@ -273,7 +270,7 @@ struct DivinationStickScene: View {
                     .zIndex(2)
             }
             if let stage = timing.slipStage(at: t) {
-                flyingSlip(stage, slipTop: slipTop, slipEnd: slipEnd)
+                flyingSlip(stage)
                     .zIndex(3)
             }
             if phase == .read, t >= timing.caught {
@@ -285,17 +282,16 @@ struct DivinationStickScene: View {
         .frame(width: width, height: height)
     }
 
-    /// 飞出来的签条：② 从筒口转着蹦到半空、停在那里轻轻浮着 → ③ 落进小熊猫手里，横着展开成签纸
-    /// 那么大，字先淡掉，落定时和图里的签纸叠在一起淡掉（纸上的字接着写出来）。
-    private func flyingSlip(_ stage: StickShake.SlipStage, slipTop: CGPoint, slipEnd: CGPoint) -> some View {
+    /// 飞出来的签条：② 从筒口转着蹦到半空、停在那里轻轻浮着 → ③ 走低路线落进小熊猫手里：先在它
+    /// 右边竖着往下落到脸下面，再横着滑进手里、展开成签纸那么大（Core 的 `StickShake.landFrame`，
+    /// 不从脸前面过），滑的时候字淡掉，落定时和图里的签纸叠在一起淡掉（纸上的字接着写出来）。
+    private func flyingSlip(_ stage: StickShake.SlipStage) -> some View {
         let mouth = point(.qianLook, DivinationArt.tubeMouth.x, DivinationArt.tubeMouth.y)
         let hoverPoint = DivinationArt.hoverCenter(sceneWidth: Double(width), sceneHeight: Double(height),
                                                    poseHeight: Double(poseHeight))
         let hover = CGPoint(x: hoverPoint.x, y: hoverPoint.y)
         let h = CGFloat(DivinationArt.flyingSlipHeight(poseHeight: Double(poseHeight)))
         let w = h * CGFloat(DivinationArt.flyingSlipAspect)
-        let target = CGSize(width: slipEnd.x - slipTop.x, height: slipEnd.y - slipTop.y)
-        let slipCenter = CGPoint(x: (slipTop.x + slipEnd.x) / 2, y: (slipTop.y + slipEnd.y) / 2)
         var position = hover, angle = 0.0, size = CGSize(width: w, height: h), scale: CGFloat = 1
         var opacity = 1.0, textOpacity = 1.0
         switch stage {
@@ -312,11 +308,12 @@ struct DivinationStickScene: View {
             position = CGPoint(x: hover.x, y: hover.y - 2.5 * CGFloat(sin(q * .pi)))
             angle = sin(q * 2 * .pi) * 4
         case .land(let q):
-            let e = CGFloat(q * q * (3 - 2 * q))
-            position = CGPoint(x: hover.x + (slipCenter.x - hover.x) * e, y: hover.y + (slipCenter.y - hover.y) * e)
-            size = CGSize(width: w + (target.width - w) * e, height: h + (target.height - h) * e)
-            textOpacity = max(0, 1 - q / 0.3)
-            opacity = q < 0.7 ? 1 : (1 - q) / 0.3
+            let frame = StickShake.landFrame(q, sceneWidth: Double(width), sceneHeight: Double(height),
+                                             poseHeight: Double(poseHeight))
+            position = CGPoint(x: frame.x, y: frame.y)
+            size = CGSize(width: frame.width, height: frame.height)
+            textOpacity = min(1, max(0, 1 - (q - StickShake.dropFraction) / 0.25))
+            opacity = q < 0.75 ? 1 : (1 - q) / 0.25
         }
         let level = index.map { FortuneStick.all[$0].level.title } ?? "签"
         return FlyingSlip(text: level, width: size.width, height: size.height, textOpacity: textOpacity)
@@ -385,14 +382,17 @@ struct TossMotion {
     var coin2: Double = 2
 }
 
-/// 起卦场景（面板，内容宽）：`throwCount` 每加一次按 Core 的 `ShellToss` 照分解图走一遍：
+/// 起卦场景：`throwCount` 每加一次按 Core 的 `ShellToss` 照分解图走一遍：
 /// ① 双手捧古龟甲轻轻一托 → ② 捧着左右摇（整张图 ±8° 摆）→ ③ 蹲一下、跳起来把龟甲举过头顶，
 /// 在最高处停一下 → ③ 一摔：换「一摔」图越落越快落回地面，蹲着把龟甲扣在面前（触地压扁回弹、
 /// 扬起一点土），三枚铜钱按落地声的间隔从壳口依次蹦出，抛物线落到小熊猫前面那排，翻着转（按纵向
 /// 压缩换正反面），弹两下停住 → ④ 把龟甲抱回来，铜钱留在地上显示这一爻。
+/// 面板用 `ShellToss.panelLayout`（内容宽，小熊猫在中线、铜钱在脚前错落一排）；桌面卡片中号、
+/// 大号用 `DesktopCardsDivinationPlan.castLayout`（同样几拍和时长，按卡片缩小，小熊猫靠左、铜钱
+/// 在它右边排成一排小号的，捡回以后留在地上显示这一爻）。
 /// 减少动态效果时不动，铜钱直接躺在地上。
 struct ShellTossScene: View {
-    var width: CGFloat
+    var layout: ShellToss.Layout = ShellToss.panelLayout
     /// 最近一爻三枚铜钱的正反（true 是背）；还没摇过是 nil，铜钱淡淡地摆着。
     var faces: [Bool]?
     var throwCount: Int
@@ -402,11 +402,13 @@ struct ShellTossScene: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let layout = ShellToss.panelLayout
-    static var height: CGFloat { CGFloat(layout.sceneHeight) }
-    private var poseHeight: CGFloat { CGFloat(Self.layout.poseHeight) }
-    private var coin: CGFloat { CGFloat(Self.layout.coin) }
-    private var foot: CGFloat { CGFloat(Self.layout.footY) }
+    private var width: CGFloat { CGFloat(layout.sceneWidth) }
+    private var height: CGFloat { CGFloat(layout.sceneHeight) }
+    private var poseHeight: CGFloat { CGFloat(layout.poseHeight) }
+    private var coin: CGFloat { CGFloat(layout.coin) }
+    private var foot: CGFloat { CGFloat(layout.footY) }
+    private var pandaX: CGFloat { CGFloat(layout.pandaX) }
+    private var scale: CGFloat { CGFloat(layout.scale) }
 
     var body: some View {
         let toss = ShellToss.timing(fast: fast)
@@ -486,17 +488,17 @@ struct ShellTossScene: View {
                 LinearKeyframe(2, duration: t.bounce)
             }
         }
-        .frame(width: width, height: Self.height)
+        .frame(width: width, height: height)
         .accessibilityHidden(true)
     }
 
     private func landing(_ i: Int) -> CGPoint {
-        let spot = Self.layout.landing(i)
-        return CGPoint(x: width / 2 + CGFloat(spot.x), y: CGFloat(spot.y))
+        let spot = layout.landing(i)
+        return CGPoint(x: CGFloat(spot.x), y: CGFloat(spot.y))
     }
 
     private func slamPoint(_ fx: Double, _ fy: Double) -> CGPoint {
-        let p = DivinationPose.castSlam.scenePoint(fx, fy, poseHeight: Double(poseHeight), centerX: Double(width / 2),
+        let p = DivinationPose.castSlam.scenePoint(fx, fy, poseHeight: Double(poseHeight), centerX: layout.pandaX,
                                                    bottom: Double(foot))
         return CGPoint(x: p.x, y: p.y)
     }
@@ -508,17 +510,22 @@ struct ShellTossScene: View {
         let crouch = CGFloat(m.crouch), jump = CGFloat(m.jump), land = CGFloat(m.land), squash = CGFloat(m.squash)
         let sx = (1 + 0.05 * crouch) * (1 - 0.04 * jump) * (1 + 0.06 * land) * (1 + 0.06 * squash)
         let sy = (1 - 0.08 * crouch) * (1 + 0.06 * jump) * (1 - 0.1 * land) * (1 - 0.08 * squash)
-        let lift = 14 * jump + 4 * CGFloat(m.hold)
+        let lift = CGFloat(layout.jumpHeight) * jump + CGFloat(layout.holdLift) * CGFloat(m.hold)
+        let center = layout.coinsCenter
+        let sparkleCenter = CGPoint(x: CGFloat(center.x), y: CGFloat(center.y) - coin * 0.4)
+        let sparkleRadius = DivinationArt.sparkleRadius(center: (Double(sparkleCenter.x), Double(sparkleCenter.y)),
+                                                        preferred: Double(coin) * 2.6, width: layout.sceneWidth,
+                                                        height: layout.sceneHeight)
         return ZStack(alignment: .topLeading) {
             DivinationGroundShadow(width: poseHeight * 0.58 * (1 - 0.35 * jump))
                 .opacity(Double(1 - 0.5 * jump))
-                .position(x: width / 2, y: foot)
+                .position(x: pandaX, y: foot)
                 .zIndex(0)
             DivinationPoseLayer(pose: pose, height: poseHeight)
                 .scaleEffect(x: sx, y: sy, anchor: .bottom)
                 .rotationEffect(.degrees(phase == .shake ? m.sway : 0), anchor: .bottom)
                 .offset(y: -lift)
-                .position(x: width / 2, y: foot - poseHeight / 2)
+                .position(x: pandaX, y: foot - poseHeight / 2)
                 .zIndex(1)
             if m.dust > 0.01, m.dust < 0.99 { dust(m.dust).zIndex(2) }
             ForEach(0..<3, id: \.self) { i in
@@ -526,15 +533,15 @@ struct ShellTossScene: View {
             }
             .zIndex(3)
             if !reduceMotion, m.t >= toss.settled, m.t < toss.settled + 0.5 {
-                DivinationSparkles(center: CGPoint(x: width / 2, y: CGFloat(Self.layout.coinRowY) - coin * 0.4),
-                                   radius: coin * 2.6, progress: (m.t - toss.settled) / 0.5)
+                DivinationSparkles(center: sparkleCenter, radius: CGFloat(sparkleRadius),
+                                   progress: (m.t - toss.settled) / 0.5)
                     .zIndex(4)
             }
         }
-        .frame(width: width, height: Self.height)
+        .frame(width: width, height: height)
     }
 
-    /// 龟甲扣地扬起的土：从着地点往两边各散六粒、变淡。
+    /// 龟甲扣地扬起的土：从着地点往两边各散六粒、变淡（散开的距离按小熊猫大小缩，收在场景里）。
     private func dust(_ p: Double) -> some View {
         let spread = CGFloat(p)
         let contact = slamPoint(DivinationArt.slamContactX, 1)
@@ -544,8 +551,8 @@ struct ShellTossScene: View {
             ForEach(0..<12, id: \.self) { k in
                 let side: CGFloat = k < 6 ? -1 : 1
                 let j = CGFloat(k % 6)
-                let x = contact.x + side * (half + 2 + j * 5 * (0.4 + spread))
-                let y = foot - 2 - (CGFloat((k * 7) % 5) + j * 0.6) * (0.3 + spread)
+                let x = min(width - 2, max(2, contact.x + side * (half + 2 * scale + j * 5 * scale * (0.4 + spread))))
+                let y = foot - 2 * scale - (CGFloat((k * 7) % 5) + j * 0.6) * scale * (0.3 + spread)
                 Circle().fill(DivinationStyle.dust)
                     .frame(width: 2.4 + CGFloat(k % 3) * 0.8, height: 2.4 + CGFloat(k % 3) * 0.8)
                     .opacity((1 - p) * (0.75 - Double(j) * 0.08))
@@ -560,8 +567,8 @@ struct ShellTossScene: View {
         if p < 1 {
             // 从「一摔」图的壳口蹦出来，三枚错开一点。
             let base = slamPoint(DivinationArt.slamMouth.x, DivinationArt.slamMouth.y)
-            let mouth = CGPoint(x: base.x + CGFloat(i - 1) * 5, y: base.y)
-            let arc: CGFloat = 40 + CGFloat(i) * 8
+            let mouth = CGPoint(x: base.x + CGFloat(i - 1) * CGFloat(layout.mouthSpread), y: base.y)
+            let arc = CGFloat(layout.coinArc(i))
             let t = CGFloat(max(0, p))
             let position = CGPoint(x: mouth.x + (land.x - mouth.x) * t,
                                    y: mouth.y + (land.y - mouth.y) * t - arc * 4 * t * (1 - t))
@@ -582,7 +589,7 @@ struct ShellTossScene: View {
         let rest = landing(i)
         return ZStack(alignment: .topLeading) {
             Ellipse().fill(DivinationStyle.groundShade)
-                .frame(width: coin * 0.8, height: 5)
+                .frame(width: coin * 0.8, height: max(2.5, coin / 6))
                 .blur(radius: 1.2)
                 .opacity(shown ? min(1, max(0.25, p)) : 0)
                 .position(x: pose.position.x, y: rest.y + coin * 0.42)
@@ -592,31 +599,6 @@ struct ShellTossScene: View {
                 .opacity(shown ? (faces == nil ? 0.55 : 1) : 0)
                 .position(pose.position)
         }
-    }
-}
-
-/// 小熊猫双手捧着古龟甲（桌面卡片用）：`shakes` 每加一次整张图左右摇一阵；减少动态效果时不摇。
-struct DivinationShellSway: View {
-    var height: CGFloat
-    var shakes: Int
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        DivinationPoseImage(pose: .castHold, height: height)
-            .keyframeAnimator(initialValue: 0.0, trigger: reduceMotion ? 0 : shakes) { view, angle in
-                view.rotationEffect(.degrees(angle), anchor: .bottom)
-            } keyframes: { _ in
-                KeyframeTrack {
-                    CubicKeyframe(-8.0, duration: 0.09)
-                    CubicKeyframe(8.0, duration: 0.11)
-                    CubicKeyframe(-6.0, duration: 0.11)
-                    CubicKeyframe(6.0, duration: 0.11)
-                    CubicKeyframe(0.0, duration: 0.09)
-                }
-            }
-            .frame(height: height, alignment: .bottom)
-            .accessibilityHidden(true)
     }
 }
 

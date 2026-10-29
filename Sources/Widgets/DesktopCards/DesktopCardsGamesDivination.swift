@@ -4,11 +4,15 @@ import SwiftUI
 //
 // 卜卦钉在桌面（Core 的 `DesktopCardsDivinationPlan`）：
 // 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号；没抽时一个「摇一摇」直接摇。
-// 中 340×160：左边今日签，右边起卦（一次起完）：本卦和变卦卦画、卦名、白话。
+// 中 340×160：左边今日签，右边起卦（一次起完）：起卦小场景和本卦、变卦卦画一行，下面卦名、白话。
 // 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞，底下留出「仅供娱乐」的余量。
+// 起卦小场景和面板同一套五拍、同样的时长和声音（ShellTossScene + DivinationPlay.performToss，
+// 按「一次起完」的节奏）：捧龟甲 → 摇几下 → 跳起举高 → 一摔、铜钱蹦出 → 捡回，铜钱留在地上
+// 显示最后一爻；按卡片缩小（Core 的 `DesktopCardsDivinationPlan.castLayout`），铜钱在小熊猫右边
+// 排成一排小号的。
 // 小熊猫和面板是同一套整身姿势图（DivinationScenes）。和扩展栏卡片、面板读写同一份卡片配置
 // （DivinationPlay），三边同时变。卡片底是桌面卡片自己的液态玻璃，这里只画内容。
-// 减少动态效果时不摇不飞，直接换图。
+// 减少动态效果时不摇不飞不摔，直接换图、出结果。
 
 @MainActor
 extension DesktopCardsGames {
@@ -27,7 +31,7 @@ private struct DeskDivinationCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shakes = 0
     @State private var busy = false
-    @State private var shellShakes = 0
+    @State private var tossCount = 0
     @State private var castBusy = false
 
     private var inset: CGFloat { CGFloat(DesktopCardsDivinationPlan.inset(size)) }
@@ -101,13 +105,9 @@ private struct DeskDivinationCard: View {
             return
         }
         castBusy = true
-        shellShakes += 1
-        DivinationPlay.play(.jingle, for: widget)
+        tossCount += 1
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(560))
-            DivinationSoundPlayer.stop(.jingle)
-            DivinationPlay.toss(in: widget, question: "", all: true)
-            DivinationPlay.play(.clink, for: widget)
+            await DivinationPlay.performToss(in: widget, question: "", all: true)
             castBusy = false
         }
     }
@@ -119,50 +119,79 @@ private struct DeskDivinationCard: View {
         return Divination.history(widget.config).first
     }
 
-    private func castingBlock(showJudgment: Bool) -> some View {
-        let casting = latest
-        return VStack(alignment: .leading, spacing: 6) {
-            if let casting, let primary = casting.primary {
-                HStack(spacing: 8) {
-                    HexagramFigure(yang: primary.yang, changing: Set(casting.changingIndices),
-                                   width: 30, lineHeight: 5, spacing: 3)
-                    if let changed = casting.changed {
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Color.panelSecondary)
-                        HexagramFigure(yang: changed.yang, faded: true, width: 30, lineHeight: 5, spacing: 3)
+    /// 起卦块：上面一行是起卦小场景和本卦 → 变卦卦画，下面卦名、（大号）卦辞、白话，最底下按钮。
+    /// 还没起过卦时小熊猫捧着龟甲、铜钱淡淡摆着，下面一行提示。
+    @ViewBuilder private func castingBlock(showJudgment: Bool) -> some View {
+        if let layout = DesktopCardsDivinationPlan.castLayout(size) {
+            let casting = latest
+            let gap = CGFloat(DesktopCardsDivinationPlan.castSpacing(size))
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: gap) {
+                    HStack(alignment: .center, spacing: CGFloat(DesktopCardsDivinationPlan.castRowSpacing(size))) {
+                        ShellTossScene(layout: layout, faces: casting?.tosses.last, throwCount: tossCount, fast: true,
+                                       tossed: casting != nil)
+                        if let casting, let primary = casting.primary {
+                            // 大号卦名放在卦画下面（这一行有 186 宽），中号放在下一行。
+                            VStack(alignment: .leading, spacing: 4) {
+                                figures(casting, primary: primary)
+                                if nameBeside { name(casting, primary: primary) }
+                            }
+                        }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
+                    if let casting, let primary = casting.primary {
+                        if !nameBeside { name(casting, primary: primary) }
+                        if showJudgment {
+                            Text(verbatim: "\(primary.name)：\(primary.judgment)")
+                                .font(.custom("Songti SC", size: 13).weight(.semibold))
+                                .foregroundStyle(DivinationStyle.red)
+                                .lineLimit(2)
+                        }
+                        Text(verbatim: primary.plain)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.panelSecondary)
+                            .lineLimit(showJudgment ? 2 : 1)
+                    } else {
+                        Text(tr("想好问题，摇六次成一卦"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.panelSecondary)
+                            .lineLimit(2)
+                    }
                 }
-                Text(verbatim: casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName)
-                    .font(.system(size: 15, weight: .heavy))
-                    .foregroundStyle(Color.panelPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.87)
-                if showJudgment {
-                    Text(verbatim: "\(primary.name)：\(primary.judgment)")
-                        .font(.custom("Songti SC", size: 13).weight(.semibold))
-                        .foregroundStyle(DivinationStyle.red)
-                        .lineLimit(2)
-                }
-                Text(verbatim: primary.plain)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelSecondary)
-                    .lineLimit(showJudgment ? 2 : 1)
-            } else {
-                HStack {
-                    DivinationShellSway(height: 58, shakes: shellShakes)
-                    Spacer(minLength: 0)
-                }
-                Text(tr("想好问题，摇六次成一卦"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelSecondary)
-                    .lineLimit(2)
+                Spacer(minLength: gap)
+                DivinationPrimaryButton(title: casting == nil ? tr("起卦") : tr("再起一卦"), height: 28,
+                                        enabled: !castBusy) { cast() }
             }
-            Spacer(minLength: 0)
-            DivinationPrimaryButton(title: latest == nil ? tr("起卦") : tr("再起一卦"), height: 28,
-                                    enabled: !castBusy) { cast() }
         }
+    }
+
+    private var nameBeside: Bool { DesktopCardsDivinationPlan.nameBesideFigures(size) }
+
+    private func name(_ casting: Casting, primary: Hexagram) -> some View {
+        Text(verbatim: casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName)
+            .font(.system(size: 15, weight: .heavy))
+            .foregroundStyle(Color.panelPrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.87)
+    }
+
+    /// 本卦（标出变爻）→ 变卦（淡色）两张卦画。
+    private func figures(_ casting: Casting, primary: Hexagram) -> some View {
+        let width = CGFloat(DesktopCardsDivinationPlan.figureWidth(size))
+        let line = CGFloat(DesktopCardsDivinationPlan.figureLineHeight)
+        let spacing = CGFloat(DesktopCardsDivinationPlan.figureLineSpacing)
+        return HStack(spacing: CGFloat(DesktopCardsDivinationPlan.figureGap(size))) {
+            HexagramFigure(yang: primary.yang, changing: Set(casting.changingIndices),
+                           width: width, lineHeight: line, spacing: spacing)
+            if let changed = casting.changed {
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.panelSecondary)
+                    .frame(width: CGFloat(DesktopCardsDivinationPlan.arrowWidth))
+                HexagramFigure(yang: changed.yang, faded: true, width: width, lineHeight: line, spacing: spacing)
+            }
+        }
+        .fixedSize()
     }
 
     // MARK: 小号
