@@ -308,6 +308,10 @@ struct StickTube: View {
     var width: CGFloat
     var drop = false
 
+    /// 签筒皮肤（Pro，默认竹）：配色从共享的皮肤入口读，见 DivinationDailyExtras。
+    @Environment(\.divinationSkin) private var skin
+    private var colors: DivinationTubeColors { DivinationTubeColors(skin.tube) }
+
     private var height: CGFloat { width * 1.15 }
     private func u(_ f: CGFloat) -> CGFloat { f * width }
 
@@ -328,33 +332,34 @@ struct StickTube: View {
             }
             // 筒身。
             RoundedRectangle(cornerRadius: u(0.1), style: .continuous)
-                .fill(StickStyleGradient.body)
+                .fill(LinearGradient(colors: [colors.shade, colors.body, colors.shade],
+                                     startPoint: .leading, endPoint: .trailing))
                 .frame(width: u(0.8), height: u(0.78))
                 .offset(x: u(0.1), y: u(0.34))
             // 筒口。
             Ellipse()
-                .fill(DivinationStyle.tubeShade)
-                .overlay(Ellipse().strokeBorder(DivinationStyle.tubeBand, lineWidth: max(1, u(0.02))))
+                .fill(colors.shade)
+                .overlay(Ellipse().strokeBorder(colors.band, lineWidth: max(1, u(0.02))))
                 .frame(width: u(0.8), height: u(0.16))
                 .offset(x: u(0.1), y: u(0.27))
             // 两道箍。
             ForEach([0.46, 0.98], id: \.self) { y in
                 Capsule()
-                    .fill(DivinationStyle.tubeBand)
+                    .fill(colors.band)
                     .frame(width: u(0.8), height: max(1.5, u(0.035)))
                     .offset(x: u(0.1), y: u(y))
             }
             // 红签牌。
             RoundedRectangle(cornerRadius: u(0.04), style: .continuous)
-                .fill(DivinationStyle.label)
+                .fill(colors.label)
                 .overlay(
                     RoundedRectangle(cornerRadius: u(0.04), style: .continuous)
-                        .strokeBorder(DivinationStyle.goldLight, lineWidth: max(0.8, u(0.015)))
+                        .strokeBorder(colors.labelInk, lineWidth: max(0.8, u(0.015)))
                 )
                 .overlay(
                     Text(verbatim: "签")
                         .font(.system(size: max(8, u(0.17)), weight: .heavy))
-                        .foregroundStyle(DivinationStyle.goldLight)
+                        .foregroundStyle(colors.labelInk)
                 )
                 .frame(width: u(0.26), height: u(0.26))
                 .offset(x: u(0.37), y: u(0.6))
@@ -531,6 +536,10 @@ struct CoinView: View {
     var back: Bool
     var size: CGFloat
 
+    /// 铜钱皮肤（Pro，默认铜钱）：配色从共享的皮肤入口读，见 DivinationDailyExtras。
+    @Environment(\.divinationSkin) private var skin
+    private var colors: DivinationCoinColors { DivinationCoinColors(skin.coin) }
+
     /// 钱文按上下右左读成「卜卦通宝」（原创）；数组按上、右、下、左摆。
     private static let legend = ["卜", "通", "卦", "宝"]
     private static let places: [CGPoint] = [CGPoint(x: 0, y: -1), CGPoint(x: 1, y: 0),
@@ -538,19 +547,19 @@ struct CoinView: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(DivinationStyle.gold)
-            Circle().strokeBorder(DivinationStyle.goldDeep, lineWidth: max(1, size * 0.07))
-            Circle().strokeBorder(DivinationStyle.goldDeep.opacity(0.55), lineWidth: max(0.6, size * 0.025))
+            Circle().fill(colors.face)
+            Circle().strokeBorder(colors.deep, lineWidth: max(1, size * 0.07))
+            Circle().strokeBorder(colors.deep.opacity(0.55), lineWidth: max(0.6, size * 0.025))
                 .padding(size * 0.13)
             RoundedRectangle(cornerRadius: size * 0.03)
-                .fill(DivinationStyle.goldDeep)
+                .fill(colors.deep)
                 .frame(width: size * 0.26, height: size * 0.26)
             RoundedRectangle(cornerRadius: size * 0.02)
-                .strokeBorder(DivinationStyle.goldLight, lineWidth: max(0.6, size * 0.03))
+                .strokeBorder(colors.light, lineWidth: max(0.6, size * 0.03))
                 .frame(width: size * 0.34, height: size * 0.34)
             if back {
                 ForEach([CGFloat(-1), CGFloat(1)], id: \.self) { side in
-                    Circle().fill(DivinationStyle.goldDeep)
+                    Circle().fill(colors.deep)
                         .frame(width: size * 0.09, height: size * 0.09)
                         .offset(x: side * size * 0.29)
                 }
@@ -558,12 +567,12 @@ struct CoinView: View {
                 ForEach(0..<4, id: \.self) { i in
                     Text(verbatim: Self.legend[i])
                         .font(.system(size: size * 0.2, weight: .heavy))
-                        .foregroundStyle(DivinationStyle.goldDeep)
+                        .foregroundStyle(colors.deep)
                         .offset(x: Self.places[i].x * size * 0.29, y: Self.places[i].y * size * 0.29)
                 }
             } else {
                 ForEach(0..<4, id: \.self) { i in
-                    Capsule().fill(DivinationStyle.goldDeep)
+                    Capsule().fill(colors.deep)
                         .frame(width: size * 0.12, height: size * 0.06)
                         .offset(x: Self.places[i].x * size * 0.29, y: Self.places[i].y * size * 0.29)
                 }

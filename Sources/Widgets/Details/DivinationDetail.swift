@@ -60,6 +60,8 @@ struct DivinationDetail: View {
                     .frame(maxWidth: .infinity)
             }
             .frame(width: Self.width)
+            // 签筒、铜钱按卡片选的皮肤画（Pro，见 DivinationDailyExtras）。
+            .divinationSkins(config, isPreview: context.isPreview)
         }
     }
 
@@ -115,16 +117,19 @@ struct DivinationDetail: View {
 
     private var stickPage: some View {
         let index = stickBusy ? nil : todayIndex
-        return VStack(spacing: 10) {
-            PandaWithTube(size: 120, shakes: tubeShakes, drop: dropStick, cheering: index != nil)
-                .frame(maxWidth: .infinity)
-            if let index {
-                stickResult(index)
-            } else {
-                Text(stickBusy ? tr("沙沙沙……") : tr("诚心默念，摇出今天的一签"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelSecondary)
-                DivinationPrimaryButton(title: tr("摇一摇"), enabled: !stickBusy) { shake() }
+        // 外壳加本周寄语、收藏 / 签历 / 签卡入口（见 DivinationDailyExtras）。
+        return DivinationStickHost(instance: instance, context: context, index: index) {
+            VStack(spacing: 10) {
+                PandaWithTube(size: 120, shakes: tubeShakes, drop: dropStick, cheering: index != nil)
+                    .frame(maxWidth: .infinity)
+                if let index {
+                    stickResult(index)
+                } else {
+                    Text(stickBusy ? tr("沙沙沙……") : tr("诚心默念，摇出今天的一签"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.panelSecondary)
+                    DivinationPrimaryButton(title: tr("摇一摇"), enabled: !stickBusy) { shake() }
+                }
             }
         }
     }
@@ -136,6 +141,7 @@ struct DivinationDetail: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.panelPrimary)
             StickLevelBanner(level: stick.level, size: 34)
+            DivinationSignBadgeRow(config: config, now: context.now, isPreview: context.isPreview)
             VStack(spacing: 3) {
                 ForEach(stick.poemLines, id: \.self) { line in
                     Text(verbatim: line)

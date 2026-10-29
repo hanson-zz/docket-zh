@@ -2267,6 +2267,17 @@
         }
       }
     },
+    "不选" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
     "仅当前桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2531,6 +2542,17 @@
         }
       }
     },
+    "分享" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
     "切到 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2575,6 +2597,28 @@
         }
       }
     },
+    "双子座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemini"
+          }
+        }
+      }
+    },
+    "双鱼座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pisces"
+          }
+        }
+      }
+    },
     "取消钉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2604,6 +2648,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unmute %@"
+          }
+        }
+      }
+    },
+    "古铜绿锈" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verdigris"
           }
         }
       }
@@ -2839,6 +2894,17 @@
         }
       }
     },
+    "处女座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Virgo"
+          }
+        }
+      }
+    },
     "复制一段文字，点下面翻译" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2861,6 +2927,39 @@
         }
       }
     },
+    "天秤座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Libra"
+          }
+        }
+      }
+    },
+    "天蝎座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorpio"
+          }
+        }
+      }
+    },
+    "天青" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sky blue"
+          }
+        }
+      }
+    },
     "好好安排自己的时间" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2872,6 +2971,28 @@
         }
       }
     },
+    "存储…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save…"
+          }
+        }
+      }
+    },
+    "射手座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sagittarius"
+          }
+        }
+      }
+    },
     "小时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2879,6 +3000,160 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "hours"
+          }
+        }
+      }
+    },
+    "属兔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rabbit"
+          }
+        }
+      }
+    },
+    "属牛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ox"
+          }
+        }
+      }
+    },
+    "属狗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dog"
+          }
+        }
+      }
+    },
+    "属猪" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pig"
+          }
+        }
+      }
+    },
+    "属猴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monkey"
+          }
+        }
+      }
+    },
+    "属相" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chinese zodiac"
+          }
+        }
+      }
+    },
+    "属羊" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goat"
+          }
+        }
+      }
+    },
+    "属虎" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiger"
+          }
+        }
+      }
+    },
+    "属蛇" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snake"
+          }
+        }
+      }
+    },
+    "属马" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horse"
+          }
+        }
+      }
+    },
+    "属鸡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rooster"
+          }
+        }
+      }
+    },
+    "属鼠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rat"
+          }
+        }
+      }
+    },
+    "属龙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dragon"
+          }
+        }
+      }
+    },
+    "巨蟹座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancer"
           }
         }
       }
@@ -2938,6 +3213,17 @@
         }
       }
     },
+    "已收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
     "已获取网站图标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2971,6 +3257,39 @@
         }
       }
     },
+    "幸运数字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lucky number"
+          }
+        }
+      }
+    },
+    "幸运数字 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lucky number %@"
+          }
+        }
+      }
+    },
+    "幸运色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lucky color"
+          }
+        }
+      }
+    },
     "应用开始出声后在这里调音量" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3000,6 +3319,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start to record laps"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins"
           }
         }
       }
@@ -3180,6 +3510,17 @@
         }
       }
     },
+    "按星座或属相" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draw by sign"
+          }
+        }
+      }
+    },
     "换一个周期" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3224,6 +3565,17 @@
         }
       }
     },
+    "摩羯座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capricorn"
+          }
+        }
+      }
+    },
     "播放器开始播放后这里显示歌曲" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3235,6 +3587,35 @@
         }
       }
     },
+    "收藏 (verb)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        }
+      }
+    },
     "收藏电台" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3242,6 +3623,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favorite Stations"
+          }
+        }
+      }
+    },
+    "收藏的签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved sticks"
+          }
+        }
+      }
+    },
+    "收藏这支签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save this stick"
           }
         }
       }
@@ -3286,6 +3689,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Same time"
+          }
+        }
+      }
+    },
+    "星座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star sign"
           }
         }
       }
@@ -3400,6 +3814,28 @@
         }
       }
     },
+    "月白" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moon white"
+          }
+        }
+      }
+    },
+    "本周寄语" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week"
+          }
+        }
+      }
+    },
     "本周已排" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3433,6 +3869,39 @@
         }
       }
     },
+    "朱漆签筒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red lacquer"
+          }
+        }
+      }
+    },
+    "朱红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vermilion"
+          }
+        }
+      }
+    },
+    "杏黄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apricot"
+          }
+        }
+      }
+    },
     "松手钉在这里" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3440,6 +3909,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Release to pin here"
+          }
+        }
+      }
+    },
+    "松绿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pine green"
+          }
+        }
+      }
+    },
+    "桃粉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peach pink"
           }
         }
       }
@@ -3477,6 +3968,17 @@
         }
       }
     },
+    "水瓶座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aquarius"
+          }
+        }
+      }
+    },
     "没取到图标，可以用文字或上传" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3484,6 +3986,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No icon found. Use text or upload a picture"
+          }
+        }
+      }
+    },
+    "海棠红" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Begonia"
           }
         }
       }
@@ -3499,6 +4012,17 @@
         }
       }
     },
+    "湖蓝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lake blue"
+          }
+        }
+      }
+    },
     "点“获取图标”读取网站图标" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3506,6 +4030,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click Get Icon to read the site's icon"
+          }
+        }
+      }
+    },
+    "点签旁边的星星收藏喜欢的签诗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the star next to a stick to save the verses you like"
+          }
+        }
+      }
+    },
+    "狮子座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leo"
+          }
+        }
+      }
+    },
+    "珊瑚橙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coral"
           }
         }
       }
@@ -3521,6 +4078,28 @@
         }
       }
     },
+    "白羊座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aries"
+          }
+        }
+      }
+    },
+    "码头每日一签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling-Daily-Stick"
+          }
+        }
+      }
+    },
     "空着就用网页标题" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3528,6 +4107,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Empty uses the page title"
+          }
+        }
+      }
+    },
+    "竹签筒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bamboo"
+          }
+        }
+      }
+    },
+    "竹青" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bamboo green"
+          }
+        }
+      }
+    },
+    "签卡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card"
+          }
+        }
+      }
+    },
+    "签卡预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card preview"
+          }
+        }
+      }
+    },
+    "签历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log"
+          }
+        }
+      }
+    },
+    "签筒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stick tube"
           }
         }
       }
@@ -3598,6 +4243,17 @@
         }
       }
     },
+    "藕荷" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lotus mauve"
+          }
+        }
+      }
+    },
     "读不出这张图片，换一张试试" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3620,6 +4276,17 @@
         }
       }
     },
+    "象牙白" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ivory"
+          }
+        }
+      }
+    },
     "这个网站没有可用的图标，卡片上画首字" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3627,6 +4294,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This site has no usable icon, so the card shows its first letter"
+          }
+        }
+      }
+    },
+    "这天没有抽签" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stick drawn this day"
           }
         }
       }
@@ -4258,6 +4936,17 @@
         }
       }
     },
+    "选了以后，同一天同一个星座或属相抽到的是同一支签，签上多一个小徽章和今日幸运色、幸运数字。不选时每张卡片各抽各的。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With a sign chosen, everyone with the same star sign or Chinese zodiac draws the same stick that day, and the stick shows a small badge with today's lucky color and lucky number. With None, each card draws its own."
+          }
+        }
+      }
+    },
     "选择文件…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4291,6 +4980,17 @@
         }
       }
     },
+    "金牛座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taurus"
+          }
+        }
+      }
+    },
     "钉在桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4298,6 +4998,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pin to Desktop"
+          }
+        }
+      }
+    },
+    "铜钱" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bronze"
+          }
+        }
+      }
+    },
+    "银币" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silver"
+          }
+        }
+      }
+    },
+    "青玉签筒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Green jade"
           }
         }
       }
@@ -58930,6 +59663,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default: this widget's own color"
+          }
+        }
+      }
+    },
+    "黛紫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo violet"
           }
         }
       }

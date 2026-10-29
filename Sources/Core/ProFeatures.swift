@@ -58,6 +58,9 @@ import Foundation
 /// - 快速待办的橙黄绿紫四色标签和按颜色筛选、重复待办（每天 / 每周 / 工作日），见
 ///   `ProLicenseGate.canTagTodo`、`canFilterTodoTags`、`canRepeatTodos`。红色标签（原来的
 ///   「重要」）、勾选手感、撤销、拖动排序、今天清空庆祝都免费。
+/// - 卜卦每日一签的签历（月历回顾）和签诗收藏、签卡分享图、朱漆和青玉签筒、银币和古铜绿锈
+///   铜钱，见 `ProLicenseGate.canUseDivinationArchive`、`canShareDivinationCard`、
+///   `canChooseDivinationSkin`。星座 / 属相、幸运色和幸运数字、本周寄语免费。
 /// - 扩展栏上下滑动翻页（`CustomDockSettings.pageDirection` 为 vertical），见
 ///   `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮切换布局免费。
 public enum ProFeatures {

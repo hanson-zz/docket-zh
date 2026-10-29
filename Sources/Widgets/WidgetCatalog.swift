@@ -421,8 +421,9 @@ public enum WidgetCatalog {
               variants: [], supportsCompact: false, selfContained: true),
 
         // 卜卦（免费）：今天的签、起卦记录、解忧书翻过的页、停在哪页和音效开关都由卡片和面板
-        // 写进配置（Divination 的 stickDay、stick、history、casting、bookRecent、page、sound），
-        // 不放进默认值，设置页不列。
+        // 写进配置（Divination 的 stickDay、stick、history、casting、bookRecent、page、sound，
+        // 每日一签的 sign、stickLog、stickFavs 和皮肤 tubeSkin、coinSkin），不放进默认值；
+        // 星座 / 属相和皮肤在设置页单独一节（DivinationSettingsSection）。
         Entry(kind: .divination, name: tr("卜卦"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 

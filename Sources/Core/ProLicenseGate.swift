@@ -248,6 +248,19 @@ public enum ProLicenseGate {
     /// 没解锁时卡片照旧显示固定的或最后一次那条，收藏照旧存着。见 `CurrencyDesk.rotation`。
     public static func canRotateCalcFavorites(unlocked: Bool) -> Bool { unlocked }
 
+    // MARK: 卜卦 · 每日一签
+
+    /// 签历（月历回顾、点日期看那天的签）和签诗收藏（Pro）。抽过的签免费也照样记进签历、
+    /// 留一年多，没解锁时看不到、不能收藏，解锁或试用后原样回来。见 `Divination.stickLog`。
+    public static func canUseDivinationArchive(unlocked: Bool) -> Bool { unlocked }
+
+    /// 把当天签渲染成竖版签卡图保存、拷贝、分享（Pro）。见 `DivinationShareCard`。
+    public static func canShareDivinationCard(unlocked: Bool) -> Bool { unlocked }
+
+    /// 签筒和铜钱换皮肤（Pro；竹签筒和默认铜钱免费）。没解锁时画默认款，选的照旧存着。
+    /// 见 `Divination.tubeSkin(_:unlocked:)`、`coinSkin(_:unlocked:)`。
+    public static func canChooseDivinationSkin(isPro: Bool, unlocked: Bool) -> Bool { unlocked || !isPro }
+
     /// 邮件面板顶部能不能按账户筛选（Pro）。没解锁时按「全部」显示，筛选照旧存着。
     public static func canFilterMailAccounts(unlocked: Bool) -> Bool { unlocked }
 

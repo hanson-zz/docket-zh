@@ -42,6 +42,8 @@ private struct DeskDivinationCard: View {
         }
         .padding(inset)
         .frame(width: size.size.width, height: size.size.height, alignment: .top)
+        // 签筒、铜钱皮肤（Pro）和面板同一个入口。
+        .divinationSkins(widget.config)
     }
 
     // MARK: 签

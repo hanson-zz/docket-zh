@@ -397,15 +397,20 @@ public enum Divination {
                                                           using rng: inout G) -> Draw {
         if let index = todayStick(config, now: now, calendar: calendar) { return Draw(index: index, isNew: false) }
         let index = drawIndex(using: &rng)
-        config.set(stickDayKey, .string(dayKey(now, calendar: calendar)))
+        let day = dayKey(now, calendar: calendar)
+        config.set(stickDayKey, .string(day))
         config.set(stickKey, .number(Double(index)))
+        // 抽过的签都记进签历（免费也记，看签历是 Pro，见 DivinationDaily）。
+        recordStick(index, day: day, in: &config, now: now, calendar: calendar)
         return Draw(index: index, isNew: true)
     }
 
-    /// 不传随机数时按日期加盐（卡片 id）定签。
+    /// 不传随机数时按日期加盐定签：选了星座 / 属相时盐是它（同一天同一个星座同一支），
+    /// 否则是卡片 id。
     @discardableResult
     public static func drawStick(in config: inout WidgetConfig, now: Date, salt: String,
                                  calendar: Calendar = .current) -> Draw {
+        let salt = stickSalt(config, cardSalt: salt)
         var rng = MineRandom(seed: stableHash("\(dayKey(now, calendar: calendar))|\(salt)"))
         return drawStick(in: &config, now: now, calendar: calendar, using: &rng)
     }
