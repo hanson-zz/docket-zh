@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - 卜卦 · 扩展栏卡片
 //
-// 扩展栏卡片 188×58（竖排 76×120）：小熊猫、今日签级和签号；没抽时写「今天还没抽签」。
+// 扩展栏卡片 188×62（竖排 76×120）：小熊猫、今日签级和签号；没抽时写「今天还没抽签」。
 // 点卡片打开面板（每日一签 / 起卦 / 解忧书三页）。规则和存法都在 Core 的 `Divination`。
 // 这里还放三个界面共用的部件：小熊猫、签筒、龟壳、铜钱、卦画、书，全部原创、代码画
 // （小熊猫用 Resources/Pet 里码头自己的小熊猫图），以及写回配置和放音效的 DivinationPlay。
@@ -64,6 +64,7 @@ struct DivinationTile: View {
                             .font(.system(size: 17, weight: .heavy))
                             .foregroundStyle(levelColor(stick.level))
                     }
+                    .minimumScaleFactor(0.87)
                     Text(verbatim: Divination.stickNumber(index))
                         .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
@@ -71,13 +72,14 @@ struct DivinationTile: View {
                     Text(tr("今天还没抽签"))
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
+                        .minimumScaleFactor(0.87)
                     Text(tr("点开摇一摇"))
                         .font(.system(size: 13))
                         .foregroundStyle(WidgetStyle.secondary)
                 }
             }
+            // 13pt 的小字不缩（最小 13pt），只有上面 15、17pt 的大字放不下时缩到 13。
             .lineLimit(1)
-            .minimumScaleFactor(0.85)
             Spacer(minLength: 0)
         }
     }
@@ -92,17 +94,21 @@ struct DivinationTile: View {
                 Text(verbatim: stick.level.title)
                     .font(.system(size: 15, weight: .heavy))
                     .foregroundStyle(levelColor(stick.level))
-                Text(verbatim: Divination.stickNumber(index))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.87)
+                // 竖条内容只有 56 宽，「第三十七签」13pt 要 65，原来缩到 10pt 多；这里写阿拉伯数字。
+                Text(verbatim: Divination.shortStickNumber(index))
                     .font(.system(size: 13))
                     .foregroundStyle(WidgetStyle.secondary)
+                    .lineLimit(1)
             } else {
                 Text(tr("未抽签"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
             }
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
     }
 }
 
@@ -166,7 +172,10 @@ enum DivinationPlay {
     }
 
     static func toggleSound(in instance: WidgetInstance) {
-        write(instance) { Divination.setSound(!Divination.soundOn($0), in: &$0) }
+        let on = !Divination.soundOn(config(instance))
+        write(instance) { Divination.setSound(on, in: &$0) }
+        // 摇签筒、铜钱叮当正响着时点静音：马上停，不等它放完。
+        if !on { DivinationSoundPlayer.stopAll() }
     }
 
     /// 按卡片上的开关放一个音效。
@@ -197,6 +206,10 @@ enum DivinationSoundPlayer {
 
     static func stop(_ sound: DivinationSound) {
         cache[sound]?.stop()
+    }
+
+    static func stopAll() {
+        for player in cache.values where player.isPlaying { player.stop() }
     }
 }
 
@@ -784,7 +797,8 @@ struct DivinationPrimaryButton: View {
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Color.white)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                // 最小 13pt：15 × 0.87。
+                .minimumScaleFactor(0.87)
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .background(Capsule().fill(DivinationStyle.buttonFill).opacity(enabled ? 1 : 0.45))
@@ -807,7 +821,8 @@ struct DivinationGlassButton: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.panelPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                // 最小 13pt：14 × 0.93。
+                .minimumScaleFactor(0.93)
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .background(Capsule().fill(Color.panelRaised).panelLift())

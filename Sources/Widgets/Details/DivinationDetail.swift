@@ -500,6 +500,7 @@ struct DivinationDetail: View {
                 Text(tr("第 \(index + 1) 页"))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.panelSecondary)
+                    .minimumScaleFactor(1)
                     .padding(.top, 4)
             }
             .multilineTextAlignment(.center)

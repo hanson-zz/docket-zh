@@ -415,6 +415,11 @@ public enum Divination {
         "第\(chineseNumber(index + 1))签"
     }
 
+    /// 「第37签」：放不下中文数字的窄处（扩展栏竖条）用。
+    public static func shortStickNumber(_ index: Int) -> String {
+        "第\(index + 1)签"
+    }
+
     /// 1...99 的中文数字：一、十、十一、二十、三十七。
     public static func chineseNumber(_ n: Int) -> String {
         let digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]

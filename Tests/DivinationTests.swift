@@ -392,6 +392,7 @@ final class DivinationTests: XCTestCase {
         XCTAssertEqual(Divination.chineseNumber(37), "三十七")
         XCTAssertEqual(Divination.chineseNumber(60), "六十")
         XCTAssertEqual(Divination.stickNumber(36), "第三十七签")
+        XCTAssertEqual(Divination.shortStickNumber(36), "第37签")
         XCTAssertEqual(Divination.lineName(0), "初爻")
         XCTAssertEqual(Divination.lineName(2), "第三爻")
         XCTAssertEqual(Divination.lineName(5), "上爻")

@@ -132,7 +132,7 @@ private struct DeskDivinationCard: View {
                     .font(.system(size: 15, weight: .heavy))
                     .foregroundStyle(Color.panelPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.87)
                 if showJudgment {
                     Text(verbatim: "\(primary.name)：\(primary.judgment)")
                         .font(.custom("Songti SC", size: 13).weight(.semibold))
