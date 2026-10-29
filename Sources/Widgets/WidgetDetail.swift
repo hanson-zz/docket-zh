@@ -268,6 +268,7 @@ final class WidgetDetailWindow {
         guard let closing = openWidgetID else { return }
         openWidgetID = nil
         announceClosed(closing)
+        SystemColorPanel.shared.closeIfOwned()
         shown = nil
         fit = nil
         stopWatching()
@@ -312,7 +313,11 @@ final class WidgetDetailWindow {
         // and `toggle` would then answer every later click by closing a panel
         // that was never up.
         guard size.width > 1, size.height > 1 else { return }
-        if let previous = openWidgetID, previous != instance.id { announceClosed(previous) }
+        if let previous = openWidgetID, previous != instance.id {
+            announceClosed(previous)
+            // 换到别的卡片：上一张卡片打开的颜色面板收起，不再往它身上写。
+            SystemColorPanel.shared.closeIfOwned()
+        }
         openWidgetID = instance.id
         isFloating = floating
         lastShownAnchor = (instance.id, anchor)

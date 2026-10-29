@@ -442,9 +442,8 @@ struct SlackerDetail: View {
                     .buttonStyle(.plain)
                     .help(hex)
                 }
-                ColorPicker("", selection: custom, supportsOpacity: false)
-                    .labelsHidden()
-                    .help("自定义颜色")
+                // 详情面板里 ColorPicker 的颜色面板出不来，改用自己打开的系统颜色面板。
+                SystemColorWell(color: custom.wrappedValue) { custom.wrappedValue = $0 }
             }
             HStack(spacing: 6) {
                 Text("自定义").font(.system(size: 13)).foregroundStyle(.panelSecondary)
