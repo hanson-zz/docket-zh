@@ -130,6 +130,8 @@ final class WidgetOptionTests: XCTestCase {
             .aiAssistant: [],
             // 扫雷：局、难度和最佳成绩由卡片和面板写，设置页不列（Minesweeper）。
             .minesweeper: [],
+            // 拔牙：局、纪录和音效开关由卡片和面板写，设置页不列（PullTooth）。
+            .pullTooth: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 

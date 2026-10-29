@@ -171,6 +171,7 @@ enum DesktopCardLayouts {
         DesktopCardsData.view,
         DesktopCardsFiles.view,
         DesktopCardsGames.view,
+        DesktopCardsGames.toothView,
     ]
 
     /// 专属布局总能放下小号的种类：不再按扩展栏卡片能不能塞进 160×160 判断。
@@ -181,6 +182,7 @@ enum DesktopCardLayouts {
         .union(DesktopCardsDataPlan.kinds)
         .union(DesktopCardsFilesPlan.kinds)
         .union(DesktopCardsGamesPlan.kinds)
+        .union(DesktopCardsToothPlan.kinds)
 
     static func view(_ widget: WidgetInstance, size: DesktopPinSize, now: Date) -> AnyView? {
         for provider in providers {

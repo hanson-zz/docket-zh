@@ -15,7 +15,7 @@ public enum WidgetLibraryGroups {
     /// 按 git 历史挑的：上一个正式版 v0.6.0（2026-10-13）的目录里还没有、之后
     /// 才加进来的 kind。下一个正式版发布后应当清空或换成那之后新增的。
     public static let newKinds: [WidgetKind] = [
-        .slacker, .aiAssistant, .translate, .water, .pet, .perfectDay, .podcast, .cassette, .minesweeper,
+        .slacker, .aiAssistant, .translate, .water, .pet, .perfectDay, .podcast, .cassette, .minesweeper, .pullTooth,
     ]
 
     public static func isNew(_ kind: WidgetKind) -> Bool { newKinds.contains(kind) }
@@ -38,7 +38,7 @@ public enum WidgetLibraryGroups {
         .todo, .reminders, .anniversary, .notes,
         .water, .posture, .habit, .timer, .perfectDay, .pet,
         .aiAssistant, .aiUsage, .translate, .clipboard, .search, .bookmarks, .github, .mail,
-        .calculator, .colorPicker, .capture, .emoji, .toggles, .minesweeper,
+        .calculator, .colorPicker, .capture, .emoji, .toggles, .minesweeper, .pullTooth,
         .music, .cassette, .podcast, .radio, .ambient, .recorder, .photos, .volume, .appVolume,
         .downloads, .trash, .fileShelf, .screenshots, .airdrop,
         .battery, .system, .network, .gauges, .microphone, .wallpaper,

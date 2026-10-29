@@ -415,6 +415,11 @@ public enum WidgetCatalog {
         Entry(kind: .minesweeper, name: tr("扫雷"), category: .tools, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 拔牙（免费）：进行中的局、最高连拔、胜场和音效开关都由卡片和面板写进配置
+        // （PullTooth 的 game、best、bestAt、wins、sound），不放进默认值，设置页不列。
+        Entry(kind: .pullTooth, name: tr("拔牙"), category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
         // 收藏和按时间自动换（Pro）在面板里设，存在 favorites、autoChange 这些键里
         // （见 WallpaperSchedule），设置里不列。
@@ -709,7 +714,7 @@ public enum WidgetCatalog {
              .translate,
              .github,
              .microphone, .gauges,
-             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth:
             nil
         }
     }
@@ -951,7 +956,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth:
             nil
         }
     }
@@ -1034,6 +1039,9 @@ public enum WidgetCatalog {
         // 扫雷：小棋盘缩略图、剩余雷数和计时、重开键。
         case .minesweeper:
             return CGSize(width: Minesweeper.tileWidth, height: 62)
+        // 拔牙：河马缩略图、已拔几颗和最高连拔、重开键。
+        case .pullTooth:
+            return CGSize(width: PullTooth.tileWidth, height: PullTooth.tileHeight)
         case .battery:
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
@@ -1288,6 +1296,9 @@ public enum WidgetCatalog {
         // 扫雷：缩略图加两行读数。
         case .minesweeper:
             return Minesweeper.columnHeight
+        // 拔牙：缩略图加两行读数。
+        case .pullTooth:
+            return PullTooth.columnHeight
         default:
             return 76
         }

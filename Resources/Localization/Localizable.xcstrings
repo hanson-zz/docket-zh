@@ -65748,6 +65748,237 @@
           }
         }
       }
+    },
+    "拔牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull a Tooth"
+          }
+        }
+      }
+    },
+    "河马圆圆" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Momo the Hippo"
+          }
+        }
+      }
+    },
+    "张大嘴了，点一颗牙拔下来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mouth wide open. Click a tooth to pull it"
+          }
+        }
+      }
+    },
+    "还剩 %@ 颗好牙，哪颗是疼牙？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ good teeth left. Which one is sore?"
+          }
+        }
+      }
+    },
+    "啊呜！拔到疼牙了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chomp! That was the sore tooth"
+          }
+        }
+      }
+    },
+    "好牙全拔光了，你赢了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every good tooth is out. You win"
+          }
+        }
+      }
+    },
+    "最高 %@ 颗 · 赢 %@ 局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best %@ · %@ wins"
+          }
+        }
+      }
+    },
+    "拔牙，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull a Tooth, %@"
+          }
+        }
+      }
+    },
+    "重开一局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New game"
+          }
+        }
+      }
+    },
+    "这局已拔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulled this game"
+          }
+        }
+      }
+    },
+    "最高连拔" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best run"
+          }
+        }
+      }
+    },
+    "河马圆圆，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Momo the Hippo, %@"
+          }
+        }
+      }
+    },
+    "这局已拔 %@ 颗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pulled this game"
+          }
+        }
+      }
+    },
+    "拔一颗牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull a tooth"
+          }
+        }
+      }
+    },
+    "啊呜！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chomp!"
+          }
+        }
+      }
+    },
+    "点一颗牙拔下来，拔到疼牙河马就合嘴；其余的牙都拔光就赢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click a tooth to pull it. Pull the sore one and the hippo snaps shut; pull all the others to win"
+          }
+        }
+      }
+    },
+    "音效：开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound: on"
+          }
+        }
+      }
+    },
+    "音效：关" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound: off"
+          }
+        }
+      }
+    },
+    "%@ · 新纪录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · New best"
+          }
+        }
+      }
+    },
+    "再来一局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play again"
+          }
+        }
+      }
+    },
+    "/ %@ 颗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/ %@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

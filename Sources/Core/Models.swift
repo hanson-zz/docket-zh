@@ -280,6 +280,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case aiAssistant = "ai-assistant"
     case cassette
     case minesweeper
+    case pullTooth = "pull-tooth"
 }
 
 /// What a widget opens when its card is clicked.
