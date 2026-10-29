@@ -439,7 +439,7 @@ struct WidgetTintPicker: View {
         }
     }
 
-    /// 自定义：彩虹色圆，点开系统取色器。取色器本身几乎透明地盖在上面，
+    /// 自定义：彩虹色圆，点开系统颜色面板（`SystemColorPanel`），
     /// 选过自定义时中间显示选的颜色。
     private var customSwatch: some View {
         let selectedCode: ColorCode? = {
@@ -462,14 +462,21 @@ struct WidgetTintPicker: View {
                 .padding(3)
                 .overlay { Circle().strokeBorder(Self.ring, lineWidth: 2).opacity(selectedCode != nil ? 1 : 0) }
             if unlocked {
-                ColorPicker("", selection: Binding(
-                    get: { selectedCode.map { Color(code: $0) } ?? Color(code: WidgetTint.defaultPalette(instance.kind).main) },
-                    set: { color in
+                // 自己打开系统颜色面板：详情面板不激活 App、层级在程序坞之上，
+                // 以前盖一层几乎透明的 ColorPicker，颜色面板出不来或被压在下面，
+                // 点了像没反应。见 `SystemColorPanel`。
+                Button {
+                    let initial = selectedCode.map { Color(code: $0) }
+                        ?? Color(code: WidgetTint.defaultPalette(instance.kind).main)
+                    SystemColorPanel.shared.open(initial: initial) { color in
                         if let code = Self.code(color) { pick(.custom(code)) }
-                    }), supportsOpacity: false)
-                    .labelsHidden()
-                    .frame(width: Self.swatch + 6, height: Self.swatch + 6)
-                    .opacity(0.02)
+                    }
+                } label: {
+                    Color.clear
+                        .frame(width: Self.swatch + 6, height: Self.swatch + 6)
+                        .contentShape(.circle)
+                }
+                .buttonStyle(.plain)
             } else {
                 // 自定义取色是码头 Pro：没解锁时不开取色器，点了弹付费墙。
                 Button { PaywallWindow.shared.show() } label: {
