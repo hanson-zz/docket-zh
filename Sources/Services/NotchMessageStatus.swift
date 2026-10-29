@@ -14,8 +14,8 @@ final class NotchMessageStatus {
     static let trustedBuildKey = "notchMessage.lastTrustedBuild"
 
     private(set) var trusted = AXIsProcessTrusted()
-    var notificationCenterRunning = true
-    var connected = false
+    private(set) var notificationCenterRunning = true
+    private(set) var connected = false
     private(set) var lastBanner: Date?
     private(set) var lastBannerApp: String?
     private(set) var lastMessage: Date?
@@ -44,6 +44,16 @@ final class NotchMessageStatus {
         if UserDefaults.standard.string(forKey: Self.trustedBuildKey) != build {
             UserDefaults.standard.set(build, forKey: Self.trustedBuildKey)
         }
+    }
+
+    /// 观察器每 2 秒都会报一遍；@Observable 每次赋值都通知，值没变时不写，免得设置页
+    /// 跟着白白重画。
+    func setNotificationCenterRunning(_ value: Bool) {
+        if notificationCenterRunning != value { notificationCenterRunning = value }
+    }
+
+    func setConnected(_ value: Bool) {
+        if connected != value { connected = value }
     }
 
     func sawBanner(app: String?, at now: Date = Date()) {

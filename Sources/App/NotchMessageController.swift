@@ -45,6 +45,8 @@ final class NotchMessageController {
     private var contentHeight: CGFloat = 220
     private var hideGeneration = 0
     private var hovering = false
+    /// 测试通知正在发（第一次会等通知授权弹窗）：这时设置里的按钮还能点，连点只发一条。
+    private var probeSending = false
     private var lastUnlocked = ProAccess.isUnlocked
     private var observers: [NSObjectProtocol] = []
     private var workspaceObservers: [NSObjectProtocol] = []
@@ -193,12 +195,17 @@ final class NotchMessageController {
             status.probe.inactive()
             return
         }
+        guard !probeSending, status.probe.token == nil else { return }
+        probeSending = true
         Task { @MainActor [weak self] in
-            guard let token = await NotchMessageProbeSender.send() else {
+            let token = await NotchMessageProbeSender.send()
+            self?.probeSending = false
+            guard let token else {
                 status.probe.notificationsOff()
                 return
             }
             guard let self, self.active else {
+                NotchMessageProbeSender.withdraw(token)
                 status.probe.inactive()
                 return
             }

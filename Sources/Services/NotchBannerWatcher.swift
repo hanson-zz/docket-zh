@@ -38,6 +38,9 @@ final class NotchBannerWatcher {
     private var healthTimer: Timer?
     private var scanPending = false
     private var scanGeneration = 0
+    /// 后台队列上还没读完的扫描数。读的时候 `observedWindows` 还是旧的，这时轮询比对
+    /// 会误以为窗口变了、再排一次扫描，所以有扫描在读就不轮询。
+    private var scansInFlight = 0
     private var polling = false
     /// 设置里「发一条测试通知」的暗号，读到带它的横幅就当测试消息报上去。
     var probeToken: String?
@@ -106,10 +109,10 @@ final class NotchBannerWatcher {
         status.updateTrust(trusted)
         guard trusted else { return }
         guard let pid = Self.notificationCenterPID() else {
-            status.notificationCenterRunning = false
+            status.setNotificationCenterRunning(false)
             return
         }
-        status.notificationCenterRunning = true
+        status.setNotificationCenterRunning(true)
         var created: AXObserver?
         guard AXObserverCreate(pid, notchBannerObserverCallback, &created) == .success, let created else { return }
         let app = AXUIElementCreateApplication(pid)
@@ -126,7 +129,7 @@ final class NotchBannerWatcher {
         observer = created
         appElement = app
         observedPID = pid
-        status.connected = true
+        status.setConnected(true)
         scan(priming: true)
     }
 
@@ -144,7 +147,9 @@ final class NotchBannerWatcher {
         appElement = nil
         observedWindows = []
         observedPID = 0
-        NotchMessageStatus.shared.connected = false
+        // 断开前已经在后台读的那次作废：结果属于旧的进程和窗口，不能再报上来、挂观察器。
+        scanGeneration += 1
+        NotchMessageStatus.shared.setConnected(false)
     }
 
     private func startHealthTimer() {
@@ -168,11 +173,11 @@ final class NotchBannerWatcher {
             return
         }
         guard let pid = Self.notificationCenterPID() else {
-            status.notificationCenterRunning = false
+            status.setNotificationCenterRunning(false)
             if observer != nil { detach() }
             return
         }
-        status.notificationCenterRunning = true
+        status.setNotificationCenterRunning(true)
         guard observer != nil, pid == observedPID else {
             attach()
             return
@@ -182,7 +187,7 @@ final class NotchBannerWatcher {
 
     /// 兜底：通知中心的窗口和上次读到的不一样（多了、少了、换了）就读一遍，不靠 AX 事件。
     private func pollWindows() {
-        guard !polling, !scanPending, let appElement else { return }
+        guard !polling, !scanPending, scansInFlight == 0, let appElement else { return }
         polling = true
         let app = Box(element: appElement)
         let known = observedWindows.map { Box(element: $0) }
@@ -208,8 +213,12 @@ final class NotchBannerWatcher {
             }
             observedWindows.append(window)
         }
-        // 不在了的窗口去掉，免得越积越多。
-        observedWindows.removeAll { old in !windows.contains { CFEqual($0, old) } }
+        // 不在了的窗口去掉（连同挂在上面的事件），免得越积越多。
+        let gone = observedWindows.filter { old in !windows.contains { CFEqual($0, old) } }
+        for window in gone {
+            for event in Self.events { AXObserverRemoveNotification(observer, window, event as CFString) }
+        }
+        observedWindows.removeAll { old in gone.contains { CFEqual($0, old) } }
     }
 
     // MARK: 读
@@ -251,10 +260,13 @@ final class NotchBannerWatcher {
         let app = Box(element: appElement)
         let apps = enabled
         let token = probeToken
+        scansInFlight += 1
         Self.queue.async {
             let result = Self.read(app: app.element, enabled: apps, probeToken: token)
             Task { @MainActor [weak self] in
-                guard let self, self.isRunning, self.scanGeneration == generation else { return }
+                guard let self else { return }
+                self.scansInFlight = max(0, self.scansInFlight - 1)
+                guard self.isRunning, self.scanGeneration == generation else { return }
                 self.observeWindows(result.windows)
                 NotchMessageStatus.shared.recordScan(result.report, windows: result.windows.count, banners: result.bannerCount)
                 if result.bannerCount > 0 { NotchMessageStatus.shared.sawBanner(app: result.bannerApp) }
