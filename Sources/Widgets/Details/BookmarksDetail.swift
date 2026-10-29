@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 ///
 /// 两个状态：
 /// - 浏览：顶部分组标签（Pro）、“粘贴网址，回车添加”，网格里点一个用默认
-///   浏览器打开；右键拷贝网址、刷新预览、小宇宙链接“加到播客”。最下面一个
+///   浏览器打开；右键拷贝网址、刷新预览、小宇宙链接“加到播客”、删除。最下面一个
 ///   虚线框提示把链接拖到卡片上就能加入，拖到面板上也一样。
 /// - 编辑：右上“编辑”进入。点名字改名，拖左边把手排序，红色减号滑出“删除”
 ///   再点才删；点一行选中后在底部“移到分组”（Pro）。
@@ -644,6 +644,10 @@ struct BookmarksDetail: View {
         if unlocked, !groups.isEmpty, !context.isPreview {
             Menu(tr("移到分组")) { moveMenu(link.url) }
         }
+        if !context.isPreview {
+            Divider()
+            Button(tr("删除"), role: .destructive) { delete(link) }
+        }
     }
 
     @ViewBuilder
@@ -749,19 +753,10 @@ struct BookmarksDetail: View {
         let revealing = pendingDelete == key
         let chosen = selected == key
         let group = unlocked ? BookmarkGroups.group(of: link.url, in: groups) : nil
+        // 露出的“删除”放在行的上面一层，而且行的点按区域跟着行一起左移（先 contentShape
+        // 再 offset）：之前 contentShape 写在 offset 后面，点按区域还是整行，盖住了右边
+        // 露出的“删除”，一点就被行的点按吃掉，只是收起，删不掉。
         return ZStack(alignment: .trailing) {
-            if revealing {
-                Button { delete(link) } label: {
-                    Text(tr("删除"))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: Self.deleteWidth, height: Self.rowHeight - 4)
-                        .background(Color(red: 0.85, green: 0.18, blue: 0.13))
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .transition(.move(edge: .trailing))
-            }
             HStack(spacing: 10) {
                 handle(link, index: index, list: list, lifted: lifted)
                 Button { openForm(link) } label: {
@@ -818,7 +813,6 @@ struct BookmarksDetail: View {
             .padding(.leading, 6)
             .padding(.trailing, revealing ? 8 : 10)
             .frame(height: Self.rowHeight - 4)
-            .offset(x: revealing ? -Self.deleteWidth : 0)
             .contentShape(.rect)
             .onTapGesture {
                 withAnimation(.snappy(duration: 0.2)) {
@@ -828,6 +822,21 @@ struct BookmarksDetail: View {
                         selected = chosen ? nil : key
                     }
                 }
+            }
+            .offset(x: revealing ? -Self.deleteWidth : 0)
+            if revealing {
+                Button { delete(link) } label: {
+                    Text(tr("删除"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: Self.deleteWidth, height: Self.rowHeight - 4)
+                        .background(Color(red: 0.85, green: 0.18, blue: 0.13))
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tr("删除 \(title)"))
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
             }
         }
         .frame(height: Self.rowHeight - 4)
@@ -986,10 +995,13 @@ struct BookmarksDetail: View {
     }
 
     private func delete(_ link: Bookmark) {
+        guard !context.isPreview else { return }
+        let key = link.url.absoluteString
+        if renaming == key { renaming = nil }
         withAnimation(.snappy(duration: 0.22)) {
             saveLinks(BookmarkList.removing(link.url, from: entries))
             pendingDelete = nil
-            if selected == link.url.absoluteString { selected = nil }
+            if selected == key { selected = nil }
         }
     }
 
