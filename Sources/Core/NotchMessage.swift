@@ -289,7 +289,7 @@ public enum NotchBannerParser {
         guard !isListPanel(window) else { return [] }
         var found: [(path: [Int], banner: NotchBanner)] = []
         collect(window, path: [], into: &found)
-        // 没有认得的 subrole（系统换了名字）：退一步按「孩子里有 title / body 标识的字」认。
+        // 没有认得的 subrole（系统换了名字）：退一步按「孩子里有 body 和 title / header 标识的字」认。
         if found.isEmpty { collectByTexts(window, path: [], into: &found) }
         return found
     }
@@ -307,7 +307,9 @@ public enum NotchBannerParser {
         let marked = node.children.filter { child in
             child.role == "AXStaticText" && textIdentifiers.contains(child.identifier?.lowercased() ?? "")
         }
-        if marked.contains(where: { ["title", "body"].contains($0.identifier?.lowercased() ?? "") }) {
+        // 要同时有内容（body）和标题或 App 名（title / header），只有一段带标识的字不算。
+        let marks = Set(marked.compactMap { $0.identifier?.lowercased() })
+        if marks.contains("body"), marks.contains("title") || marks.contains("header") {
             found.append((path, banner(from: node)))
             return
         }

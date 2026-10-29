@@ -143,6 +143,11 @@ final class NotchMessageDiagnosisTests: XCTestCase {
             NotchBannerNode(role: "AXGroup", children: [NotchBannerNode(role: "AXStaticText", value: "微信")]),
         ])
         XCTAssertTrue(NotchBannerParser.incoming(in: loose, enabled: NotchMessageApp.allCases).isEmpty)
+        // 只有一段带 title 标识的字（没有内容）：也不认。
+        let titleOnly = NotchBannerNode(role: "AXWindow", children: [
+            NotchBannerNode(role: "AXGroup", children: [NotchBannerNode(role: "AXStaticText", identifier: "title", value: "微信")]),
+        ])
+        XCTAssertTrue(NotchBannerParser.incoming(in: titleOnly, enabled: NotchMessageApp.allCases).isEmpty)
     }
 
     func testDesktopWidgetIdentifier() {
