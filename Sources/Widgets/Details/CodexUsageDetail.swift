@@ -449,9 +449,16 @@ struct CodexUsageDetail: View {
                 .foregroundStyle(onWater ? Color.panelPrimary : Color.panelSecondary)
                 .lineLimit(1)
         }
-        // 液态杯里的字压在水上：深色外观描一圈淡黑，浅色外观描一圈淡白。
-        .shadow(color: onWater ? (scheme == .dark ? .black.opacity(0.45) : .white.opacity(0.7)) : .clear,
-                radius: 1.5)
+        // 液态杯里的字一半在水上一半在水里：垫一块半透明的小底（深色黑 0.42、
+        // 浅色白 0.62），水面高低都看得清。亮绿水上直接放白字只有约 2:1。
+        .padding(.horizontal, onWater ? 8 : 0)
+        .padding(.vertical, onWater ? 3 : 0)
+        .background {
+            if onWater {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(scheme == .dark ? Color.black.opacity(0.42) : Color.white.opacity(0.62))
+            }
+        }
     }
 
     private func bigRing(_ w: CodexLimitWindow, now: Date) -> some View {
@@ -519,8 +526,8 @@ struct CodexUsageDetail: View {
                         Text(CodexDetailEmphasis.sessionSummary(states))
                             .font(WidgetStyle.label(14))
                             .foregroundStyle(.panelPrimary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.9)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 4)
                         if !sessions.isEmpty {
                             Image(systemName: "chevron.down")
@@ -597,12 +604,13 @@ struct CodexUsageDetail: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 }
-                if !details.isEmpty {
-                    Text(details.joined(separator: " · "))
+                // 会话数和时长各占一行：以前并成「6 个会话 · 2 小时 35 分」一行，
+                // 126pt 宽的格子放不下，缩到 13pt 以下。
+                ForEach(details, id: \.self) { line in
+                    Text(line)
                         .font(WidgetStyle.caption(13))
                         .foregroundStyle(.panelSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
             }
             .padding(12)

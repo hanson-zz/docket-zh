@@ -67654,7 +67654,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sessions: %@ · Waiting for you: %@"
+            "value" : "Sessions: %@ · Waiting: %@"
           }
         }
       }
