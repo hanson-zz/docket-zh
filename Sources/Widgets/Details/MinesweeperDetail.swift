@@ -7,7 +7,8 @@ import SwiftUI
 // 换难度面板不跳，宽度按卡片真实内容宽 `Minesweeper.panelBoardWidth` 算，左右边距
 // 和其他面板一样）；棋盘下面一条可展开的排行榜（当前难度前 5 名，刚进榜那行高亮，
 // 默认收起，这一局进榜时自动展开）；最后一行操作提示。
-// 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。
+// 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。剩余雷数是最大的读数；
+// 读数行右端是音效开关（喇叭，存卡片配置，默认开）。踩雷时小熊猫换成小骷髅并抖一下。
 // 每个难度各存一局，换难度不丢另一局；排行榜存在卡片配置（Minesweeper.topKey，
 // 第一名同时写进 bestKey）。
 // 不铺背景色、不发光，颜色只在旗子、数字和结果上。
@@ -290,19 +291,26 @@ struct MinesweeperDetail: View {
 
     // MARK: 读数
 
+    /// 剩余雷数最大最醒目（24pt 粗圆体，橙 / 绿 / 红三档），中间难度，右边计时和音效开关。
     private func counters(_ board: MineBoard, level: MineLevel, now: Double) -> some View {
-        HStack {
-            MineReadout(symbol: "flag.fill", value: "\(board.minesLeft)", tint: MineStyle.flag, size: 15)
-                .help(tr("剩余雷数"))
-            Spacer(minLength: 8)
+        HStack(spacing: 6) {
+            MineCountReadout(minesLeft: board.minesLeft, size: 24)
+            Spacer(minLength: 4)
             Text(level.detail)
                 .font(.system(size: 13))
                 .foregroundStyle(Color.panelTertiary)
-            Spacer(minLength: 8)
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
+            Spacer(minLength: 4)
             MineReadout(symbol: "timer", value: "\(board.displaySeconds(now: now))",
                         tint: board.status == .won ? MineStyle.win : nil, size: 15)
+                .fixedSize()
                 .help(tr("用时（秒）"))
+            MineSoundToggle(on: context.isPreview || Minesweeper.soundOn(instance.config), diameter: 28) {
+                guard !context.isPreview else { return }
+                MinePlay.toggleSound(in: instance)
+            }
         }
-        .padding(.horizontal, 4)
+        .padding(.leading, 4)
     }
 }

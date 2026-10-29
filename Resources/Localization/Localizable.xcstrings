@@ -65672,6 +65672,39 @@
         }
       }
     },
+    "旗插多了：比雷还多 %@ 面" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many flags: %@ more than there are mines"
+          }
+        }
+      }
+    },
+    "关闭音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mute sounds"
+          }
+        }
+      }
+    },
+    "打开音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn sounds on"
+          }
+        }
+      }
+    },
     "再来一盘" : {
       "extractionState" : "manual",
       "localizations" : {

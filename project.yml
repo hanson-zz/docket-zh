@@ -63,6 +63,10 @@ targets:
       # scripts/make-unlock-sounds.py 合成的原创音效（WAV），作为普通资源打包。
       - path: Resources/Unlock
         buildPhase: resources
+      # 扫雷的音效（揭开、插旗、踩雷、赢了）：scripts/make-mines-sounds.py 合成的原创 WAV，
+      # 作为普通资源打包。
+      - path: Resources/Mines
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

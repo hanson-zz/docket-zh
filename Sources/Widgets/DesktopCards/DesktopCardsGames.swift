@@ -51,11 +51,11 @@ private struct DeskMinesweeperCard: View {
         }
     }
 
-    /// 剩余雷数和计时；进行中每秒走。
-    private func readouts(_ board: MineBoard, size font: CGFloat) -> some View {
+    /// 剩余雷数（大号粗体、三档颜色）和计时；进行中每秒走。
+    private func readouts(_ board: MineBoard, count: CGFloat, timer font: CGFloat) -> some View {
         TimelineView(.periodic(from: .now, by: board.status == .playing ? 1 : 60)) { timeline in
             HStack(spacing: 10) {
-                MineReadout(symbol: "flag.fill", value: "\(board.minesLeft)", tint: MineStyle.flag, size: font)
+                MineCountReadout(minesLeft: board.minesLeft, size: count)
                 MineReadout(symbol: "timer", value: "\(board.displaySeconds(now: timeline.date.timeIntervalSince1970))",
                             tint: board.status == .won ? MineStyle.win : nil, size: font)
             }
@@ -68,7 +68,7 @@ private struct DeskMinesweeperCard: View {
         VStack(spacing: CGFloat(DesktopCardsGamesPlan.headerSpacing(size))) {
             HStack(spacing: 8) {
                 MineRestartButton(diameter: 16) { MinePlay.restart(level, in: widget) }
-                readouts(board, size: 13)
+                readouts(board, count: 16, timer: 13)
                 Spacer(minLength: 0)
                 if board.isOver { MinePanda(status: board.status, size: 16) }
             }
@@ -96,7 +96,7 @@ private struct DeskMinesweeperCard: View {
                     if board.isOver { MinePanda(status: board.status, size: 30) }
                 }
                 Spacer(minLength: 0)
-                readouts(board, size: 15)
+                readouts(board, count: 24, timer: 15)
                 HStack(spacing: 8) {
                     MineRestartButton(diameter: 28) { MinePlay.restart(level, in: widget) }
                     Text(tr("最佳 \(Minesweeper.bestText(Minesweeper.best(widget.config, level: level)))"))
@@ -116,7 +116,7 @@ private struct DeskMinesweeperCard: View {
         VStack(spacing: CGFloat(DesktopCardsGamesPlan.headerSpacing(size))) {
             HStack(spacing: 10) {
                 MineRestartButton(diameter: 28) { MinePlay.restart(level, in: widget) }
-                readouts(board, size: 15)
+                readouts(board, count: 22, timer: 15)
                 Spacer(minLength: 0)
                 Text(level.title)
                     .font(.system(size: 13, weight: .semibold))

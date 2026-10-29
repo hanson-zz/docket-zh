@@ -44,10 +44,9 @@ struct MinesweeperTile: View {
         HStack(spacing: 10) {
             thumbnail(board, side: 44)
             VStack(alignment: .leading, spacing: 3) {
-                MineReadout(symbol: "flag.fill", value: "\(board.minesLeft)", tint: MineStyle.flag, size: 15)
-                    .help(tr("剩余雷数"))
+                MineCountReadout(minesLeft: board.minesLeft, size: 18)
                 MineReadout(symbol: "timer", value: "\(board.displaySeconds(now: now))",
-                            tint: board.status == .won ? MineStyle.win : nil, size: 15)
+                            tint: board.status == .won ? MineStyle.win : nil, size: 14)
                     .help(tr("用时（秒）"))
             }
             Spacer(minLength: 0)
@@ -62,14 +61,14 @@ struct MinesweeperTile: View {
         VStack(spacing: 6) {
             thumbnail(board, side: 50)
             VStack(alignment: .leading, spacing: 2) {
-                MineReadout(symbol: "flag.fill", value: "\(board.minesLeft)", tint: MineStyle.flag, size: 13)
+                MineCountReadout(minesLeft: board.minesLeft, size: 16)
                 MineReadout(symbol: "timer", value: "\(board.displaySeconds(now: now))",
                             tint: board.status == .won ? MineStyle.win : nil, size: 13)
             }
         }
     }
 
-    /// 这一局的缩略图；结束时右下角坐一只小熊猫（赢了欢呼，输了难过）。
+    /// 这一局的缩略图；结束时右下角坐一只小熊猫（赢了欢呼，输了被炸成小骷髅）。
     private func thumbnail(_ board: MineBoard, side: CGFloat) -> some View {
         MineThumbnail(board: board)
             .frame(width: side, height: side)
@@ -99,12 +98,20 @@ enum MinePlay {
         let outcome = Minesweeper.apply(action, at: index, level: level, to: &widget.config,
                                         now: Date().timeIntervalSince1970)
         if outcome.changed { WidgetWriter.update(widget) }
+        if let sound = outcome.sound, Minesweeper.soundOn(widget.config) { MineSoundPlayer.shared.play(sound) }
         return outcome
     }
 
     static func restart(_ level: MineLevel, in instance: WidgetInstance) {
         var widget = WidgetWriter.current(instance.id) ?? instance
         Minesweeper.restart(level, in: &widget.config)
+        WidgetWriter.update(widget)
+    }
+
+    /// 面板上的喇叭：开关这张卡片的音效。
+    static func toggleSound(in instance: WidgetInstance) {
+        var widget = WidgetWriter.current(instance.id) ?? instance
+        Minesweeper.setSound(!Minesweeper.soundOn(widget.config), in: &widget.config)
         WidgetWriter.update(widget)
     }
 
@@ -128,6 +135,18 @@ enum MineStyle {
     /// 小熊猫橙实心底上的字：白字在 #E8743B 上只有约 3:1，用按底色算出的深墨。
     static var flagInk: Color { Color(hex: PaperInk.ink(on: ShelfColor.redPanda.hex)) }
     static var boom: Color { Color(hex: "#E5484D") }
+
+    /// 剩余雷数的字色，三档各一对（深色玻璃上亮、浅色玻璃上压深），两边都过 4.5:1：
+    /// 还有雷是小熊猫橙（浅色 #B4471A 在 #F4F4F6 上 4.96:1，深色 #FF9A5C），
+    /// 正好插完是绿，旗插多了成负数是红（和数字 2、3 同一对）。
+    static func count(_ tone: MineCountTone) -> Color {
+        let (dark, light): (String, String) = switch tone {
+        case .remaining: ("#FF9A5C", "#B4471A")
+        case .cleared: ("#63D394", "#1D7F45")
+        case .over: ("#FF7F75", "#C8352A")
+        }
+        return Color.panelDynamic(dark: NSColor(Color(hex: dark)), light: NSColor(Color(hex: light)))
+    }
 
     static var hiddenFill: Color {
         Color.panelDynamic(dark: NSColor.white.withAlphaComponent(0.17),
@@ -419,17 +438,26 @@ struct MineRestartButton: View {
     }
 }
 
-/// 结果小熊猫：赢了欢呼，输了难过，没结束时是平常的样子（Resources/Pet）。
+/// 结果小熊猫：赢了欢呼，输了「被炸」成电子宠物用过的那只小骷髅（转圈眼、抱着奶瓶，
+/// 卡通不吓人），没结束时是平常的样子（Resources/Pet）。刚踩雷那一下放大再抖几下，
+/// 「减少动态效果」打开时只换图不动。
 struct MinePanda: View {
     var status: MineBoard.Status
     var size: CGFloat
 
     @MainActor private static var cache: [String: NSImage] = [:]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var blasts = 0
+
+    private struct Blast {
+        var scale: CGFloat = 1
+        var angle: Double = 0
+    }
 
     private var name: String {
         switch status {
         case .won: "pet-panda-cheer"
-        case .lost: "pet-panda-sick"
+        case .lost: "pet-panda-skeleton"
         case .ready, .playing: "pet-panda-idle"
         }
     }
@@ -449,8 +477,81 @@ struct MinePanda: View {
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
+                .keyframeAnimator(initialValue: Blast(), trigger: blasts) { content, value in
+                    content
+                        .scaleEffect(value.scale)
+                        .rotationEffect(.degrees(value.angle))
+                } keyframes: { _ in
+                    KeyframeTrack(\.scale) {
+                        CubicKeyframe(1.28, duration: 0.09)
+                        SpringKeyframe(1, duration: 0.32, spring: .bouncy)
+                    }
+                    KeyframeTrack(\.angle) {
+                        LinearKeyframe(-11, duration: 0.05)
+                        LinearKeyframe(9, duration: 0.06)
+                        LinearKeyframe(-6, duration: 0.06)
+                        LinearKeyframe(4, duration: 0.06)
+                        LinearKeyframe(0, duration: 0.06)
+                    }
+                }
+                .onChange(of: status) { _, new in
+                    if new == .lost, !reduceMotion { blasts += 1 }
+                }
                 .accessibilityHidden(true)
         }
+    }
+}
+
+/// 剩余雷数：旗子加一个大号、粗体圆体、等宽的数字，是一局里最该一眼看到的读数。
+/// 还有雷是小熊猫橙，正好插完变绿，旗插多了成负数变红并换成警示三角。
+struct MineCountReadout: View {
+    var minesLeft: Int
+    var size: CGFloat = 22
+
+    var body: some View {
+        let tone = MineCountTone(minesLeft: minesLeft)
+        let color = MineStyle.count(tone)
+        HStack(spacing: max(3, size * 0.18)) {
+            Image(systemName: tone == .over ? "exclamationmark.triangle.fill" : "flag.fill")
+                .font(.system(size: max(12, size * 0.68), weight: .bold))
+                .foregroundStyle(color)
+            Text(verbatim: Minesweeper.minesLeftText(minesLeft))
+                .font(.system(size: size, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+                .monospacedDigit()
+                .lineLimit(1)
+                .contentTransition(.numericText(value: Double(minesLeft)))
+                .animation(.snappy(duration: 0.2), value: minesLeft)
+        }
+        .fixedSize()
+        .help(tone == .over ? tr("旗插多了：比雷还多 \(-minesLeft) 面") : tr("剩余雷数"))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("剩余雷数"))
+        .accessibilityValue(Minesweeper.minesLeftText(minesLeft))
+    }
+}
+
+/// 音效开关：玻璃小圆钮里一个喇叭，开着是 speaker.wave.2.fill，关了是 speaker.slash.fill，
+/// 用主文字色画，浅色深色玻璃上都看得清。存在卡片配置（`Minesweeper.soundKey`）。
+struct MineSoundToggle: View {
+    var on: Bool
+    var diameter: CGFloat = 28
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: on ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                .font(.system(size: diameter * 0.45, weight: .semibold))
+                .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
+                .frame(width: diameter, height: diameter)
+                .background(Circle().fill(Color.panelRaised).panelLift())
+                .overlay(Circle().strokeBorder(Color.panelStroke, lineWidth: 0.5))
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .help(on ? tr("关闭音效") : tr("打开音效"))
+        .accessibilityLabel(tr("音效"))
+        .accessibilityValue(on ? tr("开") : tr("关"))
     }
 }
 

@@ -456,6 +456,50 @@ final class MinesweeperTests: XCTestCase {
         XCTAssertEqual(Minesweeper.best(config, level: .beginner), 10)
     }
 
+    // MARK: 剩余雷数、音效
+
+    func testMinesLeftToneAndText() {
+        XCTAssertEqual(MineCountTone(minesLeft: 10), .remaining)
+        XCTAssertEqual(MineCountTone(minesLeft: 1), .remaining)
+        XCTAssertEqual(MineCountTone(minesLeft: 0), .cleared)
+        XCTAssertEqual(MineCountTone(minesLeft: -2), .over)
+        XCTAssertEqual(Minesweeper.minesLeftText(7), "7")
+        XCTAssertEqual(Minesweeper.minesLeftText(0), "0")
+        XCTAssertEqual(Minesweeper.minesLeftText(-3), "\u{2212}3", "负数用真正的减号")
+    }
+
+    func testSoundSettingDefaultsToOn() {
+        var config = WidgetConfig()
+        XCTAssertTrue(Minesweeper.soundOn(config), "默认开声音")
+        Minesweeper.setSound(false, in: &config)
+        XCTAssertFalse(Minesweeper.soundOn(config))
+        Minesweeper.setSound(true, in: &config)
+        XCTAssertTrue(Minesweeper.soundOn(config))
+        XCTAssertEqual(Set(MineSound.allCases.map(\.fileName)),
+                       ["mines-reveal", "mines-flag", "mines-boom", "mines-win"])
+    }
+
+    func testOutcomeNamesTheSound() {
+        var config = WidgetConfig()
+        var rng = MineRandom(seed: 4)
+        let first = Minesweeper.apply(.reveal, at: 0, level: .beginner, to: &config, now: 0, using: &rng)
+        XCTAssertEqual(first.sound, .reveal)
+        let board = Minesweeper.board(config, level: .beginner)
+        let hidden = try! XCTUnwrap((0..<board.cellCount).first { !board.revealed[$0] && board.isMine($0) })
+        XCTAssertEqual(Minesweeper.apply(.flag, at: hidden, level: .beginner, to: &config, now: 1, using: &rng).sound,
+                       .flag)
+        XCTAssertEqual(Minesweeper.apply(.flag, at: hidden, level: .beginner, to: &config, now: 1, using: &rng).sound,
+                       .flag, "拔旗也是插旗声")
+        let boom = Minesweeper.apply(.reveal, at: hidden, level: .beginner, to: &config, now: 2, using: &rng)
+        XCTAssertEqual(boom.sound, .boom)
+        XCTAssertNil(Minesweeper.apply(.reveal, at: 1, level: .beginner, to: &config, now: 3, using: &rng).sound,
+                     "结束后点了不响")
+
+        var won = WidgetConfig()
+        Minesweeper.store(oneClickBoard(startedAt: 0), level: .beginner, in: &won)
+        XCTAssertEqual(Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &won, now: 5).sound, .win)
+    }
+
     func testWonLine() {
         XCTAssertEqual(Minesweeper.wonLine(seconds: 12, rank: 1), "赢了 · 12 秒 · 新纪录")
         XCTAssertEqual(Minesweeper.wonLine(seconds: 12, rank: 3), "赢了 · 12 秒 · 第 3 名")

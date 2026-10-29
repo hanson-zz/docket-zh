@@ -344,6 +344,31 @@ public struct MineScore: Codable, Equatable, Sendable {
     }
 }
 
+/// 扫雷的音效（Resources/Mines，scripts/make-mines-sounds.py 合成的原创 WAV）。
+public enum MineSound: String, CaseIterable, Sendable {
+    /// 揭开格子（含点数字揭开周围）。
+    case reveal
+    /// 插旗、拔旗。
+    case flag
+    /// 踩雷。
+    case boom
+    /// 赢了。
+    case win
+
+    public var fileName: String { "mines-\(rawValue)" }
+}
+
+/// 剩余雷数的颜色档位：还有雷（小熊猫橙）、正好插完（绿）、旗插多了成负数（红）。
+public enum MineCountTone: Equatable, Sendable {
+    case remaining
+    case cleared
+    case over
+
+    public init(minesLeft: Int) {
+        self = minesLeft > 0 ? .remaining : (minesLeft == 0 ? .cleared : .over)
+    }
+}
+
 /// 进行中的局、选的难度和各难度最佳成绩，都存在卡片配置里（不在设置页列出：
 /// 这些键不放进目录的默认值）。扩展栏卡片、面板和桌面卡片读写同一份。
 public enum Minesweeper {
@@ -362,6 +387,21 @@ public enum Minesweeper {
     public static func topKey(_ level: MineLevel) -> String { "top.\(level.rawValue)" }
     /// 每个难度留几名。
     public static let topCount = 5
+    /// 音效开关（布尔，默认开）。只看这一项，和系统静音、「减少动态效果」无关。
+    public static let soundKey = "sound"
+
+    public static func soundOn(_ config: WidgetConfig) -> Bool {
+        config.bool(soundKey, default: true)
+    }
+
+    public static func setSound(_ on: Bool, in config: inout WidgetConfig) {
+        config.set(soundKey, .bool(on))
+    }
+
+    /// 剩余雷数怎么写：负数用真正的减号「−」，比连字符显眼。
+    public static func minesLeftText(_ minesLeft: Int) -> String {
+        minesLeft < 0 ? "\u{2212}\(-minesLeft)" : "\(minesLeft)"
+    }
 
     /// 这个难度的排行榜，从快到慢。还没有 `top.*` 的旧配置把 `best.*`（和 `bestAt.*`）
     /// 当成第一名读出来；下次赢的时候连同新成绩一起写成 `top.*`。
@@ -483,6 +523,8 @@ public enum Minesweeper {
         public var newRecord: Bool
         /// 刚赢而且进了排行榜：第几名（从 1 起）。
         public var rank: Int? = nil
+        /// 这一下该响哪个音效（没变化是 nil）：输赢优先，其次插旗，其余是揭开。
+        public var sound: MineSound? = nil
     }
 
     /// 在某个难度的那一局上点一下，写回配置；刚赢时更新最佳成绩。
@@ -499,6 +541,7 @@ public enum Minesweeper {
         }
         var outcome = Outcome(changed: changed, justWon: false, justLost: false, newRecord: false)
         guard changed else { return outcome }
+        let flagsBefore = board(config, level: level).flagged.filter { $0 }.count
         store(game, level: level, in: &config)
         if before != .won, game.status == .won {
             outcome.justWon = true
@@ -513,6 +556,15 @@ public enum Minesweeper {
             }
         }
         if before != .lost, game.status == .lost { outcome.justLost = true }
+        if outcome.justLost {
+            outcome.sound = .boom
+        } else if outcome.justWon {
+            outcome.sound = .win
+        } else if game.flagged.filter({ $0 }).count != flagsBefore {
+            outcome.sound = .flag
+        } else {
+            outcome.sound = .reveal
+        }
         return outcome
     }
 
@@ -608,7 +660,8 @@ public enum DesktopCardsGamesPlan {
     /// 卡片边距。
     public static func inset(_ size: DesktopPinSize) -> Double { size == .small ? 6 : 12 }
     /// 顶上读数一行的高（小号、大号在棋盘上面；中号读数在右边一列）。
-    public static func headerHeight(_ size: DesktopPinSize) -> Double { size == .small ? 16 : 30 }
+    /// 小号的剩余雷数用 16pt 粗体，行高 18；中号、大号 22pt 以上，行高 30。
+    public static func headerHeight(_ size: DesktopPinSize) -> Double { size == .small ? 18 : 30 }
     /// 读数行和棋盘之间。
     public static func headerSpacing(_ size: DesktopPinSize) -> Double { size == .small ? 3 : 6 }
 
