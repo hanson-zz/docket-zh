@@ -77,16 +77,14 @@ struct MinesweeperDetail: View {
         return isRecord(board, level: level) ? tr("赢了 · \(seconds) 秒 · 新纪录") : tr("赢了 · \(seconds) 秒")
     }
 
-    /// 刚赢的这局就是最佳成绩（存的时候四舍五入到 0.1 秒）。
+    /// 刚赢的这局就是创下最佳成绩的那一局（按 `bestAt` 认那一局，平纪录的不算）。
     private func isRecord(_ board: MineBoard, level: MineLevel) -> Bool {
-        guard board.status == .won, let best = Minesweeper.best(instance.config, level: level) else { return false }
-        let time = (board.elapsed(now: 0) * 10).rounded() / 10
-        return abs(best - time) < 0.05
+        Minesweeper.isRecord(board, level: level, in: instance.config)
     }
 
     private func statusColor(_ board: MineBoard) -> Color {
         switch board.status {
-        case .won: MineStyle.win
+        case .won: MineStyle.winText
         case .lost: MineStyle.boom.panelReadable
         case .ready, .playing: Color.panelSecondary
         }
@@ -104,7 +102,7 @@ struct MinesweeperDetail: View {
                 Text(over ? tr("再来一盘") : tr("重开"))
                     .font(.system(size: 13, weight: .semibold))
             }
-            .foregroundStyle(over ? Color.white : Color.panelPrimary)
+            .foregroundStyle(over ? MineStyle.flagInk : Color.panelPrimary)
             .padding(.horizontal, 12)
             .frame(height: 30)
             .background {

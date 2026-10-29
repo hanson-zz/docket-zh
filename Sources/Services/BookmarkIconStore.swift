@@ -28,7 +28,9 @@ final class BookmarkIconStore {
     /// 这次运行已经自动联网试过的网站图标。
     @ObservationIgnored private var autoTried = Set<String>()
     @ObservationIgnored private var askedUploads = Set<String>()
-    @ObservationIgnored private var fetching = Set<String>()
+    /// 正在联网取的网站图标。同一个网站又被要一次（卡片自动取的途中点了“获取图标”）
+    /// 时等这一趟的结果，不当作没取到。
+    @ObservationIgnored private var fetching: [String: Task<Bool, Never>] = [:]
 
     private init() {}
 
@@ -90,8 +92,17 @@ final class BookmarkIconStore {
     }
 
     private func download(_ name: String, page: URL, pageIcon: String?) async -> NSImage? {
-        guard fetching.insert(name).inserted else { return sites[name] }
-        defer { fetching.remove(name) }
+        if let running = fetching[name] {
+            return await running.value ? sites[name] : nil
+        }
+        let task = Task { await self.downloadOnce(name, page: page, pageIcon: pageIcon) != nil }
+        fetching[name] = task
+        let got = await task.value
+        fetching[name] = nil
+        return got ? sites[name] : nil
+    }
+
+    private func downloadOnce(_ name: String, page: URL, pageIcon: String?) async -> NSImage? {
         for candidate in BookmarkIcons.iconCandidates(page: page, pageIcon: pageIcon) {
             guard let data = await Self.get(candidate), let png = Self.shrunkPNG(data),
                   let image = NSImage(data: png) else { continue }

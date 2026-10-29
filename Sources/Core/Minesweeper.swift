@@ -334,6 +334,9 @@ public enum Minesweeper {
     public static func gameKey(_ level: MineLevel) -> String { "game.\(level.rawValue)" }
     /// 最快通关秒数。
     public static func bestKey(_ level: MineLevel) -> String { "best.\(level.rawValue)" }
+    /// 创下最佳成绩的那一局是什么时候赢的（那局的 `endedAt`）：面板据此只在那一局
+    /// 写「新纪录」，平了纪录或四舍五入后一样的不算。
+    public static func bestAtKey(_ level: MineLevel) -> String { "bestAt.\(level.rawValue)" }
 
     public static func level(_ config: WidgetConfig) -> MineLevel {
         MineLevel(rawValue: config.string(levelKey, default: "")) ?? .beginner
@@ -356,6 +359,12 @@ public enum Minesweeper {
     public static func best(_ config: WidgetConfig, level: MineLevel) -> Double? {
         let value = config.double(bestKey(level), default: 0)
         return value > 0 ? value : nil
+    }
+
+    /// 这一局是不是刚创下这个难度最佳成绩的那一局（赢了，且 `bestAt` 记的就是它）。
+    public static func isRecord(_ board: MineBoard, level: MineLevel, in config: WidgetConfig) -> Bool {
+        guard board.status == .won, let ended = board.endedAt, best(config, level: level) != nil else { return false }
+        return abs(config.double(bestAtKey(level), default: -1) - ended) < 0.001
     }
 
     /// 「12 秒」；没有记录是「暂无」。
@@ -400,7 +409,9 @@ public enum Minesweeper {
             outcome.justWon = true
             let time = game.elapsed(now: now)
             if best(config, level: level).map({ time < $0 }) ?? true {
-                config.set(bestKey(level), .number((time * 10).rounded() / 10))
+                // 第一下就赢（空格一路翻完）用时是 0，存 0 会被当成“没有记录”，至少记 0.1 秒。
+                config.set(bestKey(level), .number(max(0.1, (time * 10).rounded() / 10)))
+                if let ended = game.endedAt { config.set(bestAtKey(level), .number(ended)) }
                 outcome.newRecord = true
             }
         }

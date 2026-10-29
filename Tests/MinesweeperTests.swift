@@ -308,6 +308,39 @@ final class MinesweeperTests: XCTestCase {
         XCTAssertEqual(Minesweeper.best(config, level: .beginner), 20)
     }
 
+    /// 9×9、10 雷全在第 0 行和第 1 行最左一格：点右下角一下就把其余格子全翻开、直接赢。
+    private func oneClickBoard(startedAt: Double) -> MineBoard {
+        MineBoard.fixed(rows: 9, columns: 9, mines: Set(0..<9).union([9]), startedAt: startedAt)
+    }
+
+    func testWinningOnTheFirstClickStillRecordsABest() {
+        var config = WidgetConfig()
+        Minesweeper.store(oneClickBoard(startedAt: 50), level: .beginner, in: &config)
+        let outcome = Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 50)
+        XCTAssertTrue(outcome.justWon)
+        XCTAssertTrue(outcome.newRecord)
+        XCTAssertEqual(Minesweeper.best(config, level: .beginner), 0.1, "用时 0 也要记下，不能当成暂无")
+        XCTAssertTrue(Minesweeper.isRecord(Minesweeper.board(config, level: .beginner), level: .beginner, in: config))
+    }
+
+    func testOnlyTheRecordGameIsMarkedAsRecord() {
+        var config = WidgetConfig()
+        Minesweeper.store(oneClickBoard(startedAt: 100), level: .beginner, in: &config)
+        XCTAssertTrue(Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 112.34).newRecord)
+        XCTAssertEqual(Minesweeper.best(config, level: .beginner), 12.3)
+        XCTAssertTrue(Minesweeper.isRecord(Minesweeper.board(config, level: .beginner), level: .beginner, in: config))
+
+        // 平了纪录（四舍五入后也是 12.3 秒）：不是新纪录，面板也不能写「新纪录」。
+        Minesweeper.store(oneClickBoard(startedAt: 200), level: .beginner, in: &config)
+        let tie = Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 212.3)
+        XCTAssertTrue(tie.justWon)
+        XCTAssertFalse(tie.newRecord)
+        XCTAssertFalse(Minesweeper.isRecord(Minesweeper.board(config, level: .beginner), level: .beginner, in: config))
+
+        Minesweeper.restart(.beginner, in: &config)
+        XCTAssertFalse(Minesweeper.isRecord(Minesweeper.board(config, level: .beginner), level: .beginner, in: config))
+    }
+
     func testIntermediateCanBeWonAndRecorded() {
         var config = WidgetConfig()
         let outcome = win(.intermediate, seed: 21, start: 0, end: 95, config: &config)

@@ -123,6 +123,10 @@ enum MinePlay {
 enum MineStyle {
     static var flag: Color { Color(hex: ShelfColor.redPanda.hex).panelGraphic }
     static var win: Color { Color(hex: "#3FAE5A").panelGraphic }
+    /// 「赢了 · 23 秒」这类字：浅色玻璃上压到正文的 4.5:1（`win` 只够图形的 3:1）。
+    static var winText: Color { Color(hex: "#3FAE5A").panelReadable }
+    /// 小熊猫橙实心底上的字：白字在 #E8743B 上只有约 3:1，用按底色算出的深墨。
+    static var flagInk: Color { Color(hex: PaperInk.ink(on: ShelfColor.redPanda.hex)) }
     static var boom: Color { Color(hex: "#E5484D") }
 
     static var hiddenFill: Color {

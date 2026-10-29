@@ -283,7 +283,7 @@ struct BookmarkEditorForm: View {
                 if let notice = draft.notice {
                     Text(notice)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Self.red)
+                        .foregroundStyle(Self.red.panelReadable)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 buttons(draft)
