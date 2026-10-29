@@ -64276,6 +64276,336 @@
         }
       }
     },
+    "辅助功能" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility"
+          }
+        }
+      }
+    },
+    "未授权" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not allowed"
+          }
+        }
+      }
+    },
+    "更新后授权失效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lost after update"
+          }
+        }
+      }
+    },
+    "消息灵动岛要的是辅助功能权限，不是通知权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Island needs Accessibility permission, not notification permission. "
+          }
+        }
+      }
+    },
+    "如果系统设置里码头已经勾着，那是更新前的旧授权：在 隐私与安全性 ▸ 辅助功能 里选中码头点「−」移除，再点「+」重新添加，或点「去授权」后打开开关。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Dockling already looks switched on in System Settings, that entry is from before the update: in Privacy & Security ▸ Accessibility, select Dockling, click − to remove it, then click + to add it again, or click Grant and turn the switch on."
+          }
+        }
+      }
+    },
+    "通知中心" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification Center"
+          }
+        }
+      }
+    },
+    "等辅助功能授权" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for Accessibility"
+          }
+        }
+      }
+    },
+    "未找到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found"
+          }
+        }
+      }
+    },
+    "系统的通知中心没有在运行，等几秒会自动重连；一直这样可以重启 Mac。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The system Notification Center isn't running. Dockling reconnects in a few seconds; if this stays, restart your Mac."
+          }
+        }
+      }
+    },
+    "已连接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected"
+          }
+        }
+      }
+    },
+    "正在连接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting"
+          }
+        }
+      }
+    },
+    "最近一次读到横幅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last banner read"
+          }
+        }
+      }
+    },
+    "从未" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
+    },
+    "让别人给你发一条消息，或点下面的「发一条测试通知」。横幅没出现时码头读不到：通知样式要选「横幅」或「提醒」，专注模式、勿扰时不出现，正在看那个 App 时系统也不弹横幅。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask someone to message you, or click Send a Test Notification below. Dockling can only read banners that appear: the notification style must be Banners or Alerts, banners don't appear during Focus or Do Not Disturb, and macOS shows no banner for the app you're using."
+          }
+        }
+      }
+    },
+    "测试消息灵动岛能不能读到横幅 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testing whether Message Island can read banners %@"
+          }
+        }
+      }
+    },
+    "测试成功：码头读到了通知横幅，消息灵动岛工作正常" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test passed: Dockling read the notification banner. Message Island is working."
+          }
+        }
+      }
+    },
+    "测试通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test notification"
+          }
+        }
+      }
+    },
+    "已发出，等横幅…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent, waiting for the banner…"
+          }
+        }
+      }
+    },
+    "读到了，消息卡已弹出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read it, the message card is showing"
+          }
+        }
+      }
+    },
+    "先给码头辅助功能权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Dockling in Accessibility first. "
+          }
+        }
+      }
+    },
+    "一条横幅都没读到：看看屏幕右上角刚才有没有出现码头的横幅。没出现就到 系统设置 ▸ 通知 ▸ 码头，把样式改成「横幅」，并关掉专注模式；出现了却读不到，请在系统设置里把码头从辅助功能移除再重新添加。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No banners read at all. Did a Dockling banner just appear at the top right? If not, go to System Settings ▸ Notifications ▸ Dockling, set the style to Banners and turn off Focus. If it appeared but wasn't read, remove Dockling from Accessibility in System Settings and add it again."
+          }
+        }
+      }
+    },
+    "别的横幅能读到，这条没读到：确认刚才出现了码头的横幅，再试一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other banners are read but this one wasn't. Make sure a Dockling banner appeared, then try again."
+          }
+        }
+      }
+    },
+    "没读到" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not read"
+          }
+        }
+      }
+    },
+    "码头的通知被关了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling notifications are off"
+          }
+        }
+      }
+    },
+    "到 系统设置 ▸ 通知 ▸ 码头 打开「允许通知」，样式选「横幅」，再点一次测试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to System Settings ▸ Notifications ▸ Dockling, turn on Allow Notifications, choose Banners, then test again."
+          }
+        }
+      }
+    },
+    "消息灵动岛没在运行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Island isn't running"
+          }
+        }
+      }
+    },
+    "打开上面的开关，并至少选一个 App。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on the switch above and choose at least one app."
+          }
+        }
+      }
+    },
+    "发一条测试通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a Test Notification"
+          }
+        }
+      }
+    },
+    "测试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test"
+          }
+        }
+      }
+    },
+    "码头自己发一条通知，读到了就弹出消息卡。码头的通知要允许，样式选「横幅」。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling sends itself a notification and shows the message card if it can read it. Dockling notifications must be allowed with the Banners style."
+          }
+        }
+      }
+    },
     "用默认输入法" : {
       "extractionState" : "manual",
       "localizations" : {

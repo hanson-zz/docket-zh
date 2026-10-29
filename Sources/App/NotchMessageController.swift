@@ -141,13 +141,24 @@ final class NotchMessageController {
         let now = Date()
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         var fresh = false
+        var testArrived = false
         for item in found {
             let key = item.incoming.key
             if priming {
                 dedupe.remember(key, now: now)
                 continue
             }
+            // 设置里「发一条测试通知」读回来的：不看 App 开关和前台 App，弹一张不能回复的卡。
+            if item.incoming.isTest {
+                guard dedupe.isNew(key, now: now) else { continue }
+                probeReceived(now: now)
+                model.inbox.receive(NotchMessage(item.incoming, date: now), makeCurrent: !model.replying)
+                fresh = true
+                testArrived = !model.replying
+                continue
+            }
             guard dedupe.isNew(key, now: now), settings.isOn(item.incoming.app) else { continue }
+            NotchMessageStatus.shared.sawMessage(at: now)
             // 正在看这个 App：不另外弹。
             if let front, NotchMessageApp.match(bundleID: front) == item.incoming.app { continue }
             let message = NotchMessage(item.incoming, date: now)
@@ -159,12 +170,52 @@ final class NotchMessageController {
         let alive = Set(model.inbox.messages.map(\.id))
         banners = banners.filter { alive.contains($0.key) }
         lastArrival = now
+        // 测试是用户在设置里点的：不管位置选的是不是小胶囊，直接展开给他看。
+        if testArrived, !model.expanded {
+            userExpand()
+            return
+        }
         if model.expanded {
             if !model.replying, !hovering { countdown.start(Double(settings.dismissSeconds), at: now) }
         } else {
             pendingSince = pendingSince ?? now
         }
         refresh()
+    }
+
+    // MARK: 测试通知
+
+    /// 设置里「发一条测试通知」：码头自己发一条通知，读到后弹卡；等 `NotchMessageProbe.timeout`
+    /// 秒没读到，设置里写「没读到」和原因。
+    func sendTestNotification() {
+        let status = NotchMessageStatus.shared
+        guard active else {
+            status.probe.inactive()
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let token = await NotchMessageProbeSender.send() else {
+                status.probe.notificationsOff()
+                return
+            }
+            guard let self, self.active else {
+                status.probe.inactive()
+                return
+            }
+            self.watcher.probeToken = token
+            status.probe.sent(token: token, at: Date())
+            try? await Task.sleep(for: .seconds(NotchMessageProbe.timeout + 0.5))
+            guard status.probe.token == token else { return }
+            status.probe.tick(now: Date())
+            if self.watcher.probeToken == token { self.watcher.probeToken = nil }
+        }
+    }
+
+    private func probeReceived(now: Date) {
+        let status = NotchMessageStatus.shared
+        if let token = watcher.probeToken { NotchMessageProbeSender.withdraw(token) }
+        watcher.probeToken = nil
+        status.probe.received(at: now)
     }
 
     /// 用户自己打开了消息所在的 App：它的未读清掉。
@@ -317,6 +368,8 @@ final class NotchMessageController {
         guard model.expanded else { return }
         model.expanded = false
         model.replying = false
+        // 测试那条看过就走，不在刘海旁边留未读数。
+        model.inbox.clearTests()
         countdown.stop()
         hovering = false
         NotchMessageOccupancy.shared.update(nil)
@@ -456,6 +509,11 @@ final class NotchMessageController {
             refresh()
         case .open:
             guard let current = model.inbox.current else { return }
+            if current.isTest {
+                collapse(animated: true)
+                refresh()
+                return
+            }
             NotchMessageOpener.open(current.app, banner: banners[current.id]?.element)
             model.inbox.handle(current.id)
             collapse(animated: true)

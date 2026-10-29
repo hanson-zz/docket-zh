@@ -209,14 +209,17 @@ public struct NotchIncoming: Equatable, Sendable {
     public var preview: String?
     /// 去重用的键：有系统标识用标识，没有时用内容。
     public var key: String
+    /// 设置里「发一条测试通知」读回来的那条（`NotchMessageProbe`）：不能回复、不留未读。
+    public var isTest: Bool
 
     public var previewHidden: Bool { preview == nil }
 
-    public init(app: NotchMessageApp, sender: String?, preview: String?, key: String) {
+    public init(app: NotchMessageApp, sender: String?, preview: String?, key: String, isTest: Bool = false) {
         self.app = app
         self.sender = sender
         self.preview = preview
         self.key = key
+        self.isTest = isTest
     }
 }
 
@@ -348,13 +351,11 @@ public enum NotchBannerParser {
         }
 
         if result.header == nil, result.title == nil, result.body == nil, let summary = result.summary {
-            var parts = summary.components(separatedBy: ", ").map { $0.trimmingCharacters(in: .whitespaces) }
-            if let last = parts.last, stackedWords.contains(last.lowercased()) { parts.removeLast() }
-            parts.removeAll { $0.isEmpty }
+            let parts = summaryParts(summary)
             if parts.count >= 3 {
                 result.header = parts[0]
                 result.title = parts[1]
-                result.body = parts[2...].joined(separator: ", ")
+                result.body = parts[2]
             } else if parts.count == 2 {
                 result.header = parts[0]
                 result.body = parts[1]
@@ -365,7 +366,7 @@ public enum NotchBannerParser {
 
     /// 这条横幅是不是要的 App 的一条消息。认不出 App、App 没启用、什么字都没有时为 nil。
     public static func incoming(_ banner: NotchBanner, enabled: [NotchMessageApp]) -> NotchIncoming? {
-        let summaryHead = banner.summary?.components(separatedBy: ", ").first
+        let summaryHead = banner.summary.flatMap { summaryParts($0).first }
         let candidates: [String?] = [banner.header, summaryHead] + banner.imageNames.map { Optional($0) }
         var app = candidates.lazy.compactMap { NotchMessageApp.match(name: $0) }.first
         var titleIsApp = false
@@ -405,6 +406,32 @@ public enum NotchBannerParser {
                 NotchLocatedIncoming(path: entry.path, incoming: $0, pressable: !entry.banner.stacked)
             }
         }
+    }
+
+    /// 横幅上的 App 名，设置里「最近一次读到横幅」用：顶上的 App 名，没有时取辅助说明的
+    /// 第一段，再没有取图标的说明。不取发件人和内容。
+    public static func appLabel(_ banner: NotchBanner) -> String? {
+        cleaned(banner.header) ?? banner.summary.flatMap { summaryParts($0).first } ?? banner.imageNames.first
+    }
+
+    /// 拆横幅的辅助说明：App 名、发件人、内容。英文系统用「, 」分开，中文系统用全角
+    /// 「，」（有时是「、」），只按前两个分隔拆，内容里的逗号原样留着；末尾的「已堆叠」
+    /// 去掉。最多三段。
+    public static func summaryParts(_ summary: String) -> [String] {
+        var rest = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 末尾「, stacked」「，已堆叠」。
+        if let range = rest.range(of: #"\s*(, |,|，|、)\s*([^,，、]+)$"#, options: .regularExpression) {
+            let tail = rest[range].trimmingCharacters(in: CharacterSet(charactersIn: ",，、 "))
+            if stackedWords.contains(tail.lowercased()) { rest = String(rest[..<range.lowerBound]) }
+        }
+        var parts: [String] = []
+        while parts.count < 2,
+              let range = rest.range(of: #"(, |，|、)"#, options: .regularExpression) {
+            parts.append(String(rest[..<range.lowerBound]))
+            rest = String(rest[range.upperBound...])
+        }
+        parts.append(rest)
+        return parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
     }
 
     static func isPlaceholder(_ text: String) -> Bool {
@@ -483,17 +510,22 @@ public struct NotchMessage: Identifiable, Equatable, Sendable {
     public var sender: String?
     public var preview: String?
     public var date: Date
+    /// 测试通知读回来的（见 `NotchIncoming.isTest`）。
+    public var isTest: Bool
 
-    public init(id: UUID = UUID(), app: NotchMessageApp, sender: String?, preview: String?, date: Date) {
+    public init(id: UUID = UUID(), app: NotchMessageApp, sender: String?, preview: String?, date: Date,
+                isTest: Bool = false) {
         self.id = id
         self.app = app
         self.sender = sender
         self.preview = preview
         self.date = date
+        self.isTest = isTest
     }
 
     public init(_ incoming: NotchIncoming, date: Date, id: UUID = UUID()) {
-        self.init(id: id, app: incoming.app, sender: incoming.sender, preview: incoming.preview, date: date)
+        self.init(id: id, app: incoming.app, sender: incoming.sender, preview: incoming.preview, date: date,
+                  isTest: incoming.isTest)
     }
 
     public var previewHidden: Bool { preview == nil || sender == nil }
@@ -505,7 +537,7 @@ public struct NotchMessage: Identifiable, Equatable, Sendable {
     }
 
     /// 能不能在刘海里直接回复：「信息」、知道发给谁。
-    public var canReplyInline: Bool { app.canReplyInline && !previewHidden }
+    public var canReplyInline: Bool { app.canReplyInline && !previewHidden && !isTest }
 
     /// 头像上的字：名字的第一个字（英文取首字母大写），没名字时为 nil（画 App 图标）。
     public var initial: String? {
@@ -605,6 +637,18 @@ public struct NotchMessageInbox: Equatable, Sendable {
         messages.removeAll { $0.app == app }
         deferred.subtract(gone)
         if let currentID, gone.contains(currentID) { self.currentID = messages.first?.id }
+    }
+
+    /// 测试通知那条看完就走，不在刘海旁边留未读数。还有消息时返回 true。
+    @discardableResult
+    public mutating func clearTests() -> Bool {
+        let gone = messages.filter(\.isTest).map(\.id)
+        if !gone.isEmpty {
+            messages.removeAll { $0.isTest }
+            deferred.subtract(gone)
+            if let currentID, gone.contains(currentID) { self.currentID = messages.first?.id }
+        }
+        return !messages.isEmpty
     }
 
     public mutating func clearAll() {

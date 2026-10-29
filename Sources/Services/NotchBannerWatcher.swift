@@ -8,8 +8,13 @@ import ApplicationServices
 /// 公开接口：读不到、认不出就什么都不报，绝不崩溃。macOS 26 上第一条横幅出现时是
 /// AXWindowCreated，后面追加进同一个窗口的只有 AXLayoutChanged，所以几种都听。
 ///
-/// 读 AX 在后台串行队列上做（每个元素最多等 `timeout` 秒），结果回主线程。没给
-/// 辅助功能权限时不做事，每隔几秒看一眼权限，给了就自动开始。
+/// 读 AX 在后台串行队列上做（每个元素最多等 `timeout` 秒），结果回主线程。
+///
+/// 每 `healthInterval` 秒看一次：辅助功能权限（没给时不做事，给了就自动接上，中途被收回
+/// 就断开）；通知中心进程换没换（它是后台进程，NSWorkspace 不发它的启动、退出通知，
+/// 重启后 pid 变了要重新挂观察器）；通知中心的窗口有没有变（万一这个版本的系统不报
+/// AXWindowCreated，靠这个兜底读一遍）。读到的情况写进 `NotchMessageStatus`，设置里的
+/// 状态几行就是看它。
 @MainActor
 final class NotchBannerWatcher {
     /// 读到的一条新消息（还没去重），带能替用户点一下的横幅元素。
@@ -30,9 +35,12 @@ final class NotchBannerWatcher {
     private var observedPID: pid_t = 0
     private var observedWindows: [AXUIElement] = []
     private var workspaceObservers: [NSObjectProtocol] = []
-    private var trustTimer: Timer?
+    private var healthTimer: Timer?
     private var scanPending = false
     private var scanGeneration = 0
+    private var polling = false
+    /// 设置里「发一条测试通知」的暗号，读到带它的横幅就当测试消息报上去。
+    var probeToken: String?
 
     private nonisolated static let queue = DispatchQueue(label: "com.docket-zh.notch-message.ax", qos: .userInitiated)
     /// 每个 AX 元素最多等多久。
@@ -44,6 +52,8 @@ final class NotchBannerWatcher {
     private nonisolated static let maxDepth = NotchBannerParser.maxDepth
     /// 事件来了等一小会儿再读，几个事件并成一次。
     private static let debounce: Duration = .milliseconds(120)
+    /// 多久看一次权限、通知中心进程和窗口。
+    private static let healthInterval: TimeInterval = 2
 
     private static let events: [String] = [
         kAXWindowCreatedNotification as String, "AXLayoutChanged",
@@ -63,6 +73,7 @@ final class NotchBannerWatcher {
             })
         }
         attach()
+        startHealthTimer()
     }
 
     func update(apps: [NotchMessageApp]) { enabled = apps }
@@ -71,8 +82,8 @@ final class NotchBannerWatcher {
         guard isRunning else { return }
         isRunning = false
         detach()
-        trustTimer?.invalidate()
-        trustTimer = nil
+        healthTimer?.invalidate()
+        healthTimer = nil
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach(workspace.removeObserver)
         workspaceObservers.removeAll()
@@ -80,30 +91,41 @@ final class NotchBannerWatcher {
 
     // MARK: 接上通知中心
 
+    /// 通知中心现在的进程（退出了的不算）。
+    private static func notificationCenterPID() -> pid_t? {
+        NSRunningApplication.runningApplications(withBundleIdentifier: NotchBannerParser.notificationCenterBundleID)
+            .first { !$0.isTerminated }?.processIdentifier
+    }
+
     private func attach() {
         detach()
         guard isRunning else { return }
-        guard AXIsProcessTrusted() else {
-            waitForTrust()
+        let status = NotchMessageStatus.shared
+        let trusted = AXIsProcessTrusted()
+        status.updateTrust(trusted)
+        guard trusted else { return }
+        guard let pid = Self.notificationCenterPID() else {
+            status.notificationCenterRunning = false
             return
         }
-        trustTimer?.invalidate()
-        trustTimer = nil
-        guard let process = NSRunningApplication.runningApplications(
-            withBundleIdentifier: NotchBannerParser.notificationCenterBundleID).first else { return }
-        let pid = process.processIdentifier
+        status.notificationCenterRunning = true
         var created: AXObserver?
         guard AXObserverCreate(pid, notchBannerObserverCallback, &created) == .success, let created else { return }
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, Self.timeout)
         let refcon = Unmanaged.passUnretained(self).toOpaque()
+        var registered = 0
         for event in Self.events {
-            AXObserverAddNotification(created, app, event as CFString, refcon)
+            let result = AXObserverAddNotification(created, app, event as CFString, refcon)
+            if result == .success || result == .notificationAlreadyRegistered { registered += 1 }
         }
+        // 一个都没挂上（权限其实没生效、进程正在退出）：不留半截观察器，下一轮再试。
+        guard registered > 0 else { return }
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(created), .commonModes)
         observer = created
         appElement = app
         observedPID = pid
+        status.connected = true
         scan(priming: true)
     }
 
@@ -121,20 +143,58 @@ final class NotchBannerWatcher {
         appElement = nil
         observedWindows = []
         observedPID = 0
+        NotchMessageStatus.shared.connected = false
     }
 
-    /// 没权限时每 5 秒看一眼，给了就接上。
-    private func waitForTrust() {
-        guard trustTimer == nil else { return }
-        let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, self.isRunning, AXIsProcessTrusted() else { return }
-                self.attach()
+    private func startHealthTimer() {
+        guard healthTimer == nil else { return }
+        let timer = Timer(timeInterval: Self.healthInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkHealth() }
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        healthTimer = timer
+    }
+
+    /// 定时看一眼：权限给了或收回、通知中心重启（pid 变了）都重新接；接着的时候看窗口变没变。
+    private func checkHealth() {
+        guard isRunning else { return }
+        let status = NotchMessageStatus.shared
+        let trusted = AXIsProcessTrusted()
+        status.updateTrust(trusted)
+        guard trusted else {
+            if observer != nil { detach() }
+            return
+        }
+        guard let pid = Self.notificationCenterPID() else {
+            status.notificationCenterRunning = false
+            if observer != nil { detach() }
+            return
+        }
+        status.notificationCenterRunning = true
+        guard observer != nil, pid == observedPID else {
+            attach()
+            return
+        }
+        pollWindows()
+    }
+
+    /// 兜底：通知中心的窗口和上次读到的不一样（多了、少了、换了）就读一遍，不靠 AX 事件。
+    private func pollWindows() {
+        guard !polling, !scanPending, let appElement else { return }
+        polling = true
+        let app = Box(element: appElement)
+        let known = observedWindows.map { Box(element: $0) }
+        Self.queue.async {
+            let windows = Self.windows(of: app.element)
+            let changed = windows.count != known.count
+                || windows.contains { window in !known.contains { CFEqual($0.element, window) } }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.polling = false
+                if changed { self.scheduleScan() }
             }
         }
-        timer.tolerance = 1
-        RunLoop.main.add(timer, forMode: .common)
-        trustTimer = timer
     }
 
     /// 新窗口也挂上同样的事件：追加进已有窗口的横幅只在窗口上报 AXLayoutChanged。
@@ -176,6 +236,9 @@ final class NotchBannerWatcher {
     private struct ScanResult: @unchecked Sendable {
         var windows: [AXUIElement]
         var found: [Found]
+        /// 读到几条横幅（不管哪个 App），和第一条上的 App 名，给设置里的自查用。
+        var bannerCount = 0
+        var bannerApp: String?
     }
 
     private func scan(priming: Bool) {
@@ -184,45 +247,58 @@ final class NotchBannerWatcher {
         let generation = scanGeneration
         let app = Box(element: appElement)
         let apps = enabled
+        let token = probeToken
         Self.queue.async {
-            let result = Self.read(app: app.element, enabled: apps)
+            let result = Self.read(app: app.element, enabled: apps, probeToken: token)
             Task { @MainActor [weak self] in
                 guard let self, self.isRunning, self.scanGeneration == generation else { return }
                 self.observeWindows(result.windows)
+                if result.bannerCount > 0 { NotchMessageStatus.shared.sawBanner(app: result.bannerApp) }
                 guard !result.found.isEmpty else { return }
                 self.onFound?(result.found, priming)
             }
         }
     }
 
+    /// 通知中心的窗口：先读 AXWindows，读不到时从孩子里挑窗口。
+    private nonisolated static func windows(of app: AXUIElement) -> [AXUIElement] {
+        if let list = copy(app, kAXWindowsAttribute) as? [AXUIElement], !list.isEmpty { return list }
+        guard let children = copy(app, kAXChildrenAttribute) as? [AXUIElement] else { return [] }
+        return children.filter { (copy($0, kAXRoleAttribute) as? String) == (kAXWindowRole as String) }
+    }
+
     /// 在后台队列上读通知中心的所有窗口。任何一步读不到都当没有。
-    private nonisolated static func read(app: AXUIElement, enabled: [NotchMessageApp]) -> ScanResult {
-        var windows: [AXUIElement] = []
-        if let list = copy(app, kAXWindowsAttribute) as? [AXUIElement] { windows = list }
-        if windows.isEmpty, let children = copy(app, kAXChildrenAttribute) as? [AXUIElement] {
-            windows = children.filter { (copy($0, kAXRoleAttribute) as? String) == (kAXWindowRole as String) }
-        }
-        var found: [Found] = []
+    private nonisolated static func read(app: AXUIElement, enabled: [NotchMessageApp],
+                                         probeToken: String?) -> ScanResult {
+        let windows = windows(of: app)
+        var result = ScanResult(windows: windows, found: [])
         var budget = maxNodes
         let deadline = Date().addingTimeInterval(readBudget)
         for window in windows {
             let tree = ElementTree(window)
             let snapshot = node(window, tree: tree, depth: 0, budget: &budget, deadline: deadline)
-            for located in NotchBannerParser.located(incomingIn: snapshot, enabled: enabled) {
+            for entry in NotchBannerParser.located(in: snapshot) {
+                result.bannerCount += 1
+                if result.bannerApp == nil { result.bannerApp = NotchBannerParser.appLabel(entry.banner) }
+                var incoming = NotchBannerParser.incoming(entry.banner, enabled: enabled)
+                if incoming == nil, let probeToken {
+                    incoming = NotchMessageProbe.incoming(entry.banner, token: probeToken)
+                }
+                guard let incoming else { continue }
                 var element: AXUIElement?
-                if located.pressable {
+                if !entry.banner.stacked {
                     var walk: ElementTree? = tree
-                    for index in located.path {
+                    for index in entry.path {
                         guard let current = walk, index < current.children.count else { walk = nil; break }
                         walk = current.children[index]
                     }
                     element = walk?.element
                 }
-                found.append(Found(incoming: located.incoming, element: element))
+                result.found.append(Found(incoming: incoming, element: element))
             }
             if budget <= 0 || Date() >= deadline { break }
         }
-        return ScanResult(windows: windows, found: found)
+        return result
     }
 
     private nonisolated static func node(_ element: AXUIElement, tree: ElementTree, depth: Int,

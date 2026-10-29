@@ -4,8 +4,9 @@ import SwiftUI
 ///
 /// 没解锁时开关旁边是 Pro 胶囊，打开开关只弹付费墙、不改配置；关掉不拦。解锁前已经
 /// 打开的照旧存着，只是不观察横幅、不弹卡片，解锁或试用后自动恢复（同窗口预览）。
-/// 打开后列出辅助功能权限、启用哪几个 App、位置（自动让位 / 刘海下方 / 刘海旁小胶囊）
-/// 和几秒后收起，底下写清楚它是怎么拿到消息的、什么时候拿不到。
+/// 打开后列出状态自查（辅助功能、通知中心、最近一次读到横幅、发一条测试通知）、启用
+/// 哪几个 App、位置（自动让位 / 刘海下方 / 刘海旁小胶囊）和几秒后收起，底下写清楚它是
+/// 怎么拿到消息的、什么时候拿不到。
 struct NotchMessageSettingsSection: View {
     @Binding var settings: NotchMessageSettings
 
@@ -44,7 +45,8 @@ struct NotchMessageSettingsSection: View {
             }
 
             if settings.enabled && unlocked {
-                AccessibilityRow()
+                NotchMessageStatusRows()
+                NotchMessageProbeRow()
 
                 ForEach(NotchMessageApp.allCases, id: \.self) { app in
                     Toggle(app.title, isOn: Binding(
@@ -92,28 +94,87 @@ struct NotchMessageSettingsSection: View {
     }
 }
 
-/// 辅助功能权限：给了写「已授权」，没给时一句说明加「去授权」。每两秒看一次，
-/// 在系统设置里打开后这里跟着变。
-private struct AccessibilityRow: View {
+/// 状态自查：辅助功能、通知中心、最近一次读到横幅，各一行，前面一个小圆点（绿正常、
+/// 橙要处理、灰在等），要处理的下面写怎么办。每秒刷新：在系统设置里给了权限，这里
+/// 跟着变。判断和文案在 Core 的 `NotchMessageDiagnosis`。
+private struct NotchMessageStatusRows: View {
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 2)) { _ in
-            let trusted = AppWindows.isTrusted
-            LabeledContent {
-                if trusted {
-                    Text(tr("已授权"))
-                        .foregroundStyle(.secondary)
-                } else {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let snapshot = NotchMessageStatus.shared.snapshot()
+            VStack(alignment: .leading, spacing: 10) {
+                Text(tr("状态"))
+                ForEach(NotchMessageDiagnosis.lines(snapshot, now: context.date), id: \.title) { line in
+                    NotchDiagnosisLineView(line: line)
+                }
+                if !snapshot.trusted {
                     Button(tr("去授权")) { AppWindows.requestAccess() }
                 }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+}
+
+/// 「发一条测试通知」和它的结果。
+private struct NotchMessageProbeRow: View {
+    var body: some View {
+        let status = NotchMessageStatus.shared
+        VStack(alignment: .leading, spacing: 8) {
+            LabeledContent {
+                Button(tr("发一条测试通知")) { NotchMessageController.shared.sendTestNotification() }
+                    .disabled(status.probe.token != nil)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("辅助功能权限"))
-                    Text(tr("读系统通知横幅需要辅助功能权限，没给时不会弹出消息卡。"))
+                    Text(tr("测试"))
+                    Text(tr("码头自己发一条通知，读到了就弹出消息卡。码头的通知要允许，样式选「横幅」。"))
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            if let line = status.probe.line(status.snapshot()) {
+                NotchDiagnosisLineView(line: line)
+            }
         }
+    }
+}
+
+/// 一行状态：圆点、名字、结果，下面一句怎么办。颜色只在圆点上，字用主色和次要色，
+/// 浅色、深色和液态玻璃底上都看得清。
+private struct NotchDiagnosisLineView: View {
+    var line: NotchMessageDiagnosis.Line
+
+    private var dot: Color {
+        switch line.level {
+        case .ok: .green
+        case .warning: .orange
+        case .idle: .gray
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Circle()
+                    .fill(dot)
+                    .frame(width: 8, height: 8)
+                    .accessibilityHidden(true)
+                Text(line.title)
+                    .font(.system(size: 13))
+                Spacer(minLength: 8)
+                Text(line.value)
+                    .font(.system(size: 13, weight: line.level == .warning ? .semibold : .regular))
+                    .foregroundStyle(line.level == .warning ? .primary : .secondary)
+                    .multilineTextAlignment(.trailing)
+            }
+            if let hint = line.hint {
+                Text(hint)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 16)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

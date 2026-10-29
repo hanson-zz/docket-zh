@@ -218,6 +218,8 @@ private struct NotchMessageCard: View {
     private var choices: [Choice] {
         let later = Choice(title: tr("稍后", context: "later"), action: .later)
         let open = Choice(title: NotchMessageText.jump(tr("打开")), action: .open)
+        // 设置里的测试通知：只有一个「知道了」。
+        if message.isTest { return [Choice(title: tr("知道了"), action: .dismiss)] }
         if message.previewHidden { return [later, open] }
         if message.canReplyInline {
             return [Choice(title: tr("回复"), action: .reply, selected: model.replying), later, open]
