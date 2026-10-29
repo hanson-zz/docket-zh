@@ -279,6 +279,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case slacker
     case aiAssistant = "ai-assistant"
     case cassette
+    case minesweeper
 }
 
 /// What a widget opens when its card is clicked.

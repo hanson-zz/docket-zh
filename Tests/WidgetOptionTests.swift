@@ -128,6 +128,8 @@ final class WidgetOptionTests: XCTestCase {
             // 时钟的子选项来自样式注册表，各由 ClockStyles.face 读（见 ClockStyleTests）。
             .clock: Set(["seconds", "secondHand"] + ClockStyles.optionKeys),
             .aiAssistant: [],
+            // 扫雷：局、难度和最佳成绩由卡片和面板写，设置页不列（Minesweeper）。
+            .minesweeper: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 

@@ -680,6 +680,8 @@ enum WidgetDetail {
         case .music: 320
         // 复古卡带：机身、玻璃键帽、推子和接下来 3 首，和正在播放一样 320（效果图）。
         case .cassette: 320
+        // 扫雷：初级、中级棋盘一样宽，换难度面板不跳。
+        case .minesweeper: CGFloat(Minesweeper.panelWidth)
         // 相册按第二批效果图改成 320。
         case .photos: 320
         // 最近截图改版：搜索、筛选、多选和标注，和下载一样 320。

@@ -100,6 +100,7 @@ public struct WidgetTile: View {
         case .slacker: SlackerTile(instance: instance, context: context)
         case .aiAssistant: AIAssistantTile(instance: instance, context: context)
         case .cassette: CassetteTile(instance: instance, context: context)
+        case .minesweeper: MinesweeperTile(instance: instance, context: context)
         // Still to come; a labelled placeholder beats rendering nothing. None
         // of these four can be placed today, so nothing reaches this arm:
         // they have no WidgetCatalog entry at all, so make returns nil. It

@@ -286,6 +286,8 @@ public enum WidgetTint {
         case .aiAssistant: Palette("#D9663A", "#5B5BD6")
         // 复古卡带：播放键的珊瑚色，对比色是收录机的苔绿。
         case .cassette: Palette("#E4623A", "#7A865E")
+        // 扫雷：旗子的小熊猫橙，对比色是竹叶绿。
+        case .minesweeper: Palette("#E8743B", "#6DBE45")
         }
     }
 

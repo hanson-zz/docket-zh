@@ -121,6 +121,8 @@ struct WidgetDetailBody: View {
             AIAssistantDetail(instance: instance, context: context)
         case .cassette:
             CassetteDetail(instance: instance, context: context)
+        case .minesweeper:
+            MinesweeperDetail(instance: instance, context: context)
         case .emoji:
             EmojiDetail(instance: instance, context: context)
         case .toggles:

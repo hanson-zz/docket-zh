@@ -410,6 +410,11 @@ public enum WidgetCatalog {
                            QuickToggle.showNamesKey: .bool(false)]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 扫雷（免费）：进行中的局、选的难度和最佳成绩都由卡片和面板写进配置
+        // （Minesweeper 的 level、game.*、best.*），不放进默认值，设置页不列。
+        Entry(kind: .minesweeper, name: tr("扫雷"), category: .tools, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // Empty folder: ~/Pictures, like the photo frame. Chosen in the panel.
         // 收藏和按时间自动换（Pro）在面板里设，存在 favorites、autoChange 这些键里
         // （见 WallpaperSchedule），设置里不列。
@@ -704,7 +709,7 @@ public enum WidgetCatalog {
              .translate,
              .github,
              .microphone, .gauges,
-             .colorPicker, .capture, .emoji, .search, .volume, .toggles:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper:
             nil
         }
     }
@@ -946,7 +951,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper:
             nil
         }
     }
@@ -1026,6 +1031,9 @@ public enum WidgetCatalog {
         // 复古卡带：中卡 404，磁带开紧凑时 216；宽度只看机型和紧凑，不看解锁。
         case .cassette:
             return CGSize(width: CassetteWidget.width(cfg), height: CassetteWidget.cardHeight)
+        // 扫雷：小棋盘缩略图、剩余雷数和计时、重开键。
+        case .minesweeper:
+            return CGSize(width: Minesweeper.tileWidth, height: 62)
         case .battery:
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
@@ -1277,6 +1285,9 @@ public enum WidgetCatalog {
         // 一盒小磁带、歌名和播放键。
         case .cassette:
             return CassetteWidget.columnHeight
+        // 扫雷：缩略图加两行读数。
+        case .minesweeper:
+            return Minesweeper.columnHeight
         default:
             return 76
         }

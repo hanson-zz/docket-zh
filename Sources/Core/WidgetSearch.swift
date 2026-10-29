@@ -19,6 +19,7 @@ public enum WidgetSearch {
         "reminders": ["reminders", "todo", "待办"],
         "notes": ["notes", "sticky", "备忘", "笔记"],
         "music": ["music", "now playing", "spotify", "音乐", "歌曲", "播放", "网易云", "netease", "cloudmusic", "qq音乐", "qq 音乐", "qqmusic", "小宇宙", "播客", "podcast", "xiaoyuzhou"],
+        "minesweeper": ["minesweeper", "mines", "mine", "game", "puzzle", "saolei", "扫雷", "地雷", "游戏", "小游戏", "益智"],
         "cassette": ["cassette", "tape", "walkman", "boombox", "retro", "磁带", "卡带", "复古", "随身听", "收录机", "音乐", "播放"],
         "battery": ["battery", "电量", "充电"],
         "system": ["system", "cpu", "memory", "内存", "处理器"],
