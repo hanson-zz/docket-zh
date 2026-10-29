@@ -143,13 +143,17 @@ final class DivinationTests: XCTestCase {
     // MARK: 铜钱规则
 
     func testCoinRule() {
-        // 三背老阳（变）、三字老阴（变）、两背一字少阳、两字一背少阴。true 是背。
+        // 火珠林「少者为主」：三背老阳（变）、三字老阴（变）、一背两字少阳、两背一字少阴。true 是背。
         XCTAssertEqual(LineKind(coins: [true, true, true]), .oldYang)
         XCTAssertEqual(LineKind(coins: [false, false, false]), .oldYin)
-        XCTAssertEqual(LineKind(coins: [true, true, false]), .youngYang)
-        XCTAssertEqual(LineKind(coins: [false, true, true]), .youngYang)
-        XCTAssertEqual(LineKind(coins: [true, false, false]), .youngYin)
-        XCTAssertEqual(LineKind(coins: [false, false, true]), .youngYin)
+        XCTAssertEqual(LineKind(coins: [true, false, false]), .youngYang)
+        XCTAssertEqual(LineKind(coins: [false, false, true]), .youngYang)
+        XCTAssertEqual(LineKind(coins: [false, true, false]), .youngYang)
+        XCTAssertEqual(LineKind(coins: [true, true, false]), .youngYin)
+        XCTAssertEqual(LineKind(coins: [false, true, true]), .youngYin)
+        XCTAssertEqual(LineKind(coins: [true, false, true]), .youngYin)
+        XCTAssertEqual(LineKind(backs: 1), .youngYang)
+        XCTAssertEqual(LineKind(backs: 2), .youngYin)
         XCTAssertEqual(LineKind.oldYin.rawValue, 6)
         XCTAssertEqual(LineKind.youngYang.rawValue, 7)
         XCTAssertEqual(LineKind.youngYin.rawValue, 8)
@@ -194,7 +198,8 @@ final class DivinationTests: XCTestCase {
 
     func testChangedHexagram() {
         // 泰（乾下坤上），九三老阳变：成临（兑下坤上）。初爻在前。
-        let yang = [true, true, true], young = [true, true, false], yin = [true, false, false]
+        // 一背两字少阳、两背一字少阴。
+        let yang = [true, true, true], young = [true, false, false], yin = [true, true, false]
         let casting = Casting(tosses: [young, young, yang, yin, yin, yin])
         XCTAssertEqual(casting.primary?.name, "泰")
         XCTAssertEqual(casting.changingIndices, [2])

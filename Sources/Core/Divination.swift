@@ -159,9 +159,9 @@ public struct Hexagram: Equatable, Sendable {
 
 /// 一爻的四种：老阴（变）、少阳、少阴、老阳（变）。原始值是传统的六七八九。
 ///
-/// 对应关系（本小组件一直用这一种）：三枚铜钱，背面是「背」、有字的一面是「字」，
-/// 三背为老阳（变）、三字为老阴（变）、两背一字为少阳、两字一背为少阴。
-/// 也就是背多为阳、字多为阴，三枚一样时为老、要变。
+/// 对应关系按传统火珠林「少者为主」（本小组件一直用这一种）：三枚铜钱，背面是「背」、
+/// 有字的一面是「字」，三背为老阳（变）、三字为老阴（变）、一背两字为少阳、两背一字为少阴。
+/// 也就是三枚不一样时看少的那一面：背少为阳、字少为阴；三枚一样时为老、要变。
 public enum LineKind: Int, CaseIterable, Codable, Sendable {
     case oldYin = 6, youngYang = 7, youngYin = 8, oldYang = 9
 
@@ -169,8 +169,8 @@ public enum LineKind: Int, CaseIterable, Codable, Sendable {
     public init(backs: Int) {
         switch backs {
         case 3: self = .oldYang
-        case 2: self = .youngYang
-        case 1: self = .youngYin
+        case 2: self = .youngYin
+        case 1: self = .youngYang
         default: self = .oldYin
         }
     }

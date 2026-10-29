@@ -535,7 +535,8 @@ struct DivinationDetail: View {
 /// 小组件库和截图里的示例：泰卦九三变成临卦（固定的一卦）。
 enum DivinationSamples {
     static let casting: Casting = {
-        let yang = [true, true, true], young = [true, true, false], yin = [true, false, false]
+        // 一背两字少阳、两背一字少阴（火珠林「少者为主」）。
+        let yang = [true, true, true], young = [true, false, false], yin = [true, true, false]
         return Casting(question: "", time: 1_800_000_000, tosses: [young, young, yang, yin, yin, yin])
     }()
 }
