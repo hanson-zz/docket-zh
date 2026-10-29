@@ -405,10 +405,10 @@ struct BookmarkEditorForm: View {
 
     private func statusLine(_ status: BookmarkFormState.Status) -> String? {
         switch status {
-        case .idle: nil
-        case .fetching: tr("正在读取标题和图标…")
-        case .got: tr("已获取网站图标")
-        case .missed: tr("没取到图标，可以用文字或上传")
+        case .idle: return nil
+        case .fetching: return tr("正在读取标题和图标…")
+        case .got: return tr("已获取网站图标")
+        case .missed: return tr("没取到图标，可以用文字或上传")
         }
     }
 
@@ -709,9 +709,12 @@ struct BookmarkEditorForm: View {
         state.draft?.fetchedFor = key
         state.draft?.notice = nil
         Task {
-            let web = LinkPreview.needsFetch(url, stored: nil)
-            let preview = web ? await LinkPreviewFetcher.fetch([url]).first : nil
-            let image = web ? await BookmarkIconStore.shared.fetchSiteIcon(page: url, pageIcon: preview?.icon) : nil
+            var preview: LinkPreview?
+            var image: NSImage?
+            if LinkPreview.needsFetch(url, stored: nil) {
+                preview = await LinkPreviewFetcher.fetch([url]).first
+                image = await BookmarkIconStore.shared.fetchSiteIcon(page: url, pageIcon: preview?.icon)
+            }
             guard var next = state.draft, next.fetchedFor == key else { return }
             next.preview = preview
             if image != nil {
