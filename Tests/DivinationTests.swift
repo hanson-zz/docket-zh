@@ -489,6 +489,109 @@ final class DivinationTests: XCTestCase {
         XCTAssertEqual(Set(DivinationSoundSynth.clinkOffsets).count, 3)
     }
 
+    // MARK: 解忧书书页
+
+    /// 每一条答案都排进两行、字号不小于 17pt，每行按全角字宽放得进两页的写字宽度，
+    /// 拆开拼回去还是原文。
+    func testEveryAnswerFitsTwoLinesOnTheSpread() {
+        for answer in WorryBook.answers {
+            let layout = WorryBook.layout(answer)
+            XCTAssertTrue((1...2).contains(layout.lines.count), answer)
+            XCTAssertGreaterThanOrEqual(layout.font, 17, answer)
+            XCTAssertGreaterThanOrEqual(layout.font, Divination.minimumFont, answer)
+            XCTAssertEqual(layout.lines.joined(), answer)
+            for line in layout.lines {
+                XCTAssertLessThanOrEqual(Double(line.count) * layout.font, WorryBook.spreadTextWidth, answer)
+                XCTAssertFalse(line.isEmpty, answer)
+            }
+        }
+        XCTAssertEqual(WorryBook.pageFonts, WorryBook.pageFonts.sorted(by: >))
+    }
+
+    func testPageLinesBreakAtCommaThenNearTheMiddle() {
+        XCTAssertEqual(WorryBook.lines("先迈出一小步，答案会自己出现", perLine: 8), ["先迈出一小步，", "答案会自己出现"])
+        // 没有逗号、一行放不下：在中间附近断。
+        XCTAssertEqual(WorryBook.lines("你心里其实早有答案了", perLine: 8), ["你心里其实", "早有答案了"])
+        // 放得进一行就一行。
+        XCTAssertEqual(WorryBook.lines("这页写着：放心吧", perLine: 8), ["这页写着：放心吧"])
+        // 两行都放不下。
+        XCTAssertNil(WorryBook.lines("一二三四五六七八九十", perLine: 4))
+        // 标点不落在行首，左引号不留在行尾。
+        let lines = WorryBook.lines("把“如果”换成“试试”", perLine: 6) ?? []
+        XCTAssertEqual(lines.joined(), "把“如果”换成“试试”")
+        for line in lines.dropFirst() { XCTAssertFalse(["”", "，"].contains(line.first.map(String.init) ?? "")) }
+        for line in lines { XCTAssertNotEqual(line.last, "“") }
+        // 逗号太靠后时不硬按逗号断。
+        let long = WorryBook.lines("今天不适合想太多，适合吃点好的", perLine: 8)
+        XCTAssertEqual(long?.joined(), "今天不适合想太多，适合吃点好的")
+        XCTAssertTrue((long ?? []).allSatisfy { $0.count <= 8 })
+    }
+
+    func testFlipSwapsHalfway() {
+        XCTAssertEqual(WorryBook.flipSwap, WorryBook.flipDuration / 2, accuracy: 0.0001)
+        XCTAssertLessThan(WorryBook.flipDuration, 1)
+    }
+
+    /// 书页上的墨色、强调红和页码，在纸面和书脊阴影上都过 4.5:1，浅色深色都算。
+    func testBookInkContrastOnPaper() {
+        let pairs: [(paper: String, gutter: String, inks: [String])] = [
+            (Divination.bookPaperLightHex, Divination.bookGutterLightHex,
+             [Divination.bookInkLightHex, Divination.bookRedLightHex, Divination.bookPageNumberLightHex]),
+            (Divination.bookPaperDarkHex, Divination.bookGutterDarkHex,
+             [Divination.bookInkDarkHex, Divination.bookRedDarkHex, Divination.bookPageNumberDarkHex]),
+        ]
+        for pair in pairs {
+            for ink in pair.inks {
+                XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: pair.paper, ink: ink), 4.5, "\(ink) on \(pair.paper)")
+                XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: pair.gutter, ink: ink), 4.5, "\(ink) on \(pair.gutter)")
+            }
+        }
+        // 深色外观的纸压低了亮度，比浅色纸暗。
+        let dark = ColorCode(hex: Divination.bookPaperDarkHex)!
+        let light = ColorCode(hex: Divination.bookPaperLightHex)!
+        XCTAssertLessThan(WidgetTint.luminance(dark), WidgetTint.luminance(light) * 0.75)
+    }
+
+    // MARK: 捧龟甲摔卦
+
+    func testShellTossOrder() {
+        for toss in [ShellToss.normal, ShellToss.fast] {
+            let marks = [0, toss.liftStart, toss.fallStart, toss.impact, toss.popStart(0), toss.landing(0),
+                         toss.settled, toss.pickupStart, toss.total]
+            XCTAssertEqual(marks, marks.sorted())
+            XCTAssertEqual(Set(marks).count, marks.count, "每一步都占时间")
+            // 铜钱出壳、落地的间隔就是落地声的间隔。
+            for i in 0..<3 {
+                XCTAssertEqual(toss.landing(i) - toss.landing(0),
+                               DivinationSoundSynth.clinkOffsets[i] - DivinationSoundSynth.clinkOffsets[0],
+                               accuracy: 0.0001)
+                XCTAssertGreaterThan(toss.popStart(i), toss.impact, "摔到地上以后才蹦出来")
+            }
+            XCTAssertEqual(toss.clinkStart, toss.landing(0), accuracy: 0.0001)
+            XCTAssertLessThan(toss.total, 2.6)
+        }
+        XCTAssertLessThan(ShellToss.fast.total, ShellToss.normal.total, "一次起完节奏快一些")
+        XCTAssertEqual(ShellToss.timing(fast: true), .fast)
+        XCTAssertEqual(ShellToss.timing(fast: false), .normal)
+    }
+
+    /// 三枚铜钱落在地面线上左中右错开，互不压着，也都在场景（内容宽 266、铜钱 30）里面。
+    func testCoinLandingsAreSpreadAndInside() {
+        let coin = 30.0
+        let half = Divination.panelContentWidth / 2
+        let spots = ShellToss.landings
+        XCTAssertEqual(spots.count, 3)
+        XCTAssertEqual(spots.map(\.x), spots.map(\.x).sorted())
+        for i in 1..<spots.count {
+            XCTAssertGreaterThan((spots[i].x - spots[i - 1].x) * coin, coin * 1.4)
+        }
+        for spot in spots {
+            XCTAssertLessThanOrEqual(abs(spot.x) * coin + coin / 2, half)
+            XCTAssertLessThan(abs(spot.y), 0.5)
+        }
+        XCTAssertGreaterThan(Set(spots.map(\.y)).count, 1, "前后也错开一点")
+    }
+
     // MARK: 目录
 
     func testCatalogEntry() {

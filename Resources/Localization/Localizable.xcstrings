@@ -67604,17 +67604,6 @@
         }
       }
     },
-    "哗啦……" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flip…"
-          }
-        }
-      }
-    },
     "想好了，就翻开看看" : {
       "extractionState" : "manual",
       "localizations" : {

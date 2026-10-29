@@ -304,6 +304,113 @@ public enum WorryBook {
     }
 }
 
+// MARK: 解忧书 · 书页排版和翻页节奏
+
+extension WorryBook {
+    /// 答案写在摊开的两页上、跨书脊居中，宋体大字，最多两行。从大到小试这几档字号，
+    /// 第一档能排进两行的就用它（最小 17pt，所有答案都排得下，测试守着）。
+    public static let pageFonts: [Double] = [22, 21, 20, 19, 18, 17]
+    /// 两页上能写字的宽度（书 258 宽，两边留出页边和左上角的「解忧」印）。
+    public static let spreadTextWidth: Double = 190
+    /// 翻一页的时长（秒）：右页绕书脊翻过去，翻到一半换答案。
+    public static let flipDuration: Double = 0.6
+    public static var flipSwap: Double { flipDuration / 2 }
+
+    /// 一页上的排法：一行或两行字，加上字号。
+    public struct PageLayout: Equatable, Sendable {
+        public var lines: [String]
+        public var font: Double
+    }
+
+    /// 行首不能放的标点、行尾不能放的标点，断在这些后面更自然。
+    private static let noLineStart: Set<Character> = ["，", "。", "、", "：", "；", "！", "？", "”", "」", "』", "）", "…"]
+    private static let noLineEnd: Set<Character> = ["“", "「", "『", "（"]
+    private static let niceBreakAfter: Set<Character> = ["，", "。", "、", "：", "；", "！", "？"]
+
+    /// 按字号排：书页上的字都是全角，一个字占一个字号宽。先找按逗号断（或一行）放得下的
+    /// 最大字号，都不行再在中间附近断。
+    public static func layout(_ answer: String, width: Double = spreadTextWidth) -> PageLayout {
+        for middle in [false, true] {
+            for font in pageFonts {
+                let perLine = Int((width / font).rounded(.down))
+                if let lines = lines(answer, perLine: perLine, breakInMiddle: middle) {
+                    return PageLayout(lines: lines, font: font)
+                }
+            }
+        }
+        let smallest = pageFonts.last ?? 17
+        return PageLayout(lines: [answer], font: smallest)
+    }
+
+    /// 每行最多 `perLine` 个字，排成一到两行；两行放不下返回 nil。
+    /// 第一个「，」前后都放得下时在逗号处断（后半行用强调色）；`breakInMiddle` 时
+    /// 再试在中间附近断，不让标点落在行首，也不把左引号留在行尾。
+    public static func lines(_ answer: String, perLine: Int, breakInMiddle: Bool = true) -> [String]? {
+        guard perLine > 0 else { return nil }
+        let chars = Array(answer)
+        let parts = split(answer)
+        if let second = parts.second, parts.first.count <= perLine, second.count <= perLine {
+            return [parts.first, second]
+        }
+        if chars.count <= perLine { return [answer] }
+        guard breakInMiddle else { return nil }
+        guard chars.count <= perLine * 2 else { return nil }
+        var best: (k: Int, score: Double)?
+        for k in 1..<chars.count where k <= perLine && chars.count - k <= perLine {
+            if noLineStart.contains(chars[k]) || noLineEnd.contains(chars[k - 1]) { continue }
+            var score = abs(Double(k) - Double(chars.count) / 2)
+            if niceBreakAfter.contains(chars[k - 1]) { score -= 2.5 }
+            if best == nil || score < best!.score { best = (k, score) }
+        }
+        guard let k = best?.k else { return nil }
+        return [String(chars[..<k]), String(chars[k...])]
+    }
+}
+
+// MARK: 起卦 · 捧龟甲、摔卦的节奏
+
+/// 小熊猫双爪捧着古龟甲左右摇（铜钱叮当）→ 举高 → 往地上一摔（越落越快，触地压扁回弹，
+/// 扬起一点土）→ 三枚铜钱按 `DivinationSoundSynth.clinkOffsets` 错开从壳口蹦出，
+/// 抛物线落地、弹两下停住 → 小熊猫把龟甲捡回手里。时间都是从按下起算的秒数。
+/// 「一次起完」节奏快一些；减少动态效果时不走这套，直接出结果。
+public struct ShellToss: Equatable, Sendable {
+    public var shake: Double
+    public var lift: Double
+    public var fall: Double
+    public var squash: Double
+    public var pop: Double
+    public var flight: Double
+    public var bounce: Double
+    public var rest: Double
+    public var pickup: Double
+
+    public static let normal = ShellToss(shake: 0.62, lift: 0.18, fall: 0.2, squash: 0.16, pop: 0.04,
+                                         flight: 0.36, bounce: 0.18, rest: 0.18, pickup: 0.32)
+    public static let fast = ShellToss(shake: 0.34, lift: 0.12, fall: 0.16, squash: 0.12, pop: 0.03,
+                                       flight: 0.3, bounce: 0.14, rest: 0.08, pickup: 0.24)
+
+    public static func timing(fast: Bool) -> ShellToss { fast ? .fast : .normal }
+
+    /// 举高开始、往下摔开始、触地。
+    public var liftStart: Double { shake }
+    public var fallStart: Double { shake + lift }
+    public var impact: Double { shake + lift + fall }
+
+    /// 第 i 枚铜钱出壳口、落地。
+    public func popStart(_ i: Int) -> Double { impact + pop + DivinationSoundSynth.clinkOffsets[i] }
+    public func landing(_ i: Int) -> Double { popStart(i) + flight }
+
+    /// 三声落地声从第一枚落地开始放（音效里本身按 clinkOffsets 错开）。
+    public var clinkStart: Double { landing(0) }
+    /// 三枚都停稳、开始捡龟甲、全部结束。
+    public var settled: Double { landing(DivinationSoundSynth.clinkOffsets.count - 1) + bounce }
+    public var pickupStart: Double { settled + rest }
+    public var total: Double { pickupStart + pickup }
+
+    /// 三枚铜钱停下的位置：相对场景中心和地面线，按铜钱直径算（x 左右错开，y 前后错开一点）。
+    public static let landings: [(x: Double, y: Double)] = [(-2.85, -0.08), (0.25, 0.22), (3.0, -0.15)]
+}
+
 // MARK: - 存进卡片配置
 
 /// 面板停在哪一页。
@@ -559,6 +666,19 @@ public enum Divination {
     /// 金色当字用时：浅色压深（白底约 4.9:1），深色提亮。
     public static let goldTextLightHex = "#8A6414"
     public static let goldTextDarkHex = "#F0CB6A"
+
+    /// 解忧书的纸和墨：浅色米白纸；深色外观换成暖灰米色、压低亮度，不刺眼。
+    /// 墨色、强调红和页码在纸面和书脊阴影上都过 4.5:1（测试守着）。
+    public static let bookPaperLightHex = "#FBF6EA"
+    public static let bookGutterLightHex = "#EADFC8"
+    public static let bookInkLightHex = "#2B211A"
+    public static let bookRedLightHex = "#A8231C"
+    public static let bookPageNumberLightHex = "#6E5E4A"
+    public static let bookPaperDarkHex = "#CFC4AE"
+    public static let bookGutterDarkHex = "#BDB199"
+    public static let bookInkDarkHex = "#2A1F17"
+    public static let bookRedDarkHex = "#7E1915"
+    public static let bookPageNumberDarkHex = "#463A2D"
 
     // MARK: 尺寸
 

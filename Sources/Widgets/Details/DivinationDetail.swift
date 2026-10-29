@@ -6,7 +6,7 @@ import SwiftUI
 // （Divination.panelContentWidth，340 是 266）排，不会把整列撑宽、被面板裁掉右边。
 // 顶上三段切换（每日一签 / 起卦 / 解忧书）和音效开关，底下一行「仅供娱乐」。
 // 不铺背景色、不发光：颜色只在签级、卦辞、变爻红点、主按钮和金色点缀上。
-// 「减少动态效果」打开时签筒不抖、龟壳不晃不翻、铜钱不弹、书页不翻，直接出结果。
+// 「减少动态效果」打开时签筒不抖、龟甲不晃不摔、铜钱不蹦、书页不翻、小熊猫不倾，直接出结果。
 
 struct DivinationDetail: View {
     var instance: WidgetInstance
@@ -21,9 +21,8 @@ struct DivinationDetail: View {
     @State private var stickBusy = false
     // 起卦
     @State private var question = ""
-    @State private var shellPhase: PandaWithShell.Phase = .idle
-    @State private var shellShakes = 0
-    @State private var coinDrops = 0
+    @State private var tossCount = 0
+    @State private var tossFast = false
     @State private var castBusy = false
     @State private var viewing: Casting?
     @State private var showHistory = false
@@ -31,6 +30,7 @@ struct DivinationDetail: View {
     @State private var bookQuestion = ""
     @State private var bookFlips = 0
     @State private var bookBusy = false
+    @State private var bookTextVisible = true
 
     private static let width = CGFloat(Divination.panelContentWidth)
 
@@ -221,9 +221,7 @@ struct DivinationDetail: View {
             } else {
                 viewingBar(casting)
             }
-            PandaWithShell(size: 92, phase: shellPhase, shakes: shellShakes)
-                .frame(maxWidth: .infinity)
-            CoinRow(faces: casting.tosses.last, size: 34, drops: coinDrops)
+            ShellTossScene(width: Self.width, faces: casting.tosses.last, throwCount: tossCount, fast: tossFast)
                 .frame(maxWidth: .infinity)
             Text(Divination.castingSummary(casting))
                 .font(.system(size: 13))
@@ -371,19 +369,20 @@ struct DivinationDetail: View {
             DivinationPlay.play(.clink, for: instance)
             return
         }
+        // 捧着摇（叮当）→ 举高摔下 → 触地时记下这一爻 → 第一枚铜钱落地时放三声落地声 → 捡回龟甲。
         castBusy = true
-        shellPhase = .shaking
-        shellShakes += 1
+        tossFast = all
+        tossCount += 1
         DivinationPlay.play(.jingle, for: instance)
+        let toss = ShellToss.timing(fast: all)
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(all ? 420 : 680))
+            try? await Task.sleep(for: .seconds(toss.shake))
             DivinationSoundPlayer.stop(.jingle)
-            shellPhase = .pouring
+            try? await Task.sleep(for: .seconds(toss.impact - toss.shake))
             DivinationPlay.toss(in: instance, question: question, all: all)
-            coinDrops += 1
+            try? await Task.sleep(for: .seconds(toss.clinkStart - toss.impact))
             DivinationPlay.play(.clink, for: instance)
-            try? await Task.sleep(for: .milliseconds(620))
-            shellPhase = .idle
+            try? await Task.sleep(for: .seconds(toss.total - toss.clinkStart))
             castBusy = false
         }
     }
@@ -479,46 +478,10 @@ struct DivinationDetail: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.panelPrimary)
             questionField($bookQuestion)
-            ZStack(alignment: .top) {
-                DivinationPanda(name: "pet-panda-cheer", size: 64)
-                OpenBook(width: 226, flips: bookFlips)
-                    .padding(.top, 48)
-            }
-            .frame(maxWidth: .infinity)
-            answer
-                .frame(minHeight: 92)
+            // 答案直接写在书页上；小熊猫在书后探头，爪子搭在页边，翻页时掀起右页。
+            WorryBookScene(width: Self.width, index: lastPage, textVisible: bookTextVisible, flips: bookFlips)
+                .frame(maxWidth: .infinity)
             DivinationPrimaryButton(title: tr("翻一页"), enabled: !bookBusy) { flip() }
-        }
-    }
-
-    @ViewBuilder private var answer: some View {
-        if let index = lastPage, !bookBusy {
-            let parts = WorryBook.split(WorryBook.answers[index])
-            VStack(spacing: 2) {
-                Text(verbatim: parts.first)
-                    .font(.system(size: 22, weight: .heavy))
-                    .foregroundStyle(parts.second == nil ? DivinationStyle.red : Color.panelPrimary)
-                if let second = parts.second {
-                    Text(verbatim: second)
-                        .font(.system(size: 22, weight: .heavy))
-                        .foregroundStyle(DivinationStyle.red)
-                }
-                Text(tr("第 \(index + 1) 页"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelSecondary)
-                    .minimumScaleFactor(1)
-                    .padding(.top, 4)
-            }
-            .multilineTextAlignment(.center)
-            .lineLimit(2)
-            .minimumScaleFactor(0.8)
-            .fixedSize(horizontal: false, vertical: true)
-            .transition(.opacity)
-            .accessibilityElement(children: .combine)
-        } else {
-            Text(bookBusy ? tr("哗啦……") : tr("想好了，就翻开看看"))
-                .font(.system(size: 15))
-                .foregroundStyle(Color.panelSecondary)
         }
     }
 
@@ -529,12 +492,16 @@ struct DivinationDetail: View {
             DivinationPlay.turnPage(in: instance)
             return
         }
+        // 旧字淡出、右页翻起来，翻到一半换成新的一页，翻完再放开按钮。
         bookBusy = true
+        withAnimation(.easeOut(duration: 0.12)) { bookTextVisible = false }
         bookFlips += 1
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(340))
+            try? await Task.sleep(for: .seconds(WorryBook.flipSwap))
             DivinationPlay.turnPage(in: instance)
-            withAnimation(.easeOut(duration: 0.2)) { bookBusy = false }
+            withAnimation(.easeOut(duration: 0.2)) { bookTextVisible = true }
+            try? await Task.sleep(for: .seconds(WorryBook.flipDuration - WorryBook.flipSwap))
+            bookBusy = false
         }
     }
 }

@@ -147,7 +147,7 @@ private struct DeskDivinationCard: View {
                     .lineLimit(showJudgment ? 2 : 1)
             } else {
                 HStack {
-                    PandaWithShell(size: 58, phase: castBusy ? .shaking : .idle, shakes: shellShakes)
+                    PandaWithShell(size: 58, shakes: shellShakes)
                     Spacer(minLength: 0)
                 }
                 Text(tr("想好问题，摇六次成一卦"))
