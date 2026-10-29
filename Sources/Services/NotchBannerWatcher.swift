@@ -46,9 +46,10 @@ final class NotchBannerWatcher {
     /// 每个 AX 元素最多等多久。
     private nonisolated static let timeout: Float = 0.2
     /// 一次读最多花多久，通知中心卡住时不让后台队列越积越多。
-    private nonisolated static let readBudget: TimeInterval = 1.5
-    /// 一次最多读多少个元素、多深，防一个反常的树。
-    private nonisolated static let maxNodes = 400
+    private nonisolated static let readBudget: TimeInterval = 2.5
+    /// 每个窗口最多读多少个元素、多深，防一个反常的树。按窗口算：通知中心进程里还挂着
+    /// 桌面小组件的窗口，以前几个窗口合用 400 个，小组件排在前面时轮不到横幅那个窗口。
+    private nonisolated static let maxNodesPerWindow = 600
     private nonisolated static let maxDepth = NotchBannerParser.maxDepth
     /// 事件来了等一小会儿再读，几个事件并成一次。
     private static let debounce: Duration = .milliseconds(120)
@@ -239,6 +240,8 @@ final class NotchBannerWatcher {
         /// 读到几条横幅（不管哪个 App），和第一条上的 App 名，给设置里的自查用。
         var bannerCount = 0
         var bannerApp: String?
+        /// 每个窗口的结构摘要（不含消息内容），设置里「复制诊断信息」用。
+        var report: String = ""
     }
 
     private func scan(priming: Bool) {
@@ -253,6 +256,7 @@ final class NotchBannerWatcher {
             Task { @MainActor [weak self] in
                 guard let self, self.isRunning, self.scanGeneration == generation else { return }
                 self.observeWindows(result.windows)
+                NotchMessageStatus.shared.recordScan(result.report, windows: result.windows.count, banners: result.bannerCount)
                 if result.bannerCount > 0 { NotchMessageStatus.shared.sawBanner(app: result.bannerApp) }
                 guard !result.found.isEmpty else { return }
                 self.onFound?(result.found, priming)
@@ -272,11 +276,21 @@ final class NotchBannerWatcher {
                                          probeToken: String?) -> ScanResult {
         let windows = windows(of: app)
         var result = ScanResult(windows: windows, found: [])
-        var budget = maxNodes
         let deadline = Date().addingTimeInterval(readBudget)
-        for window in windows {
+        // 横幅所在的窗口（macOS 26 上是 AXSystemDialog「通知中心」）先读，桌面小组件的窗口后读。
+        let dialogs = windows.filter { string($0, kAXSubroleAttribute) == "AXSystemDialog" }
+        let ordered = dialogs + windows.filter { window in !dialogs.contains { CFEqual($0, window) } }
+        var reports: [String] = []
+        for window in ordered {
+            guard Date() < deadline else {
+                reports.append("window skipped: out of time")
+                break
+            }
             let tree = ElementTree(window)
+            var budget = maxNodesPerWindow
             let snapshot = node(window, tree: tree, depth: 0, budget: &budget, deadline: deadline)
+            reports.append(NotchBannerParser.report(snapshot, enabled: enabled, probeToken: probeToken)
+                           + (budget <= 0 ? "\n  (node budget used up)" : ""))
             for entry in NotchBannerParser.located(in: snapshot) {
                 result.bannerCount += 1
                 if result.bannerApp == nil { result.bannerApp = NotchBannerParser.appLabel(entry.banner) }
@@ -296,8 +310,8 @@ final class NotchBannerWatcher {
                 }
                 result.found.append(Found(incoming: incoming, element: element))
             }
-            if budget <= 0 || Date() >= deadline { break }
         }
+        result.report = reports.joined(separator: "\n")
         return result
     }
 
@@ -305,14 +319,18 @@ final class NotchBannerWatcher {
                                          budget: inout Int, deadline: Date) -> NotchBannerNode {
         budget -= 1
         AXUIElementSetMessagingTimeout(element, timeout)
-        var result = NotchBannerNode(role: string(element, kAXRoleAttribute),
-                                     subrole: string(element, kAXSubroleAttribute),
-                                     identifier: string(element, "AXIdentifier"),
-                                     description: string(element, kAXDescriptionAttribute),
-                                     title: string(element, kAXTitleAttribute),
-                                     value: string(element, kAXValueAttribute))
+        // 六个属性和孩子一次读回来（一次跨进程），比一个一个读快得多。
+        let values = multiple(element, nodeAttributes)
+        var result = NotchBannerNode(role: values[0] as? String,
+                                     subrole: values[1] as? String,
+                                     identifier: values[2] as? String,
+                                     description: text(values[3]),
+                                     title: text(values[4]),
+                                     value: text(values[5]))
+        // 桌面小组件不往里读。
+        guard !NotchBannerParser.isDesktopWidget(identifier: result.identifier) else { return result }
         guard depth < maxDepth, budget > 0, Date() < deadline,
-              let children = copy(element, kAXChildrenAttribute) as? [AXUIElement] else { return result }
+              let children = values[6] as? [AXUIElement] else { return result }
         for child in children {
             guard budget > 0 else { break }
             let sub = ElementTree(child)
@@ -320,6 +338,33 @@ final class NotchBannerWatcher {
             result.children.append(node(child, tree: sub, depth: depth + 1, budget: &budget, deadline: deadline))
         }
         return result
+    }
+
+    private nonisolated static let nodeAttributes: [String] = [
+        kAXRoleAttribute, kAXSubroleAttribute, "AXIdentifier", kAXDescriptionAttribute,
+        kAXTitleAttribute, kAXValueAttribute, kAXChildrenAttribute,
+    ]
+
+    /// 一次读几个属性，读不到的位置是 nil（不会因为一个属性不支持整个失败）。
+    private nonisolated static func multiple(_ element: AXUIElement, _ attributes: [String]) -> [Any?] {
+        var raw: CFArray?
+        let names = attributes as CFArray
+        guard AXUIElementCopyMultipleAttributeValues(element, names, [], &raw) == .success,
+              let list = raw as? [AnyObject], list.count == attributes.count else {
+            return attributes.map { copy(element, $0) as Any? }
+        }
+        // 读不到的那一项是一个 AXValue 包着的错误码，当没有。
+        return list.map { item -> Any? in
+            if CFGetTypeID(item) == AXValueGetTypeID(),
+               AXValueGetType(unsafeBitCast(item, to: AXValue.self)) == .axError { return nil }
+            return item
+        }
+    }
+
+    private nonisolated static func text(_ raw: Any?) -> String? {
+        if let text = raw as? String { return text }
+        if let attributed = raw as? NSAttributedString { return attributed.string }
+        return nil
     }
 
     private nonisolated static func copy(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {

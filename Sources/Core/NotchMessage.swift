@@ -289,7 +289,87 @@ public enum NotchBannerParser {
         guard !isListPanel(window) else { return [] }
         var found: [(path: [Int], banner: NotchBanner)] = []
         collect(window, path: [], into: &found)
+        // 没有认得的 subrole（系统换了名字）：退一步按「孩子里有 title / body 标识的字」认。
+        if found.isEmpty { collectByTexts(window, path: [], into: &found) }
         return found
+    }
+
+    /// 桌面小组件（也挂在通知中心进程里）：读树时不往里走，省得把预算花在它们身上。
+    public static func isDesktopWidget(identifier: String?) -> Bool {
+        identifier?.hasPrefix("widget-local:") == true
+    }
+
+    static let textIdentifiers: Set<String> = ["title", "body", "subtitle", "header"]
+
+    private static func collectByTexts(_ node: NotchBannerNode, path: [Int],
+                                       into found: inout [(path: [Int], banner: NotchBanner)]) {
+        guard path.count <= maxDepth, node.role != "AXStaticText" else { return }
+        let marked = node.children.filter { child in
+            child.role == "AXStaticText" && textIdentifiers.contains(child.identifier?.lowercased() ?? "")
+        }
+        if marked.contains(where: { ["title", "body"].contains($0.identifier?.lowercased() ?? "") }) {
+            found.append((path, banner(from: node)))
+            return
+        }
+        for (index, child) in node.children.enumerated() { collectByTexts(child, path: path + [index], into: &found) }
+    }
+
+    // MARK: 诊断信息
+
+    /// 一个窗口的结构摘要，给设置里「复制诊断信息」用：角色、subrole、标识的统计，认没
+    /// 认成通知列表，每条横幅认成哪个 App、为什么没弹。不抄发件人和消息内容（只写有没有），
+    /// App 名只写认出来的；`probeToken` 出现在哪条横幅上也标出来。
+    public static func report(_ window: NotchBannerNode, enabled: [NotchMessageApp], probeToken: String? = nil) -> String {
+        var nodes = 0
+        var roles: [String: Int] = [:]
+        var subroles: [String: Int] = [:]
+        var ids: [String: Int] = [:]
+        walk(window, depth: 0) { node in
+            nodes += 1
+            if let role = node.role { roles[role, default: 0] += 1 }
+            if let subrole = node.subrole { subroles[subrole, default: 0] += 1 }
+            if let id = node.identifier, !id.isEmpty { ids[reportIdentifier(id), default: 0] += 1 }
+        }
+        func list(_ counts: [String: Int]) -> String {
+            counts.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ", ")
+        }
+        var lines = ["window role=\(window.role ?? "-") subrole=\(window.subrole ?? "-") nodes=\(nodes)",
+                     "  roles=[\(list(roles))]",
+                     "  subroles=[\(list(subroles))]",
+                     "  ids=[\(list(ids))]"]
+        if isListPanel(window) {
+            lines.append("  -> notification list or desktop widget, skipped")
+            return lines.joined(separator: "\n")
+        }
+        let banners = located(in: window)
+        if banners.isEmpty { lines.append("  -> no banner found") }
+        for entry in banners {
+            let b = entry.banner
+            let has = [b.header != nil ? "header" : nil, b.title != nil ? "title" : nil,
+                       b.body != nil ? "body" : nil, b.summary != nil ? "summary" : nil].compactMap { $0 }
+            let label = appLabel(b)
+            let known = label.flatMap { NotchMessageApp.match(name: $0) }
+            let verdict: String
+            if let token = probeToken, NotchMessageProbe.matches(b, token: token) {
+                verdict = "test banner"
+            } else if let incoming = incoming(b, enabled: enabled) {
+                verdict = "message from \(incoming.app.rawValue)"
+            } else if let known {
+                verdict = "\(known.rawValue) is turned off"
+            } else {
+                verdict = "app not recognised"
+            }
+            let shown = known?.rawValue ?? (label == nil ? "none" : "other")
+            lines.append("  banner path=\(entry.path) stacked=\(b.stacked) app=\(shown) has=[\(has.joined(separator: ","))] -> \(verdict)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// 标识里 UUID 那种一条一个的写成 uuid，小组件只留前缀，免得摘要又长又带内容。
+    static func reportIdentifier(_ id: String) -> String {
+        if UUID(uuidString: id) != nil { return "uuid" }
+        if isDesktopWidget(identifier: id) { return "widget-local:*" }
+        return id.count > 40 ? String(id.prefix(40)) + "…" : id
     }
 
     private static func collect(_ node: NotchBannerNode, path: [Int],

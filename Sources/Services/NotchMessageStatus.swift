@@ -20,6 +20,12 @@ final class NotchMessageStatus {
     private(set) var lastBannerApp: String?
     private(set) var lastMessage: Date?
     var probe = NotchMessageProbe()
+    /// 最近一次读通知中心的结构摘要（不含消息内容）；最近一次读到横幅那次单独留着，
+    /// 横幅消失后的空读不会把它盖掉。
+    @ObservationIgnored private var lastScan = ""
+    @ObservationIgnored private var lastScanAt: Date?
+    @ObservationIgnored private var lastBannerScan = ""
+    @ObservationIgnored private var scans = 0
 
     private init() {}
 
@@ -47,6 +53,38 @@ final class NotchMessageStatus {
 
     func sawMessage(at now: Date = Date()) { lastMessage = now }
 
+    func recordScan(_ report: String, windows: Int, banners: Int, at now: Date = Date()) {
+        scans += 1
+        lastScanAt = now
+        lastScan = "windows=\(windows) banners=\(banners)\n" + report
+        if banners > 0 || report.contains("banner path=") { lastBannerScan = lastScan }
+    }
+
+    static var osMajor: Int { ProcessInfo.processInfo.operatingSystemVersion.majorVersion }
+
+    /// 「复制诊断信息」：版本、权限、连接、最近两次读到的通知中心结构。不含消息内容和发件人。
+    func diagnosticText(now: Date = Date()) -> String {
+        let snap = snapshot()
+        let os = ProcessInfo.processInfo.operatingSystemVersionString
+        let formatter = ISO8601DateFormatter()
+        func time(_ date: Date?) -> String { date.map { formatter.string(from: $0) } ?? "never" }
+        var lines = [
+            "Dockling \(Self.currentBuild) · macOS \(os)",
+            "accessibility trusted=\(snap.trusted) lastTrustedBuild=\(snap.lastTrustedBuild ?? "none")",
+            "notificationCenter running=\(snap.notificationCenterRunning) connected=\(snap.connected)",
+            "scans=\(scans) lastScan=\(time(lastScanAt)) lastBanner=\(time(lastBanner)) lastMessage=\(time(lastMessage))",
+            "probe=\(probe.state)",
+            "now=\(formatter.string(from: now))",
+        ]
+        if !lastBannerScan.isEmpty, lastBannerScan != lastScan {
+            lines.append("--- last scan with a banner ---")
+            lines.append(lastBannerScan)
+        }
+        lines.append("--- last scan ---")
+        lines.append(lastScan.isEmpty ? "none" : lastScan)
+        return lines.joined(separator: "\n")
+    }
+
     /// 给 Core 判断用的快照。权限现读（设置页每秒刷新一次），别的用观察器写进来的。
     func snapshot() -> NotchMessageDiagnosis.Snapshot {
         let live = AXIsProcessTrusted()
@@ -54,6 +92,7 @@ final class NotchMessageStatus {
             trusted: live,
             lastTrustedBuild: UserDefaults.standard.string(forKey: Self.trustedBuildKey),
             currentBuild: Self.currentBuild,
+            osMajor: Self.osMajor,
             notificationCenterRunning: notificationCenterRunning,
             connected: live && connected,
             lastBanner: lastBanner,

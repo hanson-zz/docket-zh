@@ -64210,13 +64210,13 @@
         }
       }
     },
-    "码头通过辅助功能读取系统通知横幅，只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。" : {
+    "码头通过「%@」权限读取系统通知横幅（不是通知权限），只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dockling reads the system notification banners through Accessibility. It only reads them and never blocks or changes a notification. The system banner and the message card both appear: setting these apps' notification style to None removes the duplicate, but Dockling cannot see a message when no banner appears, which also happens during a Focus, Do Not Disturb, a full-screen presentation or screen sharing. No card appears over full-screen apps or presentations. Replies in Messages are sent through Automation (AppleScript), and the first time you send, macOS asks whether Dockling may control Messages."
+            "value" : "Dockling reads the system notification banners through the %@ permission (not notification permission). It only reads them and never blocks or changes a notification. The system banner and the message card both appear: setting these apps' notification style to None removes the duplicate, but Dockling cannot see a message when no banner appears, which also happens during a Focus, Do Not Disturb, a full-screen presentation or screen sharing. No card appears over full-screen apps or presentations. Replies in Messages are sent through Automation (AppleScript), and the first time you send, macOS asks whether Dockling may control Messages."
           }
         }
       }
@@ -64276,6 +64276,105 @@
         }
       }
     },
+    "设备控制和数据访问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Control and Data Access"
+          }
+        }
+      }
+    },
+    "隐私与安全" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Security"
+          }
+        }
+      }
+    },
+    "隐私与安全性" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Security"
+          }
+        }
+      }
+    },
+    "系统设置 ▸ %@ ▸ %@ 里打开码头。如果码头已经勾着，那是更新前的旧授权：选中码头点「−」移除，再点「+」重新添加，或点「去授权」后打开开关。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Dockling in System Settings ▸ %@ ▸ %@. If Dockling is already switched on there, that entry is from before the update: select Dockling, click − to remove it, then click + to add it again, or click Grant and turn the switch on."
+          }
+        }
+      }
+    },
+    "消息灵动岛要的是「%@」权限，不是通知权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Island needs the %@ permission, not notification permission. "
+          }
+        }
+      }
+    },
+    "等「%@」授权" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for %@"
+          }
+        }
+      }
+    },
+    "一条横幅都没读到：看看屏幕右上角刚才有没有出现码头的横幅。没出现就到 系统设置 ▸ 通知 ▸ 码头，把样式改成「横幅」，并关掉专注模式；出现了却读不到，请在系统设置里把码头从「%@」移除再重新添加，然后点「复制诊断信息」发给开发者。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No banners read at all. Did a Dockling banner just appear at the top right? If not, go to System Settings ▸ Notifications ▸ Dockling, set the style to Banners and turn off Focus. If it appeared but wasn't read, remove Dockling from %@ in System Settings and add it again, then click Copy Diagnostics and send it to the developer."
+          }
+        }
+      }
+    },
+    "复制诊断信息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Diagnostics"
+          }
+        }
+      }
+    },
+    "弹不出来时复制发给开发者：只有版本、权限和通知中心的结构，不含消息内容。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If cards don't appear, copy this and send it to the developer. It only has versions, permissions and the Notification Center structure, no message content."
+          }
+        }
+      }
+    },
     "辅助功能" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -64309,28 +64408,6 @@
         }
       }
     },
-    "消息灵动岛要的是辅助功能权限，不是通知权限。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Message Island needs Accessibility permission, not notification permission. "
-          }
-        }
-      }
-    },
-    "如果系统设置里码头已经勾着，那是更新前的旧授权：在 隐私与安全性 ▸ 辅助功能 里选中码头点「−」移除，再点「+」重新添加，或点「去授权」后打开开关。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If Dockling already looks switched on in System Settings, that entry is from before the update: in Privacy & Security ▸ Accessibility, select Dockling, click − to remove it, then click + to add it again, or click Grant and turn the switch on."
-          }
-        }
-      }
-    },
     "通知中心" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -64338,17 +64415,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notification Center"
-          }
-        }
-      }
-    },
-    "等辅助功能授权" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for Accessibility"
           }
         }
       }
@@ -64481,28 +64547,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Read it, the message card is showing"
-          }
-        }
-      }
-    },
-    "先给码头辅助功能权限。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow Dockling in Accessibility first. "
-          }
-        }
-      }
-    },
-    "一条横幅都没读到：看看屏幕右上角刚才有没有出现码头的横幅。没出现就到 系统设置 ▸ 通知 ▸ 码头，把样式改成「横幅」，并关掉专注模式；出现了却读不到，请在系统设置里把码头从辅助功能移除再重新添加。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No banners read at all. Did a Dockling banner just appear at the top right? If not, go to System Settings ▸ Notifications ▸ Dockling, set the style to Banners and turn off Focus. If it appeared but wasn't read, remove Dockling from Accessibility in System Settings and add it again."
           }
         }
       }

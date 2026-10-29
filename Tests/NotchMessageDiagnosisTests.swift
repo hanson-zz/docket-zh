@@ -58,7 +58,8 @@ final class NotchMessageDiagnosisTests: XCTestCase {
         let never = NotchMessageDiagnosis.accessibility(.init(trusted: false, lastTrustedBuild: nil, currentBuild: "0.8 (9)"))
         XCTAssertEqual(never.level, .warning)
         XCTAssertEqual(never.value, tr("未授权"))
-        XCTAssertTrue(never.hint?.contains(NotchMessageDiagnosis.reAddHint) == true, "没授权时总说怎么移除再添加")
+        XCTAssertTrue(never.hint?.contains(NotchMessageDiagnosis.reAddHint(osMajor: 26)) == true, "没授权时总说怎么移除再添加")
+        XCTAssertEqual(never.title, tr("辅助功能"))
 
         let lost = NotchMessageDiagnosis.Snapshot(trusted: false, lastTrustedBuild: "0.8 (8)", currentBuild: "0.8 (9)")
         XCTAssertTrue(lost.trustLostAfterUpdate)
@@ -87,6 +88,90 @@ final class NotchMessageDiagnosisTests: XCTestCase {
         XCTAssertEqual(recent.level, .ok)
         XCTAssertEqual(recent.value, "\(tr("刚刚")) · 微信")
         XCTAssertEqual(NotchMessageDiagnosis.lines(.init(trusted: true), now: now).count, 3)
+    }
+
+    func testPermissionNameFollowsMacOSVersion() {
+        // macOS 27 起「辅助功能」改名「设备控制和数据访问」，跳转地址不变。
+        XCTAssertEqual(NotchMessageDiagnosis.permissionName(osMajor: 26), tr("辅助功能"))
+        XCTAssertEqual(NotchMessageDiagnosis.permissionName(osMajor: 27), tr("设备控制和数据访问"))
+        XCTAssertEqual(NotchMessageDiagnosis.privacyName(osMajor: 27), tr("隐私与安全"))
+        XCTAssertNotEqual(NotchMessageDiagnosis.reAddHint(osMajor: 26), NotchMessageDiagnosis.reAddHint(osMajor: 27))
+        XCTAssertTrue(NotchMessageDiagnosis.reAddHint(osMajor: 27).contains(tr("设备控制和数据访问")))
+        let line = NotchMessageDiagnosis.accessibility(.init(trusted: false, osMajor: 27))
+        XCTAssertEqual(line.title, tr("设备控制和数据访问"))
+        XCTAssertTrue(line.hint?.contains(tr("设备控制和数据访问")) == true)
+        XCTAssertFalse(line.hint?.contains(tr("辅助功能")) == true, "27 上不再写旧名字")
+    }
+
+    // MARK: macOS 26 的通知中心结构
+
+    /// 照 macOS 26 的普查写的窗口：AXSystemDialog「通知中心」铺满屏幕，里面 AXHostingView、
+    /// widgets-overlay-view、AXNotificationListItems，横幅的字带 header / title / body 标识。
+    private func macOS26Window(subrole: String?) -> NotchBannerNode {
+        let banner = NotchBannerNode(role: "AXGroup", subrole: subrole, identifier: "F066454A-0000-4000-8000-000000000000",
+                                     children: [
+                                        NotchBannerNode(role: "AXStaticText", identifier: "header", value: "微信"),
+                                        NotchBannerNode(role: "AXStaticText", identifier: "title", value: "王姐"),
+                                        NotchBannerNode(role: "AXStaticText", identifier: "body", value: "在吗"),
+                                     ])
+        return NotchBannerNode(role: "AXWindow", subrole: "AXSystemDialog", title: "Notification Center", children: [
+            NotchBannerNode(role: "AXGroup", subrole: "AXHostingView", children: [
+                NotchBannerNode(role: "AXGroup", identifier: "widgets-overlay-view"),
+                NotchBannerNode(role: "AXScrollArea", identifier: "AXNotificationListItems", children: [banner]),
+            ]),
+        ])
+    }
+
+    func testMacOS26WindowIsNotMistakenForTheList() {
+        let window = macOS26Window(subrole: "AXNotificationCenterAlert")
+        XCTAssertFalse(NotchBannerParser.isListPanel(window), "widgets-overlay-view 不是桌面小组件")
+        let found = NotchBannerParser.incoming(in: window, enabled: NotchMessageApp.allCases)
+        XCTAssertEqual(found.first?.app, .wechat)
+        XCTAssertEqual(found.first?.sender, "王姐")
+    }
+
+    func testUnknownSubroleFallsBackToTextIdentifiers() {
+        // 系统再换 subrole 的名字：按孩子里的 title / body 标识认。
+        let renamed = macOS26Window(subrole: "AXNotificationCenterSomethingNew")
+        let found = NotchBannerParser.located(incomingIn: renamed, enabled: NotchMessageApp.allCases)
+        XCTAssertEqual(found.first?.incoming.app, .wechat)
+        XCTAssertEqual(found.first?.path, [0, 1, 0])
+        let none = macOS26Window(subrole: nil)
+        XCTAssertEqual(NotchBannerParser.incoming(in: none, enabled: NotchMessageApp.allCases).count, 1)
+        // 只有零散的字、没有标识：不乱认。
+        let loose = NotchBannerNode(role: "AXWindow", children: [
+            NotchBannerNode(role: "AXGroup", children: [NotchBannerNode(role: "AXStaticText", value: "微信")]),
+        ])
+        XCTAssertTrue(NotchBannerParser.incoming(in: loose, enabled: NotchMessageApp.allCases).isEmpty)
+    }
+
+    func testDesktopWidgetIdentifier() {
+        XCTAssertTrue(NotchBannerParser.isDesktopWidget(identifier: "widget-local:com.apple.weather"))
+        XCTAssertFalse(NotchBannerParser.isDesktopWidget(identifier: "widgets-overlay-view"))
+        XCTAssertFalse(NotchBannerParser.isDesktopWidget(identifier: nil))
+    }
+
+    func testReportHasStructureButNoMessageContent() {
+        let report = NotchBannerParser.report(macOS26Window(subrole: "AXNotificationCenterAlert"),
+                                              enabled: NotchMessageApp.allCases)
+        XCTAssertTrue(report.contains("subrole=AXSystemDialog"))
+        XCTAssertTrue(report.contains("AXNotificationCenterAlert:1"))
+        XCTAssertTrue(report.contains("uuid:1"), "一条一个的 UUID 标识只记个数")
+        XCTAssertTrue(report.contains("app=wechat"))
+        XCTAssertTrue(report.contains("message from wechat"))
+        XCTAssertFalse(report.contains("王姐"), "不抄发件人")
+        XCTAssertFalse(report.contains("在吗"), "不抄内容")
+
+        let off = NotchBannerParser.report(macOS26Window(subrole: "AXNotificationCenterAlert"), enabled: [.messages])
+        XCTAssertTrue(off.contains("wechat is turned off"))
+
+        let widget = NotchBannerNode(role: "AXWindow", children: [
+            NotchBannerNode(role: "AXGroup", identifier: "widget-local:com.apple.weather.WeatherWidget"),
+        ])
+        let skipped = NotchBannerParser.report(widget, enabled: NotchMessageApp.allCases)
+        XCTAssertTrue(skipped.contains("widget-local:*"))
+        XCTAssertTrue(skipped.contains("skipped"))
+        XCTAssertTrue(NotchBannerParser.report(NotchBannerNode(role: "AXWindow"), enabled: []).contains("no banner found"))
     }
 
     // MARK: 测试通知
@@ -128,7 +213,7 @@ final class NotchMessageDiagnosisTests: XCTestCase {
         // 没读到时的说明按现状给。
         let untrusted = probe.line(.init(trusted: false))
         XCTAssertEqual(untrusted?.level, .warning)
-        XCTAssertTrue(untrusted?.hint?.contains(NotchMessageDiagnosis.reAddHint) == true)
+        XCTAssertEqual(untrusted?.hint, NotchMessageDiagnosis.reAddHint(osMajor: 26))
         let noBanner = probe.line(.init(trusted: true))?.hint
         let someBanner = probe.line(.init(trusted: true, lastBanner: now))?.hint
         XCTAssertNotNil(noBanner)

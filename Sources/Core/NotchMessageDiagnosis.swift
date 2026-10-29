@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - 消息灵动岛：自查
 
-/// 设置 ▸ 消息灵动岛里的「状态」几行：辅助功能、通知中心、最近一次读到横幅、测试
+/// 设置 ▸ 消息灵动岛里的「状态」几行：辅助功能（macOS 27 起叫设备控制和数据访问）、通知中心、最近一次读到横幅、测试
 /// 通知。用户说「打开了还是不弹」时，看这几行就知道卡在哪一步。只有纯逻辑，读权限、
 /// 读横幅、发通知都在 App 那边。
 public enum NotchMessageDiagnosis {
@@ -30,6 +30,25 @@ public enum NotchMessageDiagnosis {
         }
     }
 
+    /// 系统设置里这项权限叫什么：macOS 27 起「辅助功能」改名「设备控制和数据访问」，
+    /// 开关和 `Privacy_Accessibility` 跳转都没变，只是名字变了。
+    public static func permissionName(osMajor: Int) -> String {
+        osMajor >= 27 ? tr("设备控制和数据访问") : tr("辅助功能")
+    }
+
+    /// 「隐私与安全性」macOS 27 起中文写「隐私与安全」。
+    public static func privacyName(osMajor: Int) -> String {
+        osMajor >= 27 ? tr("隐私与安全") : tr("隐私与安全性")
+    }
+
+    /// 没授权时的处理办法。自签名版本每次更新签名都变，系统设置里码头看着还勾着，
+    /// 其实是旧版本的那一条，勾掉再勾上也没用，要移除再添加。
+    public static func reAddHint(osMajor: Int) -> String {
+        let privacy = privacyName(osMajor: osMajor)
+        let pane = permissionName(osMajor: osMajor)
+        return tr("系统设置 ▸ \(privacy) ▸ \(pane) 里打开码头。如果码头已经勾着，那是更新前的旧授权：选中码头点「−」移除，再点「+」重新添加，或点「去授权」后打开开关。")
+    }
+
     /// 读到的现状。
     public struct Snapshot: Equatable, Sendable {
         /// `AXIsProcessTrusted()`。
@@ -37,6 +56,8 @@ public enum NotchMessageDiagnosis {
         /// 上次读到「已授权」时码头的版本（版本号加构建号），从没授权过时为 nil。
         public var lastTrustedBuild: String?
         public var currentBuild: String
+        /// macOS 大版本号，决定权限在系统设置里叫什么。
+        public var osMajor: Int
         /// 通知中心进程在不在。
         public var notificationCenterRunning: Bool
         /// 观察器接上了通知中心（至少一个事件挂上了）。
@@ -47,12 +68,13 @@ public enum NotchMessageDiagnosis {
         /// 最近一次读到要的 App 的消息的时间。
         public var lastMessage: Date?
 
-        public init(trusted: Bool, lastTrustedBuild: String? = nil, currentBuild: String = "",
+        public init(trusted: Bool, lastTrustedBuild: String? = nil, currentBuild: String = "", osMajor: Int = 26,
                     notificationCenterRunning: Bool = true, connected: Bool = false,
                     lastBanner: Date? = nil, lastBannerApp: String? = nil, lastMessage: Date? = nil) {
             self.trusted = trusted
             self.lastTrustedBuild = lastTrustedBuild
             self.currentBuild = currentBuild
+            self.osMajor = osMajor
             self.notificationCenterRunning = notificationCenterRunning
             self.connected = connected
             self.lastBanner = lastBanner
@@ -67,22 +89,18 @@ public enum NotchMessageDiagnosis {
         }
     }
 
-    /// 没授权时的处理办法。自签名版本每次更新签名都变，系统设置里码头看着还勾着，
-    /// 其实是旧版本的那一条，勾掉再勾上也没用，要移除再添加。
-    public static let reAddHint = tr("如果系统设置里码头已经勾着，那是更新前的旧授权：在 隐私与安全性 ▸ 辅助功能 里选中码头点「−」移除，再点「+」重新添加，或点「去授权」后打开开关。")
-
     public static func accessibility(_ s: Snapshot) -> Line {
-        let title = tr("辅助功能")
-        if s.trusted { return Line(title: title, value: tr("已授权"), level: .ok) }
+        let pane = permissionName(osMajor: s.osMajor)
+        if s.trusted { return Line(title: pane, value: tr("已授权"), level: .ok) }
         let value = s.trustLostAfterUpdate ? tr("更新后授权失效") : tr("未授权")
-        return Line(title: title, value: value, level: .warning,
-                    hint: tr("消息灵动岛要的是辅助功能权限，不是通知权限。") + reAddHint)
+        return Line(title: pane, value: value, level: .warning,
+                    hint: tr("消息灵动岛要的是「\(pane)」权限，不是通知权限。") + reAddHint(osMajor: s.osMajor))
     }
 
     public static func notificationCenter(_ s: Snapshot) -> Line {
         let title = tr("通知中心")
         guard s.trusted else {
-            return Line(title: title, value: tr("等辅助功能授权"), level: .idle)
+            return Line(title: title, value: tr("等「\(permissionName(osMajor: s.osMajor))」授权"), level: .idle)
         }
         guard s.notificationCenterRunning else {
             return Line(title: title, value: tr("未找到"), level: .warning,
@@ -191,9 +209,10 @@ public struct NotchMessageProbe: Equatable, Sendable {
         case .missed:
             let hint: String
             if !snapshot.trusted {
-                hint = tr("先给码头辅助功能权限。") + NotchMessageDiagnosis.reAddHint
+                hint = NotchMessageDiagnosis.reAddHint(osMajor: snapshot.osMajor)
             } else if snapshot.lastBanner == nil {
-                hint = tr("一条横幅都没读到：看看屏幕右上角刚才有没有出现码头的横幅。没出现就到 系统设置 ▸ 通知 ▸ 码头，把样式改成「横幅」，并关掉专注模式；出现了却读不到，请在系统设置里把码头从辅助功能移除再重新添加。")
+                let pane = NotchMessageDiagnosis.permissionName(osMajor: snapshot.osMajor)
+                hint = tr("一条横幅都没读到：看看屏幕右上角刚才有没有出现码头的横幅。没出现就到 系统设置 ▸ 通知 ▸ 码头，把样式改成「横幅」，并关掉专注模式；出现了却读不到，请在系统设置里把码头从「\(pane)」移除再重新添加，然后点「复制诊断信息」发给开发者。")
             } else {
                 hint = tr("别的横幅能读到，这条没读到：确认刚才出现了码头的横幅，再试一次。")
             }

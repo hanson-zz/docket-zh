@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// 设置 ▸ 通用 ▸「消息灵动岛」（码头 Pro，默认关）。
@@ -75,7 +76,7 @@ struct NotchMessageSettingsSection: View {
         } header: {
             Text(tr("消息灵动岛"))
         } footer: {
-            Text(tr("码头通过辅助功能读取系统通知横幅，只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。"))
+            Text(tr("码头通过「\(NotchMessageDiagnosis.permissionName(osMajor: NotchMessageStatus.osMajor))」权限读取系统通知横幅（不是通知权限），只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -117,6 +118,8 @@ private struct NotchMessageStatusRows: View {
 
 /// 「发一条测试通知」和它的结果。
 private struct NotchMessageProbeRow: View {
+    @State private var copied = false
+
     var body: some View {
         let status = NotchMessageStatus.shared
         VStack(alignment: .leading, spacing: 8) {
@@ -134,6 +137,21 @@ private struct NotchMessageProbeRow: View {
             }
             if let line = status.probe.line(status.snapshot()) {
                 NotchDiagnosisLineView(line: line)
+            }
+            HStack(spacing: 8) {
+                Button(copied ? tr("已复制") : tr("复制诊断信息")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(status.diagnosticText(), forType: .string)
+                    copied = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(2))
+                        copied = false
+                    }
+                }
+                Text(tr("弹不出来时复制发给开发者：只有版本、权限和通知中心的结构，不含消息内容。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
