@@ -335,6 +335,8 @@ final class MinesweeperTests: XCTestCase {
         let tie = Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 212.3)
         XCTAssertTrue(tie.justWon)
         XCTAssertFalse(tie.newRecord)
+        XCTAssertEqual(tie.rank, 2, "平分排在原来那条后面")
+        XCTAssertEqual(Minesweeper.rank(Minesweeper.board(config, level: .beginner), level: .beginner, in: config), 2)
         XCTAssertFalse(Minesweeper.isRecord(Minesweeper.board(config, level: .beginner), level: .beginner, in: config))
 
         Minesweeper.restart(.beginner, in: &config)
@@ -365,7 +367,99 @@ final class MinesweeperTests: XCTestCase {
 
     func testBestText() {
         XCTAssertEqual(Minesweeper.bestText(nil), "暂无")
-        XCTAssertEqual(Minesweeper.bestText(42.9), "42 秒")
+        XCTAssertEqual(Minesweeper.bestText(42.9), "42.9 秒")
+        XCTAssertEqual(Minesweeper.scoreText(0.3), "0.3 秒", "存的 0.1 秒精度原样显示，不被浮点误差往下舍")
+        XCTAssertEqual(Minesweeper.scoreText(12), "12.0 秒")
+    }
+
+    // MARK: 排行榜
+
+    func testInsertKeepsTheTopFiveInOrder() {
+        var list: [MineScore] = []
+        for (i, seconds) in [30.0, 10, 20, 50, 40].enumerated() {
+            let placed = Minesweeper.insert(MineScore(seconds: seconds, date: Double(i + 1)), into: list)
+            list = placed.list
+        }
+        XCTAssertEqual(list.map(\.seconds), [10, 20, 30, 40, 50])
+        // 比第 5 名慢：不进榜，榜不变。
+        let slow = Minesweeper.insert(MineScore(seconds: 60, date: 9), into: list)
+        XCTAssertNil(slow.rank)
+        XCTAssertEqual(slow.list, list)
+        // 平了第 5 名也挤不进去（排在它后面，被截掉）。
+        XCTAssertNil(Minesweeper.insert(MineScore(seconds: 50, date: 9), into: list).rank)
+        // 进到第 2 名：原来的第 5 名掉出去。
+        let second = Minesweeper.insert(MineScore(seconds: 15, date: 9), into: list)
+        XCTAssertEqual(second.rank, 2)
+        XCTAssertEqual(second.list.map(\.seconds), [10, 15, 20, 30, 40])
+        // 平了第一名排第 2。
+        XCTAssertEqual(Minesweeper.insert(MineScore(seconds: 10, date: 9), into: list).rank, 2)
+        XCTAssertEqual(Minesweeper.insert(MineScore(seconds: 9.9, date: 9), into: list).rank, 1)
+    }
+
+    func testLeaderboardIsStoredAsCompactJSONAndFollowsBest() throws {
+        var config = WidgetConfig()
+        Minesweeper.storeLeaderboard([MineScore(seconds: 20, date: 200), MineScore(seconds: 12.3, date: 100)],
+                                     level: .beginner, in: &config)
+        let raw = config.string(Minesweeper.topKey(.beginner), default: "")
+        XCTAssertFalse(raw.contains(" "), "紧凑 JSON")
+        XCTAssertTrue(raw.contains("\"s\""))
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner).map(\.seconds), [12.3, 20], "读出来按快到慢")
+        XCTAssertEqual(config.double(Minesweeper.bestKey(.beginner), default: 0), 12.3, "best.* 跟着第一名")
+        XCTAssertEqual(config.double(Minesweeper.bestAtKey(.beginner), default: 0), 100)
+        XCTAssertTrue(Minesweeper.leaderboard(config, level: .intermediate).isEmpty, "各难度分开")
+
+        let decoded = try JSONDecoder().decode([MineScore].self, from: Data(raw.utf8))
+        XCTAssertEqual(decoded.count, 2)
+        // 坏数据不崩：退回旧的 best.*。
+        config.set(Minesweeper.topKey(.beginner), .string("[oops"))
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner), [MineScore(seconds: 12.3, date: 100)])
+        // 超过 5 条、负数、0 都清掉。
+        let many = (0..<8).map { MineScore(seconds: Double(8 - $0), date: Double($0 + 1)) } + [MineScore(seconds: 0, date: 1)]
+        Minesweeper.storeLeaderboard(many, level: .beginner, in: &config)
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner).map(\.seconds), [1, 2, 3, 4, 5])
+    }
+
+    func testOldBestMigratesAsFirstPlace() {
+        var config = WidgetConfig([Minesweeper.bestKey(.beginner): .number(42.4),
+                                   Minesweeper.bestAtKey(.beginner): .number(142.36)])
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner), [MineScore(seconds: 42.4, date: 142.36)])
+        XCTAssertEqual(Minesweeper.best(config, level: .beginner), 42.4)
+        // 只有 best.* 的更早配置：日期未知。
+        let bare = WidgetConfig([Minesweeper.bestKey(.intermediate): .number(95)])
+        let first = Minesweeper.leaderboard(bare, level: .intermediate).first
+        XCTAssertEqual(first?.seconds, 95)
+        XCTAssertEqual(first?.hasDate, false)
+
+        // 再赢一局：旧的第一名和新成绩一起写进 top.*。
+        Minesweeper.store(oneClickBoard(startedAt: 500), level: .beginner, in: &config)
+        let outcome = Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 560)
+        XCTAssertEqual(outcome.rank, 2)
+        XCTAssertFalse(outcome.newRecord)
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner).map(\.seconds), [42.4, 60])
+        XCTAssertFalse(config.string(Minesweeper.topKey(.beginner), default: "").isEmpty)
+        XCTAssertEqual(Minesweeper.best(config, level: .beginner), 42.4)
+    }
+
+    func testWinsFillTheLeaderboardAndReportTheirRank() {
+        var config = WidgetConfig()
+        var ranks: [Int?] = []
+        for (i, seconds) in [30.0, 20, 40, 10, 50, 60, 25].enumerated() {
+            let start = Double(i * 1000)
+            Minesweeper.store(oneClickBoard(startedAt: start), level: .beginner, in: &config)
+            ranks.append(Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: start + seconds).rank)
+        }
+        XCTAssertEqual(ranks, [1, 1, 3, 1, 5, nil, 3])
+        XCTAssertEqual(Minesweeper.leaderboard(config, level: .beginner).map(\.seconds), [10, 20, 25, 30, 40])
+        let last = Minesweeper.board(config, level: .beginner)
+        XCTAssertEqual(Minesweeper.rank(last, level: .beginner, in: config), 3, "刚进榜的就是这一局")
+        XCTAssertFalse(Minesweeper.isRecord(last, level: .beginner, in: config))
+        XCTAssertEqual(Minesweeper.best(config, level: .beginner), 10)
+    }
+
+    func testWonLine() {
+        XCTAssertEqual(Minesweeper.wonLine(seconds: 12, rank: 1), "赢了 · 12 秒 · 新纪录")
+        XCTAssertEqual(Minesweeper.wonLine(seconds: 12, rank: 3), "赢了 · 12 秒 · 第 3 名")
+        XCTAssertEqual(Minesweeper.wonLine(seconds: 12, rank: nil), "赢了 · 12 秒")
     }
 
     func testStatusLine() {
@@ -386,8 +480,8 @@ final class MinesweeperTests: XCTestCase {
             let bigger = Minesweeper.boardSize(rows: columns, columns: columns, cell: cell + 1).width
             XCTAssertGreaterThan(bigger, side, "已经是放得下的最大整数")
         }
-        XCTAssertEqual(Minesweeper.cellSize(columns: 9, side: Minesweeper.panelBoardWidth), 32)
-        XCTAssertEqual(Minesweeper.cellSize(columns: 16, side: Minesweeper.panelBoardWidth), 17)
+        XCTAssertEqual(Minesweeper.cellSize(columns: 9, side: Minesweeper.panelBoardWidth), 26)
+        XCTAssertEqual(Minesweeper.cellSize(columns: 16, side: Minesweeper.panelBoardWidth), 15)
     }
 
     func testHitIndexMapsPointsToCells() {
@@ -408,6 +502,15 @@ final class MinesweeperTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(cell, 14, "面板里的格子不小于 14pt")
         }
         XCTAssertLessThan(Minesweeper.panelBoardWidth, Minesweeper.panelWidth)
+        // 棋盘宽 = 面板宽 - 内容区两侧 16 - 侧边尾巴 10 - 卡片两侧 16，不会再顶到右边被裁。
+        XCTAssertEqual(Minesweeper.panelBoardWidth, 266)
+        for level in MineLevel.allCases {
+            let cell = Minesweeper.cellSize(columns: level.columns, side: Minesweeper.panelBoardWidth)
+            let width = Minesweeper.boardSize(rows: level.rows, columns: level.columns, cell: cell).width
+            let used = width + Minesweeper.panelCardPadding * 2 + Double(DetailPanelWidth.padding) * 2
+                + Minesweeper.panelTailDepth
+            XCTAssertLessThanOrEqual(used, Minesweeper.panelWidth, "\(level) 连边距一起放进面板")
+        }
     }
 
     func testDesktopCardsArePlayable() {

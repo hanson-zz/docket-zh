@@ -65584,6 +65584,94 @@
         }
       }
     },
+    "赢了 · %@ 秒 · 第 %@ 名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleared · %@s · #%@"
+          }
+        }
+      }
+    },
+    "排行榜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaderboard"
+          }
+        }
+      }
+    },
+    "收起排行榜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide leaderboard"
+          }
+        }
+      }
+    },
+    "展开排行榜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show leaderboard"
+          }
+        }
+      }
+    },
+    "还没有成绩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No scores yet"
+          }
+        }
+      }
+    },
+    "本局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This game"
+          }
+        }
+      }
+    },
+    "第 %@ 名 · %@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#%@ · %@ · %@"
+          }
+        }
+      }
+    },
+    "早前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Earlier"
+          }
+        }
+      }
+    },
     "再来一盘" : {
       "extractionState" : "manual",
       "localizations" : {

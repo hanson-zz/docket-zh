@@ -4,8 +4,12 @@ import SwiftUI
 //
 // 液态玻璃面板 340 宽：顶上小熊猫、名字和一句状态，右边重开；下面初级 / 中级两段，
 // 每段写各自的最佳成绩；再下面剩余雷数、难度和计时；然后是棋盘（两个难度一样宽，
-// 换难度面板不跳）。左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。
-// 每个难度各存一局，换难度不丢另一局；最佳成绩存在卡片配置（Minesweeper.bestKey）。
+// 换难度面板不跳，宽度按卡片真实内容宽 `Minesweeper.panelBoardWidth` 算，左右边距
+// 和其他面板一样）；棋盘下面一条可展开的排行榜（当前难度前 5 名，刚进榜那行高亮，
+// 默认收起，这一局进榜时自动展开）；最后一行操作提示。
+// 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。
+// 每个难度各存一局，换难度不丢另一局；排行榜存在卡片配置（Minesweeper.topKey，
+// 第一名同时写进 bestKey）。
 // 不铺背景色、不发光，颜色只在旗子、数字和结果上。
 
 struct MinesweeperDetail: View {
@@ -19,6 +23,9 @@ struct MinesweeperDetail: View {
     }
 
     private static let boardSide = CGFloat(Minesweeper.panelBoardWidth)
+
+    /// 排行榜展开着。默认收起，面板不高；这一局刚进榜时自动展开。
+    @State private var showsBoard = false
 
     var body: some View {
         let board = board
@@ -40,6 +47,7 @@ struct MinesweeperDetail: View {
                 }
                 .frame(width: Self.boardSide, height: Self.boardSide)
                 .frame(maxWidth: .infinity)
+                leaderboard(board, level: level)
                 Text(tr("左键揭开，右键或按住 ⌥ 点插旗，点数字揭开周围"))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.panelTertiary)
@@ -47,6 +55,9 @@ struct MinesweeperDetail: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
             }
+        }
+        .onChange(of: rank(board, level: level)) { _, rank in
+            if rank != nil { withAnimation(.snappy(duration: 0.25)) { showsBoard = true } }
         }
     }
 
@@ -62,24 +73,25 @@ struct MinesweeperDetail: View {
                 Text(statusText(board, level: level))
                     .font(.system(size: 13, weight: board.isOver ? .semibold : .regular))
                     .foregroundStyle(statusColor(board))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.9)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .layoutPriority(1)
             Spacer(minLength: 8)
             restartButton(over: board.isOver, level: level)
+                .fixedSize()
         }
     }
 
     private func statusText(_ board: MineBoard, level: MineLevel) -> String {
         let now = context.isPreview ? MineSamples.now : Date().timeIntervalSince1970
         guard board.status == .won else { return Minesweeper.statusLine(board, now: now) }
-        let seconds = board.displaySeconds(now: now)
-        return isRecord(board, level: level) ? tr("赢了 · \(seconds) 秒 · 新纪录") : tr("赢了 · \(seconds) 秒")
+        return Minesweeper.wonLine(seconds: board.displaySeconds(now: now), rank: rank(board, level: level))
     }
 
-    /// 刚赢的这局就是创下最佳成绩的那一局（按 `bestAt` 认那一局，平纪录的不算）。
-    private func isRecord(_ board: MineBoard, level: MineLevel) -> Bool {
-        Minesweeper.isRecord(board, level: level, in: instance.config)
+    /// 刚赢的这局在排行榜上第几名（按赢下的时间认那一局；平了的排在原来那条后面）。
+    private func rank(_ board: MineBoard, level: MineLevel) -> Int? {
+        context.isPreview ? nil : Minesweeper.rank(board, level: level, in: instance.config)
     }
 
     private func statusColor(_ board: MineBoard) -> Color {
@@ -156,6 +168,124 @@ struct MinesweeperDetail: View {
         }
         .padding(3)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
+    }
+
+    // MARK: 排行榜
+
+    /// 一条可展开的玻璃小区块：标题行（奖杯、「排行榜」、第一名用时、箭头），展开后是
+    /// 前 5 名（名次、用时、日期），这一局刚进榜的那行小熊猫橙描边高亮、写「本局」。
+    private func leaderboard(_ board: MineBoard, level: MineLevel) -> some View {
+        let scores = context.isPreview ? [] : Minesweeper.leaderboard(instance.config, level: level)
+        let mine = rank(board, level: level)
+        return VStack(alignment: .leading, spacing: 4) {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) { showsBoard.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MineStyle.flag)
+                    Text(tr("排行榜"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.panelPrimary)
+                    Text(level.title)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.panelTertiary)
+                    Spacer(minLength: 6)
+                    if !showsBoard, let first = scores.first {
+                        Text(Minesweeper.scoreText(first.seconds))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.panelSecondary)
+                            .monospacedDigit()
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color.panelTertiary)
+                        .rotationEffect(.degrees(showsBoard ? 180 : 0))
+                }
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help(showsBoard ? tr("收起排行榜") : tr("展开排行榜"))
+            .accessibilityAddTraits(showsBoard ? .isSelected : [])
+
+            if showsBoard {
+                Group {
+                    if scores.isEmpty {
+                        Text(tr("还没有成绩"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.panelTertiary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 8)
+                    } else {
+                        VStack(spacing: 2) {
+                            ForEach(Array(scores.enumerated()), id: \.offset) { index, score in
+                                scoreRow(score, rank: index + 1, highlighted: mine == index + 1)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 4)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+    }
+
+    private func scoreRow(_ score: MineScore, rank: Int, highlighted: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(verbatim: "\(rank)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(rank == 1 ? MineStyle.flagInk : Color.panelSecondary)
+                .frame(width: 22, height: 22)
+                .background {
+                    if rank == 1 { Circle().fill(Color(hex: ShelfColor.redPanda.hex)) }
+                }
+            Text(Minesweeper.scoreText(score.seconds))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.panelPrimary)
+                .monospacedDigit()
+            if highlighted {
+                Text(tr("本局"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: ShelfColor.redPanda.hex).panelReadable)
+            }
+            Spacer(minLength: 6)
+            Text(dateText(score))
+                .font(.system(size: 13))
+                .foregroundStyle(Color.panelTertiary)
+                .monospacedDigit()
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 6)
+        .frame(height: 30)
+        .background {
+            if highlighted {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.panelRaised).panelLift()
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(MineStyle.flag, lineWidth: 1.5)
+                    }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("第 \(rank) 名 · \(Minesweeper.scoreText(score.seconds)) · \(dateText(score))"))
+    }
+
+    /// 「10月29日」；不是今年的带上年份；旧配置迁移来、不知道哪天的写「早前」。
+    private func dateText(_ score: MineScore) -> String {
+        guard score.hasDate else { return tr("早前") }
+        let date = Date(timeIntervalSince1970: score.date)
+        let sameYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
+        let style = Date.FormatStyle(locale: L10n.interfaceLocale)
+        return sameYear ? date.formatted(style.month(.abbreviated).day())
+                        : date.formatted(style.year().month(.abbreviated).day())
     }
 
     // MARK: 读数

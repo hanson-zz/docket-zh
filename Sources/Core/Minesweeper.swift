@@ -324,6 +324,26 @@ extension MineBoard: Codable {
     }
 }
 
+/// 排行榜上的一条成绩：用时（存到 0.1 秒）和赢下那一局的时间（那局的 `endedAt`，
+/// 1970 起的秒）。赢的时间既当日期显示，也用来认出「刚进榜的就是这一局」。
+/// 从旧的 `best.*` 迁移来、又没有 `bestAt.*` 的那条不知道哪天赢的，`date` 是 0。
+public struct MineScore: Codable, Equatable, Sendable {
+    public var seconds: Double
+    public var date: Double
+
+    public init(seconds: Double, date: Double) {
+        self.seconds = seconds
+        self.date = date
+    }
+
+    /// 日期未知（旧配置迁移来的）。
+    public var hasDate: Bool { date > 0 }
+
+    private enum CodingKeys: String, CodingKey {
+        case seconds = "s", date = "d"
+    }
+}
+
 /// 进行中的局、选的难度和各难度最佳成绩，都存在卡片配置里（不在设置页列出：
 /// 这些键不放进目录的默认值）。扩展栏卡片、面板和桌面卡片读写同一份。
 public enum Minesweeper {
@@ -337,6 +357,65 @@ public enum Minesweeper {
     /// 创下最佳成绩的那一局是什么时候赢的（那局的 `endedAt`）：面板据此只在那一局
     /// 写「新纪录」，平了纪录或四舍五入后一样的不算。
     public static func bestAtKey(_ level: MineLevel) -> String { "bestAt.\(level.rawValue)" }
+    /// 排行榜：前几名的紧凑 JSON 数组（`[{"s":12.3,"d":1730000000}]`）。`best.*`、`bestAt.*`
+    /// 照样跟着第一名写，旧版本读回来也对。
+    public static func topKey(_ level: MineLevel) -> String { "top.\(level.rawValue)" }
+    /// 每个难度留几名。
+    public static let topCount = 5
+
+    /// 这个难度的排行榜，从快到慢。还没有 `top.*` 的旧配置把 `best.*`（和 `bestAt.*`）
+    /// 当成第一名读出来；下次赢的时候连同新成绩一起写成 `top.*`。
+    public static func leaderboard(_ config: WidgetConfig, level: MineLevel) -> [MineScore] {
+        let raw = config.string(topKey(level), default: "")
+        if !raw.isEmpty, let data = raw.data(using: .utf8),
+           let list = try? JSONDecoder().decode([MineScore].self, from: data) {
+            return normalized(list)
+        }
+        let old = config.double(bestKey(level), default: 0)
+        guard old > 0 else { return [] }
+        return [MineScore(seconds: old, date: max(0, config.double(bestAtKey(level), default: 0)))]
+    }
+
+    /// 排好、去掉坏数据、截到前几名（存进来的东西不一定可信）。
+    static func normalized(_ list: [MineScore]) -> [MineScore] {
+        let valid = list.filter { $0.seconds > 0 && $0.seconds.isFinite && $0.date.isFinite }
+        // 稳定排序：一样快的保持原来的先后（先创下的在前）。
+        let sorted = valid.enumerated().sorted { a, b in
+            a.element.seconds != b.element.seconds ? a.element.seconds < b.element.seconds : a.offset < b.offset
+        }.map(\.element)
+        return Array(sorted.prefix(topCount))
+    }
+
+    /// 把一条新成绩插进排行榜：排在所有不比它慢的后面（平了的排在原来那条后面），
+    /// 截到前几名。返回新榜和它的名次（从 1 起），没进榜是 nil、榜不变。
+    public static func insert(_ score: MineScore, into list: [MineScore]) -> (list: [MineScore], rank: Int?) {
+        let board = normalized(list)
+        let position = board.firstIndex { $0.seconds > score.seconds } ?? board.count
+        guard position < topCount, score.seconds > 0 else { return (board, nil) }
+        var next = board
+        next.insert(score, at: position)
+        return (Array(next.prefix(topCount)), position + 1)
+    }
+
+    /// 存排行榜，并让 `best.*`、`bestAt.*` 跟着第一名。
+    public static func storeLeaderboard(_ list: [MineScore], level: MineLevel, in config: inout WidgetConfig) {
+        let list = normalized(list)
+        guard let data = try? JSONEncoder().encode(list),
+              let text = String(data: data, encoding: .utf8) else { return }
+        config.set(topKey(level), .string(text))
+        if let first = list.first {
+            config.set(bestKey(level), .number(first.seconds))
+            if first.hasDate { config.set(bestAtKey(level), .number(first.date)) }
+        }
+    }
+
+    /// 这一局在排行榜上第几名（赢了，且榜上有一条的日期就是它的 `endedAt`）；没进榜是 nil。
+    public static func rank(_ board: MineBoard, level: MineLevel, in config: WidgetConfig) -> Int? {
+        guard board.status == .won, let ended = board.endedAt else { return nil }
+        guard let index = leaderboard(config, level: level).firstIndex(where: { abs($0.date - ended) < 0.001 })
+        else { return nil }
+        return index + 1
+    }
 
     public static func level(_ config: WidgetConfig) -> MineLevel {
         MineLevel(rawValue: config.string(levelKey, default: "")) ?? .beginner
@@ -356,21 +435,35 @@ public enum Minesweeper {
         config.set(gameKey(level), .string(text))
     }
 
+    /// 最快成绩：排行榜第一名。
     public static func best(_ config: WidgetConfig, level: MineLevel) -> Double? {
-        let value = config.double(bestKey(level), default: 0)
-        return value > 0 ? value : nil
+        leaderboard(config, level: level).first?.seconds
     }
 
-    /// 这一局是不是刚创下这个难度最佳成绩的那一局（赢了，且 `bestAt` 记的就是它）。
+    /// 这一局是不是刚创下这个难度最佳成绩的那一局（排行榜第一名就是它）。
+    /// 平了纪录的排在原来那条后面，是第 2 名，不算新纪录。
     public static func isRecord(_ board: MineBoard, level: MineLevel, in config: WidgetConfig) -> Bool {
-        guard board.status == .won, let ended = board.endedAt, best(config, level: level) != nil else { return false }
-        return abs(config.double(bestAtKey(level), default: -1) - ended) < 0.001
+        rank(board, level: level, in: config) == 1
     }
 
-    /// 「12 秒」；没有记录是「暂无」。
+    /// 「12.3 秒」；没有记录是「暂无」。
     public static func bestText(_ seconds: Double?) -> String {
         guard let seconds else { return tr("暂无") }
-        return tr("\(Int(seconds.rounded(.down))) 秒")
+        return scoreText(seconds)
+    }
+
+    /// 排行榜上的用时：「12.3 秒」（一位小数）。
+    public static func scoreText(_ seconds: Double) -> String {
+        tr("\(String(format: "%.1f", (seconds * 10).rounded() / 10)) 秒")
+    }
+
+    /// 赢了的一句状态：第 1 名写「新纪录」，进榜写「第 N 名」，没进榜只写用时。
+    public static func wonLine(seconds: Int, rank: Int?) -> String {
+        switch rank {
+        case 1?: return tr("赢了 · \(seconds) 秒 · 新纪录")
+        case let rank?: return tr("赢了 · \(seconds) 秒 · 第 \(rank) 名")
+        case nil: return tr("赢了 · \(seconds) 秒")
+        }
     }
 
     public enum Action: Sendable {
@@ -388,6 +481,8 @@ public enum Minesweeper {
         public var justLost: Bool
         /// 刚赢而且是这个难度的新纪录。
         public var newRecord: Bool
+        /// 刚赢而且进了排行榜：第几名（从 1 起）。
+        public var rank: Int? = nil
     }
 
     /// 在某个难度的那一局上点一下，写回配置；刚赢时更新最佳成绩。
@@ -407,12 +502,14 @@ public enum Minesweeper {
         store(game, level: level, in: &config)
         if before != .won, game.status == .won {
             outcome.justWon = true
-            let time = game.elapsed(now: now)
-            if best(config, level: level).map({ time < $0 }) ?? true {
-                // 第一下就赢（空格一路翻完）用时是 0，存 0 会被当成“没有记录”，至少记 0.1 秒。
-                config.set(bestKey(level), .number(max(0.1, (time * 10).rounded() / 10)))
-                if let ended = game.endedAt { config.set(bestAtKey(level), .number(ended)) }
-                outcome.newRecord = true
+            // 第一下就赢（空格一路翻完）用时是 0，存 0 会被当成“没有记录”，至少记 0.1 秒。
+            let time = max(0.1, (game.elapsed(now: now) * 10).rounded() / 10)
+            let score = MineScore(seconds: time, date: game.endedAt ?? now)
+            let placed = insert(score, into: leaderboard(config, level: level))
+            if let rank = placed.rank {
+                storeLeaderboard(placed.list, level: level, in: &config)
+                outcome.rank = rank
+                outcome.newRecord = rank == 1
             }
         }
         if before != .lost, game.status == .lost { outcome.justLost = true }
@@ -442,7 +539,7 @@ public enum Minesweeper {
         switch board.status {
         case .ready: return tr("点任意一格开始")
         case .playing: return tr("还剩 \(board.minesLeft) 颗雷")
-        case .won: return tr("赢了 · \(board.displaySeconds(now: now)) 秒")
+        case .won: return wonLine(seconds: board.displaySeconds(now: now), rank: nil)
         case .lost: return tr("踩雷了，再来一盘")
         }
     }
@@ -455,8 +552,19 @@ public enum Minesweeper {
     public static let columnHeight: Double = 120
     /// 面板宽。
     public static let panelWidth: Double = 340
-    /// 面板里棋盘的宽（初级、中级一样宽，换难度面板不跳）。
-    public static let panelBoardWidth: Double = 316
+    /// 面板卡片（DetailCard）自己的内边距，和别的面板一样 16。
+    public static let panelCardPadding: Double = 16
+    /// 面板尾巴的深度（PanelShape.arrowDepth）：扩展栏在左右两侧时尾巴在侧边，内容区再窄 10。
+    public static let panelTailDepth: Double = 10
+    /// 面板卡片里真正能放内容的宽：面板宽减面板内容区两侧边距（DetailPanelWidth.padding），
+    /// 按尾巴在侧边的最窄情况再减尾巴，最后减卡片自己的内边距。340 宽是 266。
+    public static var panelContentWidth: Double {
+        Double(DetailPanelWidth.content(panel: CGFloat(panelWidth), tailDepth: CGFloat(panelTailDepth),
+                                        tailOnSide: true)) - panelCardPadding * 2
+    }
+    /// 面板里棋盘的宽（初级、中级一样宽，换难度面板不跳），就是卡片的内容宽，
+    /// 左右边距和其他面板一样。原来写死 316，比内容宽多出 40 多，右边被裁。
+    public static var panelBoardWidth: Double { panelContentWidth }
     /// 格子之间的缝。
     public static func gap(cell: Double) -> Double { cell >= 24 ? 3 : (cell >= 17 ? 2 : 1) }
 
