@@ -175,9 +175,23 @@ public enum ChineseCalendar {
             }
             // Meeus works in dynamical time, about 69 seconds ahead of UTC.
             let moment = date(julianDay: jd - 69.0 / 86_400)
-            return SolarTerm(name: name, moment: moment, day: calendar.startOfDay(for: moment))
+            var day = calendar.startOfDay(for: moment)
+            if let fixed = termDayCorrections["\(year)\(name)"],
+               let corrected = calendar.date(from: DateComponents(year: year, month: fixed.month, day: fixed.day)) {
+                day = corrected
+            }
+            return SolarTerm(name: name, moment: moment, day: day)
         }
     }
+
+    /// 低精度公式离子夜只差几分钟、落错一天的节气（1900 到 2100 年，按 6tail lunar 的寿星历法逐年对过，
+    /// 见 ChineseAlmanac 文件头）：键是「年份 + 节气名」，值是正确的公历月、日。
+    static let termDayCorrections: [String: (month: Int, day: Int)] = [
+        "1912寒露": (10, 9), "1917大雪": (12, 8), "1923雨水": (2, 19), "1950谷雨": (4, 20),
+        "1951冬至": (12, 23), "1978小雪": (11, 23), "2008小满": (5, 21), "2014惊蛰": (3, 6),
+        "2016小暑": (7, 7), "2045小暑": (7, 7), "2047惊蛰": (3, 6), "2051春分": (3, 20),
+        "2082大寒": (1, 20), "2084芒种": (6, 5), "2097立夏": (5, 5),
+    ]
 
     /// The term that falls on this day, if any.
     public static func term(on date: Date) -> String? {

@@ -133,11 +133,15 @@ struct DivinationDetail: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Color.panelSecondary)
                     DivinationPrimaryButton(title: tr("摇一摇"), enabled: !stickBusy) { shake() }
+                    // 黄历按日子算，没抽签也看得到。
+                    DivinationAlmanacBox(date: context.now)
                 }
             }
         }
     }
 
+    /// 抽到以后：签号、签级、签题（英文界面加意译）、徽章、签诗（中文原文）、白话、可折叠的五项分项解读、
+    /// 今日黄历。
     private func stickResult(_ index: Int) -> some View {
         let stick = FortuneStick.all[index]
         return VStack(spacing: 8) {
@@ -145,6 +149,12 @@ struct DivinationDetail: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.panelPrimary)
             StickLevelBanner(level: stick.level, size: 34)
+            if L10n.isEnglish {
+                Text(verbatim: stick.level.englishTitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
+            }
+            DivinationStickTitle(stick: stick)
             DivinationSignBadgeRow(config: config, now: context.now, isPreview: context.isPreview)
             VStack(spacing: 3) {
                 ForEach(stick.poemLines, id: \.self) { line in
@@ -154,31 +164,22 @@ struct DivinationDetail: View {
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 5) {
-                labeled(tr("今日宜："), stick.good, tint: DivinationStyle.red)
-                labeled(tr("今日忌："), stick.avoid, tint: Color.panelPrimary)
-                Text(verbatim: stick.plain)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.panelStroke, lineWidth: 0.5))
+            Text(verbatim: stick.localizedPlain)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.panelPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.panelStroke, lineWidth: 0.5))
+            DivinationAspectsSection(stick: stick)
+            DivinationAlmanacBox(date: context.now)
             DivinationGlassButton(title: tr("今天已抽 · 明天再来")) {
                 guard !context.isPreview else { return }
                 DivinationPlay.play(.tick, for: instance)
             }
         }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func labeled(_ label: String, _ value: String, tint: Color) -> some View {
-        (Text(label).font(.system(size: 14, weight: .bold)).foregroundStyle(tint)
-            + Text(verbatim: value).font(.system(size: 14)).foregroundStyle(Color.panelPrimary))
-            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func shake() {

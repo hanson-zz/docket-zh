@@ -194,6 +194,65 @@ final class DivinationDailyTests: XCTestCase {
         XCTAssertNil(Divination.date(fromDay: "nope", calendar: shanghai))
     }
 
+    // MARK: 换签库的签历迁移
+
+    /// 换成观音灵签以前的签历（键 `stickLog`，原创 60 支的下标）只读：日子照样在月历上有点、能收藏，
+    /// 显示成旧签（没有签文，只有折算的签级），不会把旧下标当成观音灵签显示；新签历换了键（`gyLog`）。
+    func testLegacyLogIsKeptButNeverShownAsGuanyin() throws {
+        XCTAssertEqual(Divination.stickLogKey, "gyLog")
+        XCTAssertEqual(Divination.legacyStickLogKey, "stickLog")
+        XCTAssertEqual(Divination.legacyStickCount, 60)
+        var config = WidgetConfig()
+        config.set(Divination.legacyStickLogKey,
+                   .string("2026-10-01=0,2026-10-02=59,2026-10-03=60,bad,2026-10-04=30,2026-10-05=21,2026-10-06=22"))
+        XCTAssertTrue(Divination.stickLog(config).isEmpty, "旧下标不进新签历")
+        XCTAssertEqual(Divination.legacyStickLog(config),
+                       ["2026-10-01": 0, "2026-10-02": 59, "2026-10-04": 30, "2026-10-05": 21, "2026-10-06": 22],
+                       "超出旧签库的下标跳过")
+        let old = try XCTUnwrap(Divination.record(day: "2026-10-01", in: config))
+        XCTAssertTrue(old.isLegacy)
+        XCTAssertNil(old.stick, "旧签不套观音灵签的签文")
+        XCTAssertEqual(old.level, .upper, "原来的上上签折成上签")
+        XCTAssertEqual(Divination.record(day: "2026-10-02", in: config)?.level, .lower, "原来的下签")
+        XCTAssertEqual(Divination.record(day: "2026-10-04", in: config)?.level, .middle, "原来的中吉、中平")
+        XCTAssertEqual(Divination.record(day: "2026-10-05", in: config)?.level, .upper, "原来的上吉最后一支")
+        XCTAssertEqual(Divination.record(day: "2026-10-06", in: config)?.level, .middle, "原来的中吉第一支")
+        XCTAssertEqual(Divination.records(config).map(\.day),
+                       ["2026-10-06", "2026-10-05", "2026-10-04", "2026-10-02", "2026-10-01"])
+        // 月历上有点，按折算的签级上色。
+        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        let levels = Divination.monthLevels(config, month: now, calendar: shanghai)
+        XCTAssertEqual(levels["2026-10-01"], .upper)
+        XCTAssertEqual(levels["2026-10-02"], .lower)
+        // 旧签也能收藏。
+        XCTAssertTrue(Divination.toggleFavorite(day: "2026-10-01", in: &config))
+        XCTAssertEqual(Divination.favorites(config).map(\.day), ["2026-10-01"])
+        XCTAssertTrue(Divination.favorites(config).first?.isLegacy ?? false)
+        // 同一天新签历里有的，以新的为准。
+        Divination.recordStick(36, day: "2026-10-02", in: &config, now: now, calendar: shanghai)
+        let replaced = try XCTUnwrap(Divination.record(day: "2026-10-02", in: config))
+        XCTAssertFalse(replaced.isLegacy)
+        XCTAssertEqual(replaced.stick?.title, "李靖归山")
+        XCTAssertEqual(replaced.level, FortuneStick.all[36].level)
+        XCTAssertEqual(Divination.records(config).count, 5)
+    }
+
+    /// 旧签历和新签历一起按保留期清：一年以前、没收藏的旧签清掉，收藏的旧签留着；全清空时旧键删掉。
+    func testLegacyLogIsPrunedWithTheNewOne() {
+        var config = WidgetConfig()
+        config.set(Divination.legacyStickLogKey, .string("2025-01-01=3,2025-06-01=4,2026-09-01=5"))
+        XCTAssertTrue(Divination.toggleFavorite(day: "2025-06-01", in: &config))
+        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        Divination.recordStick(1, day: "2026-10-29", in: &config, now: now, calendar: shanghai)
+        XCTAssertEqual(Divination.legacyStickLog(config), ["2025-06-01": 4, "2026-09-01": 5])
+        XCTAssertEqual(Divination.stickLog(config), ["2026-10-29": 1])
+        // 坏数据不崩。
+        config.set(Divination.legacyStickLogKey, .string("==,2026-1-01=1,abc,2026-09-02=-1"))
+        XCTAssertTrue(Divination.legacyStickLog(config).isEmpty)
+        Divination.recordStick(2, day: "2026-10-30", in: &config, now: now, calendar: shanghai)
+        XCTAssertNil(config.values[Divination.legacyStickLogKey], "旧签历清空后删掉键")
+    }
+
     // MARK: 皮肤
 
     func testSkins() {

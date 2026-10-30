@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 // MARK: - 卜卦 · 签卡分享图（Pro）
 //
-// 把当天的签（签号、签级、签诗、宜忌、白话、日期、捧着展开签纸的小熊猫、码头水印；选了星座 / 属相时
+// 把当天的签（签号、签题、签级、签诗、白话、当天农历和宜忌、日期、捧着展开签纸的小熊猫、码头水印；选了星座 / 属相时
 // 再加徽章和幸运色、幸运数字）画成 360×640 的竖版卡片，ImageRenderer 按 3 倍出
 // 1080×1920 的 PNG。浅色宣纸底、深色墨底两款，配色固定（不跟面板玻璃走），尺寸和
 // 文件名在 Core 的 DivinationShareCard。面板里：预览、浅深切换、存储、拷贝、分享。
@@ -27,6 +27,11 @@ struct DivinationShareCardView: View {
     private var red: Color { Color(hex: dark ? Divination.redDarkHex : Divination.redLightHex) }
     private var gold: Color { Color(hex: Divination.goldHex) }
 
+    private var english: Bool { L10n.isEnglish }
+    private var almanac: ChineseAlmanac.Day {
+        ChineseAlmanac.day(ChineseCalendar.day(day) ?? Date())
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
@@ -39,46 +44,67 @@ struct DivinationShareCardView: View {
                     .foregroundStyle(subInk)
                     .lineLimit(1)
             }
-            Spacer(minLength: 16)
-            Text(verbatim: Divination.stickNumber(index))
-                .font(.custom("Songti SC", size: 22).weight(.semibold))
-                .foregroundStyle(ink)
+            Spacer(minLength: 8)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(verbatim: Divination.stickNumber(index))
+                    .font(.custom("Songti SC", size: 20).weight(.semibold))
+                    .foregroundStyle(ink)
+                Text(verbatim: stick.title)
+                    .font(.custom("Songti SC", size: 20).weight(.bold))
+                    .foregroundStyle(Color(hex: dark ? Divination.goldTextDarkHex : Divination.goldTextLightHex))
+            }
+            .lineLimit(1)
+            if english {
+                Text(verbatim: stick.englishTitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(subInk)
+                    .lineLimit(1)
+                    .padding(.top, 2)
+            }
             HStack(spacing: 10) {
                 ornament
                 Text(verbatim: stick.level.title)
-                    .font(.custom("Songti SC", size: 50).weight(.heavy))
-                    .foregroundStyle(stick.level.isFestive ? red : (stick.level == .good ? gold : ink))
+                    .font(.custom("Songti SC", size: 44).weight(.heavy))
+                    .foregroundStyle(stick.level.isFestive ? red : (stick.level == .middle ? gold : ink))
                     .lineLimit(1)
                     .fixedSize()
                 ornament.scaleEffect(x: -1)
             }
             .padding(.top, 4)
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 ForEach(stick.poemLines, id: \.self) { line in
                     Text(verbatim: line)
-                        .font(.custom("Songti SC", size: 24).weight(.semibold))
+                        .font(.custom("Songti SC", size: 21).weight(.semibold))
                         .foregroundStyle(ink)
                 }
             }
-            .padding(.top, 14)
-            Rectangle().fill(gold.opacity(0.7)).frame(width: 120, height: 1).padding(.vertical, 14)
+            .padding(.top, 10)
+            Rectangle().fill(gold.opacity(0.7)).frame(width: 120, height: 1).padding(.vertical, 12)
             VStack(alignment: .leading, spacing: 6) {
-                labeled(tr("今日宜："), stick.good, tint: red)
-                labeled(tr("今日忌："), stick.avoid, tint: ink)
-                Text(verbatim: stick.plain)
-                    .font(.system(size: 15))
-                    .foregroundStyle(subInk)
+                Text(verbatim: stick.localizedPlain)
+                    .font(.system(size: 14))
+                    .foregroundStyle(ink)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: almanac.lunarLine(english: english))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(red)
+                    Text(verbatim: almanac.yiJiLine(goodCount: 4, badCount: 3, goodLabel: tr("宜"), badLabel: tr("忌"),
+                                                    english: english))
+                        .font(.system(size: 13))
+                        .foregroundStyle(subInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let sign {
-                signRow(sign).padding(.top, 12)
+                signRow(sign).padding(.top, 10)
             }
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
             HStack(alignment: .bottom) {
                 // 和面板第三拍同一张：小熊猫双手捧着展开的签（卡片上签级已经写得很大，纸上不再写）。
-                DivinationPoseImage(pose: .qianRead, height: 96)
+                DivinationPoseImage(pose: .qianRead, height: 84)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(verbatim: "码头 Dockling")
@@ -107,12 +133,6 @@ struct DivinationShareCardView: View {
             Circle().fill(gold).frame(width: 6, height: 6)
             Rectangle().fill(gold).frame(width: 28, height: 1.5)
         }
-    }
-
-    private func labeled(_ label: String, _ value: String, tint: Color) -> some View {
-        (Text(label).font(.system(size: 16, weight: .bold)).foregroundStyle(tint)
-            + Text(verbatim: value).font(.system(size: 16)).foregroundStyle(ink))
-            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func signRow(_ sign: DivinationSign) -> some View {

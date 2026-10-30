@@ -132,7 +132,10 @@ final class DivinationTests: XCTestCase {
             all += [hexagram.name, hexagram.judgment, hexagram.plain] + hexagram.lineTexts
             if let extra = hexagram.extraText { all.append(extra) }
         }
-        for stick in FortuneStick.all { all += stick.poem + [stick.good, stick.avoid, stick.plain] }
+        for stick in FortuneStick.all {
+            all += stick.poem + [stick.title, stick.plain, stick.short, stick.englishTitle, stick.englishPlain,
+                                 stick.englishShort] + stick.aspects.all + stick.englishAspects.all
+        }
         all += WorryBook.answers
         for text in all {
             XCTAssertFalse(text.contains("\u{2014}"), text)
@@ -394,30 +397,90 @@ final class DivinationTests: XCTestCase {
 
     func testBadStoredStickIsIgnored() {
         var config = WidgetConfig()
-        let now = date("2026-10-29T03:00:00Z")
+        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
         config.set(Divination.stickDayKey, .string("2026-10-29"))
         config.set(Divination.stickKey, .number(999))
         XCTAssertNil(Divination.todayStick(config, now: now, calendar: shanghai))
+        config.set(Divination.stickKey, .number(100))
+        XCTAssertNil(Divination.todayStick(config, now: now, calendar: shanghai), "一百签的下标只到 99")
     }
 
+    /// 换签库那天：旧版存的今天那支（原创 60 支的下标，键 `stick`）不当成观音灵签显示，今天可以再抽。
+    func testLegacyTodayStickIsNotMisread() {
+        var config = WidgetConfig()
+        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        config.set(Divination.stickDayKey, .string("2026-10-29"))
+        config.set(Divination.legacyStickKey, .number(36))
+        XCTAssertNotEqual(Divination.stickKey, Divination.legacyStickKey)
+        XCTAssertNil(Divination.todayStick(config, now: now, calendar: shanghai))
+        var rng = MineRandom(seed: 8)
+        let draw = Divination.drawStick(in: &config, now: now, calendar: shanghai, using: &rng)
+        XCTAssertTrue(draw.isNew)
+        XCTAssertTrue(FortuneStick.all.indices.contains(draw.index))
+        XCTAssertEqual(Divination.todayStick(config, now: now, calendar: shanghai), draw.index)
+    }
+
+    /// 观音灵签一百签：签号顺序、签级分布（上 23、中 59、下 18）、七言四句、首末签原文、
+    /// 自写的白话 / 一句话 / 五项分项 / 英文都齐全，英文里没有汉字，不写医疗、投资、法律。
     func testStickLibrary() {
-        XCTAssertGreaterThanOrEqual(FortuneStick.all.count, 60)
+        XCTAssertEqual(FortuneStick.all.count, 100)
+        XCTAssertEqual(FortuneStick.all.map(\.number), Array(1...100))
         XCTAssertEqual(Set(FortuneStick.all.map(\.level)), Set(StickLevel.allCases), "每一级都有")
+        XCTAssertEqual(FortuneStick.all.filter { $0.level == .upper }.count, 23)
+        XCTAssertEqual(FortuneStick.all.filter { $0.level == .middle }.count, 59)
+        XCTAssertEqual(FortuneStick.all.filter { $0.level == .lower }.count, 18)
+        let han = try! NSRegularExpression(pattern: #"[\p{Han}，。；：、！？「」]"#)
+        func hasHan(_ text: String) -> Bool {
+            han.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
+        }
+        let banned = ["投资", "股票", "基金", "医生", "就医", "吃药", "律师", "官司", "诉讼", "法院", "手术", "注定"]
         for stick in FortuneStick.all {
             XCTAssertEqual(stick.poem.count, 4)
             XCTAssertTrue(stick.poem.allSatisfy { $0.count == 7 }, "七言四句：\(stick.poem)")
             XCTAssertEqual(stick.poemLines.first?.last, "，")
             XCTAssertEqual(stick.poemLines.last?.last, "。")
-            XCTAssertFalse(stick.good.isEmpty)
-            XCTAssertFalse(stick.avoid.isEmpty)
+            XCTAssertFalse(stick.title.isEmpty)
+            XCTAssertLessThanOrEqual(stick.title.count, 7, stick.title)
             XCTAssertFalse(stick.plain.isEmpty)
+            XCTAssertFalse(stick.short.isEmpty)
+            XCTAssertEqual(stick.aspects.all.count, 5)
+            XCTAssertTrue(stick.aspects.all.allSatisfy { !$0.isEmpty && $0.count <= 20 }, "\(stick.number)")
+            XCTAssertTrue(stick.englishAspects.all.allSatisfy { !$0.isEmpty }, "\(stick.number)")
+            for text in [stick.englishTitle, stick.englishPlain, stick.englishShort] + stick.englishAspects.all {
+                XCTAssertFalse(text.isEmpty)
+                XCTAssertFalse(hasHan(text), "英文里有汉字：\(text)")
+            }
+            let chinese = ([stick.plain, stick.short] + stick.aspects.all).joined()
+            for word in banned { XCTAssertFalse(chinese.contains(word), "\(stick.number) 写了「\(word)」") }
         }
         XCTAssertEqual(Set(FortuneStick.all.map { $0.poem.joined() }).count, FortuneStick.all.count, "签诗不重复")
-        XCTAssertEqual(StickLevel.best.title, "上上签")
-        XCTAssertEqual(StickLevel.low.title, "下签")
-        XCTAssertTrue(StickLevel.best.isFestive && StickLevel.great.isFestive)
-        XCTAssertFalse(StickLevel.fair.isFestive)
-        XCTAssertLessThan(StickLevel.best.rank, StickLevel.low.rank)
+        XCTAssertEqual(FortuneStick.all.first?.poem.first, "开天辟地作良缘")
+        XCTAssertEqual(FortuneStick.all.first?.title, "钟离成道")
+        XCTAssertEqual(FortuneStick.all.last?.poem.first, "佛神灵变与君知")
+        XCTAssertEqual(FortuneStick.all[36].title, "李靖归山")
+        XCTAssertEqual(FortuneStick.all[36].level, .middle)
+        XCTAssertEqual(FortuneStick.all[8].level, .upper, "第九签按港本取上签")
+        XCTAssertEqual(StickLevel.upper.title, "上签")
+        XCTAssertEqual(StickLevel.middle.title, "中签")
+        XCTAssertEqual(StickLevel.lower.title, "下签")
+        XCTAssertTrue(StickLevel.upper.isFestive)
+        XCTAssertFalse(StickLevel.middle.isFestive)
+        XCTAssertLessThan(StickLevel.upper.rank, StickLevel.lower.rank)
+        XCTAssertEqual(StickAspects.titles, ["家宅", "求财", "婚姻", "出行", "事业"])
+    }
+
+    /// 一句话白话写在桌面中号签那一列（128 宽）和小号（140 宽）上，不折行：中英文都放得下。
+    func testShortLinesFitTheDesktopCards() {
+        let room = DesktopCardsDivinationPlan.mediumStickWidth - 4
+        for stick in FortuneStick.all {
+            XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.estimatedWidth(stick.short), room, stick.short)
+            XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.estimatedWidth(stick.englishShort), room,
+                                     stick.englishShort)
+            // 大号签诗前两句一行（右边文字列 232 宽）。
+            let poem = stick.poem.prefix(2).joined(separator: "，") + "。"
+            XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.estimatedWidth(poem), 232, poem)
+        }
+        XCTAssertEqual(DesktopCardsDivinationPlan.estimatedWidth("签签"), 26)
     }
 
     func testChineseNumbers() {
@@ -427,6 +490,9 @@ final class DivinationTests: XCTestCase {
         XCTAssertEqual(Divination.chineseNumber(20), "二十")
         XCTAssertEqual(Divination.chineseNumber(37), "三十七")
         XCTAssertEqual(Divination.chineseNumber(60), "六十")
+        XCTAssertEqual(Divination.chineseNumber(99), "九十九")
+        XCTAssertEqual(Divination.chineseNumber(100), "一百")
+        XCTAssertEqual(Divination.stickNumber(99), "第一百签")
         XCTAssertEqual(Divination.stickNumber(36), "第三十七签")
         XCTAssertEqual(Divination.shortStickNumber(36), "第37签")
         XCTAssertEqual(Divination.lineName(0), "初爻")

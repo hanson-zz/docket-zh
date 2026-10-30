@@ -4,12 +4,14 @@ import SwiftUI
 // MARK: - 钉在桌面 · 小游戏组 · 卜卦
 //
 // 卜卦钉在桌面（Core 的 `DesktopCardsDivinationPlan`）：
-// 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号；没抽时一个「摇一摇」直接摇。
-// 中 340×160：左边今日签，右边起卦（一次起完）：起卦小场景（卦画叠在右上角），下面卦名；
+// 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号、一句话白话，底下一行农历；没抽时一个「摇一摇」直接摇。
+// 中 340×160：左边今日签（签级、签号、一句话白话、一行宜忌；没抽时宜忌加「摇一摇」），
+// 右边起卦（一次起完）：起卦小场景（卦画叠在右上角），下面卦名；
 // 白话不占一行，鼠标停在卦名那一行时自己画一个浮层写完整白话（桌面卡片窗口不激活，系统的
 // `.help` 悬停提示可能不弹），腾出的高度让小熊猫和左边签那只一样大。左边签场景按右边起卦场景的
 // 脚底线加高（Core 的 `mediumStickSceneHeight`），两只小熊猫脚底在同一条线上。
-// 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞，底下留出「仅供娱乐」的余量。
+// 大 340×340：上面今日签（签级、签号、签题，签诗前两句，一句话白话，农历和宜忌），下面起卦，多一行卦辞，
+// 底下留出「仅供娱乐」的余量。
 // 起卦小场景和面板同一套五拍、同样的时长和声音（ShellTossScene + DivinationPlay.performToss，
 // 按「一次起完」的节奏）：捧龟甲 → 摇几下 → 跳起举高 → 一摔、铜钱蹦出 → 捡回，铜钱留在地上
 // 显示最后一爻；按卡片缩小（Core 的 `DesktopCardsDivinationPlan.castLayout`），铜钱在小熊猫右边
@@ -58,25 +60,61 @@ private struct DeskDivinationCard: View {
 
     // MARK: 签
 
-    private var stickSummary: some View {
-        VStack(spacing: 2) {
+    /// 小号、中号签场景下面那几行。抽过：签级加签号一行、一句话白话（中号再加一行宜忌，小号再加农历）；
+    /// 没抽：小号一行提示加「摇一摇」再加农历，中号一行宜忌加「摇一摇」。
+    @ViewBuilder private func stickSummary(medium: Bool) -> some View {
+        let spacing = CGFloat(DesktopCardsDivinationPlan.summaryLineSpacing)
+        VStack(spacing: spacing) {
             if let index = today {
                 let stick = FortuneStick.all[index]
-                Text(verbatim: Divination.stickNumber(index))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.panelSecondary)
-                Text(verbatim: stick.level.title)
-                    .font(.custom("Songti SC", size: 24).weight(.heavy))
-                    .foregroundStyle(DivinationStyle.level(stick.level))
-                    .lineLimit(1)
-            } else {
-                Text(tr("今天还没抽签"))
-                    .font(.system(size: 13, weight: .semibold))
+                levelRow(stick, index: index, levelSize: medium ? 15 : 20)
+                Text(verbatim: stick.localizedShort)
+                    .font(.system(size: 13))
                     .foregroundStyle(Color.panelPrimary)
                     .lineLimit(1)
+                    .fixedSize()
+                if medium {
+                    DivinationYiJiLine(date: now, attempts: [(1, 1), (1, 0)])
+                } else {
+                    lunarLine
+                }
+            } else {
+                if medium {
+                    DivinationYiJiLine(date: now, attempts: [(1, 1), (1, 0)])
+                } else {
+                    Text(tr("今天还没抽签"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.panelPrimary)
+                        .lineLimit(1)
+                }
                 DivinationPrimaryButton(title: tr("摇一摇"), height: 28, enabled: !busy) { shake() }
+                if !medium { lunarLine }
             }
         }
+    }
+
+    /// 签级（宋体）加签号一行。
+    private func levelRow(_ stick: FortuneStick, index: Int, levelSize: CGFloat) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(verbatim: stick.level.title)
+                .font(.custom("Songti SC", size: levelSize).weight(.heavy))
+                .foregroundStyle(DivinationStyle.level(stick.level))
+                .fixedSize()
+            Text(verbatim: Divination.shortStickNumber(index))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.panelSecondary)
+                .fixedSize()
+        }
+        .lineLimit(1)
+    }
+
+    /// 今天的农历（九月廿一；英文 Lunar 9/21）。
+    private var lunarLine: some View {
+        Text(verbatim: ChineseAlmanac.day(now).shortLunar(english: L10n.isEnglish))
+            .font(.system(size: 13))
+            .foregroundStyle(Color.panelTertiary)
+            .lineLimit(1)
+            .fixedSize()
     }
 
     private func shake() {
@@ -253,9 +291,9 @@ private struct DeskDivinationCard: View {
     // MARK: 小号
 
     private var small: some View {
-        VStack(spacing: 4) {
-            stickScene(width: 140, poseHeight: 70)
-            stickSummary
+        VStack(spacing: 2) {
+            stickScene(width: 140, poseHeight: CGFloat(DesktopCardsDivinationPlan.smallPoseHeight))
+            stickSummary(medium: false)
             Spacer(minLength: 0)
         }
     }
@@ -270,7 +308,7 @@ private struct DeskDivinationCard: View {
                 stickScene(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth),
                            poseHeight: CGFloat(DesktopCardsDivinationPlan.mediumStickPoseHeight),
                            height: CGFloat(DesktopCardsDivinationPlan.mediumStickSceneHeight))
-                stickSummary
+                stickSummary(medium: true)
                 Spacer(minLength: 0)
             }
             .frame(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth))
@@ -282,33 +320,44 @@ private struct DeskDivinationCard: View {
     // MARK: 大号
 
     private var large: some View {
-        // 340 高去掉上下 12 的边距只有 316：小熊猫压到 72、间距 8、签级和签号并成一行，
-        // 卦辞两行加白话两行以后底下还剩十几 pt，「仅供娱乐」不贴底、不被按钮挤掉。
+        // 340 高去掉上下 12 的边距只有 316：小熊猫压到 72、间距 8，右边签那列四行（Core 的
+        // largeStickTextHeight），卦辞两行加白话两行以后底下还有几 pt，「仅供娱乐」不贴底、不被按钮挤掉。
         VStack(spacing: CGFloat(DesktopCardsDivinationPlan.largeSpacing)) {
             HStack(alignment: .center, spacing: 12) {
                 stickScene(width: 72, poseHeight: CGFloat(DesktopCardsDivinationPlan.largePoseHeight))
-                // 签级和签号排一行（原来上下两行加两行签诗比小熊猫高出一截，把下面整块往下挤）。
-                VStack(alignment: .leading, spacing: 4) {
+                // 签级、签号、签题一行，签诗前两句一行，一句话白话一行，农历和宜忌一行（放不下逐个减）。
+                VStack(alignment: .leading, spacing: CGFloat(DesktopCardsDivinationPlan.summaryLineSpacing)) {
                     if let index = today {
                         let stick = FortuneStick.all[index]
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(verbatim: stick.level.title)
-                                .font(.custom("Songti SC", size: 24).weight(.heavy))
-                                .foregroundStyle(DivinationStyle.level(stick.level))
-                                .lineLimit(1)
-                                .fixedSize()
-                            Text(verbatim: Divination.stickNumber(index))
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.panelSecondary)
-                                .lineLimit(1)
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                levelRow(stick, index: index, levelSize: 20)
+                                Text(verbatim: stick.localizedTitle)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(DivinationStyle.goldText)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                            }
+                            levelRow(stick, index: index, levelSize: 20)
                         }
-                        Text(verbatim: stick.poemLines.prefix(2).joined())
+                        Text(verbatim: stick.poem.prefix(2).joined(separator: "，") + "。")
                             .font(.custom("Songti SC", size: 13))
                             .foregroundStyle(Color.panelPrimary)
-                            .lineLimit(2)
+                            .lineLimit(1)
+                            .fixedSize()
+                        Text(verbatim: stick.localizedShort)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.panelSecondary)
+                            .lineLimit(1)
+                            .fixedSize()
                     } else {
-                        stickSummary
+                        Text(tr("今天还没抽签"))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.panelPrimary)
+                            .lineLimit(1)
+                        DivinationPrimaryButton(title: tr("摇一摇"), height: 28, enabled: !busy) { shake() }
                     }
+                    DivinationYiJiLine(date: now, showsLunar: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

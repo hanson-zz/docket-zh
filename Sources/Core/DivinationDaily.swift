@@ -116,8 +116,11 @@ public struct DailyLuck: Equatable, Sendable {
 public extension Divination {
     /// 选的星座或属相（原始值；空字符串是不选）。
     static let signKey = "sign"
-    /// 签历：抽过的签，`yyyy-MM-dd=下标`，按日期从旧到新，逗号分隔。
-    static let stickLogKey = "stickLog"
+    /// 签历：抽过的观音灵签，`yyyy-MM-dd=下标`（0...99），按日期从旧到新，逗号分隔。
+    static let stickLogKey = "gyLog"
+    /// 换签库以前的签历（原创 60 支的下标），只读不写：留着的日子照样在月历上有点、能收藏，
+    /// 显示成「旧签」（签文已经换掉，不硬套成观音灵签，免得显示错签）。
+    static let legacyStickLogKey = "stickLog"
     /// 收藏的日子（`yyyy-MM-dd`，逗号分隔）。
     static let stickFavoritesKey = "stickFavs"
     /// 签筒皮肤、铜钱皮肤（Pro）。
@@ -182,31 +185,65 @@ public extension Divination {
 
     // MARK: 签历
 
-    /// 一天的签：日期、第几支（下标）、收藏没有。
+    /// 一天的签：日期、第几支（下标）、收藏没有。`isLegacy` 是换签库以前抽的原创签（`index` 是旧下标，
+    /// `stick` 为 nil，只认得签级）。
     struct StickRecord: Equatable, Sendable, Identifiable {
         public var day: String
         public var index: Int
         public var favorite: Bool
+        public var isLegacy: Bool
         public var id: String { day }
-        public var stick: FortuneStick { FortuneStick.all[index] }
+        /// 观音灵签那一支；旧签是 nil。
+        public var stick: FortuneStick? { isLegacy ? nil : FortuneStick.all[index] }
+        /// 签级：观音灵签按原签谱；旧签按原来的等级折算（上上、上吉算上签，中吉、中平算中签，下签算下签）。
+        public var level: StickLevel {
+            isLegacy ? Divination.legacyLevel(index) : FortuneStick.all[index].level
+        }
 
-        public init(day: String, index: Int, favorite: Bool) {
+        public init(day: String, index: Int, favorite: Bool, isLegacy: Bool = false) {
             self.day = day
             self.index = index
             self.favorite = favorite
+            self.isLegacy = isLegacy
         }
     }
 
-    /// 签历：日期到下标。坏数据（日期格式不对、下标超界）跳过。
-    static func stickLog(_ config: WidgetConfig) -> [String: Int] {
+    /// 旧签库 60 支的等级（按下标），折算成三等：U 上签、M 中签、L 下签。
+    static let legacyLevelCodes = Array(String(repeating: "U", count: 22) + String(repeating: "M", count: 30)
+                                        + String(repeating: "L", count: 8))
+
+    static var legacyStickCount: Int { legacyLevelCodes.count }
+
+    static func legacyLevel(_ index: Int) -> StickLevel {
+        guard legacyLevelCodes.indices.contains(index) else { return .middle }
+        switch legacyLevelCodes[index] {
+        case "U": return .upper
+        case "L": return .lower
+        default: return .middle
+        }
+    }
+
+    /// 解析 `yyyy-MM-dd=下标` 列表；坏数据（日期格式不对、下标超出 `count`）跳过。
+    private static func parseLog(_ text: String, count: Int) -> [String: Int] {
         var result: [String: Int] = [:]
-        for item in config.string(stickLogKey).split(separator: ",") {
+        for item in text.split(separator: ",") {
             let parts = item.split(separator: "=")
             guard parts.count == 2, isDayKey(String(parts[0])), let index = Int(parts[1]),
-                  FortuneStick.all.indices.contains(index) else { continue }
+                  (0..<count).contains(index) else { continue }
             result[String(parts[0])] = index
         }
         return result
+    }
+
+    /// 签历：日期到观音灵签下标。坏数据（日期格式不对、下标超界）跳过。
+    static func stickLog(_ config: WidgetConfig) -> [String: Int] {
+        parseLog(config.string(stickLogKey), count: FortuneStick.all.count)
+    }
+
+    /// 换签库以前的签历：日期到旧下标（0...59）。同一天新签历里有的，以新的为准。
+    static func legacyStickLog(_ config: WidgetConfig) -> [String: Int] {
+        let current = stickLog(config)
+        return parseLog(config.string(legacyStickLogKey), count: legacyStickCount).filter { current[$0.key] == nil }
     }
 
     static func favoriteDays(_ config: WidgetConfig) -> Set<String> {
@@ -215,15 +252,24 @@ public extension Divination {
 
     /// 那天的签（没抽过是 nil）。
     static func record(day: String, in config: WidgetConfig) -> StickRecord? {
-        guard let index = stickLog(config)[day] else { return nil }
-        return StickRecord(day: day, index: index, favorite: favoriteDays(config).contains(day))
+        let favorite = favoriteDays(config).contains(day)
+        if let index = stickLog(config)[day] { return StickRecord(day: day, index: index, favorite: favorite) }
+        if let old = legacyStickLog(config)[day] {
+            return StickRecord(day: day, index: old, favorite: favorite, isLegacy: true)
+        }
+        return nil
     }
 
-    /// 全部签历，新的在前。
+    /// 全部签历（新旧合在一起），新的在前。
     static func records(_ config: WidgetConfig) -> [StickRecord] {
         let favorites = favoriteDays(config)
-        return stickLog(config).sorted { $0.key > $1.key }
-            .map { StickRecord(day: $0.key, index: $0.value, favorite: favorites.contains($0.key)) }
+        let current = stickLog(config).map {
+            StickRecord(day: $0.key, index: $0.value, favorite: favorites.contains($0.key))
+        }
+        let legacy = legacyStickLog(config).map {
+            StickRecord(day: $0.key, index: $0.value, favorite: favorites.contains($0.key), isLegacy: true)
+        }
+        return (current + legacy).sorted { $0.day > $1.day }
     }
 
     /// 收藏的签，新的在前。
@@ -231,7 +277,8 @@ public extension Divination {
         records(config).filter(\.favorite)
     }
 
-    /// 记下某天抽到的签（同一天再记就改成新的），顺手清掉 `stickLogRetentionDays` 天以前、没收藏的。
+    /// 记下某天抽到的签（同一天再记就改成新的），顺手清掉 `stickLogRetentionDays` 天以前、没收藏的
+    /// （新旧签历一起清）。
     static func recordStick(_ index: Int, day: String, in config: inout WidgetConfig, now: Date,
                             calendar: Calendar = .current) {
         guard FortuneStick.all.indices.contains(index), isDayKey(day) else { return }
@@ -241,15 +288,21 @@ public extension Divination {
         let cutoff = calendar.date(byAdding: .day, value: -stickLogRetentionDays, to: now).map {
             dayKey($0, calendar: calendar)
         } ?? ""
-        log = log.filter { $0.key >= cutoff || favorites.contains($0.key) }
+        func keep(_ key: String) -> Bool { key >= cutoff || favorites.contains(key) }
+        log = log.filter { keep($0.key) }
         let text = log.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         config.set(stickLogKey, .string(text))
+        let old = parseLog(config.string(legacyStickLogKey), count: legacyStickCount).filter { keep($0.key) }
+        if !config.string(legacyStickLogKey).isEmpty {
+            let oldText = old.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+            config.set(legacyStickLogKey, oldText.isEmpty ? nil : .string(oldText))
+        }
     }
 
     /// 收藏 / 取消收藏某天的签；那天没抽过签时不动，返回 false。返回收藏后的状态。
     @discardableResult
     static func toggleFavorite(day: String, in config: inout WidgetConfig) -> Bool {
-        guard stickLog(config)[day] != nil else { return false }
+        guard record(day: day, in: config) != nil else { return false }
         var days = favoriteDays(config)
         let on = !days.contains(day)
         if on { days.insert(day) } else { days.remove(day) }
@@ -271,12 +324,12 @@ public extension Divination {
         return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 
-    /// 签历这一个月里每天的签级（月历的小圆点用）：日期到签级。
+    /// 签历这一个月里每天的签级（月历的小圆点用）：日期到签级，新旧签历都算。
     static func monthLevels(_ config: WidgetConfig, month: Date, calendar: Calendar = .current) -> [String: StickLevel] {
         let prefix = String(dayKey(month, calendar: calendar).prefix(7))
         var result: [String: StickLevel] = [:]
-        for (day, index) in stickLog(config) where day.hasPrefix(prefix) {
-            result[day] = FortuneStick.all[index].level
+        for record in records(config) where record.day.hasPrefix(prefix) {
+            result[record.day] = record.level
         }
         return result
     }

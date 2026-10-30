@@ -8,48 +8,102 @@ import Foundation
 
 // MARK: - 签
 
-/// 签级。从好到平：上上、上吉、中吉、中平、下签。下签的白话也写得轻松正面。
+/// 签级。观音灵签通行版一百签的原签谱只分上签、中签、下签三等（上 23、中 59、下 18，见
+/// notes/guanyin-sticks-sources.md 的核对）。下签的白话也写清楚「怎么做」，不吓人。
 public enum StickLevel: String, CaseIterable, Codable, Sendable {
-    case best, great, good, fair, low
+    case upper, middle, lower
 
     /// 签级的字（签上的内容，英文界面也保持中文）。
     public var title: String {
         switch self {
-        case .best: "上上签"
-        case .great: "上吉签"
-        case .good: "中吉签"
-        case .fair: "中平签"
-        case .low: "下签"
+        case .upper: "上签"
+        case .middle: "中签"
+        case .lower: "下签"
+        }
+    }
+
+    /// 英文界面在签级旁边加的一小行说明。
+    public var englishTitle: String {
+        switch self {
+        case .upper: "Upper lot"
+        case .middle: "Middle lot"
+        case .lower: "Lower lot"
         }
     }
 
     /// 越小越好，排序和配色用。
     public var rank: Int { StickLevel.allCases.firstIndex(of: self) ?? 0 }
 
-    /// 上上、上吉用喜庆红配金。
-    public var isFestive: Bool { self == .best || self == .great }
+    /// 上签用喜庆红配金，中签金色，下签主文字色。
+    public var isFestive: Bool { self == .upper }
 }
 
-/// 一支签：签级、四句签诗（原创七言）、今日宜、今日忌和一句白话。
-public struct FortuneStick: Equatable, Sendable {
-    public var level: StickLevel
-    public var poem: [String]
-    public var good: String
-    public var avoid: String
-    public var plain: String
+/// 一支签的分项解读：家宅、求财、婚姻、出行、事业（学业），各一句（原创白话）。
+public struct StickAspects: Equatable, Sendable {
+    public var home: String
+    public var wealth: String
+    public var love: String
+    public var travel: String
+    public var career: String
 
-    public init(level: StickLevel, poem: [String], good: String, avoid: String, plain: String) {
+    public init(home: String, wealth: String, love: String, travel: String, career: String) {
+        self.home = home
+        self.wealth = wealth
+        self.love = love
+        self.travel = travel
+        self.career = career
+    }
+
+    /// 按显示顺序排好的五项。
+    public var all: [String] { [home, wealth, love, travel, career] }
+
+    /// 五项的标题（界面文字，走 tr）。
+    public static var titles: [String] { [tr("家宅"), tr("求财", context: "aspect"), tr("婚姻"), tr("出行"), tr("事业")] }
+}
+
+/// 一支签：观音灵签第几签、签级、签题（典故）、四句签诗（传世原文，简体）、白话、一句话、五项分项解读，
+/// 以及英文界面用的签题意译、白话、一句话和分项（签诗在英文界面也保持中文原文）。
+/// 白话、一句话、分项和英文都是我们自己按签诗意思写的，不取任何现代解签书。
+public struct FortuneStick: Equatable, Sendable {
+    public var number: Int
+    public var level: StickLevel
+    public var title: String
+    public var poem: [String]
+    public var plain: String
+    public var short: String
+    public var aspects: StickAspects
+    public var englishTitle: String
+    public var englishPlain: String
+    public var englishShort: String
+    public var englishAspects: StickAspects
+
+    public init(number: Int, level: StickLevel, title: String, poem: [String], plain: String, short: String,
+                aspects: StickAspects, englishTitle: String, englishPlain: String, englishShort: String,
+                englishAspects: StickAspects) {
+        self.number = number
         self.level = level
+        self.title = title
         self.poem = poem
-        self.good = good
-        self.avoid = avoid
         self.plain = plain
+        self.short = short
+        self.aspects = aspects
+        self.englishTitle = englishTitle
+        self.englishPlain = englishPlain
+        self.englishShort = englishShort
+        self.englishAspects = englishAspects
     }
 
     /// 签诗四句，单句后加「，」、双句后加「。」，排成四行。
     public var poemLines: [String] {
         poem.enumerated().map { i, line in line + (i % 2 == 0 ? "，" : "。") }
     }
+
+    // 按界面语言取（英文界面用英文，其余用中文）。签诗、签级不翻。
+
+    public var localizedTitle: String { L10n.isEnglish ? englishTitle : title }
+    public var localizedPlain: String { L10n.isEnglish ? englishPlain : plain }
+    public var localizedShort: String { L10n.isEnglish ? englishShort : short }
+    public var localizedAspects: StickAspects { L10n.isEnglish ? englishAspects : aspects }
 }
 
 // MARK: - 八卦与六十四卦
@@ -434,8 +488,11 @@ public enum DivinationPage: String, CaseIterable, Sendable {
 public enum Divination {
     /// 抽签那天（本地日期 yyyy-MM-dd）。
     public static let stickDayKey = "stickDay"
-    /// 那天抽到第几支（下标）。
-    public static let stickKey = "stick"
+    /// 那天抽到观音灵签的第几支（下标 0...99）。换签库以前用的键是 `legacyStickKey`（原创 60 支的下标），
+    /// 新版不读它，所以升级当天已经抽过旧签的，今天可以再抽一支观音灵签，不会把旧下标当成新签显示。
+    public static let stickKey = "gyStick"
+    /// 换签库以前存今天那支（原创 60 支）的键，只留着认，不再写。
+    public static let legacyStickKey = "stick"
     /// 最近几次起卦（紧凑 JSON 数组，新的在前）。
     public static let historyKey = "history"
     /// 正在摇、还没摇满六爻的那一卦。
@@ -525,19 +582,20 @@ public enum Divination {
         return drawStick(in: &config, now: now, calendar: calendar, using: &rng)
     }
 
-    /// 「第三十七签」。
+    /// 「第三十七签」（英文界面「Lot 37」）。
     public static func stickNumber(_ index: Int) -> String {
-        "第\(chineseNumber(index + 1))签"
+        L10n.isEnglish ? "Lot \(index + 1)" : "第\(chineseNumber(index + 1))签"
     }
 
-    /// 「第37签」：放不下中文数字的窄处（扩展栏竖条）用。
+    /// 「第37签」：放不下中文数字的窄处（扩展栏竖条）用（英文界面「Lot 37」）。
     public static func shortStickNumber(_ index: Int) -> String {
-        "第\(index + 1)签"
+        L10n.isEnglish ? "Lot \(index + 1)" : "第\(index + 1)签"
     }
 
-    /// 1...99 的中文数字：一、十、十一、二十、三十七。
+    /// 1...100 的中文数字：一、十、十一、二十、三十七、一百。
     public static func chineseNumber(_ n: Int) -> String {
         let digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+        if n == 100 { return "一百" }
         guard n > 0, n < 100 else { return "\(n)" }
         if n < 10 { return digits[n] }
         let tens = n / 10, ones = n % 10
@@ -740,10 +798,67 @@ public enum DesktopCardsDivinationPlan {
     public static let levelLineHeight: Double = 34
     public static let buttonHeight: Double = 28
 
-    /// 中号左边一列从上往下要的高：签场景、间距，下面抽过是签号加签级，没抽是一行提示加「摇一摇」按钮。
+    /// 签场景下面几行之间的间距。
+    public static let summaryLineSpacing: Double = 1
+    /// 15pt、20pt 宋体签级那一行的高（宋体行高按 1.4 倍从宽算）。
+    public static let level15LineHeight: Double = 21
+    public static let level20LineHeight: Double = 28
+    /// 13pt 宋体（大号签诗那一行）。
+    public static let songti13LineHeight: Double = 19
+
+    /// 中号左边一列从上往下要的高：签场景、间距，下面抽过是签级加签号一行、一句话白话、一行宜忌；
+    /// 没抽是一行宜忌加「摇一摇」按钮。
     public static func mediumStickColumnHeight(drawn: Bool) -> Double {
-        let summary = drawn ? lineHeight13 + 2 + levelLineHeight : lineHeight13 + 2 + buttonHeight
+        let summary = drawn ? level15LineHeight + lineHeight13 * 2 + summaryLineSpacing * 2
+            : lineHeight13 + buttonHeight + summaryLineSpacing
         return mediumStickSceneHeight + mediumStickSummarySpacing + summary
+    }
+
+    /// 小号：小熊猫高度（场景再加 4 留给影子）和整列的高：场景、间距 2，下面抽过是签级加签号一行、
+    /// 一句话白话、农历；没抽是一行提示、「摇一摇」、农历。
+    public static let smallPoseHeight: Double = 56
+    public static func smallColumnHeight(drawn: Bool) -> Double {
+        let summary = drawn ? level20LineHeight + lineHeight13 * 2 : lineHeight13 * 2 + buttonHeight
+        return smallPoseHeight + stickFootMargin + 2 + summary + summaryLineSpacing * 2
+    }
+
+    /// 13pt 系统字一行字的估算宽（汉字全宽按字号算，英文按 SF 的大致字宽，i、l 这类窄、m、w 宽），
+    /// 只用来在测试里验算卡片上不折行的那几行（一句话白话）放不放得下。从宽估。
+    public static func estimatedWidth(_ text: String, size: Double = 13) -> Double {
+        let narrow: [Character: Double] = ["i": 3.2, "j": 3.2, "l": 3.2, "f": 4.4, "t": 4.5, "r": 4.7, "I": 3.6,
+                                           " ": 3.5, ".": 3.3, ",": 3.3, ";": 3.6, ":": 3.6, "'": 3.0, "!": 3.6,
+                                           "-": 5.0, "m": 11.0, "w": 9.8, "M": 11.6, "W": 12.6]
+        var total = 0.0
+        for ch in text {
+            if let scalar = ch.unicodeScalars.first, scalar.value >= 0x2E80 {
+                total += size
+            } else if let value = narrow[ch] {
+                total += value * size / 13
+            } else if ch.isUppercase {
+                total += 8.8 * size / 13
+            } else {
+                total += 7.3 * size / 13
+            }
+        }
+        return total
+    }
+
+    /// 小号卡片的内高（160 减上下边距 10）。
+    public static var smallInnerHeight: Double { DesktopPinSize.small.height - inset(.small) * 2 }
+
+    /// 大号上面签那一行右边文字列的高：签级行、签诗前两句、一句话白话、农历和宜忌。
+    public static var largeStickTextHeight: Double {
+        level20LineHeight + songti13LineHeight + lineHeight13 * 2 + summaryLineSpacing * 3
+    }
+
+    /// 大号从上往下估算要的高：签那一行（小熊猫和文字列取高的）、分隔线、起卦块（场景、卦辞两行、白话两行、
+    /// 最小间距、按钮）、「仅供娱乐」，块之间 `largeSpacing`。
+    public static var largeColumnHeight: Double {
+        let top = max(largePoseHeight + stickFootMargin, largeStickTextHeight)
+        let scene = castLayout(.large)?.sceneHeight ?? 0
+        let cast = scene + castSpacing(.large) * 3 + songti13LineHeight * 2 + lineHeight13 * 2 + buttonHeight
+        let disclaimer = 15.0 + 2
+        return top + 1 + cast + disclaimer + largeSpacing * 3
     }
 
     /// 中号右边起卦一列从上往下要的高：场景、间距、卦名（或一行提示）那一行、最小间距、按钮。

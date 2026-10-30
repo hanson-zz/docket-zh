@@ -310,19 +310,18 @@ struct DivinationBackButton: View {
 // MARK: - 签级配色（月历小点）
 
 enum DivinationLevelDot {
-    /// 上上红、上吉珊瑚、中吉金、中平竹青、下签灰：浅色深色玻璃上都看得清。
+    /// 上签红、中签金、下签灰：浅色深色玻璃上都看得清（观音灵签只分三等）。
     static func color(_ level: StickLevel) -> Color {
         switch level {
-        case .best: DivinationStyle.red
-        case .great: Color(hex: "#F07F5A")
-        case .good: DivinationStyle.gold
-        case .fair: Color(hex: "#5E9B5A")
-        case .low: Color(hex: "#8E8E93")
+        case .upper: DivinationStyle.red
+        case .middle: DivinationStyle.gold
+        case .lower: Color(hex: "#8E8E93")
         }
     }
 
-    /// 图例上的短名：上上、上吉、中吉、中平、下（签诗内容，英文界面也保持中文）。
+    /// 图例上的短名：上、中、下（英文界面 Upper、Middle、Lower）。
     static func short(_ level: StickLevel) -> String {
-        level.title.replacingOccurrences(of: "签", with: "")
+        if L10n.isEnglish { return level.englishTitle.replacingOccurrences(of: " lot", with: "") }
+        return level.title.replacingOccurrences(of: "签", with: "")
     }
 }

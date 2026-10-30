@@ -171,8 +171,7 @@ struct DivinationArchiveView: View {
     }
 
     private func recordCard(_ record: Divination.StickRecord) -> some View {
-        let stick = record.stick
-        return VStack(spacing: 6) {
+        VStack(spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(verbatim: DivinationShareCard.dateText(day: record.day, calendar: calendar))
                     .font(.system(size: 13))
@@ -193,34 +192,46 @@ struct DivinationArchiveView: View {
                 .accessibilityLabel(record.favorite ? tr("取消收藏") : tr("收藏这支签"))
             }
             HStack(spacing: 8) {
-                Text(verbatim: Divination.stickNumber(record.index))
+                Text(verbatim: Self.numberText(record))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.panelPrimary)
-                Text(verbatim: stick.level.title)
+                Text(verbatim: record.level.title)
                     .font(.custom("Songti SC", size: 17).weight(.heavy))
-                    .foregroundStyle(DivinationStyle.level(stick.level))
+                    .foregroundStyle(DivinationStyle.level(record.level))
             }
-            VStack(spacing: 2) {
-                ForEach(stick.poemLines, id: \.self) { line in
-                    Text(verbatim: line)
-                        .font(.custom("Songti SC", size: 15).weight(.semibold))
-                        .foregroundStyle(Color.panelPrimary)
+            if let stick = record.stick {
+                DivinationStickTitle(stick: stick, size: 15)
+                VStack(spacing: 2) {
+                    ForEach(stick.poemLines, id: \.self) { line in
+                        Text(verbatim: line)
+                            .font(.custom("Songti SC", size: 15).weight(.semibold))
+                            .foregroundStyle(Color.panelPrimary)
+                    }
                 }
+                Text(verbatim: stick.localizedPlain)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                // 换签库以前抽的原创签：签文已经停用，只留日期和签级，不硬套成观音灵签。
+                Text(tr("这是换成观音灵签之前抽的签，签文已停用"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            (Text(tr("今日宜：")).font(.system(size: 13, weight: .bold)).foregroundStyle(DivinationStyle.red)
-                + Text(verbatim: stick.good).font(.system(size: 13)).foregroundStyle(Color.panelPrimary)
-                + Text(verbatim: "  ")
-                + Text(tr("今日忌：")).font(.system(size: 13, weight: .bold)).foregroundStyle(Color.panelPrimary)
-                + Text(verbatim: stick.avoid).font(.system(size: 13)).foregroundStyle(Color.panelPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
             .strokeBorder(Color.panelStroke, lineWidth: 0.5))
-        .accessibilityElement(children: .combine)
+    }
+
+    /// 「第三十七签」；旧签写「旧签」。
+    static func numberText(_ record: Divination.StickRecord) -> String {
+        record.isLegacy ? tr("旧签") : Divination.stickNumber(record.index)
     }
 
     // MARK: 收藏
@@ -273,20 +284,20 @@ struct DivinationArchiveView: View {
         } label: {
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(verbatim: record.stick.poem.first ?? "")
+                    Text(verbatim: record.stick?.poem.first ?? tr("旧签"))
                         .font(.custom("Songti SC", size: 14).weight(.semibold))
                         .foregroundStyle(Color.panelPrimary)
                         .lineLimit(1)
-                    Text(verbatim: "\(record.day) · \(Divination.stickNumber(record.index))")
+                    Text(verbatim: "\(record.day) · \(Self.numberText(record))")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.panelTertiary)
                         .monospacedDigit()
                         .lineLimit(1)
                 }
                 Spacer(minLength: 4)
-                Text(verbatim: record.stick.level.title)
+                Text(verbatim: record.level.title)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(DivinationStyle.level(record.stick.level))
+                    .foregroundStyle(DivinationStyle.level(record.level))
                     .fixedSize()
             }
             .padding(.horizontal, 10)

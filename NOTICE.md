@@ -352,12 +352,52 @@ penguin, otter and octopus (`Resources/Water/water-<name>-<mood>.png`) were
 made for this project. The hydration factors and the weight-based
 goal suggestion are this project's own rough figures.
 
+### 6tail lunar - Chinese almanac rules and tables (MIT)
+
+The daily almanac on the 卜卦 widget's 每日一签 page (`Sources/Core/ChineseAlmanac.swift`:
+the twelve day officers 建除, the 28 lunar mansions 二十八宿, and the traditional
+宜 / 忌 activity lists) is ported from [**lunar**](https://github.com/6tail/lunar-javascript)
+by 6tail (lunar-java / lunar-javascript 1.7.x). The 宜忌 table string and its word list
+are copied as data, with the English word list lightly corrected; the lookup and the
+mansion and officer rules are reimplemented in Swift. The 15 solar-term days that the
+low-precision formula in `ChineseCalendar.swift` puts on the wrong side of midnight
+between 1900 and 2100 were corrected against lunar's own solar-term table, and the
+port was checked day by day against lunar from 1901 to 2099. lunar is licensed under
+the MIT licence:
+
+> MIT License
+>
+> Copyright (c) 2018 6tail
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+The verses, titles and grades of the 100 观音灵签 lots are the traditional texts
+(public domain). The plain-language readings, the five per-area readings and all
+English text for the lots were written for this project.
+
 ### Bundled dependencies
 
 **There are none.** Docket has no Swift Package Manager dependencies, no
 CocoaPods, no Carthage, and no vendored third-party source. Everything under
 `Sources/` was written for this project (the Codex usage widget follows
-Codenotch's findings and the quick switches follow OnlySwitch, as described
+Codenotch's findings, the quick switches follow OnlySwitch, and the almanac
+tables in `ChineseAlmanac.swift` are ported from 6tail's lunar, as described
 above).
 
 ---

@@ -14,7 +14,7 @@
 
 ## 3. 第三方内容
 
-码头还按各自的许可使用了一些第三方的代码思路、资源和数据（例如 Codenotch、OnlySwitch、阿喵收音机 meowRadio 的 MIT 许可，AudioCap 的 BSD 2-Clause 许可，MET Norway 和 Open-Meteo 的 CC BY 4.0 数据），详见 [NOTICE.md](NOTICE.md)。这些内容按其原许可执行。
+码头还按各自的许可使用了一些第三方的代码思路、资源和数据（例如 Codenotch、OnlySwitch、阿喵收音机 meowRadio、6tail lunar（黄历宜忌表和算法）的 MIT 许可，AudioCap 的 BSD 2-Clause 许可，MET Norway 和 Open-Meteo 的 CC BY 4.0 数据），详见 [NOTICE.md](NOTICE.md)。这些内容按其原许可执行。
 
 ## 4. 使用安装包
 

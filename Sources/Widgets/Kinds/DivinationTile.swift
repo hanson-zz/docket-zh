@@ -44,7 +44,7 @@ struct DivinationTile: View {
 
     private func levelColor(_ level: StickLevel) -> Color {
         if level.isFestive { return Color(hex: scheme == .dark ? Divination.redDarkHex : Divination.redLightHex) }
-        if level == .good {
+        if level == .middle {
             return Color(hex: scheme == .dark ? Divination.goldTextDarkHex : Divination.goldTextLightHex)
         }
         return WidgetStyle.primary
@@ -274,10 +274,10 @@ enum DivinationStyle {
                            light: NSColor(Color(hex: Divination.goldTextLightHex)))
     }
 
-    /// 签级的字色：上上、上吉喜庆红，中吉金，其余主文字色。
+    /// 签级的字色：上签喜庆红，中签金，其余主文字色。
     static func level(_ level: StickLevel) -> Color {
         if level.isFestive { return red }
-        if level == .good { return goldText }
+        if level == .middle { return goldText }
         return Color.panelPrimary
     }
 

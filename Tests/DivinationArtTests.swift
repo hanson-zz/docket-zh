@@ -179,7 +179,8 @@ final class DivinationArtTests: XCTestCase {
     /// 签条停在半空的位置收在场景里：面板、桌面小 / 中 / 大卡片都不被裁。
     func testSlipHoverStaysInsideEveryScene() {
         let scenes: [(width: Double, height: Double, pose: Double)] = [
-            (Divination.panelContentWidth, 188, 184), (140, 74, 70),
+            (Divination.panelContentWidth, 188, 184),
+            (140, DesktopCardsDivinationPlan.smallPoseHeight + 4, DesktopCardsDivinationPlan.smallPoseHeight),
             (DesktopCardsDivinationPlan.mediumStickWidth, DesktopCardsDivinationPlan.mediumStickSceneHeight,
              DesktopCardsDivinationPlan.mediumStickPoseHeight),
             (72, DesktopCardsDivinationPlan.largePoseHeight + 4, DesktopCardsDivinationPlan.largePoseHeight),
@@ -632,7 +633,7 @@ final class DivinationArtTests: XCTestCase {
         }
     }
 
-    /// 签那块加高以后字不挤出卡片：左边抽过（签号加签级大字）、没抽（提示加「摇一摇」）两种，
+    /// 签那块加高以后字不挤出卡片：左边抽过（签级签号、一句话白话、一行宜忌）、没抽（宜忌加「摇一摇」）两种，
     /// 右边起卦（场景、卦名或提示、按钮）都放得进中号 136 的内高。
     func testDesktopMediumColumnsFit() {
         let plan = DesktopCardsDivinationPlan.self
@@ -640,6 +641,12 @@ final class DivinationArtTests: XCTestCase {
         XCTAssertLessThanOrEqual(plan.mediumStickColumnHeight(drawn: true), plan.mediumInnerHeight)
         XCTAssertLessThanOrEqual(plan.mediumStickColumnHeight(drawn: false), plan.mediumInnerHeight)
         XCTAssertLessThanOrEqual(plan.mediumCastColumnHeight, plan.mediumInnerHeight)
+        // 小号（160×160）：小熊猫、签级签号、一句话白话、农历（没抽：提示、摇一摇、农历）放得进 140 的内高；
+        // 大号：签那一行多了签题、一句话白话、农历宜忌以后，整列仍放得进 316 的内高。
+        XCTAssertEqual(plan.smallInnerHeight, 140, accuracy: 0.0001)
+        XCTAssertLessThanOrEqual(plan.smallColumnHeight(drawn: true), plan.smallInnerHeight)
+        XCTAssertLessThanOrEqual(plan.smallColumnHeight(drawn: false), plan.smallInnerHeight)
+        XCTAssertLessThanOrEqual(plan.largeColumnHeight, DesktopPinSize.large.height - plan.inset(.large) * 2)
         // 签场景只往下加高，不比起卦场景高（两边顶上对齐、底下都留得出字的地方）。
         XCTAssertEqual(plan.mediumStickSceneHeight, plan.castLayout(.medium)!.sceneHeight, accuracy: 0.0001)
     }
