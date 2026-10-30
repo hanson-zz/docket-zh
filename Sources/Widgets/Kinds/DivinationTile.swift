@@ -152,16 +152,34 @@ enum DivinationPlay {
         return result
     }
 
+    /// 桌面卡片起卦：丢掉面板里摇到一半的那一卦，重新一次起完六爻（Core 的 `castFresh`）。
+    @discardableResult
+    static func castFresh(in instance: WidgetInstance, question: String) -> Casting {
+        var result = Casting()
+        write(instance) { config in
+            var rng = SystemRandomNumberGenerator()
+            result = Divination.castFresh(in: &config, question: question,
+                                          now: Date().timeIntervalSince1970, using: &rng)
+        }
+        return result
+    }
+
     /// 起卦动画期间的声音和写回，面板和桌面卡片同一套时间（Core 的 `ShellToss`）：开始摇时放叮当、
     /// 跳起来时停，一摔触地时记下这一爻，第一枚铜钱落地时放三声落地声，抱回龟甲后返回。
-    static func performToss(in instance: WidgetInstance, question: String, all: Bool) async {
+    /// `fresh`（桌面卡片）：触地时不续面板摇到一半的那一卦，重新起一个完整的新卦；节奏按一次起完。
+    static func performToss(in instance: WidgetInstance, question: String, all: Bool,
+                            fresh: Bool = false) async {
         let timing = ShellToss.timing(fast: all)
         try? await Task.sleep(for: .seconds(timing.shakeStart))
         play(.jingle, for: instance)
         try? await Task.sleep(for: .seconds(timing.liftStart - timing.shakeStart))
         DivinationSoundPlayer.stop(.jingle)
         try? await Task.sleep(for: .seconds(timing.impact - timing.liftStart))
-        toss(in: instance, question: question, all: all)
+        if fresh {
+            castFresh(in: instance, question: question)
+        } else {
+            toss(in: instance, question: question, all: all)
+        }
         try? await Task.sleep(for: .seconds(timing.clinkStart - timing.impact))
         play(.clink, for: instance)
         try? await Task.sleep(for: .seconds(timing.total - timing.clinkStart))

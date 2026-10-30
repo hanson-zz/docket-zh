@@ -101,17 +101,19 @@ private struct DeskDivinationCard: View {
 
     // MARK: 起卦
 
+    /// 桌面卡片没有问题输入框，问题为空。面板里摇到一半的那一卦不续用：总是丢掉它、
+    /// 重新一次起完六爻（DivinationPlay.castFresh），面板之后显示的是这一卦。
     private func cast() {
         guard !castBusy else { return }
         if reduceMotion {
-            DivinationPlay.toss(in: widget, question: "", all: true)
+            DivinationPlay.castFresh(in: widget, question: "")
             DivinationPlay.play(.clink, for: widget)
             return
         }
         castBusy = true
         tossCount += 1
         Task { @MainActor in
-            await DivinationPlay.performToss(in: widget, question: "", all: true)
+            await DivinationPlay.performToss(in: widget, question: "", all: true, fresh: true)
             castBusy = false
         }
     }

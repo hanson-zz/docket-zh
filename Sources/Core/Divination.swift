@@ -596,6 +596,18 @@ public enum Divination {
         return current
     }
 
+    /// 桌面卡片起卦：不管面板里有没有摇到一半的那一卦，都丢掉它、带上这里的问题（没有就空）
+    /// 重新起一卦，一次摇满六爻，记进历史。面板之后显示的就是这一卦。返回这一卦。
+    @discardableResult
+    public static func castFresh<G: RandomNumberGenerator>(in config: inout WidgetConfig, question: String,
+                                                          now: Double, using rng: inout G) -> Casting {
+        var fresh = Casting(question: question.trimmingCharacters(in: .whitespacesAndNewlines), time: now)
+        fresh.tossAll(using: &rng)
+        storeCasting(fresh, in: &config)
+        record(fresh, in: &config)
+        return fresh
+    }
+
     /// 重新起卦：丢掉没摇完的那一卦。
     public static func resetCasting(in config: inout WidgetConfig) {
         config.set(castingKey, nil)

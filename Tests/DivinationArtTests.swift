@@ -331,10 +331,15 @@ final class DivinationArtTests: XCTestCase {
         XCTAssertTrue(card.contains("ShellTossScene(layout: layout"), "桌面卡片用面板同一个起卦场景")
         XCTAssertTrue(card.contains("throwCount: tossCount, fast: true"), "按一次起完的节奏")
         XCTAssertTrue(card.contains("DivinationPlay.performToss(in: widget"), "声音和写回跟面板同一套时间")
+        XCTAssertTrue(card.contains("question: \"\", all: true, fresh: true"),
+                      "桌面卡片起卦总是丢掉半截、重新一次起完")
+        XCTAssertTrue(card.contains("DivinationPlay.castFresh(in: widget"), "减少动态效果时也重新起一卦")
+        XCTAssertFalse(card.contains("DivinationPlay.toss(in: widget"), "桌面卡片不续面板的半截卦")
         XCTAssertFalse(card.contains("DivinationShellSway"), "不再只是抱着龟甲摇一下")
         let panel = try String(contentsOf: root.appendingPathComponent(
             "Sources/Widgets/Details/DivinationDetail.swift"), encoding: .utf8)
-        XCTAssertTrue(panel.contains("DivinationPlay.performToss(in: instance"))
+        XCTAssertTrue(panel.contains("DivinationPlay.performToss(in: instance, question: asked, all: all)"),
+                      "面板自己照旧逐次摇、续自己的半截卦")
     }
 
     /// 桌面卡片起卦小场景不裁切：每一拍的姿势图（连同摇摆、压扁、起跳）、三枚铜钱（连影子、

@@ -277,6 +277,42 @@ final class DivinationTests: XCTestCase {
         XCTAssertEqual(Divination.casting(config).count, 0)
     }
 
+    /// 桌面卡片起卦：面板里摇到一半的那一卦不续用，结果是全新的六爻，问题用桌面卡片的（这里为空）。
+    func testDesktopCastFreshDropsHalfCasting() {
+        var config = WidgetConfig()
+        var rng = MineRandom(seed: 3)
+        Divination.toss(in: &config, question: "面板的问题", all: false, now: 10, using: &rng)
+        let half = Divination.toss(in: &config, question: "面板的问题", all: false, now: 11, using: &rng)
+        XCTAssertEqual(half.count, 2)
+        XCTAssertFalse(half.isComplete)
+
+        var freshRNG = MineRandom(seed: 99)
+        let fresh = Divination.castFresh(in: &config, question: "", now: 50, using: &freshRNG)
+        XCTAssertTrue(fresh.isComplete)
+        XCTAssertEqual(fresh.count, 6, "一次起完六爻")
+        XCTAssertEqual(fresh.question, "", "问题用桌面卡片的，不带面板的")
+        XCTAssertEqual(fresh.time, 50, "新的一卦，不是旧半截的时间")
+        // 同一个随机数从空白起的一卦和它一模一样：六爻全是新摇的，旧半截的两爻没有被续用。
+        var blank = WidgetConfig()
+        var sameRNG = MineRandom(seed: 99)
+        let reference = Divination.castFresh(in: &blank, question: "", now: 50, using: &sameRNG)
+        XCTAssertEqual(fresh, reference)
+        XCTAssertEqual(Divination.casting(config), fresh, "面板之后显示的是新卦")
+        XCTAssertEqual(Divination.history(config), [fresh], "只记新卦，半截不记")
+
+        // 已经起好一卦时再点：也是另起一卦，不改上一卦。
+        var nextRNG = MineRandom(seed: 100)
+        let again = Divination.castFresh(in: &config, question: "  桌面问题  ", now: 60, using: &nextRNG)
+        XCTAssertTrue(again.isComplete)
+        XCTAssertEqual(again.question, "桌面问题")
+        XCTAssertEqual(Divination.history(config), [again, fresh])
+
+        // 面板自己逐次摇照旧：新开一卦从第一爻起。
+        let panel = Divination.toss(in: &config, question: "再问", all: false, now: 70, using: &rng)
+        XCTAssertEqual(panel.count, 1)
+        XCTAssertEqual(panel.question, "再问")
+    }
+
     func testHistoryKeepsNewestFive() {
         var config = WidgetConfig()
         var rng = MineRandom(seed: 2)
