@@ -737,15 +737,17 @@ public enum DesktopCardsDivinationPlan {
     public static func figureWidth(_ size: DesktopPinSize) -> Double { size == .large ? 30 : 20 }
     public static func castSpacing(_ size: DesktopPinSize) -> Double { size == .large ? 6 : 4 }
     /// 卦画（一爻）的高、爻间距，和本卦、箭头、变卦之间的间距。
-    public static let figureLineHeight: Double = 5
-    public static let figureLineSpacing: Double = 3
+    /// 中号卦画叠在场景右上角，爻细一点、密一点（4、2，整张 34 高），第三枚铜钱飞过来、光点散开时
+    /// 都在它下面；大号照旧 5、3。
+    public static func figureLineHeight(_ size: DesktopPinSize) -> Double { size == .medium ? 4 : 5 }
+    public static func figureLineSpacing(_ size: DesktopPinSize) -> Double { size == .medium ? 2 : 3 }
     public static func figureGap(_ size: DesktopPinSize) -> Double { size == .large ? 8 : 4 }
     /// 箭头（11pt）大约的宽。
     public static let arrowWidth: Double = 11
 
     /// 本卦 → 变卦两张卦画加箭头的总宽（每张卦画左边还有一个变爻圆点和 4 的间距）。
     public static func figuresWidth(_ size: DesktopPinSize) -> Double {
-        let one = figureLineHeight * 0.9 + 4 + figureWidth(size)
+        let one = figureLineHeight(size) * 0.9 + 4 + figureWidth(size)
         return one * 2 + arrowWidth + figureGap(size) * 2
     }
 
@@ -760,11 +762,13 @@ public enum DesktopCardsDivinationPlan {
     public static func figuresOverScene(_ size: DesktopPinSize) -> (x: Double, y: Double, width: Double, height: Double)? {
         guard size == .medium else { return nil }
         let width = figuresWidth(size)
-        return (castBlockWidth(size) - width, 0, width, figureHeight)
+        return (castBlockWidth(size) - width, 0, width, figureHeight(size))
     }
 
     /// 一张卦画的高（六爻）。
-    public static var figureHeight: Double { figureLineHeight * 6 + figureLineSpacing * 5 }
+    public static func figureHeight(_ size: DesktopPinSize) -> Double {
+        figureLineHeight(size) * 6 + figureLineSpacing(size) * 5
+    }
 }
 
 // MARK: - 音效合成

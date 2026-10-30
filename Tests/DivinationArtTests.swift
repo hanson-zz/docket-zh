@@ -384,7 +384,7 @@ final class DivinationArtTests: XCTestCase {
                 let row = l.sceneWidth + DesktopCardsDivinationPlan.castRowSpacing(size)
                     + DesktopCardsDivinationPlan.figuresWidth(size)
                 XCTAssertLessThanOrEqual(row, DesktopCardsDivinationPlan.castBlockWidth(size), tag)
-                let beside = DesktopCardsDivinationPlan.figureHeight
+                let beside = DesktopCardsDivinationPlan.figureHeight(size)
                     + (DesktopCardsDivinationPlan.nameBesideFigures(size) ? 4 + 19 : 0)
                 XCTAssertLessThanOrEqual(beside, l.sceneHeight, tag)
             } else {
@@ -525,6 +525,8 @@ final class DivinationArtTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(f.y, 0)
         XCTAssertLessThanOrEqual(f.y + f.height, l.sceneHeight)
         XCTAssertEqual(f.width, DesktopCardsDivinationPlan.figuresWidth(size), accuracy: 0.0001)
+        XCTAssertEqual(DesktopCardsDivinationPlan.figureHeight(.large), 45, accuracy: 0.0001, "大号卦画不变")
+        XCTAssertGreaterThanOrEqual(DesktopCardsDivinationPlan.figureLineHeight(size), 4, "爻还看得清")
         func inFigures(_ x0: Double, _ y0: Double, _ x1: Double, _ y1: Double) -> Bool {
             x1 > f.x && x0 < f.x + f.width && y1 > f.y && y0 < f.y + f.height
         }

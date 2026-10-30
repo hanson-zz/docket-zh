@@ -129,8 +129,8 @@ private struct DeskDivinationCard: View {
             let gap = CGFloat(DesktopCardsDivinationPlan.castSpacing(size))
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: gap) {
-                    let scene = ShellTossScene(layout: layout, faces: casting?.tosses.last, throwCount: tossCount,
-                                               fast: true, tossed: casting != nil)
+                    let scene = ShellTossScene(layout: layout, faces: casting?.tosses.last,
+                                               throwCount: tossCount, fast: true, tossed: casting != nil)
                     if let rect = DesktopCardsDivinationPlan.figuresOverScene(size) {
                         // 中号：场景占左边，卦画叠在右上角（铜钱那排在卦画下面、脚底那条线上）。
                         ZStack(alignment: .topLeading) {
@@ -214,8 +214,8 @@ private struct DeskDivinationCard: View {
     /// 本卦（标出变爻）→ 变卦（淡色）两张卦画。
     private func figures(_ casting: Casting, primary: Hexagram) -> some View {
         let width = CGFloat(DesktopCardsDivinationPlan.figureWidth(size))
-        let line = CGFloat(DesktopCardsDivinationPlan.figureLineHeight)
-        let spacing = CGFloat(DesktopCardsDivinationPlan.figureLineSpacing)
+        let line = CGFloat(DesktopCardsDivinationPlan.figureLineHeight(size))
+        let spacing = CGFloat(DesktopCardsDivinationPlan.figureLineSpacing(size))
         return HStack(spacing: CGFloat(DesktopCardsDivinationPlan.figureGap(size))) {
             HexagramFigure(yang: primary.yang, changing: Set(casting.changingIndices),
                            width: width, lineHeight: line, spacing: spacing)
