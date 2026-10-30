@@ -141,17 +141,23 @@ private struct DeskDivinationCard: View {
 
     /// 桌面卡片没有问题输入框，问题为空。面板里摇到一半的那一卦不续用：总是丢掉它、
     /// 重新一次起完六爻（DivinationPlay.castFresh），面板之后显示的是这一卦。
+    /// 自己在摇，或面板正在给同一个小组件摇卦（`DivinationTossLock`）：按钮变灰，免得两边写回互相盖掉。
+    private var castLocked: Bool { castBusy || DivinationTossLock.shared.isBusy(widget.id) }
+
     private func cast() {
-        guard !castBusy else { return }
+        guard !castLocked else { return }
         if reduceMotion {
             DivinationPlay.castFresh(in: widget, question: "")
             DivinationPlay.play(.clink, for: widget)
             return
         }
+        guard DivinationTossLock.shared.begin(widget.id) else { return }
         castBusy = true
         tossCount += 1
+        let id = widget.id
         Task { @MainActor in
             await DivinationPlay.performToss(in: widget, question: "", all: true, fresh: true)
+            DivinationTossLock.shared.end(id)
             castBusy = false
         }
     }
@@ -233,7 +239,7 @@ private struct DeskDivinationCard: View {
                 }
                 Spacer(minLength: gap)
                 DivinationPrimaryButton(title: casting == nil ? tr("起卦") : tr("再起一卦"), height: 28,
-                                        enabled: !castBusy) { cast() }
+                                        enabled: !castLocked) { cast() }
             }
         }
     }

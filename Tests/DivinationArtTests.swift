@@ -507,6 +507,28 @@ final class DivinationArtTests: XCTestCase {
         XCTAssertFalse(body.contains("ViewThatFits"), "签题不再整段藏掉")
     }
 
+    /// 面板和桌面卡片是同一份配置：一边在播起卦动画时另一边不能起卦（DivinationTossLock），
+    /// 否则后触地的那次会把先写回的卦盖掉。卡片上一行宜忌最后一档放不下时写省略号，不撑出卡片。
+    func testPanelAndDesktopCastDoNotOverlap() throws {
+        func source(_ path: String) throws -> String {
+            try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+        }
+        let tile = try source("Sources/Widgets/Kinds/DivinationTile.swift")
+        XCTAssertTrue(tile.contains("final class DivinationTossLock"))
+        let detail = try source("Sources/Widgets/Details/DivinationDetail.swift")
+        let card = try source("Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift")
+        XCTAssertTrue(detail.contains("guard DivinationTossLock.shared.begin(instance.id) else { return }"))
+        XCTAssertTrue(card.contains("guard DivinationTossLock.shared.begin(widget.id) else { return }"))
+        for text in [detail, card] {
+            XCTAssertTrue(text.contains("DivinationTossLock.shared.end(id)"))
+            XCTAssertTrue(text.contains("castBusy || DivinationTossLock.shared.isBusy("))
+            XCTAssertTrue(text.contains("enabled: !castLocked)"))
+        }
+        let almanac = try source("Sources/Widgets/Details/DivinationAlmanac.swift")
+        XCTAssertTrue(almanac.contains("text(day, last.0, last.1, english: english, lunar: false, fits: false)"))
+        XCTAssertTrue(almanac.contains(".fixedSize(horizontal: fits, vertical: false)"))
+    }
+
     /// 起卦场景里一张姿势图最多伸到哪（场景坐标）：② 摇的时候不压扁、绕脚底转 ±8°（转出去的是
     /// 上面的角）；一摔触地、捡回落地时最多横着胖 6%；跳起、托一下时竖着高 6% 再往上抬。
     private func poseExtent(_ pose: DivinationPose, _ l: ShellToss.Layout)

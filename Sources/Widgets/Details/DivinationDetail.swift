@@ -359,16 +359,19 @@ struct DivinationDetail: View {
             title = tr("摇第 \(casting.count + 1) 爻")
         }
         return HStack(spacing: 8) {
-            DivinationPrimaryButton(title: title, enabled: !castBusy) { cast(all: false) }
+            DivinationPrimaryButton(title: title, enabled: !castLocked) { cast(all: false) }
             DivinationGlassButton(title: tr("一次起完")) { cast(all: true) }
                 .frame(width: 92)
-                .disabled(castBusy)
+                .disabled(castLocked)
                 .help(tr("剩下的几爻一次摇完"))
         }
     }
 
+    /// 自己在摇，或桌面卡片正在给同一个小组件起卦（`DivinationTossLock`）。
+    private var castLocked: Bool { castBusy || DivinationTossLock.shared.isBusy(instance.id) }
+
     private func cast(all: Bool) {
-        guard !context.isPreview, !castBusy else { return }
+        guard !context.isPreview, !castLocked else { return }
         viewing = nil
         if reduceMotion {
             DivinationPlay.toss(in: instance, question: question, all: all)
@@ -376,12 +379,15 @@ struct DivinationDetail: View {
             return
         }
         // 捧起 → 捧着摇（叮当）→ 跳起来举高 → 一摔，触地时记下这一爻 → 第一枚铜钱落地时放三声落地声 → 抱回龟甲。
+        guard DivinationTossLock.shared.begin(instance.id) else { return }
         castBusy = true
         tossFast = all
         tossCount += 1
         let asked = question
+        let id = instance.id
         Task { @MainActor in
             await DivinationPlay.performToss(in: instance, question: asked, all: all)
+            DivinationTossLock.shared.end(id)
             castBusy = false
         }
     }

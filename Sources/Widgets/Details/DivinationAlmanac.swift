@@ -140,7 +140,7 @@ struct DivinationAlmanacBox: View {
     }
 }
 
-/// 卡片上的一行宜忌：放得下就多写几个，放不下逐个减，最后只写一个宜（不截断、不缩字）。
+/// 卡片上的一行宜忌：放得下就多写几个，放不下逐个减，最后只写一个宜（不缩字）；还放不下写省略号。
 struct DivinationYiJiLine: View {
     var date: Date
     /// 依次尝试的（宜几个、忌几个）。
@@ -159,10 +159,17 @@ struct DivinationYiJiLine: View {
                     text(day, attempt.0, attempt.1, english: english, lunar: false)
                 }
             }
+            // 最后一档还放不下（英文长词，比如中号签那列 128 宽放「Do: Mourning clothes removal」）：
+            // 写省略号收在这一行里，不再整行撑出卡片被裁掉。
+            if let last = attempts.last {
+                text(day, last.0, last.1, english: english, lunar: false, fits: false)
+            }
         }
     }
 
-    private func text(_ day: ChineseAlmanac.Day, _ good: Int, _ bad: Int, english: Bool, lunar: Bool) -> some View {
+    /// `fits` 为 false 是最后的兜底：不撑宽，放不下写省略号。
+    private func text(_ day: ChineseAlmanac.Day, _ good: Int, _ bad: Int, english: Bool, lunar: Bool,
+                      fits: Bool = true) -> some View {
         let yiJi = day.yiJiLine(goodCount: good, badCount: bad, goodLabel: tr("宜"), badLabel: tr("忌"),
                                 english: english)
         let prefix = lunar ? day.shortLunar(english: english) + (english ? " · " : "  ") : ""
@@ -170,6 +177,7 @@ struct DivinationYiJiLine: View {
             .font(.system(size: 13))
             .foregroundStyle(Color.panelSecondary)
             .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
+            .truncationMode(.tail)
+            .fixedSize(horizontal: fits, vertical: false)
     }
 }

@@ -116,6 +116,25 @@ struct DivinationTile: View {
     }
 }
 
+// MARK: - 起卦互斥
+
+/// 同一个卜卦小组件正在播起卦动画（面板或桌面卡片）的那几个。面板和桌面卡片是同一份配置：
+/// 一边摇到一半另一边又起卦，后触地的那次会把先写回的卦盖掉（面板逐次摇会在桌面刚起好的整卦上
+/// 另开一卦，桌面的 castFresh 会把面板刚摇的那一爻和问题丢掉）。所以一边在摇时，另一边的起卦按钮变灰、
+/// 点了也不动，等动画收尾再放开。
+@MainActor @Observable
+final class DivinationTossLock {
+    static let shared = DivinationTossLock()
+    private(set) var busy: Set<UUID> = []
+
+    func isBusy(_ id: UUID) -> Bool { busy.contains(id) }
+
+    /// 占住这个小组件；已经有人在摇返回 false。
+    func begin(_ id: UUID) -> Bool { busy.insert(id).inserted }
+
+    func end(_ id: UUID) { busy.remove(id) }
+}
+
 // MARK: - 写回和音效
 
 /// 卡片、面板和桌面卡片的每一下都走这里：取最新存着的那份配置，算完写回，按开关放音效。
