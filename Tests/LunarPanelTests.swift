@@ -192,35 +192,65 @@ final class LunarPanelTests: XCTestCase {
         if case .event = early {} else { XCTFail("当天生日排在提前的调休提醒前面") }
     }
 
-    // MARK: 宜忌
+    // MARK: 宜忌（和卜卦每日一签同一份真黄历）
 
     func testDayGanzhi() {
-        XCTAssertEqual(LunarAlmanac.dayGanzhi(day("2026-10-20")), "丁卯")
-        XCTAssertEqual(LunarAlmanac.dayGanzhi(day("1970-01-01")), "辛巳")
-        XCTAssertEqual(LunarAlmanac.dayGanzhi(day("2026-11-16")), "甲午")
-        XCTAssertEqual(LunarAlmanac.dayGanzhi(day("1969-12-31")), "庚辰", "1970 年以前也不出负数")
+        XCTAssertEqual(ChineseAlmanac.dayGanzhi(day("2026-10-20")), "丁卯")
+        XCTAssertEqual(ChineseAlmanac.dayGanzhi(day("1970-01-01")), "辛巳")
+        XCTAssertEqual(ChineseAlmanac.dayGanzhi(day("2026-11-16")), "甲午")
+        XCTAssertEqual(ChineseAlmanac.dayGanzhi(day("1969-12-31")), "庚辰", "1970 年以前也不出负数")
+        XCTAssertEqual(LunarPanel.almanac(day("2026-10-20")).dayGanzhi, "丁卯")
     }
 
     func testOfficersFollowTheSolarMonth() {
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-10-20")), "执日")
+        func officer(_ key: String) -> String { LunarPanel.almanac(day(key)).officer }
+        XCTAssertEqual(officer("2026-10-20"), "执日")
         // 寒露当天换戌月，和前一天同是执日（重建）。
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-10-07")), "执日")
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-10-08")), "执日")
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-11-16")), "危日")
+        XCTAssertEqual(officer("2026-10-07"), "执日")
+        XCTAssertEqual(officer("2026-10-08"), "执日")
+        XCTAssertEqual(officer("2026-11-16"), "危日")
         // 小寒以前还是子月。
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-01-04")), "满日")
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-01-06")), "平日")
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-02-04")), "危日")
-        XCTAssertEqual(LunarAlmanac.officerName(day("2026-12-07")), "平日")
+        XCTAssertEqual(officer("2026-01-04"), "满日")
+        XCTAssertEqual(officer("2026-01-06"), "平日")
+        XCTAssertEqual(officer("2026-02-04"), "危日")
+        XCTAssertEqual(officer("2026-12-07"), "平日")
     }
 
-    func testEveryDayHasFourGoodAndFourBad() {
-        for offset in 0..<30 {
-            let date = Calendar(identifier: .gregorian).date(byAdding: .day, value: offset, to: day("2026-10-01"))!
-            XCTAssertEqual(LunarAlmanac.good(date).count, 4)
-            XCTAssertEqual(LunarAlmanac.bad(date).count, 4)
-            XCTAssertTrue(Set(LunarAlmanac.good(date)).isDisjoint(with: LunarAlmanac.bad(date)))
+    /// 农历面板宜忌页、桌面中号卡片和卜卦每日一签页拿的是同一份：一年多里每一天（不同钟点问也一样）
+    /// 干支、建除、星宿、宜忌完全一致，也和不经缓存现算的一致。
+    func testPanelAlmanacMatchesTheDivinationPage() {
+        for offset in 0..<400 {
+            let date = Calendar(identifier: .gregorian).date(byAdding: .day, value: offset, to: day("2026-01-01"))!
+            let panel = LunarPanel.almanac(date)
+            let divination = ChineseAlmanac.day(date.addingTimeInterval(3 * 3600))
+            XCTAssertEqual(panel, divination, ChineseCalendar.key(date))
+            XCTAssertEqual(panel, ChineseAlmanac.compute(date), ChineseCalendar.key(date))
+            XCTAssertFalse(panel.good.isEmpty)
+            XCTAssertFalse(panel.bad.isEmpty)
         }
+        // 今天：2026-10-30 丁丑日、平日、娄金狗，宜祭祀、平治道涂，忌嫁娶。
+        let today = LunarPanel.almanac(day("2026-10-30"))
+        XCTAssertEqual(today.dayGanzhi, "丁丑")
+        XCTAssertEqual(today.officer, "平日")
+        XCTAssertEqual(today.mansionText, "娄金狗")
+        XCTAssertEqual(Array(today.good.prefix(2)), ["祭祀", "平治道涂"])
+        XCTAssertEqual(today.bad.first, "嫁娶")
+        XCTAssertEqual(LunarPanel.cardWordCounts, [4, 3, 2, 1])
+    }
+
+    /// 界面上两处都走 `LunarPanel.almanac`，旧的「每值日四宜四忌」简表已经删掉。
+    func testLunarViewsUseTheRealAlmanac() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let detail = try String(contentsOf: root.appendingPathComponent("Sources/Widgets/Details/LunarDetail.swift"),
+                                encoding: .utf8)
+        let card = try String(contentsOf: root.appendingPathComponent(
+            "Sources/Widgets/DesktopCards/DesktopCardsTime+Days.swift"), encoding: .utf8)
+        for source in [detail, card] {
+            XCTAssertTrue(source.contains("LunarPanel.almanac(now)"))
+            XCTAssertFalse(source.contains("LunarAlmanac"))
+        }
+        XCTAssertFalse(FileManager.default.fileExists(
+            atPath: root.appendingPathComponent("Sources/Core/LunarAlmanac.swift").path))
     }
 
     // MARK: 近期节日节气

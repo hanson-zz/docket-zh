@@ -365,6 +365,13 @@ public enum LunarPanel {
     /// 宜忌开关，默认开。节气和调休补班沿用原来的 `showTerm`、`workAlert`。
     public static let almanacKey = "showAlmanac"
 
+    /// 宜忌页和桌面中号卡片用的黄历：和卜卦每日一签页是同一份（`ChineseAlmanac`，6tail lunar 移植，
+    /// 月建日干支查《协纪辨方书》的宜忌表），同一天两处的干支、建除、星宿、宜忌完全一样。
+    public static func almanac(_ date: Date) -> ChineseAlmanac.Day { ChineseAlmanac.day(date) }
+
+    /// 桌面中号卡片一行宜（或忌）依次试写几个：放得下多写，放不下逐个减，最少一个，不截断、不缩字。
+    public static let cardWordCounts = [4, 3, 2, 1]
+
     /// 月历格子里第二行最多放三个字（13pt 一格约 39pt 宽）：南北小年都写「小年」，
     /// 闰月初一写「闰六」，再长的去掉「节」。
     public static func cellName(_ name: String) -> String {

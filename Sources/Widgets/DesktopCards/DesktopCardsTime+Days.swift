@@ -529,10 +529,11 @@ struct TimeDeskLunarCard: View {
                     .monospacedDigit()
                     .lineLimit(1)
                 Spacer(minLength: 0)
-                // 面板里关了宜忌就不写（同一个设置）。
+                // 面板里关了宜忌就不写（同一个设置）。和面板宜忌页、卜卦每日一签同一份黄历。
                 if widget.config.bool(LunarPanel.almanacKey, default: true) {
-                    almanacLine(tr("宜"), LunarAlmanac.good(now), color: green)
-                    almanacLine(tr("忌"), LunarAlmanac.bad(now), color: red)
+                    let almanac = LunarPanel.almanac(now)
+                    almanacLine(tr("宜"), almanac.goodWords(english: L10n.isEnglish), color: green)
+                    almanacLine(tr("忌"), almanac.badWords(english: L10n.isEnglish), color: red)
                 }
             }
             Spacer(minLength: 0)
@@ -540,17 +541,33 @@ struct TimeDeskLunarCard: View {
         .padding(DesktopCardsTime.inset(.medium))
     }
 
+    /// 一行宜（或忌）：放得下写四个，放不下逐个减到一个（`LunarPanel.cardWordCounts`），不缩字。
     private func almanacLine(_ mark: String, _ items: [String], color: Color) -> some View {
-        HStack(spacing: 6) {
+        let separator = L10n.isEnglish ? ", " : " "
+        return HStack(spacing: 6) {
             Text(mark)
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(color.panelReadable)
-                .frame(width: 20, height: 20)
-                .background(Circle().fill(color.opacity(0.16)))
-            Text(items.prefix(4).map { trKey($0) }.joined(separator: " "))
-                .font(.system(size: 13))
-                .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 3)
+                .frame(minWidth: 20, minHeight: 20)
+                .background(Capsule().fill(color.opacity(0.16)))
+            ViewThatFits(in: .horizontal) {
+                ForEach(LunarPanel.cardWordCounts, id: \.self) { count in
+                    Text(verbatim: items.prefix(count).joined(separator: separator))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.panelSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                // 英文最长的一个词（Mourning clothes removal）在最窄时也放不下：写省略号，不裁半个字。
+                Text(verbatim: items.first ?? "")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
         }
     }
 

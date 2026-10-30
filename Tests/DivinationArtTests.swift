@@ -490,6 +490,23 @@ final class DivinationArtTests: XCTestCase {
         XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.largeSpacing, 8)
     }
 
+    /// 大号签级签号后面的签题：放不下写省略号，不再整段藏掉（原来 ViewThatFits 退到只有签级签号，
+    /// 英文签题长，大号上就看不到签题）。最宽的签级签号（英文 Lot 100）后面也还留得出 `largeTitleMinWidth`。
+    func testDesktopLargeKeepsTheStickTitle() throws {
+        let plan = DesktopCardsDivinationPlan.self
+        XCTAssertEqual(plan.largeStickTextWidth, 232, accuracy: 0.001)
+        let level = plan.estimatedWidth("上签", size: 20) + 6 + plan.estimatedWidth("Lot 100")
+        XCTAssertLessThanOrEqual(level + 6 + plan.largeTitleMinWidth, plan.largeStickTextWidth)
+        XCTAssertGreaterThanOrEqual(plan.largeTitleMinWidth, plan.estimatedWidth("Yaojin…"))
+        let card = try String(contentsOf: root.appendingPathComponent(
+            "Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift"), encoding: .utf8)
+        let large = try XCTUnwrap(card.range(of: "private var large: some View"))
+        let body = String(card[large.lowerBound...].prefix(2400))
+        XCTAssertTrue(body.contains("Text(verbatim: stick.localizedTitle)"))
+        XCTAssertTrue(body.contains(".truncationMode(.tail)"))
+        XCTAssertFalse(body.contains("ViewThatFits"), "签题不再整段藏掉")
+    }
+
     /// 起卦场景里一张姿势图最多伸到哪（场景坐标）：② 摇的时候不压扁、绕脚底转 ±8°（转出去的是
     /// 上面的角）；一摔触地、捡回落地时最多横着胖 6%；跳起、托一下时竖着高 6% 再往上抬。
     private func poseExtent(_ pose: DivinationPose, _ l: ShellToss.Layout)

@@ -9958,17 +9958,6 @@
         }
       }
     },
-    "上任" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Take office"
-          }
-        }
-      }
-    },
     "上传" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12044,17 +12033,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick up coffee\nCall Alex"
-          }
-        }
-      }
-    },
-    "争执" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quarrels"
           }
         }
       }
@@ -19337,17 +19315,6 @@
         }
       }
     },
-    "危日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Danger day"
-          }
-        }
-      }
-    },
     "卸载助手" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24377,17 +24344,6 @@
         }
       }
     },
-    "定日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stable day"
-          }
-        }
-      }
-    },
     "定时" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -27702,17 +27658,6 @@
         }
       }
     },
-    "平日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Balance day"
-          }
-        }
-      }
-    },
     "平治道涂" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28028,17 +27973,6 @@
         }
       }
     },
-    "建日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Establish day"
-          }
-        }
-      }
-    },
     "开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -28343,17 +28277,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opening a business"
-          }
-        }
-      }
-    },
-    "开日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open day"
           }
         }
       }
@@ -29641,17 +29564,6 @@
         }
       }
     },
-    "成日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Success day"
-          }
-        }
-      }
-    },
     "成本价（可选）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30535,17 +30447,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Panel"
-          }
-        }
-      }
-    },
-    "执日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Initiate day"
           }
         }
       }
@@ -31804,17 +31705,6 @@
         }
       }
     },
-    "按建除十二值日简化排出的宜忌，仅供参考" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simplified from the twelve day officers, for reference only"
-          }
-        }
-      }
-    },
     "按当前速度约 %@ 用完" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32911,28 +32801,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No http(s) stream addresses found in the playlist."
-          }
-        }
-      }
-    },
-    "收割" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvest"
-          }
-        }
-      }
-    },
-    "收日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receive day"
           }
         }
       }
@@ -35643,17 +35511,6 @@
         }
       }
     },
-    "涂泥" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plastering"
-          }
-        }
-      }
-    },
     "淡" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35991,17 +35848,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thirsty"
-          }
-        }
-      }
-    },
-    "满日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full day"
           }
         }
       }
@@ -46326,17 +46172,6 @@
         }
       }
     },
-    "登高" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Climbing"
-          }
-        }
-      }
-    },
     "白俄罗斯" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47367,17 +47202,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demolition"
-          }
-        }
-      }
-    },
-    "破日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Destruction day"
           }
         }
       }
@@ -51400,17 +51224,6 @@
         }
       }
     },
-    "行船" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sailing"
-          }
-        }
-      }
-    },
     "行首打 [ ] 变成可勾的清单" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -52470,17 +52283,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text"
-          }
-        }
-      }
-    },
-    "诉讼" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lawsuits"
           }
         }
       }
@@ -57369,17 +57171,6 @@
         }
       }
     },
-    "闭日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close day"
-          }
-        }
-      }
-    },
     "问 AI" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -57867,17 +57658,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lunar New Year's Eve"
-          }
-        }
-      }
-    },
-    "除日" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove day"
           }
         }
       }
@@ -67439,28 +67219,6 @@
         }
       }
     },
-    "今日宜：" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Good today: "
-          }
-        }
-      }
-    },
-    "今日忌：" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skip today: "
-          }
-        }
-      }
-    },
     "今天已抽 · 明天再来" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -67856,6 +67614,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drawn before the switch to the Guanyin lots; its verse is retired."
+          }
+        }
+      }
+    },
+    "宜忌按《协纪辨方书》的月建日干支排，和卜卦每日一签同一份，仅供参考" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do and avoid follow the month and day pillars in the classic almanac tables, the same as Daily Stick. For reference only."
           }
         }
       }

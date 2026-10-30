@@ -329,16 +329,17 @@ private struct DeskDivinationCard: View {
                 VStack(alignment: .leading, spacing: CGFloat(DesktopCardsDivinationPlan.summaryLineSpacing)) {
                     if let index = today {
                         let stick = FortuneStick.all[index]
-                        ViewThatFits(in: .horizontal) {
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                levelRow(stick, index: index, levelSize: 20)
-                                Text(verbatim: stick.localizedTitle)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(DivinationStyle.goldText)
-                                    .lineLimit(1)
-                                    .fixedSize()
-                            }
+                        // 签题跟在签级签号后面：放不下时写到行尾加省略号（英文签题最长三十多个字母），
+                        // 不再整段藏掉；13pt 不缩字，签级签号不让位（Core 的 largeTitleMinWidth 守住余量）。
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
                             levelRow(stick, index: index, levelSize: 20)
+                                .layoutPriority(1)
+                            Text(verbatim: stick.localizedTitle)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(DivinationStyle.goldText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .accessibilityLabel(Text(verbatim: stick.localizedTitle))
                         }
                         Text(verbatim: stick.poem.prefix(2).joined(separator: "，") + "。")
                             .font(.custom("Songti SC", size: 13))

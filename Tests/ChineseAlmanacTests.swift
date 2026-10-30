@@ -116,6 +116,33 @@ final class ChineseAlmanacTests: XCTestCase {
         XCTAssertFalse(ChineseAlmanac.dayYiJi.contains("\u{2014}"))
     }
 
+    /// 按日缓存：同一天不同钟点拿到同一份，和现算的一样；很多线程同时问也不乱（缓存加锁）。
+    func testDayCache() throws {
+        let date = try XCTUnwrap(ChineseCalendar.day("2026-10-30"))
+        ChineseAlmanac.cache.removeAll()
+        XCTAssertEqual(ChineseAlmanac.cache.count, 0)
+        let morning = ChineseAlmanac.day(date.addingTimeInterval(8 * 3600))
+        XCTAssertEqual(ChineseAlmanac.cache.count, 1)
+        let night = ChineseAlmanac.day(date.addingTimeInterval(23 * 3600 + 59 * 60))
+        XCTAssertEqual(ChineseAlmanac.cache.count, 1, "同一天只算一次")
+        XCTAssertEqual(morning, night)
+        XCTAssertEqual(morning, ChineseAlmanac.compute(date))
+        let next = ChineseAlmanac.day(date.addingTimeInterval(24 * 3600))
+        XCTAssertNotEqual(next.dayCycle, morning.dayCycle)
+        XCTAssertEqual(ChineseAlmanac.cache.count, 2)
+
+        let start = try XCTUnwrap(ChineseCalendar.day("2025-01-01"))
+        DispatchQueue.concurrentPerform(iterations: 600) { index in
+            let day = start.addingTimeInterval(Double(index % 300) * 86_400 + 3600)
+            _ = ChineseAlmanac.day(day)
+        }
+        XCTAssertLessThanOrEqual(ChineseAlmanac.cache.count, ChineseAlmanac.DayCache.limit)
+        for offset in stride(from: 0, to: 300, by: 37) {
+            let day = start.addingTimeInterval(Double(offset) * 86_400)
+            XCTAssertEqual(ChineseAlmanac.day(day), ChineseAlmanac.compute(day))
+        }
+    }
+
     /// 一整年每天都算得出来：宜忌不空、星宿 28 天一轮、建除十二天一轮（节那天重一天）。
     func testEveryDayOfAYear() throws {
         var date = try XCTUnwrap(ChineseCalendar.day("2026-01-01"))

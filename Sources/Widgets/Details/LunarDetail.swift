@@ -4,14 +4,14 @@ import SwiftUI
 ///
 /// - 浏览：今天的公历和农历，下面分页（顶部分段，记住切到的那页）：近期节日节气
 ///   （节气、传统节日、法定假日、调休上班），带日期和倒数；生日与纪念日，按农历
-///   每年换算成公历，近的在前，写还有几天；宜忌（建除十二值日，可关，关掉就没有
-///   这一页）；本月月历，看休、班和节气。
+///   每年换算成公历，近的在前，写还有几天；宜忌（真黄历，和卜卦每日一签同一份，可关，
+///   关掉就没有这一页）；本月月历，看休、班和节气。
 /// - 添加 / 编辑：名字、种类、闰月、农历月日两个滚轮，下面马上算出今年和明年落在
 ///   哪天（小月没有三十按廿九、没有那个闰月按普通月，都写出来）；提前几天、几点提醒；
 ///   卡片上显示宜忌、节气、调休补班三个开关。
 ///
 /// 放假和调休只来自 `HolidaySchedule`；生日换算和提醒见 `LunarEvents`，宜忌见
-/// `LunarAlmanac`，近期列表见 `LunarCard.agenda`。全部免费。
+/// `LunarPanel.almanac`（Core 的 `ChineseAlmanac`），近期列表见 `LunarCard.agenda`。全部免费。
 struct LunarDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -163,31 +163,56 @@ struct LunarDetail: View {
 
     // MARK: 宜忌
 
+    /// 宜忌页：和卜卦每日一签页的黄历同一份（`LunarPanel.almanac` 就是 `ChineseAlmanac.day`）。
+    /// 上面干支年月日、当日节气，下面建除和值日星宿，再下面宜、忌全列，长了折行不截断，字都不小于 13pt。
     private func almanac(_ now: Date) -> some View {
-        let good = LunarAlmanac.good(now).map(trKey)
-        let bad = LunarAlmanac.bad(now).map(trKey)
+        let day = LunarPanel.almanac(now)
+        let english = L10n.isEnglish
+        let separator = english ? ", " : "  "
         return VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(verbatim: day.ganzhiLine(english: english))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if let term = day.termText(english: english) {
+                    Text(verbatim: term)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accentInk)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(accent))
+                        .fixedSize()
+                }
+            }
+            Text(verbatim: day.dutyLine(english: english))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 almanacMark(tr("宜"), filled: true)
-                Text(good.joined(separator: "  "))
+                Text(verbatim: day.goodWords(english: english).joined(separator: separator))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.panelPrimary)
-                Spacer(minLength: 4)
-                Text(tr("\(LunarAlmanac.dayGanzhi(now))日 · \(trKey(LunarAlmanac.officerName(now)))"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelTertiary)
-                    .fixedSize()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            HStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 almanacMark(tr("忌"), filled: false)
-                Text(bad.joined(separator: "  "))
+                Text(verbatim: day.badWords(english: english).joined(separator: separator))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.panelSecondary)
-                Spacer(minLength: 0)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            Text(tr("宜忌按《协纪辨方书》的月建日干支排，和卜卦每日一签同一份，仅供参考"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .lineLimit(1)
         .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.panelFill)
                 .overlay {
@@ -195,15 +220,18 @@ struct LunarDetail: View {
                         .strokeBorder(.panelStroke, lineWidth: 0.6)
                 }
         }
-        .help(tr("按建除十二值日简化排出的宜忌，仅供参考"))
         .accessibilityElement(children: .combine)
     }
 
+    /// 宜、忌小方块。英文「Avoid」比方块宽，按字撑开（最小 26），不截断。
     private func almanacMark(_ text: String, filled: Bool) -> some View {
         Text(text)
             .font(.system(size: 13, weight: .bold))
             .foregroundStyle(filled ? accentInk : .panelPrimary)
-            .frame(width: 26, height: 24)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 6)
+            .frame(minWidth: 26, minHeight: 24)
             .background {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(filled ? accent : Color.panelSelected)

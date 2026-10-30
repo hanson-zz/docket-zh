@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - 真实黄历（本地离线计算）
 //
-// 每日一签页的黄历块：农历日期、干支年月日、生肖年、当日节气、建除十二神、二十八宿值日、宜忌。
+// 每日一签页的黄历块和农历面板的宜忌页（两处同一份）：农历日期、干支年月日、生肖年、当日节气、建除十二神、二十八宿值日、宜忌。
 //
 // 算法和数据来源：移植自 6tail 的开源万年历 lunar（lunar-java / lunar-javascript 1.7.x，
 // https://github.com/6tail/lunar-javascript ），MIT 许可，Copyright (c) 2018 6tail。
@@ -78,10 +78,10 @@ public enum ChineseAlmanac {
         "Taoist rites", "Bathing", "Reward gods", "Build temple", "Offer kitchen god", "Burn incense",
         "Earth gratitude", "Expel the flame", "Carving", "Marriage", "Engagement", "Proposing",
         "Ask name", "Uxorilocal marriage", "Visit parents", "Bed placing", "Make up accounts", "Crowning adulthood",
-        "Make alliance", "Adopt", "Dressmaking", "Cosmeticsurgery", "Open face", "Grave repair",
+        "Make alliance", "Adopt", "Dressmaking", "Cosmetic surgery", "Open face", "Grave repair",
         "Open coffin", "Break earth", "Burial", "Tombstone erecting", "Formation of clothes", "Mourning clothes removal",
         "Open grave", "Make coffin", "Body placing", "Move coffin", "Save soul", "Enter house",
-        "Incenst placement", "Door placing", "Repair", "Digging", "Break ground", "Beam placing",
+        "Incense placement", "Door placing", "Repair", "Digging", "Break ground", "Beam placing",
         "Erecting pillars", "Open pond and well", "Make pond and fill water", "Smash house", "Break house", "Demolish",
         "Mending", "Make beams", "Make stove", "Removal", "Build beam", "Build door",
         "Cover house", "Open toilet", "Build depot", "Block nest", "Repair roads", "Build bridge",
@@ -96,7 +96,7 @@ public enum ChineseAlmanac {
         "Live apart", "Shave", "Manicure", "Feed livestock", "Catch", "Hunt",
         "Train horse", "Meet friends", "Go post", "See doctor", "Treat", "Litigation",
         "Lay foundation", "Demolish", "Build house", "Build depot", "Covenant trade", "Trade",
-        "Covenant", "Install machine", "Meet friends", "Seek treatment", "Everything Sucks", "Do nothing else",
+        "Covenant", "Install machine", "Meet friends", "Seek treatment", "Nothing advisable", "Do nothing else",
         "Funeral", "Block ant hole", "Place beam", "None",
     ]
 
@@ -192,18 +192,30 @@ public enum ChineseAlmanac {
         return yiJiWordsEnglish[index]
     }
 
-    /// 某天（按北京时间那一天）的黄历。
+    /// 某天（按北京时间那一天）的黄历。按日缓存：农历面板、桌面卡片每次重画都会问今天，
+    /// 不用每次重算一年的节气（`DayCache`，加锁，哪个线程来问都行）。
     public static func day(_ date: Date) -> Day {
+        let start = ChineseCalendar.gregorian.startOfDay(for: date)
+        let key = ChineseCalendar.days(from: epoch, to: start)
+        if let cached = cache.day(key) { return cached }
+        let fresh = compute(start)
+        cache.store(fresh, for: key)
+        return fresh
+    }
+
+    /// 不经缓存现算一天（测试拿它和缓存里的比）。
+    static func compute(_ date: Date) -> Day {
         let calendar = ChineseCalendar.gregorian
         let start = calendar.startOfDay(for: date)
-        let lunar = ChineseCalendar.lunar(start)
-        let dayCycle = LunarAlmanac.dayCycleIndex(start)
-        let monthBranch = LunarAlmanac.monthBranch(start)
-        let monthCycle = monthCycleIndex(start, monthBranch: monthBranch)
-        let yearCycle = max(lunar.cycleYear - 1, 0) % 60
         let year = calendar.component(.year, from: start)
-        let termIndex = ChineseCalendar.solarTerms(year: year).firstIndex { $0.day == start }
-        let officer = ((dayCycle % 12 - monthBranch) % 12 + 12) % 12
+        let terms = ChineseCalendar.solarTerms(year: year)
+        let lunar = ChineseCalendar.lunar(start)
+        let dayCycle = dayCycleIndex(start)
+        let branch = monthBranch(start, terms: terms)
+        let monthCycle = monthCycleIndex(start, monthBranch: branch, terms: terms)
+        let yearCycle = max(lunar.cycleYear - 1, 0) % 60
+        let termIndex = terms.firstIndex { $0.day == start }
+        let officer = ((dayCycle % 12 - branch) % 12 + 12) % 12
         let weekday = calendar.component(.weekday, from: start) - 1 // 0 是星期日
         let row = Array(mansionRows[(dayCycle % 12) % 4])
         let mansion = String(row[max(0, min(6, weekday))])
@@ -213,11 +225,63 @@ public enum ChineseAlmanac {
                    bad: words(month: monthCycle, day: dayCycle, good: false))
     }
 
-    /// 月干支：月支按节换月；月干按立春换年后的年干「五虎遁」推（甲己之年丙作首……）。
-    static func monthCycleIndex(_ day: Date, monthBranch: Int) -> Int {
+    /// 按日缓存的黄历，键是离 1970-01-01（北京时间）的天数。最多留 `limit` 天，满了清空重来
+    /// （平时只问今天和签历里翻到的那几天）。
+    final class DayCache: @unchecked Sendable {
+        static let limit = 512
+        private let lock = NSLock()
+        private var days: [Int: Day] = [:]
+
+        func day(_ key: Int) -> Day? { lock.withLock { days[key] } }
+
+        func store(_ day: Day, for key: Int) {
+            lock.withLock {
+                if days.count >= Self.limit { days.removeAll(keepingCapacity: true) }
+                days[key] = day
+            }
+        }
+
+        var count: Int { lock.withLock { days.count } }
+        func removeAll() { lock.withLock { days.removeAll() } }
+    }
+
+    static let cache = DayCache()
+
+    /// 1970-01-01 在中国（儒略日 2440588）是辛巳日，六十甲子第 17 位（甲子为 0）。
+    static let epochCycleIndex = 17
+    static let epoch: Date = ChineseCalendar.gregorian.date(from: DateComponents(year: 1970, month: 1, day: 1))
+        ?? Date(timeIntervalSince1970: -8 * 3600)
+
+    /// 当天在六十甲子里的位置，甲子为 0。
+    public static func dayCycleIndex(_ date: Date) -> Int {
+        let days = ChineseCalendar.days(from: epoch, to: date)
+        return ((days + epochCycleIndex) % 60 + 60) % 60
+    }
+
+    /// 丁卯
+    public static func dayGanzhi(_ date: Date) -> String { ganzhi(dayCycleIndex(date)) }
+
+    /// 月建的地支，子为 0。节当天就算新的月（所以节那天和前一天值日相同，就是通书说的「重建」）。
+    public static func monthBranch(_ date: Date) -> Int {
         let calendar = ChineseCalendar.gregorian
-        let year = calendar.component(.year, from: day)
-        let liChun = ChineseCalendar.solarTerms(year: year).first { $0.name == "立春" }?.day
+        let day = calendar.startOfDay(for: date)
+        return monthBranch(day, terms: ChineseCalendar.solarTerms(year: calendar.component(.year, from: day)))
+    }
+
+    static func monthBranch(_ day: Date, terms: [ChineseCalendar.SolarTerm]) -> Int {
+        // 节是 termNames 里的偶数位：小寒、立春、惊蛰……大雪。
+        let jie = terms.enumerated().filter { $0.offset % 2 == 0 }
+        guard let last = jie.last(where: { $0.element.day <= day }) else {
+            // 小寒之前还在上一年大雪起的子月。
+            return 0
+        }
+        return (last.offset / 2 + 1) % 12
+    }
+
+    /// 月干支：月支按节换月；月干按立春换年后的年干「五虎遁」推（甲己之年丙作首……）。
+    static func monthCycleIndex(_ day: Date, monthBranch: Int, terms: [ChineseCalendar.SolarTerm]) -> Int {
+        let year = ChineseCalendar.gregorian.component(.year, from: day)
+        let liChun = terms.first { $0.name == "立春" }?.day
         let solarYear = (liChun.map { day >= $0 } ?? true) ? year : year - 1
         let yearStem = ((solarYear - 4) % 10 + 10) % 10
         let fromYin = ((monthBranch - 2) % 12 + 12) % 12

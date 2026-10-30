@@ -879,6 +879,10 @@ public enum DesktopCardsDivinationPlan {
     /// 大号：上面签那一行的小熊猫高度和各块之间的间距（340 高里给底下「仅供娱乐」留出余量）。
     public static let largePoseHeight: Double = 72
     public static let largeSpacing: Double = 8
+    /// 大号签那一行右边文字列的宽：内宽减小熊猫场景 72 和间距 12。
+    public static var largeStickTextWidth: Double { DesktopPinSize.large.width - inset(.large) * 2 - 72 - 12 }
+    /// 签级签号后面至少给签题留这么宽（13pt 约八九个字母），放不下的部分写省略号。
+    public static let largeTitleMinWidth: Double = 64
 
     /// 中号、大号能起卦（小号 160×160 只放今日签）。
     public static func canCast(_ size: DesktopPinSize) -> Bool { size != .small }
