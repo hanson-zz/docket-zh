@@ -704,6 +704,51 @@ public enum DesktopCardsDivinationPlan {
     /// 中号左边签那一列的宽。
     public static let mediumStickWidth: Double = 128
     public static let mediumSpacing: Double = 12
+
+    /// 中号左边签那只小熊猫的高度（和右边起卦那只一样大）。
+    public static let mediumStickPoseHeight: Double = 64
+    /// 签场景里脚底离场景底边的距离（DivinationStickScene 的 `height - 4`，留给脚下的影子）。
+    public static let stickFootMargin: Double = 4
+    /// 中号签场景的高：按右边起卦场景的脚底线取（起卦场景脚底在第 76pt，签场景就 80 高、脚底也在 76），
+    /// 两只小熊猫脚底在卡片里同一条线上。原来签场景 68 高、脚底在 64，比右边高出 12pt。
+    public static var mediumStickSceneHeight: Double {
+        (castLayout(.medium)?.footY ?? mediumStickPoseHeight + stickFootMargin) + stickFootMargin
+    }
+    /// 签场景和下面签号、签级之间的间距：场景底下已经留了 4pt 给影子，不再另加（原来 4），
+    /// 场景加高以后签级大字照样放得进卡片。
+    public static let mediumStickSummarySpacing: Double = 0
+    /// 卡片里（从卡片顶算）左边签、右边起卦两只小熊猫的脚底线。
+    public static var mediumStickFootY: Double { inset(.medium) + mediumStickSceneHeight - stickFootMargin }
+    public static var mediumCastFootY: Double { inset(.medium) + (castLayout(.medium)?.footY ?? 0) }
+
+    /// 估算的行高（pt）：13pt 系统字一行、15pt 粗体卦名一行、24pt 宋体签级一行（宋体行高按 1.4 倍从宽算）、
+    /// 卡片上的按钮。只用来在测试里验算各块放不放得进卡片。
+    public static let lineHeight13: Double = 16
+    public static let nameLineHeight: Double = 19
+    public static let levelLineHeight: Double = 34
+    public static let buttonHeight: Double = 28
+
+    /// 中号左边一列从上往下要的高：签场景、间距，下面抽过是签号加签级，没抽是一行提示加「摇一摇」按钮。
+    public static func mediumStickColumnHeight(drawn: Bool) -> Double {
+        let summary = drawn ? lineHeight13 + 2 + levelLineHeight : lineHeight13 + 2 + buttonHeight
+        return mediumStickSceneHeight + mediumStickSummarySpacing + summary
+    }
+
+    /// 中号右边起卦一列从上往下要的高：场景、间距、卦名（或一行提示）那一行、最小间距、按钮。
+    public static var mediumCastColumnHeight: Double {
+        let scene = castLayout(.medium)?.sceneHeight ?? 0
+        return scene + castSpacing(.medium) * 2 + nameLineHeight + buttonHeight
+    }
+
+    /// 中号卡片的内高（卡片高减上下边距）。
+    public static var mediumInnerHeight: Double { DesktopPinSize.medium.height - inset(.medium) * 2 }
+
+    /// 中号鼠标停在卦名那一行时自己画的浮层（桌面卡片窗口不激活，系统的悬停提示 `.help` 可能不弹）：
+    /// 起卦块那么宽、左右内边距 8，最多几行 13pt 的字；从卦名那一行的底边往上长，盖住卦名和场景下半截，
+    /// 不出起卦块。
+    public static let hoverNotePadding: Double = 8
+    public static let hoverNoteMaxLines = 5
+    public static var hoverNoteHeight: Double { Double(hoverNoteMaxLines) * lineHeight13 + 12 }
     /// 大号：上面签那一行的小熊猫高度和各块之间的间距（340 高里给底下「仅供娱乐」留出余量）。
     public static let largePoseHeight: Double = 72
     public static let largeSpacing: Double = 8

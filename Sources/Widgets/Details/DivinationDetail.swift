@@ -67,7 +67,8 @@ struct DivinationDetail: View {
     // MARK: 顶上
 
     private var header: some View {
-        HStack(spacing: 8) {
+        // 间距 6（原来 8）：三段每段多出一点宽，放英文标签。
+        HStack(spacing: 6) {
             segmented
             ToothRoundButton(symbol: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
                              diameter: 30, help: soundOn ? tr("音效：开") : tr("音效：关")) {
@@ -90,7 +91,9 @@ struct DivinationDetail: View {
                         .font(.system(size: 13, weight: selected ? .bold : .semibold))
                         .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        // 不缩字（最小 13pt）：英文「Worry Book」13pt 粗体约 75 宽，正好顶着每段的宽，
+                        // 原来 0.8 会缩到 10pt 多；现在按原大小排，宽出一点也不截断。
+                        .fixedSize()
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                         .background {

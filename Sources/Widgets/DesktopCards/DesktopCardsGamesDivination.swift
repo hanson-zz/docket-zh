@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - 钉在桌面 · 小游戏组 · 卜卦
@@ -5,7 +6,9 @@ import SwiftUI
 // 卜卦钉在桌面（Core 的 `DesktopCardsDivinationPlan`）：
 // 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号；没抽时一个「摇一摇」直接摇。
 // 中 340×160：左边今日签，右边起卦（一次起完）：起卦小场景（卦画叠在右上角），下面卦名；
-// 白话不占一行，鼠标停在起卦区时提示完整白话，腾出的高度让小熊猫和左边签那只一样大。
+// 白话不占一行，鼠标停在卦名那一行时自己画一个浮层写完整白话（桌面卡片窗口不激活，系统的
+// `.help` 悬停提示可能不弹），腾出的高度让小熊猫和左边签那只一样大。左边签场景按右边起卦场景的
+// 脚底线加高（Core 的 `mediumStickSceneHeight`），两只小熊猫脚底在同一条线上。
 // 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞，底下留出「仅供娱乐」的余量。
 // 起卦小场景和面板同一套五拍、同样的时长和声音（ShellTossScene + DivinationPlay.performToss，
 // 按「一次起完」的节奏）：捧龟甲 → 摇几下 → 跳起举高 → 一摔、铜钱蹦出 → 捡回，铜钱留在地上
@@ -157,7 +160,10 @@ private struct DeskDivinationCard: View {
                         }
                     }
                     if let casting, let primary = casting.primary {
-                        if !nameBeside { name(casting, primary: primary) }
+                        if !nameBeside {
+                            name(casting, primary: primary)
+                                .deskHoverNote(hoverNote(casting), width: blockWidth, enabled: !castBusy)
+                        }
                         if showJudgment {
                             Text(verbatim: "\(primary.name)：\(primary.judgment)")
                                 .font(.custom("Songti SC", size: 13).weight(.semibold))
@@ -176,39 +182,51 @@ private struct DeskDivinationCard: View {
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(2)
                     } else {
-                        // 中号只有卦名那一行的高度：短提示一行，完整的放在悬停提示里。
+                        // 中号只有卦名那一行的高度：短提示一行，完整的放在悬停浮层里。
                         Text(tr("想好问题再起卦"))
                             .font(.system(size: 13))
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .deskHoverNote(hoverNote(nil), width: blockWidth, enabled: !castBusy)
                     }
                 }
                 Spacer(minLength: gap)
                 DivinationPrimaryButton(title: casting == nil ? tr("起卦") : tr("再起一卦"), height: 28,
                                         enabled: !castBusy) { cast() }
             }
-            // 中号卡片上不写白话，鼠标停在起卦区时提示完整白话。
-            .help(plainHelp(casting))
         }
     }
 
-    /// 起卦区的悬停提示：中号起过卦时是卦名和完整白话，没起过是完整的「想好问题，摇六次成一卦」；
-    /// 大号这些都写在卡片上，不提示。
-    private func plainHelp(_ casting: Casting?) -> Text {
-        if DesktopCardsDivinationPlan.showsPlain(size) { return Text(verbatim: "") }
-        guard let casting, let primary = casting.primary else { return Text(tr("想好问题，摇六次成一卦")) }
+    private var blockWidth: CGFloat { CGFloat(DesktopCardsDivinationPlan.castBlockWidth(size)) }
+
+    /// 卦名那一行的悬停浮层：中号起过卦时是卦名和完整白话，没起过是完整的「想好问题，摇六次成一卦」；
+    /// 大号这些都写在卡片上，没有浮层。
+    private func hoverNote(_ casting: Casting?) -> String? {
+        if DesktopCardsDivinationPlan.showsPlain(size) { return nil }
+        guard let casting, let primary = casting.primary else { return tr("想好问题，摇六次成一卦") }
         let title = casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName
-        return Text(verbatim: "\(title)：\(primary.plain)")
+        return "\(title)：\(primary.plain)"
     }
 
     private var nameBeside: Bool { DesktopCardsDivinationPlan.nameBesideFigures(size) }
 
     private func name(_ casting: Casting, primary: Hexagram) -> some View {
-        Text(verbatim: casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName)
-            .font(.system(size: 15, weight: .heavy))
-            .foregroundStyle(Color.panelPrimary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.87)
+        HStack(spacing: 4) {
+            Text(verbatim: casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName)
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundStyle(Color.panelPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.87)
+            if !nameBeside {
+                // 中号卡片上不写白话：卦名后面一个小气泡，告诉人停在这一行能看完整白话。
+                Image(systemName: "text.bubble")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.panelTertiary)
+                    .accessibilityHidden(true)
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     /// 本卦（标出变爻）→ 变卦（淡色）两张卦画。
@@ -244,8 +262,12 @@ private struct DeskDivinationCard: View {
 
     private var medium: some View {
         HStack(alignment: .top, spacing: CGFloat(DesktopCardsDivinationPlan.mediumSpacing)) {
-            VStack(spacing: 4) {
-                stickScene(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth), poseHeight: 64)
+            // 签场景按右边起卦场景的脚底线加高（80，脚底在 76），两只小熊猫脚底对齐；场景底下的 4pt
+            // 本来就是留给影子的，下面签号、签级紧挨着放。
+            VStack(spacing: CGFloat(DesktopCardsDivinationPlan.mediumStickSummarySpacing)) {
+                stickScene(width: CGFloat(DesktopCardsDivinationPlan.mediumStickWidth),
+                           poseHeight: CGFloat(DesktopCardsDivinationPlan.mediumStickPoseHeight),
+                           height: CGFloat(DesktopCardsDivinationPlan.mediumStickSceneHeight))
                 stickSummary
                 Spacer(minLength: 0)
             }
@@ -301,8 +323,70 @@ private struct DeskDivinationCard: View {
     }
 
     /// 签的小场景：没抽时抱签筒，摇的时候整张图摆、签飞出，抽过展签（纸太小不写字）。
-    private func stickScene(width: CGFloat, poseHeight: CGFloat) -> some View {
-        DivinationStickScene(width: width, height: poseHeight + 4, poseHeight: poseHeight,
+    /// 脚底在场景底边往上 4pt；`height` 不给时场景正好是小熊猫加 4。
+    private func stickScene(width: CGFloat, poseHeight: CGFloat, height: CGFloat? = nil) -> some View {
+        DivinationStickScene(width: width, height: height ?? poseHeight + 4, poseHeight: poseHeight,
                              index: drawn, shakes: shakes)
+    }
+}
+
+// MARK: - 悬停浮层
+
+/// 鼠标停在这一行时自己画的浮层：桌面卡片的窗口不激活（码头不抢前台），系统的 `.help` 悬停提示
+/// 在 App 不在前台时可能不弹；卡片自己的悬停（`onHover`，卡片右上角的操作条也靠它）照常有。
+/// 浮层和起卦块一样宽，从这一行的底边往上长，最多 `hoverNoteMaxLines` 行，不接点击；
+/// 起卦动画进行中不出。
+private struct DeskHoverNote: ViewModifier {
+    var text: String?
+    var width: CGFloat
+    var enabled: Bool
+
+    @State private var hovering = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(.rect)
+            .onHover { hovering = $0 }
+            .overlay(alignment: .bottomLeading) {
+                if hovering, enabled, let text {
+                    note(text)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.12), value: hovering && enabled)
+            .accessibilityHint(text ?? "")
+    }
+
+    private func note(_ text: String) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let padding = CGFloat(DesktopCardsDivinationPlan.hoverNotePadding)
+        return Text(verbatim: text)
+            .font(.system(size: 13))
+            .foregroundStyle(Color.panelPrimary)
+            .lineLimit(DesktopCardsDivinationPlan.hoverNoteMaxLines)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, padding)
+            .padding(.vertical, 6)
+            .frame(width: width, alignment: .leading)
+            .background {
+                if reduceTransparency {
+                    shape.fill(Color.panelDynamic(dark: NSColor(white: 0.16, alpha: 1), light: NSColor(white: 0.97, alpha: 1)))
+                } else {
+                    // 液态玻璃上再垫一层，字压在小熊猫和铜钱上面也看得清。
+                    shape.fill(Color.panelDynamic(dark: NSColor.black.withAlphaComponent(0.5),
+                                                  light: NSColor.white.withAlphaComponent(0.75)))
+                        .background(Color.clear.glassEffect(.regular, in: shape))
+                }
+            }
+            .overlay(shape.strokeBorder(Color.panelStroke, lineWidth: 0.5))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    func deskHoverNote(_ text: String?, width: CGFloat, enabled: Bool) -> some View {
+        modifier(DeskHoverNote(text: text, width: width, enabled: enabled))
     }
 }

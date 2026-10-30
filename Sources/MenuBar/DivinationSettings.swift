@@ -43,9 +43,11 @@ struct DivinationSettingsSection: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            // 「铜钱」单独一个键：皮肤名「铜钱」的英文是 Bronze（和银币、古铜绿锈并列），这一行是选铜钱皮肤的
+            // 标题，英文应是 Coins，原来共用一个键，英文设置里写成「Bronze：Bronze / Silver / Verdigris」。
             skinPicker(tr("签筒"), stored: Divination.storedTubeSkin(config), all: TubeSkin.allCases,
                        title: \.title, isPro: \.isPro, key: Divination.tubeSkinKey)
-            skinPicker(tr("铜钱"), stored: Divination.storedCoinSkin(config), all: CoinSkin.allCases,
+            skinPicker(tr("铜钱", context: "coins"), stored: Divination.storedCoinSkin(config), all: CoinSkin.allCases,
                        title: \.title, isPro: \.isPro, key: Divination.coinSkinKey)
         }
     }

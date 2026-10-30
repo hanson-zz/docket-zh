@@ -178,12 +178,14 @@ final class DivinationArtTests: XCTestCase {
 
     /// 签条停在半空的位置收在场景里：面板、桌面小 / 中 / 大卡片都不被裁。
     func testSlipHoverStaysInsideEveryScene() {
-        let scenes: [(width: Double, pose: Double)] = [
-            (Divination.panelContentWidth, 184), (140, 70),
-            (DesktopCardsDivinationPlan.mediumStickWidth, 64), (72, DesktopCardsDivinationPlan.largePoseHeight),
+        let scenes: [(width: Double, height: Double, pose: Double)] = [
+            (Divination.panelContentWidth, 188, 184), (140, 74, 70),
+            (DesktopCardsDivinationPlan.mediumStickWidth, DesktopCardsDivinationPlan.mediumStickSceneHeight,
+             DesktopCardsDivinationPlan.mediumStickPoseHeight),
+            (72, DesktopCardsDivinationPlan.largePoseHeight + 4, DesktopCardsDivinationPlan.largePoseHeight),
         ]
         for scene in scenes {
-            let height = scene.pose + 4
+            let height = scene.height
             let c = DivinationArt.hoverCenter(sceneWidth: scene.width, sceneHeight: height, poseHeight: scene.pose)
             let h = DivinationArt.flyingSlipHeight(poseHeight: scene.pose)
             let w = h * DivinationArt.flyingSlipAspect
@@ -421,7 +423,8 @@ final class DivinationArtTests: XCTestCase {
     func testSlipLandingAvoidsTheFace() {
         let scenes: [(width: Double, height: Double, pose: Double)] = [
             (Divination.panelContentWidth, 194, 184), (140, 74, 70),
-            (DesktopCardsDivinationPlan.mediumStickWidth, 68, 64),
+            (DesktopCardsDivinationPlan.mediumStickWidth, DesktopCardsDivinationPlan.mediumStickSceneHeight,
+             DesktopCardsDivinationPlan.mediumStickPoseHeight),
             (72, DesktopCardsDivinationPlan.largePoseHeight + 4, DesktopCardsDivinationPlan.largePoseHeight),
         ]
         for scene in scenes {
@@ -559,13 +562,17 @@ final class DivinationArtTests: XCTestCase {
         }
     }
 
-    /// 中号卡片：白话不写在卡片上但没丢，悬停起卦区提示完整白话；没起过卦是一行短提示、完整的在悬停里；
+    /// 中号卡片：白话不写在卡片上但没丢，鼠标停在卦名那一行时卡片自己画浮层写完整白话（桌面卡片窗口
+    /// 不激活，系统 `.help` 可能不弹，所以卡片上不再用 `.help`）；没起过卦是一行短提示、完整的在浮层里；
     /// 卡片上的字都不小于 13pt（箭头图标、「仅供娱乐」法律小字除外）。
-    func testDesktopMediumPlainMovesToHelp() throws {
+    func testDesktopMediumPlainMovesToHoverNote() throws {
         let card = try String(contentsOf: root.appendingPathComponent(
             "Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift"), encoding: .utf8)
-        XCTAssertTrue(card.contains(".help(plainHelp(casting))"))
-        XCTAssertTrue(card.contains("primary.plain)\")"), "悬停提示里是完整白话")
+        XCTAssertFalse(card.contains(".help("), "桌面卡片不靠系统悬停提示")
+        XCTAssertTrue(card.contains(".deskHoverNote(hoverNote(casting), width: blockWidth, enabled: !castBusy)"))
+        XCTAssertTrue(card.contains(".deskHoverNote(hoverNote(nil), width: blockWidth, enabled: !castBusy)"))
+        XCTAssertTrue(card.contains("return \"\\(title)：\\(primary.plain)\""), "浮层里是完整白话")
+        XCTAssertTrue(card.contains(".onHover { hovering = $0 }"))
         XCTAssertTrue(card.contains("if DesktopCardsDivinationPlan.showsPlain(size) {\n                            Text(verbatim: primary.plain)"),
                       "卡片上只有大号写白话")
         XCTAssertTrue(card.contains("tr(\"想好问题再起卦\")"))
@@ -579,5 +586,134 @@ final class DivinationArtTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(value, Divination.minimumFont, "第 \(n + 1) 行字号")
             }
         }
+    }
+
+    // MARK: 中号两只小熊猫脚底对齐
+
+    /// 中号左边签、右边起卦两只小熊猫的脚底在卡片里同一条线上（误差 1pt 以内）：签那块按起卦场景的
+    /// 脚底线加高。每一拍的姿势图（摇一摇、仰头看、展签；捧、摇、举高、一摔、捡回）和不动时的姿势
+    /// （没抽 / 抽过、没起过 / 起过）都是底边贴着脚底线画的，所以每拍都对齐（起跳、托一下是动作本身）。
+    func testDesktopMediumPandasStandOnOneLine() throws {
+        let plan = DesktopCardsDivinationPlan.self
+        let cast = try XCTUnwrap(plan.castLayout(.medium))
+        XCTAssertEqual(plan.mediumStickFootY, plan.mediumCastFootY, accuracy: 1, "两只小熊猫脚底对齐")
+        XCTAssertEqual(plan.mediumCastFootY, 88, accuracy: 0.0001)
+        XCTAssertEqual(plan.mediumStickPoseHeight, cast.poseHeight, "两只一样大")
+        let stickBottom = plan.mediumStickSceneHeight - plan.stickFootMargin
+        let shake = StickShake.normal
+        var stickPoses = shake.beats.map(\.pose)
+        stickPoses += [shake.pose(at: 99, drawn: false), shake.pose(at: 99, drawn: true)]
+        for pose in stickPoses {
+            let foot = pose.scenePoint(pose.anchorX, 1, poseHeight: plan.mediumStickPoseHeight,
+                                       centerX: plan.mediumStickWidth / 2, bottom: stickBottom)
+            XCTAssertEqual(plan.inset(.medium) + foot.y, plan.mediumCastFootY, accuracy: 1, "\(pose)")
+        }
+        let toss = ShellToss.timing(fast: true)
+        var castPoses = toss.beats.map(\.pose)
+        castPoses += [toss.pose(at: 99, tossed: false), toss.pose(at: 99, tossed: true)]
+        for pose in castPoses {
+            let foot = pose.scenePoint(pose.anchorX, 1, poseHeight: cast.poseHeight, centerX: cast.pandaX,
+                                       bottom: cast.footY)
+            XCTAssertEqual(plan.inset(.medium) + foot.y, plan.mediumStickFootY, accuracy: 1, "\(pose)")
+        }
+        // 签那只每一拍都在签场景里：最高那张图加上签蹦出来时小熊猫轻轻一跳（4pt），摇的时候左右摆 8° 不出列宽。
+        let hop = 4.0
+        for pose in stickPoses {
+            let size = pose.displaySize(poseHeight: plan.mediumStickPoseHeight)
+            XCTAssertGreaterThanOrEqual(stickBottom - size.height - hop, 0, "\(pose) 头顶出了场景")
+            let a = StickShake.swayAngles.map { abs($0) }.max()! * Double.pi / 180
+            let half = max(size.width * pose.anchorX, size.width * (1 - pose.anchorX))
+            XCTAssertLessThanOrEqual(half * cos(a) + size.height * sin(a), plan.mediumStickWidth / 2, "\(pose)")
+        }
+    }
+
+    /// 签那块加高以后字不挤出卡片：左边抽过（签号加签级大字）、没抽（提示加「摇一摇」）两种，
+    /// 右边起卦（场景、卦名或提示、按钮）都放得进中号 136 的内高。
+    func testDesktopMediumColumnsFit() {
+        let plan = DesktopCardsDivinationPlan.self
+        XCTAssertEqual(plan.mediumInnerHeight, 136, accuracy: 0.0001)
+        XCTAssertLessThanOrEqual(plan.mediumStickColumnHeight(drawn: true), plan.mediumInnerHeight)
+        XCTAssertLessThanOrEqual(plan.mediumStickColumnHeight(drawn: false), plan.mediumInnerHeight)
+        XCTAssertLessThanOrEqual(plan.mediumCastColumnHeight, plan.mediumInnerHeight)
+        // 签场景只往下加高，不比起卦场景高（两边顶上对齐、底下都留得出字的地方）。
+        XCTAssertEqual(plan.mediumStickSceneHeight, plan.castLayout(.medium)!.sceneHeight, accuracy: 0.0001)
+    }
+
+    /// 卦名那一行的悬停浮层：最长的一条（卦名 → 变卦名加最长的白话）在最多几行里写得下，浮层从卦名那一行
+    /// 底边往上长、不出起卦块的顶，也不出起卦块的宽。
+    func testDesktopMediumHoverNoteFits() throws {
+        let plan = DesktopCardsDivinationPlan.self
+        let cast = try XCTUnwrap(plan.castLayout(.medium))
+        let width = plan.castBlockWidth(.medium)
+        let perLine = Int((width - plan.hoverNotePadding * 2) / Divination.minimumFont)
+        let longestName = Hexagram.all.map(\.name.count).max()!
+        for hexagram in Hexagram.all {
+            // 变卦写法「乾 → 坤」按每个字符一格从宽算；不变卦是全名。
+            let title = max(hexagram.fullName.count, longestName * 2 + 3)
+            let chars = title + 1 + hexagram.plain.count
+            let lines = (chars + perLine - 1) / perLine
+            XCTAssertLessThanOrEqual(lines, plan.hoverNoteMaxLines, hexagram.name)
+        }
+        let blank = tr("想好问题，摇六次成一卦").count
+        XCTAssertLessThanOrEqual((blank + perLine - 1) / perLine, plan.hoverNoteMaxLines)
+        let room = cast.sceneHeight + plan.castSpacing(.medium) + plan.nameLineHeight
+        XCTAssertLessThanOrEqual(plan.hoverNoteHeight, room, "浮层不出起卦块的顶")
+    }
+
+    // MARK: 字号
+
+    /// 卜卦的界面（面板、签历、签卡、扩展栏卡片、场景、桌面卡片）里，会缩的字缩完也不小于 13pt：
+    /// 每个 `.minimumScaleFactor` 往上找最近的字号，字号乘缩放比不小于 13。原来面板顶上三段切换
+    /// 13pt 配 0.8，英文「Worry Book」放不下时缩到 10pt 多。
+    func testScaledDivinationTextStaysReadable() throws {
+        let files = [
+            "Sources/Widgets/Details/DivinationDetail.swift", "Sources/Widgets/Details/DivinationArchive.swift",
+            "Sources/Widgets/Details/DivinationDailyExtras.swift", "Sources/Widgets/Details/DivinationShareCard.swift",
+            "Sources/Widgets/Kinds/DivinationTile.swift", "Sources/Widgets/Kinds/DivinationScenes.swift",
+            "Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift",
+        ]
+        let size = try NSRegularExpression(pattern: #"\.font\(\.system\(size: (\d+(?:\.\d+)?)"#)
+        let scale = try NSRegularExpression(pattern: #"\.minimumScaleFactor\((\d+(?:\.\d+)?)\)"#)
+        func number(_ re: NSRegularExpression, _ line: String) -> Double? {
+            guard let m = re.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+                  let r = Range(m.range(at: 1), in: line) else { return nil }
+            return Double(line[r])
+        }
+        var checked = 0
+        for file in files {
+            let lines = try String(contentsOf: root.appendingPathComponent(file), encoding: .utf8)
+                .components(separatedBy: "\n")
+            for (n, line) in lines.enumerated() {
+                guard let factor = number(scale, line) else { continue }
+                // 往上找最近的字号（同一个 Text 或它所在的那一组）。
+                var font: Double?
+                for k in stride(from: n, through: max(0, n - 12), by: -1) {
+                    if let value = number(size, lines[k]) { font = max(font ?? 0, value); break }
+                }
+                let base = try XCTUnwrap(font, "\(file):\(n + 1) 找不到字号")
+                XCTAssertGreaterThanOrEqual(base * factor, Divination.minimumFont - 0.1, "\(file):\(n + 1)")
+                checked += 1
+            }
+        }
+        XCTAssertGreaterThan(checked, 5)
+    }
+
+    /// 设置里选铜钱皮肤那一行的标题和皮肤名「铜钱」分开两个键：皮肤名英文是 Bronze，标题英文是 Coins
+    /// （原来共用一个键，英文设置里标题也写成 Bronze）。
+    func testCoinSkinPickerTitleHasItsOwnKey() throws {
+        let settings = try String(contentsOf: root.appendingPathComponent("Sources/MenuBar/DivinationSettings.swift"),
+                                  encoding: .utf8)
+        XCTAssertTrue(settings.contains("skinPicker(tr(\"铜钱\", context: \"coins\")"))
+        let data = try Data(contentsOf: root.appendingPathComponent("Resources/Localization/Localizable.xcstrings"))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let strings = try XCTUnwrap(json["strings"] as? [String: Any])
+        func english(_ key: String) -> String? {
+            let entry = strings[key] as? [String: Any]
+            let loc = entry?["localizations"] as? [String: Any]
+            let en = loc?["en"] as? [String: Any]
+            return (en?["stringUnit"] as? [String: Any])?["value"] as? String
+        }
+        XCTAssertEqual(english("铜钱 (coins)"), "Coins")
+        XCTAssertEqual(english("铜钱"), "Bronze", "皮肤名不动")
     }
 }
