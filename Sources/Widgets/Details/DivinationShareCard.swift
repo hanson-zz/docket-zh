@@ -85,12 +85,13 @@ struct DivinationShareCardView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(ink)
                     .fixedSize(horizontal: false, vertical: true)
+                // 英文宜忌词长，少写几个，长白话加星座那一行时也放得进 640 高。
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: almanac.lunarLine(english: english))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(red)
-                    Text(verbatim: almanac.yiJiLine(goodCount: 4, badCount: 3, goodLabel: tr("宜"), badLabel: tr("忌"),
-                                                    english: english))
+                    Text(verbatim: almanac.yiJiLine(goodCount: english ? 3 : 4, badCount: english ? 2 : 3,
+                                                    goodLabel: tr("宜"), badLabel: tr("忌"), english: english))
                         .font(.system(size: 13))
                         .foregroundStyle(subInk)
                         .fixedSize(horizontal: false, vertical: true)

@@ -397,7 +397,7 @@ final class DivinationTests: XCTestCase {
 
     func testBadStoredStickIsIgnored() {
         var config = WidgetConfig()
-        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        let now = date("2026-10-29T03:00:00Z")
         config.set(Divination.stickDayKey, .string("2026-10-29"))
         config.set(Divination.stickKey, .number(999))
         XCTAssertNil(Divination.todayStick(config, now: now, calendar: shanghai))
@@ -408,7 +408,7 @@ final class DivinationTests: XCTestCase {
     /// 换签库那天：旧版存的今天那支（原创 60 支的下标，键 `stick`）不当成观音灵签显示，今天可以再抽。
     func testLegacyTodayStickIsNotMisread() {
         var config = WidgetConfig()
-        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        let now = date("2026-10-29T03:00:00Z")
         config.set(Divination.stickDayKey, .string("2026-10-29"))
         config.set(Divination.legacyStickKey, .number(36))
         XCTAssertNotEqual(Divination.stickKey, Divination.legacyStickKey)

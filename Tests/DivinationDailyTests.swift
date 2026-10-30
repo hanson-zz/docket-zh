@@ -220,7 +220,7 @@ final class DivinationDailyTests: XCTestCase {
         XCTAssertEqual(Divination.records(config).map(\.day),
                        ["2026-10-06", "2026-10-05", "2026-10-04", "2026-10-02", "2026-10-01"])
         // 月历上有点，按折算的签级上色。
-        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        let now = date("2026-10-29T03:00:00Z")
         let levels = Divination.monthLevels(config, month: now, calendar: shanghai)
         XCTAssertEqual(levels["2026-10-01"], .upper)
         XCTAssertEqual(levels["2026-10-02"], .lower)
@@ -242,7 +242,7 @@ final class DivinationDailyTests: XCTestCase {
         var config = WidgetConfig()
         config.set(Divination.legacyStickLogKey, .string("2025-01-01=3,2025-06-01=4,2026-09-01=5"))
         XCTAssertTrue(Divination.toggleFavorite(day: "2025-06-01", in: &config))
-        let now = date("Thu 2026-10-29 11:00 AM CST (UTC+08:00)")
+        let now = date("2026-10-29T03:00:00Z")
         Divination.recordStick(1, day: "2026-10-29", in: &config, now: now, calendar: shanghai)
         XCTAssertEqual(Divination.legacyStickLog(config), ["2025-06-01": 4, "2026-09-01": 5])
         XCTAssertEqual(Divination.stickLog(config), ["2026-10-29": 1])
