@@ -36,30 +36,148 @@ public enum NotchMessageApp: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// 横幅上可能写的 App 名（小写比较）：中英文界面、繁体，以及老名字。
+    /// 横幅上可能写的 App 名（按 `NotchAppNames.normalized` 整理后比较：小写、去掉
+    /// 方向控制符、全角括号和空格换成半角）：各语言界面、繁体，以及老名字。微信 4.x
+    /// （bundle id 仍是 com.tencent.xinWeChat，App 包叫 WeChat.app）中文界面显示「微信」，
+    /// 英文界面显示「WeChat」，海外版官网改叫「Weixin」；装机时本地化名字再由
+    /// `NotchAppNameCatalog` 从 App 自己的 Info.plist 动态补。
     public var bannerNames: [String] {
         switch self {
-        case .messages: ["信息", "messages", "imessage", "訊息", "短信", "message"]
-        case .whatsapp: ["whatsapp", "whatsapp messenger"]
-        case .wechat: ["微信", "wechat", "weixin"]
+        case .messages:
+            ["信息", "messages", "imessage", "訊息", "短信", "message",
+             "メッセージ", "메시지", "nachrichten", "mensajes", "messaggi", "mensagens", "сообщения",
+             "berichten", "meddelanden", "beskeder", "meldinger", "viestit", "wiadomości", "mesajlar",
+             "zprávy", "üzenetek", "повідомлення", "tin nhắn", "pesan", "ข้อความ", "الرسائل", "הודעות"]
+        case .whatsapp:
+            ["whatsapp", "whatsapp messenger", "whatsapp desktop", "whatsapp beta", "واتساب", "וואטסאפ"]
+        case .wechat:
+            ["微信", "wechat", "weixin", "微信 wechat", "wechat 微信", "微信 weixin", "weixin 微信",
+             "wechat (微信)", "微信 (wechat)", "weixin (微信)", "微信 (weixin)",
+             "wechat for mac", "weixin for mac", "微信 mac 版", "微信mac版", "微信 for mac", "위챗"]
         }
     }
 
     /// 能不能在刘海里直接回复。只有「信息」有可用的 AppleScript；WhatsApp、微信只跳转。
     public var canReplyInline: Bool { self == .messages }
 
-    /// 认横幅上写的 App 名，认不出时为 nil。
+    /// 认横幅上写的 App 名（只认内置名字表里完全一样的），认不出时为 nil。
     public static func match(name raw: String?) -> NotchMessageApp? {
-        guard let raw else { return nil }
-        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !name.isEmpty else { return nil }
-        return allCases.first { $0.bannerNames.contains(name) }
+        NotchAppNames.builtIn.match(raw)
     }
 
     /// 按 bundle id 认，大小写不敏感。
     public static func match(bundleID raw: String?) -> NotchMessageApp? {
         guard let id = raw?.lowercased(), !id.isEmpty else { return nil }
         return allCases.first { app in app.bundleIDs.contains { $0.lowercased() == id } }
+    }
+
+    /// 一段字里带着哪个 App 的 bundle id（横幅元素的标识、帮助等属性有时会带出来）。
+    /// 要在字里完整出现、前后不是字母数字，免得 com.tencent.xinWeChat2 这类改过的副本也算。
+    public static func match(bundleIDIn raw: String?) -> NotchMessageApp? {
+        guard let text = raw?.lowercased(), !text.isEmpty else { return nil }
+        for app in allCases {
+            for id in app.bundleIDs {
+                var searchRange = text.startIndex..<text.endIndex
+                let needle = id.lowercased()
+                while let range = text.range(of: needle, range: searchRange) {
+                    let before = range.lowerBound == text.startIndex ? nil : text[text.index(before: range.lowerBound)]
+                    let after = range.upperBound == text.endIndex ? nil : text[range.upperBound]
+                    let edge: (Character?) -> Bool = { c in
+                        guard let c else { return true }
+                        return !(c.isLetter || c.isNumber)
+                    }
+                    if edge(before), edge(after) { return app }
+                    searchRange = range.upperBound..<text.endIndex
+                }
+            }
+        }
+        return nil
+    }
+}
+
+/// 认 App 名用的名字表：内置的 `bannerNames`，加上装机时从 App 自己的 Info.plist 读到的
+/// 本地化显示名（`NotchAppNameCatalog` 在 Services 读，这里只收字，方便测试）。只认整理后
+/// 完全一样的名字，不做包含、不做模糊匹配，认不出宁可不弹也不认错。
+public struct NotchAppNames: Equatable, Sendable {
+    /// 额外的名字，已整理。
+    public private(set) var extra: [NotchMessageApp: [String]]
+
+    public static let builtIn = NotchAppNames()
+
+    /// 额外名字最长多少字，再长的不像 App 名，不收。
+    public static let maxExtraLength = 40
+
+    public init(extra: [NotchMessageApp: [String]] = [:]) {
+        var cleaned: [NotchMessageApp: [String]] = [:]
+        for app in NotchMessageApp.allCases {
+            var seen = Self.builtInNormalized[app] ?? []
+            var list: [String] = []
+            for raw in extra[app] ?? [] {
+                let name = Self.normalized(raw)
+                guard !name.isEmpty, name.count <= Self.maxExtraLength, !seen.contains(name) else { continue }
+                // 和别的 App 的内置名字撞了的不收，免得一个 App 的本地化名把另一个顶掉。
+                guard !NotchMessageApp.allCases.contains(where: { other in
+                    other != app && Self.builtInNormalized[other]?.contains(name) == true
+                }) else { continue }
+                seen.insert(name)
+                list.append(name)
+            }
+            if !list.isEmpty { cleaned[app] = list }
+        }
+        self.extra = cleaned
+    }
+
+    /// 内置名字先比，再比额外的。
+    public func match(_ raw: String?) -> NotchMessageApp? {
+        guard let raw else { return nil }
+        let name = Self.normalized(raw)
+        guard !name.isEmpty else { return nil }
+        if let app = NotchMessageApp.allCases.first(where: { Self.builtInNormalized[$0]?.contains(name) == true }) {
+            return app
+        }
+        return NotchMessageApp.allCases.first { extra[$0]?.contains(name) == true }
+    }
+
+    /// 额外名字的一行摘要，诊断信息用（只是 App 名，不涉及消息）。
+    public var summary: String {
+        let parts = NotchMessageApp.allCases.compactMap { app -> String? in
+            guard let names = extra[app], !names.isEmpty else { return nil }
+            return "\(app.rawValue):\(names.prefix(6).joined(separator: "|"))"
+        }
+        return parts.isEmpty ? "none" : parts.joined(separator: ", ")
+    }
+
+    /// 内置名字整理后的样子，只算一次。
+    static let builtInNormalized: [NotchMessageApp: Set<String>] = Dictionary(
+        uniqueKeysWithValues: NotchMessageApp.allCases.map { ($0, Set($0.bannerNames.map(normalized))) })
+
+    /// 横幅文字里可能夹着的不可见字符：方向控制符、零宽字符。
+    static let invisible: Set<Unicode.Scalar> = Set(
+        [0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
+         0x2066, 0x2067, 0x2068, 0x2069, 0xFEFF, 0x061C].compactMap(Unicode.Scalar.init))
+
+    static func hasInvisible(_ text: String) -> Bool {
+        text.unicodeScalars.contains { invisible.contains($0) }
+    }
+
+    /// 整理一个名字：去掉不可见字符，各种空格换成普通空格并合并，全角括号换成半角，
+    /// 去掉首尾空白和末尾的冒号，小写。
+    public static func normalized(_ raw: String) -> String {
+        var scalars = String.UnicodeScalarView()
+        for scalar in raw.unicodeScalars where !invisible.contains(scalar) {
+            switch scalar.value {
+            case 0x00A0, 0x2007, 0x202F, 0x3000, 0x2009, 0x200A: scalars.append(" ")
+            case 0xFF08: scalars.append("(")
+            case 0xFF09: scalars.append(")")
+            default: scalars.append(scalar)
+            }
+        }
+        var text = String(scalars).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        // 括号前后的空格统一成「名字 (别名)」，「WeChat(微信)」「WeChat （微信）」都算同一个。
+        text = text.replacingOccurrences(of: #"\s*\(\s*"#, with: " (", options: .regularExpression)
+            .replacingOccurrences(of: #"\s*\)"#, with: ")", options: .regularExpression)
+        while let last = text.last, last == ":" || last == "：" { text.removeLast() }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
@@ -89,6 +207,8 @@ public struct NotchMessageSettings: Codable, Hashable, Sendable {
     public var position: NotchMessagePosition = .auto
     /// 展开后几秒自动收起（指针停在卡片上时暂停）。
     public var seconds: Int = NotchMessageSettings.defaultSeconds
+    /// 卡片弹出后替用户关掉那条系统横幅（只在横幅自己带「关闭」动作或关闭按钮时），默认关。
+    public var closeSystemBanner: Bool = false
 
     public static let defaultSeconds = 6
     public static let secondChoices: [Int] = [4, 6, 10]
@@ -109,7 +229,7 @@ public struct NotchMessageSettings: Codable, Hashable, Sendable {
         NotchMessageSettings.secondChoices.contains(seconds) ? seconds : NotchMessageSettings.defaultSeconds
     }
 
-    private enum CodingKeys: String, CodingKey { case enabled, apps, position, seconds }
+    private enum CodingKeys: String, CodingKey { case enabled, apps, position, seconds, closeSystemBanner }
 
     /// 宽松解码：老状态文件没有这一组、或以后多了认不出的 App 和位置，都照常读。
     public init(from decoder: any Decoder) throws {
@@ -124,6 +244,7 @@ public struct NotchMessageSettings: Codable, Hashable, Sendable {
             position = value
         }
         seconds = (try? c.decodeIfPresent(Int.self, forKey: .seconds)) ?? NotchMessageSettings.defaultSeconds
+        closeSystemBanner = (try? c.decodeIfPresent(Bool.self, forKey: .closeSystemBanner)) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -132,6 +253,7 @@ public struct NotchMessageSettings: Codable, Hashable, Sendable {
         try c.encode(apps.map(\.rawValue), forKey: .apps)
         try c.encode(position.rawValue, forKey: .position)
         try c.encode(seconds, forKey: .seconds)
+        try c.encode(closeSystemBanner, forKey: .closeSystemBanner)
     }
 }
 
@@ -146,17 +268,23 @@ public struct NotchBannerNode: Equatable, Sendable {
     public var description: String?
     public var title: String?
     public var value: String?
+    /// AXHelp（提示文字），有的版本会带出 App 名或 bundle id。
+    public var help: String?
+    /// 元素支持的 AX 动作名（只给横幅元素读）。自定义动作形如「Name:Close\nTarget:…」。
+    public var actions: [String]
     public var children: [NotchBannerNode]
 
     public init(role: String? = nil, subrole: String? = nil, identifier: String? = nil,
                 description: String? = nil, title: String? = nil, value: String? = nil,
-                children: [NotchBannerNode] = []) {
+                help: String? = nil, actions: [String] = [], children: [NotchBannerNode] = []) {
         self.role = role
         self.subrole = subrole
         self.identifier = identifier
         self.description = description
         self.title = title
         self.value = value
+        self.help = help
+        self.actions = actions
         self.children = children
     }
 
@@ -185,10 +313,17 @@ public struct NotchBanner: Equatable, Sendable {
     public var imageNames: [String]
     /// 是几条叠在一起的那一摞（`AXNotificationCenterAlertStack`）。
     public var stacked: Bool
+    /// 横幅元素自己的标识、帮助、标题、值：只用来找里面有没有 bundle id，不写进诊断。
+    public var hints: [String]
+    /// 横幅元素的动作名（自定义动作取「Name:」那一段），诊断和关横幅用。
+    public var actionNames: [String]
+    /// 能怎么关掉这条横幅；没有安全的关法时为 nil。
+    public var close: NotchBannerClose?
 
     public init(identifier: String? = nil, header: String? = nil, title: String? = nil,
                 subtitle: String? = nil, body: String? = nil, summary: String? = nil,
-                imageNames: [String] = [], stacked: Bool = false) {
+                imageNames: [String] = [], stacked: Bool = false, hints: [String] = [],
+                actionNames: [String] = [], close: NotchBannerClose? = nil) {
         self.identifier = identifier
         self.header = header
         self.title = title
@@ -197,6 +332,25 @@ public struct NotchBanner: Equatable, Sendable {
         self.summary = summary
         self.imageNames = imageNames
         self.stacked = stacked
+        self.hints = hints
+        self.actionNames = actionNames
+        self.close = close
+    }
+}
+
+/// 关掉一条系统横幅的办法：执行横幅元素上名为「关闭」的动作，或者按一下横幅里的关闭按钮。
+public enum NotchBannerClose: Equatable, Sendable {
+    /// 横幅元素上的动作，原样存 AX 给的动作名（执行时要原样传回去）。
+    case action(String)
+    /// 横幅里的关闭按钮，路径从横幅元素往下算。
+    case button(path: [Int])
+
+    /// 诊断里写的种类。
+    public var kind: String {
+        switch self {
+        case .action: "action"
+        case .button: "button"
+        }
     }
 }
 
@@ -321,7 +475,8 @@ public enum NotchBannerParser {
     /// 一个窗口的结构摘要，给设置里「复制诊断信息」用：角色、subrole、标识的统计，认没
     /// 认成通知列表，每条横幅认成哪个 App、为什么没弹。不抄发件人和消息内容（只写有没有），
     /// App 名只写认出来的；`probeToken` 出现在哪条横幅上也标出来。
-    public static func report(_ window: NotchBannerNode, enabled: [NotchMessageApp], probeToken: String? = nil) -> String {
+    public static func report(_ window: NotchBannerNode, enabled: [NotchMessageApp], probeToken: String? = nil,
+                              names: NotchAppNames = .builtIn) -> String {
         var nodes = 0
         var roles: [String: Int] = [:]
         var subroles: [String: Int] = [:]
@@ -349,22 +504,67 @@ public enum NotchBannerParser {
             let b = entry.banner
             let has = [b.header != nil ? "header" : nil, b.title != nil ? "title" : nil,
                        b.body != nil ? "body" : nil, b.summary != nil ? "summary" : nil].compactMap { $0 }
-            let label = appLabel(b)
-            let known = label.flatMap { NotchMessageApp.match(name: $0) }
+            let recognised = recognise(b, names: names)
             let verdict: String
             if let token = probeToken, NotchMessageProbe.matches(b, token: token) {
                 verdict = "test banner"
-            } else if let incoming = incoming(b, enabled: enabled) {
+            } else if let incoming = incoming(b, enabled: enabled, names: names) {
                 verdict = "message from \(incoming.app.rawValue)"
-            } else if let known {
+            } else if let known = recognised?.app {
                 verdict = "\(known.rawValue) is turned off"
             } else {
                 verdict = "app not recognised"
             }
-            let shown = known?.rawValue ?? (label == nil ? "none" : "other")
+            let shown = recognised?.app.rawValue ?? (appLabel(b, names: names) == nil ? "none" : "other")
             lines.append("  banner path=\(entry.path) stacked=\(b.stacked) app=\(shown) has=[\(has.joined(separator: ","))] -> \(verdict)")
+            lines.append("    " + summaryReport(b, recognised: recognised))
+            var extra = ["matched=\(recognised?.source ?? "none")"]
+            extra.append("bundle-hint=\(bundleHint(b)?.rawValue ?? "none")")
+            extra.append("help=\(b.hints.isEmpty ? "no" : "present")")
+            extra.append("actions=[\(b.actionNames.prefix(8).map { reportWord($0) }.joined(separator: ","))]")
+            extra.append("close=\(b.close?.kind ?? "none")")
+            lines.append("    " + extra.joined(separator: " "))
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// 诊断里 summary 那一行：拆成几段、用的什么分隔符、有没有不可见字符；认不出 App 时
+    /// 再写第一段（App 名通常在的位置），但只在它像 App 名时写原文，否则只写长度。
+    /// 发件人和内容的原文绝不写：第一段和标题、内容一样或互相包含时也只写长度。
+    static func summaryReport(_ banner: NotchBanner, recognised: Recognition?) -> String {
+        guard let summary = banner.summary else { return "summary=none" }
+        let split = summarySegments(summary)
+        var parts = ["summary parts=\(split.parts.count)",
+                     "sep=[\(split.separators.isEmpty ? "none" : split.separators.joined(separator: ","))]",
+                     "chars=\(summary.count)"]
+        if NotchAppNames.hasInvisible(summary) { parts.append("invisible=yes") }
+        if recognised == nil, let head = split.parts.first {
+            if looksLikeAppName(head, in: banner) {
+                parts.append("head=\"\(head)\"")
+            } else {
+                parts.append("head=len:\(head.count)")
+            }
+        }
+        return parts.joined(separator: " ")
+    }
+
+    /// 动作名在诊断里的写法：太长截断、去掉换行。
+    static func reportWord(_ raw: String) -> String {
+        let flat = raw.split(whereSeparator: \.isNewline).joined(separator: " ")
+        return flat.count > 24 ? String(flat.prefix(24)) + "…" : flat
+    }
+
+    /// 一段字像不像 App 名：不长（≤24 字），不是空的，和横幅的标题、副标题、内容既不一样也不
+    /// 互相包含（防止把发件人或内容写进诊断、当成 App 名）。
+    static func looksLikeAppName(_ raw: String, in banner: NotchBanner) -> Bool {
+        let name = NotchAppNames.normalized(raw)
+        guard !name.isEmpty, raw.count <= 24 else { return false }
+        for other in [banner.title, banner.subtitle, banner.body].compactMap({ $0 }) {
+            let text = NotchAppNames.normalized(other)
+            guard !text.isEmpty else { continue }
+            if text == name || text.contains(name) || name.contains(text) { return false }
+        }
+        return true
     }
 
     /// 标识里 UUID 那种一条一个的写成 uuid，小组件只留前缀，免得摘要又长又带内容。
@@ -393,6 +593,9 @@ public enum NotchBannerParser {
     public static func banner(from node: NotchBannerNode) -> NotchBanner {
         var result = NotchBanner(identifier: cleaned(node.identifier), summary: cleaned(node.description),
                                  stacked: node.subrole == stackSubrole)
+        result.hints = [node.identifier, node.help, node.title, node.value].compactMap { cleaned($0) }
+        result.actionNames = node.actions.map(actionDisplayName)
+        result.close = closeMethod(node)
         var loose: [String] = []
         var images: [String] = []
         func visit(_ child: NotchBannerNode, depth: Int) {
@@ -446,20 +649,56 @@ public enum NotchBannerParser {
         return result
     }
 
-    /// 这条横幅是不是要的 App 的一条消息。认不出 App、App 没启用、什么字都没有时为 nil。
-    public static func incoming(_ banner: NotchBanner, enabled: [NotchMessageApp]) -> NotchIncoming? {
-        let summaryHead = banner.summary.flatMap { summaryParts($0).first }
-        let candidates: [String?] = [banner.header, summaryHead] + banner.imageNames.map { Optional($0) }
-        var app = candidates.lazy.compactMap { NotchMessageApp.match(name: $0) }.first
-        var titleIsApp = false
-        if app == nil, let fromTitle = NotchMessageApp.match(name: banner.title) {
-            app = fromTitle
-            titleIsApp = true
-        }
-        guard let app, enabled.contains(app) else { return nil }
+    /// 认出来的 App 和从哪认的（诊断用：header、summary[段号]、image、bundle、title）。
+    public struct Recognition: Equatable, Sendable {
+        public var app: NotchMessageApp
+        public var source: String
+        /// 是从标题认的（标题就是 App 名，比如关了预览），这时标题不当发件人。
+        public var fromTitle: Bool { source == "title" }
+    }
 
-        var sender = titleIsApp ? nil : cleaned(banner.title)
-        if let name = sender, NotchMessageApp.match(name: name) == app { sender = nil }
+    /// 认横幅属于哪个 App。顺序：顶上的 App 名，辅助说明里的某一段（只认名字表里完全一样
+    /// 的，跳过和标题、内容一样的段），图标说明，横幅属性里带的 bundle id，最后才是标题。
+    public static func recognise(_ banner: NotchBanner, names: NotchAppNames = .builtIn) -> Recognition? {
+        if let app = names.match(banner.header) { return Recognition(app: app, source: "header") }
+        if let hit = summaryApp(banner, names: names) {
+            return Recognition(app: hit.app, source: "summary[\(hit.index)]")
+        }
+        if let app = banner.imageNames.lazy.compactMap({ names.match($0) }).first {
+            return Recognition(app: app, source: "image")
+        }
+        if let app = bundleHint(banner) { return Recognition(app: app, source: "bundle") }
+        if let app = names.match(banner.title) { return Recognition(app: app, source: "title") }
+        return nil
+    }
+
+    /// 辅助说明里哪一段是 App 名。按所有分隔符拆开逐段比，和标题、副标题、内容一样的段
+    /// 跳过（对方发来的字正好是「信息」时不把别的 App 的横幅认成信息）。
+    static func summaryApp(_ banner: NotchBanner, names: NotchAppNames) -> (app: NotchMessageApp, index: Int)? {
+        guard let summary = banner.summary else { return nil }
+        let excluded = Set([banner.title, banner.subtitle, banner.body].compactMap { $0 }
+            .map(NotchAppNames.normalized).filter { !$0.isEmpty })
+        for (index, part) in summarySegments(summary).parts.enumerated() {
+            guard !excluded.contains(NotchAppNames.normalized(part)) else { continue }
+            if let app = names.match(part) { return (app, index) }
+        }
+        return nil
+    }
+
+    /// 横幅元素的属性（标识、帮助、标题、值）和辅助说明里带着的 bundle id。
+    static func bundleHint(_ banner: NotchBanner) -> NotchMessageApp? {
+        (banner.hints + [banner.summary].compactMap { $0 }).lazy
+            .compactMap { NotchMessageApp.match(bundleIDIn: $0) }.first
+    }
+
+    /// 这条横幅是不是要的 App 的一条消息。认不出 App、App 没启用、什么字都没有时为 nil。
+    public static func incoming(_ banner: NotchBanner, enabled: [NotchMessageApp],
+                                names: NotchAppNames = .builtIn) -> NotchIncoming? {
+        guard let recognised = recognise(banner, names: names), enabled.contains(recognised.app) else { return nil }
+        let app = recognised.app
+
+        var sender = recognised.fromTitle ? nil : cleaned(banner.title)
+        if let name = sender, names.match(name) == app { sender = nil }
         var preview = cleaned(banner.body) ?? cleaned(banner.subtitle)
         if let body = preview, isPlaceholder(body) { preview = nil }
         // 有内容却没有发件人：多半是关了预览只写了一句话，或者结构没认对，都按没预览处理。
@@ -476,44 +715,153 @@ public enum NotchBannerParser {
     }
 
     /// 一个窗口里所有要弹的新消息（还没去重）。
-    public static func incoming(in window: NotchBannerNode, enabled: [NotchMessageApp]) -> [NotchIncoming] {
-        located(incomingIn: window, enabled: enabled).map(\.incoming)
+    public static func incoming(in window: NotchBannerNode, enabled: [NotchMessageApp],
+                                names: NotchAppNames = .builtIn) -> [NotchIncoming] {
+        located(incomingIn: window, enabled: enabled, names: names).map(\.incoming)
     }
 
     /// 同上，带横幅的位置和能不能替用户点它（一摞点下去只是展开，不点）。
-    public static func located(incomingIn window: NotchBannerNode,
-                               enabled: [NotchMessageApp]) -> [NotchLocatedIncoming] {
+    public static func located(incomingIn window: NotchBannerNode, enabled: [NotchMessageApp],
+                               names: NotchAppNames = .builtIn) -> [NotchLocatedIncoming] {
         located(in: window).compactMap { entry in
-            incoming(entry.banner, enabled: enabled).map {
+            incoming(entry.banner, enabled: enabled, names: names).map {
                 NotchLocatedIncoming(path: entry.path, incoming: $0, pressable: !entry.banner.stacked)
             }
         }
     }
 
-    /// 横幅上的 App 名，设置里「最近一次读到横幅」用：顶上的 App 名，没有时取辅助说明的
-    /// 第一段，再没有取图标的说明。不取发件人和内容。
-    public static func appLabel(_ banner: NotchBanner) -> String? {
-        cleaned(banner.header) ?? banner.summary.flatMap { summaryParts($0).first } ?? banner.imageNames.first
+    /// 横幅上的 App 名，设置里「最近一次读到横幅」用：顶上的 App 名；没有时取辅助说明里
+    /// 认出来的那一段，认不出时取第一段（只在它像 App 名时，见 `looksLikeAppName`）；再没有
+    /// 取图标的说明。不取发件人和内容。
+    public static func appLabel(_ banner: NotchBanner, names: NotchAppNames = .builtIn) -> String? {
+        if let header = cleaned(banner.header) { return header }
+        if let summary = banner.summary {
+            let parts = summarySegments(summary).parts
+            if let hit = summaryApp(banner, names: names), hit.index < parts.count { return parts[hit.index] }
+            if let head = parts.first, looksLikeAppName(head, in: banner) { return head }
+        }
+        return banner.imageNames.first
     }
 
     /// 拆横幅的辅助说明：App 名、发件人、内容。英文系统用「, 」分开，中文系统用全角
-    /// 「，」（有时是「、」），只按前两个分隔拆，内容里的逗号原样留着；末尾的「已堆叠」
-    /// 去掉。最多三段。
+    /// 「，」（有时是「、」），也认没有空格的「,」和「App: 标题」那样的冒号；只按前两个分隔
+    /// 拆，内容里的逗号原样留着；末尾的「已堆叠」去掉；开头是时间（「22:31」「下午10:30」
+    /// 「现在」）时跳过那一段。最多三段。
     public static func summaryParts(_ summary: String) -> [String] {
-        var rest = summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        // 末尾「, stacked」「，已堆叠」。
-        if let range = rest.range(of: #"\s*(, |,|，|、)\s*([^,，、]+)$"#, options: .regularExpression) {
-            let tail = rest[range].trimmingCharacters(in: CharacterSet(charactersIn: ",，、 "))
-            if stackedWords.contains(tail.lowercased()) { rest = String(rest[..<range.lowerBound]) }
-        }
+        let rest = stripStacked(summary)
+        var parts = splitLeading(rest, limit: 2)
+        if parts.count > 1, isTimeLike(parts[0]) { parts = splitLeading(afterFirst(rest), limit: 2) }
+        return parts
+    }
+
+    /// 去掉开头那一段（和它后面的分隔符）之后剩下的字。
+    private static func afterFirst(_ text: String) -> String {
+        guard let range = text.range(of: summarySeparatorPattern, options: .regularExpression) else { return "" }
+        return String(text[range.upperBound...])
+    }
+
+    /// 按分隔符拆出前 `limit` 段，剩下的整个作最后一段。
+    private static func splitLeading(_ text: String, limit: Int) -> [String] {
+        var rest = text
         var parts: [String] = []
-        while parts.count < 2,
-              let range = rest.range(of: #"(, |，|、)"#, options: .regularExpression) {
+        while parts.count < limit,
+              let range = rest.range(of: summarySeparatorPattern, options: .regularExpression) {
             parts.append(String(rest[..<range.lowerBound]))
             rest = String(rest[range.upperBound...])
         }
         parts.append(rest)
         return parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
+
+    /// 末尾「, stacked」「，已堆叠」去掉。
+    private static func stripStacked(_ summary: String) -> String {
+        var rest = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let range = rest.range(of: #"\s*(, |,|，|、)\s*([^,，、]+)$"#, options: .regularExpression) {
+            let tail = rest[range].trimmingCharacters(in: CharacterSet(charactersIn: ",，、 "))
+            if stackedWords.contains(tail.lowercased()) { rest = String(rest[..<range.lowerBound]) }
+        }
+        return rest
+    }
+
+    /// 辅助说明里认的分隔符：「, 」「,」「，」「、」「: 」「：」「；」「; 」「 · 」「 - 」。
+    /// 时间「22:31」里的冒号后面没有空格，不算分隔。
+    static let summarySeparatorPattern = #"(, ?|，|、|: |：|; ?|；| · | - )"#
+
+    /// 分隔符的名字，诊断用。
+    static func separatorName(_ raw: String) -> String {
+        switch raw {
+        case ", ": "comma"
+        case ",": "comma-nospace"
+        case "，": "fullwidth-comma"
+        case "、": "ideographic-comma"
+        case ": ": "colon"
+        case "：": "fullwidth-colon"
+        case "; ", ";", "；": "semicolon"
+        case " · ": "middle-dot"
+        case " - ": "dash"
+        default: "other"
+        }
+    }
+
+    /// 把辅助说明按所有分隔符拆成段（不限段数，找 App 名用），带上出现过的分隔符种类。
+    public static func summarySegments(_ summary: String) -> (parts: [String], separators: [String]) {
+        var rest = stripStacked(summary)
+        var parts: [String] = []
+        var kinds: [String] = []
+        while let range = rest.range(of: summarySeparatorPattern, options: .regularExpression) {
+            parts.append(String(rest[..<range.lowerBound]))
+            let kind = separatorName(String(rest[range]))
+            if !kinds.contains(kind) { kinds.append(kind) }
+            rest = String(rest[range.upperBound...])
+        }
+        parts.append(rest)
+        return (parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }, kinds)
+    }
+
+    /// 像不像通知上的时间：「22:31」「10:30 PM」「下午10:30」「现在」「now」「昨天」。
+    static func isTimeLike(_ raw: String) -> Bool {
+        let text = NotchAppNames.normalized(raw)
+        if ["现在", "刚刚", "now", "just now", "昨天", "yesterday", "現在", "剛剛"].contains(text) { return true }
+        let pattern = #"^((上午|下午|晚上|凌晨|中午|早上|今天)\s*)?\d{1,2}[:：]\d{2}(\s*(am|pm|a\.m\.|p\.m\.))?$"#
+        return text.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    // MARK: 关掉系统横幅
+
+    /// 「关闭」在各语言里的写法（整理后比较）。只认关闭，不认「清除」（一摞时会清掉整摞）。
+    static let closeWords: Set<String> = ["close", "关闭", "關閉", "閉じる", "닫기", "schließen", "fermer",
+                                          "cerrar", "chiudi", "fechar", "закрыть", "sluiten", "stäng"]
+
+    /// AX 动作的显示名：自定义动作「Name:Close\nTarget:0x0\nSelector:(null)」取「Close」。
+    public static func actionDisplayName(_ raw: String) -> String {
+        guard raw.hasPrefix("Name:") else { return raw }
+        let body = raw.dropFirst("Name:".count)
+        let line = body.split(whereSeparator: \.isNewline).first.map(String.init) ?? String(body)
+        return line.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// 能怎么安全地关掉这条横幅：一摞的不关；横幅元素上有名为「关闭」的动作就用它；否则
+    /// 找横幅里 subrole 是 AXCloseButton（或标识是 close）的按钮；都没有时为 nil，不关。
+    public static func closeMethod(_ node: NotchBannerNode) -> NotchBannerClose? {
+        guard node.subrole != stackSubrole else { return nil }
+        if let action = node.actions.first(where: { closeWords.contains(NotchAppNames.normalized(actionDisplayName($0))) }) {
+            return .action(action)
+        }
+        func find(_ current: NotchBannerNode, path: [Int]) -> [Int]? {
+            guard path.count <= 4 else { return nil }
+            for (index, child) in current.children.enumerated() {
+                // 里面再套一条横幅的不算这条的按钮。
+                if let subrole = child.subrole, bannerSubroles.contains(subrole) { continue }
+                let id = child.identifier?.lowercased()
+                if child.subrole == "AXCloseButton"
+                    || (child.role == "AXButton" && ["close", "closebutton", "close-button", "close_button"].contains(id ?? "")) {
+                    return path + [index]
+                }
+                if let hit = find(child, path: path + [index]) { return hit }
+            }
+            return nil
+        }
+        return find(node, path: []).map { .button(path: $0) }
     }
 
     static func isPlaceholder(_ text: String) -> Bool {

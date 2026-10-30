@@ -3,8 +3,10 @@ import ApplicationServices
 
 /// 消息灵动岛的来源：用辅助功能观察「通知中心」进程里的通知横幅。
 ///
-/// 只读不改：不拦截、不关掉、不改系统通知，只在横幅出现、排版变化时读一遍那一小棵
-/// AX 树，抄成 `NotchBannerNode` 交给 Core 的 `NotchBannerParser` 解析。横幅的结构不是
+/// 只读：不拦截、不改系统通知，只在横幅出现、排版变化时读一遍那一小棵 AX 树，抄成
+/// `NotchBannerNode` 交给 Core 的 `NotchBannerParser` 解析。唯一的例外是用户在设置里
+/// 打开了「卡片弹出后关掉系统横幅」：卡片展开后执行横幅自己带的「关闭」动作或按它的
+/// 关闭按钮（`close(_:)`），和用户自己点横幅上的关闭一样，横幅没有这两样时什么都不做。横幅的结构不是
 /// 公开接口：读不到、认不出就什么都不报，绝不崩溃。macOS 26 上第一条横幅出现时是
 /// AXWindowCreated，后面追加进同一个窗口的只有 AXLayoutChanged，所以几种都听。
 ///
@@ -22,6 +24,14 @@ final class NotchBannerWatcher {
         var incoming: NotchIncoming
         /// 横幅元素；一摞的、找不回的为 nil。只在主线程用来 AXPress。
         var element: AXUIElement?
+        /// 关掉这条横幅的办法；横幅没有「关闭」动作或关闭按钮时为 nil。
+        var close: CloseHandle?
+    }
+
+    /// 关横幅：对哪个元素执行哪个动作（「关闭」动作原样的名字，或按钮的 AXPress）。
+    struct CloseHandle: @unchecked Sendable {
+        var element: AXUIElement
+        var action: String
     }
 
     /// 读到横幅时调用（主线程）。`priming` 为 true 时是刚开始观察时屏幕上已经有的，
@@ -30,6 +40,8 @@ final class NotchBannerWatcher {
 
     private(set) var isRunning = false
     private var enabled: [NotchMessageApp] = []
+    /// 认 App 名的名字表：内置的加上从装着的 App 包里读到的本地化显示名。
+    private var names = NotchAppNames.builtIn
     private var observer: AXObserver?
     private var appElement: AXUIElement?
     private var observedPID: pid_t = 0
@@ -78,9 +90,21 @@ final class NotchBannerWatcher {
         }
         attach()
         startHealthTimer()
+        reloadNames()
     }
 
     func update(apps: [NotchMessageApp]) { enabled = apps }
+
+    /// 在后台读一遍装着的 App 的显示名（开始观察时；微信更新后重新打开灵动岛就会读到新名字）。
+    func reloadNames() {
+        Self.queue.async {
+            let loaded = NotchAppNameCatalog.load()
+            Task { @MainActor [weak self] in
+                self?.names = loaded
+                NotchMessageStatus.shared.recordNames(loaded.summary)
+            }
+        }
+    }
 
     func stop() {
         guard isRunning else { return }
@@ -260,9 +284,10 @@ final class NotchBannerWatcher {
         let app = Box(element: appElement)
         let apps = enabled
         let token = probeToken
+        let table = names
         scansInFlight += 1
         Self.queue.async {
-            let result = Self.read(app: app.element, enabled: apps, probeToken: token)
+            let result = Self.read(app: app.element, enabled: apps, probeToken: token, names: table)
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.scansInFlight = max(0, self.scansInFlight - 1)
@@ -285,7 +310,7 @@ final class NotchBannerWatcher {
 
     /// 在后台队列上读通知中心的所有窗口。任何一步读不到都当没有。
     private nonisolated static func read(app: AXUIElement, enabled: [NotchMessageApp],
-                                         probeToken: String?) -> ScanResult {
+                                         probeToken: String?, names: NotchAppNames) -> ScanResult {
         let windows = windows(of: app)
         var result = ScanResult(windows: windows, found: [])
         let deadline = Date().addingTimeInterval(readBudget)
@@ -301,48 +326,72 @@ final class NotchBannerWatcher {
             let tree = ElementTree(window)
             var budget = maxNodesPerWindow
             let snapshot = node(window, tree: tree, depth: 0, budget: &budget, deadline: deadline)
-            reports.append(NotchBannerParser.report(snapshot, enabled: enabled, probeToken: probeToken)
+            reports.append(NotchBannerParser.report(snapshot, enabled: enabled, probeToken: probeToken, names: names)
                            + (budget <= 0 ? "\n  (node budget used up)" : ""))
             for entry in NotchBannerParser.located(in: snapshot) {
                 result.bannerCount += 1
-                if result.bannerApp == nil { result.bannerApp = NotchBannerParser.appLabel(entry.banner) }
-                var incoming = NotchBannerParser.incoming(entry.banner, enabled: enabled)
+                if result.bannerApp == nil { result.bannerApp = NotchBannerParser.appLabel(entry.banner, names: names) }
+                var incoming = NotchBannerParser.incoming(entry.banner, enabled: enabled, names: names)
                 if incoming == nil, let probeToken {
                     incoming = NotchMessageProbe.incoming(entry.banner, token: probeToken)
                 }
                 guard let incoming else { continue }
                 var element: AXUIElement?
-                if !entry.banner.stacked {
-                    var walk: ElementTree? = tree
-                    for index in entry.path {
-                        guard let current = walk, index < current.children.count else { walk = nil; break }
-                        walk = current.children[index]
+                var close: CloseHandle?
+                if !entry.banner.stacked, let bannerTree = descend(tree, entry.path) {
+                    element = bannerTree.element
+                    switch entry.banner.close {
+                    case .action(let name)?:
+                        close = CloseHandle(element: bannerTree.element, action: name)
+                    case .button(let path)?:
+                        if let button = descend(bannerTree, path) {
+                            close = CloseHandle(element: button.element, action: kAXPressAction as String)
+                        }
+                    case nil:
+                        break
                     }
-                    element = walk?.element
                 }
-                result.found.append(Found(incoming: incoming, element: element))
+                result.found.append(Found(incoming: incoming, element: element, close: close))
             }
         }
         result.report = reports.joined(separator: "\n")
         return result
     }
 
+    /// 按位置从读到的元素树往下找。
+    private nonisolated static func descend(_ tree: ElementTree, _ path: [Int]) -> ElementTree? {
+        var walk = tree
+        for index in path {
+            guard index < walk.children.count else { return nil }
+            walk = walk.children[index]
+        }
+        return walk
+    }
+
     private nonisolated static func node(_ element: AXUIElement, tree: ElementTree, depth: Int,
                                          budget: inout Int, deadline: Date) -> NotchBannerNode {
         budget -= 1
         AXUIElementSetMessagingTimeout(element, timeout)
-        // 六个属性和孩子一次读回来（一次跨进程），比一个一个读快得多。
+        // 七个属性和孩子一次读回来（一次跨进程），比一个一个读快得多。
         let values = multiple(element, nodeAttributes)
         var result = NotchBannerNode(role: values[0] as? String,
                                      subrole: values[1] as? String,
                                      identifier: values[2] as? String,
                                      description: text(values[3]),
                                      title: text(values[4]),
-                                     value: text(values[5]))
+                                     value: text(values[5]),
+                                     help: text(values[6]))
+        // 动作名只给横幅元素读（关横幅、诊断用），别的元素不多花一次跨进程。
+        if let subrole = result.subrole, NotchBannerParser.bannerSubroles.contains(subrole) {
+            var actionList: CFArray?
+            if AXUIElementCopyActionNames(element, &actionList) == .success, let list = actionList as? [String] {
+                result.actions = list
+            }
+        }
         // 桌面小组件不往里读。
         guard !NotchBannerParser.isDesktopWidget(identifier: result.identifier) else { return result }
         guard depth < maxDepth, budget > 0, Date() < deadline,
-              let children = values[6] as? [AXUIElement] else { return result }
+              let children = values[7] as? [AXUIElement] else { return result }
         for child in children {
             guard budget > 0 else { break }
             let sub = ElementTree(child)
@@ -354,7 +403,7 @@ final class NotchBannerWatcher {
 
     private nonisolated static let nodeAttributes: [String] = [
         kAXRoleAttribute, kAXSubroleAttribute, "AXIdentifier", kAXDescriptionAttribute,
-        kAXTitleAttribute, kAXValueAttribute, kAXChildrenAttribute,
+        kAXTitleAttribute, kAXValueAttribute, kAXHelpAttribute, kAXChildrenAttribute,
     ]
 
     /// 一次读几个属性，读不到的位置是 nil（不会因为一个属性不支持整个失败）。
@@ -400,6 +449,16 @@ final class NotchBannerWatcher {
         guard let element, AXIsProcessTrusted() else { return false }
         AXUIElementSetMessagingTimeout(element, timeout)
         return AXUIElementPerformAction(element, kAXPressAction as CFString) == .success
+    }
+
+    /// 关掉一条系统横幅（设置里「卡片弹出后关掉系统横幅」打开时）：执行横幅自己的「关闭」
+    /// 动作或按它的关闭按钮，在后台队列上做；横幅已经不在了就是失败，什么都不发生。
+    nonisolated static func close(_ handle: CloseHandle) {
+        queue.async {
+            guard AXIsProcessTrusted() else { return }
+            AXUIElementSetMessagingTimeout(handle.element, timeout)
+            _ = AXUIElementPerformAction(handle.element, handle.action as CFString)
+        }
     }
 }
 

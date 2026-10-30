@@ -67627,6 +67627,28 @@
           }
         }
       }
+    },
+    "卡片弹出后关掉系统横幅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close the system banner once the card appears"
+          }
+        }
+      }
+    },
+    "消息卡展开后，替你关掉屏幕右上角对应的那条系统横幅，只在横幅自己带「关闭」时才关。关掉后这条通知可能也不会留在通知中心里，「打开」只能打开 App，不能直接定位到那个聊天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the message card opens, Dockling closes the matching system banner in the top-right corner, but only if the banner offers its own Close. The notification may then be gone from Notification Center too, and Open launches the app without jumping to that chat."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -6,7 +6,8 @@ import SwiftUI
 /// 没解锁时开关旁边是 Pro 胶囊，打开开关只弹付费墙、不改配置；关掉不拦。解锁前已经
 /// 打开的照旧存着，只是不观察横幅、不弹卡片，解锁或试用后自动恢复（同窗口预览）。
 /// 打开后列出状态自查（辅助功能、通知中心、最近一次读到横幅、发一条测试通知）、启用
-/// 哪几个 App、位置（自动让位 / 刘海下方 / 刘海旁小胶囊）和几秒后收起，底下写清楚它是
+/// 哪几个 App、位置（自动让位 / 刘海下方 / 刘海旁小胶囊）、几秒后收起和「卡片弹出后关掉
+/// 系统横幅」（默认关），底下写清楚它是
 /// 怎么拿到消息的、什么时候拿不到。
 struct NotchMessageSettingsSection: View {
     @Binding var settings: NotchMessageSettings
@@ -70,6 +71,16 @@ struct NotchMessageSettingsSection: View {
                     set: { settings.seconds = $0 })) {
                     ForEach(NotchMessageSettings.secondChoices, id: \.self) { seconds in
                         Text(tr("\(seconds) 秒后")).tag(seconds)
+                    }
+                }
+
+                Toggle(isOn: $settings.closeSystemBanner) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("卡片弹出后关掉系统横幅"))
+                        Text(tr("消息卡展开后，替你关掉屏幕右上角对应的那条系统横幅，只在横幅自己带「关闭」时才关。关掉后这条通知可能也不会留在通知中心里，「打开」只能打开 App，不能直接定位到那个聊天。"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }

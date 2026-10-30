@@ -26,6 +26,8 @@ final class NotchMessageStatus {
     @ObservationIgnored private var lastScanAt: Date?
     @ObservationIgnored private var lastBannerScan = ""
     @ObservationIgnored private var scans = 0
+    /// 从装着的 App 包里读到的额外 App 名（`NotchAppNames.summary`），诊断信息用。
+    @ObservationIgnored private var extraNames = "not loaded"
 
     private init() {}
 
@@ -63,6 +65,8 @@ final class NotchMessageStatus {
 
     func sawMessage(at now: Date = Date()) { lastMessage = now }
 
+    func recordNames(_ summary: String) { extraNames = summary }
+
     func recordScan(_ report: String, windows: Int, banners: Int, at now: Date = Date()) {
         scans += 1
         lastScanAt = now
@@ -84,6 +88,7 @@ final class NotchMessageStatus {
             "notificationCenter running=\(snap.notificationCenterRunning) connected=\(snap.connected)",
             "scans=\(scans) lastScan=\(time(lastScanAt)) lastBanner=\(time(lastBanner)) lastMessage=\(time(lastMessage))",
             "probe=\(probe.state)",
+            "appNames extra=[\(extraNames)]",
             "now=\(formatter.string(from: now))",
         ]
         if !lastBannerScan.isEmpty, lastBannerScan != lastScan {

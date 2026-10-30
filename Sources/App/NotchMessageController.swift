@@ -27,6 +27,8 @@ final class NotchMessageController {
     private var dedupe = NotchMessageDeduper()
     /// 消息对应的系统横幅元素，点「打开」时替用户点一下它定位到聊天。
     private var banners: [UUID: BannerBox] = [:]
+    /// 设置里「卡片弹出后关掉系统横幅」打开时，等卡片展开再关的横幅。
+    private var pendingClose: [UUID: NotchBannerWatcher.CloseHandle] = [:]
 
     private var card: KeyablePanel?
     private var leftEar: NotchIndicatorWindow?
@@ -129,6 +131,7 @@ final class NotchMessageController {
         workspaceObservers.removeAll()
         model.inbox.clearAll()
         banners.removeAll()
+        pendingClose.removeAll()
         pendingSince = nil
         forcedCapsule = false
         collapse(animated: false)
@@ -166,11 +169,13 @@ final class NotchMessageController {
             let message = NotchMessage(item.incoming, date: now)
             model.inbox.receive(message, makeCurrent: !model.replying)
             if let element = item.element { banners[message.id] = BannerBox(element: element) }
+            if settings.closeSystemBanner, let close = item.close { pendingClose[message.id] = close }
             fresh = true
         }
         guard fresh else { return }
         let alive = Set(model.inbox.messages.map(\.id))
         banners = banners.filter { alive.contains($0.key) }
+        pendingClose = pendingClose.filter { alive.contains($0.key) }
         lastArrival = now
         // 测试是用户在设置里点的：不管位置选的是不是小胶囊，直接展开给他看。
         if testArrived, !model.expanded {
@@ -179,6 +184,8 @@ final class NotchMessageController {
         }
         if model.expanded {
             if !model.replying, !hovering { countdown.start(Double(settings.dismissSeconds), at: now) }
+            // 卡片本来就开着，新到的这条已经在卡片上了。
+            closeSystemBanners()
         } else {
             pendingSince = pendingSince ?? now
         }
@@ -345,6 +352,21 @@ final class NotchMessageController {
         countdown.start(Double(settings.dismissSeconds), at: Date())
         hideIndicators()
         NotchMessageOccupancy.shared.update(frame)
+        closeSystemBanners()
+    }
+
+    /// 卡片展开了：设置里打开了「卡片弹出后关掉系统横幅」时，关掉这些消息对应的系统横幅
+    /// （只关横幅自己带「关闭」动作或关闭按钮的）。关掉后横幅不在了，「打开」改为直接打开 App。
+    private func closeSystemBanners() {
+        guard settings.closeSystemBanner else {
+            pendingClose.removeAll()
+            return
+        }
+        for (id, handle) in pendingClose {
+            NotchBannerWatcher.close(handle)
+            banners[id] = nil
+        }
+        pendingClose.removeAll()
     }
 
     private func cardFrame(_ anchor: Anchor, screen described: AINotchScreen) -> CGRect {
