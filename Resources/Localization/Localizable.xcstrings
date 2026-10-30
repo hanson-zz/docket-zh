@@ -67637,6 +67637,17 @@
         }
       }
     },
+    "想好问题再起卦" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Think of a question first"
+          }
+        }
+      }
+    },
     "想好问题，摇六次成一卦" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -4,7 +4,8 @@ import SwiftUI
 //
 // 卜卦钉在桌面（Core 的 `DesktopCardsDivinationPlan`）：
 // 小 160×160：小熊猫抱签筒（抽过展签）、今日签级和签号；没抽时一个「摇一摇」直接摇。
-// 中 340×160：左边今日签，右边起卦（一次起完）：起卦小场景和本卦、变卦卦画一行，下面卦名、白话。
+// 中 340×160：左边今日签，右边起卦（一次起完）：起卦小场景（卦画叠在右上角），下面卦名；
+// 白话不占一行，鼠标停在起卦区时提示完整白话，腾出的高度让小熊猫和左边签那只一样大。
 // 大 340×340：上面今日签和签诗，下面起卦，多一行卦辞，底下留出「仅供娱乐」的余量。
 // 起卦小场景和面板同一套五拍、同样的时长和声音（ShellTossScene + DivinationPlay.performToss，
 // 按「一次起完」的节奏）：捧龟甲 → 摇几下 → 跳起举高 → 一摔、铜钱蹦出 → 捡回，铜钱留在地上
@@ -119,7 +120,8 @@ private struct DeskDivinationCard: View {
         return Divination.history(widget.config).first
     }
 
-    /// 起卦块：上面一行是起卦小场景和本卦 → 变卦卦画，下面卦名、（大号）卦辞、白话，最底下按钮。
+    /// 起卦块：上面一行是起卦小场景和本卦 → 变卦卦画（中号叠在场景右上角），下面卦名、（大号）卦辞
+    /// 和白话，最底下按钮。中号不写白话，悬停起卦区提示完整白话。
     /// 还没起过卦时小熊猫捧着龟甲、铜钱淡淡摆着，下面一行提示。
     @ViewBuilder private func castingBlock(showJudgment: Bool) -> some View {
         if let layout = DesktopCardsDivinationPlan.castLayout(size) {
@@ -127,17 +129,32 @@ private struct DeskDivinationCard: View {
             let gap = CGFloat(DesktopCardsDivinationPlan.castSpacing(size))
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: gap) {
-                    HStack(alignment: .center, spacing: CGFloat(DesktopCardsDivinationPlan.castRowSpacing(size))) {
-                        ShellTossScene(layout: layout, faces: casting?.tosses.last, throwCount: tossCount, fast: true,
-                                       tossed: casting != nil)
-                        if let casting, let primary = casting.primary {
-                            // 大号卦名放在卦画下面（这一行有 186 宽），中号放在下一行。
-                            VStack(alignment: .leading, spacing: 4) {
+                    let scene = ShellTossScene(layout: layout, faces: casting?.tosses.last, throwCount: tossCount,
+                                               fast: true, tossed: casting != nil)
+                    if let rect = DesktopCardsDivinationPlan.figuresOverScene(size) {
+                        // 中号：场景占左边，卦画叠在右上角（铜钱那排在卦画下面、脚底那条线上）。
+                        ZStack(alignment: .topLeading) {
+                            scene
+                            if let casting, let primary = casting.primary {
                                 figures(casting, primary: primary)
-                                if nameBeside { name(casting, primary: primary) }
+                                    .frame(width: CGFloat(rect.width), alignment: .leading)
+                                    .offset(x: CGFloat(rect.x), y: CGFloat(rect.y))
                             }
                         }
-                        Spacer(minLength: 0)
+                        .frame(width: CGFloat(DesktopCardsDivinationPlan.castBlockWidth(size)),
+                               height: CGFloat(layout.sceneHeight), alignment: .topLeading)
+                    } else {
+                        HStack(alignment: .center, spacing: CGFloat(DesktopCardsDivinationPlan.castRowSpacing(size))) {
+                            scene
+                            if let casting, let primary = casting.primary {
+                                // 大号卦名放在卦画下面（这一行有 186 宽）。
+                                VStack(alignment: .leading, spacing: 4) {
+                                    figures(casting, primary: primary)
+                                    if nameBeside { name(casting, primary: primary) }
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
                     }
                     if let casting, let primary = casting.primary {
                         if !nameBeside { name(casting, primary: primary) }
@@ -147,22 +164,41 @@ private struct DeskDivinationCard: View {
                                 .foregroundStyle(DivinationStyle.red)
                                 .lineLimit(2)
                         }
-                        Text(verbatim: primary.plain)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.panelSecondary)
-                            .lineLimit(showJudgment ? 2 : 1)
-                    } else {
+                        if DesktopCardsDivinationPlan.showsPlain(size) {
+                            Text(verbatim: primary.plain)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color.panelSecondary)
+                                .lineLimit(2)
+                        }
+                    } else if DesktopCardsDivinationPlan.showsPlain(size) {
                         Text(tr("想好问题，摇六次成一卦"))
                             .font(.system(size: 13))
                             .foregroundStyle(Color.panelSecondary)
                             .lineLimit(2)
+                    } else {
+                        // 中号只有卦名那一行的高度：短提示一行，完整的放在悬停提示里。
+                        Text(tr("想好问题再起卦"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.panelSecondary)
+                            .lineLimit(1)
                     }
                 }
                 Spacer(minLength: gap)
                 DivinationPrimaryButton(title: casting == nil ? tr("起卦") : tr("再起一卦"), height: 28,
                                         enabled: !castBusy) { cast() }
             }
+            // 中号卡片上不写白话，鼠标停在起卦区时提示完整白话。
+            .help(plainHelp(casting))
         }
+    }
+
+    /// 起卦区的悬停提示：中号起过卦时是卦名和完整白话，没起过是完整的「想好问题，摇六次成一卦」；
+    /// 大号这些都写在卡片上，不提示。
+    private func plainHelp(_ casting: Casting?) -> Text {
+        if DesktopCardsDivinationPlan.showsPlain(size) { return Text(verbatim: "") }
+        guard let casting, let primary = casting.primary else { return Text(tr("想好问题，摇六次成一卦")) }
+        let title = casting.changed.map { "\(primary.name) → \($0.name)" } ?? primary.fullName
+        return Text(verbatim: "\(title)：\(primary.plain)")
     }
 
     private var nameBeside: Bool { DesktopCardsDivinationPlan.nameBesideFigures(size) }

@@ -720,11 +720,13 @@ public enum DesktopCardsDivinationPlan {
     /// 起卦小场景：和面板同一套五拍（捧 → 摇 → 跳起举高 → 一摔、铜钱蹦出 → 捡回），按卡片缩小。
     /// 小熊猫靠左，铜钱在它右边脚底那条线上排成一排、小一号，捡回以后留在地上显示这一爻；
     /// 右边放卦画。小号不起卦，没有场景。
+    /// 中号不放白话那一行（鼠标悬停起卦区看完整白话），腾出的高度给场景：小熊猫 64、和左边签那只
+    /// 一样大，铜钱 15；场景 119 宽，卦画叠在场景右上角（铜钱那排在卦画下面、脚底那条线上）。
     public static func castLayout(_ size: DesktopPinSize) -> ShellToss.Layout? {
         switch size {
         case .small: nil
-        case .medium: ShellToss.Layout(sceneWidth: 92, sceneHeight: 56, poseHeight: 45, footY: 53, coin: 12,
-                                       coinRowY: 47, pandaX: 27, coinsInRow: true)
+        case .medium: ShellToss.Layout(sceneWidth: 119, sceneHeight: 80, poseHeight: 64, footY: 76, coin: 15,
+                                       coinRowY: 68.5, pandaX: 36, coinsInRow: true)
         case .large: ShellToss.Layout(sceneWidth: 120, sceneHeight: 70, poseHeight: 57, footY: 67, coin: 15,
                                       coinRowY: 59.5, pandaX: 34, coinsInRow: true)
         }
@@ -747,8 +749,19 @@ public enum DesktopCardsDivinationPlan {
         return one * 2 + arrowWidth + figureGap(size) * 2
     }
 
-    /// 大号卦名写在卦画下面（和场景同一行）；中号那一行只有 76 宽，卦名另起一行。
+    /// 大号卦名写在卦画下面（和场景同一行）；中号卦画叠在场景右上角，卦名另起一行。
     public static func nameBesideFigures(_ size: DesktopPinSize) -> Bool { size == .large }
+
+    /// 卡片上写不写白话那一行：大号写（两行）；中号不写，把高度让给场景，白话放在起卦区的悬停提示里。
+    public static func showsPlain(_ size: DesktopPinSize) -> Bool { size == .large }
+
+    /// 中号卦画叠在场景右上角：在起卦块里的位置（左上角、宽高，块的坐标）。大号卦画在场景右边那一列，
+    /// 返回 nil。小熊猫、抛起来的铜钱、光点都碰不到这块，落地的铜钱在它下面。
+    public static func figuresOverScene(_ size: DesktopPinSize) -> (x: Double, y: Double, width: Double, height: Double)? {
+        guard size == .medium else { return nil }
+        let width = figuresWidth(size)
+        return (castBlockWidth(size) - width, 0, width, figureHeight)
+    }
 
     /// 一张卦画的高（六爻）。
     public static var figureHeight: Double { figureLineHeight * 6 + figureLineSpacing * 5 }

@@ -346,15 +346,12 @@ final class DivinationArtTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(l.coin, 12, "铜钱小号也看得清：\(tag)")
             XCTAssertEqual(l.coinRowY + l.coin / 2, l.footY, accuracy: 0.0001, "铜钱躺在脚底那条线上：\(tag)")
             for pose in [DivinationPose.castHold, .castRaise, .castSlam, .castPickup] {
-                let size = pose.displaySize(poseHeight: l.poseHeight)
-                let sway = pose == .castHold ? size.height * sin(8 * Double.pi / 180) : 0
-                let squash = pose == .castSlam ? ShellToss.Layout.squashWidth : 1.06
-                XCTAssertGreaterThanOrEqual(l.pandaX - size.width * pose.anchorX * squash - sway, 0, "\(tag) \(pose)")
-                XCTAssertLessThanOrEqual(l.pandaX + size.width * (1 - pose.anchorX) * squash + sway, l.sceneWidth,
-                                         "\(tag) \(pose)")
-                let lift = pose == .castRaise ? l.jumpHeight : l.holdLift
-                XCTAssertGreaterThanOrEqual(l.footY - size.height * 1.06 - lift, 0, "\(tag) \(pose) 顶边")
+                let extent = poseExtent(pose, l)
+                XCTAssertGreaterThanOrEqual(extent.left, 0, "\(tag) \(pose)")
+                XCTAssertLessThanOrEqual(extent.right, l.sceneWidth, "\(tag) \(pose)")
+                XCTAssertGreaterThanOrEqual(extent.top, 0, "\(tag) \(pose) 顶边")
             }
+            XCTAssertLessThanOrEqual(l.footY + 2, l.sceneHeight, "脚下阴影：\(tag)")
             let slam = DivinationPose.castSlam.displaySize(poseHeight: l.poseHeight).width
             let slamRight = l.pandaX + slam * (1 - DivinationPose.castSlam.anchorX) * ShellToss.Layout.squashWidth
             let mouth = DivinationPose.castSlam.scenePoint(DivinationArt.slamMouth.x, DivinationArt.slamMouth.y,
@@ -382,21 +379,26 @@ final class DivinationArtTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(y - star.size / 2, -0.001, tag)
                 XCTAssertLessThanOrEqual(y + star.size / 2, l.sceneHeight + 0.001, tag)
             }
-            // 那一行：场景 + 间距 + 本卦 → 变卦，放得进起卦块的宽；卦画（大号连卦名）不比场景高。
-            let row = l.sceneWidth + DesktopCardsDivinationPlan.castRowSpacing(size)
-                + DesktopCardsDivinationPlan.figuresWidth(size)
-            XCTAssertLessThanOrEqual(row, DesktopCardsDivinationPlan.castBlockWidth(size), tag)
-            let beside = DesktopCardsDivinationPlan.figureHeight
-                + (DesktopCardsDivinationPlan.nameBesideFigures(size) ? 4 + 19 : 0)
-            XCTAssertLessThanOrEqual(beside, l.sceneHeight, tag)
+            if DesktopCardsDivinationPlan.figuresOverScene(size) == nil {
+                // 大号那一行：场景 + 间距 + 本卦 → 变卦，放得进起卦块的宽；卦画连卦名不比场景高。
+                let row = l.sceneWidth + DesktopCardsDivinationPlan.castRowSpacing(size)
+                    + DesktopCardsDivinationPlan.figuresWidth(size)
+                XCTAssertLessThanOrEqual(row, DesktopCardsDivinationPlan.castBlockWidth(size), tag)
+                let beside = DesktopCardsDivinationPlan.figureHeight
+                    + (DesktopCardsDivinationPlan.nameBesideFigures(size) ? 4 + 19 : 0)
+                XCTAssertLessThanOrEqual(beside, l.sceneHeight, tag)
+            } else {
+                XCTAssertLessThanOrEqual(l.sceneWidth, DesktopCardsDivinationPlan.castBlockWidth(size), tag)
+            }
         }
         XCTAssertEqual(DesktopCardsDivinationPlan.castBlockWidth(.medium), 176)
         XCTAssertEqual(DesktopCardsDivinationPlan.castBlockWidth(.large), 316)
         // 竖着放得下（15pt 一行约 19、13pt 约 17、宋体 13pt 约 19，按钮 28）：
-        // 中号 160 高去掉边距 136：一行场景、卦名、一行白话、按钮。
+        // 中号 160 高去掉边距 136：场景（卦画叠在右上角）、卦名（没起过是一行提示）、按钮；不写白话。
         let m = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.medium))
         let gm = DesktopCardsDivinationPlan.castSpacing(.medium)
-        XCTAssertLessThanOrEqual(m.sceneHeight + gm + 19 + gm + 17 + gm + 28, 136)
+        XCTAssertFalse(DesktopCardsDivinationPlan.showsPlain(.medium))
+        XCTAssertLessThanOrEqual(m.sceneHeight + gm + 19 + gm + 28, 136)
         // 大号起卦块约 198 高（340 去掉边距、签那行 76、分隔线、「仅供娱乐」和间距）：
         // 场景一行（卦名在里面）、两行卦辞、两行白话、按钮。
         let lg = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.large))
@@ -477,5 +479,103 @@ final class DivinationArtTests: XCTestCase {
         // 大号 340：签那行 72 高的小熊猫加起卦块，底下还有余量给「仅供娱乐」。
         XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.largePoseHeight, 76)
         XCTAssertLessThanOrEqual(DesktopCardsDivinationPlan.largeSpacing, 8)
+    }
+
+    /// 起卦场景里一张姿势图最多伸到哪（场景坐标）：② 摇的时候不压扁、绕脚底转 ±8°（转出去的是
+    /// 上面的角）；一摔触地、捡回落地时最多横着胖 6%；跳起、托一下时竖着高 6% 再往上抬。
+    private func poseExtent(_ pose: DivinationPose, _ l: ShellToss.Layout)
+        -> (left: Double, right: Double, top: Double) {
+        let size = pose.displaySize(poseHeight: l.poseHeight)
+        let left = size.width * pose.anchorX, right = size.width * (1 - pose.anchorX)
+        var l0 = left * 1.06, r0 = right * 1.06
+        if pose == .castHold {
+            let a = StickShake.swayAngles.map { abs($0) }.max()! * Double.pi / 180
+            l0 = max(l0, left * cos(a) + size.height * sin(a))
+            r0 = max(r0, right * cos(a) + size.height * sin(a))
+        }
+        let lift = pose == .castRaise ? l.jumpHeight : l.holdLift
+        return (l.pandaX - l0, l.pandaX + r0, l.footY - size.height * 1.06 - lift)
+    }
+
+    /// 中号起卦区收起白话那一行，腾出的高度给场景：小熊猫接近左边签那只（64），铜钱 14 以上，
+    /// 仍一排在小熊猫右边脚底那条线上；大号不变。
+    func testDesktopMediumCastIsBigger() throws {
+        let m = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.medium))
+        XCTAssertGreaterThanOrEqual(m.poseHeight, 58)
+        XCTAssertLessThanOrEqual(m.poseHeight, 64, "不比左边签那只大")
+        XCTAssertGreaterThanOrEqual(m.coin, 14)
+        XCTAssertTrue(m.coinsInRow)
+        XCTAssertGreaterThan(m.landing(0).x, m.pandaX, "铜钱在小熊猫右边")
+        let lg = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(.large))
+        XCTAssertEqual(lg, ShellToss.Layout(sceneWidth: 120, sceneHeight: 70, poseHeight: 57, footY: 67, coin: 15,
+                                            coinRowY: 59.5, pandaX: 34, coinsInRow: true), "大号不变")
+        XCTAssertTrue(DesktopCardsDivinationPlan.showsPlain(.large))
+        XCTAssertNil(DesktopCardsDivinationPlan.figuresOverScene(.large))
+    }
+
+    /// 中号卦画叠在场景右上角：卦画在起卦块里；小熊猫每一拍、抛起来的铜钱一路、落地的铜钱、
+    /// 光点都碰不到卦画；按钮和卦名放得进卡片。
+    func testDesktopMediumFiguresStayClear() throws {
+        let size = DesktopPinSize.medium
+        let l = try XCTUnwrap(DesktopCardsDivinationPlan.castLayout(size))
+        let f = try XCTUnwrap(DesktopCardsDivinationPlan.figuresOverScene(size))
+        let block = DesktopCardsDivinationPlan.castBlockWidth(size)
+        XCTAssertGreaterThanOrEqual(f.x, 0)
+        XCTAssertLessThanOrEqual(f.x + f.width, block, "卦画在起卦块里")
+        XCTAssertGreaterThanOrEqual(f.y, 0)
+        XCTAssertLessThanOrEqual(f.y + f.height, l.sceneHeight)
+        XCTAssertEqual(f.width, DesktopCardsDivinationPlan.figuresWidth(size), accuracy: 0.0001)
+        func inFigures(_ x0: Double, _ y0: Double, _ x1: Double, _ y1: Double) -> Bool {
+            x1 > f.x && x0 < f.x + f.width && y1 > f.y && y0 < f.y + f.height
+        }
+        for pose in [DivinationPose.castHold, .castRaise, .castSlam, .castPickup] {
+            let e = poseExtent(pose, l)
+            XCTAssertFalse(inFigures(e.left, e.top, e.right, l.footY), "小熊猫碰到卦画：\(pose)")
+        }
+        let mouth = DivinationPose.castSlam.scenePoint(DivinationArt.slamMouth.x, DivinationArt.slamMouth.y,
+                                                       poseHeight: l.poseHeight, centerX: l.pandaX, bottom: l.footY)
+        for i in 0..<3 {
+            let land = l.landing(i)
+            let start = (x: mouth.x + Double(i - 1) * l.mouthSpread, y: mouth.y)
+            for k in 0...40 {
+                let t = Double(k) / 40
+                let x = start.x + (land.x - start.x) * t
+                let y = start.y + (land.y - start.y) * t - l.coinArc(i) * 4 * t * (1 - t)
+                XCTAssertFalse(inFigures(x - l.coin / 2, y - l.coin / 2, x + l.coin / 2, y + l.coin / 2),
+                               "第 \(i + 1) 枚铜钱飞过卦画（t = \(t)）")
+            }
+            // 落地以后弹两下，最高弹起 0.3 枚。
+            XCTAssertGreaterThan(land.y - l.coin * 0.8, f.y + f.height, "第 \(i + 1) 枚落地在卦画下面")
+        }
+        let c = l.coinsCenter
+        let center = (x: c.x, y: c.y - l.coin * 0.4)
+        let r = DivinationArt.sparkleRadius(center: center, preferred: l.coin * 2.6,
+                                            width: l.sceneWidth, height: l.sceneHeight)
+        for star in DivinationArt.sparkleStars {
+            let x = center.x + star.x * r, y = center.y + star.y * r, h = star.size / 2
+            XCTAssertFalse(inFigures(x - h, y - h, x + h, y + h), "光点盖住卦画")
+        }
+    }
+
+    /// 中号卡片：白话不写在卡片上但没丢，悬停起卦区提示完整白话；没起过卦是一行短提示、完整的在悬停里；
+    /// 卡片上的字都不小于 13pt（箭头图标、「仅供娱乐」法律小字除外）。
+    func testDesktopMediumPlainMovesToHelp() throws {
+        let card = try String(contentsOf: root.appendingPathComponent(
+            "Sources/Widgets/DesktopCards/DesktopCardsGamesDivination.swift"), encoding: .utf8)
+        XCTAssertTrue(card.contains(".help(plainHelp(casting))"))
+        XCTAssertTrue(card.contains("primary.plain)\")"), "悬停提示里是完整白话")
+        XCTAssertTrue(card.contains("if DesktopCardsDivinationPlan.showsPlain(size) {\n                            Text(verbatim: primary.plain)"),
+                      "卡片上只有大号写白话")
+        XCTAssertTrue(card.contains("tr(\"想好问题再起卦\")"))
+        let lines = card.components(separatedBy: "\n")
+        let pattern = try NSRegularExpression(pattern: #"size: (\d+(?:\.\d+)?)[,)]"#)
+        for (n, line) in lines.enumerated() where line.contains(".font(") {
+            if n > 0, lines[n - 1].contains("Image(systemName:") { continue }
+            let range = NSRange(line.startIndex..., in: line)
+            for match in pattern.matches(in: line, range: range) {
+                let value = Double(line[Range(match.range(at: 1), in: line)!])!
+                XCTAssertGreaterThanOrEqual(value, Divination.minimumFont, "第 \(n + 1) 行字号")
+            }
+        }
     }
 }
