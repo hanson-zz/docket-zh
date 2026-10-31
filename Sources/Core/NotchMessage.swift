@@ -272,11 +272,16 @@ public struct NotchBannerNode: Equatable, Sendable {
     public var help: String?
     /// 元素支持的 AX 动作名（只给横幅元素读）。自定义动作形如「Name:Close\nTarget:…」。
     public var actions: [String]
+    /// 元素上有哪些 AX 属性（只给横幅元素读，只要名字），诊断用。
+    public var attributes: [String]
+    /// 不常见属性里读到的字（只给横幅元素读）：只用来找 bundle id，不写进诊断。
+    public var attributeTexts: [String] = []
     public var children: [NotchBannerNode]
 
     public init(role: String? = nil, subrole: String? = nil, identifier: String? = nil,
                 description: String? = nil, title: String? = nil, value: String? = nil,
-                help: String? = nil, actions: [String] = [], children: [NotchBannerNode] = []) {
+                help: String? = nil, actions: [String] = [], attributes: [String] = [],
+                children: [NotchBannerNode] = []) {
         self.role = role
         self.subrole = subrole
         self.identifier = identifier
@@ -285,6 +290,7 @@ public struct NotchBannerNode: Equatable, Sendable {
         self.value = value
         self.help = help
         self.actions = actions
+        self.attributes = attributes
         self.children = children
     }
 
@@ -319,6 +325,8 @@ public struct NotchBanner: Equatable, Sendable {
     public var actionNames: [String]
     /// 能怎么关掉这条横幅；没有安全的关法时为 nil。
     public var close: NotchBannerClose?
+    /// 横幅元素上不常见的 AX 属性名（常见的几个去掉），诊断用：看新系统有没有带 App 的属性。
+    public var extraAttributes: [String] = []
 
     public init(identifier: String? = nil, header: String? = nil, title: String? = nil,
                 subtitle: String? = nil, body: String? = nil, summary: String? = nil,
@@ -476,7 +484,7 @@ public enum NotchBannerParser {
     /// 认成通知列表，每条横幅认成哪个 App、为什么没弹。不抄发件人和消息内容（只写有没有），
     /// App 名只写认出来的；`probeToken` 出现在哪条横幅上也标出来。
     public static func report(_ window: NotchBannerNode, enabled: [NotchMessageApp], probeToken: String? = nil,
-                              names: NotchAppNames = .builtIn) -> String {
+                              testTokens: [String] = [], names: NotchAppNames = .builtIn) -> String {
         var nodes = 0
         var roles: [String: Int] = [:]
         var subroles: [String: Int] = [:]
@@ -501,29 +509,9 @@ public enum NotchBannerParser {
         let banners = located(in: window)
         if banners.isEmpty { lines.append("  -> no banner found") }
         for entry in banners {
-            let b = entry.banner
-            let has = [b.header != nil ? "header" : nil, b.title != nil ? "title" : nil,
-                       b.body != nil ? "body" : nil, b.summary != nil ? "summary" : nil].compactMap { $0 }
-            let recognised = recognise(b, names: names)
-            let verdict: String
-            if let token = probeToken, NotchMessageProbe.matches(b, token: token) {
-                verdict = "test banner"
-            } else if let incoming = incoming(b, enabled: enabled, names: names) {
-                verdict = "message from \(incoming.app.rawValue)"
-            } else if let known = recognised?.app {
-                verdict = "\(known.rawValue) is turned off"
-            } else {
-                verdict = "app not recognised"
-            }
-            let shown = recognised?.app.rawValue ?? (appLabel(b, names: names) == nil ? "none" : "other")
-            lines.append("  banner path=\(entry.path) stacked=\(b.stacked) app=\(shown) has=[\(has.joined(separator: ","))] -> \(verdict)")
-            lines.append("    " + summaryReport(b, recognised: recognised))
-            var extra = ["matched=\(recognised?.source ?? "none")"]
-            extra.append("bundle-hint=\(bundleHint(b)?.rawValue ?? "none")")
-            extra.append("help=\(b.hints.isEmpty ? "no" : "present")")
-            extra.append("actions=[\(b.actionNames.prefix(8).map { reportWord($0) }.joined(separator: ","))]")
-            extra.append("close=\(b.close?.kind ?? "none")")
-            lines.append("    " + extra.joined(separator: " "))
+            let analysis = analyse(entry.banner, path: entry.path, enabled: enabled,
+                                   testTokens: [probeToken].compactMap { $0 } + testTokens, names: names)
+            lines.append(contentsOf: analysis.lines.map { "  " + $0 })
         }
         return lines.joined(separator: "\n")
     }
@@ -593,9 +581,11 @@ public enum NotchBannerParser {
     public static func banner(from node: NotchBannerNode) -> NotchBanner {
         var result = NotchBanner(identifier: cleaned(node.identifier), summary: cleaned(node.description),
                                  stacked: node.subrole == stackSubrole)
-        result.hints = [node.identifier, node.help, node.title, node.value].compactMap { cleaned($0) }
+        result.hints = ([node.identifier, node.help, node.title, node.value] + node.attributeTexts.map(Optional.some))
+            .compactMap { cleaned($0) }
         result.actionNames = node.actions.map(actionDisplayName)
         result.close = closeMethod(node)
+        result.extraAttributes = node.attributes.filter { !commonAttributes.contains($0) }
         var loose: [String] = []
         var images: [String] = []
         func visit(_ child: NotchBannerNode, depth: Int) {
@@ -649,6 +639,16 @@ public enum NotchBannerParser {
         return result
     }
 
+    /// 横幅元素上常见的 AX 属性，诊断里不列。
+    static let commonAttributes: Set<String> = [
+        "AXRole", "AXSubrole", "AXRoleDescription", "AXIdentifier", "AXDescription", "AXTitle", "AXValue",
+        "AXHelp", "AXChildren", "AXChildrenInNavigationOrder", "AXParent", "AXWindow", "AXTopLevelUIElement",
+        "AXPosition", "AXSize", "AXFrame", "AXEnabled", "AXFocused", "AXSelected", "AXCustomActions",
+        "AXActivationPoint", "AXTraits",
+    ]
+
+    public static func isCommonAttribute(_ name: String) -> Bool { commonAttributes.contains(name) }
+
     /// 认出来的 App 和从哪认的（诊断用：header、summary[段号]、image、bundle、title）。
     public struct Recognition: Equatable, Sendable {
         public var app: NotchMessageApp
@@ -672,15 +672,12 @@ public enum NotchBannerParser {
         return nil
     }
 
-    /// 辅助说明里哪一段是 App 名。按所有分隔符拆开逐段比，和标题、副标题、内容一样的段
-    /// 跳过（对方发来的字正好是「信息」时不把别的 App 的横幅认成信息）。
+    /// 辅助说明里哪一段是 App 名。按所有分隔符拆开逐段比（App 名在第一段、第二段、
+    /// 末尾都认），只比 `appCandidates` 留下的段：和标题、内容一样的段，内容自己拆出来
+    /// 的段都跳过（对方发来的字正好是「信息」、或内容里夹着「，微信，」时不认错）。
     static func summaryApp(_ banner: NotchBanner, names: NotchAppNames) -> (app: NotchMessageApp, index: Int)? {
-        guard let summary = banner.summary else { return nil }
-        let excluded = Set([banner.title, banner.subtitle, banner.body].compactMap { $0 }
-            .map(NotchAppNames.normalized).filter { !$0.isEmpty })
-        for (index, part) in summarySegments(summary).parts.enumerated() {
-            guard !excluded.contains(NotchAppNames.normalized(part)) else { continue }
-            if let app = names.match(part) { return (app, index) }
+        for candidate in appCandidates(banner) {
+            if let app = names.match(candidate.text) { return (app, candidate.index) }
         }
         return nil
     }
@@ -805,17 +802,81 @@ public enum NotchBannerParser {
 
     /// 把辅助说明按所有分隔符拆成段（不限段数，找 App 名用），带上出现过的分隔符种类。
     public static func summarySegments(_ summary: String) -> (parts: [String], separators: [String]) {
-        var rest = stripStacked(summary)
-        var parts: [String] = []
+        let split = segmentSpans(summary)
+        return (split.spans.map(\.text), split.separators)
+    }
+
+    /// 同上，带每段在（去掉末尾「已堆叠」后的）辅助说明里的位置，和那段字本身。
+    static func segmentSpans(_ summary: String)
+        -> (text: String, spans: [(text: String, range: Range<String.Index>)], separators: [String]) {
+        let whole = stripStacked(summary)
+        var spans: [(text: String, range: Range<String.Index>)] = []
         var kinds: [String] = []
-        while let range = rest.range(of: summarySeparatorPattern, options: .regularExpression) {
-            parts.append(String(rest[..<range.lowerBound]))
-            let kind = separatorName(String(rest[range]))
-            if !kinds.contains(kind) { kinds.append(kind) }
-            rest = String(rest[range.upperBound...])
+        var start = whole.startIndex
+        func add(_ range: Range<String.Index>) {
+            let raw = whole[range]
+            let trimmed = raw.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty, let inner = raw.range(of: trimmed) else { return }
+            spans.append((trimmed, inner))
         }
-        parts.append(rest)
-        return (parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }, kinds)
+        while start < whole.endIndex,
+              let range = whole.range(of: summarySeparatorPattern, options: .regularExpression, range: start..<whole.endIndex) {
+            add(start..<range.lowerBound)
+            let kind = separatorName(String(whole[range]))
+            if !kinds.contains(kind) { kinds.append(kind) }
+            start = range.upperBound
+        }
+        add(start..<whole.endIndex)
+        return (whole, spans, kinds)
+    }
+
+    /// 辅助说明里哪几段可能是 App 名（段号, 字）：去掉和标题、副标题、内容一样的段，
+    /// 落在标题、副标题、内容原文范围里的段（内容里本身带逗号时，「好的，微信，明天见」
+    /// 拆出来的「微信」不算），以及末尾组成内容的那几段（系统把长内容截断加省略号时
+    /// 内容不能原样找到，按「末尾几段连起来是内容的开头」认）。
+    static func appCandidates(_ banner: NotchBanner) -> [(index: Int, text: String)] {
+        guard let summary = banner.summary else { return [] }
+        let split = segmentSpans(summary)
+        let spans = split.spans
+        let texts = [banner.body, banner.subtitle, banner.title].compactMap { cleaned($0) }
+        let excluded = Set(texts.map(NotchAppNames.normalized).filter { !$0.isEmpty })
+        var blocked = Set<Int>()
+        // 原文范围：标题、内容在辅助说明里原样出现的每一处，整段落在里面的段都不算。
+        for text in texts {
+            var from = split.text.startIndex
+            while from < split.text.endIndex, let hit = split.text.range(of: text, range: from..<split.text.endIndex) {
+                for (index, span) in spans.enumerated()
+                where span.range.lowerBound >= hit.lowerBound && span.range.upperBound <= hit.upperBound {
+                    blocked.insert(index)
+                }
+                from = hit.upperBound
+            }
+        }
+        // 末尾几段：连起来（去掉分隔符、空白、末尾省略号）是内容去掉分隔符后的开头。
+        if let body = cleaned(banner.body) {
+            let bodyCompact = compact(body)
+            if !bodyCompact.isEmpty {
+                for start in spans.indices {
+                    let tail = compact(spans[start...].map(\.text).joined())
+                    guard !tail.isEmpty, bodyCompact.hasPrefix(tail) else { continue }
+                    for index in start..<spans.count { blocked.insert(index) }
+                    break
+                }
+            }
+        }
+        return spans.enumerated().compactMap { index, span in
+            guard !blocked.contains(index), !excluded.contains(NotchAppNames.normalized(span.text)) else { return nil }
+            return (index, span.text)
+        }
+    }
+
+    /// 比较内容用：去掉分隔符、空白和末尾省略号，小写。
+    static func compact(_ raw: String) -> String {
+        var text = raw.replacingOccurrences(of: summarySeparatorPattern, with: "", options: .regularExpression)
+        text = String(text.unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0)
+            && !NotchAppNames.invisible.contains($0) }.map(Character.init))
+        while let last = text.last, last == "…" || last == "." { text.removeLast() }
+        return text.lowercased()
     }
 
     /// 像不像通知上的时间：「22:31」「10:30 PM」「下午10:30」「现在」「now」「昨天」。

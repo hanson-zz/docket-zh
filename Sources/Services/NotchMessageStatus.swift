@@ -25,11 +25,31 @@ final class NotchMessageStatus {
     @ObservationIgnored private var lastScan = ""
     @ObservationIgnored private var lastScanAt: Date?
     @ObservationIgnored private var lastBannerScan = ""
+    @ObservationIgnored private var lastBannerScanAt: Date?
     @ObservationIgnored private var scans = 0
+    /// 每种触发方式各读了几次（`NotchScanTrigger`）。
+    @ObservationIgnored private var scansBy: [String: Int] = [:]
+    /// 收到的 AX 事件按名字计数，和最近一次的时间：真实横幅来时有没有事件，看这里。
+    @ObservationIgnored private var events: [String: Int] = [:]
+    @ObservationIgnored private var lastEventAt: Date?
+    /// 最近几条非测试横幅、测试横幅的分析记录和计数，存在 UserDefaults 里，码头重开后还在。
+    @ObservationIgnored private(set) var bannerLog: NotchBannerLog
+    /// 这次启动的时间：两次诊断的 scans 一样多时，看它就知道码头是不是中间重开过。
+    private let launchedAt = Date()
     /// 从装着的 App 包里读到的额外 App 名（`NotchAppNames.summary`），诊断信息用。
     @ObservationIgnored private var extraNames = "not loaded"
 
-    private init() {}
+    static let bannerLogKey = "notchMessage.bannerLog"
+
+    private init() {
+        let build = Self.currentBuild
+        if let data = UserDefaults.standard.data(forKey: Self.bannerLogKey),
+           let saved = try? JSONDecoder().decode(NotchBannerLog.self, from: data), saved.build == build {
+            bannerLog = saved
+        } else {
+            bannerLog = NotchBannerLog(build: build)
+        }
+    }
 
     /// 当前版本：版本号加构建号，形如「0.8.0 (9)」。
     static var currentBuild: String {
@@ -67,11 +87,32 @@ final class NotchMessageStatus {
 
     func recordNames(_ summary: String) { extraNames = summary }
 
-    func recordScan(_ report: String, windows: Int, banners: Int, at now: Date = Date()) {
+    /// 记一次读通知中心。「最近一次读到真实横幅」只在这次读到了非测试横幅时更新，测试通知
+    /// 不会把它盖掉。
+    func recordScan(_ report: String, windows: Int, banners: Int, realBanners: Int,
+                    trigger: NotchScanTrigger, at now: Date = Date()) {
         scans += 1
+        scansBy[trigger.rawValue, default: 0] += 1
         lastScanAt = now
-        lastScan = "windows=\(windows) banners=\(banners)\n" + report
-        if banners > 0 || report.contains("banner path=") { lastBannerScan = lastScan }
+        lastScan = "windows=\(windows) banners=\(banners) trigger=\(trigger.rawValue)\n" + report
+        if realBanners > 0 {
+            lastBannerScan = lastScan
+            lastBannerScanAt = now
+        }
+    }
+
+    func recordEvent(_ name: String, at now: Date = Date()) {
+        events[name, default: 0] += 1
+        lastEventAt = now
+    }
+
+    /// 记这次读到的每条横幅，存下来。
+    func recordBanners(_ items: [(key: String, analysis: NotchBannerAnalysis)]) {
+        guard !items.isEmpty else { return }
+        for item in items { bannerLog.record(item.analysis, key: item.key) }
+        if let data = try? JSONEncoder().encode(bannerLog) {
+            UserDefaults.standard.set(data, forKey: Self.bannerLogKey)
+        }
     }
 
     static var osMajor: Int { ProcessInfo.processInfo.operatingSystemVersion.majorVersion }
@@ -82,17 +123,25 @@ final class NotchMessageStatus {
         let os = ProcessInfo.processInfo.operatingSystemVersionString
         let formatter = ISO8601DateFormatter()
         func time(_ date: Date?) -> String { date.map { formatter.string(from: $0) } ?? "never" }
+        func counts(_ dict: [String: Int]) -> String {
+            dict.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ", ")
+        }
         var lines = [
             "Dockling \(Self.currentBuild) · macOS \(os)",
             "accessibility trusted=\(snap.trusted) lastTrustedBuild=\(snap.lastTrustedBuild ?? "none")",
             "notificationCenter running=\(snap.notificationCenterRunning) connected=\(snap.connected)",
-            "scans=\(scans) lastScan=\(time(lastScanAt)) lastBanner=\(time(lastBanner)) lastMessage=\(time(lastMessage))",
+            "launched=\(time(launchedAt)) scans=\(scans) by=[\(counts(scansBy))] lastScan=\(time(lastScanAt))",
+            "events=[\(counts(events))] lastEvent=\(time(lastEventAt))",
+            "lastBanner=\(time(lastBanner)) lastMessage=\(time(lastMessage))",
             "probe=\(probe.state)",
             "appNames extra=[\(extraNames)]",
             "now=\(formatter.string(from: now))",
         ]
+        let since = bannerLog.since.map { " since=\(time($0))" } ?? ""
+        lines.append("bannerLog build=\(bannerLog.build)\(since)")
+        lines.append(contentsOf: bannerLog.report(time: time))
         if !lastBannerScan.isEmpty, lastBannerScan != lastScan {
-            lines.append("--- last scan with a banner ---")
+            lines.append("--- last scan with a real banner (\(time(lastBannerScanAt))) ---")
             lines.append(lastBannerScan)
         }
         lines.append("--- last scan ---")
