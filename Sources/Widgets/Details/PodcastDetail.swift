@@ -734,7 +734,7 @@ struct PodcastDetail: View {
         case .new, .unplayed:
             break
         }
-        if meta.isEmpty, let progressText { meta = progressText; progressText = nil }
+        if meta.isEmpty, let text = progressText { meta = text; progressText = nil }
         return HStack(alignment: .top, spacing: 10) {
             stateGlyph(state, current: current, playing: playing)
                 .padding(.top, 1)
