@@ -1213,6 +1213,11 @@ struct DockShelfView: View {
                                            addApps(urls, toGroup: id)
                                        }
                                    }))
+            // App 格子：拖文件上去用它打开；按住 Option 拖图片或 App 上去换它的显示图标（Pro）。
+            .modifier(DockIconDropTarget(bundleID: DockIconDrop.appBundleID(of: entry.item),
+                                         ref: entry.item.fileRef,
+                                         place: .shelf,
+                                         edge: position))
             .gesture(reorderGesture(entry, solved))
             // Collapsing children puts the label on the tile, but it also
             // hides a widget's own controls from assistive tech, so only do it

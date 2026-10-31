@@ -485,7 +485,10 @@ struct GroupSheet: View {
                                                                           shown: titles[item.id] ?? original) },
                                                restoreName: { renameItem(item, nil, original) },
                                                showsNames: group.showsNames,
-                                               toggleNames: { showNames(!group.showsNames) })
+                                               toggleNames: { showNames(!group.showsNames) },
+                                               canAddToGroup: !picking
+                                                   && ShelfLock.allows(.dropIntoGroupWindow, locked: locked),
+                                               addApps: { urls in add(urls) })
                             }
                             if index == rows.count - 1, row.count < columns {
                                 addCell
@@ -693,6 +696,10 @@ private struct GroupSheetItem: View {
     var restoreName: () -> Void = {}
     var showsNames = true
     var toggleNames: () -> Void = {}
+    /// 拖 App 到图标上（不按 Option）照旧加进组，和拖到窗口空白处一样；锁定、选择列表
+    /// 开着时不收。
+    var canAddToGroup = false
+    var addApps: ([URL]) -> Void = { _ in }
 
     @FocusState private var fieldFocused: Bool
     @State private var hovering = false
@@ -725,6 +732,16 @@ private struct GroupSheetItem: View {
         VStack(spacing: 4) {
             icon
                 .frame(width: carriedSide, height: carriedSide)
+                // 拖文件上去用它打开；按住 Option 拖图片或 App 上去换显示图标（Pro）。
+                .modifier(DockIconDropTarget(bundleID: DockIconDrop.appBundleID(of: item),
+                                             ref: item.fileRef,
+                                             place: .groupWindow,
+                                             edge: .bottom,
+                                             canAddToGroup: canAddToGroup,
+                                             addToGroup: { urls in
+                                                 let apps = urls.filter(AppGroups.isAppBundle)
+                                                 if !apps.isEmpty { addApps(apps) }
+                                             }))
             if editing {
                 TextField(tr("名称"), text: $draft)
                     .textFieldStyle(.plain)

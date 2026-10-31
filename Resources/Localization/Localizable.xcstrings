@@ -67826,6 +67826,61 @@
         }
       }
     },
+    "用“%@”打开，按住 Option 换图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open with \"%@\", hold Option to change icon"
+          }
+        }
+      }
+    },
+    "用“%@”打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open with \"%@\""
+          }
+        }
+      }
+    },
+    "按住 Option 换成这个图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold Option to use as icon"
+          }
+        }
+      }
+    },
+    "松手换成这个图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release to use as icon"
+          }
+        }
+      }
+    },
+    "只能用图片或 App 当图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only an image or app can be an icon"
+          }
+        }
+      }
+    },
     "这个 App 没有可用的标识，不能更换图标。" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -39,17 +39,25 @@ enum DockAppIconPicker {
         let name = appName(bundleID: bundleID, ref: ref)
         guard let source = pickSource(appName: name) else { return }
         Task { @MainActor in
-            switch await DockAppIconStore.shared.setIcon(from: source, for: bundleID) {
-            case .success:
-                break
-            case .failure(.unreadable):
-                showError(tr("读不出这张图片。换一张 PNG、JPG、HEIC 或 ICNS 试试，边长至少 16 像素。"))
-            case .failure(.writeFailed):
-                showError(tr("图标没能存下来，请检查磁盘空间后再试。"))
-            case .failure(.noBundleID):
-                showError(tr("这个 App 没有可用的标识，不能更换图标。"))
-            }
+            report(await DockAppIconStore.shared.setIcon(from: source, for: bundleID))
         }
+    }
+
+    /// 换图标的结果：失败时弹和「更换图标…」同一套的错误提示。成功返回 true。
+    /// 拖放换图标（`DockIconDropTarget`）也走这里，文案只有一份。
+    @discardableResult
+    static func report(_ result: Result<Void, DockAppIconStore.ChangeError>) -> Bool {
+        switch result {
+        case .success:
+            return true
+        case .failure(.unreadable):
+            showError(tr("读不出这张图片。换一张 PNG、JPG、HEIC 或 ICNS 试试，边长至少 16 像素。"))
+        case .failure(.writeFailed):
+            showError(tr("图标没能存下来，请检查磁盘空间后再试。"))
+        case .failure(.noBundleID):
+            showError(tr("这个 App 没有可用的标识，不能更换图标。"))
+        }
+        return false
     }
 
     /// 打开面板选图片或 App。取消时是 nil。
@@ -73,7 +81,7 @@ enum DockAppIconPicker {
         return panel.url
     }
 
-    private static func showError(_ message: String) {
+    static func showError(_ message: String) {
         let policy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)

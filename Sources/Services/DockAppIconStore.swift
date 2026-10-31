@@ -76,8 +76,7 @@ final class DockAppIconStore {
 
     /// 用选的文件当这个 App 的图标：图片缩放成方形存下；选的是 App 就取它的图标。成功后立刻生效。
     func setIcon(from source: URL, for bundleID: String) async -> Result<Void, ChangeError> {
-        guard let file = DockAppIcons.fileName(for: bundleID), let key = DockAppIcons.mapKey(bundleID),
-              let folder = Self.folder else { return .failure(.noBundleID) }
+        guard DockAppIcons.fileName(for: bundleID) != nil else { return .failure(.noBundleID) }
         let png: Data?
         if Self.isApp(source) {
             png = Self.appIconPNG(source)
@@ -86,6 +85,23 @@ final class DockAppIconStore {
                 DockAppIconStore.squarePNG(contentsOf: source)
             }.value
         }
+        return await store(png, for: bundleID)
+    }
+
+    /// 用拖来的图片数据（浏览器、预览里拖出来、没有文件的图）当这个 App 的图标。
+    /// 和选文件一样缩放成方形、同样的大小限制。
+    func setIcon(fromImageData data: Data, for bundleID: String) async -> Result<Void, ChangeError> {
+        guard DockAppIcons.fileName(for: bundleID) != nil else { return .failure(.noBundleID) }
+        let png = await Task.detached(priority: .userInitiated) {
+            DockAppIconStore.squarePNG(data: data)
+        }.value
+        return await store(png, for: bundleID)
+    }
+
+    /// 存下规范化好的 PNG，成功后立刻生效。
+    private func store(_ png: Data?, for bundleID: String) async -> Result<Void, ChangeError> {
+        guard let file = DockAppIcons.fileName(for: bundleID), let key = DockAppIcons.mapKey(bundleID),
+              let folder = Self.folder else { return .failure(.noBundleID) }
         guard let png, let image = NSImage(data: png), image.isValid else { return .failure(.unreadable) }
         let target = folder.appending(path: file)
         let written = await Task.detached(priority: .userInitiated) { () -> Bool in
@@ -179,6 +195,17 @@ final class DockAppIconStore {
         let bytes = (attributes?[.size] as? NSNumber)?.intValue ?? 0
         guard bytes > 0, bytes <= DockAppIcons.maximumBytes,
               let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return squarePNG(source: source, bytes: bytes)
+    }
+
+    /// 同上，图片在内存里（拖放带来的 PNG、TIFF、JPEG 数据）。
+    nonisolated static func squarePNG(data: Data) -> Data? {
+        guard !data.isEmpty, data.count <= DockAppIcons.maximumBytes,
+              let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return squarePNG(source: source, bytes: data.count)
+    }
+
+    private nonisolated static func squarePNG(source: CGImageSource, bytes: Int) -> Data? {
         let count = CGImageSourceGetCount(source)
         guard count > 0 else { return nil }
         var best = 0
