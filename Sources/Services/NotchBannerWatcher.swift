@@ -71,6 +71,14 @@ final class NotchBannerWatcher {
     private var lastSignature: [String]?
     private var followUpPending = false
     private var pendingTrigger: NotchScanTrigger = .event
+    /// 最近 20 秒程序坞角标的记录（每秒一次，横幅出现时再立刻读一次）。
+    private var dockHistory = NotchDockBadgeHistory()
+    private var dockSampling = false
+    /// 见过的横幅（按 `identityKey`）：第一次读到的时间、认成了哪个 App、是否已经排过
+    /// 角标补读。认角标时拿第一次读到的时间比，别的横幅认走的个数从涨幅里扣掉。
+    private var seenBanners: [String: NotchSeenBanner] = [:]
+    /// 有认不出的横幅在等角标时，到这个时间为止，每秒记角标发现涨了就再读一遍横幅。
+    private var dockPendingUntil: Date?
 
     private nonisolated static let queue = DispatchQueue(label: "com.docket-zh.notch-message.ax", qos: .userInitiated)
     /// 每个 AX 元素最多等多久。
@@ -228,12 +236,37 @@ final class NotchBannerWatcher {
             return
         }
         pollWindows()
+        sampleDock()
+    }
+
+    /// 每秒记一次程序坞角标（只读三个 App 那一项的角标）。有认不出的横幅在等、角标刚涨了，
+    /// 就再读一遍横幅。
+    private func sampleDock() {
+        guard !dockSampling, !enabled.isEmpty else { return }
+        dockSampling = true
+        NotchDockBadgeReader.queue.async {
+            let sample = NotchDockBadgeReader.shared.sample()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.dockSampling = false
+                guard self.isRunning, let sample else { return }
+                self.dockHistory.append(sample)
+                NotchMessageStatus.shared.recordDockSample(sample)
+                if self.dockHistory.lastStepRose, let until = self.dockPendingUntil, sample.at <= until {
+                    self.scheduleScan(.dockRecheck)
+                }
+            }
+        }
     }
 
     /// 兜底，不靠 AX 事件：通知中心的窗口和上次读到的不一样（多了、少了、换了），或者窗口
     /// 里横幅元素的标识、辅助说明长度变了（一直开着的窗口里加了一条横幅），就读一遍。
     private func pollWindows() {
-        guard !polling, !scanPending, scansInFlight == 0, let appElement else { return }
+        guard let appElement else { return }
+        guard !polling, !scanPending, scansInFlight == 0 else {
+            NotchMessageStatus.shared.recordPoll(skipped: true)
+            return
+        }
         polling = true
         let app = Box(element: appElement)
         let known = observedWindows.map { Box(element: $0) }
@@ -242,17 +275,23 @@ final class NotchBannerWatcher {
             let windows = Self.windows(of: app.element)
             let windowsChanged = windows.count != known.count
                 || windows.contains { window in !known.contains { CFEqual($0.element, window) } }
-            var budget = Self.signatureBudget
+            // 横幅所在的窗口先读；每个窗口单独算预算，小组件窗口排在前面时也轮得到横幅那个窗口。
+            let dialogs = windows.filter { Self.string($0, kAXSubroleAttribute) == "AXSystemDialog" }
+            let ordered = dialogs + windows.filter { window in !dialogs.contains { CFEqual($0, window) } }
             var signature: [String] = []
-            for window in windows where budget > 0 {
+            for window in ordered.prefix(12) {
+                var budget = Self.signatureBudget
                 Self.signature(window, depth: 0, budget: &budget, into: &signature)
             }
             let bannersChanged = previous != nil && previous != signature
+            let entries = signature.count
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.polling = false
                 self.lastSignature = signature
-                if windowsChanged || bannersChanged { self.scheduleScan(.poll) }
+                let changed = windowsChanged || bannersChanged
+                NotchMessageStatus.shared.recordPoll(skipped: false, changed: changed, banners: entries)
+                if changed { self.scheduleScan(.poll) }
             }
         }
     }
@@ -351,6 +390,12 @@ final class NotchBannerWatcher {
         var report: String = ""
         /// 每条横幅的分析记录（不含消息内容）和认它用的键。
         var analyses: [(key: String, analysis: NotchBannerAnalysis)] = []
+        /// 这次读横幅时立刻读的程序坞角标。
+        var dockSample: NotchDockSample?
+        /// 这次读到的每条横幅（第一次读到的时间、认成的 App）。
+        var seen: [String: NotchSeenBanner] = [:]
+        /// 认不出 App、要等角标再读的横幅。
+        var unresolved: [String] = []
     }
 
     private func scan(priming: Bool, trigger: NotchScanTrigger = .priming) {
@@ -362,14 +407,18 @@ final class NotchBannerWatcher {
         let token = probeToken
         let tokens = recentProbeTokens
         let table = names
+        let history = dockHistory
+        let seen = seenBanners
         scansInFlight += 1
         Self.queue.async {
-            let result = Self.read(app: app.element, enabled: apps, probeToken: token, testTokens: tokens, names: table)
+            let result = Self.read(app: app.element, enabled: apps, probeToken: token, testTokens: tokens, names: table,
+                                   dock: history, seen: seen, now: Date())
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.scansInFlight = max(0, self.scansInFlight - 1)
                 guard self.isRunning, self.scanGeneration == generation else { return }
                 self.observeWindows(result.windows)
+                self.absorbDock(result, priming: priming)
                 let status = NotchMessageStatus.shared
                 let realBanners = result.analyses.filter { $0.analysis.outcome != .test }.count
                 status.recordScan(result.report, windows: result.windows.count, banners: result.bannerCount,
@@ -386,6 +435,44 @@ final class NotchBannerWatcher {
         }
     }
 
+    /// 一次读完后：记下立刻读的角标和见过的横幅；有新的认不出的横幅时，0.5 秒、1.5 秒后各补读
+    /// 一遍（那时角标多半已经涨了），并在之后 3 秒里每秒记角标时盯着涨没涨。
+    private func absorbDock(_ result: ScanResult, priming: Bool) {
+        if let sample = result.dockSample {
+            dockHistory.append(sample)
+            NotchMessageStatus.shared.recordDockSample(sample)
+        }
+        let now = Date()
+        for (key, seen) in result.seen {
+            var merged = seen
+            merged.rechecked = seenBanners[key]?.rechecked ?? false
+            seenBanners[key] = merged
+        }
+        seenBanners = seenBanners.filter { now.timeIntervalSince($0.value.at) < 60 }
+        guard !priming else { return }
+        var schedule = false
+        for key in result.unresolved {
+            guard var seen = seenBanners[key], !seen.rechecked,
+                  now.timeIntervalSince(seen.at) <= NotchDockBadgeHistory.window else { continue }
+            seen.rechecked = true
+            seenBanners[key] = seen
+            schedule = true
+            let until = seen.at.addingTimeInterval(NotchDockBadgeHistory.window)
+            dockPendingUntil = max(dockPendingUntil ?? until, until)
+        }
+        guard schedule else { return }
+        for delay in Self.dockRechecks {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: delay)
+                guard let self, self.isRunning, !self.scanPending else { return }
+                self.scan(priming: false, trigger: .dockRecheck)
+            }
+        }
+    }
+
+    /// 认不出的横幅出现后什么时候补读角标。
+    private static let dockRechecks: [Duration] = [.milliseconds(500), .milliseconds(1500)]
+
     /// 通知中心的窗口：先读 AXWindows，读不到时从孩子里挑窗口。
     private nonisolated static func windows(of app: AXUIElement) -> [AXUIElement] {
         if let list = copy(app, kAXWindowsAttribute) as? [AXUIElement], !list.isEmpty { return list }
@@ -396,7 +483,8 @@ final class NotchBannerWatcher {
     /// 在后台队列上读通知中心的所有窗口。任何一步读不到都当没有。
     private nonisolated static func read(app: AXUIElement, enabled: [NotchMessageApp],
                                          probeToken: String?, testTokens: [String],
-                                         names: NotchAppNames) -> ScanResult {
+                                         names: NotchAppNames, dock: NotchDockBadgeHistory,
+                                         seen: [String: NotchSeenBanner], now: Date) -> ScanResult {
         let windows = windows(of: app)
         var result = ScanResult(windows: windows, found: [])
         let deadline = Date().addingTimeInterval(readBudget)
@@ -404,9 +492,10 @@ final class NotchBannerWatcher {
         let dialogs = windows.filter { string($0, kAXSubroleAttribute) == "AXSystemDialog" }
         let ordered = dialogs + windows.filter { window in !dialogs.contains { CFEqual($0, window) } }
         var reports: [String] = []
-        // 程序坞角标只在有认不出的横幅时读一次。
-        var dockBadges: String?
+        // 程序坞角标只在有认不出的横幅时立刻读一次，和每秒的记录合在一起比。
+        var history = dock
         var dockRead = false
+        let allTokens = [probeToken].compactMap { $0 } + testTokens
         for window in ordered {
             guard Date() < deadline else {
                 reports.append("window skipped: out of time")
@@ -420,19 +509,43 @@ final class NotchBannerWatcher {
                            + (budget <= 0 ? "\n  (node budget used up)" : ""))
             for entry in NotchBannerParser.located(in: snapshot) {
                 result.bannerCount += 1
-                var analysis = NotchBannerParser.analyse(entry.banner, path: entry.path, enabled: enabled,
-                                                         testTokens: [probeToken].compactMap { $0 } + testTokens,
-                                                         names: names)
-                if analysis.outcome != .test, analysis.outcome != .message {
+                let banner = entry.banner
+                let key = NotchBannerParser.identityKey(banner)
+                let bannerAt = seen[key]?.at ?? result.seen[key]?.at ?? now
+                let explicit = NotchBannerParser.recognise(banner, names: names)
+                let isTest = explicit == nil && allTokens.contains { NotchMessageProbe.matches(banner, token: $0) }
+                // 原来的认法认不出时比角标：横幅第一次读到的前后 3 秒里哪个 App 的角标涨了，
+                // 别的横幅已经认走的个数扣掉。一摞的不比（里面的单条会各自比）。
+                var attribution: NotchDockAttribution?
+                if explicit == nil, !isTest, !banner.stacked {
                     if !dockRead {
-                        dockBadges = NotchDockBadges.read()
                         dockRead = true
+                        if let fresh = NotchDockBadgeReader.queue.sync(execute: { NotchDockBadgeReader.shared.sample(now: now) }) {
+                            history.append(fresh)
+                            result.dockSample = fresh
+                        }
                     }
-                    analysis.dock = dockBadges
+                    var claims: [NotchMessageApp: Int] = [:]
+                    for (other, item) in seen.merging(result.seen, uniquingKeysWith: { _, new in new })
+                    where other != key && item.claims && abs(item.at.timeIntervalSince(bannerAt)) <= NotchDockBadgeHistory.window {
+                        if let app = item.app { claims[app, default: 0] += 1 }
+                    }
+                    attribution = history.attribution(at: bannerAt).excluding(claims)
                 }
-                result.analyses.append((key: NotchBannerParser.identityKey(entry.banner), analysis: analysis))
-                if result.bannerApp == nil { result.bannerApp = NotchBannerParser.appLabel(entry.banner, names: names) }
-                var incoming = NotchBannerParser.incoming(entry.banner, enabled: enabled, names: names)
+                var analysis = NotchBannerParser.analyse(banner, path: entry.path, enabled: enabled,
+                                                         testTokens: allTokens, names: names, dock: attribution)
+                if explicit == nil, !isTest { analysis.dock = result.dockSample?.summary ?? history.latest?.summary }
+                result.analyses.append((key: key, analysis: analysis))
+                let resolved = isTest ? nil : NotchBannerParser.resolve(banner, names: names, dock: attribution)
+                result.seen[key] = NotchSeenBanner(
+                    at: bannerAt, app: resolved?.app,
+                    claims: resolved != nil && (resolved?.inferred == false || banner.identifier != nil))
+                if resolved == nil, !isTest, !banner.stacked { result.unresolved.append(key) }
+                if result.bannerApp == nil {
+                    result.bannerApp = NotchBannerParser.appLabel(banner, names: names) ?? resolved?.app.title
+                }
+                var incoming = isTest ? nil : NotchBannerParser.incoming(banner, enabled: enabled, names: names,
+                                                                         dock: attribution)
                 if incoming == nil, let probeToken {
                     incoming = NotchMessageProbe.incoming(entry.banner, token: probeToken)
                 }
@@ -493,7 +606,12 @@ final class NotchBannerWatcher {
             if AXUIElementCopyAttributeNames(element, &names) == .success, let list = names as? [String] {
                 result.attributes = list
                 for name in list.prefix(40) where !NotchBannerParser.isCommonAttribute(name) {
-                    if let text = string(element, name) { result.attributeTexts.append(text) }
+                    if name == "AXAttributedDescription" {
+                        readAttributedDescription(element, into: &result)
+                        if let text = result.attributedDescription { result.attributeTexts.append(text) }
+                    } else if let text = string(element, name) {
+                        result.attributeTexts.append(text)
+                    }
                 }
             }
         }
@@ -508,6 +626,30 @@ final class NotchBannerWatcher {
             result.children.append(node(child, tree: sub, depth: depth + 1, budget: &budget, deadline: deadline))
         }
         return result
+    }
+
+    /// 读横幅元素的 AXAttributedDescription：字本身（找 App 名、bundle id，诊断只写长度），
+    /// 出现过的属性键名（诊断用），和字体、颜色以外的字符串、链接属性值（找 bundle id 用）。
+    private nonisolated static func readAttributedDescription(_ element: AXUIElement, into node: inout NotchBannerNode) {
+        guard let raw = copy(element, "AXAttributedDescription") else { return }
+        if let attributed = raw as? NSAttributedString {
+            node.attributedDescription = attributed.string
+            var keys: [String] = []
+            var values: [String] = []
+            let whole = NSRange(location: 0, length: attributed.length)
+            attributed.enumerateAttributes(in: whole, options: []) { attributes, _, stop in
+                for (key, value) in attributes {
+                    if !keys.contains(key.rawValue) { keys.append(key.rawValue) }
+                    let text = (value as? String) ?? (value as? URL)?.absoluteString
+                    if let text, !text.isEmpty, values.count < 20, !values.contains(text) { values.append(text) }
+                }
+                if keys.count > 30 { stop.pointee = true }
+            }
+            node.attributedKeys = keys.sorted()
+            node.attributedValues = values
+        } else if let text = raw as? String {
+            node.attributedDescription = text
+        }
     }
 
     private nonisolated static let nodeAttributes: [String] = [
@@ -581,45 +723,87 @@ enum NotchScanTrigger: String, CaseIterable, Sendable {
     case followUp = "follow-up"
     /// 定时轻读发现窗口或横幅变了。
     case poll
+    /// 有认不出的横幅，角标补读（横幅出现后 0.5 秒、1.5 秒，或每秒记角标时发现涨了）。
+    case dockRecheck = "dock-recheck"
 }
 
-/// 程序坞上三个 App 的角标，诊断用（只有数字或有没有，不含内容）：真实横幅认不出 App 时，
-/// 看那一刻哪个 App 的角标在，判断以后能不能拿角标帮着认。
-enum NotchDockBadges {
-    nonisolated static func read() -> String? {
-        guard let dock = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock").first else {
-            return nil
+/// 见过的一条横幅：第一次读到的时间、认成的 App，认 App 用的是不是稳定的办法。
+struct NotchSeenBanner: Sendable {
+    var at: Date
+    var app: NotchMessageApp?
+    /// 这条认走的个数能不能从别的横幅的角标涨幅里扣：原来的认法认出的都算；靠角标、线索推断
+    /// 的只有系统标识稳定的才算（没标识的横幅字填上前后键会变，同一条会被算成两条）。
+    var claims: Bool
+    /// 已经排过角标补读。
+    var rechecked = false
+}
+
+/// 读程序坞上三个 App（信息、WhatsApp、微信）的角标。macOS 27 的横幅上没有 App 名，
+/// 横幅出现前后哪个 App 的角标涨了，就是它的消息（判断在 Core 的 `NotchDockBadgeHistory`）。
+///
+/// 每秒读一次，所以记住三个 App 在程序坞里的那一项，只读它们的 AXStatusLabel（三次跨进程）；
+/// 每 20 秒、或读失败、程序坞换了进程时重新走一遍程序坞找它们。只在 `queue` 上用。
+final class NotchDockBadgeReader: @unchecked Sendable {
+    static let shared = NotchDockBadgeReader()
+    /// 读程序坞单独一条队列：读通知中心一次最多 2.5 秒，不让每秒的角标记录排在它后面。
+    nonisolated static let queue = DispatchQueue(label: "com.docket-zh.notch-message.dock", qos: .userInitiated)
+    private static let refreshInterval: TimeInterval = 20
+
+    private var items: [NotchMessageApp: AXUIElement] = [:]
+    private var dockPID: pid_t = 0
+    private var lastRefresh: Date?
+
+    /// 读一次（在 `queue` 上调）。程序坞没在运行时为 nil。
+    func sample(now: Date = Date()) -> NotchDockSample? {
+        guard let dock = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
+            .first(where: { !$0.isTerminated }) else { return nil }
+        let pid = dock.processIdentifier
+        if pid != dockPID || lastRefresh.map({ now.timeIntervalSince($0) > Self.refreshInterval }) ?? true {
+            refresh(pid: pid, now: now)
         }
-        let app = AXUIElementCreateApplication(dock.processIdentifier)
+        var badges: [NotchMessageApp: NotchDockBadge] = [:]
+        var failed = false
+        for (app, item) in items {
+            AXUIElementSetMessagingTimeout(item, 0.2)
+            var label: CFTypeRef?
+            switch AXUIElementCopyAttributeValue(item, "AXStatusLabel" as CFString, &label) {
+            case .success:
+                badges[app] = NotchDockBadge.parse(label as? String)
+            case .noValue, .attributeUnsupported:
+                badges[app] = NotchDockBadge.none
+            default:
+                // 那一项没了（App 退出、从程序坞拿掉）：这次当不在，下次重新找。
+                failed = true
+            }
+        }
+        if failed { lastRefresh = nil }
+        return NotchDockSample(at: now, badges: badges)
+    }
+
+    /// 走一遍程序坞，记下三个 App 各自那一项。
+    private func refresh(pid: pid_t, now: Date) {
+        dockPID = pid
+        lastRefresh = now
+        items = [:]
+        let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, 0.2)
         var lists: CFTypeRef?
         guard AXUIElementCopyAttributeValue(app, kAXChildrenAttribute as CFString, &lists) == .success,
-              let children = lists as? [AXUIElement] else { return nil }
-        var badges: [NotchMessageApp: String] = [:]
+              let children = lists as? [AXUIElement] else { return }
         for list in children {
             var raw: CFTypeRef?
             guard AXUIElementCopyAttributeValue(list, kAXChildrenAttribute as CFString, &raw) == .success,
-                  let items = raw as? [AXUIElement] else { continue }
-            for item in items.prefix(80) {
+                  let entries = raw as? [AXUIElement] else { continue }
+            for item in entries.prefix(80) {
                 AXUIElementSetMessagingTimeout(item, 0.2)
                 var url: CFTypeRef?
                 guard AXUIElementCopyAttributeValue(item, kAXURLAttribute as CFString, &url) == .success,
                       let bundleURL = url as? URL,
-                      let app = NotchMessageApp.match(bundleID: Bundle(url: bundleURL)?.bundleIdentifier) else { continue }
-                var label: CFTypeRef?
-                let badge = AXUIElementCopyAttributeValue(item, "AXStatusLabel" as CFString, &label) == .success
-                    ? (label as? String) : nil
-                badges[app] = badge.map(NotchDockBadges.describe) ?? "-"
+                      let found = NotchMessageApp.match(bundleID: Bundle(url: bundleURL)?.bundleIdentifier),
+                      items[found] == nil else { continue }
+                items[found] = item
             }
         }
-        return NotchMessageApp.allCases.map { "\($0.rawValue):\(badges[$0] ?? "n/a")" }.joined(separator: ",")
-    }
-
-    /// 角标写成数字；不是数字的（「•」之类）只写有。
-    nonisolated static func describe(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { return "-" }
-        return trimmed.range(of: #"^\d+\+?$"#, options: .regularExpression) != nil ? trimmed : "yes"
     }
 }
 

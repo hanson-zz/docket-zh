@@ -32,6 +32,16 @@ final class NotchMessageStatus {
     /// 收到的 AX 事件按名字计数，和最近一次的时间：真实横幅来时有没有事件，看这里。
     @ObservationIgnored private var events: [String: Int] = [:]
     @ObservationIgnored private var lastEventAt: Date?
+    /// 每秒轻读：跑了几次、因为正在读横幅跳过几次、发现变了几次（变了才会算进 by=[poll]），
+    /// 最近一次的时间和读到几个横幅元素。
+    @ObservationIgnored private var pollsRan = 0
+    @ObservationIgnored private var pollsSkipped = 0
+    @ObservationIgnored private var pollsChanged = 0
+    @ObservationIgnored private var lastPollAt: Date?
+    @ObservationIgnored private var lastPollBanners = 0
+    /// 程序坞角标记了几次、最近一次的角标（只有数字）。
+    @ObservationIgnored private var dockSamples = 0
+    @ObservationIgnored private var lastDock: NotchDockSample?
     /// 最近几条非测试横幅、测试横幅的分析记录和计数，存在 UserDefaults 里，码头重开后还在。
     @ObservationIgnored private(set) var bannerLog: NotchBannerLog
     /// 这次启动的时间：两次诊断的 scans 一样多时，看它就知道码头是不是中间重开过。
@@ -101,6 +111,22 @@ final class NotchMessageStatus {
         }
     }
 
+    func recordPoll(skipped: Bool, changed: Bool = false, banners: Int = 0, at now: Date = Date()) {
+        if skipped {
+            pollsSkipped += 1
+            return
+        }
+        pollsRan += 1
+        if changed { pollsChanged += 1 }
+        lastPollAt = now
+        lastPollBanners = banners
+    }
+
+    func recordDockSample(_ sample: NotchDockSample) {
+        dockSamples += 1
+        lastDock = sample
+    }
+
     func recordEvent(_ name: String, at now: Date = Date()) {
         events[name, default: 0] += 1
         lastEventAt = now
@@ -132,6 +158,8 @@ final class NotchMessageStatus {
             "notificationCenter running=\(snap.notificationCenterRunning) connected=\(snap.connected)",
             "launched=\(time(launchedAt)) scans=\(scans) by=[\(counts(scansBy))] lastScan=\(time(lastScanAt))",
             "events=[\(counts(events))] lastEvent=\(time(lastEventAt))",
+            "polls ran=\(pollsRan) skipped=\(pollsSkipped) changed=\(pollsChanged) lastPoll=\(time(lastPollAt)) bannerElements=\(lastPollBanners)",
+            "dock samples=\(dockSamples) last=[\(lastDock?.summary ?? "none")] at=\(time(lastDock?.at))",
             "lastBanner=\(time(lastBanner)) lastMessage=\(time(lastMessage))",
             "probe=\(probe.state)",
             "appNames extra=[\(extraNames)]",

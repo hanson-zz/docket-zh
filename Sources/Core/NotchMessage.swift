@@ -276,6 +276,12 @@ public struct NotchBannerNode: Equatable, Sendable {
     public var attributes: [String]
     /// 不常见属性里读到的字（只给横幅元素读）：只用来找 bundle id，不写进诊断。
     public var attributeTexts: [String] = []
+    /// AXAttributedDescription 的字（只给横幅元素读）：找 App 名、bundle id 用，诊断里只写长度。
+    public var attributedDescription: String?
+    /// AXAttributedDescription 里出现过的属性键名（诊断用，不含内容）。
+    public var attributedKeys: [String] = []
+    /// AXAttributedDescription 里字体、颜色以外的属性值（链接之类）：只用来找 bundle id、App 名。
+    public var attributedValues: [String] = []
     public var children: [NotchBannerNode]
 
     public init(role: String? = nil, subrole: String? = nil, identifier: String? = nil,
@@ -327,6 +333,11 @@ public struct NotchBanner: Equatable, Sendable {
     public var close: NotchBannerClose?
     /// 横幅元素上不常见的 AX 属性名（常见的几个去掉），诊断用：看新系统有没有带 App 的属性。
     public var extraAttributes: [String] = []
+    /// 横幅元素属性里可能带 App 名或 bundle id 的字（`NotchBannerClue`），认不出 App 时用；
+    /// 诊断里只写长度和命中。
+    public var clues: [NotchBannerClue] = []
+    /// AXAttributedDescription 里的属性键名，诊断用。
+    public var attributedKeys: [String] = []
 
     public init(identifier: String? = nil, header: String? = nil, title: String? = nil,
                 subtitle: String? = nil, body: String? = nil, summary: String? = nil,
@@ -586,6 +597,15 @@ public enum NotchBannerParser {
         result.actionNames = node.actions.map(actionDisplayName)
         result.close = closeMethod(node)
         result.extraAttributes = node.attributes.filter { !commonAttributes.contains($0) }
+        result.attributedKeys = node.attributedKeys
+        let clueSources: [(String, String?)] = [
+            ("attr-desc", node.attributedDescription),
+            ("attr-values", node.attributedValues.isEmpty ? nil : node.attributedValues.joined(separator: "\n")),
+            ("desc", node.description), ("id", node.identifier), ("help", node.help),
+        ]
+        result.clues = clueSources.compactMap { source, text in
+            cleaned(text).map { NotchBannerClue(source: source, text: $0) }
+        }
         var loose: [String] = []
         var images: [String] = []
         func visit(_ child: NotchBannerNode, depth: Int) {
@@ -653,6 +673,8 @@ public enum NotchBannerParser {
     public struct Recognition: Equatable, Sendable {
         public var app: NotchMessageApp
         public var source: String
+        /// 是靠程序坞角标或属性线索推断的（`resolve`），这时发件人、内容按辅助说明拆。
+        public var inferred = false
         /// 是从标题认的（标题就是 App 名，比如关了预览），这时标题不当发件人。
         public var fromTitle: Bool { source == "title" }
     }
@@ -689,15 +711,26 @@ public enum NotchBannerParser {
     }
 
     /// 这条横幅是不是要的 App 的一条消息。认不出 App、App 没启用、什么字都没有时为 nil。
+    /// `dock` 是这条横幅前后的程序坞角标变化，原来的认法认不出时用（见 `resolve`）。
     public static func incoming(_ banner: NotchBanner, enabled: [NotchMessageApp],
-                                names: NotchAppNames = .builtIn) -> NotchIncoming? {
-        guard let recognised = recognise(banner, names: names), enabled.contains(recognised.app) else { return nil }
+                                names: NotchAppNames = .builtIn,
+                                dock: NotchDockAttribution? = nil) -> NotchIncoming? {
+        guard let recognised = resolve(banner, names: names, dock: dock), enabled.contains(recognised.app) else {
+            return nil
+        }
         let app = recognised.app
 
-        var sender = recognised.fromTitle ? nil : cleaned(banner.title)
-        if let name = sender, names.match(name) == app { sender = nil }
-        var preview = cleaned(banner.body) ?? cleaned(banner.subtitle)
-        if let body = preview, isPlaceholder(body) { preview = nil }
+        var sender: String?
+        var preview: String?
+        if recognised.inferred {
+            // 辅助说明里没有 App 名（macOS 27 只有「发件人, 内容」）：第一段是发件人。
+            (sender, preview) = senderAndPreview(banner)
+        } else {
+            sender = recognised.fromTitle ? nil : cleaned(banner.title)
+            if let name = sender, names.match(name) == app { sender = nil }
+            preview = cleaned(banner.body) ?? cleaned(banner.subtitle)
+            if let body = preview, isPlaceholder(body) { preview = nil }
+        }
         // 有内容却没有发件人：多半是关了预览只写了一句话，或者结构没认对，都按没预览处理。
         if sender == nil { preview = nil }
         guard sender != nil || banner.body != nil || banner.title != nil || banner.summary != nil else { return nil }

@@ -41,6 +41,10 @@ public struct NotchBannerAnalysis: Codable, Equatable, Sendable {
     public var priming: Bool = false
     /// 读这条时程序坞上三个 App 的角标（只有数字或有无，没有内容），读不到时为空。
     public var dock: String?
+    /// 横幅前后程序坞角标的变化（wechat:1->2），比过角标时有。
+    public var badge: String?
+    /// 横幅属性线索的长度和命中（`NotchBannerParser.clueReport`），不含原文。
+    public var clues: String?
 
     /// 诊断里 `->` 后面那句。
     public var verdict: String {
@@ -61,24 +65,31 @@ public struct NotchBannerAnalysis: Codable, Equatable, Sendable {
                      "actions=[\(actions.joined(separator: ","))]", "close=\(close)"]
         if !attributes.isEmpty { extra.append("attrs=[\(attributes.joined(separator: ","))]") }
         if let dock { extra.append("dock=[\(dock)]") }
-        return [head, "  " + summary, "  " + extra.joined(separator: " ")]
+        if let badge { extra.append("badge=[\(badge)]") }
+        var result = [head, "  " + summary, "  " + extra.joined(separator: " ")]
+        if let clues { result.append("  " + clues) }
+        return result
     }
 }
 
 extension NotchBannerParser {
     /// 分析一条横幅。`testTokens` 是最近发过的测试通知暗号：只有认不出是三个 App 之一、
     /// 字里又带着其中一个暗号的才算测试横幅（真实消息里碰巧有「#1234」也不会被当成测试）。
+    /// `dock` 是横幅前后程序坞角标的变化，原来的认法认不出时拿它和属性线索认（`resolve`）。
     public static func analyse(_ b: NotchBanner, path: [Int], enabled: [NotchMessageApp], testTokens: [String] = [],
-                               names: NotchAppNames = .builtIn, at now: Date = Date()) -> NotchBannerAnalysis {
+                               names: NotchAppNames = .builtIn, dock: NotchDockAttribution? = nil,
+                               at now: Date = Date()) -> NotchBannerAnalysis {
         let has = [b.header != nil ? "header" : nil, b.title != nil ? "title" : nil,
                    b.subtitle != nil ? "subtitle" : nil, b.body != nil ? "body" : nil,
                    b.summary != nil ? "summary" : nil].compactMap { $0 }
-        let recognised = recognise(b, names: names)
+        let explicit = recognise(b, names: names)
+        let isTest = explicit == nil && testTokens.contains(where: { NotchMessageProbe.matches(b, token: $0) })
+        let recognised = isTest ? nil : resolve(b, names: names, dock: dock)
         let outcome: NotchBannerAnalysis.Outcome
         var outcomeApp: String?
-        if recognised == nil, testTokens.contains(where: { NotchMessageProbe.matches(b, token: $0) }) {
+        if isTest {
             outcome = .test
-        } else if let incoming = incoming(b, enabled: enabled, names: names) {
+        } else if let incoming = incoming(b, enabled: enabled, names: names, dock: dock) {
             outcome = .message
             outcomeApp = incoming.app.rawValue
         } else if let known = recognised?.app {
@@ -88,16 +99,30 @@ extension NotchBannerParser {
             outcome = .notRecognised
         }
         let shown = recognised?.app.rawValue ?? (appLabel(b, names: names) == nil ? "none" : "other")
-        return NotchBannerAnalysis(
+        // 原来的认法认不出时，写上角标比没比出来（no change / ambiguous 也写，看得出卡在哪）。
+        var matched = recognised?.source ?? "none"
+        if explicit == nil, !isTest, let dock {
+            if recognised == nil {
+                matched = dock.source
+            } else if matched != dock.source {
+                matched += " (\(dock.source))"
+            }
+        }
+        var analysis = NotchBannerAnalysis(
             at: now, path: path, stacked: b.stacked, app: shown, has: has,
-            summary: summaryReport(b, recognised: recognised),
-            matched: recognised?.source ?? "none",
+            summary: summaryReport(b, recognised: explicit),
+            matched: matched,
             bundleHint: bundleHint(b)?.rawValue ?? "none",
             help: b.hints.isEmpty ? "no" : "present",
             actions: b.actionNames.prefix(8).map { reportWord($0) },
             close: b.close?.kind ?? "none",
             attributes: b.extraAttributes.prefix(12).map { reportWord($0) },
             outcome: outcome, outcomeApp: outcomeApp)
+        if explicit == nil, !isTest {
+            analysis.badge = dock?.badgeLine
+            analysis.clues = clueReport(b, names: names)
+        }
+        return analysis
     }
 
     /// 认同一条横幅用的键：有系统标识用标识，没有时用字算一个摘要（FNV-1a，只用来比较，
