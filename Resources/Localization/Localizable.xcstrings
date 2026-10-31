@@ -67858,6 +67858,281 @@
           }
         }
       }
+    },
+    "有 %@ 个旧订阅读不出来，原存档已备份。可以重新获取，或重新粘贴链接订阅。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ earlier subscriptions could not be read, and the original file was backed up. Fetch again, or paste their links to subscribe again."
+          }
+        }
+      }
+    },
+    "播客存档读不出来，原文件已备份。可以重新获取，或重新粘贴链接订阅。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The podcast library could not be read, and the original file was backed up. Fetch again, or paste the links to subscribe again."
+          }
+        }
+      }
+    },
+    "小宇宙上找不到这个节目，可能已下架或链接已变。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaoyuzhou can't find this show. It may have been taken down, or its link has changed."
+          }
+        }
+      }
+    },
+    "小宇宙暂时拒绝了请求，请稍后重新获取。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaoyuzhou turned the request down for now. Fetch again in a little while."
+          }
+        }
+      }
+    },
+    "小宇宙节目" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaoyuzhou show"
+          }
+        }
+      }
+    },
+    "剩不到 1 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Under 1 min left"
+          }
+        }
+      }
+    },
+    "正在重新获取之前的订阅…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching your earlier subscriptions again…"
+          }
+        }
+      }
+    },
+    "在上面粘贴小宇宙节目或单集的链接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste a Xiaoyuzhou show or episode link above"
+          }
+        }
+      }
+    },
+    "之前的订阅没有全部读出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some earlier subscriptions could not be read"
+          }
+        }
+      }
+    },
+    "这个节目还没读出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This show hasn't loaded yet"
+          }
+        }
+      }
+    },
+    "没读到最新的单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't get the latest episodes"
+          }
+        }
+      }
+    },
+    "正在获取" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching"
+          }
+        }
+      }
+    },
+    "重新获取" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetch Again"
+          }
+        }
+      }
+    },
+    "没读出来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load"
+          }
+        }
+      }
+    },
+    "正在获取单集…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching episodes…"
+          }
+        }
+      }
+    },
+    "共 %@ 集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ episodes"
+          }
+        }
+      }
+    },
+    "%@更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %@"
+          }
+        }
+      }
+    },
+    "%@ 集新单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ new"
+          }
+        }
+      }
+    },
+    "继续收听" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue Listening"
+          }
+        }
+      }
+    },
+    "先播放这一集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play this episode first"
+          }
+        }
+      }
+    },
+    "已播 %@，共 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ played"
+          }
+        }
+      }
+    },
+    "最近单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent Episodes"
+          }
+        }
+      }
+    },
+    "新单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New episode"
+          }
+        }
+      }
+    },
+    "听了 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% played"
+          }
+        }
+      }
+    },
+    "继续：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue: %@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

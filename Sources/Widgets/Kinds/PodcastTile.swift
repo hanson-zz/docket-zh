@@ -24,13 +24,26 @@ struct PodcastTile: View {
     private var episode: PodcastEpisode? {
         guard let show else { return nil }
         if !context.isPreview, player.showID == show.id, let current = player.episode { return current }
-        return show.episodes.first
+        if context.isPreview { return show.episodes.first }
+        return service.library.resumeEpisode(in: show.id) ?? show.episodes.first
     }
 
     private var playing: Bool {
         if context.isPreview { return false }
         guard let episode else { return false }
         return player.isCurrent(episode) && player.isPlaying
+    }
+
+    /// 卡片上那一集听了多少（0...1）：正在放的按播放器，听了一半的按存的进度；
+    /// 没开始或已听完不画进度条。
+    private var listened: Double? {
+        if context.isPreview { return 0.32 }
+        guard let episode else { return nil }
+        if player.isCurrent(episode), player.duration > 0 {
+            return min(1, max(0, player.position / player.duration))
+        }
+        guard let saved = service.library.progress[episode.id], !saved.finished, saved.position > 0 else { return nil }
+        return saved.fraction
     }
 
     private var unheard: Int { context.isPreview ? 1 : service.library.unheardCount }
@@ -49,6 +62,7 @@ struct PodcastTile: View {
             return player.isPlaying ? episode.title : tr("已暂停 · \(episode.title)")
         }
         if service.problems[show.id] != nil, show.episodes.isEmpty { return tr("暂时连不上小宇宙") }
+        if let episode, listened != nil { return tr("继续：\(episode.title)") }
         return episode.map { tr("最新：\($0.title)") } ?? tr("还没有单集")
     }
 
@@ -69,7 +83,21 @@ struct PodcastTile: View {
             } else {
                 HStack(spacing: 9) {
                     cover(size: 40)
-                    TileReading(value: show?.title ?? tr("播客"), caption: caption, valueSize: 15)
+                    VStack(alignment: .leading, spacing: 4) {
+                        TileReading(value: show?.title ?? tr("播客"), caption: caption, valueSize: 15)
+                        if let listened {
+                            // 这一集听到哪了：一道细进度条，正在放的跟着走，听了一半的停在那里。
+                            GeometryReader { proxy in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(WidgetStyle.primary.opacity(0.18))
+                                    Capsule().fill(PodcastCover.accent)
+                                        .frame(width: max(3, proxy.size.width * listened))
+                                }
+                            }
+                            .frame(height: 3)
+                            .accessibilityHidden(true)
+                        }
+                    }
                     Spacer(minLength: 0)
                     playButton(size: 11)
                 }

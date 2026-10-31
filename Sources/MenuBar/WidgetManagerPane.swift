@@ -124,12 +124,9 @@ struct WidgetManagerPane: View {
                 .help("拖动排序")
             kindIcon
             VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 5) {
-                    Text(WidgetNames.name(widget.kind))
-                        .lineLimit(1)
-                    // 整种是 Pro，或现在用的外观是 Pro（液态、Pro 表盘等）。
-                    if ProFeatures.isPro(widget) { ProBadge() }
-                }
+                // 整种是 Pro，或现在用的外观是 Pro（液态、Pro 表盘等）。角标跟在名字后面，
+                // 名字优先占宽，规则见 `FeatureBadges`。
+                BadgedTitle(title: WidgetNames.name(widget.kind), pro: ProFeatures.isPro(widget))
                 if mode == .conditional,
                    let condition = WidgetVisibility.conditionTitle(widget.kind, config: widget.config) {
                     Text(condition)
@@ -239,11 +236,10 @@ struct WidgetManagerPane: View {
     private func unaddedRow(_ candidate: WidgetManagement.Candidate) -> some View {
         HStack(spacing: 9) {
             kindIcon
-            HStack(spacing: 5) {
-                Text(candidate.name)
-                    .lineLimit(1)
-                if ProFeatures.isPro(candidate.kind, overrides: candidate.overrides) { ProBadge() }
-            }
+            // 和小组件库卡片一样标 Pro 和「新」。
+            BadgedTitle(title: candidate.name,
+                        pro: ProFeatures.isPro(candidate.kind, overrides: candidate.overrides),
+                        new: WidgetCatalog.isNew(candidate.kind))
             Spacer(minLength: 8)
             // 永远是关着的：打开就加到扩展栏，这一行随即移到上半（可放多个的留在这里）。
             Toggle("添加", isOn: Binding(get: { false }, set: { on in if on { add(candidate) } }))

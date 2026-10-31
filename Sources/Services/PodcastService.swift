@@ -21,6 +21,26 @@ final class PodcastService {
     private(set) var problems: [String: String] = [:]
     /// Covers already downloaded, by address.
     private(set) var artwork: [URL: NSImage] = [:]
+    /// 封面压淡后的颜色（面板顶上那一抹），灰白封面没有，按封面地址。
+    private(set) var artworkTint: [URL: ColorCode] = [:]
+    /// 启动时存档没读全：有几条旧订阅读不出来、原文件备份在哪。面板上提示。
+    private(set) var loadIssue: LoadIssue?
+    /// 正在重新获取旧订阅（启动后的迁移、点「重新获取」）。
+    private(set) var recovering = false
+
+    struct LoadIssue: Equatable {
+        /// 读不出来、只能丢掉的条数；整个文件读不出来时是 nil。
+        var lost: Int?
+        /// 原文件的备份。
+        var backup: URL?
+
+        var message: String {
+            if let lost {
+                return tr("有 \(lost) 个旧订阅读不出来，原存档已备份。可以重新获取，或重新粘贴链接订阅。")
+            }
+            return tr("播客存档读不出来，原文件已备份。可以重新获取，或重新粘贴链接订阅。")
+        }
+    }
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var active = false
@@ -34,18 +54,32 @@ final class PodcastService {
         case notALink
         case network
         case unreadable
+        /// 小宇宙上找不到（404）：节目下架了，或者存的链接已经不对。
+        case notFound
+        /// 小宇宙拒绝了请求（403、429）：一下子请求太多被限流。
+        case refused
 
         var message: String {
             switch self {
             case .notALink: tr("这不是小宇宙的节目或单集链接。")
             case .network: tr("连不上小宇宙，请检查网络后再试。")
             case .unreadable: tr("读不出这个节目的信息，页面可能已变更。")
+            case .notFound: tr("小宇宙上找不到这个节目，可能已下架或链接已变。")
+            case .refused: tr("小宇宙暂时拒绝了请求，请稍后重新获取。")
             }
         }
     }
 
     private init() {
-        library = Self.read()
+        let loaded = Self.read()
+        library = loaded.library
+        loadIssue = loaded.issue
+        if loaded.save { save() }
+        // 旧存档迁移来的节目（只有 id、还没有单集）和只剩链接的订阅，启动后
+        // 重新获取一次；不等到整点检查，也不要求扩展栏上放着播客卡片。
+        if !library.pendingLinks.isEmpty || !library.showsToRefetch.isEmpty {
+            Task { await recover() }
+        }
     }
 
     // MARK: Schedule
@@ -82,8 +116,62 @@ final class PodcastService {
         refreshAll()
     }
 
+    /// 一个接一个地读，中间隔 `PodcastPlayback.refreshSpacing`：以前全部同时发，
+    /// 订阅多的时候被小宇宙限流，靠后的节目常常读不出来。
     func refreshAll() {
-        for show in library.shows { Task { await refresh(show.id) } }
+        let ids = library.shows.map(\.id)
+        Task {
+            for (index, id) in ids.enumerated() {
+                if index > 0 { try? await Task.sleep(for: .seconds(PodcastPlayback.refreshSpacing)) }
+                await refresh(id)
+            }
+        }
+    }
+
+    /// 重新获取读不全的订阅：先把只剩单集链接、短链的旧订阅换成节目，再把还没有
+    /// 单集或上次读取失败的节目逐个重读。面板上的「重新获取」也走这里。
+    func recover() async {
+        guard !recovering else { return }
+        recovering = true
+        defer { recovering = false }
+        for (index, link) in library.pendingLinks.enumerated() {
+            if index > 0 { try? await Task.sleep(for: .seconds(PodcastPlayback.refreshSpacing)) }
+            switch await resolve(link) {
+            case .success:
+                library.resolvePending(link)
+                save()
+            case .failure(.notALink), .failure(.notFound):
+                // 链接本身不对或节目已下架：再试也没用，拿掉，提示里算一条丢失。
+                library.resolvePending(link)
+                loadIssue = LoadIssue(lost: (loadIssue?.lost ?? 0) + 1, backup: loadIssue?.backup)
+                save()
+            case .failure:
+                continue
+            }
+        }
+        let ids = Set(library.showsToRefetch).union(problems.keys)
+        for (index, id) in library.shows.map(\.id).filter(ids.contains).enumerated() {
+            if index > 0 { try? await Task.sleep(for: .seconds(PodcastPlayback.refreshSpacing)) }
+            await refresh(id)
+        }
+        if library.pendingLinks.isEmpty, problems.isEmpty, loadIssue?.lost == 0 { loadIssue = nil }
+    }
+
+    /// 关掉启动时的存档提示（已经重新订阅过、不想再看）。
+    func dismissLoadIssue() { loadIssue = nil }
+
+    /// 旧订阅里的一条链接：小宇宙链接直接订阅；xyzfm.link 短链先跟着跳转拿到真正的地址。
+    private func resolve(_ text: String) async -> Result<PodcastShow, Failure> {
+        if let link = PodcastStore.link(text) { return await add(link) }
+        guard PodcastStore.isShortLink(text) else { return .failure(.notALink) }
+        let address = text.lowercased().hasPrefix("http") ? text : "https://" + text
+        guard let url = URL(string: address) else { return .failure(.notALink) }
+        switch await Self.landing(url) {
+        case .failure(let failure): return .failure(failure)
+        case .success(let landed):
+            guard let link = XiaoyuzhouLink.parse(landed.absoluteString) else { return .failure(.notALink) }
+            return await add(link)
+        }
     }
 
     // MARK: Subscribing
@@ -114,6 +202,7 @@ final class PodcastService {
         defer { loading.remove(pid) }
         switch await Self.page(XiaoyuzhouLink.podcast(pid).pageURL) {
         case .failure(let failure):
+            if library.show(pid) != nil { problems[pid] = failure.message }
             return .failure(failure)
         case .success(let html):
             guard let show = Xiaoyuzhou.podcast(fromPage: html) else { return .failure(.unreadable) }
@@ -185,9 +274,39 @@ final class PodcastService {
         Task {
             let image = await Self.download(url)
             artworkLoading.remove(url)
-            if let image { artwork[url] = image }
+            if let image {
+                artwork[url] = image
+                if let average = Self.averageColor(image), let wash = PodcastArtTint.wash(average) {
+                    artworkTint[url] = wash
+                }
+            }
         }
         return nil
+    }
+
+    /// 封面缩到 8×8 取平均色（太白、太黑的点不算，免得白边、黑底把颜色冲掉）。
+    private static func averageColor(_ image: NSImage) -> ColorCode? {
+        let side = 8
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side,
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let context = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        image.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+        NSGraphicsContext.restoreGraphicsState()
+        var red = 0.0, green = 0.0, blue = 0.0, count = 0.0
+        for x in 0..<side {
+            for y in 0..<side {
+                guard let color = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                let r = Double(color.redComponent), g = Double(color.greenComponent), b = Double(color.blueComponent)
+                let peak = max(r, g, b), floor = min(r, g, b)
+                if peak < 0.08 || floor > 0.94 { continue }
+                red += r; green += g; blue += b; count += 1
+            }
+        }
+        guard count > 0 else { return nil }
+        return ColorCode(red: red / count, green: green / count, blue: blue / count)
     }
 
     private nonisolated static func download(_ url: URL) async -> NSImage? {
@@ -208,10 +327,22 @@ final class PodcastService {
         guard let (data, response) = try? await URLSession.shared.data(for: request) else {
             return .failure(.network)
         }
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            return .failure(.unreadable)
+        guard let http = response as? HTTPURLResponse else { return .failure(.unreadable) }
+        switch http.statusCode {
+        case 200..<300: return .success(String(decoding: data, as: UTF8.self))
+        case 404, 410: return .failure(.notFound)
+        case 403, 429: return .failure(.refused)
+        default: return .failure(.unreadable)
         }
-        return .success(String(decoding: data, as: UTF8.self))
+    }
+
+    /// 短链跳转以后落到的地址。
+    private nonisolated static func landing(_ url: URL) async -> Result<URL, Failure> {
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.setValue(LinkPreviewFetcher.userAgent, forHTTPHeaderField: "User-Agent")
+        guard let (_, response) = try? await URLSession.shared.data(for: request) else { return .failure(.network) }
+        guard let landed = response.url else { return .failure(.unreadable) }
+        return .success(landed)
     }
 
     // MARK: Notifications
@@ -246,16 +377,46 @@ final class PodcastService {
             .appendingPathComponent("podcasts.json")
     }
 
-    private static func read() -> PodcastLibrary {
-        guard let url = fileURL, let data = try? Data(contentsOf: url) else { return PodcastLibrary() }
+    /// 读存档。以前一次 `try?` 整份解码，任何一处不对整份就读成空的，接着订阅新节目时
+    /// 存档被只剩新节目的版本覆盖，旧订阅从此读不回来。现在逐个节目宽松读取
+    /// （`PodcastStore.load`），旧写法换成新格式马上写回；有读不出来的，先把原文件
+    /// 备份成 podcasts-backup-时间.json 再写，面板上提示可以重新获取。
+    private static func read() -> (library: PodcastLibrary, issue: LoadIssue?, save: Bool) {
+        guard let url = fileURL, let data = try? Data(contentsOf: url) else { return (PodcastLibrary(), nil, false) }
         // Dates as plain numbers: ISO 8601 would drop the milliseconds 小宇宙
         // dates carry, and a stored mark a fraction of a second early would
         // make the newest episode look new again after every launch.
-        return (try? JSONDecoder().decode(PodcastLibrary.self, from: data)) ?? PodcastLibrary()
+        let loaded = PodcastStore.load(data)
+        var issue: LoadIssue?
+        if loaded.needsBackup {
+            let backup = backupCopy(of: url)
+            issue = LoadIssue(lost: loaded.fileUnreadable ? nil : loaded.unreadable, backup: backup)
+        }
+        // 有东西读不出来却没备份成功时先不写回，免得把唯一的原文件覆盖掉。
+        let canWrite = issue == nil || issue?.backup != nil
+        return (loaded.library, issue, loaded.needsSave && canWrite)
+    }
+
+    private static func backupCopy(of url: URL) -> URL? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let backup = url.deletingLastPathComponent()
+            .appendingPathComponent("podcasts-backup-\(formatter.string(from: .now)).json")
+        do {
+            try FileManager.default.copyItem(at: url, to: backup)
+            return backup
+        } catch {
+            return nil
+        }
     }
 
     private func save() {
         guard let url = Self.fileURL else { return }
+        // 启动时没读全、当时又没备份成功：第一次写回之前再备份一次原文件。
+        if let issue = loadIssue, issue.backup == nil, FileManager.default.fileExists(atPath: url.path) {
+            loadIssue?.backup = Self.backupCopy(of: url)
+        }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                  withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(library) { try? data.write(to: url, options: .atomic) }

@@ -25,6 +25,24 @@ public struct PodcastEpisode: Codable, Equatable, Sendable, Identifiable {
         self.imageURL = imageURL
         self.chapters = chapters
     }
+
+    /// 宽松读取存档：只有 id 是必须的（旧写法 `eid` 也认），其他字段缺了、
+    /// 类型变了（时长存成小数、日期存成文字、网址写坏）都用默认值，免得一集
+    /// 读不出来连累整个节目。写回仍是原来的字段名。
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: PodcastArchiveKey.self)
+        guard let id = c.text(["id", "eid"]), !id.isEmpty else {
+            throw DecodingError.keyNotFound(PodcastArchiveKey("id"),
+                                            .init(codingPath: c.codingPath, debugDescription: "单集没有 id"))
+        }
+        self.id = id
+        title = c.text(["title"]) ?? tr("未命名单集")
+        pubDate = c.date(["pubDate"])
+        duration = Int(max(0, c.number(["duration"]) ?? 0))
+        audioURL = c.url(["audioURL", "audio", "enclosure"])
+        imageURL = c.url(["imageURL", "image"])
+        chapters = c.lossy([PodcastChapter].self, "chapters")
+    }
 }
 
 /// One subscribed show and every episode kept for it. The page lists the
@@ -55,6 +73,45 @@ public struct PodcastShow: Codable, Equatable, Sendable, Identifiable {
         self.latestPubDate = latestPubDate
         self.episodeCount = episodeCount
         self.episodes = episodes
+    }
+
+    /// 宽松读取存档，同 `PodcastEpisode.init(from:)`。节目 id 认 `id`、`pid`、
+    /// `podcastID`，也认整条小宇宙链接（早先有的存档把页面地址当 id 存）；都没有时
+    /// 再从 `url`、`link`、`pageURL` 里找。读出来的 id 一律换成纯 id，页面地址由
+    /// `pageURL` 现拼。只找到单集链接或 xyzfm.link 短链时抛
+    /// `PodcastArchiveError.needsLookup`，由 `PodcastStore` 记下来联网换成节目。
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: PodcastArchiveKey.self)
+        let raw = ["id", "pid", "podcastID", "podcastId", "url", "link", "pageURL", "pageUrl"]
+            .compactMap { c.text([$0]) }
+        var found: String?
+        var lookup: String?
+        for candidate in raw {
+            switch PodcastStore.link(candidate) {
+            case .podcast(let pid)?:
+                found = pid
+            case .episode(let eid)?:
+                lookup = lookup ?? XiaoyuzhouLink.episode(eid).pageURL.absoluteString
+            case nil:
+                if PodcastStore.isShortLink(candidate) { lookup = lookup ?? PodcastStore.trimmed(candidate) }
+            }
+            if found != nil { break }
+        }
+        guard let id = found else {
+            if let lookup { throw PodcastArchiveError.needsLookup(lookup) }
+            throw DecodingError.keyNotFound(PodcastArchiveKey("id"),
+                                            .init(codingPath: c.codingPath, debugDescription: "节目没有 id"))
+        }
+        self.id = id
+        title = c.text(["title", "name"]).flatMap { $0.isEmpty ? nil : $0 } ?? tr("未命名节目")
+        author = c.text(["author"]) ?? ""
+        summary = c.text(["summary", "description"]) ?? ""
+        imageURL = c.url(["imageURL", "image", "cover"])
+        latestPubDate = c.date(["latestPubDate", "latestEpisodePubDate"])
+        let episodes = (c.lossy([PodcastArchiveLossy<PodcastEpisode>].self, "episodes") ?? [])
+            .compactMap(\.value)
+        self.episodes = episodes
+        episodeCount = Int(max(0, c.number(["episodeCount"]) ?? Double(episodes.count)))
     }
 
     /// The newest date anything on the page carries.
@@ -271,8 +328,21 @@ public struct PodcastLibrary: Codable, Equatable, Sendable {
     public var notifiedThrough: [String: Date] = [:]
     /// Per episode id.
     public var progress: [String: PodcastProgress] = [:]
+    /// 旧存档里只剩单集链接的订阅：要联网读单集页才知道是哪个节目，
+    /// `PodcastService` 启动时换成节目，换好了从这里拿掉。
+    public var pendingLinks: [String] = []
 
     public init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case shows, newSince, notifiedThrough, progress, pendingLinks
+    }
+
+    /// 宽松读取，见 `PodcastStore.load`：缺字段、改过名的字段、整条链接当 id、
+    /// 坏掉的某一个节目或某一集，都不再让整个存档读成空的。
+    public init(from decoder: Decoder) throws {
+        self = try PodcastStore.decodeLibrary(decoder).library
+    }
 
     public func show(_ id: String) -> PodcastShow? { shows.first { $0.id == id } }
 
@@ -292,6 +362,17 @@ public struct PodcastLibrary: Codable, Equatable, Sendable {
         return true
     }
 
+    /// 订阅成功或确认读不出来以后，把这条旧链接从待换列表里拿掉。
+    public mutating func resolvePending(_ link: String) {
+        pendingLinks.removeAll { $0 == link }
+    }
+
+    /// 存档里有、但还没读到过单集的节目（旧存档迁移来的、上次读取失败的），
+    /// 启动后先重新获取它们。
+    public var showsToRefetch: [String] {
+        shows.filter { $0.episodes.isEmpty }.map(\.id)
+    }
+
     public mutating func remove(_ id: String) {
         guard let show = show(id) else { return }
         shows.removeAll { $0.id == id }
@@ -307,6 +388,9 @@ public struct PodcastLibrary: Codable, Equatable, Sendable {
         guard let index = shows.firstIndex(where: { $0.id == fresh.id }) else { return [] }
         let fresher = Self.newEpisodes(in: fresh, after: notifiedThrough[fresh.id])
         shows[index] = Self.combined(shows[index], with: fresh)
+        // 旧存档迁移来的节目没有「从哪天算新」的记号：第一次读到时补上，
+        // 之后出的新单集才会算新，已有的不会一下子全变成新。
+        if newSince[fresh.id] == nil { newSince[fresh.id] = fresh.newestDate ?? .distantPast }
         if let newest = fresh.newestDate {
             notifiedThrough[fresh.id] = max(newest, notifiedThrough[fresh.id] ?? .distantPast)
         }

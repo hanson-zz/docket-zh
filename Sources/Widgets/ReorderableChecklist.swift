@@ -76,6 +76,7 @@ struct ReorderableChecklist: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(primary)
                         .lineLimit(1)
+                        .layoutPriority(1)
                     if choice.isPro { ProBadge() }
                     Spacer(minLength: 0)
                     if isDragging {

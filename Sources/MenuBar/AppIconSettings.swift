@@ -51,20 +51,28 @@ private struct AppIconCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
+                // 顶边一行：左边 Pro 角标（Pro 专属图标固定显示，同小组件库），右边选中的勾。
+                // 都在卡片以内，不压缩略图，也不和名字挤一行（以前是名字前面一个小锁）。
+                HStack(spacing: 0) {
+                    if option.isSupporterOnly { ProBadge() }
+                    Spacer(minLength: 0)
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color.accentColor)
+                    }
+                }
+                .frame(height: BadgeStrip.height(compact: false))
                 Image(nsImage: AppIconSwitcher.thumbnail(for: option))
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 64, height: 64)
                     .opacity(locked ? 0.45 : 1)
-                HStack(spacing: 3) {
-                    if locked {
-                        Image(systemName: "lock.fill").font(.caption2)
-                    }
-                    Text(option.title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                }
+                Text(option.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
             }
             .padding(10)
             .frame(width: 112)
@@ -73,15 +81,6 @@ private struct AppIconCard: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(selected ? Color.accentColor : .primary.opacity(0.08),
                                   lineWidth: selected ? 2 : 1)
-            }
-            .overlay(alignment: .topTrailing) {
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.accentColor)
-                        .padding(6)
-                }
             }
             .contentShape(.rect(cornerRadius: 10))
         }
