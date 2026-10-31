@@ -339,7 +339,11 @@ final class ReminderPopupCenter {
         if inside {
             countdown.pause(at: now)
             // 指针在卡片上时才接键盘，Esc 才关得掉；不在上面时不抢别的窗口的键盘。
-            panel?.makeKey()
+            // 码头的设置这类普通窗口正是 key 时也不抢：一抢设置窗口就整个变灰。
+            if FloatingKeyPolicy.mayTakeKey(.hover, needsKeyboard: true,
+                                            regularWindowIsKey: AccessoryActivation.shared.regularWindowIsKey) {
+                panel?.makeKey()
+            }
         } else {
             countdown.resume(at: now)
         }

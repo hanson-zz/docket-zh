@@ -63,11 +63,13 @@ class HostedWindow {
     /// *behind* whatever the user is looking at - it exists, it is just
     /// invisible. `orderFrontRegardless` is the call that actually raises it,
     /// and a floating level keeps it from sinking again on the next click.
+    ///
+    /// 排到最前还不够：App 没激活时窗口是 key 也显示成非激活的灰色（红绿灯、标题、
+    /// 侧边栏选中项、开关都发灰）。激活交给 `AccessoryActivation`，它会一步步升级，
+    /// 见 Core 的 `WindowActivationPlan`。
     private func raise(_ window: NSWindow) {
         window.level = .floating
-        window.orderFrontRegardless()
-        NSApp.activate()
-        window.makeKey()
+        AccessoryActivation.shared.bringForward(window)
     }
 
     func close() {
@@ -81,6 +83,132 @@ class HostedWindow {
 final class EditKeyWindow: NSWindow {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         EditKeyRouting.perform(event, in: self) { super.performKeyEquivalent(with: event) }
+    }
+
+    /// 点到窗口时 App 还没激活（之前的激活请求被系统忽略，或者键盘一直在码头的
+    /// 非激活面板手里，点普通窗口只是在 App 里换了 key）：借这次点击再激活一次。
+    /// 这是用户自己的点击，协作式激活这时最容易被系统放行。
+    override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            if WindowActivationPlan.activateOnClick(isActive: NSApp.isActive) {
+                AccessoryActivation.shared.bringForward(self, fromClick: true)
+            }
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
+}
+
+/// 把码头（accessory App）连同一个普通窗口一起带到前台，让窗口显示正常的激活外观。
+///
+/// 步骤见 Core 的 `WindowActivationPlan`：先 `NSApp.activate()` 请求；过一会儿还没激活
+/// 就 `activate(ignoringOtherApps:)`；还不成就临时切成 `.regular` 再激活（这时程序坞
+/// 里会出现码头的图标），等这类普通窗口全关了再切回 `.accessory`。激活成功后再把
+/// 窗口设为 key 一次：激活时系统可能把 key 还给上次那个面板。
+@MainActor
+final class AccessoryActivation {
+    static let shared = AccessoryActivation()
+
+    /// 打开着的普通窗口。全关了才把临时的 `.regular` 切回去。
+    private var openWindows: Set<ObjectIdentifier> = []
+    private var closeObservers: [ObjectIdentifier: NSObjectProtocol] = [:]
+    /// 这次是自己临时切成 `.regular` 的，切回时只切这一种。
+    private var promoted = false
+    /// 正在走的那一轮，新一轮开始时旧的作废。
+    private var generation = 0
+    private weak var target: NSWindow?
+    /// 激活回来时补设 key 只管刚带到前台的这一小会儿；之后别的面板激活码头时不去抢它的 key。
+    private var settleUntil = Date.distantPast
+    private var activeObserver: NSObjectProtocol?
+
+    private init() {
+        activeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { AccessoryActivation.shared.becameActive() }
+        }
+    }
+
+    func bringForward(_ window: NSWindow, fromClick: Bool = false) {
+        track(window)
+        target = window
+        generation += 1
+        settleUntil = Date().addingTimeInterval(1.5)
+        if !fromClick {
+            window.orderFrontRegardless()
+        }
+        window.makeKeyAndOrderFront(nil)
+        step(attempt: 0, generation: generation)
+    }
+
+    private func step(attempt: Int, generation: Int) {
+        guard generation == self.generation, let window = target, window.isVisible,
+              let step = WindowActivationPlan.step(attempt: attempt, isActive: NSApp.isActive) else { return }
+        switch step {
+        case .request:
+            NSApp.activate()
+        case .force:
+            NSApp.activate(ignoringOtherApps: true)
+        case .promote:
+            if NSApp.activationPolicy() != .regular {
+                NSApp.setActivationPolicy(.regular)
+                promoted = true
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        }
+        let wait = WindowActivationPlan.wait(after: step)
+        DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+            MainActor.assumeIsolated {
+                AccessoryActivation.shared.step(attempt: attempt + 1, generation: generation)
+            }
+        }
+    }
+
+    /// 激活成功：系统可能把 key 还给了激活前的那个窗口（扩展栏弹出的面板），
+    /// 刚要带到前台的普通窗口还开着就再设一次 key。
+    private func becameActive() {
+        guard Date() < settleUntil else { return }
+        settleUntil = .distantPast
+        guard let window = target, window.isVisible, !window.isKeyWindow else { return }
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private func track(_ window: NSWindow) {
+        let id = ObjectIdentifier(window)
+        openWindows.insert(id)
+        guard closeObservers[id] == nil else { return }
+        closeObservers[id] = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { AccessoryActivation.shared.closed(id) }
+        }
+    }
+
+    private func closed(_ id: ObjectIdentifier) {
+        openWindows.remove(id)
+        if let observer = closeObservers.removeValue(forKey: id) {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        guard WindowActivationPlan.shouldRestoreAccessory(promoted: promoted, openWindows: openWindows.count) else { return }
+        promoted = false
+        // 关窗这一拍里切回，系统可能还没把 key 交出去；下一拍再切。
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                let me = AccessoryActivation.shared
+                guard !me.promoted, me.openWindows.isEmpty else { return }
+                NSApp.setActivationPolicy(.accessory)
+            }
+        }
+    }
+
+    /// 码头自己的普通窗口（设置、小组件库…）此刻是不是 key。浮动面板悬停时看这个，
+    /// 免得指针路过就把设置窗口的 key 抢走。
+    var regularWindowIsKey: Bool {
+        guard let key = NSApp.keyWindow else { return false }
+        return key is EditKeyWindow
     }
 }
 
