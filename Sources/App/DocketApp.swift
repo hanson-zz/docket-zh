@@ -69,6 +69,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // is better than no window at all.
         state.installDefaultProfile()
 
+        // 自定义 App 图标（Pro）：已卸载、也不在任何布局里的 App 的图片清掉。
+        DockAppIconStore.shared.cleanUp(profiles: state.state.profiles)
+
         // Widgets write their own state through here - see WidgetWriter. An
         // open detail panel holds the instance by value, so it is redrawn from
         // the same funnel rather than left showing what the tile used to say.

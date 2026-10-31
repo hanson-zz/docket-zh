@@ -2006,6 +2006,12 @@ struct DockShelfView: View {
                 }
             }
         }
+        // 换显示图标（Pro）：只改码头里画的图，启动照旧按原 App。锁定扩展栏时也能换，
+        // 和分组里的「重命名…」一样只是显示。
+        if case .app(_, let bundleID, let ref) = entry.item {
+            Divider()
+            appIconMenuItems(bundleID: bundleID, ref: ref)
+        }
         // 文件夹分组只收文件夹，App 的「添加到分组」里不列它。
         if entry.canBeGrouped, !groupTargets(for: entry).isEmpty {
             Divider()
@@ -2046,6 +2052,21 @@ struct DockShelfView: View {
         hiddenWidgetsMenu
         Button("添加小组件…") { LibraryWindow.shared.show(app: app) }
         Button("程序坞设置…") { SettingsWindow.shared.show(app: app) }
+    }
+
+    /// 「更换图标…」和「恢复默认图标」。免费用户的「更换图标…」带「（Pro 专属）」，点了弹付费墙；
+    /// 恢复默认随时能点（授权过期后也能清掉）。
+    @ViewBuilder
+    private func appIconMenuItems(bundleID: String, ref: FileRef) -> some View {
+        Button(DockAppIconPicker.menuTitle(tr("更换图标…"))) {
+            // 等菜单收起再弹面板。
+            Task { @MainActor in DockAppIconPicker.choose(bundleID: bundleID, ref: ref) }
+        }
+        if DockAppIconStore.shared.hasCustomIcon(bundleID) {
+            Button(tr("恢复默认图标")) {
+                withAnimation(.snappy(duration: 0.2)) { DockAppIconStore.shared.resetIcon(for: bundleID) }
+            }
+        }
     }
 
     /// When this widget is on the shelf: always, on its condition, or never.

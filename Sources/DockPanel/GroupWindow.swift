@@ -705,6 +705,8 @@ private struct GroupSheetItem: View {
     /// Released outside: shrinking away at the drop point before the shelf
     /// grows it back in, so the icon travels instead of blinking out.
     @State private var departing = false
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
 
     /// Dragging an icon past the edge of the sheet takes it out of the group,
     /// the way dragging one off a folder does on iOS. A cross-window drag
@@ -839,6 +841,16 @@ private struct GroupSheetItem: View {
                 Button(tr("恢复原名"), action: restoreName)
             }
             Toggle(tr("显示名字"), isOn: Binding(get: { showsNames }, set: { _ in toggleNames() }))
+            if case .app(_, let bundleID, let ref) = item {
+                Divider()
+                // 换显示图标（Pro），和扩展栏上的右键菜单同一套。
+                Button(DockAppIconPicker.menuTitle(tr("更换图标…"))) {
+                    Task { @MainActor in DockAppIconPicker.choose(bundleID: bundleID, ref: ref) }
+                }
+                if DockAppIconStore.shared.hasCustomIcon(bundleID) {
+                    Button(tr("恢复默认图标")) { DockAppIconStore.shared.resetIcon(for: bundleID) }
+                }
+            }
             Divider()
             Button("从分组中移除") { remove() }
                 .disabled(!ShelfLock.allows(.removeInGroup, locked: locked))
@@ -850,10 +862,14 @@ private struct GroupSheetItem: View {
     @ViewBuilder
     private var icon: some View {
         if let url = item.fileRef?.resolve() {
-            Image(nsImage: AppCatalog.shared.icon(for: url)).resizable().interpolation(.high)
+            Image(nsImage: DockAppIconDisplay.image(for: item, fallback: AppCatalog.shared.icon(for: url),
+                                                    unlocked: licenseUnlocked || supporter))
+                .resizable().interpolation(.high)
         } else if case .app(_, let bundleID, _) = item,
                   let image = AppCatalog.shared.icon(forBundleID: bundleID) {
-            Image(nsImage: image).resizable().interpolation(.high)
+            Image(nsImage: DockAppIconStore.shared.icon(for: bundleID, fallback: image,
+                                                        unlocked: licenseUnlocked || supporter))
+                .resizable().interpolation(.high)
         } else {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.secondary.opacity(0.3))

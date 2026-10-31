@@ -533,6 +533,12 @@ struct WidgetLibraryView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            // 添加 App 时顺手换显示图标（Pro）。没解锁时弹付费墙，不添加；直接点照旧免费添加。
+            if !shortcut.isFolder {
+                Button(DockAppIconPicker.menuTitle(tr("添加并更换图标…"))) { addChangingIcon(shortcut) }
+            }
+        }
         .help(shortcut.url == nil ? tr("选择其他\(shortcut.isFolder ? tr("文件夹") : tr("应用"))") : tr("添加到扩展栏"))
         .accessibilityLabel(shortcut.url == nil ? shortcut.title : tr("添加“\(shortcut.title)”"))
     }
@@ -623,9 +629,10 @@ struct WidgetLibraryView: View {
         }
     }
 
-    private func add(_ shortcut: LibraryShortcut) {
+    private func add(_ shortcut: LibraryShortcut, changingIcon: Bool = false) {
         if let item = shortcut.item {
             onAddItem(item)
+            if changingIcon { changeIcon(of: [item]) }
             return
         }
         let panel = NSOpenPanel()
@@ -633,12 +640,52 @@ struct WidgetLibraryView: View {
         panel.canChooseDirectories = shortcut.isFolder
         panel.allowsMultipleSelection = true
         panel.prompt = tr("添加")
+        // 选 App 时面板底部多一个勾选框「添加后更换图标」（Pro）。
+        var iconBox: NSButton?
         if !shortcut.isFolder {
             panel.allowedContentTypes = [.applicationBundle]
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
+            let box = NSButton(checkboxWithTitle: DockAppIconPicker.menuTitle(tr("添加后更换图标")),
+                               target: nil, action: nil)
+            box.font = .systemFont(ofSize: 13)
+            box.state = changingIcon ? .on : .off
+            box.sizeToFit()
+            let holder = NSView(frame: NSRect(x: 0, y: 0, width: box.frame.width + 32, height: box.frame.height + 16))
+            box.setFrameOrigin(NSPoint(x: 16, y: 8))
+            holder.addSubview(box)
+            panel.accessoryView = holder
+            panel.isAccessoryViewDisclosed = true
+            iconBox = box
         }
         guard panel.runModal() == .OK else { return }
-        for url in panel.urls { onAddItem(LibraryShortcut.item(for: url)) }
+        let items = panel.urls.map { LibraryShortcut.item(for: $0) }
+        for item in items { onAddItem(item) }
+        if iconBox?.state == .on { changeIcon(of: items) }
+    }
+
+    /// 右键「添加并更换图标…」：没解锁弹付费墙，不添加；解锁后先添加，再选图标。
+    private func addChangingIcon(_ shortcut: LibraryShortcut) {
+        guard DockAppIconPicker.unlocked else {
+            PaywallWindow.shared.show()
+            return
+        }
+        add(shortcut, changingIcon: true)
+    }
+
+    /// 刚添加的 App 一个个选图标（选了几个就弹几次，取消一个不影响下一个）。没解锁时
+    /// （「更多应用…」面板里勾了勾选框）App 照旧添加，再弹付费墙。
+    private func changeIcon(of items: [DockItem]) {
+        let apps: [(String, FileRef)] = items.compactMap { item in
+            if case .app(_, let bundleID, let ref) = item, !bundleID.isEmpty { return (bundleID, ref) }
+            return nil
+        }
+        guard !apps.isEmpty else { return }
+        Task { @MainActor in
+            for (bundleID, ref) in apps {
+                DockAppIconPicker.choose(bundleID: bundleID, ref: ref)
+                if !DockAppIconPicker.unlocked { break }
+            }
+        }
     }
 
     /// 一张库卡片。底栏只放名字和 −/+：名字最多两行、不缩到 13pt 以下，

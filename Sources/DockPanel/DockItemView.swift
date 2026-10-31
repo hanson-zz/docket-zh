@@ -13,6 +13,9 @@ struct DockItemView: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var spacerHovered = false
+    // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
 
     private var geo: Geometry.IconGeometry {
         Geometry.iconGeometry(scale: scale, vertical: position.isVertical)
@@ -71,10 +74,17 @@ struct DockItemView: View {
     private var icon: some View {
         switch item {
         case .app(_, let bundleID, let ref):
+            // 只换画的图：卸载了的 App 照旧画成失效项，不拿自定义图标盖住。
             if let url = ref.resolve() {
-                Image(nsImage: AppCatalog.shared.icon(for: url)).resizable()
+                Image(nsImage: DockAppIconStore.shared.icon(for: bundleID, fallback: AppCatalog.shared.icon(for: url),
+                                                            unlocked: licenseUnlocked || supporter))
+                    .resizable()
+                    .interpolation(.high)
             } else if let image = AppCatalog.shared.icon(forBundleID: bundleID) {
-                Image(nsImage: image).resizable()
+                Image(nsImage: DockAppIconStore.shared.icon(for: bundleID, fallback: image,
+                                                            unlocked: licenseUnlocked || supporter))
+                    .resizable()
+                    .interpolation(.high)
             } else {
                 deadItem
             }

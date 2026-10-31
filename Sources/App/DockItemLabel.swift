@@ -45,8 +45,14 @@ public extension DockItem {
     @MainActor var listIcon: NSImage? {
         switch self {
         case .app(_, let bundleID, let ref):
-            if let url = ref.resolve() { return AppCatalog.shared.icon(for: url) }
-            return AppCatalog.shared.icon(forBundleID: bundleID)
+            // 设置里的列表和扩展栏画同一张（自定义 App 图标，Pro）。
+            if let url = ref.resolve() {
+                return DockAppIconStore.shared.icon(for: bundleID, fallback: AppCatalog.shared.icon(for: url),
+                                                    unlocked: ProAccess.isUnlocked)
+            }
+            return AppCatalog.shared.icon(forBundleID: bundleID).map {
+                DockAppIconStore.shared.icon(for: bundleID, fallback: $0, unlocked: ProAccess.isUnlocked)
+            }
         case .folder(_, let ref, _), .file(_, let ref):
             guard let url = ref.resolve() else { return nil }
             return AppCatalog.shared.icon(for: url)

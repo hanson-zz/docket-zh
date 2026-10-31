@@ -109,15 +109,19 @@ struct GroupTile: View {
 /// One app's artwork inside a group, at its natural shape.
 private struct MiniIcon: View {
     var item: DockItem
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
 
     var body: some View {
         if let url = item.fileRef?.resolve() {
-            Image(nsImage: AppCatalog.shared.icon(for: url))
+            Image(nsImage: DockAppIconDisplay.image(for: item, fallback: AppCatalog.shared.icon(for: url),
+                                                    unlocked: licenseUnlocked || supporter))
                 .resizable()
                 .interpolation(.high)
         } else if case .app(_, let bundleID, _) = item,
                   let image = AppCatalog.shared.icon(forBundleID: bundleID) {
-            Image(nsImage: image)
+            Image(nsImage: DockAppIconStore.shared.icon(for: bundleID, fallback: image,
+                                                        unlocked: licenseUnlocked || supporter))
                 .resizable()
                 .interpolation(.high)
         } else {

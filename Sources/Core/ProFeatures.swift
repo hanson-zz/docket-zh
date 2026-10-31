@@ -64,6 +64,7 @@ import Foundation
 ///   `canChooseDivinationSkin`。星座 / 属相、幸运色和幸运数字、本周寄语免费。
 /// - 扩展栏上下滑动翻页（`CustomDockSettings.pageDirection` 为 vertical），见
 ///   `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮切换布局免费。
+/// - 程序坞 App 换显示图标（`Setting.dockAppIcons`），见 `DockAppIcons`。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -172,6 +173,9 @@ public enum ProFeatures {
         /// 设置 ▸ 布局 ▸ 翻页方向选「上下」：横着的扩展栏上两指上下滑切换布局，见 `ShelfPaging`、
         /// `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮免费。
         case verticalPaging
+        /// 程序坞里的 App（包括访达）换显示图标：上传图片或取另一个 App 的图标，只改码头里
+        /// 画的图，启动照旧按原 App。没解锁时画默认图标、设置留着，见 `DockAppIcons.display`。
+        case dockAppIcons
     }
 
     // MARK: 判断

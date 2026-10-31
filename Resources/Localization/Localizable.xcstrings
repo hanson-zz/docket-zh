@@ -3334,13 +3334,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins"
           }
         }
       }
@@ -67723,6 +67723,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When the message card opens, Dockling closes the matching system banner in the top-right corner, but only if the banner offers its own Close. The notification may then be gone from Notification Center too, and Open launches the app without jumping to that chat."
+          }
+        }
+      }
+    },
+    "换 App 图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom App Icons"
+          }
+        }
+      }
+    },
+    "更换图标…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon…"
+          }
+        }
+      }
+    },
+    "恢复默认图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Default Icon"
+          }
+        }
+      }
+    },
+    "添加并更换图标…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add and Change Icon…"
+          }
+        }
+      }
+    },
+    "添加后更换图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the icon after adding"
+          }
+        }
+      }
+    },
+    "更换“%@”的图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the Icon of \"%@\""
+          }
+        }
+      }
+    },
+    "选一张图片（PNG、JPG、HEIC、ICNS），会缩放成方形；也可以选一个 App，用它的图标。只改码头里显示的图标，不改 App 本身。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a picture (PNG, JPG, HEIC, ICNS), which is scaled to a square, or choose an app to use its icon. Only the icon shown in Dockling changes, never the app itself."
+          }
+        }
+      }
+    },
+    "使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use"
+          }
+        }
+      }
+    },
+    "没能更换图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't Change the Icon"
+          }
+        }
+      }
+    },
+    "这个 App 没有可用的标识，不能更换图标。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This app has no usable identifier, so its icon can't be changed."
+          }
+        }
+      }
+    },
+    "读不出这张图片。换一张 PNG、JPG、HEIC 或 ICNS 试试，边长至少 16 像素。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This picture can't be read. Try a PNG, JPG, HEIC or ICNS at least 16 pixels on each side."
+          }
+        }
+      }
+    },
+    "图标没能存下来，请检查磁盘空间后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The icon couldn't be saved. Check the free disk space and try again."
           }
         }
       }
