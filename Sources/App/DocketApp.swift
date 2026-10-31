@@ -346,6 +346,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                          record: { state.state.hiddenDockAutoHide = $0 })
         }
         state?.saveNow()
+        // 替代系统音量和亮度提示：撤掉媒体键拦截，按键马上回到系统手里。
+        IslandController.shared.shutdown()
         // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。
         NetworkMetrics.shared.flushToday()
     }

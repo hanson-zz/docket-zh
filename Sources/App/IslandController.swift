@@ -8,8 +8,10 @@ import SwiftUI
 ///
 /// A borderless, non-activating panel at status-bar level that ignores the
 /// mouse entirely, so it can never take a click or focus from the app
-/// underneath. It only reads levels; the system's own OSD still appears as
-/// it always has, because no key is intercepted.
+/// underneath. By default it only reads levels and the system's own OSD
+/// still appears. With 替代系统音量和亮度提示 on (and Accessibility granted)
+/// it takes the volume and brightness keys itself through `MediaKeyTap`, so
+/// only this capsule shows; without the permission it falls back to reading.
 @MainActor
 final class IslandController {
     static let shared = IslandController()
@@ -26,6 +28,11 @@ final class IslandController {
     private var lastBrightness: Double?
 
     private var meetingTimer: Timer?
+
+    /// 替代系统音量和亮度提示：媒体键拦截、按下松开的记账，和没装上时的重试。
+    private let keyTap = MediaKeyTap()
+    private var keyLedger = IslandKeyLedger()
+    private var keyTapTimer: Timer?
 
     private var flashGeneration = 0
     private var hideGeneration = 0
@@ -79,7 +86,127 @@ final class IslandController {
             model.flash = nil
             model.meeting = nil
         }
+        updateKeyTap()
         sync()
+    }
+
+    /// 退出码头时撤掉拦截，音量、亮度键马上回到系统手里。
+    func shutdown() {
+        removeKeyTap()
+    }
+
+    // MARK: Taking over the keys
+
+    /// 设置页出现、码头回到前台时叫一次：权限可能刚在系统设置里改过。
+    func recheckKeyTap() {
+        updateKeyTap()
+    }
+
+    /// 按设置装上或撤掉媒体键拦截，并更新设置里那一行状态。
+    ///
+    /// 没有辅助功能权限时不去创建（免得系统反复弹输入监控的提示），退回只读；
+    /// 想要但没装上时每 5 秒再看一次，授权后不用重开码头。装着时也每 5 秒看一眼，
+    /// 权限被收回就撤掉，退回只读。
+    private func updateKeyTap() {
+        guard settings.wantsKeyTap else {
+            removeKeyTap()
+            return
+        }
+        let trusted = AXIsProcessTrusted()
+        if trusted, !keyTap.isInstalled {
+            _ = keyTap.install { [weak self] press, modifiers, pointer in
+                self?.handleKey(press, modifiers: modifiers, pointer: pointer) ?? false
+            }
+        } else if !trusted, keyTap.isInstalled {
+            keyTap.remove()
+            keyLedger.reset()
+        }
+        IslandTakeover.shared.status = IslandTakeoverStatus.resolve(
+            wanted: true, trusted: trusted, installed: keyTap.isInstalled)
+        if keyTapTimer == nil {
+            let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateKeyTap() }
+            }
+            timer.tolerance = 1
+            RunLoop.main.add(timer, forMode: .common)
+            keyTapTimer = timer
+        }
+    }
+
+    private func removeKeyTap() {
+        keyTapTimer?.invalidate()
+        keyTapTimer = nil
+        keyTap.remove()
+        keyLedger.reset()
+        IslandTakeover.shared.status = .off
+    }
+
+    /// 拦截回调：true 吞掉这一下（码头已经改好并显示），false 交给系统。
+    private func handleKey(_ press: IslandMediaKeyPress, modifiers: IslandMediaModifiers,
+                           pointer: CGPoint) -> Bool {
+        guard press.isDown else {
+            let swallowed = keyLedger.up(press.key)
+            if swallowed, press.key == .soundUp || press.key == .soundDown {
+                VolumeFeedback.play(shift: modifiers.shift)
+            }
+            return swallowed
+        }
+        var handled = IslandKeyRoute.handles(press, settings: settings, modifiers: modifiers,
+                                             context: keyContext(for: press.key, pointer: pointer))
+        if handled {
+            handled = press.key.isVolume ? changeVolume(press, fine: modifiers.fine)
+                                         : changeBrightness(press, fine: modifiers.fine)
+        }
+        keyLedger.down(press.key, handled: handled)
+        return handled
+    }
+
+    /// 只读这一下用得上的那一半，按键连发时不白读另一种设备。
+    private func keyContext(for key: IslandMediaKey, pointer: CGPoint) -> IslandKeyContext {
+        var context = IslandKeyContext(volumeWritable: false, muteWritable: false, brightnessWritable: false,
+                                       keyboardLocked: KeyboardBlocker.shared.isActive)
+        if key.isVolume, let device = CoreAudioReader.defaultOutput() {
+            context.volumeWritable = SystemVolumeControl.volumeWritable(device)
+            context.muteWritable = SystemVolumeControl.muteWritable(device)
+        } else if key.isBrightness {
+            context.brightnessWritable = DisplayBrightness.canWrite(pointer: pointer)
+        }
+        return context
+    }
+
+    /// 改默认输出的音量或静音，然后闪一下胶囊。一样都没改成时返回 false，放行给系统。
+    private func changeVolume(_ press: IslandMediaKeyPress, fine: Bool) -> Bool {
+        guard let device = CoreAudioReader.defaultOutput(),
+              let now = SystemVolumeControl.read(device) else { return false }
+        // 按住静音键的连发：什么都不改，但这一下也是码头的，照样吞掉。
+        guard let next = IslandKeyEffect.volume(press, level: now.level, muted: now.muted, fine: fine) else {
+            return true
+        }
+        var wrote = false
+        if next.level != now.level {
+            wrote = SystemVolumeControl.setVolume(next.level, on: device)
+        }
+        if next.muted != now.muted, SystemVolumeControl.muteWritable(device) {
+            wrote = SystemVolumeControl.setMute(next.muted, on: device) || wrote
+        }
+        // 已经到顶或到底：没有要写的，胶囊照样亮一下，和系统一样。
+        if !wrote, next.level == now.level, next.muted == now.muted { wrote = true }
+        guard wrote else { return false }
+        let after = SystemVolumeControl.read(device) ?? next
+        lastVolume = after.level
+        lastMuted = after.muted
+        flash(.volume(level: after.level, muted: after.muted))
+        return true
+    }
+
+    /// 改内建屏亮度，然后闪一下胶囊。读写失败时返回 false，放行给系统。
+    private func changeBrightness(_ press: IslandMediaKeyPress, fine: Bool) -> Bool {
+        guard let now = DisplayBrightness.read(),
+              let next = IslandKeyEffect.brightness(press, level: now, fine: fine),
+              let after = DisplayBrightness.write(next) else { return false }
+        lastBrightness = after
+        flash(.brightness(level: after))
+        return true
     }
 
     // MARK: Sources
@@ -243,6 +370,14 @@ final class IslandController {
         panel.setFrame(frame, display: false)
         IslandOccupancy.shared.update(IslandLayout.occupied(panel: frame))
     }
+}
+
+/// 替代系统音量和亮度提示的状态，设置里那一行说明读它。
+@MainActor @Observable
+final class IslandTakeover {
+    static let shared = IslandTakeover()
+    var status: IslandTakeoverStatus = .off
+    private init() {}
 }
 
 /// Where the island is, for whatever has to keep clear of it.

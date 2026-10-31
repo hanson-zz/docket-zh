@@ -5,8 +5,9 @@ import CoreGraphics
 import EventKit
 import Foundation
 
-// The three things 灵动提示 listens to. Each one only reads; none of them
-// intercepts a key or replaces the system's own volume and brightness OSD.
+// The three things 灵动提示 listens to. Each one only reads. Taking over the
+// volume and brightness keys, when 替代系统音量和亮度提示 is on, is in
+// MediaKeyTap.swift; the brightness writer it uses lives here beside the reader.
 
 // MARK: - System volume
 
@@ -141,9 +142,26 @@ enum DisplayBrightness {
     private typealias Getter = @convention(c) (UInt32, UnsafeMutablePointer<Float>) -> Int32
 
     private static let getter: Getter? = {
-        guard let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
-              let symbol = dlsym(handle, "DisplayServicesGetBrightness") else { return nil }
+        guard let handle, let symbol = dlsym(handle, "DisplayServicesGetBrightness") else { return nil }
         return unsafeBitCast(symbol, to: Getter.self)
+    }()
+
+    private typealias Setter = @convention(c) (UInt32, Float) -> Int32
+    private typealias Notifier = @convention(c) (UInt32, Double) -> Int32
+
+    nonisolated(unsafe) private static let handle: UnsafeMutableRawPointer? =
+        dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY)
+
+    /// 替代系统亮度提示时码头自己改亮度用。和读取一样可有可无，没有就放行给系统。
+    private static let setter: Setter? = {
+        guard let handle, let symbol = dlsym(handle, "DisplayServicesSetBrightness") else { return nil }
+        return unsafeBitCast(symbol, to: Setter.self)
+    }()
+
+    /// 改完告诉系统一声，控制中心的亮度滑块跟着动。没有这个符号也不影响改亮度。
+    private static let notifier: Notifier? = {
+        guard let handle, let symbol = dlsym(handle, "DisplayServicesBrightnessChanged") else { return nil }
+        return unsafeBitCast(symbol, to: Notifier.self)
     }()
 
     /// Whether there is a brightness to read on this Mac at all.
@@ -154,6 +172,37 @@ enum DisplayBrightness {
         var value: Float = 0
         guard getter(display, &value) == 0, value.isFinite else { return nil }
         return Double(min(1, max(0, value)))
+    }
+
+    /// 能不能由码头来改：有读写接口、内建屏亮着，而且指针在内建屏上。
+    /// 指针在外接显示器上时亮度键是给那块屏的，交给系统。
+    static func canWrite(pointer: CGPoint) -> Bool {
+        guard setter != nil, getter != nil, let display = activeBuiltInDisplay() else { return false }
+        var count: UInt32 = 0
+        var under: CGDirectDisplayID = 0
+        // CGEvent 的位置是左上角为原点的全局坐标，和 CGGetDisplaysWithPoint 一致。
+        guard CGGetDisplaysWithPoint(pointer, 1, &under, &count) == .success, count > 0 else {
+            return CGMainDisplayID() == display
+        }
+        return under == display
+    }
+
+    /// 写入内建屏亮度，成功后读回来的值；失败是 nil，调用方放行给系统。
+    static func write(_ level: Double) -> Double? {
+        guard let setter, let display = activeBuiltInDisplay() else { return nil }
+        let value = Float(min(1, max(0, level)))
+        guard setter(display, value) == 0 else { return nil }
+        _ = notifier?(display, Double(value))
+        return read() ?? Double(value)
+    }
+
+    /// 亮着的内建屏（合盖或熄屏时没有）。
+    private static func activeBuiltInDisplay() -> CGDirectDisplayID? {
+        var count: UInt32 = 0
+        guard CGGetActiveDisplayList(0, nil, &count) == .success, count > 0 else { return nil }
+        var displays = [CGDirectDisplayID](repeating: 0, count: Int(count))
+        guard CGGetActiveDisplayList(count, &displays, &count) == .success else { return nil }
+        return displays.prefix(Int(count)).first { CGDisplayIsBuiltin($0) != 0 }
     }
 
     private static func builtInDisplay() -> CGDirectDisplayID? {

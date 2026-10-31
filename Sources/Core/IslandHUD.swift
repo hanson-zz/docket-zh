@@ -10,6 +10,9 @@ public struct IslandSettings: Codable, Hashable, Sendable {
     public var volume: Bool = false
     public var brightness: Bool = false
     public var meeting: Bool = false
+    /// 替代系统音量和亮度提示：码头拦下音量、亮度键自己调，系统的提示就不出现。
+    /// 只在音量或亮度提示打开时对那一种生效，见 `replacesVolume`、`replacesBrightness`。
+    public var replaceSystemHUD: Bool = false
     /// How many minutes before an event the countdown appears.
     public var meetingMinutes: Int = IslandSettings.defaultMinutes
 
@@ -19,6 +22,13 @@ public struct IslandSettings: Codable, Hashable, Sendable {
     public init() {}
 
     public var anyEnabled: Bool { volume || brightness || meeting }
+
+    /// 音量键由码头接管（系统音量提示不出现）。
+    public var replacesVolume: Bool { replaceSystemHUD && volume }
+    /// 亮度键由码头接管（系统亮度提示不出现）。
+    public var replacesBrightness: Bool { replaceSystemHUD && brightness }
+    /// 需要装键盘事件拦截。
+    public var wantsKeyTap: Bool { replacesVolume || replacesBrightness }
 
     /// A saved choice that is no longer offered falls back to the default
     /// rather than to a number no picker row shows.
@@ -33,6 +43,7 @@ public struct IslandSettings: Codable, Hashable, Sendable {
         volume = try c.decodeIfPresent(Bool.self, forKey: .volume) ?? false
         brightness = try c.decodeIfPresent(Bool.self, forKey: .brightness) ?? false
         meeting = try c.decodeIfPresent(Bool.self, forKey: .meeting) ?? false
+        replaceSystemHUD = try c.decodeIfPresent(Bool.self, forKey: .replaceSystemHUD) ?? false
         meetingMinutes = try c.decodeIfPresent(Int.self, forKey: .meetingMinutes) ?? IslandSettings.defaultMinutes
     }
 }

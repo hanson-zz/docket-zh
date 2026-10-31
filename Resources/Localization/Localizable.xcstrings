@@ -2773,6 +2773,17 @@
         }
       }
     },
+    "在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。默认只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现；打开“替代系统音量和亮度提示”后，音量和亮度键由码头接管，只显示码头的提示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefly shows a small capsule at the top center of the screen (below the notch). By default it only reads volume, brightness and events, never intercepts keys, and the system's own volume and brightness HUDs still appear. With \"Replace the system volume and brightness HUD\" on, Dockling takes over the volume and brightness keys and only its own HUD shows."
+          }
+        }
+      }
+    },
     "在扩展栏的壁纸面板里选文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3726,6 +3737,17 @@
         }
       }
     },
+    "替代系统音量和亮度提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace the system volume and brightness HUD"
+          }
+        }
+      }
+    },
     "最占 CPU" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3990,6 +4012,17 @@
         }
       }
     },
+    "没能接管音量和亮度键，暂时照常只读取，系统的提示也会出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't take over the volume and brightness keys. For now levels are only read and the system's HUD still appears."
+          }
+        }
+      }
+    },
     "海棠红" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4085,6 +4118,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aries"
+          }
+        }
+      }
+    },
+    "码头正在调节亮度，系统自带的亮度提示不再出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling is handling brightness. The system's brightness HUD no longer appears."
+          }
+        }
+      }
+    },
+    "码头正在调节音量和亮度，系统自带的提示不再出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling is handling volume and brightness. The system's HUD no longer appears."
+          }
+        }
+      }
+    },
+    "码头正在调节音量，系统自带的音量提示不再出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling is handling volume. The system's volume HUD no longer appears."
           }
         }
       }
@@ -4283,6 +4349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ivory"
+          }
+        }
+      }
+    },
+    "运行码头时由码头调节音量和亮度，只显示码头的提示，系统自带的不再出现。只对上面打开了的提示生效，需要辅助功能权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While Dockling is running, it changes volume and brightness itself and shows only its own HUD, so the system's no longer appears. Applies only to the HUDs turned on above. Requires Accessibility permission."
           }
         }
       }
@@ -5020,6 +5097,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Silver"
+          }
+        }
+      }
+    },
+    "需要辅助功能权限才能替代系统提示。授权前照常只读取，系统的提示也会出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility permission is needed to replace the system HUD. Until it is granted, levels are only read and the system's HUD still appears."
           }
         }
       }
@@ -22295,17 +22383,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show %@ on the widget"
-          }
-        }
-      }
-    },
-    "在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Briefly shows a small capsule at the top center of the screen (below the notch). It only reads volume, brightness and events, never intercepts keys, and the system's own volume and brightness HUDs still appear."
           }
         }
       }

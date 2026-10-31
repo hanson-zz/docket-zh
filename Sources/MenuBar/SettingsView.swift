@@ -700,6 +700,19 @@ struct SettingsView: View {
                 .help(brightnessAvailable
                       ? tr("调节内建显示器亮度时，在屏幕顶部中央显示当前亮度。")
                       : tr("这台 Mac 没有可读取亮度的内建显示器。"))
+            Toggle("替代系统音量和亮度提示", isOn: $state.island.replaceSystemHUD)
+                .disabled(!state.island.volume && !state.island.brightness && !state.island.replaceSystemHUD)
+                .help("运行码头时由码头调节音量和亮度，只显示码头的提示，系统自带的不再出现。只对上面打开了的提示生效，需要辅助功能权限。")
+                .onChange(of: state.island.replaceSystemHUD) { _, on in
+                    // 刚打开又没权限：让系统弹一次允许的提示，状态行里也有“去授权”。
+                    if on, !AppWindows.isTrusted {
+                        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+                    }
+                }
+            if let note = islandTakeover.status.note(volume: state.island.volume && state.island.replaceSystemHUD,
+                                                     brightness: state.island.brightness && state.island.replaceSystemHUD) {
+                islandTakeoverRow(note)
+            }
             Toggle("会议倒计时", isOn: $state.island.meeting)
                 .help("日程开始前，在屏幕顶部中央显示“X 分钟后：日程标题”。需要日历权限。")
             if state.island.meeting {
@@ -714,10 +727,33 @@ struct SettingsView: View {
         } header: {
             Text("灵动提示")
         } footer: {
-            Text("在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现。")
+            Text("在屏幕顶部中央（刘海下方）短暂显示一个小胶囊。默认只读取音量、亮度和日程，不拦截按键，系统自带的音量和亮度提示照常出现；打开“替代系统音量和亮度提示”后，音量和亮度键由码头接管，只显示码头的提示。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+        .onAppear { IslandController.shared.recheckKeyTap() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            IslandController.shared.recheckKeyTap()
+        }
+    }
+
+    private var islandTakeover: IslandTakeover { IslandTakeover.shared }
+
+    /// 替代系统提示的状态：接管中是灰色说明，退回只读时是橙色提醒，缺权限时带“去授权”。
+    private func islandTakeoverRow(_ note: String) -> some View {
+        let status = islandTakeover.status
+        let warning = status != .active
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Label(note, systemImage: warning ? "exclamationmark.triangle.fill" : "checkmark.circle")
+                .font(.system(size: 13))
+                .foregroundStyle(warning ? AnyShapeStyle(Color.orange) : AnyShapeStyle(.secondary))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if status.needsGrant {
+                Button(tr("去授权")) { AppWindows.requestAccess() }
+                    .controlSize(.small)
+            }
         }
     }
 
