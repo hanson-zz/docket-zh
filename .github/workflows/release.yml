@@ -113,6 +113,8 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="" \
             ENABLE_HARDENED_RUNTIME=NO \
+            SWIFT_OPTIMIZATION_LEVEL=-Osize \
+            SWIFT_COMPILATION_MODE=wholemodule \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
             DEPLOYMENT_POSTPROCESSING=YES \
             STRIP_INSTALLED_PRODUCT=YES \
@@ -144,7 +146,18 @@ jobs:
       - name: Check the app size
         run: |
           APP=build/Build/Products/Release/Dockling.app
-          du -sh "$APP" "$APP/Contents/MacOS/"* "$APP/Contents/Resources"
+          du -sh "$APP" "$APP/Contents/MacOS/"* "$APP/Contents/Resources" "$APP/Contents/PlugIns/"* 2>/dev/null || true
+          # Resources 里占地最大的 10 项（打包后资源是平铺的，Assets.car、各 .lproj 和大图都在这一层），
+          # 以后体积涨了先看这里。
+          echo "Largest items in Contents/Resources:"
+          du -sk "$APP/Contents/Resources/"* | sort -rn | head -10 \
+            | awk '{ printf "  %8.1f MB  %s\n", $1 / 1024, $2 }' | sed "s|$APP/Contents/Resources/||" || true
+          # 小组件扩展自带一份小熊猫图（沙盒里读不到主 App 的资源），一起看。
+          if [ -d "$APP/Contents/PlugIns/DocklingWidgets.appex/Contents/Resources" ]; then
+            echo "Largest items in DocklingWidgets.appex/Contents/Resources:"
+            du -sk "$APP/Contents/PlugIns/DocklingWidgets.appex/Contents/Resources/"* | sort -rn | head -5 \
+              | awk '{ printf "  %8.1f MB  %s\n", $1 / 1024, $2 }' | sed "s|$APP/Contents/PlugIns/DocklingWidgets.appex/Contents/Resources/||" || true
+          fi
           SIZE_MB=$(( $(du -sk "$APP" | cut -f1) / 1024 ))
           echo "App size: ${SIZE_MB} MB"
           if [ "$SIZE_MB" -gt 100 ]; then

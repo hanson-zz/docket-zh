@@ -27,6 +27,13 @@ settings:
     ENABLE_HARDENED_RUNTIME: NO
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
+  configs:
+    # 发布构建按体积优化：-Osize 和 -O 差不多快（码头的热点在 SwiftUI 和系统框架里，
+    # 不在自己的计算循环），机器码小一截；整模块编译让优化器看到全部代码，裁得更干净。
+    # 代码全是 Swift，没有 C/ObjC，所以不开 LLVM_LTO（它只管 clang 编的代码）。
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-Osize"
+      SWIFT_COMPILATION_MODE: wholemodule
 
 targets:
   Docket:
