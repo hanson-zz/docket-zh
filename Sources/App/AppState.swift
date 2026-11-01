@@ -69,6 +69,9 @@ public final class AppState {
             if state.inputSource != oldValue.inputSource {
                 InputSourceController.shared.apply(state.inputSource)
             }
+            if state.typingSounds != oldValue.typingSounds {
+                TypingSoundController.shared.apply(state.typingSounds)
+            }
             // 钉在桌面：设置或卡片变了重摆窗口；布局里的小组件变了也看一眼，删掉的小组件
             // （撕掉的便签那张）跟着取消钉。
             if state.desktopPins != oldValue.desktopPins

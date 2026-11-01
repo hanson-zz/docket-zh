@@ -145,6 +145,8 @@ struct SettingsView: View {
         ("Shortcuts", tr("快捷键"), "command"),
         // 输入法自动切换，夹在快捷键和通用之间。
         ("InputSource", tr("输入法"), "keyboard"),
+        // 打字音效：按键时的机械键盘、打字机声音，跟在输入法后面。
+        ("TypingSounds", tr("打字音效"), "speaker.wave.2"),
         ("General", tr("通用"), "gearshape"),
         ("Pro", tr("码头 Pro"), "crown"),
     ]
@@ -189,6 +191,7 @@ struct SettingsView: View {
         case "AI": ai
         case "Shortcuts": shortcuts
         case "InputSource": InputSourceSettingsPane(settings: $state.inputSource)
+        case "TypingSounds": TypingSoundSettingsPane(settings: $state.typingSounds)
         case "General": general
         case "Pro": ProSettingsPane()
         default: shelf

@@ -68188,6 +68188,633 @@
           }
         }
       }
+    },
+    "青轴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blue switch"
+          }
+        }
+      }
+    },
+    "茶轴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brown switch"
+          }
+        }
+      }
+    },
+    "打字机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typewriter"
+          }
+        }
+      }
+    },
+    "红轴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red switch"
+          }
+        }
+      }
+    },
+    "黑轴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Black switch"
+          }
+        }
+      }
+    },
+    "静电容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capacitive"
+          }
+        }
+      }
+    },
+    "白噪安静款" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet hush"
+          }
+        }
+      }
+    },
+    "清脆的咔哒声" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A crisp click"
+          }
+        }
+      }
+    },
+    "闷一点的段落感" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A softer tactile bump"
+          }
+        }
+      }
+    },
+    "金属敲击，回车带铃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metal strikes, a bell on Return"
+          }
+        }
+      }
+    },
+    "线性，轻快顺滑" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear, light and smooth"
+          }
+        }
+      }
+    },
+    "线性，沉稳厚实" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear, deep and solid"
+          }
+        }
+      }
+    },
+    "圆润的咚咚声" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A round, muted thock"
+          }
+        }
+      }
+    },
+    "轻柔，不吵人" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soft and unobtrusive"
+          }
+        }
+      }
+    },
+    "config.json 不是有效的 JSON。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "config.json is not valid JSON."
+          }
+        }
+      }
+    },
+    "config.json 里没有定义任何键的声音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "config.json does not define a sound for any key."
+          }
+        }
+      }
+    },
+    "config.json 没写声音文件（sound 或 audio_file）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "config.json does not name a sound file (sound or audio_file)."
+          }
+        }
+      }
+    },
+    "声音文件路径不安全：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsafe sound file path: %@"
+          }
+        }
+      }
+    },
+    "不支持 .%@ 格式，请用 wav、ogg、mp3、flac 或 m4a。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The .%@ format is not supported. Use wav, ogg, mp3, flac or m4a."
+          }
+        }
+      }
+    },
+    "这个声音包要更新版本的 Mechvibes 才能读。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This sound pack needs a newer version of Mechvibes."
+          }
+        }
+      }
+    },
+    "声音包里的文件太多。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sound pack has too many files."
+          }
+        }
+      }
+    },
+    "找不到这个文件。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That file could not be found."
+          }
+        }
+      }
+    },
+    "请选 Mechvibes 声音包的 .zip 或解压后的文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Mechvibes sound pack as a .zip or an unzipped folder."
+          }
+        }
+      }
+    },
+    "压缩包太大（超过 80 MB）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive is too large (over 80 MB)."
+          }
+        }
+      }
+    },
+    "没找到 config.json，这不像 Mechvibes 声音包。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No config.json found. This does not look like a Mechvibes sound pack."
+          }
+        }
+      }
+    },
+    "读不了 config.json。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "config.json could not be read."
+          }
+        }
+      }
+    },
+    "声音包里缺少文件：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sound pack is missing a file: %@"
+          }
+        }
+      }
+    },
+    "%@ 太长（超过 3 分钟），不像按键声音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is too long (over 3 minutes) to be a key sound."
+          }
+        }
+      }
+    },
+    "这台 Mac 解不开 %@（.%@ 格式）。可以先用音频软件转成 wav 或 m4a，改好 config.json 里的文件名再导入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac cannot decode %@ (.%@). Convert it to wav or m4a with an audio app, update the file name in config.json, then import again."
+          }
+        }
+      }
+    },
+    "解不开 %@，文件可能坏了或格式不支持。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ could not be decoded. The file may be damaged or in an unsupported format."
+          }
+        }
+      }
+    },
+    "找不到存声音包的文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The folder for sound packs could not be found."
+          }
+        }
+      }
+    },
+    "保存声音包时出错：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sound pack could not be saved: %@"
+          }
+        }
+      }
+    },
+    "解压失败。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive could not be unzipped."
+          }
+        }
+      }
+    },
+    "解压失败，压缩包可能坏了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive could not be unzipped. It may be damaged."
+          }
+        }
+      }
+    },
+    "删除这个声音包？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete This Sound Pack?"
+          }
+        }
+      }
+    },
+    "「%@」会从这台 Mac 上删掉，要用时再导入一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" will be removed from this Mac. Import it again to use it later."
+          }
+        }
+      }
+    },
+    "输入监控权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Monitoring permission"
+          }
+        }
+      }
+    },
+    "只用来知道按了哪个键好放对应的声音：不读、不存、不上传你打的任何内容。输入密码时自动静音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only used to know which key was pressed so the right sound plays. Nothing you type is read, stored or uploaded. Sounds are muted while you enter a password."
+          }
+        }
+      }
+    },
+    "还没授权，打字时不会出声。在系统设置 ▸ 隐私与安全性 ▸ 输入监控里打开「码头」；打开后仍没声音时，退出码头再打开一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not allowed yet, so typing stays silent. Turn on Dockling in System Settings, Privacy & Security, Input Monitoring. If there is still no sound after that, quit Dockling and open it again."
+          }
+        }
+      }
+    },
+    "权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission"
+          }
+        }
+      }
+    },
+    "选着的是 Pro 声音，解锁前先用青轴。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Pro sound is selected. Blue switch plays until you unlock Pro."
+          }
+        }
+      }
+    },
+    "回车、空格、删除各有自己的声音，其余键在几个变体里随机，音高也略有起伏。按住不放连发时最多每 0.15 秒响一声。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return, Space and Delete each have their own sound; other keys pick from a few variants with a slight change in pitch. A held key that repeats sounds at most once every 0.15 seconds."
+          }
+        }
+      }
+    },
+    "支持 Mechvibes 声音包：选 .zip 或解压后的文件夹（config.json 加声音文件）。只在本机读，不联网，存在码头自己的文件夹里，随时能删。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mechvibes sound packs are supported: choose a .zip or an unzipped folder (config.json plus sound files). They are read on this Mac only, never downloaded, and kept in Dockling's own folder, where you can delete them any time."
+          }
+        }
+      }
+    },
+    "Mechvibes 声音包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mechvibes Sound Packs"
+          }
+        }
+      }
+    },
+    "正在导入…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing…"
+          }
+        }
+      }
+    },
+    "导入 Mechvibes 声音包…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Mechvibes Sound Pack…"
+          }
+        }
+      }
+    },
+    "导入 Mechvibes 声音包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Mechvibes Sound Pack"
+          }
+        }
+      }
+    },
+    "选声音包的 .zip，或解压后带 config.json 的文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the sound pack's .zip, or an unzipped folder with config.json"
+          }
+        }
+      }
+    },
+    "没能导入这个声音包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't Import This Sound Pack"
+          }
+        }
+      }
+    },
+    "相对音量，和系统音量叠在一起：系统静音或没有输出设备时不出声。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relative to the system volume: nothing plays when the system is muted or there is no output device."
+          }
+        }
+      }
+    },
+    "打字音效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing Sounds"
+          }
+        }
+      }
+    },
+    "敲键盘时听见机械键盘或打字机的声音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hear a mechanical keyboard or a typewriter as you type"
+          }
+        }
+      }
+    },
+    "真实录音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real recording"
+          }
+        }
+      }
+    },
+    "原创合成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original synthesis"
+          }
+        }
+      }
+    },
+    "删除这个声音包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this sound pack"
+          }
+        }
+      }
+    },
+    "%@ 个键" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ keys"
+          }
+        }
+      }
+    },
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤；打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins; the six Typing Sounds beyond Blue switch, and importing Mechvibes sound packs"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

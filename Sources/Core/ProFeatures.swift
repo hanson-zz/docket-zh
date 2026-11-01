@@ -65,6 +65,8 @@ import Foundation
 /// - 扩展栏上下滑动翻页（`CustomDockSettings.pageDirection` 为 vertical），见
 ///   `ProLicenseGate.verticalPagingActive`。左右轻扫和 ⌘ + 滚轮切换布局免费。
 /// - 程序坞 App 换显示图标（`Setting.dockAppIcons`），见 `DockAppIcons`。
+/// - 打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包（`Setting.typingSounds`），见
+///   `TypingSoundGate`。总开关、青轴、音量、试听免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -176,6 +178,10 @@ public enum ProFeatures {
         /// 程序坞里的 App（包括访达）换显示图标：上传图片或取另一个 App 的图标，只改码头里
         /// 画的图，启动照旧按原 App。没解锁时画默认图标、设置留着，见 `DockAppIcons.display`。
         case dockAppIcons
+        /// 设置 ▸ 打字音效：青轴以外的 6 款声音（茶轴、打字机、红轴、黑轴、静电容、白噪安静款）
+        /// 和导入 Mechvibes 声音包。总开关、青轴、音量、试听免费。没解锁时选着的 Pro 款按青轴响，
+        /// 选择照旧存着，见 `TypingSoundGate.effectiveChoice`。
+        case typingSounds
     }
 
     // MARK: 判断

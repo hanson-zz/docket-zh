@@ -231,6 +231,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 按 App 规则是码头 Pro，总开关和其余设置免费。
         InputSourceController.shared.apply(state.state.inputSource)
 
+        // 打字音效（默认关）：按键时放机械键盘、打字机的声音。要「输入监控」权限，只听键码，
+        // 不记录键入内容。青轴以外的款式和导入 Mechvibes 声音包是码头 Pro。
+        TypingSoundController.shared.apply(state.state.typingSounds)
+
         // 钉在桌面：扩展栏的卡片拖到桌面或右键「钉在桌面」变成桌面卡片，在所有窗口之后。
         DesktopPinController.shared.start(app: state)
 
@@ -351,6 +355,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state?.saveNow()
         // 替代系统音量和亮度提示：撤掉媒体键拦截，按键马上回到系统手里。
         IslandController.shared.shutdown()
+        // 打字音效：撤掉键盘监听、停掉音频引擎。
+        TypingSoundController.shared.shutdown()
         // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。
         NetworkMetrics.shared.flushToday()
     }

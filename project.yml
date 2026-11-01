@@ -71,6 +71,11 @@ targets:
       # 作为普通资源打包。
       - path: Resources/Mines
         buildPhase: resources
+      # 打字音效的七款单键样本（单声道 32 kHz WAV，合计约 0.43 MB）：青轴、茶轴、打字机是
+      # scripts/make-typing-sounds.py 合成的原创音效；红轴、黑轴、静电容裁自 Mechvibes 自带包（MIT），
+      # 白噪安静款裁自 OpenGameArt 的 CC0 录音，出处见 NOTICE.md。作为普通资源打包。
+      - path: Resources/TypingSounds
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

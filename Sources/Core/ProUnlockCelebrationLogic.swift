@@ -281,6 +281,7 @@ public enum ProUnlockHighlights {
         case .setting(.desktopPins): tr("桌面卡片")
         case .setting(.verticalPaging): tr("上下翻页")
         case .setting(.dockAppIcons): tr("换 App 图标")
+        case .setting(.typingSounds): tr("打字音效")
         case .kind(.pet): tr("电子宠物")
         case .tool(.textCapture): tr("截图识字")
         case .kind(let kind): WidgetCatalog.entry(kind)?.name ?? kind.rawValue
@@ -304,6 +305,7 @@ public enum ProUnlockHighlights {
         case .setting(.desktopPins): "pin.square.fill"
         case .setting(.verticalPaging): "arrow.up.arrow.down"
         case .setting(.dockAppIcons): "app.badge.checkmark"
+        case .setting(.typingSounds): "keyboard"
         case .kind(.pet): "pawprint.fill"
         case .tool(.textCapture): "text.viewfinder"
         default: "star.fill"

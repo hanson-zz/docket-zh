@@ -391,6 +391,59 @@ The verses, titles and grades of the 100 观音灵签 lots are the traditional t
 (public domain). The plain-language readings, the five per-area readings and all
 English text for the lots were written for this project.
 
+### Typing sound samples - Mechvibes (MIT) and OpenGameArt (CC0)
+
+The 打字音效 (Typing Sounds) setting plays short single-key samples from
+`Resources/TypingSounds/` (32 kHz mono WAV, about 0.43 MB for all seven sets).
+The interface uses generic names only and never a manufacturer's name.
+
+- **青轴 (Blue switch), 茶轴 (Brown switch), 打字机 (Typewriter)** are original
+  sounds synthesized for this project by `scripts/make-typing-sounds.py` from
+  noise, decaying sine waves and envelopes. No recording or sample is used.
+- **红轴 (Red switch), 黑轴 (Black switch), 静电容 (Capacitive)** are cut from the
+  key-down segments of three sound packs bundled with
+  [**Mechvibes**](https://github.com/hainguyents13/mechvibes)
+  (`soundpacks/keyboard/cherrymx-red-abs`, `cherrymx-black-pbt` and
+  `topre-purple-hybrid-pbt`): seven keys per set (A, F, J, L, Space, Enter,
+  Backspace), downmixed to mono, resampled, trimmed and level-matched. The
+  repository and its bundled packs are distributed under the MIT licence
+  (checked 2026-11-01 at https://github.com/hainguyents13/mechvibes/blob/main/LICENSE;
+  the Clacky app, https://github.com/jasonzh0/Clacky, redistributes the same
+  packs under the same terms):
+
+> MIT License
+>
+> Copyright (c) 2026 Hải Nguyễn
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+- **白噪安静款 (Quiet hush)** is cut from the single keystrokes in
+  [**Keyboard Soundpack #1 [Typing and Single Keystrokes]**](https://opengameart.org/content/keyboard-soundpack-1-typing-and-single-keystrokes)
+  by unicaegames on OpenGameArt, released under
+  [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (licence checked
+  2026-11-01 on that page). Seven of the 32 keystrokes were used; Space, Enter
+  and Backspace are three of them slowed or sped up slightly. CC0 asks for no
+  attribution; it is given here as a courtesy.
+
+Packs the user imports with 导入 Mechvibes 声音包 are copied into the user's own
+Application Support folder and are never bundled or redistributed by Dockling.
+
 ### Bundled dependencies
 
 **There are none.** Docket has no Swift Package Manager dependencies, no

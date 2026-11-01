@@ -1205,6 +1205,9 @@ public struct PersistedState: Codable, Sendable {
     /// 钉在桌面：总开关、所有桌面 / 仅当前、窗口盖住时、外观，和已钉的卡片（位置按
     /// 屏幕 displayID + 相对坐标）。见 `DesktopPinSettings`。
     public var desktopPins = DesktopPinSettings()
+    /// 打字音效：总开关（默认关）、选的款式、相对音量、导入的 Mechvibes 声音包。
+    /// 青轴以外的款式和导入是码头 Pro，见 `TypingSoundSettings`。
+    public var typingSounds = TypingSoundSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1241,6 +1244,7 @@ public struct PersistedState: Codable, Sendable {
         notchMessage = (try? c.decodeIfPresent(NotchMessageSettings.self, forKey: .notchMessage)) ?? NotchMessageSettings()
         inputSource = (try? c.decodeIfPresent(InputSourceSettings.self, forKey: .inputSource)) ?? InputSourceSettings()
         desktopPins = (try? c.decodeIfPresent(DesktopPinSettings.self, forKey: .desktopPins)) ?? DesktopPinSettings()
+        typingSounds = (try? c.decodeIfPresent(TypingSoundSettings.self, forKey: .typingSounds)) ?? TypingSoundSettings()
     }
 
     public init() {}

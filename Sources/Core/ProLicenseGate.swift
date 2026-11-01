@@ -55,6 +55,9 @@ import Foundation
 /// - 程序坞 App 换显示图标：右键「更换图标…」和小组件库里「添加并更换图标…」带 Pro 标，
 ///   没解锁时点了弹付费墙；已经换过的画回默认图标，映射和图片留着，解锁或试用时自动回来，
 ///   「恢复默认图标」随时能点，见 `DockAppIcons.display`。
+/// - 打字音效：青轴以外的款式卡片带 Pro 标，点了弹付费墙、不改选择；「导入 Mechvibes 声音包」
+///   同样弹付费墙。已经选着的 Pro 款或导入的包没解锁时按青轴响，选择和导入的文件留着，
+///   解锁或试用时自动回来，见 `TypingSoundGate.effectiveChoice`。
 public enum ProLicenseGate {
 
     /// 遮罩上的字。
