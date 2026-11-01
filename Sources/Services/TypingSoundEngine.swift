@@ -22,7 +22,7 @@ struct TypingSoundBank: @unchecked Sendable {
 
 /// 解码：任何 Core Audio 认识的文件 → 引擎用的格式（44.1 kHz 单声道 Float32）。
 enum TypingSoundDecoder {
-    nonisolated(unsafe) static let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+    static let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
 
     enum Failure: Error {
         case unreadable(String)
