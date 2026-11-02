@@ -493,7 +493,8 @@ struct WidgetLibraryView: View {
             Text("应用和文件夹")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
-            // 底对齐：带 Pro 角标的分组入口比别的格子多一行角标，图标和名字仍和同排对齐。
+            // 底对齐：带 Pro 角标的分组入口比别的格子多一行角标，图标和名字仍和同排对齐
+            // （名字都预留两行高，英文长名折行也不错位）。
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 76, maximum: 84), spacing: 8, alignment: .bottom)],
                       alignment: .leading, spacing: 10) {
                 if showsGroupShortcut {
@@ -529,7 +530,8 @@ struct WidgetLibraryView: View {
                     .fill(shortcut.url == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear)))
                 Text(shortcut.title)
                     .font(.system(size: 13))
-                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
                     .truncationMode(.middle)
             }
             .frame(width: 76)
@@ -581,10 +583,13 @@ struct WidgetLibraryView: View {
                 BadgeStrip(pro: true, new: false)
                 GroupTile(group: group, side: 40)
                     .frame(width: 52, height: 52)
+                // 英文「Folder Group」在 76 宽里一行放不下：最多两行不截断。和 App 格子
+                // 一样预留两行高，同排的图标仍对齐；Pro 角标在上面的 BadgeStrip，不挤名字。
                 Text(title)
                     .font(.system(size: 13))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(width: 76)
             .contentShape(.rect)

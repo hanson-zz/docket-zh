@@ -62988,7 +62988,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On-device transcription, no internet"
+            "value" : "Transcribed on this Mac, offline"
           }
         }
       }

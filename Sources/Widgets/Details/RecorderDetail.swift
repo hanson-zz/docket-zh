@@ -118,7 +118,7 @@ struct RecorderDetail: View {
         }
         noticeLine
         list
-        HStack(spacing: 8) {
+        pillRow(spacing: 8) {
             pill(tr("选择文件夹…"), action: choose)
             pill(tr("在访达中打开")) {
                 guard !context.isPreview else { return }
@@ -145,8 +145,11 @@ struct RecorderDetail: View {
                 }
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
+                // 英文比中文长，旁边还有「编辑」钮：放不下时折成两行，不截断。
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .layoutPriority(1)
             Spacer(minLength: 0)
             if !context.isPreview, !items.isEmpty {
                 Button { startEdit(shownExpanded ?? items[0]) } label: {
@@ -161,6 +164,7 @@ struct RecorderDetail: View {
                     .background(Capsule().fill(.panelFill))
                     .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
                     .contentShape(.rect)
+                    .fixedSize()
                 }
                 .buttonStyle(.plain)
                 .disabled(tools && isBusy((shownExpanded ?? items[0]).url))
@@ -192,8 +196,9 @@ struct RecorderDetail: View {
                     Text(recordCaption)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.panelSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                         .truncationMode(.middle)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 if recording, let started = recorder.startedAt {
@@ -317,7 +322,7 @@ struct RecorderDetail: View {
             .onDrag { FileActions.dragProvider(item.url) }
             playback(item)
             transcriptBox(item, segments: segments)
-            HStack(spacing: 6) {
+            pillRow(spacing: 6) {
                 firstAction(item, segments: segments, hasText: hasText)
                 pill(tr("改名"), height: 26) { startRename(item) }
                     .disabled(isBusy(item.url))
@@ -606,8 +611,11 @@ struct RecorderDetail: View {
                 Text(tr("改名 · 裁剪 · 改文字"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .lineLimit(1)
+            .layoutPriority(1)
             Spacer(minLength: 0)
             Button { tapDone(item) } label: {
                 Text(tr("完成"))
@@ -617,6 +625,7 @@ struct RecorderDetail: View {
                     .frame(height: 28)
                     .background(Capsule().fill(accent))
                     .contentShape(.rect)
+                    .fixedSize()
             }
             .buttonStyle(.plain)
             .disabled(saving)
@@ -624,7 +633,7 @@ struct RecorderDetail: View {
         titleField(item)
         sectionLabel(tr("裁剪"), right: tr("拖两端"))
         trimBox(item)
-        HStack(spacing: 8) {
+        pillRow(spacing: 8) {
             pill(tr("试听选段"), height: 32) {
                 recorder.playRange(item.url, start: trim.start, end: trim.end)
             }
@@ -634,7 +643,7 @@ struct RecorderDetail: View {
         sectionLabel(tr("文字"), right: tr("点进去直接改"))
             .padding(.top, 6)
         textBox(item)
-        HStack(spacing: 8) {
+        pillRow(spacing: 8) {
             pill(tr("复制全部文字"), height: 36) { copy(Transcript.fullText(currentSegments(item))) }
                 .disabled(!Transcript.hasText(currentSegments(item)))
             pill(saving ? tr("正在保存…") : tr("存为新录音"), height: 36, solid: true) { saveAsNew(item) }
@@ -927,7 +936,14 @@ struct RecorderDetail: View {
 
     // MARK: 小零件
 
-    /// 面板里的胶囊钮：13pt；实心是强调色配深色字。
+    /// 一排胶囊钮：放得下时横排（每个至少按字宽，多出来的宽度大家分），英文放不下
+    /// 就改成竖排各占一行，不截断文字。
+    private func pillRow<C: View>(spacing: CGFloat, @ViewBuilder _ content: () -> C) -> some View {
+        RecorderPillRow(spacing: spacing) { content() }
+    }
+
+    /// 面板里的胶囊钮：13pt；实心是强调色配深色字。宽度不小于文字本身（不截断），
+    /// 有富余时撑满分到的宽度。
     private func pill(_ title: String, height: CGFloat = 30, solid: Bool = false, pro: Bool = false,
                       action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -936,6 +952,7 @@ struct RecorderDetail: View {
                     .lineLimit(1)
                 if pro { ProBadge(compact: true) }
             }
+            .fixedSize()
             .font(.system(size: 13, weight: solid ? .bold : .semibold))
             .foregroundStyle(solid ? accentInk : .panelPrimary)
             .padding(.horizontal, 8)
@@ -952,6 +969,54 @@ struct RecorderDetail: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// 一排胶囊钮的排法：每个钮先按自己的字宽（不截断），横排放得下就把多出来的宽度
+/// 平分给每个钮；放不下（英文长）就竖排，每个钮占满一行。
+private struct RecorderPillRow: Layout {
+    var spacing: CGFloat
+
+    private func ideals(_ subviews: Subviews) -> [CGSize] {
+        subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    private func rowWidth(_ sizes: [CGSize]) -> CGFloat {
+        sizes.reduce(0) { $0 + $1.width } + spacing * CGFloat(max(0, sizes.count - 1))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = ideals(subviews)
+        let row = rowWidth(sizes)
+        let available = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? row
+        if row <= available + 0.5 {
+            return CGSize(width: available, height: sizes.map(\.height).max() ?? 0)
+        }
+        let column = sizes.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(0, sizes.count - 1))
+        return CGSize(width: available, height: column)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = ideals(subviews)
+        guard !sizes.isEmpty else { return }
+        let row = rowWidth(sizes)
+        if row <= bounds.width + 0.5 {
+            let extra = max(0, bounds.width - row) / CGFloat(sizes.count)
+            var x = bounds.minX
+            for (subview, size) in zip(subviews, sizes) {
+                let width = size.width + extra
+                subview.place(at: CGPoint(x: x, y: bounds.midY), anchor: .leading,
+                              proposal: ProposedViewSize(width: width, height: size.height))
+                x += width + spacing
+            }
+        } else {
+            var y = bounds.minY
+            for (subview, size) in zip(subviews, sizes) {
+                subview.place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading,
+                              proposal: ProposedViewSize(width: bounds.width, height: size.height))
+                y += size.height + spacing
+            }
+        }
     }
 }
 

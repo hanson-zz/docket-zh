@@ -145,7 +145,7 @@ public extension Divination {
     /// 改星座 / 属相（nil 是不选）。今天已经抽过时按新的种子换成对应的那支，签历里今天这条一起改，
     /// 这样同一天同一个星座永远是同一支。
     static func setSign(_ sign: DivinationSign?, in config: inout WidgetConfig, now: Date, cardSalt: String,
-                        calendar: Calendar = .current) {
+                        calendar: Calendar = Divination.calendar) {
         config.set(signKey, sign.map { .string($0.rawValue) })
         guard todayStick(config, now: now, calendar: calendar) != nil else { return }
         let day = dayKey(now, calendar: calendar)
@@ -280,7 +280,7 @@ public extension Divination {
     /// 记下某天抽到的签（同一天再记就改成新的），顺手清掉 `stickLogRetentionDays` 天以前、没收藏的
     /// （新旧签历一起清）。
     static func recordStick(_ index: Int, day: String, in config: inout WidgetConfig, now: Date,
-                            calendar: Calendar = .current) {
+                            calendar: Calendar = Divination.calendar) {
         guard FortuneStick.all.indices.contains(index), isDayKey(day) else { return }
         var log = stickLog(config)
         log[day] = index
@@ -318,14 +318,14 @@ public extension Divination {
     }
 
     /// 日期字符串转回那天零点（按传入的日历）。
-    static func date(fromDay day: String, calendar: Calendar = .current) -> Date? {
+    static func date(fromDay day: String, calendar: Calendar = Divination.calendar) -> Date? {
         let parts = day.split(separator: "-").compactMap { Int($0) }
         guard isDayKey(day), parts.count == 3 else { return nil }
         return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 
     /// 签历这一个月里每天的签级（月历的小圆点用）：日期到签级，新旧签历都算。
-    static func monthLevels(_ config: WidgetConfig, month: Date, calendar: Calendar = .current) -> [String: StickLevel] {
+    static func monthLevels(_ config: WidgetConfig, month: Date, calendar: Calendar = Divination.calendar) -> [String: StickLevel] {
         let prefix = String(dayKey(month, calendar: calendar).prefix(7))
         var result: [String: StickLevel] = [:]
         for record in records(config) where record.day.hasPrefix(prefix) {
@@ -476,7 +476,7 @@ public enum DivinationShareCard {
 
     /// 卡片上的日期：「2026 年 10 月 29 日 · 星期四」（按界面语言）。
     /// `locale` 不传时按界面语言。
-    public static func dateText(day: String, calendar: Calendar = .current, locale: Locale? = nil) -> String {
+    public static func dateText(day: String, calendar: Calendar = Divination.calendar, locale: Locale? = nil) -> String {
         guard let date = Divination.date(fromDay: day, calendar: calendar) else { return day }
         let formatter = DateFormatter()
         formatter.calendar = calendar
@@ -497,10 +497,10 @@ public enum DivinationShareCard {
 
 // MARK: - 本周寄语
 
-/// 每周一换一句温暖鼓励的话（按本地 ISO 周，周一开头）。只是寄语，不说运势、不做预测。
+/// 每周一换一句温暖鼓励的话（按 ISO 周，周一开头，默认北京时间，和每日一签同一个日历）。只是寄语，不说运势、不做预测。
 public enum DivinationWeekly {
     /// 某天所在的 ISO 周：年和第几周。
-    public static func week(_ date: Date, calendar: Calendar = .current) -> (year: Int, week: Int) {
+    public static func week(_ date: Date, calendar: Calendar = Divination.calendar) -> (year: Int, week: Int) {
         var iso = Calendar(identifier: .iso8601)
         iso.timeZone = calendar.timeZone
         let parts = iso.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
@@ -508,13 +508,13 @@ public enum DivinationWeekly {
     }
 
     /// 那周的那一句（下标）：一年里每周都不一样（句子比 53 周多）。
-    public static func index(_ date: Date, calendar: Calendar = .current) -> Int {
+    public static func index(_ date: Date, calendar: Calendar = Divination.calendar) -> Int {
         let w = week(date, calendar: calendar)
         let raw = w.year * 53 + (w.week - 1)
         return ((raw % lines.count) + lines.count) % lines.count
     }
 
-    public static func line(_ date: Date, calendar: Calendar = .current) -> String {
+    public static func line(_ date: Date, calendar: Calendar = Divination.calendar) -> String {
         lines[index(date, calendar: calendar)]
     }
 
