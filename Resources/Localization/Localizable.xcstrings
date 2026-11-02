@@ -2630,6 +2630,17 @@
         }
       }
     },
+    "切到前台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring to Front"
+          }
+        }
+      }
+    },
     "到 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3400,6 +3411,28 @@
         }
       }
     },
+    "当前 · %@ 个窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current · %@ windows"
+          }
+        }
+      }
+    },
+    "当前 · 没有窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current · No windows"
+          }
+        }
+      }
+    },
     "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4078,6 +4111,17 @@
         }
       }
     },
+    "没有窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No windows"
+          }
+        }
+      }
+    },
     "没能接管音量和亮度键，暂时照常只读取，系统的提示也会出现。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4184,6 +4228,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aries"
+          }
+        }
+      }
+    },
+    "看缩略图需要「屏幕录制」权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thumbnails need Screen Recording"
           }
         }
       }
@@ -4419,6 +4474,28 @@
         }
       }
     },
+    "跳到窗口：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to window: %@"
+          }
+        }
+      }
+    },
+    "运行中 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ running"
+          }
+        }
+      }
+    },
     "运行码头时由码头调节音量和亮度，只显示码头的提示，系统自带的不再出现。只对上面打开了的提示生效，需要辅助功能权限。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4426,6 +4503,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While Dockling is running, it changes volume and brightness itself and shows only its own HUD, so the system's no longer appears. Applies only to the HUDs turned on above. Requires Accessibility permission."
+          }
+        }
+      }
+    },
+    "还没打开，点图标启动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not open. Click the icon to launch."
           }
         }
       }

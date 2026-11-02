@@ -2,31 +2,50 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 应用切换器面板（整种 Pro）：
-/// - 「固定」一行：固定的 App 没开也在（半透明），点了启动；开着的下面一个小点。
-/// - 「正在运行」列表：按所选排序（最近使用 / 名称 / 固定在前），隐藏的不列；右边是窗口数
-///   小角标和箭头，点箭头展开这个 App 的窗口标题，点一个跳到那个窗口。读窗口要「辅助功能」
-///   权限，没给时展开处写一行说明和「去授权」，其余照常。
-/// - 底部排序和「已隐藏 N 个 · 管理」。
-/// - 「编辑」：固定 / 取消固定、前后挪、隐藏 / 取消隐藏、添加没开的 App。
-/// 右键一行：切换、固定、不在切换器显示、隐藏、退出。
+/// 应用切换器面板（整种 Pro），v2 效果图 design/app-switcher-v2.py：
+/// - 标题和 Pro 角标、「固定 N 个 · 运行中 N 个」、右上「编辑」。
+/// - 「固定」「正在运行」两块是只有图标的自适应网格（每格至少 52，图标 44），网格里不写名字，
+///   悬停提示名字；固定的没开时半透明，点了启动，开着的下面一个小点；正在运行的窗口数大于 1 时
+///   右上角一个实心数字角标。高度按行数算，正在运行最多摊开 4 行，再多在网格里滚。
+/// - 点一个图标：垫中性浅色高亮块，在那块网格下面展开名字、「当前 · N 个窗口」、「切到前台」，
+///   下面一排窗口缩略图（窄时横向滚动），点缩略图跳到那个窗口；再点同一个图标收起。
+///   缩略图要「屏幕录制」权限，没给时列窗口标题和「去授权」；读窗口要「辅助功能」，没给时沿用原来的说明。
+/// - 悬停时浅色块跟着鼠标；方向键移动选中、回车切换、空格展开收起、Esc 收起。
+/// - 底部排序胶囊（选中的是中性浅色块）和「已隐藏 N 个 · 管理」。
+/// - 「编辑」：沿用列表编辑器，固定 / 取消固定、前后挪、隐藏 / 取消隐藏、添加没开的 App。
+/// 右键一个图标：切换、固定、不在切换器显示、隐藏、退出。
 struct AppSwitcherDetail: View {
-    @Environment(\.panelTint) private var panelTint
     var instance: WidgetInstance
     var context: WidgetContext
 
+    private typealias Position = AppSwitcherLayout.Position
+
+    /// 一格认 App 不认序号：App 开关、列表重排后选中的还是那个 App。
+    private struct Slot: Equatable {
+        var section: Int
+        var id: String
+    }
+
     @State private var editing = false
-    @State private var expanded: String?
+    /// 选中的那一格（点的、键盘走到的）；`expanded` 时在它那块网格下面展开。
+    @State private var cursor: Slot?
+    @State private var expanded = false
+    /// 键盘走过或展开过：选中块画出来。点同一个图标收起、Esc 后不画。
+    @State private var showsCursor = false
+    @State private var hovered: Slot?
     @State private var windows: [AppWindows.Window] = []
+    /// `windows` 是哪个 App 的。
+    @State private var windowsFor: String?
     @State private var counts: [String: Int] = [:]
     @State private var trusted = false
+    @State private var canCapture = false
+    /// 内容区宽度（320 面板 288，尾巴在侧边时 280），按它算网格列数。
+    @State private var contentWidth: CGFloat = 288
+    @FocusState private var focused: Bool
 
     private var catalog: AppCatalog { AppCatalog.shared }
+    private var thumbnails: AppWindowThumbnails { AppWindowThumbnails.shared }
     private var config: WidgetConfig { instance.config }
-
-    /// 效果图的淡紫，实心按钮上的字用深色。
-    private var accent: Color { panelTint.accent(or: Color(hex: "#A7B4FF")) }
-    private var ink: Color { panelTint.ink(or: Color(hex: "#0E1440")) }
 
     private var sort: AppSwitcherList.Sort { AppSwitcherList.sort(config) }
     private var pinned: [String] {
@@ -47,42 +66,107 @@ struct AppSwitcherDetail: View {
             .map { item($0.id) }
     }
 
+    /// 两块网格：0 固定，1 正在运行。
+    private var sections: [[AppSwitcherItem]] { [pinned.map { item($0) }, list] }
+
+    /// 网格两边各让 3pt，角标往外探一点不被裁。
+    private var gridInset: CGFloat { 3 }
+    private var columns: Int { AppSwitcherLayout.columns(width: Double(contentWidth - gridInset * 2)) }
+
+    private func app(at position: Position?, in sections: [[AppSwitcherItem]]) -> AppSwitcherItem? {
+        guard let position, sections.indices.contains(position.section),
+              sections[position.section].indices.contains(position.index) else { return nil }
+        return sections[position.section][position.index]
+    }
+
+    private func position(_ slot: Slot?, in sections: [[AppSwitcherItem]]) -> Position? {
+        guard let slot, sections.indices.contains(slot.section),
+              let index = sections[slot.section].firstIndex(where: { $0.id == slot.id }) else { return nil }
+        return Position(section: slot.section, index: index)
+    }
+
+    private func slot(_ position: Position?, in sections: [[AppSwitcherItem]]) -> Slot? {
+        guard let position, let app = app(at: position, in: sections) else { return nil }
+        return Slot(section: position.section, id: app.id)
+    }
+
+    private func app(for slot: Slot?, in sections: [[AppSwitcherItem]]) -> AppSwitcherItem? {
+        app(at: position(slot, in: sections), in: sections)
+    }
+
     var body: some View {
-        let shown = list
+        let all = sections
+        let selected = expanded ? app(for: cursor, in: all) : nil
         return DetailCard {
-            MeshBackdrop(color: WidgetStyle.tint(.indigo))
+            Color.clear
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(running: runningApps.count)
                 if editing {
                     editor
                 } else {
-                    if !pinned.isEmpty { pinnedRow }
-                    runningSection(shown)
+                    if !all[0].isEmpty { pinnedSection(all, selected: selected) }
+                    runningSection(all, selected: selected)
                     sortRow
                     if !hidden.isEmpty { hiddenLine }
                 }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                if abs(width - contentWidth) > 0.5 { contentWidth = width }
+            }
+        }
+        .focusable(!editing && !context.isPreview)
+        .focused($focused)
+        .focusEffectDisabled()
+        .onKeyPress(keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, .return, .space, .escape]) { press in
+            handleKey(press.key)
         }
         .onAppear {
             guard !context.isPreview else { return }
             catalog.refresh()
-            reloadWindows()
+            reloadCounts()
+            focused = true
         }
         .onChange(of: catalog.runningIDs) { _, _ in
-            if expanded.map({ !catalog.isRunning(bundleID: $0) }) ?? false { expanded = nil }
+            // 展开的那个 App 退出了（或从列表里没了）就收起。
+            if expanded, app(for: cursor, in: sections)?.isRunning != true { collapse() }
+            reloadCounts()
+            if expanded { reloadWindows() }
+        }
+        // 切到别的 App（比如去系统设置授权再回来）时重新看一眼权限，变了就重读。
+        .onChange(of: catalog.running.first(where: \.isActive)?.id) { _, _ in
+            guard !context.isPreview else { return }
+            let nowTrusted = AppWindows.isTrusted, nowCapture = AppWindows.canCapture
+            guard nowTrusted != trusted || nowCapture != canCapture else { return }
+            if !nowCapture { thumbnails.clear() }
+            reloadCounts()
+            if expanded { reloadWindows() }
+        }
+        .task(id: expanded ? selected?.id : nil) {
+            guard expanded else { return }
+            // 方向键连着按时不挨个读，停一下再读。
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
             reloadWindows()
+        }
+        .onChange(of: editing) { _, now in
+            if now { collapse() }
         }
     }
 
     // MARK: Header
 
     private func header(running: Int) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("应用切换器")
-                    .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(.panelPrimary)
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text("应用切换器")
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .fixedSize()
+                    ProBadge()
+                }
                 Text(AppSwitcherList.subtitle(pinned: pinned.count, running: running))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
@@ -92,14 +176,8 @@ struct AppSwitcherDetail: View {
             Button {
                 withAnimation(.snappy(duration: 0.25)) { editing.toggle() }
             } label: {
-                Text(editing ? tr("完成") : tr("编辑"))
-                    .font(.system(size: 13, weight: editing ? .bold : .semibold))
-                    .foregroundStyle(editing ? ink : .panelPrimary)
-                    .padding(.horizontal, editing ? 15 : 13)
-                    .frame(height: 28)
-                    .background(Capsule().fill(editing ? accent : .panelFill))
-                    .overlay(Capsule().strokeBorder(editing ? Color.clear : Color.panelStroke, lineWidth: 0.8))
-                    .contentShape(Capsule())
+                AppSwitcherChipLabel(title: editing ? tr("完成") : tr("编辑"), on: editing, height: 28)
+                    .fixedSize()
             }
             .buttonStyle(.plain)
             .disabled(context.isPreview)
@@ -111,180 +189,152 @@ struct AppSwitcherDetail: View {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
             Spacer(minLength: 6)
             if let note {
                 Text(verbatim: note)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
             }
         }
     }
 
-    // MARK: Pinned
+    // MARK: Grids
 
-    private var pinnedRow: some View {
+    private func pinnedSection(_ all: [[AppSwitcherItem]], selected: AppSwitcherItem?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             section(tr("固定", context: "section"), note: tr("没开也在，点了启动"))
-            // 6 x 40 加 5 个 6pt 间距 = 270，竖排扩展栏（尾巴在侧边，内容区 278）也放得下；
-            // 原来 8pt 间距是 280，侧边时比内容区宽 2pt。
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 6), count: 6),
-                      alignment: .leading, spacing: 10) {
-                ForEach(pinned, id: \.self) { id in
-                    let app = item(id)
-                    Button { open(app) } label: {
-                        VStack(spacing: 4) {
-                            AppSwitcherIcon(app: app, size: 40)
-                                .opacity(app.isRunning ? 1 : 0.45)
-                            Circle()
-                                .fill(app.isRunning ? Color.panelSecondary : Color.clear)
-                                .frame(width: 4, height: 4)
-                        }
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .help(app.isRunning ? app.name : tr("\(app.name)（没开，点了启动）"))
-                    .accessibilityLabel(app.isRunning ? app.name : tr("\(app.name)，没开，点按启动"))
-                    .contextMenu { menu(app) }
-                }
-            }
+            grid(all[0], section: 0)
+            if expanded, cursor?.section == 0, let selected { expansion(selected) }
         }
     }
 
-    // MARK: Running
-
-    private func runningSection(_ shown: [AppSwitcherItem]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func runningSection(_ all: [[AppSwitcherItem]], selected: AppSwitcherItem?) -> some View {
+        let shown = all[1]
+        let rows = AppSwitcherLayout.rows(count: shown.count, columns: columns)
+        return VStack(alignment: .leading, spacing: 8) {
             section(tr("正在运行 · \(sort.title)"))
             if shown.isEmpty {
                 Text(runningApps.isEmpty ? tr("没有正在运行的应用。") : tr("正在运行的应用都隐藏了。"))
                     .font(.system(size: 13))
                     .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
-            } else {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(shown) { app in
-                            row(app)
-                            if expanded == app.id { windowList(app) }
-                        }
+            } else if rows > AppSwitcherLayout.panelMaxRows {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        grid(shown, section: 1)
+                            .padding(.vertical, gridInset)
+                    }
+                    .scrollIndicators(.never)
+                    .frame(height: CGFloat(AppSwitcherLayout.gridHeight(count: shown.count, columns: columns,
+                                                                        maxRows: AppSwitcherLayout.panelMaxRows))
+                           + gridInset * 2)
+                    .onChange(of: cursor) { _, now in
+                        guard let now, now.section == 1 else { return }
+                        withAnimation(.snappy(duration: 0.2)) { proxy.scrollTo(now.id) }
                     }
                 }
-                .scrollIndicators(.never)
-                .frame(height: listHeight(shown))
+            } else {
+                grid(shown, section: 1)
+            }
+            if expanded, cursor?.section == 1, let selected { expansion(selected) }
+        }
+    }
+
+    /// 一块图标网格：`GridItem(.adaptive(minimum: 52))`，列数和 `columns` 同一个算法。
+    private func grid(_ apps: [AppSwitcherItem], section: Int) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: CGFloat(AppSwitcherLayout.panelCell)),
+                                     spacing: CGFloat(AppSwitcherLayout.panelColumnSpacing))],
+                  spacing: CGFloat(AppSwitcherLayout.panelRowSpacing)) {
+            ForEach(Array(apps.enumerated()), id: \.element.id) { index, app in
+                cell(app, at: Position(section: section, index: index))
+                    .id(app.id)
             }
         }
+        .padding(.horizontal, gridInset)
     }
 
-    /// 列表的高度：每行 40，展开的窗口每个 30（说明一行 34），最高 260，再多在里面滚。
-    private func listHeight(_ shown: [AppSwitcherItem]) -> CGFloat {
-        var height = CGFloat(shown.count) * 40
-        if let id = expanded, shown.contains(where: { $0.id == id }) {
-            height += !trusted || windows.isEmpty ? 38 : CGFloat(windows.count) * 30 + 4
+    private func cell(_ app: AppSwitcherItem, at position: Position) -> some View {
+        let here = Slot(section: position.section, id: app.id)
+        let isCursor = cursor == here && (showsCursor || expanded)
+        let isPinnedSection = position.section == 0
+        let count = counts[app.id] ?? 0
+        return Button { tap(app, at: position) } label: {
+            AppSwitcherIcon(app: app, size: CGFloat(AppSwitcherLayout.panelIcon),
+                            plate: CGFloat(AppSwitcherLayout.panelCell),
+                            selected: isCursor, hovered: !isCursor && hovered == here,
+                            dot: isPinnedSection && app.isRunning,
+                            badge: isPinnedSection ? nil : count, dimsWhenOff: true)
+                .contentShape(.rect)
         }
-        return min(260, height)
+        .buttonStyle(.plain)
+        .onHover { inside in
+            if inside {
+                hovered = here
+            } else if hovered == here {
+                hovered = nil
+            }
+        }
+        .help(app.isRunning ? app.name : tr("\(app.name)（没开，点了启动）"))
+        .accessibilityLabel(app.isActive ? tr("\(app.name)（当前）")
+                            : app.isRunning ? app.name : tr("\(app.name)，没开，点按启动"))
+        .accessibilityAddTraits(isCursor ? .isSelected : [])
+        .contextMenu { menu(app) }
     }
 
-    private func row(_ app: AppSwitcherItem) -> some View {
-        let open = expanded == app.id
-        return HStack(spacing: 10) {
-            AppSwitcherIcon(app: app, size: 24)
+    // MARK: Expansion
+
+    private func expansion(_ app: AppSwitcherItem) -> some View {
+        let count: Int? = windowsFor == app.id && trusted ? windows.count : nil
+        let status = AppSwitcherLayout.status(isActive: app.isActive, isRunning: app.isRunning, windows: count)
+        let nameRow = HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(verbatim: app.name)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(.panelPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Spacer(minLength: 4)
-            if let count = counts[app.id], count > 0 {
-                Text(count > 1 && open ? tr("\(count) 个窗口") : "\(count)")
-                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.panelPrimary)
-                    .padding(.horizontal, 7)
-                    .frame(height: 20)
-                    .background(Capsule().fill(.panelSelected))
-                    .help(tr("\(count) 个窗口"))
-            }
-            Button {
-                toggleExpand(app.id)
-            } label: {
-                Image(systemName: open ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+            if !status.isEmpty {
+                Text(verbatim: status)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
-                    .frame(width: 26, height: 26)
-                    .contentShape(.rect)
+                    .lineLimit(1)
+                    .fixedSize()
             }
-            .buttonStyle(.plain)
-            .disabled(context.isPreview)
-            .help(open ? tr("收起窗口列表") : tr("展开窗口列表"))
-            .accessibilityLabel(open ? tr("收起 \(app.name) 的窗口") : tr("展开 \(app.name) 的窗口"))
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 4)
-        .frame(height: 38)
-        .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(app.isActive ? Color.panelSelected : Color.panelFill))
-        .contentShape(.rect(cornerRadius: 11))
-        .onTapGesture { self.open(app) }
-        .contextMenu { menu(app) }
-        .help(app.name)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(app.isActive ? tr("\(app.name)（当前）") : app.name)
-        .accessibilityAddTraits(.isButton)
-    }
-
-    @ViewBuilder
-    private func windowList(_ app: AppSwitcherItem) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            if !trusted {
-                HStack(spacing: 8) {
-                    Text("列出窗口需要辅助功能权限")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelSecondary)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Button {
-                        AppWindows.requestAccess()
-                    } label: {
-                        Text("去授权")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(ink)
-                            .padding(.horizontal, 10)
-                            .frame(height: 24)
-                            .background(Capsule().fill(accent))
-                    }
-                    .buttonStyle(.plain)
+        let button = Button { open(app) } label: {
+            AppSwitcherButtonLabel(title: app.isRunning ? tr("切到前台") : tr("打开"))
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        return VStack(alignment: .leading, spacing: 12) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 8) {
+                    nameRow
+                    Spacer(minLength: 8)
+                    button
                 }
-                .padding(.leading, 14)
-                .frame(height: 30)
-            } else if windows.isEmpty {
-                Text("没有打开的窗口")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelSecondary)
-                    .padding(.leading, 14)
-                    .frame(height: 28)
-            } else {
-                ForEach(Array(windows.enumerated()), id: \.element.id) { index, window in
-                    Button {
+                VStack(alignment: .leading, spacing: 8) {
+                    nameRow
+                    button
+                }
+            }
+            if app.isRunning, !context.isPreview {
+                if windowsFor == app.id {
+                    AppSwitcherWindowStrip(app: app, windows: windows, trusted: trusted, canCapture: canCapture,
+                                           style: .panel, width: max(0, contentWidth - 24)) { window in
                         AppWindows.focus(window, bundleID: app.id)
-                    } label: {
-                        Text(verbatim: window.title)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(index == 0 ? Color.panelPrimary : Color.panelSecondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .padding(.horizontal, 14)
-                            .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(index == 0 ? accent.opacity(0.16) : .clear))
-                            .contentShape(.rect)
                     }
-                    .buttonStyle(.plain)
-                    .help(window.title)
+                } else {
+                    Color.clear.frame(height: 28)
                 }
             }
         }
-        .padding(.leading, 30)
-        .padding(.vertical, 2)
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(Color.panelStroke, lineWidth: 0.8))
+        .transition(.opacity)
     }
 
     // MARK: Sort and hidden
@@ -299,15 +349,7 @@ struct AppSwitcherDetail: View {
                         guard !context.isPreview else { return }
                         WidgetWriter.write(instance) { $0.set(AppSwitcherList.sortKey, .string(option.rawValue)) }
                     } label: {
-                        Text(verbatim: option.title)
-                            .font(.system(size: 13, weight: on ? .bold : .semibold))
-                            .foregroundStyle(on ? ink : .panelPrimary)
-                            .lineLimit(1)
-                            .padding(.horizontal, 11)
-                            .frame(height: 30)
-                            .background(Capsule().fill(on ? accent : .panelFill))
-                            .overlay(Capsule().strokeBorder(on ? Color.clear : Color.panelStroke, lineWidth: 0.6))
-                            .contentShape(Capsule())
+                        AppSwitcherChipLabel(title: option.title, on: on)
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(on ? .isSelected : [])
@@ -325,10 +367,13 @@ struct AppSwitcherDetail: View {
                 Text(tr("已隐藏 \(hidden.count) 个（\(names)）"))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                Text(tr(" · 管理")).fixedSize()
+                    .foregroundStyle(.panelSecondary)
+                Text(tr(" · 管理"))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.panelPrimary)
+                    .fixedSize()
             }
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.panelSecondary)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -484,23 +529,127 @@ struct AppSwitcherDetail: View {
         catalog.open(WidgetTarget.app(bundleID: app.id))
     }
 
-    private func toggleExpand(_ id: String) {
-        // 授权回来再点箭头：刚给了权限就直接列窗口，不收起。
-        let justAllowed = expanded == id && !trusted && AppWindows.isTrusted
-        if !justAllowed {
-            withAnimation(.snappy(duration: 0.2)) {
-                expanded = expanded == id ? nil : id
-            }
+    // MARK: Selection
+
+    /// 点一个图标：没开的固定 App 直接启动；开着的展开，展开着的再点收起。
+    private func tap(_ app: AppSwitcherItem, at position: Position) {
+        guard !context.isPreview else { return }
+        focused = true
+        let here = Slot(section: position.section, id: app.id)
+        if !app.isRunning {
+            cursor = here
+            showsCursor = false
+            collapse()
+            open(app)
+            return
         }
-        reloadWindows()
+        if expanded, cursor == here {
+            collapse()
+            showsCursor = false
+            return
+        }
+        withAnimation(.snappy(duration: 0.2)) {
+            cursor = here
+            showsCursor = true
+            expanded = true
+        }
     }
 
-    /// 重新读权限、窗口数和展开那个 App 的窗口。只在打开面板、展开和 App 开关时读。
-    private func reloadWindows() {
+    private func collapse() {
+        guard expanded else { return }
+        withAnimation(.snappy(duration: 0.2)) { expanded = false }
+    }
+
+    /// 方向键移动选中（展开着的跟着换），回车切换，空格展开收起，Esc 收起（没展开时再按交给面板）。
+    private func handleKey(_ key: KeyEquivalent) -> KeyPress.Result {
+        guard !editing, !context.isPreview else { return .ignored }
+        let all = sections
+        let sizes = all.map(\.count)
+        let current = position(cursor, in: all)
+        switch key {
+        case .leftArrow, .rightArrow, .upArrow, .downArrow:
+            let move: AppSwitcherLayout.Move = key == .leftArrow ? .left : key == .rightArrow ? .right
+                : key == .upArrow ? .up : .down
+            // 第一次按（还没画选中块）：落在当前的 App 上（它在列表里时），否则第一格。
+            let next: Position?
+            if let current, showsCursor || expanded {
+                next = AppSwitcherLayout.move(current, move, sections: sizes, columns: columns)
+            } else {
+                next = activePosition(in: all)
+            }
+            guard let next else { return .ignored }
+            withAnimation(.snappy(duration: 0.15)) {
+                cursor = slot(next, in: all)
+                showsCursor = true
+                // 展开着时选中没开的 App 就收起（没窗口可看）。
+                if expanded, app(at: next, in: all)?.isRunning != true { expanded = false }
+            }
+            return .handled
+        case .return:
+            guard let target = app(at: current, in: all), showsCursor || expanded else { return .ignored }
+            open(target)
+            return .handled
+        case .space:
+            let target = current ?? activePosition(in: all)
+            guard let target, let picked = app(at: target, in: all) else { return .ignored }
+            let pickedSlot = slot(target, in: all)
+            if expanded, cursor == pickedSlot {
+                collapse()
+            } else if picked.isRunning {
+                withAnimation(.snappy(duration: 0.2)) {
+                    cursor = pickedSlot
+                    showsCursor = true
+                    expanded = true
+                }
+            } else {
+                cursor = pickedSlot
+                showsCursor = true
+            }
+            return .handled
+        case .escape:
+            if expanded {
+                collapse()
+                return .handled
+            }
+            if showsCursor {
+                showsCursor = false
+                return .handled
+            }
+            return .ignored
+        default:
+            return .ignored
+        }
+    }
+
+    /// 当前 App 在「正在运行」里的位置；不在时第一格。
+    private func activePosition(in all: [[AppSwitcherItem]]) -> Position? {
+        if let index = all[1].firstIndex(where: \.isActive) { return Position(section: 1, index: index) }
+        return AppSwitcherLayout.move(nil, .right, sections: all.map(\.count), columns: columns)
+    }
+
+    // MARK: Windows
+
+    /// 窗口数角标：只在打开面板和 App 开关、权限变了时读一遍，不轮询。
+    private func reloadCounts() {
         guard !context.isPreview else { return }
         trusted = AppWindows.isTrusted
+        canCapture = AppWindows.canCapture
         counts = AppWindows.counts(bundleIDs: catalog.running.map(\.id).filter { !hidden.contains($0) })
-        windows = expanded.map { AppWindows.windows(bundleID: $0) } ?? []
+    }
+
+    /// 展开那个 App 的窗口（截缩略图用的那份，带系统窗口号）。只在展开、换了展开的 App、
+    /// App 开关和权限变了时读；缩略图由 `AppSwitcherWindowStrip` 按窗口列表要，重画不截。
+    private func reloadWindows() {
+        guard !context.isPreview, expanded, let target = app(for: cursor, in: sections), target.isRunning else {
+            windows = []
+            windowsFor = nil
+            return
+        }
+        trusted = AppWindows.isTrusted
+        canCapture = AppWindows.canCapture
+        windows = AppWindows.thumbnailWindows(bundleID: target.id)
+        windowsFor = target.id
+        if trusted { counts[target.id] = windows.count }
     }
 
     /// 按存着的最新列表改，再整个写回（文件面板回来后面板里的副本可能已经旧了）。
@@ -518,7 +667,7 @@ struct AppSwitcherDetail: View {
     }
 
     private func toggleHide(_ id: String) {
-        if expanded == id { expanded = nil }
+        if expanded, app(for: cursor, in: sections)?.id == id { collapse() }
         writeLists { AppSwitcherList.toggleHide(id, pinned: $0, hidden: $1) }
     }
 

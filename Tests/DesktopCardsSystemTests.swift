@@ -82,8 +82,14 @@ final class DesktopCardsSystemTests: XCTestCase {
         XCTAssertEqual([crowded.shown, crowded.overflow], [8, 6])
         let medium = Plan.appGrid(count: 12, size: .medium)
         XCTAssertEqual([medium.columns, medium.rows, medium.shown, medium.overflow], [6, 2, 12, 0])
-        let large = Plan.appGrid(count: 9, size: .large)
-        XCTAssertEqual([large.columns, large.rows, large.shown, large.overflow], [1, 7, 6, 3])
+        let large = Plan.appGrid(count: 10, size: .large)
+        XCTAssertEqual([large.columns, large.rows, large.shown, large.overflow], [5, 2, 10, 0])
+        XCTAssertFalse(large.showsCaption)
+        let crowdedLarge = Plan.appGrid(count: 11, size: .large)
+        XCTAssertEqual([crowdedLarge.columns, crowdedLarge.rows, crowdedLarge.shown, crowdedLarge.overflow],
+                       [5, 2, 9, 2], "第 10 格写「+2」")
+        let fewLarge = Plan.appGrid(count: 3, size: .large)
+        XCTAssertEqual([fewLarge.columns, fewLarge.rows, fewLarge.shown], [5, 1, 3])
         XCTAssertEqual(Plan.appGrid(count: 0, size: .large), .empty)
     }
 
