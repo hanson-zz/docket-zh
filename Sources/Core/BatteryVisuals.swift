@@ -137,6 +137,27 @@ public enum BatteryColorMap {
     }
 }
 
+// MARK: - Charging state
+
+/// Whether the Mac battery is taking charge. `IOPSCopyPowerSourcesInfo`'s
+/// IsCharging can stay false on the adapter while System Settings says
+/// 正在充电 (seen on macOS 26 at 13% on a 65W adapter), so the
+/// AppleSmartBattery registry is the tie-breaker: its own IsCharging, or
+/// current flowing into the battery.
+public enum BatteryChargingState {
+    /// Milliamps into the battery below which it counts as trickle noise.
+    public static let minimumAmperage = 50
+
+    public static func isCharging(powerSourceSays: Bool, onPower: Bool, charged: Bool,
+                                  registryIsCharging: Bool?, amperage: Int?) -> Bool {
+        if powerSourceSays { return true }
+        guard onPower, !charged else { return false }
+        if registryIsCharging == true { return true }
+        if let amperage, amperage >= minimumAmperage { return true }
+        return false
+    }
+}
+
 // MARK: - Status line
 
 /// The panel's one-line summary of the Mac battery.
