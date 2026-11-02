@@ -380,19 +380,31 @@ public struct NotchIncoming: Equatable, Sendable {
     public var sender: String?
     /// 消息内容；关了预览时为 nil。
     public var preview: String?
-    /// 去重用的键：有系统标识用标识，没有时用内容。
+    /// 去重用的键：App、发件人和内容（有系统标识时前面再加标识）。同一条横幅就地换了字
+    /// （微信连着来消息）键就不一样，算新的一条。
     public var key: String
+    /// 横幅的系统标识，没有时为 nil。就地更新的横幅标识不变，`NotchBannerRevisions` 按它认。
+    public var bannerID: String?
     /// 设置里「发一条测试通知」读回来的那条（`NotchMessageProbe`）：不能回复、不留未读。
     public var isTest: Bool
 
     public var previewHidden: Bool { preview == nil }
 
-    public init(app: NotchMessageApp, sender: String?, preview: String?, key: String, isTest: Bool = false) {
+    public init(app: NotchMessageApp, sender: String?, preview: String?, key: String, bannerID: String? = nil,
+                isTest: Bool = false) {
         self.app = app
         self.sender = sender
         self.preview = preview
         self.key = key
+        self.bannerID = bannerID
         self.isTest = isTest
+    }
+
+    /// 按「App + 发件人 + 内容」拼的去重键，有系统标识时前面加 `id:标识|`。
+    public static func key(app: NotchMessageApp, sender: String?, preview: String?, bannerID: String?) -> String {
+        let content = "\(app.rawValue)|\(sender ?? "")|\(preview ?? "")"
+        if let bannerID, !bannerID.isEmpty { return "id:\(bannerID)|" + content }
+        return "text:" + content
     }
 }
 
@@ -735,13 +747,12 @@ public enum NotchBannerParser {
         if sender == nil { preview = nil }
         guard sender != nil || banner.body != nil || banner.title != nil || banner.summary != nil else { return nil }
 
-        let key: String
-        if let id = banner.identifier, !id.isEmpty {
-            key = "id:\(id)"
-        } else {
-            key = "text:\(app.rawValue)|\(sender ?? "")|\(preview ?? banner.body ?? "")"
-        }
-        return NotchIncoming(app: app, sender: sender, preview: preview.map { singleLine($0) }, key: key)
+        // 以前有系统标识时只用标识，微信第二条起是原横幅就地换字、标识不变，被当成同一条吞掉。
+        let bannerID = cleaned(banner.identifier)
+        let key = NotchIncoming.key(app: app, sender: sender, preview: preview ?? banner.body,
+                                    bannerID: bannerID)
+        return NotchIncoming(app: app, sender: sender, preview: preview.map { singleLine($0) }, key: key,
+                             bannerID: bannerID)
     }
 
     /// 一个窗口里所有要弹的新消息（还没去重）。
@@ -1025,6 +1036,96 @@ public struct NotchMessageDeduper: Sendable {
     }
 }
 
+// MARK: - 横幅就地更新
+
+/// 同一条横幅（同一个系统标识）的字就地换了。微信连着来消息时，第二条起不新开横幅，只把
+/// 原来那条横幅的字换掉（系统只报 AXLayoutChanged、值变化）。按横幅记最后一次处理的内容，
+/// 判断新读到的是：
+/// - `fresh`：没见过这条横幅，照常弹（再交给 `NotchMessageDeduper`）；
+/// - `updated`：同一条横幅换成了新的一条消息，弹（不问去重：对方隔一条又发了前面那句话，
+///   横幅的字确实换过，也该弹）；
+/// - `unchanged`：字没变，又报了一次；
+/// - `refine`：刚弹出的那条横幅先只有发件人、内容随后才填上（`fillWindow` 内），顶替刚弹的那条，
+///   不再多弹一条；
+/// - `settle`：离上次换字不到 `throttle`，字可能还在一段一段地填，等 `after` 秒再读一遍（防抖）。
+public struct NotchBannerRevisions: Sendable {
+    /// 同一条横幅两次换字至少隔多久才认。
+    public static let throttle: TimeInterval = 0.3
+    /// 空壳填上字算同一条的时限。
+    public static let fillWindow: TimeInterval = 1.5
+    /// 横幅记多久（横幅早就不在了，留着没用）。
+    public static let keep: TimeInterval = 300
+
+    public enum Decision: Equatable, Sendable {
+        case fresh
+        /// 同一条横幅换成了新的一条消息。
+        case updated
+        case unchanged
+        /// 顶替卡片上这条（同一条横幅刚弹出时内容还没填上）。
+        case refine(UUID)
+        /// 过这么多秒再读一遍。
+        case settle(after: TimeInterval)
+    }
+
+    struct Entry: Sendable {
+        var key: String
+        var at: Date
+        var app: NotchMessageApp
+        var sender: String?
+        var hadPreview: Bool
+        var messageID: UUID?
+    }
+
+    private var entries: [String: Entry] = [:]
+
+    public init() {}
+
+    /// 判断，不记。没有系统标识的横幅总是 `fresh`（字一变键就变，交给去重）。
+    public func decide(_ incoming: NotchIncoming, now: Date) -> Decision {
+        guard let id = incoming.bannerID, let entry = entries[id],
+              now.timeIntervalSince(entry.at) < Self.keep else { return .fresh }
+        if entry.key == incoming.key { return .unchanged }
+        let elapsed = now.timeIntervalSince(entry.at)
+        if elapsed >= 0, elapsed < Self.throttle { return .settle(after: Self.throttle - elapsed) }
+        if !entry.hadPreview, elapsed < Self.fillWindow, entry.app == incoming.app,
+           let messageID = entry.messageID, entry.sender == nil || entry.sender == incoming.sender {
+            return .refine(messageID)
+        }
+        return .updated
+    }
+
+    /// 记下这条横幅现在的内容。`messageID` 是卡片上对应的那条，没弹（刚开始观察时就在、
+    /// 正在看这个 App、App 没开）时为 nil。只有字变了才更新时间，同样的字再报一次不算换字。
+    public mutating func record(_ incoming: NotchIncoming, messageID: UUID?, now: Date) {
+        entries = entries.filter { now.timeIntervalSince($0.value.at) < Self.keep }
+        guard let id = incoming.bannerID else { return }
+        if let entry = entries[id], entry.key == incoming.key {
+            if entries[id]?.messageID == nil { entries[id]?.messageID = messageID }
+            return
+        }
+        entries[id] = Entry(key: incoming.key, at: now, app: incoming.app, sender: incoming.sender,
+                            hadPreview: incoming.preview != nil, messageID: messageID)
+    }
+}
+
+/// 读通知中心的节流：两次读至少隔 `interval`。排版、值、标题变化一下来好几个，
+/// 读一次最多 2.5 秒，不能每个事件都读。
+public struct NotchScanThrottle: Sendable {
+    public static let interval: TimeInterval = 0.3
+
+    public private(set) var lastScan: Date?
+
+    public init() {}
+
+    /// 现在要读，最早过多少秒能读（不少于 `minimum`，即原来的防抖时间）。
+    public func delay(now: Date, minimum: TimeInterval) -> TimeInterval {
+        guard let lastScan else { return minimum }
+        return max(minimum, Self.interval - now.timeIntervalSince(lastScan))
+    }
+
+    public mutating func scanned(at now: Date) { lastScan = now }
+}
+
 // MARK: - 消息堆叠
 
 /// 卡片上的一条消息。
@@ -1118,6 +1219,16 @@ public struct NotchMessageInbox: Equatable, Sendable {
             deferred.subtract(dropped)
         }
         if makeCurrent || current == nil { currentID = message.id }
+    }
+
+    /// 同一条横幅刚弹出时内容还没填上，填上后换成完整的：发件人、内容换掉，位置和
+    /// 「稍后」不动。这条已经不在了（打开过、清掉了）时返回 false。
+    @discardableResult
+    public mutating func refine(_ id: UUID, sender: String?, preview: String?) -> Bool {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return false }
+        messages[index].sender = sender
+        messages[index].preview = preview
+        return true
     }
 
     /// 「稍后」：这条留着算未读，换到下一条没点过稍后的；没有了返回 false（收起）。

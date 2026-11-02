@@ -137,6 +137,16 @@ extension NotchBannerParser {
         }
         return "h:" + String(hash, radix: 16)
     }
+
+    /// 认同一条横幅的同一版内容用的键：有系统标识时是标识加上字的摘要。微信连着来消息时
+    /// 第二条起不新开横幅，只把原来那条的字就地换掉，标识不变，只按标识认会把后面几条
+    /// 当成同一条。没有标识时和 `identityKey` 一样（本来就按字认）。
+    public static func revisionKey(_ b: NotchBanner) -> String {
+        guard let id = cleaned(b.identifier) else { return identityKey(b) }
+        var copy = b
+        copy.identifier = nil
+        return "id:" + id + "#" + identityKey(copy)
+    }
 }
 
 /// 诊断用的横幅记录：最近 `keep` 条非测试横幅、最近一条测试横幅分开存，互不覆盖；另有计数

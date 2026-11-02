@@ -123,7 +123,8 @@ final class NotchMessageTests: XCTestCase {
         XCTAssertEqual(found.first?.app, .messages)
         XCTAssertEqual(found.first?.sender, "林小雨")
         XCTAssertEqual(found.first?.preview, "晚上七点三里屯见吗？ 我订了靠窗的位置", "换行并成空格")
-        XCTAssertEqual(found.first?.key, "id:8F0C")
+        XCTAssertEqual(found.first?.bannerID, "8F0C")
+        XCTAssertEqual(found.first?.key.hasPrefix("id:8F0C|messages|林小雨|"), true, "标识加上 App、发件人和内容")
         XCTAssertEqual(found.first?.previewHidden, false)
     }
 

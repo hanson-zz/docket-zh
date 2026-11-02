@@ -8,8 +8,10 @@ import ApplicationServices
 /// 打开了「卡片弹出后关掉系统横幅」：卡片展开后执行横幅自己带的「关闭」动作或按它的
 /// 关闭按钮（`close(_:)`），和用户自己点横幅上的关闭一样，横幅没有这两样时什么都不做。横幅的结构不是
 /// 公开接口：读不到、认不出就什么都不报，绝不崩溃。macOS 26 上第一条横幅出现时是
-/// AXWindowCreated，后面追加进同一个窗口的只有 AXLayoutChanged，所以几种都听。事件来了
-/// 先等一小会儿读一遍，再过一会儿补读一遍（横幅刚出现时字可能还没填上）。
+/// AXWindowCreated，后面追加进同一个窗口的只有 AXLayoutChanged；微信连着来消息时第二条起
+/// 不新开横幅，是原来那条就地换字（AXLayoutChanged、AXValueChanged、AXTitleChanged），
+/// 所以几种都听。事件来了先等一小会儿读一遍，再过一会儿补读一遍（横幅刚出现时字可能还没
+/// 填上）；两次读至少隔 300ms（`NotchScanThrottle`），一串事件并成一次。
 ///
 /// 读 AX 在后台串行队列上做（每个元素最多等 `timeout` 秒），结果回主线程。
 ///
@@ -71,10 +73,12 @@ final class NotchBannerWatcher {
     private var lastSignature: [String]?
     private var followUpPending = false
     private var pendingTrigger: NotchScanTrigger = .event
+    /// 两次读通知中心至少隔 300ms。
+    private var throttle = NotchScanThrottle()
     /// 最近 20 秒程序坞角标的记录（每秒一次，横幅出现时再立刻读一次）。
     private var dockHistory = NotchDockBadgeHistory()
     private var dockSampling = false
-    /// 见过的横幅（按 `identityKey`）：第一次读到的时间、认成了哪个 App、是否已经排过
+    /// 见过的横幅（按 `revisionKey`）：第一次读到的时间、认成了哪个 App、是否已经排过
     /// 角标补读。认角标时拿第一次读到的时间比，别的横幅认走的个数从涨幅里扣掉。
     private var seenBanners: [String: NotchSeenBanner] = [:]
     /// 有认不出的横幅在等角标时，到这个时间为止，每秒记角标发现涨了就再读一遍横幅。
@@ -89,8 +93,8 @@ final class NotchBannerWatcher {
     /// 桌面小组件的窗口，以前几个窗口合用 400 个，小组件排在前面时轮不到横幅那个窗口。
     private nonisolated static let maxNodesPerWindow = 600
     private nonisolated static let maxDepth = NotchBannerParser.maxDepth
-    /// 事件来了等一小会儿再读，几个事件并成一次。
-    private static let debounce: Duration = .milliseconds(120)
+    /// 事件来了等一小会儿再读，几个事件并成一次（秒）。
+    private static let debounceSeconds: TimeInterval = 0.12
     /// 事件之后再补读一遍的时间（横幅刚出现时字可能还没填上）。
     private static let followUp: Duration = .milliseconds(900)
     /// 多久看一次权限、通知中心进程、窗口和窗口里的横幅。横幅只停五秒左右，两秒一看
@@ -102,6 +106,8 @@ final class NotchBannerWatcher {
     private static let events: [String] = [
         kAXWindowCreatedNotification as String, "AXLayoutChanged",
         kAXCreatedNotification as String, kAXUIElementDestroyedNotification as String,
+        // 横幅就地换字（微信第二条起）：不新建元素，只报值、标题变化。
+        kAXValueChangedNotification as String, kAXTitleChangedNotification as String,
     ]
 
     func start(apps: [NotchMessageApp]) {
@@ -346,12 +352,13 @@ final class NotchBannerWatcher {
         scheduleFollowUp()
     }
 
-    private func scheduleScan(_ trigger: NotchScanTrigger) {
+    private func scheduleScan(_ trigger: NotchScanTrigger, atLeast minimum: TimeInterval = 0) {
         guard isRunning, !scanPending else { return }
         scanPending = true
         pendingTrigger = trigger
+        let wait = throttle.delay(now: Date(), minimum: max(minimum, Self.debounceSeconds))
         Task { @MainActor [weak self] in
-            try? await Task.sleep(for: Self.debounce)
+            try? await Task.sleep(for: .milliseconds(Int((wait * 1000).rounded(.up))))
             guard let self else { return }
             self.scanPending = false
             self.scan(priming: false, trigger: self.pendingTrigger)
@@ -398,8 +405,16 @@ final class NotchBannerWatcher {
         var unresolved: [String] = []
     }
 
+    /// 同一条横幅的字刚换过不到 300ms（`NotchBannerRevisions` 判成 settle）：过一会儿再读一遍，
+    /// 读到的是填好的字。
+    func rescan(after delay: TimeInterval) {
+        scheduleScan(.followUp, atLeast: delay)
+        scheduleFollowUp()
+    }
+
     private func scan(priming: Bool, trigger: NotchScanTrigger = .priming) {
         guard isRunning, let appElement else { return }
+        throttle.scanned(at: Date())
         scanGeneration += 1
         let generation = scanGeneration
         let app = Box(element: appElement)
@@ -510,7 +525,8 @@ final class NotchBannerWatcher {
             for entry in NotchBannerParser.located(in: snapshot) {
                 result.bannerCount += 1
                 let banner = entry.banner
-                let key = NotchBannerParser.identityKey(banner)
+                // 按「标识 + 字」认：同一条横幅就地换了字算另一条（角标补读、诊断计数都分开）。
+                let key = NotchBannerParser.revisionKey(banner)
                 let bannerAt = seen[key]?.at ?? result.seen[key]?.at ?? now
                 let explicit = NotchBannerParser.recognise(banner, names: names)
                 let isTest = explicit == nil && allTokens.contains { NotchMessageProbe.matches(banner, token: $0) }
