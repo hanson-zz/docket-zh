@@ -411,7 +411,8 @@ public struct MechvibesPack: Equatable, Sendable {
     /// 用到的全部文件（相对声音包文件夹的路径），按名字排。
     public var files: [String] { Array(Set(definitions.values.map(\.file))).sorted() }
 
-    /// 支持的音频扩展名；ogg、flac 交给 Core Audio 试着解，解不开时导入会说清楚。
+    /// 支持的音频扩展名；ogg、flac 交给 Core Audio 试着解，解不开时导入会说清楚
+    /// （OGG 见 `TypingSoundAudioFormat.oggUnsupportedMessage`）。
     public static let audioExtensions: Set<String> = ["wav", "ogg", "mp3", "flac", "m4a", "aac", "aif", "aiff", "caf"]
     /// 一个包最多用多少个文件、定义多少个键。
     public static let maxFiles = 300
@@ -432,7 +433,7 @@ public struct MechvibesPack: Equatable, Sendable {
             case .noDefinitions: tr("config.json 里没有定义任何键的声音。")
             case .missingAudioFile: tr("config.json 没写声音文件（sound 或 audio_file）。")
             case .unsafePath(let path): tr("声音文件路径不安全：\(path)")
-            case .unsupportedFormat(let ext): tr("不支持 .\(ext) 格式，请用 wav、ogg、mp3、flac 或 m4a。")
+            case .unsupportedFormat(let ext): tr("不支持 .\(ext) 格式，请用 wav、mp3、m4a 或 flac。")
             case .tooNewVersion: tr("这个声音包要更新版本的 Mechvibes 才能读。")
             case .tooManyFiles: tr("声音包里的文件太多。")
             }

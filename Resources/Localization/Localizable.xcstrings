@@ -68541,13 +68541,13 @@
         }
       }
     },
-    "不支持 .%@ 格式，请用 wav、ogg、mp3、flac 或 m4a。" : {
+    "不支持 .%@ 格式，请用 wav、mp3、m4a 或 flac。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The .%@ format is not supported. Use wav, ogg, mp3, flac or m4a."
+            "value" : "The .%@ format is not supported. Use wav, mp3, m4a or flac."
           }
         }
       }
@@ -68713,6 +68713,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The archive could not be unzipped. It may be damaged."
+          }
+        }
+      }
+    },
+    "压缩包里的文件太多（超过 1000 个），不像声音包。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive has too many files (over 1,000). This does not look like a sound pack."
+          }
+        }
+      }
+    },
+    "%@ 超过 20 MB，不像按键声音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is over 20 MB, which is too large for a key sound."
+          }
+        }
+      }
+    },
+    "压缩包解压后超过 200 MB，为了安全没有导入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive unzips to more than 200 MB, so it was not imported for safety."
+          }
+        }
+      }
+    },
+    "压缩包里有不安全的路径：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive contains an unsafe path: %@"
+          }
+        }
+      }
+    },
+    "压缩包里有符号链接（%@），为了安全没有导入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive contains a symbolic link (%@), so it was not imported for safety."
+          }
+        }
+      }
+    },
+    "此音效包使用 OGG 格式，暂不支持，请用 WAV/MP3 版本。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This sound pack uses the OGG format, which is not supported yet. Please use the WAV/MP3 version."
           }
         }
       }
