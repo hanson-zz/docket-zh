@@ -743,10 +743,12 @@ struct MicrophoneDetail: View {
         Button { PaywallWindow.shared.show() } label: {
             HStack(spacing: 6) {
                 ProBadge()
+                // 英文这句比中文长一倍多，一行放不下时折成两行，不截断。
                 Text(verbatim: tr("使用记录保留 30 天，可以往前翻"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
             .contentShape(.rect)

@@ -245,14 +245,15 @@ private struct AddSearchSite: View {
         VStack(alignment: .leading, spacing: 12) {
             if !available.isEmpty {
                 Text(tr("常用", context: "sites")).font(.headline)
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(64), spacing: 6), count: 4), spacing: 10) {
+                // 名字 13pt（以前 .caption 只有 10pt）：一行 3 个 80 宽，DuckDuckGo、Xiaohongshu 也放得下。
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 8), count: 3), spacing: 10) {
                     ForEach(available) { site in
                         Button { add(site) } label: {
                             VStack(spacing: 4) {
                                 SiteBadge(site: site, size: 30)
-                                Text(site.title).font(.caption).lineLimit(1)
+                                Text(site.title).font(.system(size: 13)).lineLimit(1)
                             }
-                            .frame(width: 64)
+                            .frame(width: 80)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
@@ -265,7 +266,7 @@ private struct AddSearchSite: View {
             TextField("名字，例如 豆瓣", text: $name)
             TextField("搜索网址，用 %s 代表搜索词", text: $address)
             Text("例如 https://www.douban.com/search?q=%s。不写 %s 时搜索词接在网址末尾。")
-                .font(.caption)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {

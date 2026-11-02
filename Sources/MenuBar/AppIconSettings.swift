@@ -70,9 +70,12 @@ private struct AppIconCard: View {
                     .interpolation(.high)
                     .frame(width: 64, height: 64)
                     .opacity(locked ? 0.45 : 1)
+                // 卡片内只有 92pt 宽：英文名（Red Panda Night 等）一行放不下，
+                // 最多两行、居中，并总是留出两行高度，同一排卡片照样对齐。
                 Text(option.title)
                     .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
             }
             .padding(10)
             .frame(width: 112)
