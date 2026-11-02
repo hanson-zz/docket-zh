@@ -46,6 +46,9 @@ final class PodcastService {
     @ObservationIgnored private var active = false
     @ObservationIgnored private var notify = true
     @ObservationIgnored private var lastCheck: Date?
+    /// 正在逐个刷新全部节目的那一轮；扩展栏上不再放播客卡片时取消。
+    @ObservationIgnored private var refreshTask: Task<Void, Never>?
+    @ObservationIgnored private var refreshRound = 0
     @ObservationIgnored private var askedPermission = false
     @ObservationIgnored private var artworkLoading: Set<URL> = []
     @ObservationIgnored private let presenter = BannerPresenter()
@@ -93,6 +96,9 @@ final class PodcastService {
         guard active else {
             timer?.invalidate()
             timer = nil
+            // 卡片都拿掉了：这一轮还没读到的节目不再读。
+            refreshTask?.cancel()
+            refreshTask = nil
             return
         }
         if notify { askPermissionOnce() }
@@ -118,13 +124,19 @@ final class PodcastService {
 
     /// 一个接一个地读，中间隔 `PodcastPlayback.refreshSpacing`：以前全部同时发，
     /// 订阅多的时候被小宇宙限流，靠后的节目常常读不出来。
+    /// 上一轮还没读完时不再开一轮（两轮交错会把间隔打乱，又容易被限流）。
     func refreshAll() {
+        guard refreshTask == nil else { return }
         let ids = library.shows.map(\.id)
-        Task {
+        refreshRound += 1
+        let round = refreshRound
+        refreshTask = Task {
             for (index, id) in ids.enumerated() {
                 if index > 0 { try? await Task.sleep(for: .seconds(PodcastPlayback.refreshSpacing)) }
+                if Task.isCancelled { break }
                 await refresh(id)
             }
+            if refreshRound == round { refreshTask = nil }
         }
     }
 
@@ -238,6 +250,8 @@ final class PodcastService {
         defer { loading.remove(showID) }
         switch await Self.page(XiaoyuzhouLink.podcast(showID).pageURL) {
         case .failure(let failure):
+            // 整轮刷新被取消时请求跟着断，不算这个节目读不出来。
+            guard !Task.isCancelled else { return }
             problems[showID] = failure.message
         case .success(let html):
             guard let show = Xiaoyuzhou.podcast(fromPage: html) else {
@@ -401,14 +415,20 @@ final class PodcastService {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyyMMdd-HHmmss"
-        let backup = url.deletingLastPathComponent()
-            .appendingPathComponent("podcasts-backup-\(formatter.string(from: .now)).json")
+        let folder = url.deletingLastPathComponent()
+        let backup = folder.appendingPathComponent(
+            PodcastStore.backupPrefix + formatter.string(from: .now) + PodcastStore.backupSuffix)
         do {
             try FileManager.default.copyItem(at: url, to: backup)
-            return backup
         } catch {
             return nil
         }
+        // 只留最新几份，旧的删掉。
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        for name in PodcastStore.staleBackups(names) {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
+        }
+        return backup
     }
 
     private func save() {

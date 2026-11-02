@@ -151,6 +151,21 @@ public enum PodcastStore {
         return bare.hasPrefix("xyzfm.link/") && bare.count > "xyzfm.link/".count
     }
 
+    // MARK: 备份
+
+    /// 备份文件名的前缀和后缀：podcasts-backup-20261102-101500.json。
+    public static let backupPrefix = "podcasts-backup-"
+    public static let backupSuffix = ".json"
+    /// 最多留几份备份，再多就删最旧的。
+    public static let backupsKept = 5
+
+    /// 目录里该删的旧备份：只认 `backupPrefix` 开头、`backupSuffix` 结尾的文件，按名字里的
+    /// 时间排（名字按时间排序就是先后），留最新的 `keep` 份，其余返回。
+    public static func staleBackups(_ names: [String], keep: Int = backupsKept) -> [String] {
+        let backups = names.filter { $0.hasPrefix(backupPrefix) && $0.hasSuffix(backupSuffix) }.sorted()
+        return Array(backups.dropLast(max(0, keep)))
+    }
+
     static func trimmed(_ text: String) -> String {
         text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.init(charactersIn: "\"'<>()（）")))
     }
@@ -168,8 +183,9 @@ public struct PodcastLoad: Equatable, Sendable {
 
     public init() {}
 
-    /// 换过写法的要马上写回新格式。
-    public var needsSave: Bool { repaired > 0 }
+    /// 换过写法的要马上写回新格式；有读不出来的也要（先备份再写回），不然坏的那几条
+    /// 一直留在文件里，每次启动都再备份一份，备份越积越多。
+    public var needsSave: Bool { repaired > 0 || needsBackup }
     /// 有东西读不出来：写回之前先把原文件备份一份，面板上提示。
     public var needsBackup: Bool { fileUnreadable || unreadable > 0 }
 }

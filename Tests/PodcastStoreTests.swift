@@ -84,7 +84,25 @@ final class PodcastStoreTests: XCTestCase {
         XCTAssertEqual(loaded.library.shows[0].episodes.map(\.id), ["a", "b"])
         XCTAssertEqual(loaded.unreadable, 1)
         XCTAssertTrue(loaded.needsBackup)
+        // 备份后要写回，不然坏的那条每次启动都再触发一次备份。
+        XCTAssertTrue(loaded.needsSave)
         XCTAssertEqual(loaded.library.progress.keys.sorted(), ["a"])
+    }
+
+    func testAnUnreadableFileIsWrittenBackAfterTheBackup() {
+        XCTAssertTrue(load("不是 JSON").needsSave)
+    }
+
+    func testOnlyTheNewestBackupsAreKept() {
+        let names = ["podcasts.json",
+                     "podcasts-backup-20261101-090000.json",
+                     "podcasts-backup-20261103-090000.json",
+                     "podcasts-backup-20261102-090000.json",
+                     "podcasts-backup-notes.txt",
+                     "other-backup-20261101-090000.json"]
+        XCTAssertEqual(PodcastStore.staleBackups(names, keep: 2), ["podcasts-backup-20261101-090000.json"])
+        XCTAssertEqual(PodcastStore.staleBackups(names, keep: 5), [])
+        XCTAssertEqual(PodcastStore.staleBackups(names, keep: 0).count, 3)
     }
 
     func testAListOfLinksIsMigrated() {
