@@ -3,7 +3,7 @@ import SwiftUI
 /// 设置 ▸ 快捷键 ▸ 窗口切换（⌥Tab 按窗口切换，免费功能）。
 ///
 /// 快捷键（默认 ⌥Tab，可改可清空，撞上 ⌘Tab 或码头里别的快捷键时提醒）、只显示当前桌面、
-/// 按 App 分组、包含已最小化和已隐藏的窗口。缺辅助功能权限时说明不会生效并给去授权；
+/// 按 App 分组、包含已最小化和已隐藏的窗口、用 ⌘Tab 打开（接管系统 ⌘Tab，默认关）。缺辅助功能权限时说明不会生效并给去授权；
 /// 缺屏幕录制权限时只在这里提示一句，卡片改画 App 大图标，运行时不弹授权。
 struct WindowSwitcherSettingsSection: View {
     @Binding var state: PersistedState
@@ -54,6 +54,16 @@ struct WindowSwitcherSettingsSection: View {
                 }
             }
 
+            Toggle(isOn: settings.commandTab) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("用 ⌘Tab 打开窗口切换器"))
+                    Text(tr("打开后系统的 ⌘Tab 由码头接管，关掉或退出码头会自动还原。"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Toggle(tr("只显示当前桌面"), isOn: settings.currentDesktopOnly)
             Toggle(tr("按 App 分组"), isOn: settings.groupByApp)
             Toggle(tr("包含已最小化、已隐藏的窗口"), isOn: settings.includeMinimized)
@@ -65,10 +75,12 @@ struct WindowSwitcherSettingsSection: View {
                 }
             }
 
-            Text(tr("⌘Tab 不受影响，系统的 App 切换照常用。"))
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !state.windowSwitcher.commandTab {
+                Text(tr("⌘Tab 不受影响，系统的 App 切换照常用。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         } header: {
             Text(tr("窗口切换"))
         }

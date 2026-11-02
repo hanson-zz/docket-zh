@@ -2179,6 +2179,28 @@
         }
       }
     },
+    "用 ⌘Tab 打开窗口切换器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use ⌘Tab to open the window switcher"
+          }
+        }
+      }
+    },
+    "打开后系统的 ⌘Tab 由码头接管，关掉或退出码头会自动还原。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When on, Dockling takes over the system ⌘Tab. Turning this off or quitting Dockling restores it."
+          }
+        }
+      }
+    },
     "⌘Tab 是系统切换 App 的快捷键，建议换一个。" : {
       "extractionState" : "manual",
       "localizations" : {

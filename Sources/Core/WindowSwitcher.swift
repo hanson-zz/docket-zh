@@ -18,16 +18,28 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
     public var groupByApp = false
     /// 也列已最小化的窗口和已隐藏 App 的窗口。默认开。
     public var includeMinimized = true
+    /// 用 ⌘Tab 打开切换器：关掉系统的 ⌘Tab、⌘⇧Tab，由码头接管。和上面的快捷键共存。
+    /// 默认关；旧数据没有这个键时读成关。
+    public var commandTab = false
+
+    /// ⌘Tab：打开，选中上一个窗口。
+    public static let commandTabHotKey = KeyCombo(keyCode: 48, modifiers: KeyCombo.Modifier.command)
+    /// ⌘⇧Tab：打开，选中最后一个。
+    public static let commandShiftTabHotKey = KeyCombo(keyCode: 48,
+                                                       modifiers: KeyCombo.Modifier.command | KeyCombo.Modifier.shift)
 
     public init(hotKey: KeyCombo? = WindowSwitcherSettings.defaultHotKey, currentDesktopOnly: Bool = false,
-                groupByApp: Bool = false, includeMinimized: Bool = true) {
+                groupByApp: Bool = false, includeMinimized: Bool = true, commandTab: Bool = false) {
         self.hotKey = hotKey
         self.currentDesktopOnly = currentDesktopOnly
         self.groupByApp = groupByApp
         self.includeMinimized = includeMinimized
+        self.commandTab = commandTab
     }
 
-    private enum CodingKeys: String, CodingKey { case hotKey, currentDesktopOnly, groupByApp, includeMinimized }
+    private enum CodingKeys: String, CodingKey {
+        case hotKey, currentDesktopOnly, groupByApp, includeMinimized, commandTab
+    }
 
     /// 少了键用默认值；快捷键键在但是 null 表示用户清空了；读不懂的快捷键当默认。
     public init(from decoder: any Decoder) throws {
@@ -44,6 +56,7 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
         currentDesktopOnly = (try? c.decodeIfPresent(Bool.self, forKey: .currentDesktopOnly)) ?? false
         groupByApp = (try? c.decodeIfPresent(Bool.self, forKey: .groupByApp)) ?? false
         includeMinimized = (try? c.decodeIfPresent(Bool.self, forKey: .includeMinimized)) ?? true
+        commandTab = (try? c.decodeIfPresent(Bool.self, forKey: .commandTab)) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -52,11 +65,36 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
         try c.encode(currentDesktopOnly, forKey: .currentDesktopOnly)
         try c.encode(groupByApp, forKey: .groupByApp)
         try c.encode(includeMinimized, forKey: .includeMinimized)
+        try c.encode(commandTab, forKey: .commandTab)
     }
 
     /// 真正要注册的快捷键：没设、缺 ⌃⌥⌘ 的不注册。
     public var registrableHotKey: KeyCombo? {
         hotKey.flatMap { $0.hasRequiredModifier ? $0 : nil }
+    }
+
+    /// 这会儿要不要接管系统的 ⌘Tab：开关打开并且有辅助功能权限。没权限时保持系统 ⌘Tab。
+    public func takesOverCommandTab(trusted: Bool) -> Bool {
+        commandTab && trusted
+    }
+
+    /// 要注册的全部快捷键（没权限时一个也不注册）。接管 ⌘Tab 时加上 ⌘Tab、⌘⇧Tab；
+    /// 自己录的快捷键正好也是其中一个时不重复。
+    public func hotKeys(trusted: Bool) -> [KeyCombo] {
+        guard trusted else { return [] }
+        var list: [KeyCombo] = []
+        if let combo = registrableHotKey { list.append(combo) }
+        if takesOverCommandTab(trusted: trusted) {
+            for combo in [Self.commandTabHotKey, Self.commandShiftTabHotKey] where !list.contains(combo) {
+                list.append(combo)
+            }
+        }
+        return list
+    }
+
+    /// 从这个快捷键打开时是不是倒着选（⌘⇧Tab 这类带 ⇧ 的 Tab）。
+    public static func opensBackward(_ combo: KeyCombo) -> Bool {
+        combo.keyCode == WindowSwitcher.Key.tab && combo.modifiers & KeyCombo.Modifier.shift != 0
     }
 }
 
@@ -185,8 +223,10 @@ public enum WindowSwitcher {
 
     /// 刚弹出时选中第二个（上一个用过的窗口），只有一个时选它。排第一的不是前台 App 的
     /// 当前窗口时（比如点了桌面，前台是没有窗口的访达）选第一个。
-    public static func initialSelection(count: Int, firstIsFront: Bool = true) -> Int {
-        count > 1 && firstIsFront ? 1 : 0
+    public static func initialSelection(count: Int, firstIsFront: Bool = true, backward: Bool = false) -> Int {
+        // ⌘⇧Tab 打开：选最后一个，和系统的 ⌘⇧Tab 一样。
+        if backward { return max(count - 1, 0) }
+        return count > 1 && firstIsFront ? 1 : 0
     }
 
     // MARK: 卡片文字
@@ -281,6 +321,8 @@ public enum WindowSwitcher {
         public static let q: UInt32 = 12
         public static let slash: UInt32 = 44
         public static let space: UInt32 = 49
+        /// ` 键（⌘` 切同一 App 的窗口，交还给系统）。
+        public static let grave: UInt32 = 50
     }
 
     /// - Parameters:
@@ -289,10 +331,15 @@ public enum WindowSwitcher {
     ///   - modifiers: Carbon 修饰键位（`KeyCombo.Modifier`）。
     ///   - triggerKey: 快捷键本身的键（默认 Tab），按它也是下一个。
     ///   - searching: 已经在搜索（打过字或按过 /）：W、M、Q 当字打进搜索框。
+    ///   - holding: 快捷键要按住的修饰键（⌥Tab 是 ⌥，⌘Tab 是 ⌘）。按住它不算额外的组合：
+    ///     ⌘Tab 打开时按着 ⌘ 按 W、M、Q 仍是关窗口、最小化、退出，不交给前台 App。
     public static func action(keyCode: UInt32, characters: String, modifiers: UInt32,
-                              triggerKey: UInt32 = Key.tab, searching: Bool) -> KeyAction {
+                              triggerKey: UInt32 = Key.tab, searching: Bool,
+                              holding: UInt32 = 0) -> KeyAction {
         typealias M = KeyCombo.Modifier
         let shift = modifiers & M.shift != 0
+        // ⌘` 一直交还给系统，切换器先收起。
+        if keyCode == Key.grave, triggerKey != Key.grave, modifiers & M.command != 0 { return .passThrough }
         switch keyCode {
         case Key.escape: return .cancel
         case Key.returnKey, Key.enter: return .commit
@@ -305,7 +352,7 @@ public enum WindowSwitcher {
         if keyCode == triggerKey || keyCode == Key.tab {
             return shift ? .previous : .next
         }
-        if modifiers & M.command != 0 { return .passThrough }
+        if modifiers & ~holding & M.command != 0 { return .passThrough }
         if keyCode == Key.delete || keyCode == Key.forwardDelete {
             return searching ? .backspace : .ignore
         }

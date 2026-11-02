@@ -255,6 +255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ShotHotKey.shared.apply(state.state.shotHotKeys)
 
         // ⌥Tab 按窗口切换：默认 ⌥Tab，要辅助功能权限，没给时不注册。平时只占这一个快捷键。
+        // 打开「用 ⌘Tab 打开」时接管系统 ⌘Tab；没接管时这里先还原一次（防上次崩溃没还原）。
         WindowSwitcherController.shared.apply(state.state.windowSwitcher)
 
         // Layout hotkeys. Registered now and again whenever a layout gains,
@@ -357,6 +358,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         IslandController.shared.shutdown()
         // 打字音效：撤掉键盘监听、停掉音频引擎。
         TypingSoundController.shared.shutdown()
+        // 窗口切换接管了 ⌘Tab 的话，还给系统。
+        WindowSwitcherController.shared.shutdown()
         // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。
         NetworkMetrics.shared.flushToday()
     }

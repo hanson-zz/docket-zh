@@ -2,7 +2,8 @@ import AppKit
 import Carbon.HIToolbox
 
 /// ⌥Tab 窗口切换器的全局快捷键。和截图、快速待办一个写法：Carbon 的
-/// `RegisterEventHotKey`，平时只占一个快捷键，不监听任何按键。签名“DkWs”。
+/// `RegisterEventHotKey`，平时只占自己的快捷键，不监听任何按键。签名“DkWs”。
+/// 打开「用 ⌘Tab 打开」时另外注册 ⌘Tab、⌘⇧Tab（系统的那两个先由 `SystemCommandTab` 关掉）。
 ///
 /// 切换器弹出期间先放开（`pause`），后面的 Tab、⇧Tab 和松开 ⌥ 都由 `SwitcherEventTap`
 /// 收，收起后再注册回来。设置里录快捷键时也放开（`suspend`）。
@@ -10,11 +11,11 @@ import Carbon.HIToolbox
 final class WindowSwitcherHotKey {
     static let shared = WindowSwitcherHotKey()
 
-    /// 按下时调。
-    var onPress: (@MainActor () -> Void)?
+    /// 按下时调，带上按的是哪个快捷键。
+    var onPress: (@MainActor (KeyCombo) -> Void)?
 
-    private var combo: KeyCombo?
-    private var ref: EventHotKeyRef?
+    private var combos: [KeyCombo] = []
+    private var refs: [EventHotKeyRef] = []
     private var handler: EventHandlerRef?
     private var suspended = false
     private var paused = false
@@ -23,10 +24,10 @@ final class WindowSwitcherHotKey {
 
     private init() {}
 
-    /// 要注册的快捷键；nil 是不注册（没设、没辅助功能权限）。
-    func apply(_ wanted: KeyCombo?) {
-        guard wanted != combo else { return }
-        combo = wanted
+    /// 要注册的快捷键；空是不注册（没设、没辅助功能权限）。
+    func apply(_ wanted: [KeyCombo]) {
+        guard wanted != combos else { return }
+        combos = wanted
         reregister()
     }
 
@@ -55,16 +56,25 @@ final class WindowSwitcherHotKey {
     }
 
     private func reregister() {
-        if let ref { UnregisterEventHotKey(ref) }
-        ref = nil
-        guard !suspended, !paused, let combo else { return }
+        for ref in refs { UnregisterEventHotKey(ref) }
+        refs = []
+        guard !suspended, !paused, !combos.isEmpty else { return }
         installHandlerIfNeeded()
-        var out: EventHotKeyRef?
-        let status = RegisterEventHotKey(combo.keyCode, combo.modifiers,
-                                         EventHotKeyID(signature: Self.signature, id: 1),
-                                         GetApplicationEventTarget(), 0, &out)
-        // 别的 App 已经占了这个组合时注册失败，等用户换一个。
-        if status == noErr { ref = out }
+        // 编号从 1 起，按下时用编号找回是哪个快捷键。
+        for (index, combo) in combos.enumerated() {
+            var out: EventHotKeyRef?
+            let status = RegisterEventHotKey(combo.keyCode, combo.modifiers,
+                                             EventHotKeyID(signature: Self.signature, id: UInt32(index + 1)),
+                                             GetApplicationEventTarget(), 0, &out)
+            // 别的 App 已经占了这个组合时注册失败，等用户换一个。
+            if status == noErr, let out { refs.append(out) }
+        }
+    }
+
+    fileprivate func pressed(id: UInt32) {
+        let index = Int(id) - 1
+        guard combos.indices.contains(index) else { return }
+        onPress?(combos[index])
     }
 
     private func installHandlerIfNeeded() {
@@ -80,7 +90,8 @@ final class WindowSwitcherHotKey {
             guard status == noErr, hotKeyID.signature == WindowSwitcherHotKey.signature else {
                 return OSStatus(eventNotHandledErr)
             }
-            MainActor.assumeIsolated { WindowSwitcherHotKey.shared.onPress?() }
+            let id = hotKeyID.id
+            MainActor.assumeIsolated { WindowSwitcherHotKey.shared.pressed(id: id) }
             return noErr
         }, 1, &spec, nil, &handler)
     }
