@@ -218,16 +218,15 @@ footer .flinks a{text-decoration:none}
 /* 功能分组配图 */
 .panel-shot{margin:14px auto 0;max-width:440px;width:100%}
 .panel-shot img{display:block;width:100%;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.10)}
-.panel-shot figcaption,.strip-fig figcaption,.shot-ph figcaption{font-size:13px;color:var(--mut);text-align:center;margin-top:6px}
+.panel-shot figcaption,.strip-fig figcaption,.mock-fig figcaption{font-size:13px;color:var(--mut);text-align:center;margin-top:6px}
 .cat.wide{grid-column:1 / -1}
 .strips.two{margin:6px 0 0}
 .strip-fig{margin:0}
 .strip-fig .stage.sm{margin:10px 0 0}
 .cat.wide .ticks{margin:14px 0 4px}
-.ph-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
-.shot-ph{margin:0}
-.ph-box{aspect-ratio:4/3;border:1.5px dashed var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mut);font-size:13px;background:rgba(127,127,127,.05)}
-.ph-box svg{width:28px;height:28px;opacity:.7}
+.mock-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;margin-top:16px;align-items:start}
+.mock-fig{margin:0}
+.mock-fig img{display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.10)}
 
 /* 最近新增：三条，一句话一张图 */
 .new3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
@@ -261,8 +260,9 @@ footer .flinks a{text-decoration:none}
 .log-ver h2{text-align:left;font-size:24px}
 .log-list p{margin:0;padding:12px 0;border-top:1px solid var(--line);color:var(--fg);font-size:15px}
 .log-list p:first-of-type,.log-list p[data-l="en"]:nth-of-type(2){border-top:0}
+.log-note{margin:0 0 12px;color:var(--mut);font-size:14px}
 
-@media (max-width:820px){.buy-grid,.new3{grid-template-columns:1fr}.buy-card{position:static}.ph-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.demo-frame{aspect-ratio:auto;padding:40px 14px 14px}}
+@media (max-width:820px){.buy-grid,.new3{grid-template-columns:1fr}.buy-card{position:static}.mock-grid{grid-template-columns:1fr}.demo-frame{aspect-ratio:auto;padding:40px 14px 14px}}
 .dl .first-note{margin:12px 0 0}
 .hero .hero-price{font-size:15px}
 .panel-shot{max-width:360px}
