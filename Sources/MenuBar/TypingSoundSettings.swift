@@ -376,19 +376,24 @@ private struct TypingStyleCard: View {
             HStack(alignment: .top, spacing: 10) {
                 TypingKeycap(label: style == .typewriter ? "T" : "", pressed: selected, tint: tint, size: 34)
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(style.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .lineLimit(1)
-                        if style.isPro { ProBadge(compact: false) }
-                    }
+                    // 名字独占一行（右上角留给选中勾/小锁），Pro 角标挪到最后一行来源后面，
+                    // 不和名字抢宽度，「白噪安静款」这类长名字不再被截成「白…」。
+                    Text(style.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.87)
+                        .padding(.trailing, 18)
                     Text(style.caption)
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(style.isRecording ? tr("真实录音") : tr("原创合成"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.tertiary)
+                    HStack(spacing: 6) {
+                        Text(style.isRecording ? tr("真实录音") : tr("原创合成"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                        if style.isPro { ProBadge(compact: false) }
+                    }
                 }
                 Spacer(minLength: 0)
             }
