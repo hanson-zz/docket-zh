@@ -4,6 +4,8 @@ import SwiftUI
 /// ⌥Tab 窗口切换器的面板内容，照效果图 design/window-switcher.png：
 /// 左上角小熊猫和搜索框（右边「N 个窗口」），中间窗口卡片，底部一行按键提示。
 /// 液态玻璃，跟随浅色 / 深色。选中的卡片白描边、往上抬一点，不用蓝色发光。
+/// 三种样式（设置 ▸ 窗口切换 ▸ 样式）：缩略图、图标（大 App 图标加一行标题）、标题列表
+/// （一列紧凑的行：小图标、窗口标题、App 名）。搜索、角标、按键都一样。
 struct WindowSwitcherView: View {
     var model: WindowSwitcherModel
     var pick: (Int) -> Void
@@ -97,6 +99,8 @@ struct WindowSwitcherView: View {
                     .foregroundStyle(.panelSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if model.layout.style == .list {
+            list(entries)
         } else if model.layout.scrolls {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: true) {
@@ -127,6 +131,7 @@ struct WindowSwitcherView: View {
                     ForEach(row * columns ..< min(entries.count, (row + 1) * columns), id: \.self) { index in
                         let entry = entries[index]
                         WindowSwitcherCard(entry: entry,
+                                           style: model.layout.style,
                                            image: model.shots[entry.id],
                                            icon: model.icons[entry.pid],
                                            thumbnails: model.canCapture,
@@ -138,6 +143,32 @@ struct WindowSwitcherView: View {
                 }
             }
         }
+    }
+
+    /// 标题列表：一列，放不下时竖向滚动，选中的行滚进来。
+    private func list(_ entries: [WindowSwitcher.Entry]) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: model.layout.scrolls) {
+                VStack(spacing: model.layout.gap) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        WindowSwitcherRow(entry: entry,
+                                          icon: model.icons[entry.pid],
+                                          selected: index == model.selection,
+                                          size: model.layout.cardSize,
+                                          iconSize: model.layout.thumbnailSize.width,
+                                          pick: { pick(entry.id) })
+                            .id(entry.id)
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDisabled(!model.layout.scrolls)
+            .onChange(of: model.selection) { _, index in
+                guard entries.indices.contains(index) else { return }
+                withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(entries[index].id) }
+            }
+        }
+        .id(model.session)
     }
 
     // MARK: 底部
@@ -194,6 +225,7 @@ struct WindowSwitcherView: View {
 /// App 图标加单行标题。选中白描边、往上抬 4pt；悬停淡淡的底。
 private struct WindowSwitcherCard: View {
     var entry: WindowSwitcher.Entry
+    var style: WindowSwitcherStyle = .thumbnails
     var image: CGImage?
     var icon: NSImage?
     var thumbnails: Bool
@@ -218,7 +250,8 @@ private struct WindowSwitcherCard: View {
                     .frame(width: layout.thumbnailSize.width, height: layout.thumbnailSize.height)
                     .clipShape(thumb)
                     .overlay(alignment: .topTrailing) { badge }
-                    .shadow(color: .black.opacity(scheme == .dark ? 0.3 : 0.14), radius: 4, y: 2)
+                    .shadow(color: .black.opacity(style == .thumbnails ? (scheme == .dark ? 0.3 : 0.14) : 0),
+                            radius: 4, y: 2)
                     .opacity(entry.dimmed ? 0.55 : 1)
                     .padding(.top, L.cardInset)
                 caption
@@ -258,6 +291,33 @@ private struct WindowSwitcherCard: View {
     }
 
     @ViewBuilder private var thumbnail: some View {
+        if style == .icons {
+            bigIcon
+        } else {
+            thumbnailImage
+        }
+    }
+
+    /// 图标样式：只有大 App 图标，不画底。
+    @ViewBuilder private var bigIcon: some View {
+        let side = min(L.iconSize * layout.scale, layout.thumbnailSize.height)
+        ZStack {
+            if let icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: side, height: side)
+            } else {
+                Image(systemName: "macwindow")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(.panelTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder private var thumbnailImage: some View {
         ZStack {
             thumb.fill(.panelFill)
             if thumbnails, let image, !entry.dimmed {
@@ -292,11 +352,26 @@ private struct WindowSwitcherCard: View {
                 .padding(.horizontal, 8)
                 .frame(height: 22)
                 .background(Capsule().fill(scheme == .dark ? Color.black.opacity(0.6) : Color.white.opacity(0.92)))
-                .padding(6)
+                .padding(style == .icons ? 4 : 6)
         }
     }
 
-    private var caption: some View {
+    @ViewBuilder private var caption: some View {
+        if style == .icons {
+            // 图标样式：只一行窗口标题，居中。
+            Text(verbatim: entry.title.isEmpty ? entry.appName : entry.title)
+                .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity)
+                .opacity(entry.dimmed && !selected ? 0.6 : 1)
+        } else {
+            thumbnailCaption
+        }
+    }
+
+    private var thumbnailCaption: some View {
         HStack(spacing: 7) {
             if let icon {
                 Image(nsImage: icon)
@@ -317,5 +392,101 @@ private struct WindowSwitcherCard: View {
     private var accessibility: String {
         if let badge = WindowSwitcher.badge(for: entry) { return tr("\(title)，\(badge.text)") }
         return title
+    }
+}
+
+/// 标题列表的一行：小 App 图标、窗口标题、右边 App 名和角标。选中是中性的浅色块，
+/// 和卡片一样不用蓝色。
+private struct WindowSwitcherRow: View {
+    var entry: WindowSwitcher.Entry
+    var icon: NSImage?
+    var selected: Bool
+    var size: CGSize
+    var iconSize: CGFloat
+    var pick: () -> Void
+
+    @State private var hovering = false
+    @Environment(\.colorScheme) private var scheme
+
+    private var row: RoundedRectangle { RoundedRectangle(cornerRadius: 10, style: .continuous) }
+
+    private var title: String { entry.title.isEmpty ? entry.appName : entry.title }
+
+    var body: some View {
+        Button(action: pick) {
+            HStack(spacing: 10) {
+                Group {
+                    if let icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .interpolation(.high)
+                    } else {
+                        Image(systemName: "macwindow")
+                            .font(.system(size: 15, weight: .light))
+                            .foregroundStyle(.panelTertiary)
+                    }
+                }
+                .frame(width: iconSize, height: iconSize)
+                Text(verbatim: title)
+                    .font(.system(size: 14, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
+                Spacer(minLength: 8)
+                if let badge = WindowSwitcher.badge(for: entry) {
+                    Text(badge.text)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .padding(.horizontal, 7)
+                        .frame(height: 20)
+                        .background(Capsule().fill(.panelFill))
+                        .fixedSize()
+                }
+                if title != entry.appName {
+                    Text(verbatim: entry.appName)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: size.width * 0.32, alignment: .trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(width: size.width, height: size.height)
+            .opacity(entry.dimmed && !selected ? 0.6 : 1)
+            .background { background }
+            .contentShape(row)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.1), value: selected)
+        .onHover { hovering = $0 }
+        .help(title)
+        .accessibilityLabel(accessibility)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    @ViewBuilder private var background: some View {
+        if selected {
+            row.fill(Color.white.opacity(scheme == .dark ? 0.16 : 0.72))
+                .overlay { row.strokeBorder(Color.white.opacity(scheme == .dark ? 0.5 : 1), lineWidth: 1) }
+                .overlay {
+                    if scheme != .dark {
+                        row.inset(by: -1).stroke(Color.black.opacity(0.1), lineWidth: 0.5)
+                    }
+                }
+        } else if hovering {
+            row.fill(.panelFill)
+        } else {
+            Color.clear
+        }
+    }
+
+    private var accessibility: String {
+        let base = title == entry.appName ? title : tr("\(title)，\(entry.appName)")
+        if let badge = WindowSwitcher.badge(for: entry) { return tr("\(base)，\(badge.text)") }
+        return base
     }
 }

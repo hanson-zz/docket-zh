@@ -21,6 +21,10 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
     /// 用 ⌘Tab 打开切换器：关掉系统的 ⌘Tab、⌘⇧Tab，由码头接管。和上面的快捷键共存。
     /// 默认关；旧数据没有这个键时读成关。
     public var commandTab = false
+    /// 移动选中时在窗口原来的位置显示一张全尺寸预览。默认开。
+    public var largePreview = true
+    /// 卡片样式：缩略图（默认）、图标、标题列表。
+    public var style: WindowSwitcherStyle = .thumbnails
 
     /// ⌘Tab：打开，选中上一个窗口。
     public static let commandTabHotKey = KeyCombo(keyCode: 48, modifiers: KeyCombo.Modifier.command)
@@ -29,16 +33,19 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
                                                        modifiers: KeyCombo.Modifier.command | KeyCombo.Modifier.shift)
 
     public init(hotKey: KeyCombo? = WindowSwitcherSettings.defaultHotKey, currentDesktopOnly: Bool = false,
-                groupByApp: Bool = false, includeMinimized: Bool = true, commandTab: Bool = false) {
+                groupByApp: Bool = false, includeMinimized: Bool = true, commandTab: Bool = false,
+                largePreview: Bool = true, style: WindowSwitcherStyle = .thumbnails) {
         self.hotKey = hotKey
         self.currentDesktopOnly = currentDesktopOnly
         self.groupByApp = groupByApp
         self.includeMinimized = includeMinimized
         self.commandTab = commandTab
+        self.largePreview = largePreview
+        self.style = style
     }
 
     private enum CodingKeys: String, CodingKey {
-        case hotKey, currentDesktopOnly, groupByApp, includeMinimized, commandTab
+        case hotKey, currentDesktopOnly, groupByApp, includeMinimized, commandTab, largePreview, style
     }
 
     /// 少了键用默认值；快捷键键在但是 null 表示用户清空了；读不懂的快捷键当默认。
@@ -57,6 +64,8 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
         groupByApp = (try? c.decodeIfPresent(Bool.self, forKey: .groupByApp)) ?? false
         includeMinimized = (try? c.decodeIfPresent(Bool.self, forKey: .includeMinimized)) ?? true
         commandTab = (try? c.decodeIfPresent(Bool.self, forKey: .commandTab)) ?? false
+        largePreview = (try? c.decodeIfPresent(Bool.self, forKey: .largePreview)) ?? true
+        style = (try? c.decodeIfPresent(WindowSwitcherStyle.self, forKey: .style)) ?? .thumbnails
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -66,6 +75,8 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
         try c.encode(groupByApp, forKey: .groupByApp)
         try c.encode(includeMinimized, forKey: .includeMinimized)
         try c.encode(commandTab, forKey: .commandTab)
+        try c.encode(largePreview, forKey: .largePreview)
+        try c.encode(style, forKey: .style)
     }
 
     /// 真正要注册的快捷键：没设、缺 ⌃⌥⌘ 的不注册。
@@ -95,6 +106,60 @@ public struct WindowSwitcherSettings: Codable, Hashable, Sendable {
     /// 从这个快捷键打开时是不是倒着选（⌘⇧Tab 这类带 ⇧ 的 Tab）。
     public static func opensBackward(_ combo: KeyCombo) -> Bool {
         combo.keyCode == WindowSwitcher.Key.tab && combo.modifiers & KeyCombo.Modifier.shift != 0
+    }
+}
+
+/// 切换器卡片的样式。读不懂的值（以后的新样式）读成缩略图。
+public enum WindowSwitcherStyle: String, Codable, CaseIterable, Hashable, Sendable {
+    /// 窗口缩略图加图标和标题一行（原来的样子）。
+    case thumbnails
+    /// 只有大 App 图标，下面一行窗口标题。
+    case icons
+    /// 紧凑的竖向列表：小图标、窗口标题、App 名。
+    case list
+
+    public init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .thumbnails
+    }
+
+    public var title: String {
+        switch self {
+        case .thumbnails: tr("缩略图")
+        case .icons: tr("图标")
+        case .list: tr("标题列表")
+        }
+    }
+
+    /// 这个样式要不要截窗口缩略图。
+    public var showsThumbnails: Bool { self == .thumbnails }
+}
+
+/// 选中窗口的全尺寸预览：显不显示、放在哪、截多大。
+public enum WindowSwitcherPreview {
+    /// 选中变化后等多久再出预览，快速连按时不闪。
+    public static let delay: Double = 0.15
+    /// 截图最长边最多多少像素。
+    public static let maxPixels: CGFloat = 3200
+
+    /// 只给当前桌面上、没最小化、App 没隐藏的窗口显示；开关关掉或没屏幕录制权限时都不显示。
+    public static func shows(_ entry: WindowSwitcher.Entry, enabled: Bool, canCapture: Bool) -> Bool {
+        guard enabled, canCapture, !entry.dimmed else { return false }
+        return entry.desktop == .current
+    }
+
+    /// AX 读到的窗口位置（左上角为原点）换成 AppKit 屏幕坐标（左下角为原点，主屏高度为准）。
+    public static func appKitFrame(_ axFrame: CGRect, primaryHeight: CGFloat) -> CGRect {
+        CGRect(x: axFrame.minX, y: primaryHeight - axFrame.maxY, width: axFrame.width, height: axFrame.height)
+    }
+
+    /// 全尺寸截图的像素：窗口大小乘屏幕倍数，最长边不超过 `maxPixels`。
+    public static func pixelSize(window: CGSize, scale: CGFloat) -> CGSize {
+        let s = max(1, scale)
+        let w = max(1, window.width * s)
+        let h = max(1, window.height * s)
+        let ratio = min(1, maxPixels / max(w, h))
+        return CGSize(width: max(1, (w * ratio).rounded()), height: max(1, (h * ratio).rounded()))
     }
 }
 
@@ -493,7 +558,18 @@ public enum WindowSwitcherLayout {
     /// 依次试的缩放。
     public static let scales: [CGFloat] = [1, 0.9, 0.8, 0.72]
 
+    /// 图标样式：卡片宽、图标框高、App 图标边长。
+    public static let iconCardWidth: CGFloat = 140
+    public static let iconBoxHeight: CGFloat = 84
+    public static let iconSize: CGFloat = 72
+    /// 标题列表样式：一行高、行间距、App 图标边长。宽度是面板最窄时的卡片区宽。
+    public static let listRowHeight: CGFloat = 40
+    public static let listGap: CGFloat = 4
+    public static let listIconSize: CGFloat = 24
+    public static var listRowWidth: CGFloat { minPanelWidth - 2 * paddingX }
+
     public struct Layout: Equatable, Sendable {
+        public var style: WindowSwitcherStyle = .thumbnails
         public var scale: CGFloat
         /// 一行几张（滚动时是总列数）。
         public var columns: Int
@@ -506,16 +582,38 @@ public enum WindowSwitcherLayout {
         /// 卡片区露出部分的大小。
         public var gridSize: CGSize
         public var panelSize: CGSize
+        /// 卡片之间的间距（标题列表是行间距）。
+        public var gap: CGFloat = WindowSwitcherLayout.gap
     }
 
-    public static func cardSize(scale: CGFloat) -> CGSize {
-        let width = (cardWidth * scale).rounded()
-        let thumb = (thumbnailHeight * scale).rounded()
-        return CGSize(width: width, height: cardInset + thumb + cardInset + captionHeight + cardInset)
+    /// 一张卡片（标题列表是一行）的大小。
+    public static func cardSize(scale: CGFloat, style: WindowSwitcherStyle = .thumbnails) -> CGSize {
+        switch style {
+        case .thumbnails:
+            let width = (cardWidth * scale).rounded()
+            let thumb = (thumbnailHeight * scale).rounded()
+            return CGSize(width: width, height: cardInset + thumb + cardInset + captionHeight + cardInset)
+        case .icons:
+            let width = (iconCardWidth * scale).rounded()
+            let box = (iconBoxHeight * scale).rounded()
+            return CGSize(width: width, height: cardInset + box + cardInset + captionHeight + cardInset)
+        case .list:
+            return CGSize(width: listRowWidth, height: listRowHeight)
+        }
     }
 
-    public static func thumbnailSize(scale: CGFloat) -> CGSize {
-        CGSize(width: (cardWidth * scale).rounded() - 2 * cardInset, height: (thumbnailHeight * scale).rounded())
+    /// 卡片里图片框的大小：缩略图样式是缩略图，图标样式是放大图标的框，标题列表是小图标。
+    public static func thumbnailSize(scale: CGFloat, style: WindowSwitcherStyle = .thumbnails) -> CGSize {
+        switch style {
+        case .thumbnails:
+            return CGSize(width: (cardWidth * scale).rounded() - 2 * cardInset,
+                          height: (thumbnailHeight * scale).rounded())
+        case .icons:
+            return CGSize(width: (iconCardWidth * scale).rounded() - 2 * cardInset,
+                          height: (iconBoxHeight * scale).rounded())
+        case .list:
+            return CGSize(width: listIconSize, height: listIconSize)
+        }
     }
 
     /// 卡片以外的高度：顶边、搜索框、间距、按键提示、底边。
@@ -526,10 +624,11 @@ public enum WindowSwitcherLayout {
     /// - Parameters:
     ///   - count: 卡片数，0 时按一张卡片的高度留出空状态。
     ///   - visible: 所在屏幕可见范围的大小。
-    public static func layout(count: Int, visible: CGSize) -> Layout {
+    public static func layout(count: Int, visible: CGSize, style: WindowSwitcherStyle = .thumbnails) -> Layout {
+        if style == .list { return listLayout(count: count, visible: visible) }
         let n = max(1, count)
         let maxWidth = max(minPanelWidth, visible.width * maxWidthFraction)
-        let maxGridHeight = max(cardSize(scale: scales.last ?? 1).height,
+        let maxGridHeight = max(cardSize(scale: scales.last ?? 1, style: style).height,
                                 visible.height * maxHeightFraction - chromeHeight)
 
         func fitColumns(_ card: CGSize) -> Int {
@@ -540,32 +639,48 @@ public enum WindowSwitcherLayout {
         }
 
         for scale in scales {
-            let card = cardSize(scale: scale)
+            let card = cardSize(scale: scale, style: style)
             let columns = min(n, fitColumns(card))
             let rows = Int((Double(n) / Double(columns)).rounded(.up))
             if rows <= rowsThatFit(card) {
-                return make(scale: scale, columns: columns, rows: rows, visibleColumns: columns,
+                return make(scale: scale, style: style, columns: columns, rows: rows, visibleColumns: columns,
                             scrolls: false, count: count)
             }
         }
         let scale = scales.last ?? 1
-        let card = cardSize(scale: scale)
+        let card = cardSize(scale: scale, style: style)
         let rows = rowsThatFit(card)
         let columns = Int((Double(n) / Double(rows)).rounded(.up))
-        return make(scale: scale, columns: columns, rows: rows, visibleColumns: min(columns, fitColumns(card)),
-                    scrolls: true, count: count)
+        return make(scale: scale, style: style, columns: columns, rows: rows,
+                    visibleColumns: min(columns, fitColumns(card)), scrolls: true, count: count)
     }
 
-    private static func make(scale: CGFloat, columns: Int, rows: Int, visibleColumns: Int,
-                             scrolls: Bool, count: Int) -> Layout {
-        let card = cardSize(scale: scale)
+    private static func make(scale: CGFloat, style: WindowSwitcherStyle, columns: Int, rows: Int,
+                             visibleColumns: Int, scrolls: Bool, count: Int) -> Layout {
+        let card = cardSize(scale: scale, style: style)
         let gridWidth = CGFloat(visibleColumns) * card.width + CGFloat(max(0, visibleColumns - 1)) * gap
         let gridHeight = CGFloat(rows) * card.height + CGFloat(max(0, rows - 1)) * gap
         let panelWidth = max(minPanelWidth, gridWidth + 2 * paddingX)
-        return Layout(scale: scale, columns: columns, rows: rows, visibleColumns: visibleColumns,
-                      scrolls: scrolls, cardSize: card, thumbnailSize: thumbnailSize(scale: scale),
+        return Layout(style: style, scale: scale, columns: columns, rows: rows, visibleColumns: visibleColumns,
+                      scrolls: scrolls, cardSize: card, thumbnailSize: thumbnailSize(scale: scale, style: style),
                       gridSize: CGSize(width: gridWidth, height: gridHeight),
                       panelSize: CGSize(width: panelWidth, height: gridHeight + chromeHeight))
+    }
+
+    /// 标题列表：一列，面板最窄宽度；放不下就竖向滚动，露出能放下的行数。
+    /// `rows` 是总行数，`columns` 是 1，上下键一次一行。
+    private static func listLayout(count: Int, visible: CGSize) -> Layout {
+        let n = max(1, count)
+        let maxGridHeight = max(listRowHeight, visible.height * maxHeightFraction - chromeHeight)
+        let fit = max(1, Int((maxGridHeight + listGap) / (listRowHeight + listGap)))
+        let shown = min(n, fit)
+        let gridHeight = CGFloat(shown) * listRowHeight + CGFloat(max(0, shown - 1)) * listGap
+        let card = cardSize(scale: 1, style: .list)
+        return Layout(style: .list, scale: 1, columns: 1, rows: n, visibleColumns: 1, scrolls: n > fit,
+                      cardSize: card, thumbnailSize: thumbnailSize(scale: 1, style: .list),
+                      gridSize: CGSize(width: card.width, height: gridHeight),
+                      panelSize: CGSize(width: minPanelWidth, height: gridHeight + chromeHeight),
+                      gap: listGap)
     }
 
     /// 面板左下角（AppKit 屏幕坐标）：在可见范围里水平居中，竖直略偏上（上下留白 4:6）。

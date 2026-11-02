@@ -17,6 +17,10 @@ import SwiftUI
 ///   和 ⌥Tab 共存。没辅助功能权限时不接管；关开关、退出、收到 SIGTERM / SIGINT 时还原，
 ///   启动时没在接管也还原一次（上次崩溃没还原的）。
 ///
+/// - 移动选中时，选中窗口按它在屏幕上的真实位置和大小显示一张全尺寸预览（`WindowSwitcherBigPreview`），
+///   停 150ms 再出；最小化、隐藏、别的桌面上的窗口和没屏幕录制权限时不出。设置里可关。
+/// - 卡片样式三选一：缩略图、图标、标题列表（布局在 Core 的 `WindowSwitcherLayout`）。
+///
 /// 平时只注册 Carbon 快捷键；按键监听、读窗口、截图都只在弹出时发生。
 /// 排序、过滤、分组、搜索、选中移动、按键含义和布局在 Core（`WindowSwitcher`、
 /// `WindowSwitcherSearch`、`WindowSwitcherLayout`）。
@@ -36,6 +40,10 @@ final class WindowSwitcherController {
     let model = WindowSwitcherModel()
 
     private var panel: WindowSwitcherPanel?
+    private let bigPreview = WindowSwitcherBigPreview()
+    private var previewTask: Task<Void, Never>?
+    /// 这次打开截过的全尺寸预览，键是 `Entry.key`。收起就清掉。
+    private var bigShots: [String: CGImage] = [:]
     private var hosting: FirstMouseHostingView<WindowSwitcherView>?
 
     /// 这次打开读到的窗口，键是 `Entry.id`。
@@ -171,6 +179,7 @@ final class WindowSwitcherController {
         show()
         loadShots()
         touch()
+        selectionChanged()
     }
 
     private func show() {
@@ -192,7 +201,8 @@ final class WindowSwitcherController {
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
         model.backingScale = screen?.backingScaleFactor ?? 2
-        model.layout = WindowSwitcherLayout.layout(count: model.visible.count, visible: visible.size)
+        model.layout = WindowSwitcherLayout.layout(count: model.visible.count, visible: visible.size,
+                                                   style: settings.style)
         let size = model.layout.panelSize
         let origin = WindowSwitcherLayout.origin(size: size, visible: visible)
         panel.setFrame(CGRect(origin: origin, size: size), display: true)
@@ -206,6 +216,10 @@ final class WindowSwitcherController {
         captureTask = nil
         refreshTask?.cancel()
         refreshTask = nil
+        previewTask?.cancel()
+        previewTask = nil
+        bigPreview.hide(immediately: true)
+        bigShots = [:]
         idleTimer?.invalidate()
         idleTimer = nil
         SwitcherEventTap.shared.stop()
@@ -296,9 +310,11 @@ final class WindowSwitcherController {
         case .down:
             model.selection = WindowSwitcher.vertical(model.selection, rows: 1,
                                                       columns: model.layout.columns, count: count)
+            selectionChanged()
         case .up:
             model.selection = WindowSwitcher.vertical(model.selection, rows: -1,
                                                       columns: model.layout.columns, count: count)
+            selectionChanged()
         case .commit: commit()
         case .cancel: finish()
         case .closeWindow:
@@ -334,6 +350,46 @@ final class WindowSwitcherController {
             return
         }
         model.selection = WindowSwitcher.step(model.selection, by: delta, count: model.visible.count)
+        selectionChanged()
+    }
+
+    // MARK: 全尺寸预览
+
+    /// 选中变了：先收起旧的预览，停一下（快速连按不闪）再截选中的窗口、放到它原来的位置。
+    private func selectionChanged() {
+        previewTask?.cancel()
+        previewTask = nil
+        guard phase == .open, let entry = model.selected, let item = items[entry.id],
+              WindowSwitcherPreview.shows(entry, enabled: settings.largePreview, canCapture: model.canCapture),
+              let primary = NSScreen.screens.first
+        else {
+            bigPreview.hide()
+            return
+        }
+        if bigPreview.showingKey == entry.key { return }
+        bigPreview.hide()
+        let frame = WindowSwitcherPreview.appKitFrame(item.frame, primaryHeight: primary.frame.height)
+        let scale = NSScreen.screens.first { $0.frame.intersects(frame) }?.backingScaleFactor ?? model.backingScale
+        let request = WindowShotRequest(key: entry.id, pid: entry.pid, title: entry.title, frame: item.frame,
+                                        pixelSize: WindowSwitcherPreview.pixelSize(window: item.frame.size,
+                                                                                   scale: scale),
+                                        windowID: item.windowID)
+        let key = entry.key
+        let session = model.session
+        previewTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(WindowSwitcherPreview.delay))
+            let me = WindowSwitcherController.shared
+            guard !Task.isCancelled else { return }
+            var image = me.bigShots[key]
+            if image == nil {
+                image = await WindowShots.capture([request])[request.key]?.image
+            }
+            // 截不到就不显示；截的时候选中又变了、收起了也不显示。
+            guard !Task.isCancelled, me.phase == .open, me.model.session == session,
+                  me.model.selected?.key == key, let image else { return }
+            me.bigShots[key] = image
+            me.bigPreview.show(image, frame: frame, key: key, below: me.panel)
+        }
     }
 
     private var selectedItem: WindowCatalog.Item? {
@@ -344,6 +400,7 @@ final class WindowSwitcherController {
     private func relayout() {
         guard phase == .open else { return }
         place()
+        selectionChanged()
     }
 
     /// 关窗口、最小化、退出之后给 App 一点时间，再原地重读一遍，选中留在原来的位置。
@@ -374,6 +431,7 @@ final class WindowSwitcherController {
         loadIcons()
         place()
         loadShots()
+        selectionChanged()
     }
 
     /// 开着超过 30 秒没碰任何键就收起，免得事件监听一直挂着。
@@ -405,7 +463,8 @@ final class WindowSwitcherController {
     private func loadShots() {
         captureTask?.cancel()
         model.canCapture = WindowPreviewSource.canCapture
-        guard model.canCapture else { return }
+        // 图标、标题列表样式用不到缩略图，不截。
+        guard model.canCapture, settings.style.showsThumbnails else { return }
         let keys = Set(model.all.map(\.key))
         shots = shots.filter { keys.contains($0.key) }
         for entry in model.all {
@@ -419,7 +478,7 @@ final class WindowSwitcherController {
         }
         let rest = model.all.filter { !queue.contains($0) }
         queue += rest
-        let box = WindowSwitcherLayout.thumbnailSize(scale: 1)
+        let box = WindowSwitcherLayout.thumbnailSize(scale: 1, style: .thumbnails)
         let scale = model.backingScale
         let requests: [WindowShotRequest] = queue.compactMap { entry in
             guard !entry.dimmed, let item = items[entry.id] else { return nil }

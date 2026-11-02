@@ -2201,6 +2201,50 @@
         }
       }
     },
+    "缩略图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thumbnails"
+          }
+        }
+      }
+    },
+    "标题列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title list"
+          }
+        }
+      }
+    },
+    "显示选中窗口的大预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show a large preview of the selected window"
+          }
+        }
+      }
+    },
+    "在窗口原来的位置显示一张全尺寸预览，需要屏幕录制权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a full-size preview where the window sits on screen. Needs Screen Recording permission."
+          }
+        }
+      }
+    },
     "⌘Tab 是系统切换 App 的快捷键，建议换一个。" : {
       "extractionState" : "manual",
       "localizations" : {
