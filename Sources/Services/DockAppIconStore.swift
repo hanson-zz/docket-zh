@@ -13,6 +13,9 @@ import UniformTypeIdentifiers
 /// - 选的图片在后台用 ImageIO 解码、缩放成方形 PNG（`DockAppIcons.squareLayout`），
 ///   主线程只拿结果；选的是 App 就取它在访达里的图标。
 /// - 启动时清理已卸载、也不在任何布局里的 App 的图片，以及目录里没人用的文件。
+/// - 写图、删图都排在同一条串行队列 `io` 上，按调用的先后执行；每次更换、恢复默认都
+///   领一张票（`DockAppIconTickets`），后台解码完票已过期就不再改映射，最后一次操作生效。
+/// - 设置备份里带上映射和图片（`DockAppIconBackup`），恢复时写回并立刻重画。
 @MainActor @Observable
 final class DockAppIconStore {
     static let shared = DockAppIconStore()
@@ -25,6 +28,19 @@ final class DockAppIconStore {
     @ObservationIgnored private var asked = Set<String>()
     /// 读过盘但读不出来的文件，不再反复读。
     @ObservationIgnored private var unreadable = Set<String>()
+    /// 每个 App 最近一次更换、恢复默认的票，旧的做完了也不生效。
+    @ObservationIgnored private var tickets = DockAppIconTickets()
+
+    /// 图片目录的写入、删除和备份时的读取都排在这条串行队列上，先调用的先做：
+    /// 「恢复默认」的删除不会落在之后那次更换的写入后面，把新图删掉。
+    private nonisolated static let io = DispatchQueue(label: "dock-app-icons.io", qos: .userInitiated)
+
+    /// 在 `io` 上做一件事。入队发生在调用的这一刻（同步），所以队列顺序就是调用顺序。
+    private nonisolated static func onQueue<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
+        await withCheckedContinuation { continuation in
+            io.async { continuation.resume(returning: work()) }
+        }
+    }
 
     private init() {
         let stored = UserDefaults.standard.dictionary(forKey: DockAppIcons.defaultsKey) as? [String: String]
@@ -60,6 +76,8 @@ final class DockAppIconStore {
             unreadable.insert(file)
             return
         }
+        // 读盘途中换了新图（已经放进内存）或恢复了默认，旧文件读出来的就不要了。
+        guard images[file] == nil, files.values.contains(file) else { return }
         images[file] = image
     }
 
@@ -72,11 +90,14 @@ final class DockAppIconStore {
         case unreadable
         /// 写不进 Application Support。
         case writeFailed
+        /// 还没做完时又换了一张或恢复了默认，这次作废，以后来的那次为准。不弹错。
+        case superseded
     }
 
     /// 用选的文件当这个 App 的图标：图片缩放成方形存下；选的是 App 就取它的图标。成功后立刻生效。
     func setIcon(from source: URL, for bundleID: String) async -> Result<Void, ChangeError> {
         guard DockAppIcons.fileName(for: bundleID) != nil else { return .failure(.noBundleID) }
+        let ticket = tickets.begin(bundleID)
         let png: Data?
         if Self.isApp(source) {
             png = Self.appIconPNG(source)
@@ -85,26 +106,29 @@ final class DockAppIconStore {
                 DockAppIconStore.squarePNG(contentsOf: source)
             }.value
         }
-        return await store(png, for: bundleID)
+        return await store(png, for: bundleID, ticket: ticket)
     }
 
     /// 用拖来的图片数据（浏览器、预览里拖出来、没有文件的图）当这个 App 的图标。
     /// 和选文件一样缩放成方形、同样的大小限制。
     func setIcon(fromImageData data: Data, for bundleID: String) async -> Result<Void, ChangeError> {
         guard DockAppIcons.fileName(for: bundleID) != nil else { return .failure(.noBundleID) }
+        let ticket = tickets.begin(bundleID)
         let png = await Task.detached(priority: .userInitiated) {
             DockAppIconStore.squarePNG(data: data)
         }.value
-        return await store(png, for: bundleID)
+        return await store(png, for: bundleID, ticket: ticket)
     }
 
-    /// 存下规范化好的 PNG，成功后立刻生效。
-    private func store(_ png: Data?, for bundleID: String) async -> Result<Void, ChangeError> {
+    /// 存下规范化好的 PNG，成功后立刻生效。`ticket` 已经不是这个 App 最新的一张时
+    /// （解码途中又换了图或恢复了默认）不写盘；写盘途中过期的也不改映射和内存里的图。
+    private func store(_ png: Data?, for bundleID: String, ticket: Int) async -> Result<Void, ChangeError> {
         guard let file = DockAppIcons.fileName(for: bundleID), let key = DockAppIcons.mapKey(bundleID),
               let folder = Self.folder else { return .failure(.noBundleID) }
+        guard tickets.isCurrent(ticket, for: key) else { return .failure(.superseded) }
         guard let png, let image = NSImage(data: png), image.isValid else { return .failure(.unreadable) }
         let target = folder.appending(path: file)
-        let written = await Task.detached(priority: .userInitiated) { () -> Bool in
+        let written = await Self.onQueue { () -> Bool in
             do {
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 try png.write(to: target, options: .atomic)
@@ -112,7 +136,8 @@ final class DockAppIconStore {
             } catch {
                 return false
             }
-        }.value
+        }
+        guard tickets.isCurrent(ticket, for: key) else { return .failure(.superseded) }
         guard written else { return .failure(.writeFailed) }
         images[file] = image
         asked.insert(file)
@@ -123,7 +148,9 @@ final class DockAppIconStore {
     }
 
     /// 恢复默认图标：丢掉映射、删掉图片。没解锁时也能点。
+    /// 正在后台解码、写盘的更换一并作废；删除排在已经入队的写入后面。
     func resetIcon(for bundleID: String) {
+        _ = tickets.begin(bundleID)
         guard let file = DockAppIcons.file(for: bundleID, in: files) else { return }
         files = DockAppIcons.setting(nil, for: bundleID, in: files)
         save()
@@ -135,6 +162,41 @@ final class DockAppIconStore {
 
     private func save() {
         UserDefaults.standard.set(files, forKey: DockAppIcons.defaultsKey)
+    }
+
+    // MARK: 备份
+
+    /// 设置备份用：每个设过图标的 App 的图片，base64（`DockAppIconBackup`）。
+    /// 在 `io` 上同步读，正在写的图先写完再读，不会读到一半。
+    func backupIcons() -> [String: String] {
+        guard let folder = Self.folder, !files.isEmpty else { return [:] }
+        let map = files
+        let data: [String: Data] = Self.io.sync {
+            var out: [String: Data] = [:]
+            for file in Set(map.values) where DockAppIcons.isOwnFileName(file) {
+                out[file] = try? Data(contentsOf: folder.appending(path: file))
+            }
+            return out
+        }
+        return DockAppIconBackup.encode(map: map) { data[$0] }
+    }
+
+    /// 从设置备份恢复：逐个写回图片和映射，立刻重画。备份里的同一个 App 覆盖现有的图，
+    /// 备份里没有的 App 不动（和布局一样是合并，不是替换）。返回写回了几张。
+    func restore(_ entries: [DockAppIconBackup.Entry]) async -> Int {
+        var restored = 0
+        for entry in entries {
+            let ticket = tickets.begin(entry.bundleID)
+            let source = entry.png
+            // 备份可能被手改过，照常走一遍解码和缩放，坏图、超大图在这里挡掉。
+            let png = await Task.detached(priority: .userInitiated) {
+                DockAppIconStore.squarePNG(data: source)
+            }.value
+            if case .success = await store(png, for: entry.bundleID, ticket: ticket) {
+                restored += 1
+            }
+        }
+        return restored
     }
 
     // MARK: 清理
@@ -153,7 +215,8 @@ final class DockAppIconStore {
         let kept = files
         let removed = result.removedFiles
         guard let folder = Self.folder else { return }
-        Task.detached(priority: .utility) {
+        // 排在 `io` 上：之后入队的更换写完的新图不会被当成没人用的文件删掉。
+        Self.io.async {
             let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false))) ?? []
             let orphans = DockAppIcons.orphanFiles(onDisk: names, map: kept)
             for name in removed.union(orphans) {
@@ -164,7 +227,7 @@ final class DockAppIconStore {
 
     private static func remove(_ names: Set<String>) {
         guard let folder = Self.folder else { return }
-        Task.detached(priority: .utility) {
+        io.async {
             for name in names where DockAppIcons.isOwnFileName(name) {
                 try? FileManager.default.removeItem(at: folder.appending(path: name))
             }
@@ -194,15 +257,20 @@ final class DockAppIconStore {
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path(percentEncoded: false))
         let bytes = (attributes?[.size] as? NSNumber)?.intValue ?? 0
         guard bytes > 0, bytes <= DockAppIcons.maximumBytes,
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+              let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else { return nil }
         return squarePNG(source: source, bytes: bytes)
     }
 
     /// 同上，图片在内存里（拖放带来的 PNG、TIFF、JPEG 数据）。
     nonisolated static func squarePNG(data: Data) -> Data? {
         guard !data.isEmpty, data.count <= DockAppIcons.maximumBytes,
-              let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+              let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else { return nil }
         return squarePNG(source: source, bytes: data.count)
+    }
+
+    /// 只读文件头和缩略图，不缓存解码后的原图。
+    private nonisolated static var sourceOptions: CFDictionary {
+        [kCGImageSourceShouldCache: false] as CFDictionary
     }
 
     private nonisolated static func squarePNG(source: CGImageSource, bytes: Int) -> Data? {
@@ -212,7 +280,8 @@ final class DockAppIconStore {
         var bestWidth = 0
         var bestHeight = 0
         for index in 0..<count {
-            guard let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any] else { continue }
+            guard let properties = CGImageSourceCopyPropertiesAtIndex(source, index, sourceOptions) as? [CFString: Any]
+            else { continue }
             let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue ?? 0
             let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue ?? 0
             if width * height > bestWidth * bestHeight {
@@ -222,10 +291,13 @@ final class DockAppIconStore {
             }
         }
         guard DockAppIcons.accepts(bytes: bytes, pixelWidth: bestWidth, pixelHeight: bestHeight) else { return nil }
+        // 直接从文件出 512 像素的缩略图，不先把原图完整解成 NSImage 或位图；大图再让解码器
+        // 边读边抽样（2、4、8 倍），几万像素的 PNG 内存峰值也只有抽样后那一份。
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: DockAppIcons.storedPixels,
+            kCGImageSourceSubsampleFactor: DockAppIcons.subsampleFactor(pixelWidth: bestWidth, pixelHeight: bestHeight),
             kCGImageSourceShouldCacheImmediately: true,
         ]
         guard let image = CGImageSourceCreateThumbnailAtIndex(source, best, options as CFDictionary) else { return nil }

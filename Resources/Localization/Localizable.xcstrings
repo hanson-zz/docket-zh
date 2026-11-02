@@ -6094,6 +6094,17 @@
         }
       }
     },
+    "另外恢复了 %@ 个程序坞自定义图标。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also restored %@ custom app icons."
+          }
+        }
+      }
+    },
     "只显示当前桌面" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14622,13 +14633,13 @@
         }
       }
     },
-    "保存你的布局、其中的项目以及小组件设置。" : {
+    "保存你的布局、其中的项目、小组件设置和程序坞自定义图标。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save your layouts, their items and widget settings."
+            "value" : "Save your layouts, their items, widget settings and custom app icons."
           }
         }
       }
@@ -23190,13 +23201,13 @@
         }
       }
     },
-    "备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。" : {
+    "备份包含你的布局、其中的项目、小组件设置和程序坞自定义图标，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A backup holds your layouts, their items and widget settings, not the apps or files they point to. Restoring adds to what you have rather than replacing it."
+            "value" : "A backup holds your layouts, their items, widget settings and custom app icons, not the apps or files they point to. Restoring adds to what you have rather than replacing it."
           }
         }
       }

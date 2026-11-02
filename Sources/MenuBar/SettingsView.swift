@@ -299,7 +299,7 @@ struct SettingsView: View {
             } header: {
                 Text("备份")
             } footer: {
-                Text("备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
+                Text("备份包含你的布局、其中的项目、小组件设置和程序坞自定义图标，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }

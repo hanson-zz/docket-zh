@@ -327,12 +327,15 @@ final class SettingsWindow: HostedWindow {
         panel.nameFieldStringValue = Backup.suggestedName()
         panel.allowedContentTypes = []
         panel.canCreateDirectories = true
-        panel.message = tr("保存你的布局、其中的项目以及小组件设置。")
+        panel.message = tr("保存你的布局、其中的项目、小组件设置和程序坞自定义图标。")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            try Backup.encode(app.state).write(to: url, options: .atomic)
+            // Custom Dock icons ride along as base64 PNGs, so the backup is still
+            // one file that carries everything to another Mac.
+            let icons = DockAppIconStore.shared.backupIcons()
+            try Backup.encode(app.state, dockAppIcons: icons).write(to: url, options: .atomic)
         } catch {
             report(tr("无法保存备份。"), error)
         }
@@ -356,15 +359,27 @@ final class SettingsWindow: HostedWindow {
 
             let added = state.profiles.count - before
             let updated = payload.profiles.count - added
-            let alert = NSAlert()
-            alert.messageText = tr("已恢复 \(payload.profiles.count) 个布局。")
-            // Says what it did rather than just that it worked: a merge that
-            // replaced something should not look identical to one that only
-            // added.
-            alert.informativeText = updated > 0
-                ? tr("从备份中新增 \(added) 个，替换 \(updated) 个。")
-                : tr("新增 \(added) 个。")
-            alert.runModal()
+            // An older backup has no icons and restores exactly as before.
+            let icons = DockAppIconBackup.entries(from: payload.dockAppIcons)
+            Task { @MainActor in
+                // Written back and put on screen before the summary, so the
+                // alert never describes icons that are not there yet.
+                let restoredIcons = icons.isEmpty ? 0 : await DockAppIconStore.shared.restore(icons)
+                let alert = NSAlert()
+                alert.messageText = tr("已恢复 \(payload.profiles.count) 个布局。")
+                // Says what it did rather than just that it worked: a merge that
+                // replaced something should not look identical to one that only
+                // added.
+                var detail = updated > 0
+                    ? tr("从备份中新增 \(added) 个，替换 \(updated) 个。")
+                    : tr("新增 \(added) 个。")
+                if restoredIcons > 0 {
+                    detail += "\n" + tr("另外恢复了 \(restoredIcons) 个程序坞自定义图标。")
+                }
+                alert.informativeText = detail
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+            }
         } catch {
             report(tr("无法读取该备份。"), error)
         }

@@ -25,14 +25,22 @@ public enum Backup {
         /// rather than on whichever happens to be first.
         public var customProfileID: UUID?
         public var macOSProfileID: UUID?
+        /// 程序坞自定义图标：`[bundle id: PNG 的 base64]`，见 `DockAppIconBackup`。
+        ///
+        /// Optional and additive, so the version stays 1: a backup from before
+        /// custom icons decodes with nil here, and an older build reading a
+        /// newer backup ignores the key and still restores the profiles.
+        public var dockAppIcons: [String: String]?
 
         public init(version: Int = Payload.currentVersion, exported: Date = .now,
-                    profiles: [DockProfile], customProfileID: UUID?, macOSProfileID: UUID?) {
+                    profiles: [DockProfile], customProfileID: UUID?, macOSProfileID: UUID?,
+                    dockAppIcons: [String: String]? = nil) {
             self.version = version
             self.exported = exported
             self.profiles = profiles
             self.customProfileID = customProfileID
             self.macOSProfileID = macOSProfileID
+            self.dockAppIcons = dockAppIcons
         }
     }
 
@@ -44,10 +52,13 @@ public enum Backup {
         return tr("码头布局 \(stamp).\(fileExtension)")
     }
 
-    public static func encode(_ state: PersistedState) throws -> Data {
+    /// `dockAppIcons` comes from `DockAppIconBackup.encode`; empty leaves the
+    /// key out, so a backup without custom icons looks like it always did.
+    public static func encode(_ state: PersistedState, dockAppIcons: [String: String] = [:]) throws -> Data {
         let payload = Payload(profiles: state.profiles,
                               customProfileID: state.customDock.profileID,
-                              macOSProfileID: state.macOSDock.profileID)
+                              macOSProfileID: state.macOSDock.profileID,
+                              dockAppIcons: dockAppIcons.isEmpty ? nil : dockAppIcons)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
