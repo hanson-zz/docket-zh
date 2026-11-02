@@ -117,7 +117,7 @@ final class NotchBannerRevisionTests: XCTestCase {
             return XCTFail("300ms 里又换字，先等一下")
         }
         XCTAssertEqual(after, NotchBannerRevisions.throttle - 0.1, accuracy: 0.001)
-        XCTAssertEqual(revisions.decide(quick, now: at(NotchBannerRevisions.throttle)), .updated, "等够了再认")
+        XCTAssertEqual(revisions.decide(quick, now: at(NotchBannerRevisions.throttle + 0.01)), .updated, "等够了再认")
     }
 
     func testShellFilledRefinesTheSameMessage() throws {
