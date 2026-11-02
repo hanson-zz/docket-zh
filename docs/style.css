@@ -227,6 +227,7 @@ footer .flinks a{text-decoration:none}
 .mock-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;margin-top:16px;align-items:start}
 .mock-fig{margin:0}
 .mock-fig img{display:block;width:100%;height:auto;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.10)}
+.mock-fig picture{display:block}
 
 /* 最近新增：三条，一句话一张图 */
 .new3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
