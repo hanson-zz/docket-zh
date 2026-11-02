@@ -69,6 +69,8 @@ enum TypingSoundPackStore {
 
         // 每个用到的文件都要在包里，而且这台 Mac 解得开。
         let rootPath = packRoot.standardizedFileURL.resolvingSymlinksInPath().path
+        let segmentsByFile = Dictionary(grouping: Set(pack.definitions.values), by: \.file)
+        var usableSegments = 0
         for file in pack.files {
             let url = packRoot.appending(path: file)
             let resolved = url.standardizedFileURL.resolvingSymlinksInPath().path
@@ -76,7 +78,12 @@ enum TypingSoundPackStore {
                 throw ImportError(message: tr("声音包里缺少文件：\(file)"))
             }
             do {
-                _ = try TypingSoundDecoder.decode(url)
+                let whole = try TypingSoundDecoder.decode(url)
+                let frames = Int(whole.frameLength)
+                usableSegments += (segmentsByFile[file] ?? []).filter {
+                    TypingSoundPacks.frameRange(startMs: $0.start, endMs: $0.end, sampleRate: whole.format.sampleRate,
+                                                totalFrames: frames) != nil
+                }.count
             } catch TypingSoundDecoder.Failure.tooLong(_) {
                 throw ImportError(message: tr("\(file) 太长（超过 3 分钟），不像按键声音。"))
             } catch {
@@ -86,6 +93,11 @@ enum TypingSoundPackStore {
                 }
                 throw ImportError(message: tr("解不开 \(file)，文件可能坏了或格式不支持。"))
             }
+        }
+
+        // 时间段全落在声音文件外面（sprite 写错了）：导进来也只会默默退回青轴，直接说清楚。
+        guard usableSegments > 0 else {
+            throw ImportError(message: tr("config.json 里每个键的时间段都超出了声音文件的长度。"))
         }
 
         // 拷到 Application Support：只拷 config.json 和用到的声音文件。

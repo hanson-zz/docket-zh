@@ -536,7 +536,7 @@ public struct MechvibesPack: Equatable, Sendable {
     private static func number(_ value: Any?) -> Double? {
         switch value {
         case let n as NSNumber: return n.doubleValue.isFinite ? n.doubleValue : nil
-        case let s as String: return Double(s)
+        case let s as String: return Double(s).flatMap { $0.isFinite ? $0 : nil }
         default: return nil
         }
     }
@@ -574,6 +574,23 @@ public enum TypingSoundPacks {
     public static let maxFileSeconds: Double = 180
     /// 一段按键声音最长放多少秒。
     public static let maxSegmentSeconds: Double = 1.5
+
+    /// 一段 [startMs, endMs) 毫秒对到第几帧到第几帧：先在 Double 里夹到文件范围内再转 Int
+    /// （config.json 里写个 1e300 也不会溢出崩溃），最长 `maxSegmentSeconds` 秒。
+    /// 太短（不到 16 帧）或整段落在文件外时返回 nil。
+    public static func frameRange(startMs: Double?, endMs: Double?, sampleRate: Double,
+                                  totalFrames: Int) -> Range<Int>? {
+        guard sampleRate.isFinite, sampleRate > 0, totalFrames > 0 else { return nil }
+        let total = Double(totalFrames)
+        func frame(_ ms: Double) -> Double {
+            guard ms.isFinite else { return ms > 0 ? total : 0 }
+            return min(total, max(0, (ms / 1000 * sampleRate).rounded()))
+        }
+        let start = frame(startMs ?? 0)
+        let end = min(endMs.map(frame) ?? total, start + (maxSegmentSeconds * sampleRate).rounded())
+        guard end - start > 16 else { return nil }
+        return Int(start)..<Int(end)
+    }
 
     /// 包的显示名：config 里的名字，没有时用文件夹或 zip 的名字。
     public static func displayName(_ pack: MechvibesPack, fallback: String) -> String {

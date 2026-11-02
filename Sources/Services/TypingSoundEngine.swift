@@ -73,12 +73,11 @@ enum TypingSoundDecoder {
     /// 从一整段里切出 [start, end) 毫秒，最长 `maxSegmentSeconds` 秒，尾巴淡出 4 ms 免得“啪”一声。
     static func slice(_ buffer: AVAudioPCMBuffer, startMs: Double?, endMs: Double?) -> AVAudioPCMBuffer? {
         let rate = buffer.format.sampleRate
-        let total = Int(buffer.frameLength)
-        let start = max(0, min(total, Int(((startMs ?? 0) / 1000 * rate).rounded())))
-        var end = endMs.map { Int(($0 / 1000 * rate).rounded()) } ?? total
-        end = min(total, end, start + Int(TypingSoundPacks.maxSegmentSeconds * rate))
-        let count = end - start
-        guard count > 16, let out = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: AVAudioFrameCount(count)),
+        guard let range = TypingSoundPacks.frameRange(startMs: startMs, endMs: endMs, sampleRate: rate,
+                                                      totalFrames: Int(buffer.frameLength)) else { return nil }
+        let start = range.lowerBound
+        let count = range.count
+        guard let out = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: AVAudioFrameCount(count)),
               let src = buffer.floatChannelData, let dst = out.floatChannelData else { return nil }
         out.frameLength = AVAudioFrameCount(count)
         let fade = min(count, Int(0.004 * rate))
@@ -145,13 +144,15 @@ final class TypingSoundEngine: @unchecked Sendable {
         }
     }
 
-    /// 停掉引擎、放掉声音（关掉打字音效、App 退出时）。同步做完，退出时不留尾巴。
-    func shutdown() {
-        queue.sync { [self] in
+    /// 停掉引擎、放掉声音（关掉打字音效、App 退出时）。`wait` 为 true 时同步做完（退出时不留尾巴）；
+    /// 关开关时不等，免得队列正在解一个大声音包时主线程卡住。
+    func shutdown(wait: Bool = true) {
+        let work: @Sendable () -> Void = { [self] in
             teardownEngine()
             bank = TypingSoundBank()
             loadedKey = nil
         }
+        if wait { queue.sync(execute: work) } else { queue.async(execute: work) }
     }
 
     // MARK: 按键
@@ -160,6 +161,9 @@ final class TypingSoundEngine: @unchecked Sendable {
     func keyDown(keyCode: Int, isRepeat: Bool, secureInput: Bool) {
         let now = Double(DispatchTime.now().uptimeNanoseconds) / 1_000_000_000
         queue.async { [self] in
+            // 队列刚忙过（解声音包）积下的按键：过了 0.15 秒的不补放，免得一下子全响出来。
+            let waited = Double(DispatchTime.now().uptimeNanoseconds) / 1_000_000_000 - now
+            guard waited < TypingSoundThrottle.repeatInterval else { return }
             guard throttle.admit(isRepeat: isRepeat, secureInput: secureInput, now: now) else { return }
             play(keyCode: keyCode)
         }
@@ -239,11 +243,17 @@ final class TypingSoundEngine: @unchecked Sendable {
         self.engine = engine
         voices = built.map { (player: $0.0, pitch: $0.1) }
         nextVoice = 0
-        // 换了输出设备（插拔耳机、蓝牙断开）时引擎会自己停：下一声按需重开。
+        // 换了输出设备（插拔耳机、蓝牙断开、睡眠唤醒）时引擎会自己停，原来的连接可能还按旧设备的
+        // 格式：整个拆掉，下一声按新设备重建，不在旧连接上硬启动。
+        let engineID = ObjectIdentifier(engine)
         configObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
             guard let self else { return }
-            self.queue.async { self.voices.forEach { $0.player.stop() } }
+            self.queue.async {
+                // 只拆发通知的那一个；已经换成新引擎时不动。
+                guard let current = self.engine, ObjectIdentifier(current) == engineID else { return }
+                self.teardownEngine()
+            }
         }
     }
 

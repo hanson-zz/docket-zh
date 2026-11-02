@@ -276,6 +276,28 @@ final class TypingSoundsTests: XCTestCase {
         XCTAssertEqual(m.definitions.count, 2)
     }
 
+    func testSegmentFrameRangeStaysInsideFile() {
+        // 1 秒、1000 Hz 的文件，好算。
+        XCTAssertEqual(TypingSoundPacks.frameRange(startMs: 100, endMs: 175, sampleRate: 1000, totalFrames: 1000), 100..<175)
+        XCTAssertEqual(TypingSoundPacks.frameRange(startMs: nil, endMs: nil, sampleRate: 1000, totalFrames: 1000), 0..<1000)
+        XCTAssertEqual(TypingSoundPacks.frameRange(startMs: 900, endMs: 5000, sampleRate: 1000, totalFrames: 1000), 900..<1000,
+                       "结束超出文件夹到文件尾")
+        XCTAssertNil(TypingSoundPacks.frameRange(startMs: 2000, endMs: 2100, sampleRate: 1000, totalFrames: 1000),
+                     "整段在文件外")
+        XCTAssertNil(TypingSoundPacks.frameRange(startMs: 1e300, endMs: 1e300 + 50, sampleRate: 44_100, totalFrames: 44_100),
+                     "大得离谱的数不溢出崩溃")
+        XCTAssertEqual(TypingSoundPacks.frameRange(startMs: -50, endMs: .infinity, sampleRate: 1000, totalFrames: 1000), 0..<1000)
+        XCTAssertEqual(TypingSoundPacks.frameRange(startMs: 0, endMs: nil, sampleRate: 1000, totalFrames: 10_000)?.count, 1500,
+                       "一段最长 1.5 秒")
+        XCTAssertNil(TypingSoundPacks.frameRange(startMs: 0, endMs: 10, sampleRate: 1000, totalFrames: 1000), "太短")
+
+        // 第 1 版写成字符串的超大数：不当成数，丢掉这个键。
+        let json = #"{"key_define_type":"single","sound":"s.wav","defines":{"30":["1e400","10"],"31":[0,50]}}"#
+        let pack = try? MechvibesPack.parse(Data(json.utf8))
+        XCTAssertNil(pack?.definitions["KeyA"])
+        XCTAssertNotNil(pack?.definitions["KeyS"])
+    }
+
     func testRejectsBadPacks() {
         XCTAssertThrowsError(try MechvibesPack.parse(Data("not json".utf8))) {
             XCTAssertEqual($0 as? MechvibesPack.ParseError, .invalidJSON)

@@ -68815,6 +68815,17 @@
           }
         }
       }
+    },
+    "config.json 里每个键的时间段都超出了声音文件的长度。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every key's time range in config.json lies outside the length of its sound file."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

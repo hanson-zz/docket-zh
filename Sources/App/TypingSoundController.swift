@@ -55,7 +55,7 @@ final class TypingSoundController {
         guard settings.enabled else {
             stopMonitoring()
             tap.stop()
-            TypingSoundEngine.shared.shutdown()
+            TypingSoundEngine.shared.shutdown(wait: false)
             return
         }
         startMonitoring()
