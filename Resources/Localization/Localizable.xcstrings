@@ -22585,6 +22585,17 @@
         }
       }
     },
+    "上下拖动列表里的项目即可调整顺序，右键可上移、下移；在扩展栏上直接拖动也行，点按末端的 + 可添加项目。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag items in this list up or down to reorder them, or right-click to move one up or down. You can also drag directly on the shelf. Click + at the end to add items."
+          }
+        }
+      }
+    },
     "在旁边显示" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47884,6 +47895,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Top"
+          }
+        }
+      }
+    },
+    "移到最后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to End"
           }
         }
       }

@@ -301,7 +301,16 @@ final class SettingsWindow: HostedWindow {
                 onClearError: { app.clearError() },
                 onRestoreOriginalDock: { Task { await app.restoreOriginalDock() } },
                 onShowOnboarding: { OnboardingWindow.shared.show(app: app) },
-                onAddWidget: { app.addItem(.widget($0)) }
+                onAddWidget: { app.addItem(.widget($0)) },
+                onMoveItem: { id, target in
+                    withAnimation(.smooth(duration: 0.22)) { app.moveItem(id, onto: target) }
+                },
+                onStepItem: { id, step in
+                    withAnimation(.smooth(duration: 0.22)) { app.moveItem(id, by: step) }
+                },
+                onEdgeItem: { id, first in
+                    withAnimation(.smooth(duration: 0.22)) { app.moveItem(id, toEdge: first) }
+                }
             ),
             title: tr("码头设置"),
             // Taller and resizable, because the Widgets tab is not a fixed
