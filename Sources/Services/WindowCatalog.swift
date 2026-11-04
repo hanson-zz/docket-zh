@@ -38,7 +38,7 @@ enum WindowCatalog {
                     rank: ranks[$0.processIdentifier] ?? running.count)
         }
         let raws = await read(apps: apps, deadline: deadline)
-        let server = ServerWindows.read()
+        let server = ServerWindows.read(pids: Set(apps.map(\.pid)))
         return build(raws, server: server)
     }
 
@@ -135,10 +135,13 @@ struct ServerWindows {
     /// 窗口号 → 前后位置，0 最前。
     var zOrder: [CGWindowID: Int] = [:]
 
-    static func read() -> ServerWindows {
+    /// `pids`：切换器会列的 App（普通 App，不含码头）。前后位置只在它们的窗口里数，
+    /// 别的进程（输入法、菜单栏工具、码头自己）的窗口不占 0 号。
+    static func read(pids: Set<pid_t>) -> ServerWindows {
         var out = ServerWindows()
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                     kCGNullWindowID) as? [[String: Any]] else { return out }
+        var stack: [WindowSwitcher.StackWindow] = []
         for info in list {
             guard (info[kCGWindowLayer as String] as? Int) == 0,
                   let number = info[kCGWindowNumber as String] as? Int,
@@ -146,9 +149,11 @@ struct ServerWindows {
                   let dict = info[kCGWindowBounds as String] as? NSDictionary,
                   let bounds = CGRect(dictionaryRepresentation: dict as CFDictionary) else { continue }
             let id = CGWindowID(number)
-            out.zOrder[id] = out.onScreen.count
+            let alpha = (info[kCGWindowAlpha as String] as? NSNumber)?.doubleValue ?? 1
             out.onScreen.append(Window(id: id, pid: pid_t(pid), bounds: bounds))
+            stack.append(WindowSwitcher.StackWindow(id: id, pid: Int32(pid), size: bounds.size, alpha: alpha))
         }
+        out.zOrder = WindowSwitcher.stackOrder(stack, pids: Set(pids.map { Int32($0) }))
         return out
     }
 

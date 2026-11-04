@@ -316,4 +316,34 @@ final class WindowSwitcherTests: XCTestCase {
         let none = WindowSwitcherLayout.captureSize(window: .zero, box: CGSize(width: 166, height: 112), scale: 2)
         XCTAssertEqual(none, CGSize(width: 332, height: 224))
     }
+
+    // MARK: 前后位置
+
+    func testStackOrderSkipsWindowsTheSwitcherDoesNotList() {
+        typealias W = WindowSwitcher.StackWindow
+        let big = CGSize(width: 800, height: 600)
+        let windows = [
+            W(id: 1, pid: 99, size: big),                              // 输入法、码头自己：不在列表里的进程
+            W(id: 2, pid: 10, size: big, alpha: 0),                     // 透明窗口
+            W(id: 3, pid: 10, size: CGSize(width: 20, height: 20)),     // 太小的工具窗口
+            W(id: 4, pid: 10, size: big),                               // 当前窗口
+            W(id: 5, pid: 11, size: big),
+        ]
+        let order = WindowSwitcher.stackOrder(windows, pids: [10, 11])
+        XCTAssertEqual(order, [4: 0, 5: 1])
+    }
+
+    func testCommandTabSelectsNextWindowWhenOtherProcessIsOnTop() {
+        // 前台窗口排 0 号后，一按一松 ⌘Tab 选中第二个，也就是上一个用过的窗口。
+        let order = WindowSwitcher.stackOrder([
+            .init(id: 1, pid: 99, size: CGSize(width: 300, height: 200)),
+            .init(id: 7, pid: 10, size: CGSize(width: 800, height: 600)),
+            .init(id: 8, pid: 11, size: CGSize(width: 800, height: 600)),
+        ], pids: [10, 11])
+        let entries = [entry(0, pid: 11, z: order[8]), entry(1, pid: 10, z: order[7])]
+        let arranged = WindowSwitcher.arrange(entries, settings: WindowSwitcherSettings())
+        XCTAssertEqual(arranged.map(\.id), [1, 0])
+        XCTAssertEqual(arranged.first?.zOrder, 0)
+        XCTAssertEqual(WindowSwitcher.initialSelection(count: arranged.count, firstIsFront: true), 1)
+    }
 }

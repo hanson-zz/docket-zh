@@ -286,6 +286,34 @@ public enum WindowSwitcher {
         return settings.groupByApp ? grouped(list) : list
     }
 
+    /// 窗口服务器列出的一个屏幕上的窗口（第 0 层），从前往后排。
+    public struct StackWindow: Equatable, Sendable {
+        public var id: UInt32
+        public var pid: Int32
+        public var size: CGSize
+        public var alpha: Double
+
+        public init(id: UInt32, pid: Int32, size: CGSize, alpha: Double = 1) {
+            self.id = id
+            self.pid = pid
+            self.size = size
+            self.alpha = alpha
+        }
+    }
+
+    /// 窗口的前后位置，0 最前。只数切换器会列出来的窗口：属于 `pids` 里的 App（普通 App，
+    /// 不含码头自己），看得见（不透明度大于 0），也不是太小的工具窗口。输入法候选框、
+    /// 菜单栏小工具、码头自己的设置窗口这类也在第 0 层，以前会占掉 0 号，
+    /// 结果当前窗口不算「最前」，⌘Tab 一按一松停在原窗口，切不到下一个。
+    public static func stackOrder(_ windows: [StackWindow], pids: Set<Int32>) -> [UInt32: Int] {
+        var out: [UInt32: Int] = [:]
+        for w in windows where pids.contains(w.pid) && w.alpha > 0
+            && w.size.width >= 40 && w.size.height >= 30 && out[w.id] == nil {
+            out[w.id] = out.count
+        }
+        return out
+    }
+
     /// 刚弹出时选中第二个（上一个用过的窗口），只有一个时选它。排第一的不是前台 App 的
     /// 当前窗口时（比如点了桌面，前台是没有窗口的访达）选第一个。
     public static func initialSelection(count: Int, firstIsFront: Bool = true, backward: Bool = false) -> Int {

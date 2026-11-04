@@ -60,7 +60,7 @@ enum AppWindows {
             $0.minimized || ($0.frame.width >= 40 && $0.frame.height >= 30)
         }
         let needsServer = raws.contains { $0.windowID == nil && !$0.minimized }
-        let server = needsServer ? ServerWindows.read() : ServerWindows()
+        let server = needsServer ? ServerWindows.read(pids: [pid]) : ServerWindows()
         return raws.map {
             Window(id: $0.index, title: AppSwitcherList.windowTitle($0.title, minimized: $0.minimized),
                    minimized: $0.minimized, element: $0.element, frame: $0.frame,
