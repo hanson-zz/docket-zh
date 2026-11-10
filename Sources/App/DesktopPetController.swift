@@ -47,6 +47,8 @@ final class DesktopPetController: NSObject {
     private var reading = false
     private var screensAsleep = false
     private var wakeObservers: [NSObjectProtocol] = []
+    /// 显示器插拔、改分辨率（默认通知中心），换桌面、进出全屏 App（工作区通知中心）。
+    private var screenObservers: [(NotificationCenter, NSObjectProtocol)] = []
 
     private var track: DesktopPetTrack?
     private var trackScreen: NSScreen?
@@ -155,6 +157,8 @@ final class DesktopPetController: NSObject {
         stopRescueWatch()
         for observer in wakeObservers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
         wakeObservers = []
+        for (center, observer) in screenObservers { center.removeObserver(observer) }
+        screenObservers = []
         panel?.orderOut(nil)
         bubblePanel?.orderOut(nil)
         barPanel?.orderOut(nil)
@@ -169,6 +173,7 @@ final class DesktopPetController: NSObject {
         lastTimer = nil
         shown = false
         dragging = false
+        pressPoint = nil
         transit = nil
         bubble.content = nil
         barVisibleUntil = nil
@@ -195,6 +200,18 @@ final class DesktopPetController: NSObject {
                 pet.refreshPlacement()
             }
         })
+        // 显示器插拔、换桌面时马上重新看一次，不等 1.5 秒一次的轮询（拔掉的屏幕上不留残影，
+        // 切进全屏 App 时尽快藏起来）。
+        guard screenObservers.isEmpty else { return }
+        let refresh: @Sendable (Notification) -> Void = { _ in
+            MainActor.assumeIsolated { DesktopPetController.shared.refreshPlacement() }
+        }
+        let workspace = NSWorkspace.shared.notificationCenter
+        screenObservers.append((NotificationCenter.default, NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main,
+            using: refresh)))
+        screenObservers.append((workspace, workspace.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main, using: refresh)))
     }
 
     // MARK: 停在哪
@@ -315,7 +332,15 @@ final class DesktopPetController: NSObject {
         self.panel = panel
         render(now: Date())
         if !panel.isVisible { panel.orderFrontRegardless() }
+        let wasShown = shown
         shown = true
+        // 藏着（全屏 App、屏幕睡了）时留下的气泡（「放回原处」按钮、Zzz）出来时一起出来；
+        // 已经过时的交给下一帧收掉。
+        if !wasShown, let content = bubble.content, let bubblePanel, !bubblePanel.isVisible,
+           content.until.map({ $0 > Date() }) ?? true {
+            bubblePanel.orderFrontRegardless()
+            positionFloats()
+        }
         updateClock(now: Date())
     }
 
@@ -326,6 +351,7 @@ final class DesktopPetController: NSObject {
         barPanel?.orderOut(nil)
         shown = false
         dragging = false
+        pressPoint = nil
         transit = nil
         // 藏着时错过的变化（全屏里插了电）出来以后不补说。
         newsPrimed = false
@@ -335,7 +361,8 @@ final class DesktopPetController: NSObject {
 
     /// 动的时候开显示刷新，静止时停掉，只留慢计时器。
     private func updateClock(now: Date) {
-        guard shown, let state else { return stopClocks() }
+        // 屏幕睡着时别的地方（喝水提醒、救回结果、快捷键）也可能来画一帧，不重新开时钟。
+        guard shown, !screensAsleep, let state else { return stopClocks() }
         let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now)
         if moving {
             restingTimer?.invalidate()
@@ -1139,7 +1166,16 @@ final class DesktopPetSpriteView: NSView {
         sprite.contentsScale = window?.backingScaleFactor ?? 2
     }
 
+    /// 上一次画的参数：静止时慢计时器每秒 10 次来画，画面没变就不提交图层，省得窗口服务器白白重合成。
+    private var lastDrawn: (image: String, size: CGSize, feet: CGPoint, rotation: Double, scaleX: Double,
+                            scaleY: Double)?
+
     func draw(image: String, size: CGSize, feet: CGPoint, rotation: Double, scaleX: Double, scaleY: Double) {
+        if let last = lastDrawn, last.image == image, last.size == size, last.feet == feet,
+           last.rotation == rotation, last.scaleX == scaleX, last.scaleY == scaleY, imageName == image {
+            return
+        }
+        lastDrawn = (image, size, feet, rotation, scaleX, scaleY)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         if image != imageName, let cg = DesktopPetArt.cgImage(image) {
