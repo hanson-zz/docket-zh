@@ -45358,6 +45358,16 @@
         }
       }
     },
+    "轻音乐" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Easy Listening"
+          }
+        }
+      }
+    },
     "牛奶" : {
       "extractionState" : "manual",
       "localizations" : {
