@@ -591,9 +591,20 @@ final class DesktopPetController: NSObject {
 
     // MARK: 右键菜单
 
+    private func menuItem(_ title: String, _ run: @escaping @MainActor () -> Void) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: #selector(menuChosen(_:)), keyEquivalent: "")
+        item.target = self
+        item.representedObject = DesktopPetMenuAction(run)
+        return item
+    }
+
+    @objc private func menuChosen(_ sender: NSMenuItem) {
+        (sender.representedObject as? DesktopPetMenuAction)?.run()
+    }
+
     fileprivate func menu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(DesktopPetMenuItem(title: tr("隐藏桌面宠物")) {
+        menu.addItem(menuItem(tr("隐藏桌面宠物")) {
             DesktopPetController.shared.save { $0.enabled = false }
         })
         menu.addItem(.separator())
@@ -601,7 +612,7 @@ final class DesktopPetController: NSObject {
         let sizeItem = NSMenuItem(title: tr("大小"), action: nil, keyEquivalent: "")
         let sizes = NSMenu()
         for size in DesktopPetSize.allCases {
-            let item = DesktopPetMenuItem(title: size.title) {
+            let item = menuItem(size.title) {
                 DesktopPetController.shared.save { $0.size = size }
             }
             item.state = settings.size == size ? .on : .off
@@ -613,7 +624,7 @@ final class DesktopPetController: NSObject {
         let anchorItem = NSMenuItem(title: tr("停靠位置"), action: nil, keyEquivalent: "")
         let anchors = NSMenu()
         for anchor in DesktopPetAnchor.allCases {
-            let item = DesktopPetMenuItem(title: anchor.title) {
+            let item = menuItem(anchor.title) {
                 DesktopPetController.shared.save { settings in
                     settings.anchor = anchor
                     // 换到别的边时沿边的位置重新从默认开始，屏幕保持。
@@ -627,7 +638,7 @@ final class DesktopPetController: NSObject {
         menu.addItem(anchorItem)
 
         if settings.anchor != .dock {
-            menu.addItem(DesktopPetMenuItem(title: tr("回到程序坞")) {
+            menu.addItem(menuItem(tr("回到程序坞")) {
                 DesktopPetController.shared.save {
                     $0.anchor = .dock
                     $0.spot = nil
@@ -635,7 +646,7 @@ final class DesktopPetController: NSObject {
             })
         }
         menu.addItem(.separator())
-        menu.addItem(DesktopPetMenuItem(title: tr("桌面宠物设置…")) {
+        menu.addItem(menuItem(tr("桌面宠物设置…")) {
             DesktopPetController.shared.openSettings?()
         })
         return menu
@@ -1249,21 +1260,13 @@ final class DesktopPetClickView: NSView {
     }
 }
 
-/// 右键菜单的一项：点了跑一段代码。
-final class DesktopPetMenuItem: NSMenuItem {
-    private let handler: @MainActor () -> Void
+/// 右键菜单一项要跑的代码，挂在菜单项的 representedObject 上。
+final class DesktopPetMenuAction: NSObject {
+    let run: @MainActor () -> Void
 
-    init(title: String, handler: @escaping @MainActor () -> Void) {
-        self.handler = handler
-        super.init(title: title, action: #selector(run), keyEquivalent: "")
-        target = self
+    init(_ run: @escaping @MainActor () -> Void) {
+        self.run = run
     }
-
-    @available(*, unavailable)
-    required init(coder: NSCoder) { fatalError() }
-
-    /// 菜单项的动作总在主线程上来。
-    @objc private func run() { MainActor.assumeIsolated { handler() } }
 }
 
 // MARK: - 画面
