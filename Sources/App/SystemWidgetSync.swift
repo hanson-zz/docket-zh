@@ -145,6 +145,8 @@ final class SystemWidgetSync {
         if old.pets != new.pets { kinds.append("pet") }
         if old.notes != new.notes { kinds.append("note") }
         if old.calcs != new.calcs { kinds.append("calc") }
+        // 解锁或到期：电池小组件的霓虹灯管样式跟着换（没解锁时画经典加 Pro 角标）。
+        if old.isPro != new.isPro { kinds.append("battery") }
         return kinds
     }
 

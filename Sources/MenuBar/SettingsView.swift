@@ -591,6 +591,10 @@ struct SettingsView: View {
 
             NotchMessageSettingsSection(settings: $state.notchMessage)
 
+            Section("电池") {
+                BatteryNeonPlugToggle()
+            }
+
             Section {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)

@@ -123,6 +123,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 并把小组件上打的勾、加的一杯合并回卡片。
         SystemWidgetSync.shared.widgets = { [state] in state.allWidgets }
         SystemWidgetSync.shared.start()
+        // 插上电源时的霓虹动画（Pro，设置里可关）：盯着电源变化，从电池切到接通电源时
+        // 在刘海那里播一次，没有电池的 Mac 上什么也不做。
+        BatteryNeonPlugController.shared.start()
         // 快速待办和系统提醒事项的双向同步（Pro），没有打开同步的卡片时什么也不做。
         TodoReminderSyncService.shared.start()
         // 久坐提醒的离开检测：锁屏、休眠或很久没碰键盘鼠标满设定时间，自动算一次

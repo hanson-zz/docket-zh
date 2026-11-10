@@ -9,6 +9,7 @@ final class BatteryStatusCellTests: XCTestCase {
         XCTAssertFalse(BatteryStatusCell.drawsCell(look: BatteryLook.pixel.rawValue))
         XCTAssertFalse(BatteryStatusCell.drawsCell(look: BatteryLook.particles.rawValue))
         XCTAssertFalse(BatteryStatusCell.drawsCell(look: BatteryLook.panda.rawValue))
+        XCTAssertFalse(BatteryStatusCell.drawsCell(look: BatteryLook.neon.rawValue))
         XCTAssertTrue(BatteryStatusCell.drawsCell(look: "something-old"), "认不出的旧值按经典")
     }
 

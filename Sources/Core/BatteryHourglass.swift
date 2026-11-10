@@ -16,13 +16,13 @@ public enum BatteryHourglass {
 
     // MARK: 哪些外观画沙漏
 
-    /// 电池格这个外观画不画沙漏：经典和液态画；像素电池、能量粒子、小熊猫
-    /// 画它们自己的。认不出的值按经典算（和 `BatteryLook.shown` 一致）。
+    /// 电池格这个外观画不画沙漏：经典和液态画；像素电池、能量粒子、小熊猫、
+    /// 霓虹灯管画它们自己的。认不出的值按经典算（和 `BatteryLook.shown` 一致）。
     /// 小熊猫外观里非 Mac 的设备由界面先换成液态，所以也是沙漏。
     public static func drawsHourglass(look raw: String) -> Bool {
         switch BatteryLook(rawValue: raw) ?? .classic {
         case .classic, .liquid: true
-        case .pixel, .particles, .panda: false
+        case .pixel, .particles, .panda, .neon: false
         }
     }
 

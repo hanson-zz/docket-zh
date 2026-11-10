@@ -69111,6 +69111,160 @@
           }
         }
       }
+    },
+    "霓虹灯管" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon tube"
+          }
+        }
+      }
+    },
+    "霓虹灯管（Pro）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon tube (Pro)"
+          }
+        }
+      }
+    },
+    "选电池小组件的样式：经典或霓虹灯管" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the battery widget's style: Classic or Neon tube"
+          }
+        }
+      }
+    },
+    "电量、是否在充电、还能用多久。右键「编辑小组件」可换成霓虹灯管样式（Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge level, charging state and time left. Right-click and choose Edit Widget to switch to the Neon tube style (Pro)."
+          }
+        }
+      }
+    },
+    "%@充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@"
+          }
+        }
+      }
+    },
+    "还能用 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "未接电源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not plugged in"
+          }
+        }
+      }
+    },
+    "插电动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plug-in animation"
+          }
+        }
+      }
+    },
+    "插电时霓虹动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon animation when plugging in"
+          }
+        }
+      }
+    },
+    "接上电源时，一滴光从刘海落下，把屏幕上方的霓虹电量数字从下往上灌亮，约 2.5 秒；之后刘海旁留一个电量小胶囊，几秒后淡出。全屏、屏幕共享、演示模式时不播，30 秒内反复插拔只播一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you plug in, a drop of light falls from the notch and fills a neon battery number near the top of the screen from the bottom up, for about 2.5 seconds; a small charge capsule then stays beside the notch for a few seconds before fading. It does not play in full screen, during screen sharing or in Presenting mode, and plugging in again within 30 seconds plays it only once."
+          }
+        }
+      }
+    },
+    "%@ 小时 %@ 分充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@h %@m"
+          }
+        }
+      }
+    },
+    "%@ 分钟后充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@ min"
+          }
+        }
+      }
+    },
+    "数字 Wi-Fi；像素电池、能量粒子、小熊猫抱电池、霓虹灯管；插电时的霓虹动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numbers Wi-Fi; Pixel battery, Energy particles, Red panda hug, Neon tube; the neon plug-in animation"
+          }
+        }
+      }
+    },
+    "像素、粒子、小熊猫、霓虹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel, particles, red panda, neon"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

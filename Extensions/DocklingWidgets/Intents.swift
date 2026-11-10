@@ -266,6 +266,25 @@ struct CalcConfigIntent: WidgetConfigurationIntent {
     var card: CalcCardEntity?
 }
 
+/// 电池小组件的样式。霓虹灯管是码头 Pro：没解锁时选了也画经典，右上角带一个 Pro 角标。
+enum BatteryWidgetStyle: String, AppEnum {
+    case classic
+    case neon
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation { TypeDisplayRepresentation(name: "样式") }
+    static var caseDisplayRepresentations: [BatteryWidgetStyle: DisplayRepresentation] {
+        [.classic: DisplayRepresentation(title: "经典"), .neon: DisplayRepresentation(title: "霓虹灯管（Pro）")]
+    }
+}
+
+struct BatteryConfigIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource { "电池" }
+    static var description: IntentDescription { IntentDescription("选电池小组件的样式：经典或霓虹灯管") }
+
+    @Parameter(title: "样式", default: .classic)
+    var style: BatteryWidgetStyle
+}
+
 // MARK: - 小组件上的按钮
 
 /// 待办圆圈：记一个动作文件，主 App 合并进卡片。小组件随后自己刷新，叠上这一下马上显示打勾。

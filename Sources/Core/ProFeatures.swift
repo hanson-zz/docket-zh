@@ -112,7 +112,8 @@ public enum ProFeatures {
             + ClockStyles.allOptions.reduce(0) { $0 + $1.proValues.count }
         let characters = WaterCharacter.allCases.filter(\.isSupporterOnly).count
         let wifi = WifiRingStyle.allCases.filter(\.isSupporterOnly).count
-        let battery = BatteryLook.allCases.filter(\.isSupporterOnly).count
+        // 霓虹灯管是后来加的 Pro 外观，不是原来的赞助者外观，不算进这个数。
+        let battery = BatteryLook.allCases.filter { $0.isSupporterOnly && $0 != .neon }.count
         return faces + characters + wifi + battery + ShelfColor.allCases.count
     }
 

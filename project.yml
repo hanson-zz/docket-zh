@@ -119,13 +119,16 @@ targets:
   # 系统小组件扩展（WidgetKit）。必须沙盒；和主 App 不用 App Group（ad-hoc、自签名都没有
   # Team ID，macOS 15 起组容器不认），而是读写主 App Application Support 下的 SystemWidgets
   # 文件夹（entitlements 里的 temporary-exception），见 Sources/Core/SystemWidgetSnapshot.swift。
-  # 只编那一个 Core 文件；小熊猫图片和界面文字表跟主 App 共用同一份资源。
+  # 只编那一个 Core 文件（外加电池霓虹灯管的两个文件）；小熊猫图片和界面文字表跟主 App 共用同一份资源。
   DocklingWidgets:
     type: app-extension
     platform: macOS
     sources:
       - path: Extensions/DocklingWidgets
       - path: Sources/Core/SystemWidgetSnapshot.swift
+      # 电池的霓虹灯管样式：纯逻辑和数字视图都只用 Foundation、SwiftUI、AppKit，和扩展栏卡片共用。
+      - path: Sources/Core/BatteryNeon.swift
+      - path: Sources/Widgets/Kinds/BatteryNeonDigits.swift
       - path: Resources/Pet
         buildPhase: resources
       - path: Resources/Water
