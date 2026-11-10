@@ -1262,7 +1262,8 @@ final class DesktopPetMenuItem: NSMenuItem {
     @available(*, unavailable)
     required init(coder: NSCoder) { fatalError() }
 
-    @objc private func run() { handler() }
+    /// 菜单项的动作总在主线程上来。
+    @objc private func run() { MainActor.assumeIsolated { handler() } }
 }
 
 // MARK: - 画面
