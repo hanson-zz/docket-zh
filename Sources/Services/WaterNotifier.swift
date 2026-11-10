@@ -139,6 +139,8 @@ final class WaterNotifier {
         guard ReminderPopupDecision.isFresh(due: due, now: now), ReminderPopupCenter.shared.shows(.water),
               let instance = WidgetWriter.current(widget) ?? latest[widget]?.instance else { return }
         ReminderPopupCenter.shared.post([ReminderPopupAlerts.water(instance, due: due, now: now)], now: now)
+        // 桌面宠物开着时小熊猫头顶也说一句。
+        DesktopPetController.shared.announce(.water)
     }
 
     private func schedule(id: String, at date: Date, title: String, body: String) async {

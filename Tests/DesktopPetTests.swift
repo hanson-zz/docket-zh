@@ -34,6 +34,26 @@ final class DesktopPetTests: XCTestCase {
         let decoded = try JSONDecoder().decode(DesktopPetSettings.self, from: Data(#"{"enabled":true,"x":1}"#.utf8))
         XCTAssertTrue(decoded.enabled)
         XCTAssertFalse(decoded.trashRescue)
+        XCTAssertEqual(decoded.anchor, .dock, "老状态文件没有停靠位置：程序坞上沿")
+        XCTAssertEqual(decoded.size, .medium)
+        XCTAssertTrue(decoded.bubbles, "头顶气泡默认开")
+        XCTAssertNil(decoded.hotKey, "快捷键默认不设")
+        XCTAssertNil(decoded.spot)
+
+        let odd = try JSONDecoder().decode(DesktopPetSettings.self, from: Data(
+            #"{"enabled":true,"anchor":"sideways","size":7,"bubbles":"yes","spot":{"along":3,"display":"x"}}"#.utf8))
+        XCTAssertTrue(odd.enabled)
+        XCTAssertEqual(odd.anchor, .dock, "认不出的停靠位置用默认")
+        XCTAssertEqual(odd.size, .medium)
+        XCTAssertTrue(odd.bubbles)
+        XCTAssertEqual(odd.spot?.along, 1, "沿边比例夹在 0…1")
+        XCTAssertNil(odd.spot?.display)
+
+        let full = DesktopPetSettings(enabled: true, anchor: .left, size: .large, bubbles: false,
+                                      hotKey: KeyCombo(keyCode: 35, modifiers: 0x0900),
+                                      spot: DesktopPetSpot(display: 2, along: 0.25))
+        let round = try JSONDecoder().decode(DesktopPetSettings.self, from: JSONEncoder().encode(full))
+        XCTAssertEqual(round, full)
 
         var state = PersistedState()
         XCTAssertEqual(state.desktopPet, DesktopPetSettings())
@@ -103,7 +123,7 @@ final class DesktopPetTests: XCTestCase {
         let awake = DesktopPetBrain.step(asleep, dt: 0.5, now: t0.addingTimeInterval(60), lane: lane,
                                          userIdle: 1, focusing: false, random: { 0.5 })
         guard case .idle = awake.activity else { return XCTFail("用户回来就醒") }
-        XCTAssertEqual(DesktopPetBrain.tickRate(awake), DesktopPetBrain.fps)
+        XCTAssertEqual(DesktopPetBrain.tickRate(awake), DesktopPetBrain.restingFPS)
     }
 
     func testPokeJumpsThenSettles() {

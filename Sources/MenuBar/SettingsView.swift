@@ -1786,6 +1786,7 @@ final class ShortcutKeyRecorder {
         ShotHotKey.shared.suspend()
         MicMuteHotKey.shared.suspend()
         WindowSwitcherHotKey.shared.suspend()
+        DesktopPetHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1805,6 +1806,7 @@ final class ShortcutKeyRecorder {
         ShotHotKey.shared.resume()
         MicMuteHotKey.shared.resume()
         WindowSwitcherHotKey.shared.resume()
+        DesktopPetHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

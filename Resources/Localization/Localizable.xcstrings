@@ -2256,17 +2256,6 @@
         }
       }
     },
-    "小熊猫贴在程序坞上沿散步、发呆，几分钟没操作就睡觉，点它会跳一下。全屏 App 或程序坞自动隐藏时不显示。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A red panda strolls and daydreams along the top of the Dock, falls asleep after a few idle minutes and jumps when you click it. Hidden while an app is full screen or the Dock hides automatically."
-          }
-        }
-      }
-    },
     "废纸篓救回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2285,17 +2274,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trash Rescue needs two permissions"
-          }
-        }
-      }
-    },
-    "开着专注计时时小熊猫坐在程序坞上陪你，完成一轮会欢呼（码头 Pro）。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "While the Focus Timer runs, the red panda sits on the Dock with you and cheers when a session is done (Dockling Pro)."
           }
         }
       }
@@ -2351,6 +2329,391 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desktop pet red panda"
+          }
+        }
+      }
+    },
+    "程序坞上沿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top of the Dock"
+          }
+        }
+      }
+    },
+    "屏幕左边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕右边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕上边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕下边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom edge of the screen"
+          }
+        }
+      }
+    },
+    "随意（拖到哪停哪）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anywhere (stays where you drop it)"
+          }
+        }
+      }
+    },
+    "开始专注 · %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus started · %@ min"
+          }
+        }
+      }
+    },
+    "专注还剩 5 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutes of focus left"
+          }
+        }
+      }
+    },
+    "专注完成，休息一下吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus done, take a break"
+          }
+        }
+      }
+    },
+    "正在播放 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now playing · %@"
+          }
+        }
+      }
+    },
+    "充电中 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charging · %@%%"
+          }
+        }
+      }
+    },
+    "充满了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fully charged"
+          }
+        }
+      }
+    },
+    "电量低 · %@%%，记得充电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery low · %@%%, plug in soon"
+          }
+        }
+      }
+    },
+    "新建快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New quick to-do"
+          }
+        }
+      }
+    },
+    "暂停专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause focus"
+          }
+        }
+      }
+    },
+    "开始专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start focus"
+          }
+        }
+      }
+    },
+    "播放收音机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play radio"
+          }
+        }
+      }
+    },
+    "展开码头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Dockling"
+          }
+        }
+      }
+    },
+    "隐藏桌面宠物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Desktop Pet"
+          }
+        }
+      }
+    },
+    "停靠位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resting Spot"
+          }
+        }
+      }
+    },
+    "回到程序坞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the Dock"
+          }
+        }
+      }
+    },
+    "桌面宠物设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Pet Settings…"
+          }
+        }
+      }
+    },
+    "小熊猫快捷条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red panda quick bar"
+          }
+        }
+      }
+    },
+    "小熊猫睡着了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda is asleep"
+          }
+        }
+      }
+    },
+    "小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。全屏 App 时不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A red panda strolls along the top of the Dock or curls up on a screen edge. Click it to make it hop and show a quick bar, hold to drag it elsewhere, and right-click for more options. Hidden while an app is full screen."
+          }
+        }
+      }
+    },
+    "头顶气泡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech Bubbles"
+          }
+        }
+      }
+    },
+    "专注开始、还剩 5 分钟和完成，收音机播放的台，插电、充满和低电量，喝水提醒到点时，小熊猫头顶说一句，几秒后消失。同一类 30 秒内只说一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When focus starts, has 5 minutes left or ends, when the radio starts a station, when you plug in, finish charging or run low, and when a water reminder is due, a short bubble appears above the red panda for a few seconds. Each kind shows at most once every 30 seconds."
+          }
+        }
+      }
+    },
+    "唤出小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summon the Red Panda"
+          }
+        }
+      }
+    },
+    "默认不设。按下时小熊猫跳一下并浮出快捷条（新建快速待办、专注、收音机、展开码头）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not set by default. Press it to make the red panda hop and show its quick bar (new quick to-do, focus, radio, open Dockling)."
+          }
+        }
+      }
+    },
+    "在程序坞上沿散步、发呆；程序坞自动隐藏或在侧边时先蜷在屏幕下边缘。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strolls and idles on top of the Dock. While the Dock is hidden or on a side, it curls up on the bottom edge instead."
+          }
+        }
+      }
+    },
+    "平时趴在边上，偶尔探头、伸懒腰、沿边挪几步，不挡菜单栏和程序坞。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies along the edge, now and then peeking out, stretching or shuffling a few steps, without covering the menu bar or the Dock."
+          }
+        }
+      }
+    },
+    "平时趴在菜单栏下方，偶尔探头、伸懒腰、沿边挪几步。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies just below the menu bar, now and then peeking out, stretching or shuffling a few steps."
+          }
+        }
+      }
+    },
+    "平时趴在屏幕底边，偶尔探头、伸懒腰、沿边挪几步。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies along the bottom of the screen, now and then peeking out, stretching or shuffling a few steps."
+          }
+        }
+      }
+    },
+    "拖到哪就坐在哪，记住位置。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sits wherever you drop it and remembers the spot."
+          }
+        }
+      }
+    },
+    "开着专注计时时小熊猫坐着陪你，完成一轮会欢呼（码头 Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While the Focus Timer runs the red panda sits with you and cheers when a round ends (Dockling Pro)."
           }
         }
       }

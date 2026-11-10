@@ -1,43 +1,89 @@
 import Foundation
 
-// 桌面宠物：贴在程序坞（系统程序坞或码头扩展栏）上沿的小熊猫。
+// 桌面宠物：小熊猫贴在程序坞上沿散步，或者蜷在屏幕某条边上，也可以拖到任意位置。
 //
-// 这里只有纯逻辑：设置、动作帧、走路发呆睡觉的状态机、废纸篓救回挑哪几项、
-// 程序坞上沿的可走范围。窗口、计时器、读程序坞位置和放回原处在 App 和 Services 里，
+// 这里只有纯逻辑：设置、动作帧、走路发呆睡觉蜷着的状态机、废纸篓救回挑哪几项、
+// 程序坞上沿和屏幕边缘的可待范围（`DesktopPetTrack`，见 DesktopPetEdge.swift）。
+// 窗口、显示刷新、拖动、读程序坞位置和放回原处在 App 和 Services 里，
 // 见 `DesktopPetController`。
 
 // MARK: - 设置
 
-/// 设置 ▸ 小组件 ▸ 桌面宠物。两个开关都默认关。
+/// 设置 ▸ 小组件 ▸ 桌面宠物。总开关和救回默认关。
 public struct DesktopPetSettings: Codable, Hashable, Sendable {
-    /// 总开关：小熊猫贴在程序坞上沿散步。
+    /// 总开关。
     public var enabled: Bool = false
     /// 废纸篓救回：刚拖进废纸篓的文件，小熊猫跑过去叼回来放回原处。单独默认关，
     /// 第一次打开时先说明要的权限。
     public var trashRescue: Bool = false
+    /// 停在哪：程序坞上沿（默认，散步）、屏幕四条边（蜷着）或随意（拖到哪停哪）。
+    public var anchor: DesktopPetAnchor = .dock
+    /// 大小。
+    public var size: DesktopPetSize = .medium
+    /// 头顶气泡：专注、收音机、电池、喝水这些状态用小气泡说一句。默认开。
+    public var bubbles: Bool = true
+    /// 唤出小熊猫并显示快捷条的全局快捷键，默认不设。
+    public var hotKey: KeyCombo?
+    /// 拖过以后记住的位置：哪块屏幕、沿边的哪儿。没拖过是 nil。
+    public var spot: DesktopPetSpot?
 
-    public init(enabled: Bool = false, trashRescue: Bool = false) {
+    public init(enabled: Bool = false, trashRescue: Bool = false, anchor: DesktopPetAnchor = .dock,
+                size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
+                spot: DesktopPetSpot? = nil) {
         self.enabled = enabled
         self.trashRescue = trashRescue
+        self.anchor = anchor
+        self.size = size
+        self.bubbles = bubbles
+        self.hotKey = hotKey
+        self.spot = spot
     }
 
     /// 救回真正在不在工作：总开关和子开关都开着。
     public var rescueActive: Bool { enabled && trashRescue }
 
-    private enum CodingKeys: String, CodingKey { case enabled, trashRescue }
+    private enum CodingKeys: String, CodingKey { case enabled, trashRescue, anchor, size, bubbles, hotKey, spot }
 
-    /// 宽松解码：老状态文件没有这一组，或以后多了认不出的键，都照常读。
+    /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         enabled = (try? c.decodeIfPresent(Bool.self, forKey: .enabled)) ?? false
         trashRescue = (try? c.decodeIfPresent(Bool.self, forKey: .trashRescue)) ?? false
+        anchor = ((try? c.decodeIfPresent(String.self, forKey: .anchor)) ?? nil)
+            .flatMap(DesktopPetAnchor.init(rawValue:)) ?? .dock
+        size = ((try? c.decodeIfPresent(String.self, forKey: .size)) ?? nil)
+            .flatMap(DesktopPetSize.init(rawValue:)) ?? .medium
+        bubbles = (try? c.decodeIfPresent(Bool.self, forKey: .bubbles)) ?? true
+        hotKey = (try? c.decodeIfPresent(KeyCombo.self, forKey: .hotKey)) ?? nil
+        spot = (try? c.decodeIfPresent(DesktopPetSpot.self, forKey: .spot)) ?? nil
+    }
+}
+
+/// 大小：小、中、大，按动作帧原本的大小缩放。
+public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
+    case small, medium, large
+
+    public var scale: Double {
+        switch self {
+        case .small: 0.8
+        case .medium: 1
+        case .large: 1.25
+        }
+    }
+
+    public var title: String {
+        switch self {
+        case .small: tr("小")
+        case .medium: tr("中")
+        case .large: tr("大")
+        }
     }
 }
 
 // MARK: - 动作帧
 
 /// 一套动作帧：Resources/Pet/sprites/pet-sprite-<动作>-<1…n>.png，同一只小熊猫、
-/// 同一个比例（@2x，走路那张约 105px 高），都朝右；往左走时整张左右翻过来。
+/// 同一个比例（@2x，走路那张约 105px 高），都朝右；往左时整张左右翻过来。
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, jump, carry, sleep
 
@@ -51,22 +97,35 @@ public enum DesktopPetStrip: String, CaseIterable, Sendable {
     }
 }
 
-/// 某一刻画哪张图、往上抬多少、要不要翻过来。
+/// 某一刻画哪张图、离脚下那条边多远、怎么压扁拉长、要不要翻过来。
+/// 都在小熊猫自己的坐标里：“上”是离开那条边的方向，贴在左右边时由窗口转 90°。
 public struct DesktopPetPose: Equatable, Sendable {
-    /// 图片名（不带扩展名）：动作帧，或 Resources/Pet 里现成的 pet-panda-idle / cheer。
+    /// 图片名（不带扩展名）：动作帧，或 Resources/Pet 里现成的 pet-panda-idle / rest / cheer / hungry。
     public var image: String
-    /// 脚离程序坞上沿多高（跳起来时大于 0），点。
+    /// 脚离那条边多高（跳起来、走路一颠一颠时大于 0），点。
     public var lift: Double
-    /// 朝左：图左右翻过来。
+    /// 朝“左”：图左右翻过来。贴边时的“左”是沿边往回的方向，见 `DesktopPetEdge`。
     public var facingLeft: Bool
     /// 显示高度，点。动作帧按图片自己的大小（像素 / 2），静态图给一个固定高度。
     public var height: Double?
+    /// 横向、纵向缩放（转身、落地压扁回弹、伸懒腰），1 是原样。以脚底中点为准。
+    public var scaleX: Double
+    public var scaleY: Double
+    /// 被拖起来时左右晃的角度（度，顺时针），平时 0。
+    public var wobble: Double
+    /// 睡着时头顶的 Zzz：0 不显示，1…3 是几个 z。
+    public var zzz: Int
 
-    public init(image: String, lift: Double = 0, facingLeft: Bool = false, height: Double? = nil) {
+    public init(image: String, lift: Double = 0, facingLeft: Bool = false, height: Double? = nil,
+                scaleX: Double = 1, scaleY: Double = 1, wobble: Double = 0, zzz: Int = 0) {
         self.image = image
         self.lift = lift
         self.facingLeft = facingLeft
         self.height = height
+        self.scaleX = scaleX
+        self.scaleY = scaleY
+        self.wobble = wobble
+        self.zzz = zzz
     }
 }
 
@@ -74,13 +133,13 @@ public struct DesktopPetPose: Equatable, Sendable {
 
 /// 小熊猫在做什么。时间都是绝对时刻，所以帧号和位置都能从“现在”算出来。
 public enum DesktopPetActivity: Equatable, Sendable {
-    /// 停下发呆，到点再走。
+    /// 停下发呆（坐着），到点再走。
     case idle(until: Date)
-    /// 散步到某个横坐标。
+    /// 沿着那条边走到某处（程序坞上散步，或者贴边时挪几步）。
     case walk(to: Double)
     /// 睡觉（先打哈欠，再趴下，再团成一团）。
     case sleep(since: Date)
-    /// 被点了一下：原地跳，之后回去发呆。
+    /// 跳一下（被点、插上电源），之后回去歇着。
     case jump(since: Date)
     /// 专注计时进行中：坐着陪，不乱跑。
     case sit
@@ -88,6 +147,20 @@ public enum DesktopPetActivity: Equatable, Sendable {
     case cheer(until: Date)
     /// 废纸篓救回的一整段。
     case rescue(DesktopPetRescueStep)
+    /// 贴在边上趴着歇。
+    case curl(until: Date)
+    /// 从边上探出头来（坐起来看看），到点再趴回去。
+    case peek(until: Date)
+    /// 伸个懒腰。
+    case stretch(since: Date)
+    /// 打个哈欠。
+    case yawn(since: Date)
+    /// 被鼠标拖着：四脚乱蹬。
+    case dragged(since: Date)
+    /// 松手落下：压扁再弹回来。
+    case land(since: Date)
+    /// 电量低：蔫蔫的。
+    case droop(until: Date)
 }
 
 /// 救回的几步：跑到废纸篓、叼起来、叼着跑回原来的地方、放下。
@@ -99,26 +172,41 @@ public enum DesktopPetRescueStep: Equatable, Sendable {
     case arrived(since: Date)
 }
 
+/// 平时是散步、蜷着还是坐着：程序坞上散步，屏幕边缘蜷着，随意放的地方坐着。
+public enum DesktopPetStyle: Equatable, Sendable {
+    case stroll, curl, sit
+}
+
 public struct DesktopPetState: Equatable, Sendable {
-    /// 小熊猫中心的横坐标（屏幕坐标，点）。
+    /// 小熊猫在那条边上的位置（屏幕坐标，点）：底边和上边是横坐标，左右边是纵坐标。
     public var x: Double
+    /// 朝沿边坐标变小的方向。
     public var facingLeft: Bool
     public var activity: DesktopPetActivity
     /// 这个动作从什么时候开始，算帧号用。
     public var since: Date
+    /// 上一次掉头的时刻，转身的短过渡用。
+    public var turnedAt: Date?
 
-    public init(x: Double, facingLeft: Bool = false, activity: DesktopPetActivity, since: Date) {
+    public init(x: Double, facingLeft: Bool = false, activity: DesktopPetActivity, since: Date,
+                turnedAt: Date? = nil) {
         self.x = x
         self.facingLeft = facingLeft
         self.activity = activity
         self.since = since
+        self.turnedAt = turnedAt
     }
 }
 
-/// 散步、发呆、睡觉、跳、坐、欢呼、救回的规则。所有随机都从外面传进来，测试可以定住。
+/// 散步、发呆、睡觉、跳、坐、欢呼、蜷着、探头、伸懒腰、拖动、救回的规则。
+/// 所有随机都从外面传进来，测试可以定住。
 public enum DesktopPetBrain {
-    /// 动作帧率：每秒 8 帧，低一点省电，也更像手翻的小动画。
-    public static let fps: Double = 8
+    /// 动作帧率：每秒 12 帧。位置和缩放另外按显示刷新（60 帧）算，见 `isMoving`。
+    public static let fps: Double = 12
+    /// 走路换帧慢一点，每秒 10 帧，配上身体一颠一颠才不显得碎。
+    public static let walkFPS: Double = 10
+    /// 静止时（坐着、趴着）的计时器：每秒 10 次，够看见眨眼。
+    public static let restingFPS: Double = 10
     /// 睡着以后计时器放慢到每秒 2 次。
     public static let sleepingFPS: Double = 2
     /// 用户多久没碰键盘鼠标就睡觉。
@@ -140,8 +228,25 @@ public enum DesktopPetBrain {
     public static let idleRange: ClosedRange<Double> = 3...9
     /// 一次散步最远走多远。
     public static let strollRange: ClosedRange<Double> = 40...220
+    /// 贴边时一次挪几步。
+    public static let shuffleRange: ClosedRange<Double> = 16...56
+    /// 贴边趴着歇几秒。
+    public static let curlRange: ClosedRange<Double> = 7...16
+    /// 探头看一眼多久；鼠标在旁边时一直探着。
+    public static let peekDuration: TimeInterval = 2.4
+    public static let stretchDuration: TimeInterval = 1.6
+    public static let yawnDuration: TimeInterval = 1.4
+    /// 落地压扁回弹多久。
+    public static let landDuration: TimeInterval = 0.42
+    /// 转身的短过渡多久。
+    public static let turnDuration: TimeInterval = 0.16
+    /// 电量低时蔫多久。
+    public static let droopDuration: TimeInterval = 8
     /// 静态图（发呆、坐、欢呼）显示多高。
     public static let sittingHeight: Double = 62
+    /// 走路一步多远（身体起伏一个来回）、颠多高。
+    public static let strideLength: Double = 14
+    public static let bobHeight: Double = 1.6
 
     /// 刚出现：在可走范围中间偏左一点发呆。
     public static func initial(lane: ClosedRange<Double>, now: Date) -> DesktopPetState {
@@ -149,25 +254,41 @@ public enum DesktopPetBrain {
         return DesktopPetState(x: x, activity: .idle(until: now.addingTimeInterval(4)), since: now)
     }
 
+    /// 在某个位置出现，按平时的样子歇着（拖过以后记住的位置、换了停靠方式）。
+    public static func placed(at x: Double, style: DesktopPetStyle, now: Date) -> DesktopPetState {
+        DesktopPetState(x: x, activity: rest(style, now: now, random: { 0.5 }), since: now)
+    }
+
     /// 往前走一步。`dt` 是距上一步的秒数；`userIdle` 是用户多久没操作；
-    /// `focusing` 是专注计时正在走（而且能用专注陪伴）；`random` 是 0…1 的随机数来源。
+    /// `focusing` 是专注计时正在走（而且能用专注陪伴）；`style` 是平时散步、蜷着还是坐着；
+    /// `attention` 是鼠标靠近时它在沿边坐标上的位置（离远了是 nil）；
+    /// `random` 是 0…1 的随机数来源。
     public static func step(_ state: DesktopPetState, dt: TimeInterval, now: Date,
                             lane: ClosedRange<Double>, userIdle: TimeInterval, focusing: Bool,
+                            style: DesktopPetStyle = .stroll, attention: Double? = nil,
                             random: () -> Double) -> DesktopPetState {
         var next = state
         next.x = clamp(state.x, lane)
         let dt = max(0, min(dt, 1))
 
-        // 救回、跳、欢呼正在演的，演完再说；其余的按专注和睡觉打断。
+        // 救回、跳、欢呼、拖着、落地正在演的，演完再说；其余的按专注和睡觉打断。
         switch state.activity {
         case .rescue(let step):
             return rescueStep(next, step: step, dt: dt, now: now, lane: lane)
+        case .dragged:
+            return next
         case .jump(let since):
             if now.timeIntervalSince(since) < jumpDuration { return next }
-            return settle(next, now: now, focusing: focusing, random: random)
+            return settle(next, now: now, focusing: focusing, style: style, random: random)
+        case .land(let since):
+            if now.timeIntervalSince(since) < landDuration { return next }
+            return settle(next, now: now, focusing: focusing, style: style, random: random)
         case .cheer(let until):
             if now < until { return next }
-            return settle(next, now: now, focusing: focusing, random: random)
+            return settle(next, now: now, focusing: focusing, style: style, random: random)
+        case .droop(let until):
+            if now < until { return next }
+            return settle(next, now: now, focusing: focusing, style: style, random: random)
         default:
             break
         }
@@ -185,26 +306,52 @@ public enum DesktopPetBrain {
 
         switch next.activity {
         case .sit, .sleep:
-            // 专注结束、或用户回来了：醒过来发呆一会儿。
-            next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+            // 专注结束、或用户回来了：醒过来歇一会儿。
+            next.activity = rest(style, now: now, random: random)
             next.since = now
         case .idle(let until):
+            if let attention { face(&next, toward: attention, now: now) }
             guard now >= until else { return next }
-            let target = strollTarget(from: next.x, lane: lane, random: random)
-            if abs(target - next.x) < 4 {
-                next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
-            } else {
-                next.activity = .walk(to: target)
-                next.facingLeft = target < next.x
+            if attention != nil {
+                // 鼠标在旁边：多看一会儿，不走开。
+                next.activity = .idle(until: now.addingTimeInterval(idleRange.lowerBound))
+                next.since = now
+                return next
             }
+            next = afterIdle(next, now: now, lane: lane, style: style, random: random)
+        case .curl(let until):
+            if let attention {
+                face(&next, toward: attention, now: now)
+                next.activity = .peek(until: now.addingTimeInterval(1.5))
+                next.since = now
+                return next
+            }
+            guard now >= until else { return next }
+            next = afterCurl(next, now: now, lane: lane, random: random)
+        case .peek(let until):
+            if let attention {
+                face(&next, toward: attention, now: now)
+                if until < now.addingTimeInterval(1.5) { next.activity = .peek(until: now.addingTimeInterval(1.5)) }
+                return next
+            }
+            guard now >= until else { return next }
+            next.activity = rest(style, now: now, random: random)
+            next.since = now
+        case .stretch(let since):
+            guard now.timeIntervalSince(since) >= stretchDuration else { return next }
+            next.activity = rest(style, now: now, random: random)
+            next.since = now
+        case .yawn(let since):
+            guard now.timeIntervalSince(since) >= yawnDuration else { return next }
+            next.activity = rest(style, now: now, random: random)
             next.since = now
         case .walk(let target):
             let goal = clamp(target, lane)
             let moved = move(next.x, toward: goal, by: walkSpeed * dt)
             next.x = moved
-            next.facingLeft = goal < state.x
+            turn(&next, left: goal < state.x, now: now)
             if moved == goal {
-                next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+                next.activity = rest(style, now: now, random: random)
                 next.since = now
             }
         default:
@@ -213,21 +360,70 @@ public enum DesktopPetBrain {
         return next
     }
 
-    /// 被点了一下：跳起来（睡着的也醒过来跳）。救回途中不理会。
+    /// 被点了一下：跳起来（睡着的也醒过来跳）。救回途中、拖着时不理会。
     public static func poked(_ state: DesktopPetState, now: Date) -> DesktopPetState {
-        if case .rescue = state.activity { return state }
-        if case .jump = state.activity { return state }
+        switch state.activity {
+        case .rescue, .jump, .dragged: return state
+        default: break
+        }
         var next = state
         next.activity = .jump(since: now)
         next.since = now
         return next
     }
 
-    /// 欢呼（专注完成一轮）。救回途中不打断。
+    /// 插上电源：转头朝刘海那边（`toward` 是刘海在沿边坐标上的位置），开心跳一下。
+    public static func plugged(_ state: DesktopPetState, toward: Double?, now: Date) -> DesktopPetState {
+        var next = poked(state, now: now)
+        if let toward, next.activity == .jump(since: now) { face(&next, toward: toward, now: now) }
+        return next
+    }
+
+    /// 电量低：蔫一会儿。救回、拖着、跳着时不打断。
+    public static func droop(_ state: DesktopPetState, now: Date) -> DesktopPetState {
+        switch state.activity {
+        case .rescue, .dragged, .jump: return state
+        default: break
+        }
+        var next = state
+        next.activity = .droop(until: now.addingTimeInterval(droopDuration))
+        next.since = now
+        return next
+    }
+
+    /// 欢呼（专注完成一轮）。救回途中、拖着时不打断。
     public static func cheer(_ state: DesktopPetState, now: Date) -> DesktopPetState {
-        if case .rescue = state.activity { return state }
+        switch state.activity {
+        case .rescue, .dragged: return state
+        default: break
+        }
         var next = state
         next.activity = .cheer(until: now.addingTimeInterval(cheerDuration))
+        next.since = now
+        return next
+    }
+
+    /// 被鼠标抓起来。救回途中也可以抓（救回就此放弃，由外面另外处理）。
+    public static func grabbed(_ state: DesktopPetState, now: Date) -> DesktopPetState {
+        var next = state
+        next.activity = .dragged(since: now)
+        next.since = now
+        return next
+    }
+
+    /// 拖着时朝拖的方向：横着往左拖就朝左。
+    public static func dragging(_ state: DesktopPetState, dx: Double, now: Date) -> DesktopPetState {
+        guard case .dragged = state.activity, abs(dx) >= 1.5 else { return state }
+        var next = state
+        turn(&next, left: dx < 0, now: now)
+        return next
+    }
+
+    /// 落到新位置：压扁回弹一下，之后按平时的样子歇着。
+    public static func landed(_ state: DesktopPetState, at x: Double, now: Date) -> DesktopPetState {
+        var next = state
+        next.x = x
+        next.activity = .land(since: now)
         next.since = now
         return next
     }
@@ -260,51 +456,122 @@ public enum DesktopPetBrain {
         return false
     }
 
+    /// 位置、缩放这一刻还在变：要按显示刷新（60 帧）跟着画。静止、睡觉时是 false，
+    /// 只用慢计时器换帧（`tickRate`）。
+    public static func isMoving(_ state: DesktopPetState, now: Date) -> Bool {
+        if let turnedAt = state.turnedAt, now.timeIntervalSince(turnedAt) < turnDuration { return true }
+        switch state.activity {
+        case .walk, .jump, .land, .dragged: return true
+        case .rescue(let step):
+            switch step {
+            case .toTrash, .back: return true
+            case .pickUp, .arrived: return false
+            }
+        case .stretch(let since): return now.timeIntervalSince(since) < stretchDuration
+        default: return false
+        }
+    }
+
     /// 这一刻画什么。
     public static func pose(_ state: DesktopPetState, now: Date) -> DesktopPetPose {
         let elapsed = max(0, now.timeIntervalSince(state.since))
         let frame = Int(elapsed * fps)
         let left = state.facingLeft
+        var pose: DesktopPetPose
         switch state.activity {
-        case .idle:
-            return DesktopPetPose(image: "pet-panda-idle", height: sittingHeight)
-        case .sit:
-            return DesktopPetPose(image: "pet-panda-idle", height: sittingHeight)
+        case .idle, .sit, .peek:
+            pose = DesktopPetPose(image: blinking(now: now) ? "pet-panda-rest" : "pet-panda-idle",
+                                  facingLeft: left, height: sittingHeight)
         case .cheer:
-            return DesktopPetPose(image: "pet-panda-cheer", height: sittingHeight + 4)
+            pose = DesktopPetPose(image: "pet-panda-cheer", height: sittingHeight + 4)
+        case .droop:
+            pose = DesktopPetPose(image: "pet-panda-hungry", height: sittingHeight - 2)
+        case .curl:
+            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(1), facingLeft: left)
         case .walk:
-            return DesktopPetPose(image: DesktopPetStrip.walk.imageName(frame), facingLeft: left)
+            let index = Int(elapsed * walkFPS)
+            pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(index),
+                                  lift: bobHeight * abs(sin(state.x * .pi / strideLength)), facingLeft: left)
         case .jump:
             let t = min(1, elapsed / jumpDuration)
             let index = t < 0.2 ? 0 : (t < 0.8 ? 1 : 2)
-            return DesktopPetPose(image: DesktopPetStrip.jump.imageName(index),
+            pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(index),
                                   lift: jumpLift(t), facingLeft: left)
+            // 起跳前蹲一下、落地压一下。
+            let squash = t < 0.18 ? sin(t / 0.18 * .pi) : (t > 0.86 ? sin((t - 0.86) / 0.14 * .pi) : 0)
+            pose.scaleX = 1 + 0.08 * squash
+            pose.scaleY = 1 - 0.1 * squash
+        case .stretch(let since):
+            let t = min(1, now.timeIntervalSince(since) / stretchDuration)
+            if t < 0.45 {
+                // 前爪往前一伸、屁股撅起来：跳之前蹲下那一帧。
+                pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(0), facingLeft: left)
+                pose.scaleX = 1 + 0.06 * sin(t / 0.45 * .pi)
+            } else {
+                // 坐起来往上一抻。
+                pose = DesktopPetPose(image: "pet-panda-idle", facingLeft: left, height: sittingHeight)
+                pose.scaleY = 1 + 0.07 * sin((t - 0.45) / 0.55 * .pi)
+                pose.scaleX = 1 - 0.03 * sin((t - 0.45) / 0.55 * .pi)
+            }
+        case .yawn:
+            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(0), facingLeft: left,
+                                  height: sittingHeight + 8)
         case .sleep(let since):
             let asleep = now.timeIntervalSince(since)
             let index = asleep < 1.6 ? 0 : (asleep < 4 ? 1 : 2)
-            return DesktopPetPose(image: DesktopPetStrip.sleep.imageName(index))
+            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(index), facingLeft: left)
+            if index == 2 { pose.zzz = 1 + Int(asleep * 1.5) % 3 }
+        case .dragged(let since):
+            // 四脚乱蹬：跳起来那两帧来回换，身子左右晃。
+            let t = now.timeIntervalSince(since)
+            pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(1 + Int(t * 10) % 2), facingLeft: left)
+            pose.wobble = 7 * sin(t * 13)
+        case .land(let since):
+            let t = min(1, now.timeIntervalSince(since) / landDuration)
+            pose = DesktopPetPose(image: "pet-panda-idle", facingLeft: left, height: sittingHeight)
+            let squash = landSquash(t)
+            pose.scaleX = 1 + 0.14 * squash
+            pose.scaleY = 1 - 0.2 * squash
         case .rescue(let step):
             switch step {
             case .toTrash:
-                return DesktopPetPose(image: DesktopPetStrip.run.imageName(frame), facingLeft: left)
+                pose = DesktopPetPose(image: DesktopPetStrip.run.imageName(frame), facingLeft: left)
             case .pickUp(let since, _):
                 let t = min(1, now.timeIntervalSince(since) / pickUpDuration)
                 let index = t < 0.4 ? 0 : (t < 0.75 ? 1 : 2)
-                return DesktopPetPose(image: DesktopPetStrip.carry.imageName(index), facingLeft: left)
+                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(index), facingLeft: left)
             case .back:
-                // 叼着跑：第 4 帧加一点上下颠，看着在跑。
-                return DesktopPetPose(image: DesktopPetStrip.carry.imageName(3),
-                                      lift: frame % 2 == 0 ? 0 : 3, facingLeft: left)
+                // 叼着跑：第 4 帧，按跑过的路一颠一颠。
+                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(3),
+                                      lift: 3 * abs(sin(state.x * .pi / 18)), facingLeft: left)
             case .arrived:
-                return DesktopPetPose(image: DesktopPetStrip.carry.imageName(2))
+                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(2))
             }
         }
+        // 刚掉头：横着从窄到宽弹开，像转了个身。
+        if let turnedAt = state.turnedAt {
+            let t = now.timeIntervalSince(turnedAt) / turnDuration
+            if t >= 0, t < 1 { pose.scaleX *= 0.3 + 0.7 * (1 - (1 - t) * (1 - t)) }
+        }
+        return pose
     }
 
-    /// 睡着时计时器放慢。
+    /// 不在动时慢计时器每秒几次：睡着 2 次，其余 10 次（够看见眨眼）。
     public static func tickRate(_ state: DesktopPetState) -> Double {
         if case .sleep = state.activity { return sleepingFPS }
-        return fps
+        return restingFPS
+    }
+
+    /// 眨眼：每 4.3 秒闭一下眼，约 0.18 秒。按绝对时间算，不用存状态。
+    public static func blinking(now: Date) -> Bool {
+        let t = now.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 4.3)
+        return t >= 0 && t < 0.18
+    }
+
+    /// 落地压扁回弹：0 时压得最扁（1），中途回弹拉长一点（负数），最后回到 0。
+    public static func landSquash(_ t: Double) -> Double {
+        let t = min(1, max(0, t))
+        return (1 - t) * (1 - t) * cos(t * 3 * .pi)
     }
 
     // MARK: 内部
@@ -314,11 +581,94 @@ public enum DesktopPetBrain {
         return 4 * jumpHeight * t * (1 - t)
     }
 
-    private static func settle(_ state: DesktopPetState, now: Date, focusing: Bool,
+    /// 平时歇着的样子：散步、坐着的是发呆，贴边的是趴着。
+    static func rest(_ style: DesktopPetStyle, now: Date, random: () -> Double) -> DesktopPetActivity {
+        switch style {
+        case .stroll, .sit: .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+        case .curl: .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
+        }
+    }
+
+    /// 发呆完：散步的去走一段（偶尔打个哈欠），坐着的打哈欠、伸懒腰或者换个朝向。
+    private static func afterIdle(_ state: DesktopPetState, now: Date, lane: ClosedRange<Double>,
+                                  style: DesktopPetStyle, random: () -> Double) -> DesktopPetState {
+        var next = state
+        next.since = now
+        let roll = random()
+        if roll < 0.12 {
+            next.activity = .yawn(since: now)
+            return next
+        }
+        switch style {
+        case .stroll:
+            let target = strollTarget(from: next.x, lane: lane, random: random)
+            if abs(target - next.x) < 4 {
+                next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+            } else {
+                next.activity = .walk(to: target)
+                turn(&next, left: target < next.x, now: now)
+            }
+        case .sit:
+            if roll < 0.24 {
+                next.activity = .stretch(since: now)
+            } else {
+                if roll > 0.7 { turn(&next, left: !next.facingLeft, now: now) }
+                next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+            }
+        case .curl:
+            next.activity = .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
+        }
+        return next
+    }
+
+    /// 趴够了：探头看一眼、伸个懒腰、沿边挪几步，或者打个哈欠。
+    private static func afterCurl(_ state: DesktopPetState, now: Date, lane: ClosedRange<Double>,
+                                  random: () -> Double) -> DesktopPetState {
+        var next = state
+        next.since = now
+        let roll = random()
+        if roll < 0.32 {
+            next.activity = .peek(until: now.addingTimeInterval(peekDuration))
+        } else if roll < 0.52 {
+            next.activity = .stretch(since: now)
+        } else if roll < 0.8 {
+            let distance = lerp(shuffleRange, random())
+            let goLeft = random() < 0.5
+            var target = goLeft ? next.x - distance : next.x + distance
+            if target < lane.lowerBound || target > lane.upperBound {
+                target = goLeft ? next.x + distance : next.x - distance
+            }
+            target = clamp(target, lane)
+            if abs(target - next.x) < 4 {
+                next.activity = .peek(until: now.addingTimeInterval(peekDuration))
+            } else {
+                next.activity = .walk(to: target)
+                turn(&next, left: target < next.x, now: now)
+            }
+        } else {
+            next.activity = .yawn(since: now)
+        }
+        return next
+    }
+
+    /// 朝向某处（鼠标、刘海）。差得很近时不动，免得来回抖。
+    static func face(_ state: inout DesktopPetState, toward target: Double, now: Date) {
+        guard abs(target - state.x) > 6 else { return }
+        turn(&state, left: target < state.x, now: now)
+    }
+
+    /// 掉头：朝向真的变了才记下掉头的时刻。
+    static func turn(_ state: inout DesktopPetState, left: Bool, now: Date) {
+        guard state.facingLeft != left else { return }
+        state.facingLeft = left
+        state.turnedAt = now
+    }
+
+    private static func settle(_ state: DesktopPetState, now: Date, focusing: Bool, style: DesktopPetStyle,
                                random: () -> Double) -> DesktopPetState {
         var next = state
         next.since = now
-        next.activity = focusing ? .sit : .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
+        next.activity = focusing ? .sit : rest(style, now: now, random: random)
         return next
     }
 

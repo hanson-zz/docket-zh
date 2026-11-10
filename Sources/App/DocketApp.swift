@@ -240,8 +240,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 不记录键入内容。青轴以外的款式和导入 Mechvibes 声音包是码头 Pro。
         TypingSoundController.shared.apply(state.state.typingSounds)
 
-        // 桌面宠物（默认关）：小熊猫贴在程序坞上沿散步；废纸篓救回单独默认关。
+        // 桌面宠物（默认关）：小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上、拖到任意位置；
+        // 废纸篓救回单独默认关。拖到新位置、右键菜单改的设置写回状态文件。
         DesktopPetController.shared.shelfPosition = { [weak state] in state?.effectivePosition }
+        DesktopPetController.shared.onSettingsChange = { [weak state] next in state?.state.desktopPet = next }
+        DesktopPetController.shared.openSettings = { [weak state] in
+            guard let state else { return }
+            SettingsWindow.shared.show(app: state, tab: "Widgets")
+        }
         DesktopPetController.shared.apply(state.state.desktopPet)
 
         // 钉在桌面：扩展栏的卡片拖到桌面或右键「钉在桌面」变成桌面卡片，在所有窗口之后。
