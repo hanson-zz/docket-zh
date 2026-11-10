@@ -31,12 +31,17 @@ public struct AudioFade: Equatable, Sendable {
     /// 这一刻的系数。
     public func value(at now: Date) -> Double {
         let p = progress(at: now)
+        // 走完就是目标值本身，不留 1e-14 这种尾巴（淡出要真的到 0）。
+        guard p < 1 else { return to }
         return from + (to - from) * Self.curve(p)
     }
 
+    /// 0...1。离走完不到 1 毫秒算走完：`Date` 的精度在大时间戳上只到 1e-7 秒左右。
     public func progress(at now: Date) -> Double {
         guard duration > 0 else { return 1 }
-        return Self.clamp(now.timeIntervalSince(start) / duration)
+        let elapsed = now.timeIntervalSince(start)
+        if elapsed >= duration - 0.001 { return 1 }
+        return Self.clamp(elapsed / duration)
     }
 
     public func isDone(at now: Date) -> Bool { progress(at: now) >= 1 }

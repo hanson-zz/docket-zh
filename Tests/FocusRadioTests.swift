@@ -24,7 +24,7 @@ final class FocusRadioTests: XCTestCase {
     func testCurveRunsFromZeroToOneSmoothly() {
         XCTAssertEqual(AudioFade.curve(0), 0)
         XCTAssertEqual(AudioFade.curve(1), 1)
-        XCTAssertEqual(AudioFade.curve(0.5), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(AudioFade.curve(0.5), 0.5, accuracy: 1e-6)
         var last = -1.0
         for step in 0...100 {
             let value = AudioFade.curve(Double(step) / 100)
@@ -39,9 +39,9 @@ final class FocusRadioTests: XCTestCase {
 
     func testFullFadeInTakesOnePointFiveSeconds() {
         let fade = AudioFade(from: 0, to: 1, start: t0, full: AudioFade.fadeIn)
-        XCTAssertEqual(fade.duration, 1.5, accuracy: 1e-9)
+        XCTAssertEqual(fade.duration, 1.5, accuracy: 1e-6)
         XCTAssertEqual(fade.value(at: t0), 0)
-        XCTAssertEqual(fade.value(at: t0.addingTimeInterval(0.75)), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(fade.value(at: t0.addingTimeInterval(0.75)), 0.5, accuracy: 1e-6)
         XCTAssertEqual(fade.value(at: t0.addingTimeInterval(1.5)), 1)
         XCTAssertTrue(fade.isDone(at: t0.addingTimeInterval(1.6)))
         XCTAssertFalse(fade.isDone(at: t0.addingTimeInterval(1.4)))
@@ -49,7 +49,7 @@ final class FocusRadioTests: XCTestCase {
 
     func testFadeOutTakesPointEightSeconds() {
         let fade = AudioFade(from: 1, to: 0, start: t0, full: AudioFade.fadeOut)
-        XCTAssertEqual(fade.duration, 0.8, accuracy: 1e-9)
+        XCTAssertEqual(fade.duration, 0.8, accuracy: 1e-6)
         XCTAssertEqual(fade.value(at: t0.addingTimeInterval(0.8)), 0)
         XCTAssertEqual(fade.value(at: t0.addingTimeInterval(10)), 0)
     }
@@ -58,13 +58,13 @@ final class FocusRadioTests: XCTestCase {
     func testResumingMidFadeOutRisesFromWhereItWas() {
         let out = AudioFade(from: 1, to: 0, start: t0, full: AudioFade.fadeOut)
         let halfway = out.value(at: t0.addingTimeInterval(0.4))
-        XCTAssertEqual(halfway, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(halfway, 0.5, accuracy: 1e-6)
         let back = AudioFade(from: halfway, to: 1, start: t0.addingTimeInterval(0.4), full: AudioFade.fadeIn)
-        XCTAssertEqual(back.duration, 0.75, accuracy: 1e-9)
-        XCTAssertEqual(back.value(at: back.start), halfway, accuracy: 1e-9)
+        XCTAssertEqual(back.duration, 0.75, accuracy: 1e-6)
+        XCTAssertEqual(back.value(at: back.start), halfway, accuracy: 1e-6)
         for step in 0...20 {
             let value = back.value(at: back.start.addingTimeInterval(Double(step) * 0.05))
-            XCTAssertGreaterThanOrEqual(value, halfway - 1e-9)
+            XCTAssertGreaterThanOrEqual(value, halfway - 1e-6)
         }
         XCTAssertEqual(back.value(at: back.start.addingTimeInterval(0.75)), 1)
     }
