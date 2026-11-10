@@ -199,11 +199,11 @@ public enum DesktopPetBrain {
             }
             next.since = now
         case .walk(let target):
-            let target = clamp(target, lane)
-            let moved = move(next.x, toward: target, by: walkSpeed * dt)
+            let goal = clamp(target, lane)
+            let moved = move(next.x, toward: goal, by: walkSpeed * dt)
             next.x = moved
-            next.facingLeft = target < state.x
-            if moved == target {
+            next.facingLeft = goal < state.x
+            if moved == goal {
                 next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
                 next.since = now
             }
@@ -394,7 +394,7 @@ public struct DesktopPetPerch: Equatable, Sendable {
 
     /// 小熊猫中心能走到的范围：两头各留半只小熊猫。
     public var lane: ClosedRange<Double> {
-        let inset = min(36, frame.width / 4)
+        let inset: Double = min(36, Double(frame.width) / 4)
         let low = Double(frame.minX) + inset
         let high = max(low, Double(frame.maxX) - inset)
         return low...high
@@ -453,10 +453,11 @@ public enum DesktopPetPlacement {
     /// 读不到程序坞的位置（没有辅助功能权限）时按屏幕估一个：可见区域底下空出来的
     /// 就是程序坞的高度，宽度按图标个数估，居中。
     public static func estimatedDock(screen: CGRect, visible: CGRect, tileSize: Double, tiles: Int) -> CGRect? {
-        let height = visible.minY - screen.minY
+        let height = Double(visible.minY - screen.minY)
         guard height > 8 else { return nil }
-        let width = min(screen.width * 0.9, max(160, (Double(tiles) + 2) * (tileSize + 4) + 24))
-        return CGRect(x: screen.midX - width / 2, y: screen.minY, width: width, height: height)
+        let fitted: Double = max(160, (Double(tiles) + 2) * (tileSize + 4) + 24)
+        let width: Double = min(Double(screen.width) * 0.9, fitted)
+        return CGRect(x: Double(screen.midX) - width / 2, y: Double(screen.minY), width: width, height: height)
     }
 
     /// 一个窗口算不算铺满了这块屏幕（全屏 App）：差几个点也算。
