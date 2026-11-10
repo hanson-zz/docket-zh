@@ -246,4 +246,19 @@ final class RadioBrowseTests: XCTestCase {
         XCTAssertNil(RadioWorldMap(data: Data("[]".utf8)))
         XCTAssertNil(RadioWorldMap(data: Data(#"{"cols":0,"rows":2,"codes":[],"dots":[]}"#.utf8)))
     }
+
+    func testLofiPinnedStationsComeFirstOnFirstPage() {
+        let search = RadioSearch(genre: .lofi)
+        let pinned = RadioGenre.pinned(for: search, page: 0)
+        XCTAssertEqual(pinned.map(\.station.name), ["REYFM #LOFI", "FluxFM ChillHop"])
+        XCTAssertTrue(pinned.allSatisfy { $0.station.url.hasPrefix("https://") })
+        XCTAssertTrue(RadioGenre.pinned(for: search, page: 1).isEmpty)
+        XCTAssertTrue(RadioGenre.pinned(for: RadioSearch(name: "x", genre: .lofi), page: 0).isEmpty)
+        XCTAssertTrue(RadioGenre.pinned(for: RadioSearch(genre: .jazz), page: 0).isEmpty)
+        let fromDirectory = RadioListing(station: RadioStation(id: "dir", name: "Other",
+                                                               url: "https://listen.reyfm.de/lofi_320kbps.mp3"), clicks: 999)
+        let merged = RadioBrowse.merge(pinned, batches: [[fromDirectory]])
+        XCTAssertEqual(merged.count, 2)
+        XCTAssertEqual(merged.first?.station.name, "REYFM #LOFI")
+    }
 }

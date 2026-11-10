@@ -47,6 +47,31 @@ public enum RadioGenre: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// 流派第一页最前面固定放的几个台（目录里搜不到或排得靠后，但实测好听好用的）。
+    /// 2026-11-10 实测都是 HTTPS、302 后回 audio/mpeg。
+    public var pinned: [RadioListing] {
+        switch self {
+        case .lofi:
+            [
+                RadioListing(station: RadioStation(id: "pin-reyfm-lofi", name: "REYFM #LOFI",
+                                                   url: "https://listen.reyfm.de/lofi_320kbps.mp3",
+                                                   codec: "MP3", bitrate: 320),
+                             place: tr("德国")),
+                RadioListing(station: RadioStation(id: "pin-fluxfm-chillhop", name: "FluxFM ChillHop",
+                                                   url: "https://streams.fluxfm.de/Chillhop/mp3-320",
+                                                   codec: "MP3", bitrate: 320),
+                             place: tr("德国")),
+            ]
+        default: []
+        }
+    }
+
+    /// 某次找台第一页开头先放的固定台：只在选了流派、没搜名字、没限国家时放。
+    public static func pinned(for search: RadioSearch, page: Int) -> [RadioListing] {
+        guard page == 0, let genre = search.genre, search.name.isEmpty, search.country == nil else { return [] }
+        return genre.pinned
+    }
+
     /// 再点一下选中的那个就取消，回到“热门”。
     public static func toggled(_ tapped: RadioGenre?, current: RadioGenre?) -> RadioGenre? {
         guard let tapped else { return nil }
