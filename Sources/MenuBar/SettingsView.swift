@@ -1309,6 +1309,9 @@ struct SettingsView: View {
             // 钉在桌面：扩展栏卡片拖到桌面变成桌面卡片。
             DesktopPinSettingsSection(state: $state)
 
+            // 桌面宠物：小熊猫贴在程序坞上沿，和电子宠物、喝水的角色放在同一页。
+            DesktopPetSettingsSection(settings: $state.desktopPet)
+
             // Only when there is one to configure. These are settings for a
             // widget, and showing them to somebody whose shelf has no Focus
             // Timer on it is the same noise as any other control that does

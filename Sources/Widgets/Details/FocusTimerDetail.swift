@@ -5,7 +5,8 @@ import SwiftUI
 /// 时间轴（每个完整的番茄一段，正在做的淡一点，白线是现在）和近七天统计，这两样
 /// 收在“今天”一段里（没解锁时近七天统计换成折叠外的一行 Pro 提示），默认收起，标题行写今天专注了多久。点“设置”在面板里
 /// 直接调专注、短休息、长休息、几轮一组，点最近的任务名沿用，选开始专注时放的
-/// 环境音、音量，休息时声音停不停、提不提醒起身。
+/// 环境音、音量，休息时声音停不停、提不提醒起身。专注进行中进度环右边有一根竹竿，
+/// 小熊猫按进度往上爬（码头 Pro），见 `FocusBambooClimber`。
 ///
 /// 计时器全应用只有一个，所有操作都写 `TimerStateProvider.shared.state`，和卡片一样：
 /// 暂停存下剩余的秒数，继续从屏幕上的数字接着走。番茄段见 `FocusDay`，环境音联动见
@@ -94,6 +95,13 @@ struct FocusTimerDetail: View {
             taskField
             ring(state, left: left, total: total)
                 .frame(maxWidth: .infinity)
+                // 专注进行中，进度环右边一根竹竿，小熊猫按进度往上爬（码头 Pro，
+                // 免费是一只静态的小熊猫），见 `FocusBambooClimber`。
+                .overlay(alignment: .trailing) {
+                    FocusBambooClimber(state: state, now: now,
+                                       unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked),
+                                       isPreview: context.isPreview)
+                }
             HStack(spacing: 8) {
                 bigButton(primaryTitle(state, left: left), solid: true) { togglePrimary() }
                 let untouched = state.deadline == nil && state.paused == nil && state.duration == nil

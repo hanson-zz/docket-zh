@@ -67,6 +67,9 @@ import Foundation
 /// - 程序坞 App 换显示图标（`Setting.dockAppIcons`），见 `DockAppIcons`。
 /// - 打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包（`Setting.typingSounds`），见
 ///   `TypingSoundGate`。总开关、青轴、音量、试听免费。
+/// - 专注陪伴（`Setting.focusPanda`）：专注计时面板里小熊猫顺着竹竿往上爬、中途结束滑下来、
+///   完成一轮到顶欢呼，和桌面宠物专注时坐着陪、结束时欢呼，见 `FocusPandaClimb`。免费用户
+///   在竹竿旁看到一只静态的小熊猫；桌面宠物本身免费。
 public enum ProFeatures {
 
     /// 胶囊上的字。
@@ -183,6 +186,9 @@ public enum ProFeatures {
         /// 和导入 Mechvibes 声音包。总开关、青轴、音量、试听免费。没解锁时选着的 Pro 款按青轴响，
         /// 选择照旧存着，见 `TypingSoundGate.effectiveChoice`。
         case typingSounds
+        /// 专注计时面板的小熊猫爬竹竿和桌面宠物的专注陪伴。没解锁时竹竿旁是一只静态的
+        /// 小熊猫，桌面宠物专注时照常散步，见 `FocusPandaClimb`。
+        case focusPanda
     }
 
     // MARK: 判断

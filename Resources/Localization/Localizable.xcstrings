@@ -2179,6 +2179,182 @@
         }
       }
     },
+    "专注陪伴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Buddy"
+          }
+        }
+      }
+    },
+    "刚拖进废纸篓的文件或文件夹（10 秒内），小熊猫跑过去叼回来，放回原处。清空废纸篓不受影响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you drag a file or folder to the Trash, the red panda runs over within 10 seconds, carries it back and puts it back where it was. Emptying the Trash is never affected."
+          }
+        }
+      }
+    },
+    "完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Disk Access: to see what just went into the Trash and where it came from. Automation, allowing Dockling to control Finder: so Finder can put the files back. macOS asks the first time. Without Automation, the red panda only carries the files back and offers a Put Back button."
+          }
+        }
+      }
+    },
+    "小熊猫滑下来了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda slid down"
+          }
+        }
+      }
+    },
+    "小熊猫爬到 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda has climbed %@%%"
+          }
+        }
+      }
+    },
+    "小熊猫爬到顶，欢呼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda reached the top and cheers"
+          }
+        }
+      }
+    },
+    "小熊猫爬竹竿陪你专注是码头 Pro 专属。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda climbing the bamboo while you focus is part of Dockling Pro. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
+    "小熊猫贴在程序坞上沿散步、发呆，几分钟没操作就睡觉，点它会跳一下。全屏 App 或程序坞自动隐藏时不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A red panda strolls and daydreams along the top of the Dock, falls asleep after a few idle minutes and jumps when you click it. Hidden while an app is full screen or the Dock hides automatically."
+          }
+        }
+      }
+    },
+    "废纸篓救回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash Rescue"
+          }
+        }
+      }
+    },
+    "废纸篓救回需要两项权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash Rescue needs two permissions"
+          }
+        }
+      }
+    },
+    "开着专注计时时小熊猫坐在程序坞上陪你，完成一轮会欢呼（码头 Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While the Focus Timer runs, the red panda sits on the Dock with you and cheers when a session is done (Dockling Pro)."
+          }
+        }
+      }
+    },
+    "打开并去授权" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On and Grant Access"
+          }
+        }
+      }
+    },
+    "把小熊猫叼回来的文件放回原来的位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put the files the red panda carried back where they came from"
+          }
+        }
+      }
+    },
+    "放回原处（%@ 项）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put Back (%@ items)"
+          }
+        }
+      }
+    },
+    "桌面宠物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Pet"
+          }
+        }
+      }
+    },
+    "桌面宠物小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop pet red panda"
+          }
+        }
+      }
+    },
     "用 ⌘Tab 打开窗口切换器" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2197,6 +2373,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When on, Dockling takes over the system ⌘Tab. Turning this off or quitting Dockling restores it."
+          }
+        }
+      }
+    },
+    "直接打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On"
           }
         }
       }
@@ -5251,6 +5438,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Silver"
+          }
+        }
+      }
+    },
+    "需要完全磁盘访问权限才看得见废纸篓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Disk Access is needed to see the Trash"
           }
         }
       }
@@ -69090,13 +69288,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤；打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤；打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包；专注计时的小熊猫爬竹竿陪伴" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins; the six Typing Sounds beyond Blue switch, and importing Mechvibes sound packs"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins; the six Typing Sounds beyond Blue switch, and importing Mechvibes sound packs; the red panda that climbs bamboo beside the Focus Timer"
           }
         }
       }

@@ -57,6 +57,7 @@ targets:
       - path: Resources/MenuBar
         buildPhase: resources
       # 电子宠物的状态图（吃饭、饿了、生病，以及小熊猫的全身六种），作为普通资源打包。
+      # sprites/ 是桌面宠物和专注陪伴的动作帧（走、跑、跳、叼东西、睡，@2x、256 色 PNG）。
       - path: Resources/Pet
         buildPhase: resources
       # 设置 ▸ 通用 ▸ 应用图标 里可选的运行时图标（小熊猫码头等），作为普通资源打包。
@@ -129,8 +130,11 @@ targets:
       # 电池的霓虹灯管样式：纯逻辑和数字视图都只用 Foundation、SwiftUI、AppKit，和扩展栏卡片共用。
       - path: Sources/Core/BatteryNeon.swift
       - path: Sources/Widgets/Kinds/BatteryNeonDigits.swift
+      # 桌面宠物的动作帧只有主 App 用，不打进小组件扩展。
       - path: Resources/Pet
         buildPhase: resources
+        excludes:
+          - "sprites/**"
       - path: Resources/Water
         buildPhase: resources
       - path: Resources/Localization/Localizable.xcstrings
