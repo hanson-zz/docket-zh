@@ -84,6 +84,11 @@ public struct AmbientSynth: Sendable {
     private var masterTarget: Float = 0.5
     private var master: Float = 0.5
     private let glide: Float
+    /// 淡入淡出的系数（`AudioFade` 的平滑阶梯之前的线性进度），1 是不淡。
+    private var fadeLevel: Float = 1
+    private var fadeTarget: Float = 1
+    /// 每个采样走多少，走满 0 到 1 是 `fade(to:over:)` 给的秒数。
+    private var fadeStep: Float = 1
 
     private var seed: UInt64
 
@@ -161,6 +166,22 @@ public struct AmbientSynth: Sendable {
         for index in targets.indices { targets[index] = 0 }
     }
 
+    /// 整体淡到 `target`（0...1），走满 0 到 1 用 `seconds` 秒，只走一半就只用一半的时间。
+    /// 淡出一半又淡入，从那一半往回升。曲线见 `AudioFade.curve`。
+    public mutating func fade(to target: Double, over seconds: Double) {
+        fadeTarget = Float(AudioFade.clamp(target))
+        fadeStep = seconds > 0 ? Float(1 / (seconds * sampleRate)) : 1
+    }
+
+    /// 直接把淡入淡出系数放到 `value`，淡入从 0 起时用。
+    public mutating func setFade(_ value: Double) {
+        fadeLevel = Float(AudioFade.clamp(value))
+        fadeTarget = fadeLevel
+    }
+
+    /// 现在的淡入淡出进度，0...1（曲线之前）。
+    public var fadeProgress: Double { Double(fadeLevel) }
+
     /// True once every sound has faded all the way out.
     public var isSilent: Bool {
         gains.allSatisfy { $0 < 0.0005 } && targets.allSatisfy { $0 == 0 }
@@ -193,7 +214,12 @@ public struct AmbientSynth: Sendable {
 
         // A soft knee rather than a hard clip: several sounds at once can
         // sum past full scale, and a clip there is a crackle nobody chose.
-        let driven = mix * master
+        if fadeLevel != fadeTarget {
+            fadeLevel = fadeLevel < fadeTarget ? min(fadeTarget, fadeLevel + fadeStep)
+                                               : max(fadeTarget, fadeLevel - fadeStep)
+        }
+        let shaped = fadeLevel >= 1 ? 1 : Float(AudioFade.curve(Double(fadeLevel)))
+        let driven = mix * master * shaped
         return driven / (1 + abs(driven) * 0.6)
     }
 

@@ -113,6 +113,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FocusLogStore.shared.start()
         // 专注计时一轮到点后接休息、休息完回到专注，同样从启动起就看着。
         FocusCycleDriver.shared.start()
+        // 专注时放收音机收藏里的台：从每个布局的收音机小组件读收藏。
+        FocusAmbientDriver.shared.widgets = { [state] in state.allWidgets }
         // 倒计时、闹钟、快速待办和提醒事项到点：从启动起就看着每个布局里的这几种
         // 小组件，扩展栏隐藏、卡片不在当前布局也照样响、照样弹出卡片。
         TimedAlertDriver.shared.widgets = { [state] in state.allWidgets }

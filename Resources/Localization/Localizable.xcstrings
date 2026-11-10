@@ -32090,6 +32090,28 @@
         }
       }
     },
+    "收音机收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radio favorites"
+          }
+        }
+      }
+    },
+    "去收音机收藏几个台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite a few stations in Radio"
+          }
+        }
+      }
+    },
     "换个国名试试，比如“日本”或“Japan”。" : {
       "extractionState" : "manual",
       "localizations" : {

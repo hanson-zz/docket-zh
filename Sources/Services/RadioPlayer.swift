@@ -17,6 +17,10 @@ import Observation
 /// 有备用地址的电台先按顺序换备用地址，一轮都失败才按上面的间隔退避
 /// （`RadioFailover`）。定时关闭最后 30 秒线性渐弱（`RadioFade`），渐弱中
 /// 手动调音量、换台或暂停就取消渐弱并关掉这次定时。
+///
+/// 开始播放约 1.5 秒淡入（等声音真的出来才开始），暂停、停止约 0.8 秒淡出再断开，
+/// 换台先淡出再淡入（`AudioFade`）。淡出途中再点播放，从当时的音量往回升。
+/// 每个台记住用户调过的音量（`RadioVolumeMemory`），切到这个台时套用。
 @MainActor @Observable
 final class RadioPlayer {
     static let shared = RadioPlayer()
@@ -38,6 +42,9 @@ final class RadioPlayer {
     private(set) var timerMinutes = 0
     /// 定时关闭最后 30 秒正在渐弱。
     private(set) var isFading = false
+    /// 每个台用户调过的音量（台 id → 0...100），切台时套用。
+    private(set) var stationVolumes: [String: Int] =
+        RadioVolumeMemory.decode(UserDefaults.standard.dictionary(forKey: RadioVolumeMemory.key))
 
     @ObservationIgnored private var player: AVPlayer?
     @ObservationIgnored private var statusObservation: NSKeyValueObservation?
@@ -54,6 +61,18 @@ final class RadioPlayer {
     @ObservationIgnored private var fadeMultiplier = 1.0
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var volume: Double = 60
+    /// 淡入淡出的系数，和定时关闭的 `fadeMultiplier` 相乘。1 是不淡。
+    @ObservationIgnored private var rampValue = 1.0
+    @ObservationIgnored private var ramp: AudioFade?
+    @ObservationIgnored private var rampDone: (() -> Void)?
+    @ObservationIgnored private var rampTimer: Timer?
+    /// 连上了还没出声：等 `timeControlStatus` 变成在播再淡入，缓冲期间不白白走完淡入。
+    @ObservationIgnored private var awaitingAudio = false
+    @ObservationIgnored private var awaitTask: Task<Void, Never>?
+    /// 正在淡出、淡完就断开。
+    @ObservationIgnored private var pendingPause = false
+    /// 没在播放时拖了音量：下次播放用拖的这个，并记给那个台。
+    @ObservationIgnored private var volumeSetWhilePaused = false
     @ObservationIgnored private let relay = RadioMetadataRelay()
 
     @ObservationIgnored private var playlist: [RadioStation] = []
@@ -75,6 +94,7 @@ final class RadioPlayer {
         plays(station) ? pause() : play(station, volume: volume, stations: stations, owner: owner)
     }
 
+    /// `volume` 是面板上的音量；这个台记过音量就用记的（`RadioVolumeMemory`）。
     func play(_ station: RadioStation, volume: Double, stations: [RadioStation]? = nil, owner: UUID? = nil) {
         guard RadioDial.streamURL(station.url) != nil else { return }
         // 渐弱中换台是手动操作，取消渐弱。
@@ -87,12 +107,41 @@ final class RadioPlayer {
         round = 0
         addressIndex = 0
         nextAddress = 0
-        if !(self.station?.matches(station) ?? false) { nowTitle = nil }
+        let level: Double
+        if volumeSetWhilePaused {
+            volumeSetWhilePaused = false
+            level = min(max(volume, 0), 100)
+            remember(level, id: station.id)
+        } else {
+            level = RadioVolumeMemory.volume(for: station.id, in: stationVolumes, fallback: volume)
+        }
+        let sameStation = self.station?.matches(station) ?? false
+        let hasItem = player?.currentItem != nil
+        if !sameStation { nowTitle = nil }
         self.station = station
-        self.volume = volume
         problem = nil
         isPlaying = true
-        connect()
+        syncOwnerVolume(level)
+        if pendingPause, sameStation, hasItem {
+            // 淡出途中又点了播放：接着这条连接，从现在的音量升回去。
+            pendingPause = false
+            self.volume = level
+            applyGain()
+            rampTo(1, full: AudioFade.fadeIn)
+        } else if audible {
+            // 换台：先把正在响的淡出，再连新台、淡入。
+            pendingPause = false
+            isBuffering = true
+            rampTo(0, full: AudioFade.fadeOut) { [weak self] in
+                guard let self, self.isPlaying else { return }
+                self.volume = level
+                self.connectFadingIn()
+            }
+        } else {
+            pendingPause = false
+            self.volume = level
+            connectFadingIn()
+        }
         if timerMinutes > 0, stopAt == nil {
             stopAt = .now.addingTimeInterval(Double(timerMinutes) * 60)
         }
@@ -100,7 +149,9 @@ final class RadioPlayer {
         publishSession()
     }
 
+    /// 正在出声时先淡出约 0.8 秒再断开；还在缓冲、没出声就马上断开。
     func pause() {
+        let fading = audible
         isPlaying = false
         isBuffering = false
         problem = nil
@@ -108,10 +159,32 @@ final class RadioPlayer {
         cancelRetry()
         ticker?.invalidate()
         ticker = nil
+        awaitingAudio = false
+        awaitTask?.cancel()
+        awaitTask = nil
+        publishSession()
+        if fading {
+            pendingPause = true
+            rampTo(0, full: AudioFade.fadeOut) { [weak self] in self?.finishPause() }
+        } else {
+            finishPause()
+        }
+    }
+
+    /// 淡出走完（或不用淡出）：断开连接，音量系数恢复，下次播放从 0 淡入。
+    private func finishPause() {
+        pendingPause = false
+        cancelRamp()
         dropItem()
         // 先断开再恢复音量，渐弱到 0 的那一刻不会冒出一下原音量。
         endFade()
-        publishSession()
+        rampValue = 1
+    }
+
+    /// 现在真的有声音出来：有连接、在播、音量系数不是 0。
+    private var audible: Bool {
+        guard let player, player.currentItem != nil else { return false }
+        return player.timeControlStatus == .playing && rampValue * fadeMultiplier > 0.01
     }
 
     func stop() {
@@ -163,7 +236,109 @@ final class RadioPlayer {
     func setVolume(_ volume: Double) {
         cancelFade()
         self.volume = volume
-        player?.volume = Self.gain(volume, fade: fadeMultiplier)
+        applyGain()
+        // 正在放的台记住这个音量；没在放时只记下“拖过”，下次播放用它。
+        if isPlaying, let station { remember(volume, id: station.id) } else { volumeSetWhilePaused = true }
+    }
+
+    /// 这个台现在该用的音量：记过就是记的，没记过是 `fallback`。
+    func volume(for station: RadioStation, fallback: Double) -> Double {
+        RadioVolumeMemory.volume(for: station.id, in: stationVolumes, fallback: fallback)
+    }
+
+    /// 专注计时面板上给某个台调音量：正在放这个台就马上生效，否则只记住。
+    func remember(_ volume: Double, for station: RadioStation) {
+        if plays(station) {
+            cancelFade()
+            self.volume = volume
+            applyGain()
+            syncOwnerVolume(volume)
+        }
+        remember(volume, id: station.id)
+    }
+
+    private func remember(_ volume: Double, id: String) {
+        let next = RadioVolumeMemory.remembering(volume, for: id, in: stationVolumes)
+        guard next != stationVolumes else { return }
+        stationVolumes = next
+        UserDefaults.standard.set(next, forKey: RadioVolumeMemory.key)
+    }
+
+    /// 切到记过音量的台时，开始播放的那个收音机小组件的音量滑杆跟着显示实际音量。
+    private func syncOwnerVolume(_ level: Double) {
+        guard let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio,
+              abs(instance.config.double("volume", default: 60) - level) >= 0.5 else { return }
+        WidgetWriter.write(instance) { $0.set("volume", .number(level.rounded())) }
+    }
+
+    private func applyGain() {
+        player?.volume = Self.gain(volume, fade: fadeMultiplier * rampValue)
+    }
+
+    // MARK: Fade in and out
+
+    /// 系数从现在的值走到 `target`，走满 0 到 1 用 `full` 秒；走完调 `done`。
+    /// 新的一段会顶掉还没走完的那段（连同它的 `done`）。
+    private func rampTo(_ target: Double, full: Double, then done: (() -> Void)? = nil) {
+        cancelRamp()
+        let fade = AudioFade(from: rampValue, to: target, start: .now, full: full)
+        guard fade.duration > 0 else {
+            rampValue = fade.to
+            applyGain()
+            done?()
+            return
+        }
+        ramp = fade
+        rampDone = done
+        let timer = Timer(timeInterval: AudioFade.tick, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.stepRamp() }
+        }
+        timer.tolerance = AudioFade.tick / 3
+        RunLoop.main.add(timer, forMode: .common)
+        rampTimer = timer
+    }
+
+    private func stepRamp() {
+        guard let ramp else { cancelRamp(); return }
+        let now = Date()
+        rampValue = ramp.value(at: now)
+        applyGain()
+        guard ramp.isDone(at: now) else { return }
+        let done = rampDone
+        cancelRamp()
+        done?()
+    }
+
+    private func cancelRamp() {
+        rampTimer?.invalidate()
+        rampTimer = nil
+        ramp = nil
+        rampDone = nil
+    }
+
+    /// 从静音连上，等声音出来再淡入。万一一直等不到在播的通知（几秒后），也照样淡入，
+    /// 音量不会卡在 0。
+    private func connectFadingIn() {
+        guard isPlaying else { return }
+        cancelRamp()
+        rampValue = 0
+        awaitingAudio = true
+        connect()
+        awaitTask?.cancel()
+        awaitTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(6))
+            guard !Task.isCancelled else { return }
+            self?.beginFadeIn()
+        }
+        if player?.timeControlStatus == .playing, player?.currentItem?.status == .readyToPlay { beginFadeIn() }
+    }
+
+    private func beginFadeIn() {
+        guard awaitingAudio, isPlaying else { return }
+        awaitingAudio = false
+        awaitTask?.cancel()
+        awaitTask = nil
+        rampTo(1, full: AudioFade.fadeIn)
     }
 
     /// 0 turns the timer off. Counting starts now when playing, or at the
@@ -194,7 +369,7 @@ final class RadioPlayer {
         item.add(output)
 
         let player = self.player ?? makePlayer()
-        player.volume = Self.gain(volume, fade: fadeMultiplier)
+        player.volume = Self.gain(volume, fade: fadeMultiplier * rampValue)
         player.replaceCurrentItem(with: item)
         isBuffering = true
         watch(item)
@@ -257,6 +432,7 @@ final class RadioPlayer {
             problem = nil
             round = 0
             cancelRetry()
+            if awaitingAudio { beginFadeIn() }
         case .waitingToPlayAtSpecifiedRate:
             isBuffering = true
         case .paused:
@@ -346,7 +522,7 @@ final class RadioPlayer {
         case .fading(let multiplier):
             isFading = true
             fadeMultiplier = multiplier
-            player?.volume = Self.gain(volume, fade: multiplier)
+            applyGain()
         case .full, .off:
             if isFading { endFade() }
         }
@@ -356,7 +532,7 @@ final class RadioPlayer {
     private func endFade() {
         isFading = false
         fadeMultiplier = 1
-        player?.volume = Self.gain(volume)
+        applyGain()
     }
 
     /// 渐弱中用户手动调音量、换台：取消渐弱，也关掉这次定时（还剩不到 30 秒，
