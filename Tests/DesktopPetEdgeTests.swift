@@ -375,4 +375,18 @@ final class DesktopPetEdgeTests: XCTestCase {
         timer = DesktopPetQuickAction.toggledFocus(timer, now: t0.addingTimeInterval(600))
         XCTAssertEqual(timer.deadline, t0.addingTimeInterval(600 + Double(timer.minutes * 60) - 60), "从剩下的接着走")
     }
+
+    func testWalkFramesFollowDistanceNotTime() {
+        let step = DesktopPetBrain.walkStep
+        let frames = (0..<8).map { DesktopPetBrain.walkFrame(x: 400 + Double($0) * step + 0.5) }
+        XCTAssertEqual(Set(frames), [0, 1, 2], "三张走路帧都会放到")
+        for (a, b) in zip(frames, frames.dropFirst()) {
+            XCTAssertEqual(abs(a - b), 1, "来回放，相邻两步只差一张，不从第 3 张跳回第 1 张")
+        }
+        // 站着不动（时间在走、位置没变）就不换帧。
+        let state = DesktopPetState(x: 300, activity: .walk(to: 500), since: t0)
+        let early = DesktopPetBrain.pose(state, now: t0).image
+        let later = DesktopPetBrain.pose(state, now: t0.addingTimeInterval(1.3)).image
+        XCTAssertEqual(early, later)
+    }
 }
