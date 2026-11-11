@@ -51,7 +51,12 @@ struct FileShelfTile: View {
                 targeted = inside
                 dragged = count
             },
-            receive: { urls in _ = FileShelf.add(urls, to: instance) }))
+            receive: { _ in },
+            receiveAt: { urls, point in
+                if FileShelf.add(urls, to: instance) {
+                    DesktopPetController.shared.fileStored(at: point)
+                }
+            }))
         // 自动移出：现在看一次，再睡到下一个条目到期（最多一小时）再看。
         .task(id: sweepKey) {
             guard !context.isPreview else { return }

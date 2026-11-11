@@ -166,6 +166,8 @@ public enum DesktopPetActivity: Equatable, Sendable {
     case idle(until: Date)
     /// 沿着那条边走到某处（程序坞上散步，或者贴边时挪几步）。
     case walk(to: Double)
+    case edgePause(until: Date)
+    case fileDelivery(to: Double)
     /// 睡觉（先打哈欠，再趴下，再团成一团）。
     case sleep(since: Date)
     /// 跳一下（被点、插上电源），之后回去歇着。
@@ -307,6 +309,13 @@ public enum DesktopPetBrain {
         switch state.activity {
         case .rescue(let step):
             return rescueStep(next, step: step, dt: dt, now: now, lane: lane)
+        case .fileDelivery(let target):
+            let goal = clamp(target, lane)
+            next.x = move(next.x, toward: goal, by: carrySpeed * dt)
+            if next.x == goal {
+                return settle(next, now: now, focusing: focusing, style: style, random: random)
+            }
+            return next
         case .dragged:
             return next
         case .jump(let since):
@@ -377,13 +386,23 @@ public enum DesktopPetBrain {
             guard now.timeIntervalSince(since) >= yawnDuration else { return next }
             next.activity = rest(style, now: now, random: random)
             next.since = now
+        case .edgePause(let until):
+            guard now >= until else { return next }
+            let target = lane.lowerBound + lane.upperBound - next.x
+            next.activity = .walk(to: move(next.x, toward: target, by: 42))
+            next.since = now
+            turn(&next, left: target < next.x, now: now)
         case .walk(let target):
             let goal = clamp(target, lane)
-            let moved = move(next.x, toward: goal, by: walkSpeed * dt)
+            let isEdge = style == .stroll && lane.upperBound - lane.lowerBound > 12
+                && (goal == lane.lowerBound || goal == lane.upperBound)
+            let speed = isEdge ? walkSpeed * min(1, max(0.35, abs(goal - next.x) / 24)) : walkSpeed
+            let moved = move(next.x, toward: goal, by: speed * dt)
+            if goal != next.x { turn(&next, left: goal < next.x, now: now) }
             next.x = moved
-            turn(&next, left: goal < state.x, now: now)
             if moved == goal {
-                next.activity = rest(style, now: now, random: random)
+                next.activity = isEdge ? .edgePause(until: now.addingTimeInterval(0.20))
+                    : rest(style, now: now, random: random)
                 next.since = now
             }
         default:
@@ -493,7 +512,7 @@ public enum DesktopPetBrain {
     public static func isMoving(_ state: DesktopPetState, now: Date) -> Bool {
         if let turnedAt = state.turnedAt, now.timeIntervalSince(turnedAt) < turnDuration { return true }
         switch state.activity {
-        case .walk, .jump, .land, .dragged: return true
+        case .walk, .fileDelivery, .jump, .land, .dragged: return true
         case .rescue(let step):
             switch step {
             case .toTrash, .back: return true
@@ -511,7 +530,9 @@ public enum DesktopPetBrain {
         let left = state.facingLeft
         var pose: DesktopPetPose
         switch state.activity {
-        case .idle, .sit:
+        case .fileDelivery:
+            pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(frame), facingLeft: left)
+        case .idle, .sit, .edgePause:
             pose = DesktopPetPose(image: sittingImage(now: now), facingLeft: left)
         case .peek(let until):
             // 趴着抬头看一眼：前 4 帧抬起来停在第 4 帧，快结束时用最后 2 帧趴回去。
@@ -838,7 +859,7 @@ public enum DesktopPetBrain {
         let distance = lerp(shuffleRange, random())
         let goLeft = random() < 0.5
         var target = goLeft ? next.x - distance : next.x + distance
-        if target < lane.lowerBound || target > lane.upperBound {
+        if clamp(target, lane) == x {
             target = goLeft ? next.x + distance : next.x - distance
         }
         target = clamp(target, lane)
@@ -909,7 +930,7 @@ public enum DesktopPetBrain {
         let goLeft = random() < 0.5
         var target = goLeft ? x - distance : x + distance
         // 走不出去就掉头。
-        if target < lane.lowerBound || target > lane.upperBound {
+        if clamp(target, lane) == x {
             target = goLeft ? x + distance : x - distance
         }
         return clamp(target, lane)

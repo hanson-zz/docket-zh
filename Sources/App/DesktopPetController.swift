@@ -404,6 +404,31 @@ final class DesktopPetController: NSObject {
         advance()
     }
 
+    func fileStored(at point: CGPoint) {
+        guard shown, !dragging, let track, track.style == .stroll, var current = state,
+              let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }),
+              screen.frame.contains(track.feet(along: current.x)) else { return }
+        switch current.activity {
+        case .rescue, .jump, .land, .dragged, .fileDelivery: return
+        default: break
+        }
+        let now = Date()
+        let goal = track.along(of: point)
+        guard abs(goal - current.x) >= 4 else {
+            state = DesktopPetBrain.cheer(current, now: now)
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
+        DesktopPetBrain.turn(&current, left: goal < current.x, now: now)
+        current.activity = .fileDelivery(to: goal)
+        current.since = now
+        state = current
+        lastStep = now
+        render(now: now)
+        updateClock(now: now)
+    }
+
     private func advance() {
         guard shown, let track, var current = state else { return }
         let now = Date()

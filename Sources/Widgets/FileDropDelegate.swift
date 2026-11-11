@@ -15,6 +15,7 @@ struct FileDropDelegate: DropDelegate {
     /// 有没有文件停在卡片上、几个。
     var update: @MainActor (Bool, Int) -> Void
     var receive: @MainActor ([URL]) -> Void
+    var receiveAt: (@MainActor ([URL], CGPoint) -> Void)? = nil
 
     private func count(_ info: DropInfo) -> Int {
         info.itemProviders(for: Self.types).count
@@ -46,12 +47,15 @@ struct FileDropDelegate: DropDelegate {
         let providers = info.itemProviders(for: Self.types)
         guard enabled, !providers.isEmpty else { return false }
         let receive = self.receive
+        let receiveAt = self.receiveAt
+        let point = NSEvent.mouseLocation
         Task { @MainActor in
             var urls: [URL] = []
             for provider in providers {
                 if let url = await Self.load(provider) { urls.append(url) }
             }
-            if !urls.isEmpty { receive(urls) }
+            guard !urls.isEmpty else { return }
+            if let receiveAt { receiveAt(urls, point) } else { receive(urls) }
         }
         return true
     }

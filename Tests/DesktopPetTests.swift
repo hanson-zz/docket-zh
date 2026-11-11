@@ -111,9 +111,32 @@ final class DesktopPetTests: XCTestCase {
     }
 
     func testStrollTurnsAroundAtTheEdge() {
-        let target = DesktopPetBrain.strollTarget(from: 110, lane: lane, random: { 0.2 })
-        XCTAssertGreaterThan(target, 110, "左边走不出去就往右")
+        let target = DesktopPetBrain.strollTarget(from: 100, lane: lane, random: { 0.2 })
+        XCTAssertGreaterThan(target, 100, "左边走不出去就往右")
         XCTAssertTrue(lane.contains(target))
+    }
+
+    func testStrollPausesBeforeTurningAtLaneEnd() {
+        let walking = DesktopPetState(x: 695, activity: .walk(to: 700), since: t0)
+        let stopped = DesktopPetBrain.step(walking, dt: 1, now: t0, lane: lane,
+                                          userIdle: 0, focusing: false, random: { 0.3 })
+        XCTAssertEqual(stopped.x, 700)
+        XCTAssertEqual(stopped.activity, .edgePause(until: t0.addingTimeInterval(0.20)))
+        XCTAssertFalse(stopped.facingLeft)
+        let turning = DesktopPetBrain.step(stopped, dt: 0.25, now: t0.addingTimeInterval(0.25),
+                                          lane: lane, userIdle: 0, focusing: false, random: { 0.3 })
+        XCTAssertEqual(turning.activity, .walk(to: 658))
+        XCTAssertTrue(turning.facingLeft)
+    }
+
+    func testFileDeliveryUsesCarryAndSettlesWithoutTrashRescue() {
+        let carrying = DesktopPetState(x: 300, activity: .fileDelivery(to: 310), since: t0)
+        XCTAssertEqual(DesktopPetBrain.pose(carrying, now: t0).image, DesktopPetStrip.carry.imageName(0))
+        let delivered = DesktopPetBrain.step(carrying, dt: 1, now: t0, lane: lane,
+                                            userIdle: 0, focusing: true, random: { 0.3 })
+        XCTAssertEqual(delivered.x, 310)
+        XCTAssertEqual(delivered.activity, .sit)
+        XCTAssertFalse(DesktopPetBrain.awaitingPutBack(delivered))
     }
 
     func testSleepsAfterUserIdleAndWakes() {
