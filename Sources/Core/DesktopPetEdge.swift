@@ -9,7 +9,9 @@ import Foundation
 public enum DesktopPetAnchor: String, Codable, CaseIterable, Sendable {
     /// 程序坞上沿：散步、发呆、睡觉（原来的样子）。
     case dock
-    /// 屏幕左、右、上（菜单栏下方）、下边缘：平时趴着，偶尔探头、伸懒腰、挪几步。
+    /// 屏幕下边缘：平时趴着，偶尔探头、伸懒腰、挪几步。
+    /// 上边缘（菜单栏下方）：拎着后颈吊在那里轻轻晃。
+    /// 左、右边缘：正着趴或坐，身子一半藏在屏幕外，脸朝屏幕里，偶尔探出来看看。
     case left, right, top, bottom
     /// 随意：拖到哪停哪，坐在那里。
     case free
@@ -39,24 +41,16 @@ public enum DesktopPetAnchor: String, Codable, CaseIterable, Sendable {
         switch self {
         case .dock: .stroll
         case .free: .sit
-        case .left, .right, .top, .bottom: .curl
+        case .bottom: .curl
+        case .top: .hang
+        case .left, .right: .side
         }
     }
 }
 
-/// 小熊猫脚底贴着的那条边。贴左右边时整只转 90°，贴上边时倒过来，像从边上探出来。
+/// 小熊猫待的那条边。图一直正着画（不转）：下边脚踩着，上边吊着，左右边从屏幕边探头。
 public enum DesktopPetEdge: Equatable, Sendable {
     case bottom, top, left, right
-
-    /// 画的时候顺时针转多少度（屏幕上看）。
-    public var rotation: Double {
-        switch self {
-        case .bottom: 0
-        case .left: 90
-        case .top: 180
-        case .right: -90
-        }
-    }
 
     /// “上”（离开这条边）在屏幕坐标（左下原点）里的方向。
     public var up: (dx: Double, dy: Double) {
@@ -71,19 +65,14 @@ public enum DesktopPetEdge: Equatable, Sendable {
     /// 沿边坐标在左右边是纵坐标，在上下边是横坐标。
     public var vertical: Bool { self == .left || self == .right }
 
-    /// 小熊猫自己的“右”沿边坐标是变大（1）还是变小（-1）：转过以后左右会反。
-    /// 底边原样；倒挂在上边时自己的右是屏幕的左；贴左边（顺时针转 90°）自己的右朝下；
-    /// 贴右边（逆时针转 90°）自己的右朝上。
-    public var alongSign: Double {
-        switch self {
-        case .bottom, .right: 1
-        case .top, .left: -1
-        }
-    }
-
-    /// 画的时候要不要左右翻：状态机里的朝向是“朝沿边坐标变小”，换成小熊猫自己的左右。
+    /// 画的时候要不要左右翻（帧都朝右）。上下边照状态机里的朝向（朝左就翻）；
+    /// 左右边脸总朝屏幕里：贴左边朝右不翻，贴右边朝左要翻。
     public func flipped(facingLeft: Bool) -> Bool {
-        alongSign > 0 ? facingLeft : !facingLeft
+        switch self {
+        case .bottom, .top: facingLeft
+        case .left: false
+        case .right: true
+        }
     }
 }
 
@@ -134,13 +123,27 @@ public struct DesktopPetTrack: Equatable, Sendable {
         self.trashX = trashX
     }
 
-    /// 脚底中点在屏幕上的位置；`lift` 是离开这条边多远。
+    /// 脚底中点在屏幕上的位置；`lift` 是离开这条边多远。下边、程序坞、随意用这个；
+    /// 上边吊着见 `hangPoint`，左右边探头见 `peekFeet`。
     public func feet(along: Double, lift: Double = 0) -> CGPoint {
         let up = edge.up
         if edge.vertical {
             return CGPoint(x: base + up.dx * lift, y: along)
         }
         return CGPoint(x: along, y: base + up.dy * lift)
+    }
+
+    /// 上边缘吊着：挂点（后颈）在屏幕上的位置，就在可见区域上沿（菜单栏下方）。
+    public func hangPoint(along: Double) -> CGPoint {
+        CGPoint(x: along, y: base)
+    }
+
+    /// 左右边探头：图正着画、脚踩在沿边坐标那一高度，`width` 宽的图只露出 `reveal`（0…1）
+    /// 那么多在屏幕里，其余藏在边外。返回脚底中点。
+    public func peekFeet(along: Double, width: Double, reveal: Double) -> CGPoint {
+        let shown = width * DesktopPetSide.clampReveal(reveal)
+        let x = edge == .right ? base + width / 2 - shown : base - width / 2 + shown
+        return CGPoint(x: x, y: along)
     }
 
     /// 屏幕上某一点落在这条边的沿边坐标（夹在范围里）。
@@ -182,18 +185,19 @@ public enum DesktopPetTracks {
         guard visible.width >= 80, visible.height >= 80 else { return nil }
         let inset = length / 2 + 4
         let horizontal = lane(Double(visible.minX) + inset, Double(visible.maxX) - inset)
-        let vertical = lane(Double(visible.minY) + inset, Double(visible.maxY) - inset)
+        // 左右边沿边坐标是脚底高度，身子往上长：上头多留一只小熊猫的高度，不挡菜单栏。
+        let sideLane = lane(Double(visible.minY) + 4, Double(visible.maxY) - length * 1.6)
         switch anchor {
         case .dock:
             return nil
         case .bottom:
             return DesktopPetTrack(edge: .bottom, style: .curl, base: Double(visible.minY), lane: horizontal)
         case .top:
-            return DesktopPetTrack(edge: .top, style: .curl, base: Double(visible.maxY), lane: horizontal)
+            return DesktopPetTrack(edge: .top, style: .hang, base: Double(visible.maxY), lane: horizontal)
         case .left:
-            return DesktopPetTrack(edge: .left, style: .curl, base: Double(visible.minX), lane: vertical)
+            return DesktopPetTrack(edge: .left, style: .side, base: Double(visible.minX), lane: sideLane)
         case .right:
-            return DesktopPetTrack(edge: .right, style: .curl, base: Double(visible.maxX), lane: vertical)
+            return DesktopPetTrack(edge: .right, style: .side, base: Double(visible.maxX), lane: sideLane)
         case .free:
             // 随意：一个点。没拖过时放在可见区域中间偏下。
             let spot = spot ?? DesktopPetSpot(along: 0.5, across: 0.15)
@@ -208,6 +212,69 @@ public enum DesktopPetTracks {
         let mid = (low + high) / 2
         return low <= high ? low...high : mid...mid
     }
+}
+
+// MARK: - 上边吊着、左右边探头
+
+/// 上边缘吊着：挂点在后颈（图高 0.9 处，和拖起来时指针捏的地方一样），身体垂下来，
+/// 整只绕挂点做钟摆轻晃。都按绝对时间算，换动作时晃动接得上。
+public enum DesktopPetHang {
+    /// 挂点在图高的哪儿（从脚底往上数）。拖起来时指针也捏在这里。
+    public static let anchor: Double = 0.9
+    /// 平时换帧慢：每秒 4 帧，只在幅度小的几帧里来回。
+    public static let fps: Double = 4
+    public static let calmFrames = [0, 1, 2, 1]
+    /// 抬头（鼠标靠近、被点）时按拖动的正常速度蹬 1 秒再回落。
+    public static let alertFPS: Double = 10
+    public static let alertKick: TimeInterval = 1
+    /// 钟摆：平时 ±4°、2.6 秒一个来回。
+    public static let amplitude: Double = 4
+    public static let period: Double = 2.6
+    /// 鼠标靠近、被点、欢呼时晃大一点。
+    public static let alertAmplitude: Double = 7
+    /// 沿边横着挪的时候多晃一点。
+    public static let walkAmplitude: Double = 6
+    /// 睡着：更慢更小。
+    public static let sleepAmplitude: Double = 2
+    public static let sleepPeriod: Double = 4.2
+    /// 换幅度时 0.6 秒过渡；入睡 3 秒过渡。
+    public static let blend: TimeInterval = 0.6
+    public static let sleepBlend: TimeInterval = 3
+
+    /// 钟摆角度（度，顺时针为正）：`time` 秒时的正弦摆。
+    public static func swing(time: Double, amplitude: Double = amplitude, period: Double = period) -> Double {
+        guard period > 0 else { return 0 }
+        return amplitude * sin(2 * .pi * time / period)
+    }
+
+    /// 从平时的摆慢慢过渡到另一种摆：`elapsed` 是进这个动作多久，`over` 秒内混过去。
+    public static func blended(time: Double, elapsed: Double, over: Double, amplitude: Double,
+                               period: Double = period) -> Double {
+        let k = over > 0 ? min(1, max(0, elapsed / over)) : 1
+        let calm = swing(time: time)
+        return calm + (swing(time: time, amplitude: amplitude, period: period) - calm) * k
+    }
+
+    /// 吊着时计时器每秒几次：晃动要顺，30 次；睡着晃得慢，12 次。
+    public static func tickRate(sleeping: Bool) -> Double { sleeping ? 12 : 30 }
+}
+
+/// 左右边探头：身子露出多少（图宽的比例），其余藏在屏幕边外。
+public enum DesktopPetSide {
+    /// 平时趴着露一半。
+    public static let rest: Double = 0.5
+    /// 坐起来看看。
+    public static let sit: Double = 0.65
+    /// 探出来。
+    public static let peek: Double = 0.75
+    /// 被点了一下，探得最多。
+    public static let poke: Double = 0.85
+    /// 睡着缩回去，只露耳朵和脸。
+    public static let sleep: Double = 0.3
+    /// 坐着隔多久回去趴着（秒）。
+    public static let sitRange: ClosedRange<Double> = 3...6
+
+    public static func clampReveal(_ reveal: Double) -> Double { min(1, max(0, reveal)) }
 }
 
 // MARK: - 拖完吸到哪

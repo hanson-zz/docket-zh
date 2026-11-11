@@ -73,6 +73,8 @@ final class DesktopPetTests: XCTestCase {
         XCTAssertEqual(DesktopPetStrip.carry.imageName(3), "pet-sprite-carry-4")
         XCTAssertEqual(DesktopPetStrip.sleep.imageName(-1), "pet-sprite-sleep-4")
         XCTAssertEqual(DesktopPetStrip.fallAsleep.imageName(0), "pet-sprite-fallasleep-1")
+        XCTAssertEqual(DesktopPetStrip.hang.imageName(0), "pet-sprite-drag-1", "吊着暂用拎起来的帧")
+        XCTAssertEqual(DesktopPetStrip.hang.frameCount, DesktopPetStrip.drag.frameCount)
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources/Pet/sprites")
         for strip in DesktopPetStrip.allCases {

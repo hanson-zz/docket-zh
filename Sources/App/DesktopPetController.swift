@@ -12,7 +12,9 @@ import SwiftUI
 /// 挪动超过 4 点是拖动，松手吸到最近的屏幕边缘（设成「随意」时停在松手的地方），
 /// 停靠位置和位置写回设置。右键是菜单。
 ///
-/// 画面：小熊猫是一个 CALayer（图片、旋转、缩放、翻转都在图层上改，不经过 SwiftUI），
+/// 画面：小熊猫是一个 CALayer（图片、晃动、缩放、翻转都在图层上改，不经过 SwiftUI），
+/// 图一直正着画：屏幕上边缘拎着后颈吊着轻晃，左右边缘正着趴、身子一半藏在屏幕边外
+/// （窗口不伸出那条边，伸出去的那块由视图裁掉），
 /// 位置和缩放在动的时候按显示刷新（`NSView.displayLink`，60 帧）算，窗口原点取整、
 /// 不足一点的部分放进图层位置，走得再慢也不一格一格跳；动作帧单独按 10~12 帧换。
 /// 静止（坐着、趴着）时显示刷新停掉，只留每秒 10 次的计时器换眨眼这种帧，睡着时
@@ -66,12 +68,14 @@ final class DesktopPetController: NSObject {
     private var grabOffset = CGPoint.zero
     private var lastDragX: CGFloat = 0
     /// 从哪儿滑到哪儿：拖起来、松手吸过去时的短过渡。
-    private var transit: (feet: CGPoint, rotation: Double, start: Date, duration: TimeInterval)?
+    private var transit: (feet: CGPoint, start: Date, duration: TimeInterval)?
     /// 上一帧画在哪：过渡从这里开始。
     private var drawnFeet = CGPoint.zero
-    private var drawnRotation: Double = 0
     private var drawnCenter = CGPoint.zero
     private var drawnSize = CGSize(width: 50, height: 50)
+    /// 上一帧屏幕上看得见的那块（左右边藏到屏幕外的不算），悬停、气泡、快捷条按它算。
+    private var drawnRect = CGRect(x: 0, y: 0, width: 50, height: 50)
+    private var drawnFlip = false
 
     // 气泡和快捷条
     private let bubble = DesktopPetBubbleModel()
@@ -314,7 +318,7 @@ final class DesktopPetController: NSObject {
                 state = current
             } else if let current = state, shown {
                 // 已经在别处：滑过去再落下。
-                transit = (drawnFeet, drawnRotation, now, DesktopPetSnap.glideDuration)
+                transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
                 state = DesktopPetBrain.landed(current, at: along, now: now)
             } else {
                 state = next.style == .stroll && state == nil
@@ -376,7 +380,7 @@ final class DesktopPetController: NSObject {
             displayLink?.isPaused = false
         } else {
             displayLink?.isPaused = true
-            let rate = DesktopPetBrain.tickRate(state)
+            let rate = DesktopPetBrain.tickRate(state, style: track?.style ?? .stroll)
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
             restingRate = rate
@@ -423,8 +427,7 @@ final class DesktopPetController: NSObject {
         if let content = bubble.content, let until = content.until, now >= until { setBubble(nil) }
         // 指针移得太快时离开的事件可能没来：按指针实际位置补一次。
         let pointer = NSEvent.mouseLocation
-        if petHovering, !CGRect(x: drawnCenter.x - drawnSize.width / 2 - 4, y: drawnCenter.y - drawnSize.height / 2 - 4,
-                                width: drawnSize.width + 8, height: drawnSize.height + 8).contains(pointer) {
+        if petHovering, !drawnRect.insetBy(dx: -4, dy: -4).contains(pointer) {
             hovering(false)
         }
         if barHovering, barPanel?.frame.contains(pointer) != true { barHover(nil, width: 0) }
@@ -448,30 +451,52 @@ final class DesktopPetController: NSObject {
 
     private func render(now: Date) {
         guard let track, let state, let panel, let view = spriteView else { return }
-        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale)
+        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style)
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
         let size = CGSize(width: base.width * scale, height: base.height * scale)
+        let tall = size.height * CGFloat(pose.scaleY)
+        let wide = size.width * abs(CGFloat(pose.scaleX))
 
-        var feet = dragging ? dragFeet : track.feet(along: state.x, lift: pose.lift * Double(scale))
-        var rotation = dragging ? 0 : track.edge.rotation
+        // 图都正着画。脚底中点：上边吊着时由挂点往下量，左右边按露出多少往边外推。
+        var feet: CGPoint
+        if dragging {
+            feet = dragFeet
+        } else {
+            switch track.style {
+            case .hang:
+                let hang = track.hangPoint(along: state.x)
+                feet = CGPoint(x: hang.x, y: hang.y - tall * CGFloat(pose.anchor))
+            case .side:
+                feet = track.peekFeet(along: state.x, width: Double(size.width), reveal: pose.reveal)
+            default:
+                feet = track.feet(along: state.x, lift: pose.lift * Double(scale))
+            }
+        }
         if let transit {
             let t = now.timeIntervalSince(transit.start) / transit.duration
             let eased = DesktopPetSnap.glide(t)
             feet = CGPoint(x: transit.feet.x + (feet.x - transit.feet.x) * eased,
                            y: transit.feet.y + (feet.y - transit.feet.y) * eased)
-            rotation = DesktopPetSnap.angle(from: transit.rotation, to: rotation, t: min(1, t * 1.3))
             if t >= 1 { self.transit = nil }
         }
         let flip = dragging ? pose.facingLeft : track.edge.flipped(facingLeft: pose.facingLeft)
 
-        let radians = rotation * .pi / 180
-        let up = CGPoint(x: sin(radians), y: cos(radians))
-        let tall = size.height * CGFloat(pose.scaleY)
-        let center = CGPoint(x: feet.x + up.x * tall / 2, y: feet.y + up.y * tall / 2)
+        let center = CGPoint(x: feet.x, y: feet.y + tall / 2)
         let side = (Self.windowSide * scale).rounded(.up)
-        let originX = (center.x - side / 2).rounded(.down)
-        let originY = (center.y - side / 2).rounded(.down)
+        var originX = (center.x - side / 2).rounded(.down)
+        var originY = (center.y - side / 2).rounded(.down)
+        // 吊着、探头时窗口不伸出那条边：伸出去的那块（左右边藏起来的半只、上边后颈那一撮）
+        // 由视图裁掉，也就不会出现在相邻的显示器上。拖着时不裁。
+        if !dragging {
+            let edgeLine = CGFloat(track.base)
+            switch track.style {
+            case .side where track.edge == .left: originX = max(originX, edgeLine.rounded(.up))
+            case .side where track.edge == .right: originX = min(originX, edgeLine.rounded(.down) - side)
+            case .hang: originY = min(originY, edgeLine.rounded(.down) - side)
+            default: break
+            }
+        }
         let origin = CGPoint(x: originX, y: originY)
         if panel.frame.size != CGSize(width: side, height: side) {
             panel.setFrame(CGRect(origin: origin, size: CGSize(width: side, height: side)), display: false)
@@ -479,15 +504,20 @@ final class DesktopPetController: NSObject {
             panel.setFrameOrigin(origin)
         }
         // 窗口原点是整数点，剩下不足一点的放进图层位置，慢慢走也是平滑的。
-        let localCenter = CGPoint(x: center.x - originX, y: center.y - originY)
-        let localFeet = CGPoint(x: localCenter.x - up.x * tall / 2, y: localCenter.y - up.y * tall / 2)
-        view.draw(image: pose.image, size: size, feet: localFeet,
-                  rotation: rotation + pose.wobble, scaleX: pose.scaleX * (flip ? -1 : 1), scaleY: pose.scaleY)
+        // 图层绕 `anchor`（脚底，或拎着、吊着时的后颈）转和缩放。
+        let pivot = CGPoint(x: feet.x, y: feet.y + tall * CGFloat(pose.anchor))
+        let localPivot = CGPoint(x: pivot.x - originX, y: pivot.y - originY)
+        view.draw(image: pose.image, size: size, anchor: pose.anchor, position: localPivot,
+                  rotation: pose.wobble, scaleX: pose.scaleX * (flip ? -1 : 1), scaleY: pose.scaleY)
 
+        let window = CGRect(origin: origin, size: CGSize(width: side, height: side))
+        let body = CGRect(x: feet.x - wide / 2, y: feet.y, width: wide, height: tall)
+        let seen = body.intersection(window)
         drawnFeet = feet
-        drawnRotation = rotation
-        drawnCenter = center
         drawnSize = size
+        drawnRect = seen.isNull || seen.isEmpty ? body : seen
+        drawnCenter = CGPoint(x: drawnRect.midX, y: drawnRect.midY)
+        drawnFlip = flip
 
         if pose.zzz > 0, bubble.content == nil || bubble.content?.isZzz == true {
             if bubble.content != .zzz(pose.zzz) { setBubble(.zzz(pose.zzz), position: false) }
@@ -514,13 +544,14 @@ final class DesktopPetController: NSObject {
             dragging = true
             if case .rescue = current.activity { abandonRescue() }
             // 抓着后颈提起来：脚在指针下面一点，拖起来那一下滑过去。
-            transit = (drawnFeet, drawnRotation, now, 0.14)
+            transit = (drawnFeet, now, 0.14)
             current = DesktopPetBrain.grabbed(current, now: now)
             hideBar()
             if bubble.content?.isNews == true || bubble.content?.isZzz == true { setBubble(nil) }
         }
-        // 拎起来那套帧头顶在图片上沿，指针捏在后颈。
-        let hang = drawnSize.height * 0.9
+        // 拎起来那套帧头顶在图片上沿，指针捏在后颈（和吊在上边缘的挂点同一处）。
+        let dragArt = DesktopPetArt.size(DesktopPetPose(image: DesktopPetStrip.drag.imageName(0)))
+        let hang = dragArt.height * CGFloat(settings.size.scale) * CGFloat(DesktopPetHang.anchor)
         dragFeet = CGPoint(x: point.x, y: point.y - hang)
         current = DesktopPetBrain.dragging(current, dx: Double(point.x - lastDragX), now: now)
         lastDragX = point.x
@@ -582,7 +613,7 @@ final class DesktopPetController: NSObject {
         }
         guard let next else { return }
         let along = next.style == .stroll ? next.along(of: feet) : next.along(fraction: spot.along)
-        transit = (drawnFeet, drawnRotation, now, DesktopPetSnap.glideDuration)
+        transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
         state = DesktopPetBrain.landed(current, at: along, now: now)
         track = next
         trackScreen = screen
@@ -768,33 +799,41 @@ final class DesktopPetController: NSObject {
         if position { positionFloats() }
     }
 
-    /// 快捷条和气泡放在小熊猫“外侧”（离开那条边的方向）；随意放的时候快捷条在下面、
-    /// 气泡在头顶。都夹在屏幕可见区域里。
+    /// 快捷条和气泡放在小熊猫“外侧”（离开那条边的方向）：程序坞和下边缘在头顶，
+    /// 上边吊着的在身子下面（睡着的 Zzz 在身子旁边），左右边的在屏幕里侧；随意放的时候
+    /// 快捷条在下面、气泡在头顶。都夹在屏幕可见区域里。
     private func positionFloats() {
         guard shown, let track else { return }
         let visible = (trackScreen ?? NSScreen.screens.first)?.visibleFrame ?? .zero
         let barShown = barPanel?.isVisible == true
         let barSize = barPanel?.frame.size ?? DesktopPetQuickAction.barSize
-        let petHalf = CGSize(width: drawnSize.width / 2, height: drawnSize.height / 2)
-        let center = drawnCenter
+        let rect = drawnRect
         let edge = dragging ? DesktopPetEdge.bottom : track.edge
+        let style = dragging ? DesktopPetStyle.stroll : track.style
         let gap: CGFloat = 8
+        // 左右边按探出来最多时的那条线放，身子探进探出时快捷条不跟着跑。
+        let peekLine: CGFloat
+        switch edge {
+        case .left: peekLine = max(rect.maxX, CGFloat(track.base) + drawnSize.width * CGFloat(DesktopPetSide.peek))
+        case .right: peekLine = min(rect.minX, CGFloat(track.base) - drawnSize.width * CGFloat(DesktopPetSide.peek))
+        default: peekLine = 0
+        }
 
-        var barCenter = center
-        switch (edge, track.style) {
+        var barCenter = CGPoint(x: rect.midX, y: rect.midY)
+        switch (edge, style) {
         case (.bottom, .sit):
-            barCenter.y = center.y - petHalf.height - gap - barSize.height / 2
+            barCenter.y = rect.minY - gap - barSize.height / 2
             if barCenter.y - barSize.height / 2 < visible.minY {
-                barCenter.y = center.y + petHalf.height + gap + barSize.height / 2
+                barCenter.y = rect.maxY + gap + barSize.height / 2
             }
         case (.bottom, _):
-            barCenter.y = center.y + petHalf.height + gap + barSize.height / 2
+            barCenter.y = rect.maxY + gap + barSize.height / 2
         case (.top, _):
-            barCenter.y = center.y - petHalf.height - gap - barSize.height / 2
+            barCenter.y = rect.minY - gap - barSize.height / 2
         case (.left, _):
-            barCenter.x = center.x + petHalf.height + gap + barSize.width / 2
+            barCenter.x = peekLine + gap + barSize.width / 2
         case (.right, _):
-            barCenter.x = center.x - petHalf.height - gap - barSize.width / 2
+            barCenter.x = peekLine - gap - barSize.width / 2
         }
         if let barPanel, barShown {
             let frame = clampRect(CGRect(x: barCenter.x - barSize.width / 2, y: barCenter.y - barSize.height / 2,
@@ -804,22 +843,30 @@ final class DesktopPetController: NSObject {
 
         guard let bubblePanel, bubblePanel.isVisible else { return }
         let size = bubblePanel.frame.size
-        var bubbleCenter = center
-        let barAbove = barShown && barCenter.y > center.y && !edge.vertical
-        let barBelow = barShown && barCenter.y < center.y && !edge.vertical
+        var bubbleCenter = CGPoint(x: rect.midX, y: rect.midY)
+        let barAbove = barShown && barCenter.y > rect.midY && !edge.vertical
+        let barBelow = barShown && barCenter.y < rect.midY && !edge.vertical
         switch edge {
         case .bottom:
-            bubbleCenter.y = center.y + petHalf.height + gap / 2 + size.height / 2
+            bubbleCenter.y = rect.maxY + gap / 2 + size.height / 2
             if barAbove { bubbleCenter.y += barSize.height + gap }
+        case .top where bubble.content?.isZzz == true && !barShown:
+            // 睡着吊着：Zzz 在脑袋那一侧的身子旁边，那边放不下就放另一边。
+            let right = rect.maxX + gap + size.width / 2
+            let left = rect.minX - gap - size.width / 2
+            let fitsRight = right + size.width / 2 <= visible.maxX
+            let fitsLeft = left - size.width / 2 >= visible.minX
+            bubbleCenter.x = drawnFlip ? (fitsLeft ? left : right) : (fitsRight ? right : left)
+            bubbleCenter.y = rect.maxY - rect.height * 0.3
         case .top:
-            bubbleCenter.y = center.y - petHalf.height - gap / 2 - size.height / 2
+            bubbleCenter.y = rect.minY - gap / 2 - size.height / 2
             if barBelow { bubbleCenter.y -= barSize.height + gap }
         case .left:
-            bubbleCenter.x = center.x + petHalf.height + gap + size.width / 2
-            if barShown { bubbleCenter.y += barSize.height / 2 + gap + size.height / 2 }
+            bubbleCenter.x = peekLine + gap + size.width / 2
+            if barShown { bubbleCenter.y = barCenter.y + barSize.height / 2 + gap + size.height / 2 }
         case .right:
-            bubbleCenter.x = center.x - petHalf.height - gap - size.width / 2
-            if barShown { bubbleCenter.y += barSize.height / 2 + gap + size.height / 2 }
+            bubbleCenter.x = peekLine - gap - size.width / 2
+            if barShown { bubbleCenter.y = barCenter.y + barSize.height / 2 + gap + size.height / 2 }
         }
         let frame = clampRect(CGRect(x: bubbleCenter.x - size.width / 2, y: bubbleCenter.y - size.height / 2,
                                      width: size.width, height: size.height), in: visible)
@@ -1142,6 +1189,8 @@ final class DesktopPetSpriteView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         layer?.backgroundColor = .clear
+        // 贴左右边、吊在上边时窗口不伸出那条边，伸出去的半只在这里裁掉。
+        layer?.masksToBounds = true
         sprite.anchorPoint = CGPoint(x: 0.5, y: 0)
         sprite.contentsGravity = .resize
         sprite.minificationFilter = .linear
@@ -1168,15 +1217,19 @@ final class DesktopPetSpriteView: NSView {
     }
 
     /// 上一次画的参数：静止时慢计时器每秒 10 次来画，画面没变就不提交图层，省得窗口服务器白白重合成。
-    private var lastDrawn: (image: String, size: CGSize, feet: CGPoint, rotation: Double, scaleX: Double,
-                            scaleY: Double)?
+    private var lastDrawn: (image: String, size: CGSize, anchor: Double, position: CGPoint, rotation: Double,
+                            scaleX: Double, scaleY: Double)?
 
-    func draw(image: String, size: CGSize, feet: CGPoint, rotation: Double, scaleX: Double, scaleY: Double) {
-        if let last = lastDrawn, last.image == image, last.size == size, last.feet == feet,
-           last.rotation == rotation, last.scaleX == scaleX, last.scaleY == scaleY, imageName == image {
+    /// `anchor` 是转动、缩放的那一点在图高的哪儿（0 脚底，拎着、吊着时是后颈），
+    /// `position` 是那一点在窗口里的位置。
+    func draw(image: String, size: CGSize, anchor: Double, position: CGPoint, rotation: Double,
+              scaleX: Double, scaleY: Double) {
+        if let last = lastDrawn, last.image == image, last.size == size, last.anchor == anchor,
+           last.position == position, last.rotation == rotation, last.scaleX == scaleX, last.scaleY == scaleY,
+           imageName == image {
             return
         }
-        lastDrawn = (image, size, feet, rotation, scaleX, scaleY)
+        lastDrawn = (image, size, anchor, position, rotation, scaleX, scaleY)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         if image != imageName, let cg = DesktopPetArt.cgImage(image) {
@@ -1184,16 +1237,20 @@ final class DesktopPetSpriteView: NSView {
             imageName = image
         }
         sprite.transform = CATransform3DIdentity
+        sprite.anchorPoint = CGPoint(x: 0.5, y: CGFloat(anchor))
         sprite.bounds = CGRect(origin: .zero, size: size)
-        sprite.position = feet
+        sprite.position = position
         var transform = CATransform3DMakeRotation(-CGFloat(rotation) * .pi / 180, 0, 0, 1)
         transform = CATransform3DScale(transform, CGFloat(scaleX), CGFloat(scaleY), 1)
         sprite.transform = transform
         CATransaction.commit()
     }
 
-    /// 小熊猫占的那块（窗口坐标里），四周各收 3 点。
-    private var hitRect: CGRect { sprite.frame.insetBy(dx: 3, dy: 3) }
+    /// 小熊猫看得见的那块（窗口坐标里，裁掉的不算），四周各收 3 点。
+    private var hitRect: CGRect {
+        let seen = sprite.frame.intersection(bounds)
+        return seen.isNull ? .zero : seen.insetBy(dx: 3, dy: 3)
+    }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)

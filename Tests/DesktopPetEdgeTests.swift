@@ -14,33 +14,36 @@ final class DesktopPetEdgeTests: XCTestCase {
     func testAnchorsMapToEdgesAndStyles() {
         XCTAssertEqual(DesktopPetAnchor.allCases.count, 6)
         XCTAssertEqual(DesktopPetAnchor.dock.style, .stroll, "程序坞保留散步")
-        XCTAssertEqual(DesktopPetAnchor.left.style, .curl)
-        XCTAssertEqual(DesktopPetAnchor.top.style, .curl)
+        XCTAssertEqual(DesktopPetAnchor.bottom.style, .curl, "下边缘趴着")
+        XCTAssertEqual(DesktopPetAnchor.left.style, .side, "左右边探头")
+        XCTAssertEqual(DesktopPetAnchor.right.style, .side)
+        XCTAssertEqual(DesktopPetAnchor.top.style, .hang, "上边缘吊着")
         XCTAssertEqual(DesktopPetAnchor.free.style, .sit)
         XCTAssertEqual(DesktopPetAnchor.left.edge, .left)
         XCTAssertEqual(DesktopPetAnchor.free.edge, .bottom)
         XCTAssertEqual(DesktopPetAnchor.free.title, "随意（拖到哪停哪）")
-        XCTAssertEqual(DesktopPetEdge.left.rotation, 90)
-        XCTAssertEqual(DesktopPetEdge.right.rotation, -90)
-        XCTAssertEqual(DesktopPetEdge.top.rotation, 180)
         XCTAssertEqual(DesktopPetSize.small.scale, 0.8)
         XCTAssertEqual(DesktopPetSize.large.scale, 1.25)
     }
 
     func testFacingFlipsPerEdge() {
-        // 朝沿边坐标变小：底边就是朝左，翻过来；贴左边（顺时针转 90°）本来就朝下，不翻。
+        // 图都正着画、帧朝右。上下边照朝向翻；左右边脸总朝屏幕里，跟朝向无关。
         XCTAssertTrue(DesktopPetEdge.bottom.flipped(facingLeft: true))
-        XCTAssertFalse(DesktopPetEdge.left.flipped(facingLeft: true))
-        XCTAssertTrue(DesktopPetEdge.left.flipped(facingLeft: false))
+        XCTAssertFalse(DesktopPetEdge.bottom.flipped(facingLeft: false))
+        XCTAssertTrue(DesktopPetEdge.top.flipped(facingLeft: true), "吊着不倒过来，朝左就翻")
+        XCTAssertFalse(DesktopPetEdge.top.flipped(facingLeft: false))
+        XCTAssertFalse(DesktopPetEdge.left.flipped(facingLeft: true), "贴左边朝右（屏幕里）")
+        XCTAssertFalse(DesktopPetEdge.left.flipped(facingLeft: false))
+        XCTAssertTrue(DesktopPetEdge.right.flipped(facingLeft: false), "贴右边朝左（屏幕里）")
         XCTAssertTrue(DesktopPetEdge.right.flipped(facingLeft: true))
-        XCTAssertFalse(DesktopPetEdge.top.flipped(facingLeft: true))
     }
 
     func testEdgeTracksStayInsideVisibleArea() throws {
         let left = try XCTUnwrap(DesktopPetTracks.edge(.left, visible: visible, length: 56, spot: nil))
         XCTAssertEqual(left.base, 0)
-        XCTAssertGreaterThanOrEqual(left.lane.lowerBound, 70 + 28, "不挡程序坞")
-        XCTAssertLessThanOrEqual(left.lane.upperBound, 949 - 28, "不挡菜单栏")
+        XCTAssertEqual(left.style, .side)
+        XCTAssertGreaterThanOrEqual(left.lane.lowerBound, 70, "不挡程序坞")
+        XCTAssertLessThanOrEqual(left.lane.upperBound, 949 - 56, "身子往上长，上头留一只的高度，不挡菜单栏")
         XCTAssertEqual(left.feet(along: 300, lift: 10), CGPoint(x: 10, y: 300), "贴左边往右抬")
 
         let right = try XCTUnwrap(DesktopPetTracks.edge(.right, visible: visible, length: 56, spot: nil))
@@ -49,7 +52,8 @@ final class DesktopPetEdgeTests: XCTestCase {
 
         let top = try XCTUnwrap(DesktopPetTracks.edge(.top, visible: visible, length: 56, spot: nil))
         XCTAssertEqual(top.base, 949, "菜单栏下方")
-        XCTAssertEqual(top.feet(along: 500, lift: 6), CGPoint(x: 500, y: 943), "倒挂着往下探")
+        XCTAssertEqual(top.style, .hang)
+        XCTAssertEqual(top.hangPoint(along: 500), CGPoint(x: 500, y: 949), "挂点贴着可见区域上沿")
 
         let bottom = try XCTUnwrap(DesktopPetTracks.edge(.bottom, visible: visible, length: 56, spot: nil))
         XCTAssertEqual(bottom.base, 70)
@@ -393,5 +397,140 @@ final class DesktopPetEdgeTests: XCTestCase {
         let later = DesktopPetBrain.pose(state, now: t0.addingTimeInterval(1.3))
         XCTAssertEqual(early.image, later.image)
         XCTAssertEqual(early.lift, 0)
+    }
+
+    // MARK: 上边吊着
+
+    func testHangPendulum() {
+        XCTAssertEqual(DesktopPetHang.anchor, 0.9, "挂点和拖起来捏的地方一样")
+        let p = DesktopPetHang.period
+        XCTAssertEqual(DesktopPetHang.swing(time: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetHang.swing(time: p / 4), DesktopPetHang.amplitude, accuracy: 0.0001, "最远 4°")
+        XCTAssertEqual(DesktopPetHang.swing(time: p * 3 / 4), -DesktopPetHang.amplitude, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetHang.swing(time: p), 0, accuracy: 0.0001, "一个周期回到中间")
+        XCTAssertEqual(DesktopPetHang.amplitude, 4)
+        XCTAssertEqual(DesktopPetHang.period, 2.6)
+        // 混过去：刚进动作时和平时一样，混完是新的摆。
+        let t = p / 4
+        XCTAssertEqual(DesktopPetHang.blended(time: t, elapsed: 0, over: 1, amplitude: 7), 4, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetHang.blended(time: t, elapsed: 2, over: 1, amplitude: 7), 7, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetHang.tickRate(sleeping: false), 30)
+        XCTAssertLessThan(DesktopPetHang.tickRate(sleeping: true), 30)
+    }
+
+    private func maxWobble(_ state: DesktopPetState, from: Date, seconds: Double) -> Double {
+        (0..<Int(seconds * 20)).map {
+            abs(DesktopPetBrain.pose(state, now: from.addingTimeInterval(Double($0) / 20), style: .hang).wobble)
+        }.max() ?? 0
+    }
+
+    func testHangPoseSwingsGentlyAndBigger() {
+        let calm = DesktopPetBrain.placed(at: 300, style: .hang, now: t0)
+        guard case .curl = calm.activity else { return XCTFail("吊着歇") }
+        let pose = DesktopPetBrain.pose(calm, now: t0, style: .hang)
+        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-drag-"), "暂用拎起来的帧，实际 \(pose.image)")
+        XCTAssertEqual(pose.anchor, DesktopPetHang.anchor)
+        XCTAssertEqual(pose.reveal, 1)
+        let calmMax = maxWobble(calm, from: t0, seconds: 3)
+        XCTAssertLessThanOrEqual(calmMax, DesktopPetHang.amplitude + 0.0001)
+        XCTAssertGreaterThan(calmMax, 3.5, "确实在晃")
+        // 平时只在幅度小的几帧里慢慢换（每秒 4 帧）。
+        let images = Set((0..<40).map { DesktopPetBrain.pose(calm, now: t0.addingTimeInterval(Double($0) / 10),
+                                                              style: .hang).image })
+        XCTAssertEqual(images, Set(DesktopPetHang.calmFrames.map { DesktopPetStrip.hang.imageName($0) }))
+
+        // 鼠标靠近：抬头蹬一下，晃大一点。
+        let alert = DesktopPetBrain.step(calm, dt: 0.1, now: t0.addingTimeInterval(0.1), lane: 100...800,
+                                         userIdle: 0, focusing: false, style: .hang, attention: 320, random: { 0.5 })
+        guard case .peek = alert.activity else { return XCTFail("鼠标靠近抬头，实际 \(alert.activity)") }
+        XCTAssertGreaterThan(maxWobble(alert, from: t0.addingTimeInterval(1), seconds: 3), calmMax + 1.5)
+
+        // 睡着：更小，带 Zzz。
+        let asleep = DesktopPetState(x: 300, activity: .sleep(since: t0), since: t0)
+        let late = t0.addingTimeInterval(10)
+        XCTAssertLessThanOrEqual(maxWobble(asleep, from: late, seconds: 5), DesktopPetHang.sleepAmplitude + 0.0001)
+        XCTAssertGreaterThan(DesktopPetBrain.pose(asleep, now: late, style: .hang).zzz, 0)
+        XCTAssertTrue(DesktopPetBrain.pose(asleep, now: late, style: .hang).image.hasPrefix("pet-sprite-drag-"),
+                      "吊着睡，不团成一团")
+        // 横着挪：晃得比平时多。
+        let walking = DesktopPetState(x: 300, activity: .walk(to: 340), since: t0)
+        XCTAssertGreaterThan(maxWobble(walking, from: t0.addingTimeInterval(1), seconds: 3), calmMax + 1)
+        // 落下来吸到上边：直接挂着，不压扁。
+        let landed = DesktopPetBrain.landed(calm, at: 400, now: t0)
+        let landing = DesktopPetBrain.pose(landed, now: t0, style: .hang)
+        XCTAssertEqual(landing.scaleY, 1)
+        XCTAssertEqual(landing.anchor, DesktopPetHang.anchor)
+        XCTAssertEqual(DesktopPetBrain.tickRate(calm, style: .hang), 30)
+    }
+
+    func testHangNeverYawnsOrStretches() {
+        let state = DesktopPetBrain.placed(at: 300, style: .hang, now: t0)
+        for roll in [0.05, 0.1, 0.3, 0.5, 0.7, 0.9] {
+            let (_, seen) = run(state, seconds: 40, lane: 100...800, style: .hang, random: { roll })
+            XCTAssertFalse(seen.contains { if case .yawn = $0 { true } else { false } }, "掷 \(roll) 打了哈欠")
+            XCTAssertFalse(seen.contains { if case .stretch = $0 { true } else { false } }, "掷 \(roll) 伸了懒腰")
+        }
+        let (_, moved) = run(state, seconds: 30, lane: 100...800, style: .hang, random: { 0.6 })
+        XCTAssertTrue(moved.contains { if case .walk = $0 { true } else { false } }, "沿边横着挪")
+    }
+
+    // MARK: 左右边探头
+
+    func testSideRevealRatios() throws {
+        XCTAssertEqual(DesktopPetSide.rest, 0.5, "平时露一半")
+        XCTAssertEqual(DesktopPetSide.peek, 0.75)
+        XCTAssertEqual(DesktopPetSide.sleep, 0.3)
+        let left = try XCTUnwrap(DesktopPetTracks.edge(.left, visible: visible, length: 56, spot: nil))
+        let right = try XCTUnwrap(DesktopPetTracks.edge(.right, visible: visible, length: 56, spot: nil))
+        // 80 宽露一半：左边中心正好在边上，右边也是。
+        XCTAssertEqual(left.peekFeet(along: 300, width: 80, reveal: 0.5), CGPoint(x: 0, y: 300))
+        XCTAssertEqual(right.peekFeet(along: 300, width: 80, reveal: 0.5), CGPoint(x: 1512, y: 300))
+        // 露 3/4：屏幕里那块 60 点宽。
+        XCTAssertEqual(left.peekFeet(along: 300, width: 80, reveal: 0.75).x + 40, 60, accuracy: 0.0001)
+        XCTAssertEqual(1512 - (right.peekFeet(along: 300, width: 80, reveal: 0.75).x - 40), 60, accuracy: 0.0001)
+        XCTAssertEqual(left.peekFeet(along: 300, width: 80, reveal: 2).x, 40, accuracy: 0.0001, "最多整只露出来")
+
+        let resting = DesktopPetBrain.placed(at: 300, style: .side, now: t0)
+        let pose = DesktopPetBrain.pose(resting, now: t0, style: .side)
+        XCTAssertEqual(pose.reveal, DesktopPetSide.rest)
+        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-lie-"), "正着趴，实际 \(pose.image)")
+        XCTAssertEqual(pose.wobble, 0)
+        XCTAssertEqual(pose.anchor, 0)
+
+        // 鼠标靠近：探出来，不转身。
+        let peek = DesktopPetBrain.step(resting, dt: 0.1, now: t0.addingTimeInterval(0.1), lane: 100...800,
+                                        userIdle: 0, focusing: false, style: .side, attention: 200, random: { 0.5 })
+        guard case .peek = peek.activity else { return XCTFail("鼠标靠近探头，实际 \(peek.activity)") }
+        XCTAssertNil(peek.turnedAt, "脸一直朝屏幕里")
+        XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(0.9), style: .side).reveal,
+                       DesktopPetSide.peek, accuracy: 0.0001)
+        // 缩回去：快结束时回到一半。
+        let ending = DesktopPetState(x: 300, activity: .peek(until: t0.addingTimeInterval(3)), since: t0)
+        XCTAssertLessThan(DesktopPetBrain.pose(ending, now: t0.addingTimeInterval(2.95), style: .side).reveal, 0.55)
+
+        // 睡着：缩回去只露耳朵和脸，带 Zzz。
+        let asleep = DesktopPetState(x: 300, activity: .sleep(since: t0), since: t0)
+        let sleepy = DesktopPetBrain.pose(asleep, now: t0.addingTimeInterval(8), style: .side)
+        XCTAssertEqual(sleepy.reveal, DesktopPetSide.sleep, accuracy: 0.0001)
+        XCTAssertGreaterThan(sleepy.zzz, 0)
+    }
+
+    func testSideDoesNotWalkAndSitsUpToLook() {
+        let state = DesktopPetBrain.placed(at: 300, style: .side, now: t0)
+        for roll in [0.1, 0.3, 0.6, 0.9] {
+            let (after, seen) = run(state, seconds: 40, lane: 100...800, style: .side, random: { roll })
+            XCTAssertEqual(after.x, 300, "掷 \(roll) 挪了")
+            XCTAssertFalse(seen.contains { if case .walk = $0 { true } else { false } })
+            XCTAssertFalse(seen.contains { if case .stretch = $0 { true } else { false } })
+        }
+        let (_, peeks) = run(state, seconds: 20, lane: 100...800, style: .side, random: { 0.2 })
+        XCTAssertTrue(peeks.contains { if case .peek = $0 { true } else { false } }, "隔一阵探出来")
+        let (_, sits) = run(state, seconds: 20, lane: 100...800, style: .side, random: { 0.6 })
+        XCTAssertTrue(sits.contains { if case .idle = $0 { true } else { false } }, "坐起来看看")
+        let sitting = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(5)), since: t0)
+        let look = DesktopPetBrain.pose(sitting, now: t0.addingTimeInterval(0.7), style: .side)
+        XCTAssertTrue(look.image.hasPrefix("pet-sprite-lookup-"), "先抬头看看，实际 \(look.image)")
+        XCTAssertEqual(DesktopPetBrain.pose(sitting, now: t0.addingTimeInterval(2), style: .side).reveal,
+                       DesktopPetSide.sit, accuracy: 0.0001)
     }
 }

@@ -86,18 +86,28 @@ public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
 /// 同一个比例（@2x，四脚站着约 90px 高），都朝右；往左时整张左右翻过来。
 /// 除走路外都从同一张 768 画布裁出：脚底在图片底边、身体中线在图片正中，换动作时不跳。
 /// `climb` 是旧的直立跳跃帧，只给专注竹竿爬升用。
+/// `hang` 是吊在屏幕上边缘的那套，暂时借用拎起来的 drag 帧；以后有了专门画的
+/// pet-sprite-hang-N，把 `fileStem` 和 `frameCount` 改过来就换图了。
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, carry, jump, climb, sit, blink, lie, peek, drag, fallAsleep = "fallasleep", sleep,
-         yawn, stretch, cheer, droop, lookup
+         yawn, stretch, cheer, droop, lookup, hang
 
     public var frameCount: Int {
         switch self {
         case .walk: return 32
         case .run, .carry, .jump, .sit, .yawn, .stretch: return 8
-        case .lie, .peek, .drag, .fallAsleep, .cheer: return 6
+        case .lie, .peek, .drag, .fallAsleep, .cheer, .hang: return 6
         case .sleep, .droop, .lookup: return 4
         case .climb: return 3
         case .blink: return 1
+        }
+    }
+
+    /// 图片文件名里的动作那一段。
+    public var fileStem: String {
+        switch self {
+        case .hang: DesktopPetStrip.drag.rawValue
+        default: rawValue
         }
     }
 
@@ -105,12 +115,12 @@ public enum DesktopPetStrip: String, CaseIterable, Sendable {
     public func imageName(_ frame: Int) -> String {
         let count = frameCount
         let index = ((frame % count) + count) % count
-        return "pet-sprite-\(rawValue)-\(index + 1)"
+        return "pet-sprite-\(fileStem)-\(index + 1)"
     }
 }
 
 /// 某一刻画哪张图、离脚下那条边多远、怎么压扁拉长、要不要翻过来。
-/// 都在小熊猫自己的坐标里：“上”是离开那条边的方向，贴在左右边时由窗口转 90°。
+/// 图一直正着画。上边吊着时整只绕挂点（`anchor`）摆，左右边只露出 `reveal` 那么多。
 public struct DesktopPetPose: Equatable, Sendable {
     /// 图片名（不带扩展名）：动作帧，或 Resources/Pet 里现成的 pet-panda-idle / rest / cheer / hungry。
     public var image: String
@@ -123,13 +133,18 @@ public struct DesktopPetPose: Equatable, Sendable {
     /// 横向、纵向缩放（转身、落地压扁回弹、伸懒腰），1 是原样。以脚底中点为准。
     public var scaleX: Double
     public var scaleY: Double
-    /// 被拖起来时左右晃的角度（度，顺时针），平时 0。
+    /// 左右晃的角度（度，顺时针），绕 `anchor` 转：被拖起来时、吊在上边缘时的钟摆。平时 0。
     public var wobble: Double
     /// 睡着时头顶的 Zzz：0 不显示，1…3 是几个 z。
     public var zzz: Int
+    /// 转动、定位的那一点在图高的哪儿：0 是脚底，拎着、吊着时是后颈（`DesktopPetHang.anchor`）。
+    public var anchor: Double
+    /// 左右边探头时露出图宽的多少（0…1），其余藏在屏幕边外；别处是 1。
+    public var reveal: Double
 
     public init(image: String, lift: Double = 0, facingLeft: Bool = false, height: Double? = nil,
-                scaleX: Double = 1, scaleY: Double = 1, wobble: Double = 0, zzz: Int = 0) {
+                scaleX: Double = 1, scaleY: Double = 1, wobble: Double = 0, zzz: Int = 0,
+                anchor: Double = 0, reveal: Double = 1) {
         self.image = image
         self.lift = lift
         self.facingLeft = facingLeft
@@ -138,6 +153,8 @@ public struct DesktopPetPose: Equatable, Sendable {
         self.scaleY = scaleY
         self.wobble = wobble
         self.zzz = zzz
+        self.anchor = anchor
+        self.reveal = reveal
     }
 }
 
@@ -184,9 +201,9 @@ public enum DesktopPetRescueStep: Equatable, Sendable {
     case arrived(since: Date)
 }
 
-/// 平时是散步、蜷着还是坐着：程序坞上散步，屏幕边缘蜷着，随意放的地方坐着。
+/// 平时是什么样子：程序坞上散步，屏幕下边缘蜷着，上边缘吊着，左右边缘探头，随意放的地方坐着。
 public enum DesktopPetStyle: Equatable, Sendable {
-    case stroll, curl, sit
+    case stroll, curl, sit, hang, side
 }
 
 public struct DesktopPetState: Equatable, Sendable {
@@ -325,7 +342,7 @@ public enum DesktopPetBrain {
             next.activity = rest(style, now: now, random: random)
             next.since = now
         case .idle(let until):
-            if let attention { face(&next, toward: attention, now: now) }
+            if let attention, style != .side { face(&next, toward: attention, now: now) }
             guard now >= until else { return next }
             if attention != nil {
                 // 鼠标在旁边：多看一会儿，不走开。
@@ -336,16 +353,16 @@ public enum DesktopPetBrain {
             next = afterIdle(next, now: now, lane: lane, style: style, random: random)
         case .curl(let until):
             if let attention {
-                face(&next, toward: attention, now: now)
+                if style != .side { face(&next, toward: attention, now: now) }
                 next.activity = .peek(until: now.addingTimeInterval(1.5))
                 next.since = now
                 return next
             }
             guard now >= until else { return next }
-            next = afterCurl(next, now: now, lane: lane, random: random)
+            next = afterCurl(next, now: now, lane: lane, style: style, random: random)
         case .peek(let until):
             if let attention {
-                face(&next, toward: attention, now: now)
+                if style != .side { face(&next, toward: attention, now: now) }
                 if until < now.addingTimeInterval(1.5) { next.activity = .peek(until: now.addingTimeInterval(1.5)) }
                 return next
             }
@@ -537,6 +554,7 @@ public enum DesktopPetBrain {
             let t = now.timeIntervalSince(since)
             pose = DesktopPetPose(image: DesktopPetStrip.drag.imageName(Int(t * 10)), facingLeft: left)
             pose.wobble = 4 * sin(t * 9)
+            pose.anchor = DesktopPetHang.anchor
         case .land(let since):
             let t = min(1, now.timeIntervalSince(since) / landDuration)
             pose = DesktopPetPose(image: DesktopPetStrip.sit.imageName(0), facingLeft: left)
@@ -566,10 +584,140 @@ public enum DesktopPetBrain {
         return pose
     }
 
+    /// 这一刻画什么，按平时的样子分：吊在上边缘、左右边探头的另算，其余同 `pose(_:now:scale:)`。
+    public static func pose(_ state: DesktopPetState, now: Date, scale: Double = 1,
+                            style: DesktopPetStyle) -> DesktopPetPose {
+        if case .dragged = state.activity { return pose(state, now: now, scale: scale) }
+        switch style {
+        case .hang: return hangPose(state, now: now)
+        case .side: return sidePose(state, now: now)
+        default: return pose(state, now: now, scale: scale)
+        }
+    }
+
+    /// 吊在上边缘：拎着后颈的帧慢放、只在幅度小的几帧里来回，整只绕后颈钟摆轻晃。
+    /// 鼠标靠近、被点、欢呼时正常速度蹬一下、晃大一点；横着挪时多晃一点；睡着更慢更小带 Zzz。
+    static func hangPose(_ state: DesktopPetState, now: Date) -> DesktopPetPose {
+        let elapsed = max(0, now.timeIntervalSince(state.since))
+        let time = now.timeIntervalSinceReferenceDate
+        let calmIndex = DesktopPetHang.calmFrames[Int(time * DesktopPetHang.fps) % DesktopPetHang.calmFrames.count]
+        let calm = DesktopPetStrip.hang.imageName(calmIndex)
+        var pose = DesktopPetPose(image: calm, facingLeft: state.facingLeft, anchor: DesktopPetHang.anchor)
+        let blend = DesktopPetHang.blend
+        switch state.activity {
+        case .peek:
+            if elapsed < DesktopPetHang.alertKick {
+                pose.image = DesktopPetStrip.hang.imageName(Int(elapsed * DesktopPetHang.alertFPS))
+            }
+            pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend,
+                                                 amplitude: DesktopPetHang.alertAmplitude)
+        case .jump, .cheer:
+            pose.image = DesktopPetStrip.hang.imageName(Int(elapsed * DesktopPetHang.alertFPS))
+            pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend / 2,
+                                                 amplitude: DesktopPetHang.alertAmplitude + 1)
+        case .walk:
+            pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend,
+                                                 amplitude: DesktopPetHang.walkAmplitude)
+        case .sleep(let since):
+            let asleep = max(0, now.timeIntervalSince(since))
+            pose.image = DesktopPetStrip.hang.imageName(0)
+            pose.wobble = DesktopPetHang.blended(time: time, elapsed: asleep, over: DesktopPetHang.sleepBlend,
+                                                 amplitude: DesktopPetHang.sleepAmplitude,
+                                                 period: DesktopPetHang.sleepPeriod)
+            if asleep >= DesktopPetHang.sleepBlend { pose.zzz = 1 + Int(asleep * 1.5) % 3 }
+        case .droop:
+            pose.image = DesktopPetStrip.hang.imageName(0)
+            pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend,
+                                                 amplitude: DesktopPetHang.sleepAmplitude)
+        default:
+            // 平时、专注陪着、刚吸上来：慢慢晃。
+            pose.wobble = DesktopPetHang.swing(time: time)
+        }
+        // 横着挪时掉头：同样窄一下再弹开。
+        if let turnedAt = state.turnedAt {
+            let t = now.timeIntervalSince(turnedAt) / turnDuration
+            if t >= 0, t < 1 { pose.scaleX *= 0.3 + 0.7 * (1 - (1 - t) * (1 - t)) }
+        }
+        return pose
+    }
+
+    /// 左右边探头：正着趴或坐，只露出一部分，脸朝屏幕里（朝向由那条边定，见 `DesktopPetEdge.flipped`）。
+    static func sidePose(_ state: DesktopPetState, now: Date) -> DesktopPetPose {
+        let elapsed = max(0, now.timeIntervalSince(state.since))
+        let time = now.timeIntervalSinceReferenceDate
+        var pose: DesktopPetPose
+        switch state.activity {
+        case .peek(let until):
+            // 趴着往外探：抬头那几帧，露出的从一半慢慢到四分之三，快结束时缩回去。
+            let left = until.timeIntervalSince(now)
+            let index = left < 0.4 ? (left < 0.2 ? 5 : 4) : min(3, Int(elapsed / 0.15))
+            let out = left < 0.4 ? max(0, left) / 0.4 : min(1, elapsed / 0.6)
+            pose = DesktopPetPose(image: DesktopPetStrip.peek.imageName(index))
+            pose.reveal = DesktopPetSide.rest + (DesktopPetSide.peek - DesktopPetSide.rest) * smooth(out)
+        case .idle, .sit:
+            // 坐起来：先抬头看看（约 1.4 秒），再坐着呼吸眨眼。
+            if elapsed < 1.4 {
+                let path = [0, 1, 2, 3, 3, 3, 2, 1, 0]
+                pose = DesktopPetPose(image: DesktopPetStrip.lookup.imageName(
+                    path[min(path.count - 1, Int(elapsed / 1.4 * Double(path.count)))]))
+            } else {
+                pose = DesktopPetPose(image: sittingImage(now: now))
+            }
+            pose.reveal = DesktopPetSide.rest + (DesktopPetSide.sit - DesktopPetSide.rest) * smooth(elapsed / 0.5)
+        case .jump:
+            // 被点：猛地探出来再缩回。
+            let t = min(1, elapsed / jumpDuration)
+            pose = DesktopPetPose(image: DesktopPetStrip.peek.imageName(3))
+            pose.reveal = DesktopPetSide.rest + (DesktopPetSide.poke - DesktopPetSide.rest) * sin(.pi * t)
+        case .cheer:
+            pose = DesktopPetPose(image: DesktopPetStrip.cheer.imageName(Int(elapsed * 8)))
+            pose.reveal = DesktopPetSide.peek
+        case .droop:
+            pose = DesktopPetPose(image: DesktopPetStrip.droop.imageName(Int(elapsed * 3)))
+            pose.reveal = DesktopPetSide.rest
+        case .yawn(let since):
+            let t = min(0.999, now.timeIntervalSince(since) / yawnDuration)
+            pose = DesktopPetPose(image: DesktopPetStrip.yawn.imageName(Int(t * 8)))
+            pose.reveal = DesktopPetSide.sit
+        case .sleep(let since):
+            // 趴下团起来，同时慢慢缩回去，只露耳朵和脸，带 Zzz。
+            let asleep = max(0, now.timeIntervalSince(since))
+            let step = Int(asleep / 0.5)
+            if step < DesktopPetStrip.fallAsleep.frameCount {
+                pose = DesktopPetPose(image: DesktopPetStrip.fallAsleep.imageName(step))
+            } else {
+                pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(step))
+                pose.zzz = 1 + Int(asleep * 1.5) % 3
+            }
+            pose.reveal = DesktopPetSide.rest + (DesktopPetSide.sleep - DesktopPetSide.rest) * smooth(asleep / 3)
+        case .land(let since):
+            let t = min(1, now.timeIntervalSince(since) / landDuration)
+            pose = DesktopPetPose(image: DesktopPetStrip.lie.imageName(0))
+            let squash = landSquash(t)
+            pose.scaleX = 1 + 0.1 * squash
+            pose.scaleY = 1 - 0.14 * squash
+            pose.reveal = DesktopPetSide.rest
+        default:
+            // 平时趴着呼吸（挪步、伸懒腰这些左右边不做，万一有也趴着）。
+            pose = DesktopPetPose(image: DesktopPetStrip.lie.imageName(Int(time * 4)))
+            pose.reveal = DesktopPetSide.rest
+        }
+        return pose
+    }
+
+    /// 0…1 的缓入缓出。
+    static func smooth(_ t: Double) -> Double {
+        let t = min(1, max(0, t))
+        return t * t * (3 - 2 * t)
+    }
+
     /// 不在动时慢计时器每秒几次：睡着 2 次，其余 10 次（够看见眨眼）。
-    public static func tickRate(_ state: DesktopPetState) -> Double {
-        if case .sleep = state.activity { return sleepingFPS }
-        return restingFPS
+    /// 吊在上边缘时钟摆要顺，见 `DesktopPetHang.tickRate`。
+    public static func tickRate(_ state: DesktopPetState, style: DesktopPetStyle = .stroll) -> Double {
+        let sleeping: Bool
+        if case .sleep = state.activity { sleeping = true } else { sleeping = false }
+        if style == .hang { return DesktopPetHang.tickRate(sleeping: sleeping) }
+        return sleeping ? sleepingFPS : restingFPS
     }
 
     /// 坐着：8 帧慢慢呼吸（每秒 4 帧），偶尔眨眼；每 11 秒抬头看一眼（4 帧上去再下来，约 1.4 秒）。
@@ -608,7 +756,7 @@ public enum DesktopPetBrain {
     static func rest(_ style: DesktopPetStyle, now: Date, random: () -> Double) -> DesktopPetActivity {
         switch style {
         case .stroll, .sit: .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
-        case .curl: .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
+        case .curl, .hang, .side: .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
         }
     }
 
@@ -618,7 +766,8 @@ public enum DesktopPetBrain {
         var next = state
         next.since = now
         let roll = random()
-        if roll < 0.12 {
+        // 吊着的不打哈欠（地面动作）。
+        if roll < 0.12, style != .hang {
             next.activity = .yawn(since: now)
             return next
         }
@@ -638,38 +787,66 @@ public enum DesktopPetBrain {
                 if roll > 0.7 { turn(&next, left: !next.facingLeft, now: now) }
                 next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
             }
-        case .curl:
+        case .curl, .hang, .side:
             next.activity = .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
         }
         return next
     }
 
     /// 趴够了：探头看一眼、伸个懒腰、沿边挪几步，或者打个哈欠。
+    /// 吊着的只抬头看看或者横着挪几步；左右边的探出来看看或者坐起来抬头，不挪。
     private static func afterCurl(_ state: DesktopPetState, now: Date, lane: ClosedRange<Double>,
-                                  random: () -> Double) -> DesktopPetState {
+                                  style: DesktopPetStyle = .curl, random: () -> Double) -> DesktopPetState {
         var next = state
         next.since = now
         let roll = random()
+        switch style {
+        case .side:
+            next.activity = roll < 0.45
+                ? .peek(until: now.addingTimeInterval(peekDuration))
+                : .idle(until: now.addingTimeInterval(lerp(DesktopPetSide.sitRange, random())))
+            return next
+        case .hang:
+            if roll < 0.4 {
+                next.activity = .peek(until: now.addingTimeInterval(peekDuration))
+                return next
+            }
+            if roll >= 0.8 {
+                next.activity = .curl(until: now.addingTimeInterval(lerp(curlRange, random())))
+                return next
+            }
+            return shuffle(next, now: now, lane: lane, random: random)
+        default:
+            break
+        }
         if roll < 0.32 {
             next.activity = .peek(until: now.addingTimeInterval(peekDuration))
         } else if roll < 0.52 {
             next.activity = .stretch(since: now)
         } else if roll < 0.8 {
-            let distance = lerp(shuffleRange, random())
-            let goLeft = random() < 0.5
-            var target = goLeft ? next.x - distance : next.x + distance
-            if target < lane.lowerBound || target > lane.upperBound {
-                target = goLeft ? next.x + distance : next.x - distance
-            }
-            target = clamp(target, lane)
-            if abs(target - next.x) < 4 {
-                next.activity = .peek(until: now.addingTimeInterval(peekDuration))
-            } else {
-                next.activity = .walk(to: target)
-                turn(&next, left: target < next.x, now: now)
-            }
+            next = shuffle(next, now: now, lane: lane, random: random)
         } else {
             next.activity = .yawn(since: now)
+        }
+        return next
+    }
+
+    /// 沿边挪几步：走不出去就往另一边。
+    private static func shuffle(_ state: DesktopPetState, now: Date, lane: ClosedRange<Double>,
+                                random: () -> Double) -> DesktopPetState {
+        var next = state
+        let distance = lerp(shuffleRange, random())
+        let goLeft = random() < 0.5
+        var target = goLeft ? next.x - distance : next.x + distance
+        if target < lane.lowerBound || target > lane.upperBound {
+            target = goLeft ? next.x + distance : next.x - distance
+        }
+        target = clamp(target, lane)
+        if abs(target - next.x) < 4 {
+            next.activity = .peek(until: now.addingTimeInterval(peekDuration))
+        } else {
+            next.activity = .walk(to: target)
+            turn(&next, left: target < next.x, now: now)
         }
         return next
     }
