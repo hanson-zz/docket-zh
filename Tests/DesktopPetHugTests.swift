@@ -77,6 +77,35 @@ final class DesktopPetHugTests: XCTestCase {
         XCTAssertEqual(step(cheering, at: 10).activity, .hugIn(since: t0.addingTimeInterval(10)))
     }
 
+    func testStretchReminderOnSideEdgeClimbsOutExercisesWavesThenTucksBack() {
+        let resting = DesktopPetBrain.placed(at: 300, style: .side, now: t0)
+        let start = DesktopPetBrain.stretched(resting, style: .side, now: t0)
+        XCTAssertEqual(DesktopPetBrain.pose(start, now: t0, style: .side).image, "pet-sprite-hug-out-1", "先爬出来")
+        var state = start
+        var highest = state.x
+        var sawClimb = false
+        let exerciseEnd = DesktopPetHug.outDuration + DesktopPetHug.exerciseDuration
+        var t = 0.1
+        while t <= exerciseEnd + 0.05 {
+            state = step(state, at: t, touchQuiet: 0)
+            highest = max(highest, state.x)
+            if DesktopPetBrain.pose(state, now: t0.addingTimeInterval(t), style: .side).image.hasPrefix("pet-sprite-hug-climb-") {
+                sawClimb = true
+            }
+            t += 0.1
+        }
+        XCTAssertTrue(sawClimb, "沿边上下爬着做操")
+        XCTAssertGreaterThan(highest, 308, "往上爬了一段")
+        XCTAssertEqual(state.x, 300, accuracy: 4, "做完回到原处")
+        let waving = t0.addingTimeInterval(exerciseEnd + 0.2)
+        XCTAssertEqual(DesktopPetBrain.pose(state, now: waving, style: .side).image, "pet-sprite-hug-out-6", "挥手")
+        XCTAssertTrue(DesktopPetBrain.hugIsOut(state, now: waving), "露着时单击按平时处理")
+        let done = exerciseEnd + DesktopPetHug.waveHold + DesktopPetHug.exerciseLinger + 0.1
+        XCTAssertEqual(step(state, at: done, touchQuiet: DesktopPetHug.retractAfter).activity,
+                       .hugIn(since: t0.addingTimeInterval(done)), "没人理缩回去")
+        guard case .hugOut = step(state, at: done, touchQuiet: 1).activity else { return XCTFail("有人理接着露着") }
+    }
+
     func testDozesAfterTwentyQuietSecondsAndWakesWhenPointerNear() {
         let resting = DesktopPetState(x: 300, activity: .curl(until: t0.addingTimeInterval(80)), since: t0)
         guard case .curl = step(resting, at: 19, quiet: 19).activity else { return XCTFail("还没到 20 秒") }

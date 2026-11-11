@@ -40,6 +40,23 @@ public enum DesktopPetHug {
     public static let breath: TimeInterval = 0.8
     /// 打盹闭眼呼吸 2 帧，每秒 1 帧。
     public static let sleepFPS: Double = 1
+    /// 左右边的活动提醒（没有伸懒腰帧）：爬出来，沿边上下爬两趟像在做操，挥手，等一会儿。
+    public static let exerciseCycle: TimeInterval = 1.6
+    public static let exerciseCycles = 2
+    public static var exerciseDuration: TimeInterval { exerciseCycle * Double(exerciseCycles) }
+    public static let exerciseSpeed: Double = 32
+    /// 挥完手露着等多久再按平时的规则（约 5 秒没人理缩回）。
+    public static let exerciseLinger: TimeInterval = 3
+
+    /// 做操这一刻：nil 是还在爬出或已经做完；否则 (是否往上, 这一趟里第几帧)。
+    public static func exercisePhase(elapsed: Double) -> (up: Bool, step: Int)? {
+        let t = elapsed - outDuration
+        guard t >= 0, t < exerciseDuration else { return nil }
+        let inCycle = t.truncatingRemainder(dividingBy: exerciseCycle)
+        let up = inCycle < exerciseCycle / 2
+        let step = Int((up ? inCycle : inCycle - exerciseCycle / 2) * climbFPS * 2)
+        return (up, step)
+    }
 
     /// 那条边用哪一套帧。
     public static func idleStrip(_ edge: DesktopPetEdge) -> DesktopPetStrip { edge == .right ? .hugR : .hug }
@@ -291,6 +308,25 @@ extension DesktopPetBrain {
                 next.since = now
             }
             return next
+        case .stretch(let since):
+            // 活动提醒：做操时沿边上下爬（往上一半、往下一半，回到原处），挥完手露着等一会儿。
+            let t = now.timeIntervalSince(since)
+            if let phase = DesktopPetHug.exercisePhase(elapsed: t) {
+                let delta = DesktopPetHug.exerciseSpeed * dt * (phase.up ? 1 : -1)
+                next.x = clamp(next.x + delta, lane)
+                return next
+            }
+            if t >= DesktopPetHug.outDuration + DesktopPetHug.exerciseDuration
+                + DesktopPetHug.waveHold + DesktopPetHug.exerciseLinger {
+                if touchQuiet >= DesktopPetHug.retractAfter {
+                    next.activity = .hugIn(since: now)
+                } else {
+                    // 有人在理：露着，接着按单击爬出后的规则走。
+                    next.activity = .hugOut(since: now.addingTimeInterval(-DesktopPetHug.outDuration - DesktopPetHug.waveHold))
+                }
+                next.since = now
+            }
+            return next
         case .hugClimb(let target):
             let goal = clamp(target, lane)
             next.x = move(next.x, toward: goal, by: DesktopPetHug.climbSpeed * dt)
@@ -355,6 +391,16 @@ extension DesktopPetBrain {
         case .jump, .cheer, .celebrate:
             // 被点、欢呼、专注完成：爬出来挥手，演完由 `step` 倒放缩回。
             pose.image = out.imageName(DesktopPetHug.outFrame(elapsed: elapsed))
+        case .stretch(let since):
+            let t = max(0, now.timeIntervalSince(since))
+            if t < DesktopPetHug.outDuration {
+                pose.image = out.imageName(DesktopPetHug.outFrame(elapsed: t))
+            } else if let phase = DesktopPetHug.exercisePhase(elapsed: t) {
+                pose.image = DesktopPetHug.climbStrip(edge).imageName(phase.up ? phase.step : -1 - phase.step)
+            } else {
+                let waved = t - DesktopPetHug.outDuration - DesktopPetHug.exerciseDuration
+                pose.image = out.imageName(waved < DesktopPetHug.waveHold ? 5 : 4)
+            }
         case .hugIn(let since):
             pose.image = out.imageName(max(0, 4 - Int(max(0, now.timeIntervalSince(since)) * DesktopPetHug.outFPS)))
         case .hugClimb(let target):
@@ -381,6 +427,7 @@ extension DesktopPetBrain {
         switch state.activity {
         case .hugOut(let since): return now.timeIntervalSince(since) >= DesktopPetHug.outDuration
         case .cheer, .celebrate: return true
+        case .stretch(let since): return now.timeIntervalSince(since) >= DesktopPetHug.outDuration
         default: return false
         }
     }
