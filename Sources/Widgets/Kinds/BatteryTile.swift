@@ -305,25 +305,60 @@ struct BatteryTile: View {
     /// 前一道小闪电，20% 及以下没在充电时数字和环变红。一格放不下时先去掉
     /// % 符号再缩小（`BatteryHourglass.readingFit`）。
     private var icons: some View {
-        HStack(spacing: CGFloat(BatteryHourglass.iconSlotGap)) {
-            ForEach(slots) { slot in
-                let reading = reading(slot)
-                GeometryReader { geo in
-                    HStack(spacing: 5) {
-                        iconRing(slot, reading, diameter: 30)
-                        iconReading(reading, size: 20, available: Double(geo.size.width) - 35)
-                        Spacer(minLength: 0)
+        GeometryReader { outer in
+            let count = CGFloat(max(1, slots.count))
+            let gap = CGFloat(BatteryHourglass.iconSlotGap)
+            let slotWidth = (outer.size.width - gap * (count - 1)) / count
+            // 卡片被扩展栏拉宽拉高时（面板里常见），一格放得下就用大一号的：
+            // 更大的环、更大的数字，数字下面一行状态（正在充电、使用电池……），不再留一大片空。
+            let roomy = slotWidth >= 120 && outer.size.height >= 54
+            HStack(spacing: gap) {
+                ForEach(slots) { slot in
+                    let reading = reading(slot)
+                    Group {
+                        if roomy {
+                            roomyIcon(slot, reading, height: outer.size.height, width: slotWidth)
+                        } else {
+                            GeometryReader { geo in
+                                HStack(spacing: 5) {
+                                    iconRing(slot, reading, diameter: 30)
+                                    iconReading(reading, size: 20, available: Double(geo.size.width) - 35)
+                                    Spacer(minLength: 0)
+                                }
+                                .frame(width: geo.size.width, height: geo.size.height)
+                            }
+                            // 一格最多 84 宽，一台设备时整组在卡片里居中，不贴左边。
+                            .frame(maxWidth: CGFloat(BatteryHourglass.iconSlotWidth))
+                        }
                     }
-                    .frame(width: geo.size.width, height: geo.size.height)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(slot.name)
+                    .accessibilityValue("\(percentText(reading)) \(caption(reading))")
+                    .help("\(slot.name) \(percentText(reading))")
                 }
-                // 一格最多 84 宽，一台设备时整组在卡片里居中，不贴左边。
-                .frame(maxWidth: CGFloat(BatteryHourglass.iconSlotWidth))
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(slot.name)
-                .accessibilityValue("\(percentText(reading)) \(caption(reading))")
-                .help("\(slot.name) \(percentText(reading))")
+            }
+            .frame(width: outer.size.width, height: outer.size.height)
+        }
+    }
+
+    /// 宽敞时的一格：大环 + 大号百分比，下面一行状态，整组在格里居中。
+    private func roomyIcon(_ slot: Slot, _ reading: Reading, height: CGFloat, width: CGFloat) -> some View {
+        let diameter = min(46, max(32, height - 16))
+        let warns = BatteryHourglass.numberWarns(level: reading.level, charging: reading.charging,
+                                                 present: reading.present)
+        return HStack(spacing: 10) {
+            iconRing(slot, reading, diameter: diameter)
+            VStack(alignment: .leading, spacing: 1) {
+                iconReading(reading, size: 26, available: Double(width - diameter - 10))
+                Text(caption(reading))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(reading.present && reading.charging ? accent(reading)
+                                     : (warns ? BatteryTheme.warningRed.swiftUI : WidgetStyle.secondary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// 设备图标 + 外圈电量环：默认电池绿，选了颜色是主题色，报警是红（`accent`）。
