@@ -54,6 +54,11 @@ private struct SlackerTileBody: View, Equatable {
                         .padding(.horizontal, -WidgetStyle.inset)
                         .clipShape(.rect(cornerRadius: WidgetStyle.corner, style: .continuous))
                 }
+                if look.image == nil {
+                    SlackerSheen(cornerRadius: WidgetStyle.corner)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(-WidgetStyle.inset)
+                }
                 if vertical {
                     column(reading, look)
                 } else {
@@ -400,5 +405,19 @@ enum SlackerSamples {
     /// 截到整分钟。
     static func minute(_ date: Date) -> Date {
         Date(timeIntervalSinceReferenceDate: (date.timeIntervalSinceReferenceDate / 60).rounded(.down) * 60)
+    }
+}
+
+/// 纯色底上的一层玻璃光：顶上一抹亮、底下略压暗，让整块颜色读起来像玻璃里的颜色，
+/// 不再是一块平涂的色块，和旁边的液态玻璃卡片放在一起不突兀。
+struct SlackerSheen: View {
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.06), .black.opacity(0.10)],
+                                 startPoint: .top, endPoint: .bottom))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }

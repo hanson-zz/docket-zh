@@ -110,10 +110,11 @@ struct SlackerDetail: View {
                         }
                     }
                 }
+                .overlay { SlackerSheen(cornerRadius: 18) }
                 .clipShape(.rect(cornerRadius: 18, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
+                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.75)
                 }
                 // 表盘画在自己的底色或图片上，不跟面板外观：保持浅色环境，字和水波的颜色才和底色对得上。
                 .environment(\.colorScheme, .light)
@@ -189,14 +190,11 @@ struct SlackerDetail: View {
                 Text("背景")
                     .font(WidgetStyle.label(13))
                     .foregroundStyle(.panelPrimary)
-                Picker("", selection: Binding(get: { tab }, set: { backgroundTab = $0 })) {
-                    Text("颜色").tag(BackgroundTab.color)
-                    Text("图片").tag(BackgroundTab.image)
+                // 系统分段控件在 macOS 上固定是蓝色，和整张面板的暖色对不上，改用面板自己的胶囊。
+                HStack(spacing: 4) {
+                    pill(tr("颜色"), on: tab == .color) { backgroundTab = .color }
+                    pill(tr("图片"), on: tab == .image) { backgroundTab = .image }
                 }
-                .pickerStyle(.segmented)
-                .tint(panelTint.control)
-                .labelsHidden()
-                .fixedSize()
                 Spacer()
             }
             if tab == .color {
@@ -222,6 +220,7 @@ struct SlackerDetail: View {
             .tint(panelTint.control)
             .controlSize(.mini)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .glassPane(cornerRadius: 10)
     }
@@ -264,6 +263,8 @@ struct SlackerDetail: View {
                 write { $0.set(SlackerClock.textColorKey, .string(hex)) }
             }
         }
+        // 撑满整行：不然这一块只有色板那么宽，和上下几块对不齐。
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .glassPane(cornerRadius: 10)
     }
