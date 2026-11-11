@@ -350,7 +350,7 @@ struct BatteryTile: View {
             iconRing(slot, reading, diameter: diameter)
             VStack(alignment: .leading, spacing: 1) {
                 iconReading(reading, size: 26, available: Double(width - diameter - 10))
-                Text(caption(reading))
+                Text(roomyCaption(slot, reading))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(reading.present && reading.charging ? accent(reading)
                                      : (warns ? BatteryTheme.warningRed.swiftUI : WidgetStyle.secondary))
@@ -359,6 +359,21 @@ struct BatteryTile: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 宽敞格的状态行：这台 Mac 有 macOS 估出的剩余时间就写「还能用约 3 小时」
+    /// 「约 40 分钟充满」，没有（或别的设备）写状态词。
+    private func roomyCaption(_ slot: Slot, _ reading: Reading) -> String {
+        if case .fixed(let kind, _) = slot, kind == .mac, reading.present, !context.isPreview {
+            let power = BatteryMetrics.shared.power
+            if let remaining = DesktopSystemCards.batteryRemaining(charging: reading.charging,
+                                                                   onPower: reading.onPower,
+                                                                   minutesToFull: power.minutesToFull,
+                                                                   minutesToEmpty: power.minutesToEmpty) {
+                return remaining
+            }
+        }
+        return caption(reading)
     }
 
     /// 设备图标 + 外圈电量环：默认电池绿，选了颜色是主题色，报警是红（`accent`）。
