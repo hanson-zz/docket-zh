@@ -859,7 +859,7 @@ public enum DesktopPetBrain {
         let distance = lerp(shuffleRange, random())
         let goLeft = random() < 0.5
         var target = goLeft ? next.x - distance : next.x + distance
-        if clamp(target, lane) == x {
+        if clamp(target, lane) == next.x {
             target = goLeft ? next.x + distance : next.x - distance
         }
         target = clamp(target, lane)
