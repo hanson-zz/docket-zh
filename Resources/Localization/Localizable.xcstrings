@@ -2322,6 +2322,72 @@
         }
       }
     },
+    "专注完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus done"
+          }
+        }
+      }
+    },
+    "离开时专注结束了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus ended while you were away"
+          }
+        }
+      }
+    },
+    "暂存里有 1 个新文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 new file on the shelf"
+          }
+        }
+      }
+    },
+    "暂存里有 %@ 个新文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ new files on the shelf"
+          }
+        }
+      }
+    },
+    "暂存里有 1 个文件到期移出了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 shelf file expired"
+          }
+        }
+      }
+    },
+    "暂存里有 %@ 个文件到期移出了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ shelf files expired"
+          }
+        }
+      }
+    },
     "放回原处（%@ 项）" : {
       "extractionState" : "manual",
       "localizations" : {

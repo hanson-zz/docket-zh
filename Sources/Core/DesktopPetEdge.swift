@@ -240,6 +240,8 @@ public enum DesktopPetHang {
     /// 睡着：更慢更小。
     public static let sleepAmplitude: Double = 1
     public static let sleepPeriod: Double = 4.2
+    /// 吊着没人理（鼠标没靠近、没点没拖）这么多秒就闭眼打盹（hang-sleep），鼠标一靠近就醒。
+    public static let dozeAfter: TimeInterval = 20
     /// 换幅度时 0.6 秒过渡；入睡 3 秒过渡。
     public static let blend: TimeInterval = 0.6
     public static let sleepBlend: TimeInterval = 3

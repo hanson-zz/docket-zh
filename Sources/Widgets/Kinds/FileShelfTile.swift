@@ -212,6 +212,10 @@ enum FileShelf {
                                          expiry: FileShelfList.expiry(current.config), now: now)
         guard result.changed else { return }
         WidgetWriter.write(current) { FileShelfList.write(result.kept, into: &$0) }
+        // 离开电脑时到期移出的，小熊猫记下，回来时说一句（平时不演）。
+        if !result.removed.isEmpty {
+            DesktopPetController.shared.handle(.shelfExpired(count: result.removed.count, widgetID: instance.id))
+        }
     }
 }
 

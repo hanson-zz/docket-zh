@@ -107,6 +107,12 @@ final class DesktopPetController: NSObject {
     private var assistQueue: [DesktopPetEvent] = []
     private var errand: DesktopPetErrand?
     private var review: DesktopPetReview?
+    /// 离开、回来，和离开期间先记下不演的事。
+    private var awayLog = DesktopPetAwayLog()
+    /// 锁屏、屏保、休眠、切换用户的通知（离开的判断用）。
+    private var awayObservers: [(NotificationCenter, NSObjectProtocol)] = []
+    /// 上一次有人理小熊猫（鼠标靠近、点、拖、松手、来了事）：吊着没人理约 20 秒打盹。
+    private var lastTouch = Date()
 
     /// 窗口边长（中号）：放得下最宽的跑步帧压扁、拖着晃的时候。
     static let windowSide: CGFloat = 132
@@ -168,6 +174,9 @@ final class DesktopPetController: NSObject {
         wakeObservers = []
         for (center, observer) in screenObservers { center.removeObserver(observer) }
         screenObservers = []
+        for (center, observer) in awayObservers { center.removeObserver(observer) }
+        awayObservers = []
+        awayLog = DesktopPetAwayLog()
         panel?.orderOut(nil)
         bubblePanel?.orderOut(nil)
         barPanel?.orderOut(nil)
@@ -201,6 +210,7 @@ final class DesktopPetController: NSObject {
                 let pet = DesktopPetController.shared
                 pet.screensAsleep = true
                 pet.stopClocks()
+                pet.feedAway(.blocked(.displayOff))
             }
         })
         wakeObservers.append(center.addObserver(forName: NSWorkspace.screensDidWakeNotification,
@@ -209,9 +219,11 @@ final class DesktopPetController: NSObject {
                 let pet = DesktopPetController.shared
                 pet.screensAsleep = false
                 pet.lastStep = Date()
+                pet.feedAway(.unblocked(.displayOff))
                 pet.refreshPlacement()
             }
         })
+        observeAway()
         // 显示器插拔、换桌面时马上重新看一次，不等 1.5 秒一次的轮询（拔掉的屏幕上不留残影，
         // 切进全屏 App 时尽快藏起来）。
         guard screenObservers.isEmpty else { return }
@@ -299,6 +311,8 @@ final class DesktopPetController: NSObject {
             }
         }
         checkTrash()
+        // 离开的判断：每 1.5 秒看一次系统空闲（动画那边离开着时每帧也看）。
+        feedAway(.idle(Self.userIdleSeconds()))
         guard let next, let screen else {
             hide()
             return
@@ -414,11 +428,21 @@ final class DesktopPetController: NSObject {
 
     // MARK: 状态助手
 
-    /// 码头里发生了一件事（第一版：文件暂存成功）：交给 `DesktopPetDirector` 决定怎么回应。
+    /// 码头里发生了一件事（文件暂存成功、专注完成、离开回来、暂存到期）：离开着时先记下，
+    /// 回来再合并成一条；否则交给 `DesktopPetDirector` 决定怎么回应。
     func handle(_ event: DesktopPetEvent) {
-        guard settings.enabled, shown, let track, let current = state else { return }
+        guard settings.enabled else { return }
+        // 空闲读数每帧（离开着时）或每 1.5 秒才看一次：刚拖进文件这类有人在的事，先补看一次是不是已经回来了。
+        if awayLog.isAway, case .fileStored = event { feedAway(.idle(Self.userIdleSeconds())) }
+        if awayLog.hold(event) { return }
+        guard shown, let track, let current = state else { return }
         let now = Date()
-        let point: CGPoint? = if case .fileStored(_, _, _, let at) = event { at } else { nil }
+        lastTouch = now
+        let point: CGPoint? = switch event {
+        case .fileStored(_, _, _, let at): at
+        case .focusFinished(_, let at): at
+        default: nil
+        }
         let sameScreen = point.map { point in
             if let trackScreen { return trackScreen.frame.contains(point) }
             let feet = track.feet(along: current.x)
@@ -450,6 +474,24 @@ final class DesktopPetController: NSObject {
             review = DesktopPetReview(next, now: now)
             state = DesktopPetBrain.noticed(current, style: track.style, now: now)
             sayStored(next.text, now: now)
+        case .celebrate(let widgetID, let toward, _):
+            // 朝计时器看一眼、欢呼一次、坐回去；有计时器卡片时单击打开它（开始下一轮、休息用面板里的按钮）。
+            errand = nil
+            let next = widgetID.map { DesktopPetReview(widgetID: $0, text: DesktopPetAssist.focusDoneText, now: now) }
+            review = next
+            state = DesktopPetBrain.celebrate(current, toward: toward,
+                                              until: next?.until ?? now.addingTimeInterval(DesktopPetAssist.celebrateDuration),
+                                              now: now)
+            say(DesktopPetAssist.focusDoneText, for: DesktopPetAssist.focusBubble, now: now)
+        case .welcome(let summary, _):
+            // 从睡着抬头探看；离开期间有事就说那一句，单击打开对应卡片。
+            errand = nil
+            review = summary.flatMap { summary in
+                summary.widgetID.map { DesktopPetReview(widgetID: $0, text: summary.text, itemIDs: summary.itemIDs,
+                                                        now: now) }
+            }
+            state = DesktopPetBrain.wokeUp(current, style: track.style, now: now)
+            if let summary { say(summary.text, for: DesktopPetAssist.welcomeBubble, now: now) }
         }
         render(now: now)
         updateClock(now: now)
@@ -475,8 +517,57 @@ final class DesktopPetController: NSObject {
     }
 
     private func sayStored(_ text: String, now: Date) {
+        say(text, for: DesktopPetAssist.noticeBubble, now: now)
+    }
+
+    private func say(_ text: String, for duration: TimeInterval, now: Date) {
         guard settings.bubbles, QuickActions.shared.presentation == nil, bubble.content?.isRescue != true else { return }
-        setBubble(.news(text, until: now.addingTimeInterval(DesktopPetAssist.noticeBubble)))
+        setBubble(.news(text, until: now.addingTimeInterval(duration)))
+    }
+
+    // MARK: 离开回来
+
+    /// 锁屏、屏保（分布式通知）和休眠、切换用户（工作区通知）一来就算离开；显示器睡醒在 `observeSleep` 里喂。
+    private func observeAway() {
+        guard awayObservers.isEmpty else { return }
+        let workspace = NSWorkspace.shared.notificationCenter
+        let pairs: [(Notification.Name, PostureAway.Event)] = [
+            (NSWorkspace.willSleepNotification, .blocked(.asleep)),
+            (NSWorkspace.didWakeNotification, .unblocked(.asleep)),
+            (NSWorkspace.sessionDidResignActiveNotification, .blocked(.userSwitched)),
+            (NSWorkspace.sessionDidBecomeActiveNotification, .unblocked(.userSwitched)),
+        ]
+        for (name, event) in pairs {
+            awayObservers.append((workspace, workspace.addObserver(forName: name, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { DesktopPetController.shared.feedAway(event) }
+            }))
+        }
+        let distributed = DistributedNotificationCenter.default()
+        let named: [(String, PostureAway.Event)] = [
+            ("com.apple.screenIsLocked", .blocked(.locked)),
+            ("com.apple.screenIsUnlocked", .unblocked(.locked)),
+            ("com.apple.screensaver.didstart", .blocked(.screensaver)),
+            ("com.apple.screensaver.didstop", .unblocked(.screensaver)),
+        ]
+        for (name, event) in named {
+            awayObservers.append((distributed, distributed.addObserver(forName: Notification.Name(name), object: nil,
+                                                                       queue: .main) { _ in
+                MainActor.assumeIsolated { DesktopPetController.shared.feedAway(event) }
+            }))
+        }
+    }
+
+    /// 喂一次离开的判断。回来那一刻：先看一眼专注有没有在离开时结束（记进去），再把记下的事合并成一条演出来。
+    private func feedAway(_ event: PostureAway.Event, now: Date = Date()) {
+        guard settings.enabled else { return }
+        if awayLog.isAway {
+            var probe = awayLog.tracker
+            if case .back? = probe.handle(event, at: now) { checkFocus(now: now) }
+        }
+        let focusing = FocusPandaClimb.isActive(TimerStateProvider.shared.state)
+        guard let back = awayLog.handle(event, at: now, focusing: focusing) else { return }
+        lastTouch = now
+        handle(back)
     }
 
     /// 「有待查看」结束（被点、拖走、超时）。
@@ -488,7 +579,7 @@ final class DesktopPetController: NSObject {
     /// 有待查看时被点：打开那张文件暂存卡片的面板（扩展栏自动隐藏时先滑出来），新条目闪一下。
     private func openReview(_ pending: DesktopPetReview) {
         endReview()
-        FileShelfHighlight.shared.flash(pending.itemIDs, in: pending.widgetID)
+        if !pending.itemIDs.isEmpty { FileShelfHighlight.shared.flash(pending.itemIDs, in: pending.widgetID) }
         WidgetPanelOpener.shared.open(pending.widgetID)
     }
 
@@ -500,16 +591,26 @@ final class DesktopPetController: NSObject {
 
         let timer = TimerStateProvider.shared.state
         let companion = ProLicenseGate.canUseFocusPanda(unlocked: ProAccess.isUnlocked)
-        if companion, let last = lastTimer, FocusPandaClimb.event(from: last, to: timer, now: now) == .cheer {
-            current = DesktopPetBrain.cheer(current, now: now)
-        }
+        // 专注完成一轮的欢呼改由 `checkNews` 发 `.focusFinished`（看一眼计时器、欢呼一次、坐回去）。
         lastTimer = timer
         let focusing = companion && FocusPandaClimb.isActive(timer)
 
+        // 离开着又有了输入：先探头打招呼（`handle` 改了 `state`），再接着走这一帧。
+        let idle = Self.userIdleSeconds()
+        if awayLog.isAway {
+            state = current
+            feedAway(.idle(idle), now: now)
+            guard let updated = state else { return }
+            current = updated
+        }
+        let pointer = attention(track: track)
+        if pointer != nil || dragging || pressPoint != nil { lastTouch = now }
+
         let wasDelivering: Bool = if case .fileDelivery = current.activity { true } else { false }
         current = DesktopPetBrain.step(current, dt: dt, now: now, lane: track.lane,
-                                       userIdle: Self.userIdleSeconds(), focusing: focusing,
-                                       style: track.style, attention: attention(track: track),
+                                       userIdle: idle, focusing: focusing,
+                                       style: track.style, attention: pointer,
+                                       hangQuiet: now.timeIntervalSince(lastTouch),
                                        random: { Double.random(in: 0...1) })
         if wasDelivering, let errand {
             if case .fileDelivery = current.activity {} else { arrive(&current, errand: errand, now: now) }
@@ -519,11 +620,11 @@ final class DesktopPetController: NSObject {
         if DesktopPetBrain.awaitingPutBack(current) { putBack() }
         if let content = bubble.content, let until = content.until, now >= until { setBubble(nil) }
         // 指针移得太快时离开的事件可能没来：按指针实际位置补一次。
-        let pointer = NSEvent.mouseLocation
-        if petHovering, !drawnRect.insetBy(dx: -4, dy: -4).contains(pointer) {
+        let mouse = NSEvent.mouseLocation
+        if petHovering, !drawnRect.insetBy(dx: -4, dy: -4).contains(mouse) {
             hovering(false)
         }
-        if barHovering, barPanel?.frame.contains(pointer) != true { barHover(nil, width: 0) }
+        if barHovering, barPanel?.frame.contains(mouse) != true { barHover(nil, width: 0) }
         if let until = barVisibleUntil, now >= until, !barHovering, !petHovering { hideBar() }
         if !assistQueue.isEmpty, !settling(current) {
             let waiting = assistQueue
@@ -728,6 +829,7 @@ final class DesktopPetController: NSObject {
         guard let next else { return }
         let along = next.style == .stroll ? next.along(of: feet) : next.along(fraction: spot.along)
         transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
+        lastTouch = now
         state = DesktopPetBrain.landed(current, at: along, now: now)
         track = next
         trackScreen = screen
@@ -880,7 +982,7 @@ final class DesktopPetController: NSObject {
         guard newsPrimed else { return }
         if let old = newsTimer,
            let news = DesktopPetNewsDesk.focus(from: old, at: lastNewsCheck, to: timer, at: now) {
-            announce(news)
+            focusNews(news)
         }
         if let news = DesktopPetNewsDesk.radio(wasPlaying: radioWasPlaying, oldStation: radioStation,
                                                playing: playing, station: radio.station?.name) {
@@ -892,6 +994,27 @@ final class DesktopPetController: NSObject {
     }
 
     private var newsTimer: TimerState?
+
+    /// 专注完成交给状态助手（`.focusFinished`：朝计时器卡片看一眼、欢呼一次、坐回去，单击打开计时器）；
+    /// 开始、还剩 5 分钟照旧说一句。
+    private func focusNews(_ news: DesktopPetNews) {
+        guard news == .focusDone else { return announce(news) }
+        let widgets = DockItemTree.widgets(in: WidgetPanelOpener.shared.currentItems())
+        let timerID = DesktopPetDirector.timerWidget(in: widgets)
+        handle(.focusFinished(widgetID: timerID, at: timerID.flatMap { DesktopPetCardSpots.shared.center(of: $0) }))
+    }
+
+    /// 离开着、回来之前：单独看一眼专注计时，离开时结束的那一轮记进离开的事里。
+    private func checkFocus(now: Date) {
+        let timer = TimerStateProvider.shared.state
+        defer {
+            newsTimer = timer
+            lastNewsCheck = now
+        }
+        guard newsPrimed, let old = newsTimer,
+              DesktopPetNewsDesk.focus(from: old, at: lastNewsCheck, to: timer, at: now) == .focusDone else { return }
+        focusNews(.focusDone)
+    }
 
     private func setBubble(_ content: DesktopPetBubbleContent?, position: Bool = true) {
         bubble.content = content

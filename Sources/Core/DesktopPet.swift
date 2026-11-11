@@ -192,6 +192,9 @@ public enum DesktopPetActivity: Equatable, Sendable {
     case land(since: Date)
     /// 电量低：蔫蔫的。
     case droop(until: Date)
+    /// 专注完成：先朝计时器那边抬头看一眼，再举爪欢呼一次（cheer 播一遍），之后坐着等到 `until`
+    /// （散步、坐着的坐回去，其余的趴回去）。见 `DesktopPetAssist.focusLook`、`cheerOnce`。
+    case celebrate(since: Date, until: Date)
 }
 
 /// 救回的几步：跑到废纸篓、叼起来、叼着跑回原来的地方、放下。
@@ -303,6 +306,7 @@ public enum DesktopPetBrain {
     public static func step(_ state: DesktopPetState, dt: TimeInterval, now: Date,
                             lane: ClosedRange<Double>, userIdle: TimeInterval, focusing: Bool,
                             style: DesktopPetStyle = .stroll, attention: Double? = nil,
+                            hangQuiet: TimeInterval = 0,
                             random: () -> Double) -> DesktopPetState {
         var next = state
         next.x = clamp(state.x, lane)
@@ -333,6 +337,18 @@ public enum DesktopPetBrain {
         case .droop(let until):
             if now < until { return next }
             return settle(next, now: now, focusing: focusing, style: style, random: random)
+        case .celebrate(let since, let until):
+            if now.timeIntervalSince(since) < DesktopPetAssist.celebrateDuration { return next }
+            // 欢呼完坐回去（专注陪着时照样坐着），等到「有待查看」结束。
+            next.since = now
+            if focusing {
+                next.activity = .sit
+            } else if style == .stroll || style == .sit {
+                next.activity = .idle(until: max(until, now))
+            } else {
+                next.activity = rest(style, now: now, random: random)
+            }
+            return next
         default:
             break
         }
@@ -341,7 +357,8 @@ public enum DesktopPetBrain {
             if next.activity != .sit { next.activity = .sit; next.since = now }
             return next
         }
-        if userIdle >= sleepAfter {
+        // 吊着没人理（鼠标没靠近、没点没拖）约 20 秒就闭眼打盹，见 `DesktopPetHang.dozeAfter`。
+        if userIdle >= sleepAfter || (style == .hang && hangQuiet >= DesktopPetHang.dozeAfter) {
             if case .sleep = next.activity { return next }
             next.activity = .sleep(since: now)
             next.since = now
@@ -556,6 +573,8 @@ public enum DesktopPetBrain {
             pose = DesktopPetPose(image: DesktopPetStrip.cheer.imageName(Int(elapsed * 8)))
         case .droop:
             pose = DesktopPetPose(image: DesktopPetStrip.droop.imageName(Int(elapsed * 3)))
+        case .celebrate:
+            pose = DesktopPetPose(image: celebrateImage(elapsed: elapsed, now: now), facingLeft: left)
         case .curl:
             pose = DesktopPetPose(image: DesktopPetStrip.lie.imageName(Int(elapsed * 4)), facingLeft: left)
         case .walk:
@@ -655,7 +674,7 @@ public enum DesktopPetBrain {
                 DesktopPetHang.frame(time: time, boost: min(elapsed, DesktopPetHang.alertKick) * extra))
             pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend,
                                                  amplitude: DesktopPetHang.alertAmplitude)
-        case .jump, .cheer:
+        case .jump, .cheer, .celebrate:
             pose.image = DesktopPetStrip.hang.imageName(DesktopPetHang.frame(time: time, boost: elapsed * extra))
             pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend / 2,
                                                  amplitude: DesktopPetHang.alertAmplitude + 1)
@@ -716,6 +735,9 @@ public enum DesktopPetBrain {
         case .cheer:
             pose = DesktopPetPose(image: DesktopPetStrip.cheer.imageName(Int(elapsed * 8)))
             pose.reveal = DesktopPetSide.peek
+        case .celebrate:
+            pose = DesktopPetPose(image: celebrateImage(elapsed: elapsed, now: now))
+            pose.reveal = DesktopPetSide.peek
         case .droop:
             pose = DesktopPetPose(image: DesktopPetStrip.droop.imageName(Int(elapsed * 3)))
             pose.reveal = DesktopPetSide.rest
@@ -747,6 +769,19 @@ public enum DesktopPetBrain {
             pose.reveal = DesktopPetSide.rest
         }
         return pose
+    }
+
+    /// 专注完成那一段：先抬头 4 帧停住（看计时器那边），再 cheer 6 帧播一遍，之后坐着呼吸眨眼。
+    static func celebrateImage(elapsed: Double, now: Date) -> String {
+        let look = DesktopPetAssist.focusLook
+        if elapsed < look {
+            return DesktopPetStrip.lookup.imageName(min(3, Int(elapsed / 0.12)))
+        }
+        if elapsed < look + DesktopPetAssist.cheerOnce {
+            return DesktopPetStrip.cheer.imageName(min(DesktopPetStrip.cheer.frameCount - 1,
+                                                       Int((elapsed - look) * DesktopPetAssist.cheerFPS)))
+        }
+        return sittingImage(now: now)
     }
 
     /// 0…1 的缓入缓出。
