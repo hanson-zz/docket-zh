@@ -255,7 +255,8 @@ final class DesktopPetDirectorTests: XCTestCase {
         XCTAssertNotEqual(DesktopPetWelcome.storedText(1), DesktopPetWelcome.storedText(2))
         XCTAssertTrue(DesktopPetWelcome.storedText(2).contains("2"))
         XCTAssertTrue(DesktopPetWelcome.expiredText(5).contains("5"))
-        XCTAssertEqual(DesktopPetMissed.focusFinished(widgetID: nil).priority, 3)
+        XCTAssertGreaterThan(DesktopPetMissed.focusFinished(widgetID: nil).priority,
+                             DesktopPetMissed.filesStored(count: 1, widgetID: shelf, itemIDs: []).priority)
     }
 
     func testAwayByLockAndQuietReturns() {

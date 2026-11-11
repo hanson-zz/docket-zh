@@ -26,10 +26,14 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
     public var hotKey: KeyCombo?
     /// 拖过以后记住的位置：哪块屏幕、沿边的哪儿。没拖过是 nil。
     public var spot: DesktopPetSpot?
+    /// 活动提醒：连续打字约 50 分钟伸个懒腰提醒起来活动。默认关。
+    public var stretchReminder: Bool = false
+    /// 下载完成提示：下载文件夹里有文件下好时叼过来说一声。默认开。
+    public var downloadNotice: Bool = true
 
     public init(enabled: Bool = false, trashRescue: Bool = false, anchor: DesktopPetAnchor = .dock,
                 size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
-                spot: DesktopPetSpot? = nil) {
+                spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true) {
         self.enabled = enabled
         self.trashRescue = trashRescue
         self.anchor = anchor
@@ -37,12 +41,16 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         self.bubbles = bubbles
         self.hotKey = hotKey
         self.spot = spot
+        self.stretchReminder = stretchReminder
+        self.downloadNotice = downloadNotice
     }
 
     /// 救回真正在不在工作：总开关和子开关都开着。
     public var rescueActive: Bool { enabled && trashRescue }
 
-    private enum CodingKeys: String, CodingKey { case enabled, trashRescue, anchor, size, bubbles, hotKey, spot }
+    private enum CodingKeys: String, CodingKey {
+        case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice
+    }
 
     /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
     public init(from decoder: any Decoder) throws {
@@ -56,6 +64,8 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         bubbles = (try? c.decodeIfPresent(Bool.self, forKey: .bubbles)) ?? true
         hotKey = (try? c.decodeIfPresent(KeyCombo.self, forKey: .hotKey)) ?? nil
         spot = (try? c.decodeIfPresent(DesktopPetSpot.self, forKey: .spot)) ?? nil
+        stretchReminder = (try? c.decodeIfPresent(Bool.self, forKey: .stretchReminder)) ?? false
+        downloadNotice = (try? c.decodeIfPresent(Bool.self, forKey: .downloadNotice)) ?? true
     }
 }
 

@@ -15,7 +15,7 @@ struct DesktopPetSettingsSection: View {
             Toggle(isOn: $settings.enabled) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("桌面宠物")
-                    Text("小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。全屏 App 时不显示。")
+                    Text("小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。把文件拖到它身上就放进文件暂存。全屏 App 时不显示。")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
@@ -44,6 +44,24 @@ struct DesktopPetSettingsSection: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("头顶气泡")
                         Text("专注开始、还剩 5 分钟和完成，收音机播放的台，插电、充满和低电量，喝水提醒到点时，小熊猫头顶说一句，几秒后消失。同一类 30 秒内只说一次。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Toggle(isOn: $settings.stretchReminder) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("活动提醒")
+                        Text("连续打字约 50 分钟，小熊猫伸个懒腰，提醒你起来活动一下。中间停下超过 5 分钟或离开电脑就重新计时，专注计时进行中不提醒。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Toggle(isOn: $settings.downloadNotice) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("下载完成提示")
+                        Text("下载文件夹里有文件下好时，小熊猫叼着纸团过来说一声，单击它在访达中显示。第一次可能要允许码头访问下载文件夹。")
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

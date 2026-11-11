@@ -15,6 +15,9 @@ import Foundation
 // 专注结束（`.focusFinished`）：朝计时器卡片那边看一眼、举爪欢呼一次、坐回去，有待查看时单击打开计时器。
 // 离开回来（`.welcomeBack`）：离开（锁屏、显示器睡了、或系统空闲满 5 分钟）期间发生的事先不演，
 // 记在 `DesktopPetAwayLog` 里；回来时小熊猫从睡着抬头探看，把记下的事合并成一条气泡（取最重要的）。
+// 活动提醒（`.stretchReminder`）：连续打字满 50 分钟伸个懒腰说一句，计时在 `DesktopPetStretchClock`。
+// 下载完成（`.downloadFinished`）：叼纸团跑一小段放下说一句，单击在访达中显示；
+// 看下载文件夹的规则在 `DesktopPetDownloadWatch`。见 DesktopPetUseful.swift。
 
 // MARK: - 事件
 
@@ -30,6 +33,10 @@ public enum DesktopPetEvent: Equatable, Sendable {
     case welcomeBack(DesktopPetWelcome?)
     /// 文件暂存里有 `count` 个条目到期被自动移出。平时不演，只在离开期间记下，回来时说一句。
     case shelfExpired(count: Int, widgetID: UUID)
+    /// 连续打字太久：伸个懒腰，提醒起来活动一下。
+    case stretchReminder
+    /// 下载文件夹里有文件下好了（完整路径，按下好的先后）。
+    case downloadFinished(paths: [String])
 
     /// 排队时同一类只留一件。
     public var kind: String {
@@ -38,6 +45,8 @@ public enum DesktopPetEvent: Equatable, Sendable {
         case .focusFinished: "focusFinished"
         case .welcomeBack: "welcomeBack"
         case .shelfExpired: "shelfExpired"
+        case .stretchReminder: "stretchReminder"
+        case .downloadFinished: "downloadFinished"
         }
     }
 }
@@ -124,6 +133,11 @@ public enum DesktopPetReaction: Equatable, Sendable {
     case deliver(DesktopPetErrand, to: Double)
     /// 就地抬头或探头（吊着的晃大一下，`swing`），头顶气泡说一句。
     case notice(DesktopPetErrand, swing: Bool)
+    /// 活动提醒：伸个懒腰（吊着的晃一下），头顶说「起来活动一下吧」。
+    case stretch(swing: Bool)
+    /// 下载好了：叼着纸团跑到 `to`（沿边坐标，身边一小段）放下，说一句，单击在访达中显示。
+    /// `to` 是 nil 时就地抬头或探头（吊着的晃一下）。
+    case fetch(DesktopPetDownloads, to: Double?, swing: Bool)
     /// 专注完成：朝 `toward`（计时器卡片在沿边坐标上的位置；异屏、看不见时是 nil，就地）看一眼，
     /// 欢呼一次再坐回去；有计时器卡片（`widgetID`）时进入「有待查看」，单击打开它。
     case celebrate(widgetID: UUID?, toward: Double?, swing: Bool)
@@ -146,9 +160,11 @@ public struct DesktopPetDirectorContext: Equatable, Sendable {
     public var scale: Double
     /// 正在办（或刚办完）的那一趟，3 秒内的新事件并进去。
     public var recent: DesktopPetErrand?
+    /// 刚报过的那一批下载，3 秒内新下好的并进去。
+    public var recentDownloads: DesktopPetDownloads?
 
     public init(now: Date, settling: Bool, track: DesktopPetTrack?, petX: Double, sameScreen: Bool,
-                scale: Double = 1, recent: DesktopPetErrand? = nil) {
+                scale: Double = 1, recent: DesktopPetErrand? = nil, recentDownloads: DesktopPetDownloads? = nil) {
         self.now = now
         self.settling = settling
         self.track = track
@@ -156,6 +172,7 @@ public struct DesktopPetDirectorContext: Equatable, Sendable {
         self.sameScreen = sameScreen
         self.scale = scale
         self.recent = recent
+        self.recentDownloads = recentDownloads
     }
 }
 
@@ -180,7 +197,26 @@ public enum DesktopPetDirector {
         case .shelfExpired:
             // 平时不演，离开期间由 `DesktopPetAwayLog` 记下。
             return .ignore
+        case .stretchReminder:
+            if context.settling { return .queue }
+            return .stretch(swing: track.style == .hang)
+        case .downloadFinished(let paths):
+            if context.settling { return .queue }
+            let batch = DesktopPetDownloads.merged(paths, into: context.recentDownloads, now: context.now)
+            guard !batch.paths.isEmpty else { return .ignore }
+            if track.style == .stroll, track.lane.upperBound - track.lane.lowerBound > 1 {
+                return .fetch(batch, to: fetchSpot(from: context.petX, lane: track.lane, scale: context.scale),
+                              swing: false)
+            }
+            return .fetch(batch, to: nil, swing: track.style == .hang)
         }
+    }
+
+    /// 下载好了叼过来：朝可走范围中间那边跑一小段（`DesktopPetAssist.fetchRun`），夹在范围里。
+    public static func fetchSpot(from petX: Double, lane: ClosedRange<Double>, scale: Double) -> Double {
+        let run = DesktopPetAssist.fetchRun * max(scale, 0.1)
+        let mid = (lane.lowerBound + lane.upperBound) / 2
+        return DesktopPetBrain.clamp(petX <= mid ? petX + run : petX - run, lane)
     }
 
     private static func stored(count: Int, widgetID: UUID, itemIDs ids: [String], at point: CGPoint,
@@ -233,12 +269,22 @@ public enum DesktopPetDirector {
             incoming = .fileStored(count: count + oldCount, widgetID: widgetID,
                                    newItemIDs: (ids + oldIDs).filter { seen.insert($0).inserted }, at: point)
         }
+        if case .downloadFinished(let paths) = event,
+           case .downloadFinished(let oldPaths)? = queue.first(where: { $0.kind == event.kind }) {
+            var seen = Set<String>()
+            incoming = .downloadFinished(paths: (oldPaths + paths).filter { seen.insert($0).inserted })
+        }
         return queue.filter { $0.kind != event.kind } + [incoming]
     }
 
     /// 码头上的计时器卡片（文件夹里的也算，按出现的先后取第一张）：专注完成时朝它看、单击打开它。
     public static func timerWidget(in widgets: [WidgetInstance]) -> UUID? {
         widgets.first { $0.kind == .timer }?.id
+    }
+
+    /// 拖到小熊猫身上的文件放进哪张文件暂存卡片：码头上（文件夹里的也算）第一张没隐藏的；没有是 nil。
+    public static func shelfWidget(in widgets: [WidgetInstance]) -> WidgetInstance? {
+        widgets.first { $0.kind == .fileShelf && WidgetManagement.isShown($0) }
     }
 }
 
@@ -283,12 +329,14 @@ public enum DesktopPetMissed: Equatable, Sendable {
     case focusFinished(widgetID: UUID?)
     case filesStored(count: Int, widgetID: UUID, itemIDs: [String])
     case filesExpired(count: Int, widgetID: UUID)
+    case downloaded(paths: [String])
 
-    /// 合并成一条时谁优先：专注结束 > 新暂存 > 到期移出。数大的优先。
+    /// 合并成一条时谁优先：专注结束 > 新暂存 > 下载好了 > 到期移出。数大的优先。
     public var priority: Int {
         switch self {
-        case .focusFinished: 3
-        case .filesStored: 2
+        case .focusFinished: 4
+        case .filesStored: 3
+        case .downloaded: 2
         case .filesExpired: 1
         }
     }
@@ -299,11 +347,14 @@ public struct DesktopPetWelcome: Equatable, Sendable {
     public var text: String
     public var widgetID: UUID?
     public var itemIDs: [String]
+    /// 单击在访达中显示的文件（离开期间下好的）；不是下载时为空。
+    public var revealPaths: [String]
 
-    public init(text: String, widgetID: UUID?, itemIDs: [String] = []) {
+    public init(text: String, widgetID: UUID?, itemIDs: [String] = [], revealPaths: [String] = []) {
         self.text = text
         self.widgetID = widgetID
         self.itemIDs = itemIDs
+        self.revealPaths = revealPaths
     }
 
     /// 离开期间的事合并成一条：只说最重要的那一类；同一类的计数相加，卡片取最近那件的。
@@ -330,6 +381,12 @@ public struct DesktopPetWelcome: Equatable, Sendable {
             var count = 0
             for case .filesExpired(let n, _) in same { count += max(0, n) }
             return DesktopPetWelcome(text: expiredText(count), widgetID: widget)
+        case .downloaded?:
+            var paths: [String] = []
+            for case .downloaded(let fresh) in same { paths += fresh }
+            var seen = Set<String>()
+            paths = paths.filter { seen.insert($0).inserted }
+            return DesktopPetWelcome(text: DesktopPetAssist.downloadedText(paths), widgetID: nil, revealPaths: paths)
         case nil:
             return nil
         }
@@ -382,6 +439,11 @@ public struct DesktopPetAwayLog: Equatable, Sendable {
             missed.append(.focusFinished(widgetID: widgetID))
         case .shelfExpired(let count, let widgetID):
             missed.append(.filesExpired(count: count, widgetID: widgetID))
+        case .downloadFinished(let paths):
+            if !paths.isEmpty { missed.append(.downloaded(paths: paths)) }
+        case .stretchReminder:
+            // 人不在，不提醒，也不记。
+            break
         case .welcomeBack:
             return false
         }
@@ -428,6 +490,38 @@ extension DesktopPetBrain {
         var next = state
         next.since = now
         next.activity = .peek(until: now.addingTimeInterval(peekDuration))
+        return next
+    }
+
+    /// 活动提醒：伸个懒腰。吊着的不伸懒腰，晃大一下（跳的那套晃法）。救回途中、拖着时不打断。
+    public static func stretched(_ state: DesktopPetState, style: DesktopPetStyle, now: Date) -> DesktopPetState {
+        switch state.activity {
+        case .rescue, .dragged: return state
+        default: break
+        }
+        var next = state
+        next.since = now
+        next.activity = style == .hang ? .jump(since: now) : .stretch(since: now)
+        return next
+    }
+
+    /// 文件拖到身上还没松手：抬头张望等着接（一直探着，直到松手或移开）。救回途中、拖着时不理会。
+    public static func expecting(_ state: DesktopPetState, now: Date) -> DesktopPetState {
+        switch state.activity {
+        case .rescue, .dragged, .fileDelivery: return state
+        default: break
+        }
+        var next = state
+        if case .peek = state.activity {} else { next.since = now }
+        next.activity = .peek(until: now.addingTimeInterval(DesktopPetAssist.expectHold))
+        return next
+    }
+
+    /// 文件移开了（没松手）：快点趴回去。
+    public static func stopExpecting(_ state: DesktopPetState, now: Date) -> DesktopPetState {
+        guard case .peek(let until) = state.activity, until > now.addingTimeInterval(0.4) else { return state }
+        var next = state
+        next.activity = .peek(until: now.addingTimeInterval(0.4))
         return next
     }
 

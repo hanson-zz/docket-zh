@@ -2388,6 +2388,50 @@
         }
       }
     },
+    "起来活动一下吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to stretch"
+          }
+        }
+      }
+    },
+    "先在扩展栏添加文件暂存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a File Shelf to the shelf first"
+          }
+        }
+      }
+    },
+    "下载好了：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded: %@"
+          }
+        }
+      }
+    },
+    "下载好了 %@ 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded %@ files"
+          }
+        }
+      }
+    },
     "放回原处（%@ 项）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2685,13 +2729,13 @@
         }
       }
     },
-    "小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。全屏 App 时不显示。" : {
+    "小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。把文件拖到它身上就放进文件暂存。全屏 App 时不显示。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A red panda strolls along the top of the Dock or curls up on a screen edge. Click it to make it hop and show a quick bar, hold to drag it elsewhere, and right-click for more options. Hidden while an app is full screen."
+            "value" : "A red panda strolls along the top of the Dock or curls up on a screen edge. Click it to make it hop and show a quick bar, hold to drag it elsewhere, and right-click for more options. Drop files on it to put them on the File Shelf. Hidden while an app is full screen."
           }
         }
       }
@@ -2714,6 +2758,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When focus starts, has 5 minutes left or ends, when the radio starts a station, when you plug in, finish charging or run low, and when a water reminder is due, a short bubble appears above the red panda for a few seconds. Each kind shows at most once every 30 seconds."
+          }
+        }
+      }
+    },
+    "活动提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stretch Reminder"
+          }
+        }
+      }
+    },
+    "连续打字约 50 分钟，小熊猫伸个懒腰，提醒你起来活动一下。中间停下超过 5 分钟或离开电脑就重新计时，专注计时进行中不提醒。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After about 50 minutes of continuous typing, the red panda stretches to remind you to get up and move. A pause of more than 5 minutes or stepping away restarts the count, and there are no reminders during a focus session."
+          }
+        }
+      }
+    },
+    "下载完成提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Alerts"
+          }
+        }
+      }
+    },
+    "下载文件夹里有文件下好时，小熊猫叼着纸团过来说一声，单击它在访达中显示。第一次可能要允许码头访问下载文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a file finishes downloading to your Downloads folder, the red panda brings over a paper ball and tells you; click it to show the file in Finder. The first time, macOS may ask to let Dockling access the Downloads folder."
           }
         }
       }

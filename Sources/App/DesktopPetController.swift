@@ -114,6 +114,14 @@ final class DesktopPetController: NSObject {
     /// 上一次有人理小熊猫（鼠标靠近、点、拖、松手、来了事）：吊着没人理约 20 秒打盹。
     private var lastTouch = Date()
 
+    // 有用的三件事：活动提醒、下载完成、拖文件到身上暂存（见 DesktopPetWatchers.swift）。
+    private var stretchClock = DesktopPetStretchClock()
+    private var downloads: DesktopPetDownloadsWatcher { .shared }
+    /// 正叼着跑的那一批下载、刚报过的那一批（3 秒内合并）、到了以后单击在访达中显示的那些。
+    private var fetching: DesktopPetDownloads?
+    private var recentDownloads: DesktopPetDownloads?
+    private var downloadReview: (paths: [String], until: Date)?
+
     /// 窗口边长（中号）：放得下最宽的跑步帧压扁、拖着晃的时候。
     static let windowSide: CGFloat = 132
 
@@ -138,6 +146,17 @@ final class DesktopPetController: NSObject {
         if next.rescueActive != before.rescueActive || (next.rescueActive && trashSource == nil) {
             next.rescueActive ? startRescueWatch() : stopRescueWatch()
         }
+        updateDownloadWatch()
+        if !next.stretchReminder { stretchClock = DesktopPetStretchClock() }
+    }
+
+    /// 下载完成提示：总开关和子开关都开着才看下载文件夹。
+    private func updateDownloadWatch() {
+        if settings.enabled, settings.downloadNotice {
+            downloads.start { paths in DesktopPetController.shared.handle(.downloadFinished(paths: paths)) }
+        } else {
+            downloads.stop()
+        }
     }
 
     /// 小熊猫这边改了设置：先记下（再收到同样的设置时不重复处理），再写回状态文件。
@@ -155,7 +174,10 @@ final class DesktopPetController: NSObject {
     private func start() {
         guard geometryTimer == nil else { return }
         let timer = Timer(timeInterval: 1.5, repeats: true) { _ in
-            MainActor.assumeIsolated { DesktopPetController.shared.refreshPlacement() }
+            MainActor.assumeIsolated {
+                DesktopPetController.shared.refreshPlacement()
+                DesktopPetController.shared.checkStretch()
+            }
         }
         timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
@@ -170,6 +192,11 @@ final class DesktopPetController: NSObject {
         geometryTimer = nil
         stopClocks()
         stopRescueWatch()
+        downloads.stop()
+        stretchClock = DesktopPetStretchClock()
+        fetching = nil
+        recentDownloads = nil
+        downloadReview = nil
         for observer in wakeObservers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
         wakeObservers = []
         for (center, observer) in screenObservers { center.removeObserver(observer) }
@@ -450,7 +477,8 @@ final class DesktopPetController: NSObject {
         } ?? false
         let context = DesktopPetDirectorContext(now: now, settling: settling(current), track: track,
                                                 petX: current.x, sameScreen: sameScreen,
-                                                scale: settings.size.scale, recent: errand)
+                                                scale: settings.size.scale, recent: errand,
+                                                recentDownloads: recentDownloads)
         switch DesktopPetDirector.decide(event, context: context) {
         case .ignore:
             return
@@ -459,6 +487,8 @@ final class DesktopPetController: NSObject {
         case .deliver(let next, let goal):
             errand = next
             review = nil
+            fetching = nil
+            downloadReview = nil
             var moving = current
             if abs(goal - current.x) < 4 {
                 arrive(&moving, errand: next, now: now)
@@ -472,11 +502,15 @@ final class DesktopPetController: NSObject {
         case .notice(let next, _):
             errand = next
             review = DesktopPetReview(next, now: now)
+            fetching = nil
+            downloadReview = nil
             state = DesktopPetBrain.noticed(current, style: track.style, now: now)
             sayStored(next.text, now: now)
         case .celebrate(let widgetID, let toward, _):
             // 朝计时器看一眼、欢呼一次、坐回去；有计时器卡片时单击打开它（开始下一轮、休息用面板里的按钮）。
             errand = nil
+            fetching = nil
+            downloadReview = nil
             let next = widgetID.map { DesktopPetReview(widgetID: $0, text: DesktopPetAssist.focusDoneText, now: now) }
             review = next
             state = DesktopPetBrain.celebrate(current, toward: toward,
@@ -486,12 +520,46 @@ final class DesktopPetController: NSObject {
         case .welcome(let summary, _):
             // 从睡着抬头探看；离开期间有事就说那一句，单击打开对应卡片。
             errand = nil
+            fetching = nil
             review = summary.flatMap { summary in
                 summary.widgetID.map { DesktopPetReview(widgetID: $0, text: summary.text, itemIDs: summary.itemIDs,
                                                         now: now) }
             }
+            // 离开期间下好的文件：单击在访达中显示。
+            if let paths = summary?.revealPaths, !paths.isEmpty {
+                downloadReview = (paths, now.addingTimeInterval(DesktopPetAssist.reviewDuration))
+            } else {
+                downloadReview = nil
+            }
             state = DesktopPetBrain.wokeUp(current, style: track.style, now: now)
             if let summary { say(summary.text, for: DesktopPetAssist.welcomeBubble, now: now) }
+        case .stretch:
+            // 伸个懒腰（吊着的晃一下），说一句；不打断正在办的事。
+            state = DesktopPetBrain.stretched(current, style: track.style, now: now)
+            say(DesktopPetAssist.stretchText, for: DesktopPetAssist.stretchBubble, now: now)
+        case .fetch(let batch, let goal, _):
+            // 下载好了：叼纸团跑一小段放下（贴边、吊着、侧边程序坞就地抬头），单击在访达中显示。
+            errand = nil
+            review = nil
+            recentDownloads = batch
+            var moving = current
+            if let goal, abs(goal - current.x) >= 4, current.activity != .sit {
+                fetching = batch
+                downloadReview = nil
+                DesktopPetBrain.turn(&moving, left: goal < current.x, now: now)
+                moving.activity = .fileDelivery(to: goal)
+                moving.since = now
+                state = moving
+                lastStep = now
+            } else if goal != nil {
+                arriveDownloads(&moving, batch: batch, now: now)
+                state = moving
+            } else {
+                fetching = nil
+                downloadReview = (batch.paths, now.addingTimeInterval(DesktopPetAssist.reviewDuration))
+                state = DesktopPetBrain.noticed(current, style: track.style, now: now)
+                say(batch.text, for: DesktopPetAssist.downloadBubble, now: now)
+            }
         }
         render(now: now)
         updateClock(now: now)
@@ -514,6 +582,26 @@ final class DesktopPetController: NSObject {
             current = DesktopPetBrain.waitingBeside(current, until: next.until, now: now)
         }
         sayStored(next.text, now: now)
+    }
+
+    /// 下载的纸团叼到了：放下坐好（专注陪着时照样坐着），说一句，单击在访达中显示。
+    private func arriveDownloads(_ current: inout DesktopPetState, batch: DesktopPetDownloads, now: Date) {
+        fetching = nil
+        let until = now.addingTimeInterval(DesktopPetAssist.reviewDuration)
+        downloadReview = (batch.paths, until)
+        if current.activity != .sit {
+            current = DesktopPetBrain.waitingBeside(current, until: until, now: now)
+        }
+        say(batch.text, for: DesktopPetAssist.downloadBubble, now: now)
+    }
+
+    /// 活动提醒：每 1.5 秒看一次连续打字多久了（只看多久没按键，不要辅助功能权限）。
+    fileprivate func checkStretch() {
+        guard settings.enabled, settings.stretchReminder else { return }
+        let focusing = FocusPandaClimb.isActive(TimerStateProvider.shared.state)
+        if awayLog.isAway { stretchClock.reset() }
+        guard stretchClock.tick(now: Date(), keyIdle: Self.keyIdleSeconds(), focusing: focusing) else { return }
+        handle(.stretchReminder)
     }
 
     private func sayStored(_ text: String, now: Date) {
@@ -574,6 +662,8 @@ final class DesktopPetController: NSObject {
     private func endReview() {
         review = nil
         errand = nil
+        fetching = nil
+        downloadReview = nil
     }
 
     /// 有待查看时被点：打开那张文件暂存卡片的面板（扩展栏自动隐藏时先滑出来），新条目闪一下。
@@ -612,10 +702,15 @@ final class DesktopPetController: NSObject {
                                        style: track.style, attention: pointer,
                                        hangQuiet: now.timeIntervalSince(lastTouch),
                                        random: { Double.random(in: 0...1) })
-        if wasDelivering, let errand {
-            if case .fileDelivery = current.activity {} else { arrive(&current, errand: errand, now: now) }
+        if wasDelivering {
+            if case .fileDelivery = current.activity {} else if let fetching {
+                arriveDownloads(&current, batch: fetching, now: now)
+            } else if let errand {
+                arrive(&current, errand: errand, now: now)
+            }
         }
         if let review, review.expired(at: now) { endReview() }
+        if let pending = downloadReview, now >= pending.until { downloadReview = nil }
         state = current
         if DesktopPetBrain.awaitingPutBack(current) { putBack() }
         if let content = bubble.content, let until = content.until, now >= until { setBubble(nil) }
@@ -771,8 +866,18 @@ final class DesktopPetController: NSObject {
         drop(at: dragFeet)
     }
 
-    /// 单击：有待查看时打开刚暂存的那张卡片；否则同 `clicked`。
+    /// 单击：有待查看时打开刚暂存的那张卡片（下载好的在访达中显示）；否则同 `clicked`。
     private func tapped() {
+        if let pending = downloadReview, let current = state {
+            let now = Date()
+            state = DesktopPetBrain.poked(current, now: now)
+            hideBar()
+            endReview()
+            DesktopPetDownloadsWatcher.reveal(pending.paths)
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
         if let pending = review, let current = state {
             let now = Date()
             state = DesktopPetBrain.poked(current, now: now)
@@ -1283,6 +1388,67 @@ final class DesktopPetController: NSObject {
         return panel
     }
 
+    /// 多少秒没按键（系统读数，不要辅助功能权限）。
+    private static func keyIdleSeconds() -> TimeInterval {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
+    }
+
+    // MARK: 拖文件到身上
+
+    /// 文件拖到小熊猫身上（还没松手）：码头上有文件暂存卡片就抬头等着接，返回 true；
+    /// 没有就说一句「先在扩展栏添加文件暂存」，不接。
+    fileprivate func filesEntered() -> Bool {
+        guard settings.enabled, shown, !dragging, let current = state else { return false }
+        let now = Date()
+        guard shelfForDrops() != nil else {
+            sayAnyway(DesktopPetAssist.needsShelfText, now: now)
+            return false
+        }
+        lastTouch = now
+        state = DesktopPetBrain.expecting(current, now: now)
+        render(now: now)
+        updateClock(now: now)
+        return true
+    }
+
+    /// 文件移开了没松手：趴回去。
+    fileprivate func filesExited() {
+        guard let current = state else { return }
+        let now = Date()
+        state = DesktopPetBrain.stopExpecting(current, now: now)
+        render(now: now)
+        updateClock(now: now)
+    }
+
+    /// 松手：放进文件暂存（和拖到卡片上一样，只记位置不复制），再走 `.fileStored` 叼过去。
+    fileprivate func filesDropped(_ urls: [URL]) -> Bool {
+        let now = Date()
+        guard let shelf = shelfForDrops() else {
+            sayAnyway(DesktopPetAssist.needsShelfText, now: now)
+            return false
+        }
+        let added = FileShelf.add(urls, to: shelf)
+        guard !added.isEmpty else {
+            filesExited()
+            return false
+        }
+        if let current = state { state = DesktopPetBrain.stopExpecting(current, now: now) }
+        // 卡片看得见就叼到卡片旁；看不见时以小熊猫自己的位置为准，叼着走一小步放下。
+        let point = DesktopPetCardSpots.shared.center(of: shelf.id) ?? drawnCenter
+        handle(.fileStored(count: added.count, widgetID: shelf.id, newItemIDs: added, at: point))
+        return true
+    }
+
+    private func shelfForDrops() -> WidgetInstance? {
+        DesktopPetDirector.shelfWidget(in: DockItemTree.widgets(in: WidgetPanelOpener.shared.currentItems()))
+    }
+
+    /// 直接回应的话（拖文件过来时）：头顶气泡关着也说，救回的按钮气泡在时不盖掉。
+    private func sayAnyway(_ text: String, now: Date) {
+        guard bubble.content?.isRescue != true else { return }
+        setBubble(.news(text, until: now.addingTimeInterval(DesktopPetAssist.noticeBubble)))
+    }
+
     private static func userIdleSeconds() -> TimeInterval {
         guard let any = CGEventType(rawValue: UInt32.max) else { return 0 }
         return CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: any)
@@ -1439,6 +1605,8 @@ final class DesktopPetSpriteView: NSView {
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
         setAccessibilityLabel(tr("桌面宠物小熊猫"))
+        // 访达拖来的文件放到小熊猫身上就暂存。只认画着小熊猫的那块（见 `hitTest`）。
+        registerForDraggedTypes([.fileURL])
     }
 
     @available(*, unavailable)
@@ -1545,6 +1713,38 @@ final class DesktopPetSpriteView: NSView {
     override func accessibilityPerformPress() -> Bool {
         DesktopPetController.shared.summon()
         return true
+    }
+
+    // MARK: 拖文件到身上
+
+    private var accepting = false
+
+    private static func fileURLs(_ sender: any NSDraggingInfo) -> [URL] {
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [.urlReadingFileURLsOnly: true]
+        return (sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL]) ?? []
+    }
+
+    override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        guard !Self.fileURLs(sender).isEmpty else { return [] }
+        accepting = DesktopPetController.shared.filesEntered()
+        return accepting ? .generic : []
+    }
+
+    override func draggingUpdated(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        accepting ? .generic : []
+    }
+
+    override func draggingExited(_ sender: (any NSDraggingInfo)?) {
+        if accepting { DesktopPetController.shared.filesExited() }
+        accepting = false
+    }
+
+    override func prepareForDragOperation(_ sender: any NSDraggingInfo) -> Bool { accepting }
+
+    override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        defer { accepting = false }
+        guard accepting else { return false }
+        return DesktopPetController.shared.filesDropped(Self.fileURLs(sender))
     }
 }
 

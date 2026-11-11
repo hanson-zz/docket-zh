@@ -58,6 +58,8 @@ struct FileShelfTile: View {
                 DesktopPetController.shared.handle(.fileStored(count: added.count, widgetID: instance.id,
                                                                newItemIDs: added, at: point))
             }))
+        // 文件拖到小熊猫身上时它叼到这张卡片旁：登记卡片在屏幕上的位置。
+        .background(DesktopPetCardSpot(id: instance.id, enabled: !context.isPreview))
         // 自动移出：现在看一次，再睡到下一个条目到期（最多一小时）再看。
         .task(id: sweepKey) {
             guard !context.isPreview else { return }
