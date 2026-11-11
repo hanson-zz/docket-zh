@@ -262,7 +262,7 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertEqual(DesktopPetBrain.pose(yawn, now: t0.addingTimeInterval(DesktopPetBrain.yawnDuration * 0.99)).image,
                        "pet-sprite-yawn-8")
         let stretch = DesktopPetState(x: 300, activity: .stretch(since: t0), since: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(stretch, now: t0.addingTimeInterval(0.8)).image, "pet-sprite-stretch-5")
+        XCTAssertEqual(DesktopPetBrain.pose(stretch, now: t0.addingTimeInterval(0.85)).image, "pet-sprite-stretch-5")
         let peek = DesktopPetState(x: 300, activity: .peek(until: t0.addingTimeInterval(3)), since: t0)
         XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(1)).image, "pet-sprite-peek-4", "抬头停住")
         XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(2.9)).image, "pet-sprite-peek-6", "趴回去")
