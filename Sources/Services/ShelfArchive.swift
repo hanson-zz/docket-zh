@@ -22,6 +22,7 @@ enum ShelfArchive {
         do {
             try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         } catch {
+            DockLog.error(.fileShelf, "compress: could not create staging folder: \(error.localizedDescription)")
             NSSound.beep()
             return nil
         }
@@ -43,6 +44,7 @@ enum ShelfArchive {
         let target = folder.appendingPathComponent(ArchiveNaming.name(for: names, taken: taken))
         let status = await run("/usr/bin/zip", ["-r", "-q", target.path] + names, in: staging)
         guard status == 0, fm.fileExists(atPath: target.path) else {
+            DockLog.error(.fileShelf, "compress: zip exited with status \(status) for \(names.count) files")
             try? fm.removeItem(at: target)
             NSSound.beep()
             return nil

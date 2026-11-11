@@ -129,9 +129,18 @@ final class OnboardingTests: XCTestCase {
     }
 
     func testSteps() {
-        XCTAssertEqual(OnboardingStep.allCases.count, 6)
+        XCTAssertEqual(OnboardingStep.allCases.count, 9)
         XCTAssertEqual(OnboardingStep.welcome.filledSegments, 1)
-        XCTAssertEqual(OnboardingStep.done.filledSegments, 6)
+        XCTAssertEqual(OnboardingStep.done.filledSegments, 9)
+        // 布置好以后小熊猫讲三步，再到完成。
+        XCTAssertEqual(OnboardingStep.building.next, .fileShelf)
+        XCTAssertEqual(OnboardingStep.fileShelf.next, .focus)
+        XCTAssertEqual(OnboardingStep.focus.next, .switcher)
+        XCTAssertEqual(OnboardingStep.switcher.next, .done)
+        XCTAssertEqual(OnboardingStep.allCases.filter(\.isFeatureTip), [.fileShelf, .focus, .switcher])
+        XCTAssertFalse(OnboardingStep.fileShelf.canGoBack)
+        XCTAssertTrue(OnboardingStep.focus.canGoBack)
+        XCTAssertTrue(OnboardingStep.switcher.canGoBack)
         XCTAssertFalse(OnboardingStep.welcome.canGoBack)
         XCTAssertTrue(OnboardingStep.position.canGoBack)
         XCTAssertTrue(OnboardingStep.permissions.canGoBack)

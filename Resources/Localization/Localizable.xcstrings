@@ -17009,13 +17009,13 @@
         }
       }
     },
-    "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。" : {
+    "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限，再由小熊猫介绍三个常用功能。只会追加小组件，不会删除已有的。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Walk through the first-launch guide again: shelf position, widgets by use, permissions. It only adds widgets and never removes existing ones."
+            "value" : "Walk through the first-launch guide again: shelf position, widgets by use, permissions, then the red panda shows three handy features. It only adds widgets and never removes existing ones."
           }
         }
       }
@@ -47843,6 +47843,105 @@
         }
       }
     },
+    "小熊猫带你认识 %@/3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red panda tour %@/3"
+          }
+        }
+      }
+    },
+    "⌘Tab 应用切换器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Tab app switcher"
+          }
+        }
+      }
+    },
+    "把文件拖到扩展栏的文件暂存卡片上，先放着，要用时再拖出来。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files onto the File Shelf card on your shelf. They wait there until you drag them out."
+          }
+        }
+      }
+    },
+    "点一下专注计时卡片开始专注，到点我提醒你歇一会儿。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the Focus Timer card to start focusing. I'll let you know when it's time for a break."
+          }
+        }
+      }
+    },
+    "按 ⌘Tab 看到所有窗口，挑一个直接切过去。默认关着，在设置里打开。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press ⌘Tab to see every window and jump straight to one. It's off by default, turn it on in Settings."
+          }
+        }
+      }
+    },
+    "打开设置 ▸ 快捷键" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings ▸ Shortcuts"
+          }
+        }
+      }
+    },
+    "把文件拖到文件暂存卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files onto the File Shelf card"
+          }
+        }
+      }
+    },
+    "专注计时的进度环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Timer progress ring"
+          }
+        }
+      }
+    },
+    "按 ⌘Tab 在窗口之间切换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press ⌘Tab to switch between windows"
+          }
+        }
+      }
+    },
     "码头布局" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -57716,6 +57815,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show the welcome guide again"
+          }
+        }
+      }
+    },
+    "诊断" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics"
+          }
+        }
+      }
+    },
+    "导出诊断信息…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Diagnostics…"
+          }
+        }
+      }
+    },
+    "导出诊断信息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export diagnostics"
+          }
+        }
+      }
+    },
+    "打包版本、设置摘要、最近 24 小时的日志和崩溃报告，不含激活码、邮箱和密钥。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bundles the version, a settings summary, the last 24 hours of logs and crash reports. No license codes, email addresses or keys."
+          }
+        }
+      }
+    },
+    "诊断信息不含激活码、邮箱和密钥。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics never include license codes, email addresses or keys."
+          }
+        }
+      }
+    },
+    "已导出，可以把这个文件发给开发者。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported. You can send this file to the developer."
+          }
+        }
+      }
+    },
+    "导出失败，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export failed. Please try again later."
           }
         }
       }

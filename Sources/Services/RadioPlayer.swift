@@ -460,6 +460,7 @@ final class RadioPlayer {
         // The first couple of hiccups are routine on a live stream; say so
         // only once it keeps failing.
         if step.showsProblem {
+            DockLog.notice(.radio, "stream dropped, round \(step.round), next address \(step.address) of \(station.addresses.count), retry in \(Int(wait))s")
             problem = step.address == 0
                 ? tr("连接不上电台，\(Int(wait)) 秒后重试")
                 : tr("连接不上电台，正在换备用地址")

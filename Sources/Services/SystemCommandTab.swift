@@ -43,13 +43,17 @@ enum SystemCommandTab {
     /// 关掉系统 ⌘Tab、⌘⇧Tab。找不到开关或系统不让关时还原并返回 false，保持系统 ⌘Tab。
     @discardableResult
     static func takeOver() -> Bool {
-        guard let setEnabled else { return false }
+        guard let setEnabled else {
+            DockLog.error(.switcher, "Command-Tab takeover unavailable: symbolic hotkey switch not found")
+            return false
+        }
         installTerminationHandlers()
         if isTaken { return true }
         // 先记下来再关：关到一半收到信号也会还原。
         state.withLock { $0.taken = true }
         let results = symbolicHotKeys.map { setEnabled($0, false) }
         if results.contains(where: { $0 != 0 }) {
+            DockLog.error(.switcher, "Command-Tab takeover refused by the system: \(results)")
             release()
             return false
         }

@@ -1638,11 +1638,16 @@ final class DesktopPetQuickBarModel {
 enum DesktopPetArt {
     private static var cache: [String: NSImage] = [:]
     private static var cgCache: [String: CGImage] = [:]
+    private static var missing: Set<String> = []
 
     static func image(_ name: String) -> NSImage? {
         if let image = cache[name] { return image }
         guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
+              let image = NSImage(contentsOf: url) else {
+            // 每个缺的图只记一次，动画每帧都会来要。
+            if missing.insert(name).inserted { DockLog.error(.pet, "missing pet image \(name)") }
+            return nil
+        }
         if let rep = image.representations.first, rep.pixelsWide > 0, name.hasPrefix("pet-sprite-") {
             image.size = CGSize(width: CGFloat(rep.pixelsWide) / 2, height: CGFloat(rep.pixelsHigh) / 2)
         }

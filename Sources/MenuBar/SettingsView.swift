@@ -63,6 +63,9 @@ struct SettingsView: View {
     /// 拖动经过的那一项，画一条插入线。
     @State private var dropTargetID: UUID?
     @State private var draggingID: UUID?
+    /// 导出诊断信息：正在打包时按钮变灰；导出后在按钮下面说一行结果。
+    @State private var exportingDiagnostics = false
+    @State private var diagnosticsNote: String?
 
     /// Which tab is showing, held outside the view.
     ///
@@ -599,7 +602,7 @@ struct SettingsView: View {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)
                 } label: {
-                    subtitled(tr("重新显示新手引导"), tr("再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。"))
+                    subtitled(tr("重新显示新手引导"), tr("再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限，再由小熊猫介绍三个常用功能。只会追加小组件，不会删除已有的。"))
                 }
             } header: {
                 Text("新手引导")
@@ -613,6 +616,23 @@ struct SettingsView: View {
                     get: { state.checkForUpdates == true },
                     set: { state.checkForUpdates = $0 }))
                     .help("码头每天向 GitHub 查询一次最新版本号，如果有更新版本，会在菜单栏项中提示你。不会自动安装任何内容，也不会发送其他任何信息。")
+            }
+
+            // 导出诊断信息：出问题时打一个 zip 发给开发者，放在“关于”上面。
+            Section {
+                LabeledContent {
+                    Button("导出诊断信息…", action: exportDiagnostics)
+                        .disabled(exportingDiagnostics)
+                } label: {
+                    subtitled(tr("导出诊断信息"), tr("打包版本、设置摘要、最近 24 小时的日志和崩溃报告，不含激活码、邮箱和密钥。"))
+                }
+                if let diagnosticsNote {
+                    Text(diagnosticsNote)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("诊断")
             }
 
             // About, folded in. A whole section in the sidebar for an icon and
@@ -1086,6 +1106,23 @@ struct SettingsView: View {
 
     /// A control's label with one line of explanation under it, the way
     /// System Settings does it, in place of a tooltip nobody hovers for.
+    private func exportDiagnostics() {
+        exportingDiagnostics = true
+        diagnosticsNote = nil
+        let snapshot = state
+        Task { @MainActor in
+            defer { exportingDiagnostics = false }
+            do {
+                if try await DiagnosticsExporter.run(state: snapshot) != nil {
+                    diagnosticsNote = tr("已导出，可以把这个文件发给开发者。")
+                }
+            } catch {
+                DockLog.error(.diagnostics, "export failed: \(error)")
+                diagnosticsNote = tr("导出失败，请稍后再试。")
+            }
+        }
+    }
+
     private func subtitled(_ title: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)

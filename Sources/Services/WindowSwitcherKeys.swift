@@ -149,7 +149,10 @@ final class SwitcherEventTap {
                 return consumed ? nil : Unmanaged.passUnretained(event)
             },
             userInfo: nil)
-        else { return }
+        else {
+            DockLog.error(.switcher, "could not create the event tap (Accessibility permission missing?)")
+            return
+        }
         let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: port, enable: false)

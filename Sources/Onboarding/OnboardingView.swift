@@ -5,7 +5,8 @@ import SwiftUI
 
 /// 首次启动的新手引导。
 ///
-/// 六步：欢迎、选位置、选用途、权限、布置中（小组件一个个靠岸停进扩展栏）、完成。顶部是分段进度条和返回按钮，
+/// 九步：欢迎、选位置、选用途、权限、布置中（小组件一个个靠岸停进扩展栏）、小熊猫讲三个功能
+/// （文件暂存、专注计时、⌘Tab 应用切换器）、完成。顶部是分段进度条和返回按钮，
 /// 标题左对齐，选项是大卡片，底部一个大圆角的主按钮。位置一选就生效；
 /// 小组件在“布置中”这一步真正写进当前布局（只追加，不删除已有的）。
 /// 欢迎页可以点“先带我看看”，用聚光灯依次照出进度、跳过和开始按钮（见 `SpotlightOverlay`）。
@@ -49,6 +50,7 @@ struct OnboardingView: View {
                 case .uses: usesStep
                 case .permissions: permissionsStep
                 case .building: buildingStep
+                case .fileShelf, .focus, .switcher: PandaTipStep(step: step, app: app)
                 case .done: doneStep
                 }
             }
@@ -334,8 +336,8 @@ struct OnboardingView: View {
             }
             progress = 1
             try? await Task.sleep(for: .milliseconds(600))
-            if step == .building {
-                withAnimation(.snappy(duration: 0.3)) { step = .done }
+            if step == .building, let next = step.next {
+                withAnimation(.snappy(duration: 0.3)) { step = next }
             }
         }
     }
@@ -345,14 +347,7 @@ struct OnboardingView: View {
     private var doneStep: some View {
         VStack(alignment: .leading, spacing: 18) {
             Spacer(minLength: 20)
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 112, height: 112)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 46, weight: .bold))
-                    .foregroundStyle(Color.accentColor)
-            }
+            PandaPicture(name: "pet-panda-cheer", height: 120)
             Text("码头已就绪")
                 .font(.system(size: 30, weight: .bold))
             Text(doneSummary)
@@ -537,6 +532,235 @@ private struct UseCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(use.title)：\(use.caption)")
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+// MARK: - 小熊猫讲功能
+
+/// 布置好以后的三步，每步由小熊猫用一句话讲一个功能，下面一张示意图。
+///
+/// 卡片和气泡都是 Liquid Glass，衬在一层很淡的暖色底上，玻璃才看得出来；
+/// 不用大面积蓝色。字最小 13 点。
+private struct PandaTipStep: View {
+    let step: OnboardingStep
+    let app: AppState
+
+    private var index: Int {
+        OnboardingStep.allCases.filter(\.isFeatureTip).firstIndex(of: step).map { $0 + 1 } ?? 1
+    }
+
+    private var title: String {
+        switch step {
+        case .fileShelf: tr("文件暂存")
+        case .focus: tr("专注计时")
+        default: tr("⌘Tab 应用切换器")
+        }
+    }
+
+    private var line: String {
+        switch step {
+        case .fileShelf: tr("把文件拖到扩展栏的文件暂存卡片上，先放着，要用时再拖出来。")
+        case .focus: tr("点一下专注计时卡片开始专注，到点我提醒你歇一会儿。")
+        default: tr("按 ⌘Tab 看到所有窗口，挑一个直接切过去。默认关着，在设置里打开。")
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("小熊猫带你认识 \(index)/3"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.system(size: 26, weight: .bold))
+            }
+
+            HStack(alignment: .bottom, spacing: 12) {
+                PandaPicture(name: "pet-panda-idle", height: 112)
+                Text(line)
+                    .font(.system(size: 15, weight: .medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .padding(.bottom, 28)
+            }
+
+            illustration
+                .frame(maxWidth: .infinity)
+                .frame(height: 150)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+            if step == .switcher {
+                Button {
+                    SettingsWindow.shared.show(app: app, tab: "Shortcuts")
+                } label: {
+                    Label("打开设置 ▸ 快捷键", systemImage: "gearshape")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(LinearGradient(colors: [PandaTint.fur.opacity(0.14), PandaTint.fur.opacity(0.04)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+        }
+    }
+
+    @ViewBuilder private var illustration: some View {
+        switch step {
+        case .fileShelf: ShelfSketch()
+        case .focus: FocusSketch()
+        default: SwitcherSketch()
+        }
+    }
+}
+
+/// 小熊猫的毛色和深色毛，示意图都用这两种暖色，不用蓝色。
+private enum PandaTint {
+    static let fur = Color(red: 0.86, green: 0.45, blue: 0.20)
+    static let dark = Color(red: 0.45, green: 0.24, blue: 0.14)
+}
+
+/// Resources/Pet 里的一张小熊猫，按高度等比缩放。
+private struct PandaPicture: View {
+    let name: String
+    let height: CGFloat
+
+    var body: some View {
+        if let url = Bundle.main.url(forResource: name, withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(height: height)
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                .accessibilityLabel(tr("小熊猫"))
+        } else {
+            Image(systemName: "pawprint.fill")
+                .font(.system(size: height * 0.4))
+                .foregroundStyle(PandaTint.fur)
+                .frame(width: height * 0.8, height: height)
+        }
+    }
+}
+
+/// 文件暂存示意：几张文件 → 箭头 → 扩展栏上的暂存卡片。
+private struct ShelfSketch: View {
+    var body: some View {
+        HStack(spacing: 22) {
+            ZStack {
+                ForEach(Array(["doc.fill", "photo.fill", "doc.richtext.fill"].enumerated()), id: \.offset) { i, symbol in
+                    Image(systemName: symbol)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.primary.opacity(0.75))
+                        .frame(width: 46, height: 56)
+                        .background(.background.opacity(0.9), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.primary.opacity(0.12)))
+                        .rotationEffect(.degrees(Double(i - 1) * 9))
+                        .offset(x: CGFloat(i - 1) * 16)
+                }
+            }
+            .frame(width: 96)
+            Image(systemName: "arrow.right")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.secondary)
+            VStack(spacing: 6) {
+                Image(systemName: "tray.and.arrow.down.fill")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 64, height: 64)
+                    .background(PandaTint.fur, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Text("文件暂存")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("把文件拖到文件暂存卡片上"))
+    }
+}
+
+/// 专注计时示意：一圈进度环，中间是时间。
+private struct FocusSketch: View {
+    var body: some View {
+        HStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .stroke(.primary.opacity(0.1), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: 0.68)
+                    .stroke(PandaTint.fur, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text(verbatim: "25:00")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+            }
+            .frame(width: 104, height: 104)
+            VStack(alignment: .leading, spacing: 10) {
+                Label("专注", systemImage: "brain.head.profile")
+                Label("休息", systemImage: "cup.and.saucer.fill")
+            }
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(.primary.opacity(0.8))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("专注计时的进度环"))
+    }
+}
+
+/// ⌘Tab 示意：两颗按键，下面一排窗口缩略图，第二个被选中。
+private struct SwitcherSketch: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 8) {
+                Keycap(text: "⌘")
+                Text(verbatim: "+")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Keycap(text: "Tab")
+            }
+            HStack(spacing: 10) {
+                ForEach(0..<4, id: \.self) { i in
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(.primary.opacity(0.18))
+                            .frame(height: 8)
+                        Rectangle()
+                            .fill(.background.opacity(0.85))
+                    }
+                    .frame(width: 58, height: 42)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .strokeBorder(i == 1 ? PandaTint.fur : Color.primary.opacity(0.12), lineWidth: i == 1 ? 2.5 : 1)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr("按 ⌘Tab 在窗口之间切换"))
+    }
+}
+
+/// 一颗键帽。
+private struct Keycap: View {
+    let text: String
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(.system(size: 17, weight: .semibold, design: .rounded))
+            .padding(.horizontal, 14)
+            .frame(minWidth: 44, minHeight: 38)
+            .background(.background.opacity(0.9), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.primary.opacity(0.15)))
+            .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
     }
 }
 
