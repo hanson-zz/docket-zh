@@ -79,8 +79,8 @@ final class DesktopPetDirectorTests: XCTestCase {
         // 就地提示的动作：吊着跳一下（晃大），其余抬头或探头。
         let resting = DesktopPetState(x: 300, activity: .curl(until: t0.addingTimeInterval(9)), since: t0)
         XCTAssertEqual(DesktopPetBrain.noticed(resting, style: .hang, now: t0).activity, .jump(since: t0))
-        XCTAssertEqual(DesktopPetBrain.noticed(resting, style: .side, now: t0).activity,
-                       .peek(until: t0.addingTimeInterval(DesktopPetBrain.peekDuration)))
+        XCTAssertEqual(DesktopPetBrain.noticed(resting, style: .side, now: t0).activity, .hugOut(since: t0),
+                       "抱树的先爬出来")
         let sitting = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(9)), since: t0)
         let looking = DesktopPetBrain.noticed(sitting, style: .stroll, now: t0)
         XCTAssertEqual(DesktopPetBrain.pose(looking, now: t0.addingTimeInterval(0.5), style: .stroll).image,

@@ -113,6 +113,16 @@ final class DesktopPetController: NSObject {
     private var awayObservers: [(NotificationCenter, NSObjectProtocol)] = []
     /// 上一次有人理小熊猫（鼠标靠近、点、拖、松手、来了事）：吊着没人理约 20 秒打盹。
     private var lastTouch = Date()
+    /// 上一次鼠标在小熊猫（或快捷条）上、被点、来了事：抱树爬出来以后约 5 秒没人理就缩回去。
+    private var lastPet = Date()
+    /// 连戳、摸头、经过、靠近头这些小互动的冷却。
+    private var mood = DesktopPetMood()
+    /// 上一帧指针在哪、什么时候：算鼠标移动速度（经过时抬头看）。
+    private var lastPointer: (point: CGPoint, at: Date)?
+    /// 上一帧是不是睡着、刚出现：每天第一次唤醒或出现时伸懒腰说「早」。
+    private var wasAsleep = false
+    private var justShown = false
+    private static let greetedKey = "DesktopPetGreetedDay"
 
     // 有用的三件事：活动提醒、下载完成、拖文件到身上暂存（见 DesktopPetWatchers.swift）。
     private var stretchClock = DesktopPetStretchClock()
@@ -368,7 +378,7 @@ final class DesktopPetController: NSObject {
             } else if let current = state, shown {
                 // 已经在别处：滑过去再落下。
                 transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
-                state = DesktopPetBrain.landed(current, at: along, now: now)
+                state = DesktopPetBrain.landed(current, at: along, now: now, style: next.style)
             } else {
                 state = next.style == .stroll && state == nil
                     ? DesktopPetBrain.initial(lane: next.lane, now: now)
@@ -387,6 +397,7 @@ final class DesktopPetController: NSObject {
         if !panel.isVisible { panel.orderFrontRegardless() }
         let wasShown = shown
         shown = true
+        if !wasShown { justShown = true }
         // 藏着（全屏 App、屏幕睡了）时留下的气泡（「放回原处」按钮、Zzz）出来时一起出来；
         // 已经过时的交给下一帧收掉。
         if !wasShown, let content = bubble.content, let bubblePanel, !bubblePanel.isVisible,
@@ -465,6 +476,7 @@ final class DesktopPetController: NSObject {
         guard shown, let track, let current = state else { return }
         let now = Date()
         lastTouch = now
+        lastPet = now
         let point: CGPoint? = switch event {
         case .fileStored(_, _, _, let at): at
         case .focusFinished(_, let at): at
@@ -695,13 +707,26 @@ final class DesktopPetController: NSObject {
         }
         let pointer = attention(track: track)
         if pointer != nil || dragging || pressPoint != nil { lastTouch = now }
+        if petHovering || barHovering || dragging || pressPoint != nil { lastPet = now }
+        current = sense(current, track: track, now: now)
 
         let wasDelivering: Bool = if case .fileDelivery = current.activity { true } else { false }
+        let wasClimbing: Bool = if case .hugClimb = current.activity { true } else { false }
+        let night = DesktopPetRhythm.isNight(hour: Calendar.current.component(.hour, from: now))
         current = DesktopPetBrain.step(current, dt: dt, now: now, lane: track.lane,
                                        userIdle: idle, focusing: focusing,
                                        style: track.style, attention: pointer,
                                        hangQuiet: now.timeIntervalSince(lastTouch),
+                                       touchQuiet: now.timeIntervalSince(lastPet), night: night,
                                        random: { Double.random(in: 0...1) })
+        if wasClimbing, track.style == .side {
+            if case .hugClimb = current.activity {} else {
+                // 爬完换了高度：记住（同一个停靠位置字段）。
+                let along = track.fraction(of: current.x)
+                save { $0.spot = DesktopPetSpot(display: $0.spot?.display, along: along) }
+            }
+        }
+        current = greetIfNeeded(current, style: track.style, now: now)
         if wasDelivering {
             if case .fileDelivery = current.activity {} else if let fetching {
                 arriveDownloads(&current, batch: fetching, now: now)
@@ -730,6 +755,52 @@ final class DesktopPetController: NSObject {
         updateClock(now: now)
     }
 
+    /// 指针经过（底边姿势抬头看一眼）、靠近头（抱树抖耳朵），都带冷却。
+    private func sense(_ current: DesktopPetState, track: DesktopPetTrack, now: Date) -> DesktopPetState {
+        let mouse = NSEvent.mouseLocation
+        defer { lastPointer = (mouse, now) }
+        guard !dragging, pressPoint == nil else { return current }
+        let distance = Double(hypot(mouse.x - drawnCenter.x, mouse.y - drawnCenter.y)) / settings.size.scale
+        if track.style == .side {
+            return mood.neared(distance: distance, now: now) ? DesktopPetBrain.earFlicked(current, now: now) : current
+        }
+        guard track.edge == .bottom, track.style != .sit, let last = lastPointer else { return current }
+        let span = now.timeIntervalSince(last.at)
+        guard span > 0, span < 1 else { return current }
+        let speed = Double(hypot(mouse.x - last.point.x, mouse.y - last.point.y)) / span
+        guard mood.passedBy(distance: distance, speed: speed, now: now) else { return current }
+        return DesktopPetBrain.glanced(current, now: now)
+    }
+
+    /// 每天第一次唤醒（从睡着醒来）或出现时：伸个懒腰，头顶说「早」（受头顶气泡开关控制）。
+    private func greetIfNeeded(_ current: DesktopPetState, style: DesktopPetStyle, now: Date) -> DesktopPetState {
+        let asleep: Bool = if case .sleep = current.activity { true } else { false }
+        defer {
+            wasAsleep = asleep
+            justShown = false
+        }
+        guard (justShown || wasAsleep) && !asleep, !dragging, bubble.content?.isNews != true else { return current }
+        let defaults = UserDefaults.standard
+        guard DesktopPetRhythm.shouldGreet(lastDay: defaults.string(forKey: Self.greetedKey), now: now) else {
+            return current
+        }
+        defaults.set(DesktopPetRhythm.greetingDay(now), forKey: Self.greetedKey)
+        lastPet = now
+        say(DesktopPetRhythm.morningText, for: DesktopPetAssist.noticeBubble, now: now)
+        return DesktopPetBrain.greeted(current, style: style, now: now)
+    }
+
+    /// 指针在小熊猫身上移动（不按键）：来回划算摸头，开心一下（冷却 30 秒）。
+    fileprivate func pointerMoved(_ point: CGPoint?, pressed: Bool) {
+        let now = Date()
+        if point != nil { lastPet = now }
+        guard mood.rubbed(x: point.map { Double($0.x) }, pressed: pressed, now: now),
+              let track, let current = state, !dragging else { return }
+        state = DesktopPetBrain.petted(current, style: track.style, now: now)
+        render(now: now)
+        updateClock(now: now)
+    }
+
     /// 鼠标靠近（小熊猫身边约 150 点以内）时它在沿边坐标上的位置，小熊猫转头看过去。
     private func attention(track: DesktopPetTrack) -> Double? {
         guard !dragging else { return nil }
@@ -745,7 +816,8 @@ final class DesktopPetController: NSObject {
 
     private func render(now: Date) {
         guard let track, let state, let panel, let view = spriteView else { return }
-        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style)
+        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
+                                        edge: track.edge)
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
         let size = CGSize(width: base.width * scale, height: base.height * scale)
@@ -868,9 +940,27 @@ final class DesktopPetController: NSObject {
 
     /// 单击：有待查看时打开刚暂存的那张卡片（下载好的在访达中显示）；否则同 `clicked`。
     private func tapped() {
+        let now = Date()
+        lastPet = now
+        if mood.clicked(now: now), let current = state {
+            // 10 秒内连戳 3 次：不高兴，耷拉耳朵约 3 秒。
+            state = DesktopPetBrain.sulked(current, now: now)
+            hideBar()
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
+        let hugging = track?.style == .side
+        if hugging, let current = state, review == nil, downloadReview == nil,
+           !DesktopPetBrain.hugIsOut(current, now: now) {
+            // 抱着的被点头：先爬出来露全身挥手，再点才是平时的点击。
+            state = DesktopPetBrain.hugTapped(current, now: now)
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
         if let pending = downloadReview, let current = state {
-            let now = Date()
-            state = DesktopPetBrain.poked(current, now: now)
+            state = hugging ? DesktopPetBrain.hugTapped(current, now: now) : DesktopPetBrain.poked(current, now: now)
             hideBar()
             endReview()
             DesktopPetDownloadsWatcher.reveal(pending.paths)
@@ -879,8 +969,7 @@ final class DesktopPetController: NSObject {
             return
         }
         if let pending = review, let current = state {
-            let now = Date()
-            state = DesktopPetBrain.poked(current, now: now)
+            state = hugging ? DesktopPetBrain.hugTapped(current, now: now) : DesktopPetBrain.poked(current, now: now)
             hideBar()
             openReview(pending)
             render(now: now)
@@ -894,7 +983,8 @@ final class DesktopPetController: NSObject {
     private func clicked() {
         guard let current = state else { return }
         let now = Date()
-        state = DesktopPetBrain.poked(current, now: now)
+        state = track?.style == .side ? DesktopPetBrain.hugTapped(current, now: now)
+            : DesktopPetBrain.poked(current, now: now)
         showBar(for: DesktopPetQuickAction.shownAfterClick)
         render(now: now)
         updateClock(now: now)
@@ -935,7 +1025,7 @@ final class DesktopPetController: NSObject {
         let along = next.style == .stroll ? next.along(of: feet) : next.along(fraction: spot.along)
         transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
         lastTouch = now
-        state = DesktopPetBrain.landed(current, at: along, now: now)
+        state = DesktopPetBrain.landed(current, at: along, now: now, style: next.style)
         track = next
         trackScreen = screen
         trackKey = "\(next.edge)-\(next.style)-\(display ?? 0)-\(settings.size.rawValue)"
@@ -956,7 +1046,9 @@ final class DesktopPetController: NSObject {
     fileprivate func hovering(_ inside: Bool) {
         petHovering = inside
         if inside {
-            if !dragging { showBar(for: nil) }
+            // 抱着的只露头：爬出来以后悬停才浮出快捷条。
+            let tucked = track?.style == .side && !(state.map { DesktopPetBrain.hugIsOut($0, now: Date()) } ?? false)
+            if !dragging, !tucked { showBar(for: nil) }
         } else {
             lingerBar()
         }
@@ -1676,6 +1768,8 @@ final class DesktopPetSpriteView: NSView {
 
     private func updateHover(_ event: NSEvent) {
         let now = hitRect.contains(convert(event.locationInWindow, from: nil))
+        DesktopPetController.shared.pointerMoved(now ? NSEvent.mouseLocation : nil,
+                                                 pressed: NSEvent.pressedMouseButtons != 0)
         guard now != inside else { return }
         inside = now
         DesktopPetController.shared.hovering(now)
@@ -1684,6 +1778,7 @@ final class DesktopPetSpriteView: NSView {
     override func mouseEntered(with event: NSEvent) { updateHover(event) }
     override func mouseMoved(with event: NSEvent) { updateHover(event) }
     override func mouseExited(with event: NSEvent) {
+        DesktopPetController.shared.pointerMoved(nil, pressed: false)
         if inside {
             inside = false
             DesktopPetController.shared.hovering(false)

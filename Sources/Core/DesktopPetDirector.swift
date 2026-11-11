@@ -460,6 +460,8 @@ extension DesktopPetBrain {
         case .rescue, .dragged: return state
         default: break
         }
+        // 抱树的先爬出来露全身，再说话；没人理约 5 秒缩回去。
+        if style == .side { return hugTapped(state, now: now) }
         var next = state
         next.since = now
         next.activity = style == .hang ? .jump(since: now) : .peek(until: now.addingTimeInterval(peekDuration))
@@ -487,6 +489,7 @@ extension DesktopPetBrain {
         case .rescue, .dragged: return state
         default: break
         }
+        if style == .side { return hugTapped(state, now: now) }
         var next = state
         next.since = now
         next.activity = .peek(until: now.addingTimeInterval(peekDuration))

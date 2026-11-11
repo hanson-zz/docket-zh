@@ -11,7 +11,7 @@ public enum DesktopPetAnchor: String, Codable, CaseIterable, Sendable {
     case dock
     /// 屏幕下边缘：平时趴着，偶尔探头、伸懒腰、挪几步。
     /// 上边缘（菜单栏下方）：前爪抓着菜单栏下沿吊在那里轻轻晃。
-    /// 左、右边缘：正着趴或坐，身子一半藏在屏幕外，脸朝屏幕里，偶尔探出来看看。
+    /// 左、右边缘：抱着屏幕边（考拉抱树），只露头和前爪，点一下爬出来，偶尔沿边爬一段。
     case left, right, top, bottom
     /// 随意：拖到哪停哪，坐在那里。
     case free
@@ -66,12 +66,11 @@ public enum DesktopPetEdge: Equatable, Sendable {
     public var vertical: Bool { self == .left || self == .right }
 
     /// 画的时候要不要左右翻（帧都朝右）。上下边照状态机里的朝向（朝左就翻）；
-    /// 左右边脸总朝屏幕里：贴左边朝右不翻，贴右边朝左要翻。
+    /// 左右边抱树各有专门画的一套（右边那套本身朝左），都不翻。
     public func flipped(facingLeft: Bool) -> Bool {
         switch self {
         case .bottom, .top: facingLeft
-        case .left: false
-        case .right: true
+        case .left, .right: false
         }
     }
 }

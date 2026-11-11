@@ -34,8 +34,8 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertFalse(DesktopPetEdge.top.flipped(facingLeft: false))
         XCTAssertFalse(DesktopPetEdge.left.flipped(facingLeft: true), "贴左边朝右（屏幕里）")
         XCTAssertFalse(DesktopPetEdge.left.flipped(facingLeft: false))
-        XCTAssertTrue(DesktopPetEdge.right.flipped(facingLeft: false), "贴右边朝左（屏幕里）")
-        XCTAssertTrue(DesktopPetEdge.right.flipped(facingLeft: true))
+        XCTAssertFalse(DesktopPetEdge.right.flipped(facingLeft: false), "贴右边用专门画的右套，不翻")
+        XCTAssertFalse(DesktopPetEdge.right.flipped(facingLeft: true))
     }
 
     func testEdgeTracksStayInsideVisibleArea() throws {
@@ -499,47 +499,5 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertEqual(1512 - (right.peekFeet(along: 300, width: 80, reveal: 0.75).x - 40), 60, accuracy: 0.0001)
         XCTAssertEqual(left.peekFeet(along: 300, width: 80, reveal: 2).x, 40, accuracy: 0.0001, "最多整只露出来")
 
-        let resting = DesktopPetBrain.placed(at: 300, style: .side, now: t0)
-        let pose = DesktopPetBrain.pose(resting, now: t0, style: .side)
-        XCTAssertEqual(pose.reveal, DesktopPetSide.rest)
-        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-lie-"), "正着趴，实际 \(pose.image)")
-        XCTAssertEqual(pose.wobble, 0)
-        XCTAssertEqual(pose.anchor, 0)
-
-        // 鼠标靠近：探出来，不转身。
-        let peek = DesktopPetBrain.step(resting, dt: 0.1, now: t0.addingTimeInterval(0.1), lane: 100...800,
-                                        userIdle: 0, focusing: false, style: .side, attention: 200, random: { 0.5 })
-        guard case .peek = peek.activity else { return XCTFail("鼠标靠近探头，实际 \(peek.activity)") }
-        XCTAssertNil(peek.turnedAt, "脸一直朝屏幕里")
-        XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(0.9), style: .side).reveal,
-                       DesktopPetSide.peek, accuracy: 0.0001)
-        // 缩回去：快结束时回到一半。
-        let ending = DesktopPetState(x: 300, activity: .peek(until: t0.addingTimeInterval(3)), since: t0)
-        XCTAssertLessThan(DesktopPetBrain.pose(ending, now: t0.addingTimeInterval(2.95), style: .side).reveal, 0.55)
-
-        // 睡着：缩回去只露耳朵和脸，带 Zzz。
-        let asleep = DesktopPetState(x: 300, activity: .sleep(since: t0), since: t0)
-        let sleepy = DesktopPetBrain.pose(asleep, now: t0.addingTimeInterval(8), style: .side)
-        XCTAssertEqual(sleepy.reveal, DesktopPetSide.sleep, accuracy: 0.0001)
-        XCTAssertGreaterThan(sleepy.zzz, 0)
-    }
-
-    func testSideDoesNotWalkAndSitsUpToLook() {
-        let state = DesktopPetBrain.placed(at: 300, style: .side, now: t0)
-        for roll in [0.1, 0.3, 0.6, 0.9] {
-            let (after, seen) = run(state, seconds: 40, lane: 100...800, style: .side, random: { roll })
-            XCTAssertEqual(after.x, 300, "掷 \(roll) 挪了")
-            XCTAssertFalse(seen.contains { if case .walk = $0 { true } else { false } })
-            XCTAssertFalse(seen.contains { if case .stretch = $0 { true } else { false } })
-        }
-        let (_, peeks) = run(state, seconds: 20, lane: 100...800, style: .side, random: { 0.2 })
-        XCTAssertTrue(peeks.contains { if case .peek = $0 { true } else { false } }, "隔一阵探出来")
-        let (_, sits) = run(state, seconds: 20, lane: 100...800, style: .side, random: { 0.6 })
-        XCTAssertTrue(sits.contains { if case .idle = $0 { true } else { false } }, "坐起来看看")
-        let sitting = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(5)), since: t0)
-        let look = DesktopPetBrain.pose(sitting, now: t0.addingTimeInterval(0.7), style: .side)
-        XCTAssertTrue(look.image.hasPrefix("pet-sprite-lookup-"), "先抬头看看，实际 \(look.image)")
-        XCTAssertEqual(DesktopPetBrain.pose(sitting, now: t0.addingTimeInterval(2), style: .side).reveal,
-                       DesktopPetSide.sit, accuracy: 0.0001)
     }
 }

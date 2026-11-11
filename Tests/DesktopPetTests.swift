@@ -78,6 +78,11 @@ final class DesktopPetTests: XCTestCase {
         XCTAssertEqual(DesktopPetStrip.hang.frameCount, 6)
         XCTAssertEqual(DesktopPetStrip.hangSleep.imageName(1), "pet-sprite-hang-sleep-2")
         XCTAssertEqual(DesktopPetStrip.hangSleep.frameCount, 2)
+        XCTAssertEqual(DesktopPetStrip.hug.frameCount, 4)
+        XCTAssertEqual(DesktopPetStrip.hugOut.imageName(5), "pet-sprite-hug-out-6")
+        XCTAssertEqual(DesktopPetStrip.hugSleepR.imageName(1), "pet-sprite-hug-sleep-r-2")
+        XCTAssertEqual(DesktopPetStrip.hugClimbR.frameCount, 4)
+        XCTAssertEqual(DesktopPetStrip.allCases.count, 28)
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources/Pet/sprites")
         for strip in DesktopPetStrip.allCases {
@@ -94,8 +99,8 @@ final class DesktopPetTests: XCTestCase {
         var state = DesktopPetBrain.initial(lane: lane, now: t0)
         guard case .idle = state.activity else { return XCTFail("刚出现在发呆") }
         XCTAssertTrue(lane.contains(state.x))
-        // 发呆到点后开始走。
-        let (walking, at) = run(state, from: t0, seconds: 5)
+        // 发呆到点后挑下一个动作：掷到最后一档是散步。
+        let (walking, at) = run(state, from: t0, seconds: 5, random: 0.95)
         guard case .walk(let target) = walking.activity else { return XCTFail("发呆完去散步，实际 \(walking.activity)") }
         XCTAssertTrue(lane.contains(target))
         // 走到了就停下发呆，不会走出范围。
@@ -107,7 +112,7 @@ final class DesktopPetTests: XCTestCase {
             state = DesktopPetBrain.step(state, dt: 1 / DesktopPetBrain.fps, now: now, lane: lane,
                                          userIdle: 0, focusing: false, random: { 0.3 })
             XCTAssertTrue(lane.contains(state.x))
-            if case .idle = state.activity { stopped = true; break }
+            if case .walk = state.activity {} else { stopped = true; break }
         }
         XCTAssertTrue(stopped, "走 200 点以内 12 秒应该到了")
         XCTAssertEqual(state.x, target, accuracy: 0.001)
