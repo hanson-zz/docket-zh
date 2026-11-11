@@ -448,7 +448,7 @@ final class DesktopPetController: NSObject {
 
     private func render(now: Date) {
         guard let track, let state, let panel, let view = spriteView else { return }
-        let pose = DesktopPetBrain.pose(state, now: now)
+        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale)
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
         let size = CGSize(width: base.width * scale, height: base.height * scale)

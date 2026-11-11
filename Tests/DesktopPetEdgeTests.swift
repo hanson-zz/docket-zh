@@ -247,16 +247,6 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertNil(same.turnedAt)
     }
 
-    func testWalkBobsSmoothlyWithDistance() {
-        let a = DesktopPetState(x: 300, activity: .walk(to: 500), since: t0)
-        var b = a
-        b.x += DesktopPetBrain.strideLength / 2
-        let liftA = DesktopPetBrain.pose(a, now: t0).lift
-        let liftB = DesktopPetBrain.pose(b, now: t0).lift
-        XCTAssertNotEqual(liftA, liftB, "身体随走过的路一起一伏")
-        XCTAssertLessThanOrEqual(max(liftA, liftB), DesktopPetBrain.bobHeight + 0.0001)
-    }
-
     func testBlinkAndStatics() {
         let idle = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(10)), since: t0)
         let images = Set((0..<100).map { DesktopPetBrain.pose(idle, now: t0.addingTimeInterval(Double($0) * 0.05)).image })
@@ -378,15 +368,18 @@ final class DesktopPetEdgeTests: XCTestCase {
 
     func testWalkFramesFollowDistanceNotTime() {
         let step = DesktopPetBrain.walkStep
-        let frames = (0..<8).map { DesktopPetBrain.walkFrame(x: 400 + Double($0) * step + 0.5) }
-        XCTAssertEqual(Set(frames), [0, 1, 2], "三张走路帧都会放到")
+        let frames = (0..<40).map { DesktopPetBrain.walkFrame(x: 400 + Double($0) * step + step / 2) }
         for (a, b) in zip(frames, frames.dropFirst()) {
-            XCTAssertEqual(abs(a - b), 1, "来回放，相邻两步只差一张，不从第 3 张跳回第 1 张")
+            XCTAssertEqual((b - a + 32) % 32, 1, "每走一步换下一张，32 张后接回第一张")
         }
-        // 站着不动（时间在走、位置没变）就不换帧。
+        // 放大时步子跟着放大：同样的距离，两倍大只换了一半的帧。
+        XCTAssertEqual(DesktopPetBrain.walkFrame(x: step * 10 + 0.01, scale: 1), 10)
+        XCTAssertEqual(DesktopPetBrain.walkFrame(x: step * 10 + 0.01, scale: 2), 5)
+        // 站着不动（时间在走、位置没变）就不换帧；身体起伏画在帧里，不另外颠。
         let state = DesktopPetState(x: 300, activity: .walk(to: 500), since: t0)
-        let early = DesktopPetBrain.pose(state, now: t0).image
-        let later = DesktopPetBrain.pose(state, now: t0.addingTimeInterval(1.3)).image
-        XCTAssertEqual(early, later)
+        let early = DesktopPetBrain.pose(state, now: t0)
+        let later = DesktopPetBrain.pose(state, now: t0.addingTimeInterval(1.3))
+        XCTAssertEqual(early.image, later.image)
+        XCTAssertEqual(early.lift, 0)
     }
 }

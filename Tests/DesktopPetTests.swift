@@ -68,7 +68,8 @@ final class DesktopPetTests: XCTestCase {
 
     func testStripNamesWrapAndExistOnDisk() {
         XCTAssertEqual(DesktopPetStrip.walk.imageName(0), "pet-sprite-walk-1")
-        XCTAssertEqual(DesktopPetStrip.walk.imageName(3), "pet-sprite-walk-1")
+        XCTAssertEqual(DesktopPetStrip.walk.imageName(32), "pet-sprite-walk-1")
+        XCTAssertEqual(DesktopPetStrip.walk.imageName(31), "pet-sprite-walk-32")
         XCTAssertEqual(DesktopPetStrip.carry.imageName(3), "pet-sprite-carry-4")
         XCTAssertEqual(DesktopPetStrip.sleep.imageName(-1), "pet-sprite-sleep-3")
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()

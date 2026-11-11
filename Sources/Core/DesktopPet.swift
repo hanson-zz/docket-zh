@@ -87,7 +87,13 @@ public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, jump, carry, sleep
 
-    public var frameCount: Int { self == .carry ? 4 : 3 }
+    public var frameCount: Int {
+        switch self {
+        case .walk: return 32
+        case .carry: return 4
+        default: return 3
+        }
+    }
 
     /// 第几帧（从 0 数，超出时绕回）对应的图片名，不带扩展名。
     public func imageName(_ frame: Int) -> String {
@@ -209,8 +215,8 @@ public enum DesktopPetBrain {
     public static let sleepingFPS: Double = 2
     /// 用户多久没碰键盘鼠标就睡觉。
     public static let sleepAfter: TimeInterval = 180
-    /// 散步、跑、叼着跑的速度（点 / 秒）。
-    public static let walkSpeed: Double = 28
+    /// 散步、跑、叼着跑的速度（点 / 秒）。散步配四脚走路帧：每秒约 39 张、一个循环约 0.8 秒。
+    public static let walkSpeed: Double = 18
     public static let runSpeed: Double = 190
     public static let carrySpeed: Double = 120
     /// 跑去废纸篓最多花几秒：程序坞很长时跑快一点。
@@ -242,20 +248,16 @@ public enum DesktopPetBrain {
     public static let droopDuration: TimeInterval = 8
     /// 静态图（发呆、坐、欢呼）显示多高。
     public static let sittingHeight: Double = 62
-    /// 走路一步多远（身体起伏一个来回）、颠多高。
-    public static let strideLength: Double = 14
-    /// 走路换一帧走多远：帧跟着走过的路换，不跟时间换，脚不会在地上打滑。
-    /// 两帧一步，和身体起伏同步（第 2 帧是迈步中间，正好在最高处）。
-    public static let walkStep: Double = strideLength / 2
-    /// 3 张走路帧来回放（1 2 3 2），比 1 2 3 1 少一下突然跳回。
-    static let walkCycle = [0, 1, 2, 1]
+    /// 四脚走路 32 帧一个循环，身体起伏画在帧里。帧跟着走过的路换，不跟时间换：
+    /// 着地那只脚在图里每帧往后挪约 0.46 点（原图 4.8 像素 × 缩放），换帧距离和它一样，脚就钉在地上不打滑。
+    /// 一个循环约 14.7 点。大小设置放大时步子跟着放大。
+    public static let walkStep: Double = 0.46
 
-    /// 走到横坐标 x 时该放第几张走路帧（从 0 数）。
-    public static func walkFrame(x: Double) -> Int {
-        let step = Int((abs(x) / walkStep).rounded(.down))
-        return walkCycle[step % walkCycle.count]
+    /// 走到横坐标 x 时该放第几张走路帧（从 0 数）；`scale` 是设置里的大小。
+    public static func walkFrame(x: Double, scale: Double = 1) -> Int {
+        let step = Int((abs(x) / (walkStep * max(scale, 0.1))).rounded(.down))
+        return step % DesktopPetStrip.walk.frameCount
     }
-    public static let bobHeight: Double = 1.6
 
     /// 刚出现：在可走范围中间偏左一点发呆。
     public static func initial(lane: ClosedRange<Double>, now: Date) -> DesktopPetState {
@@ -482,7 +484,7 @@ public enum DesktopPetBrain {
     }
 
     /// 这一刻画什么。
-    public static func pose(_ state: DesktopPetState, now: Date) -> DesktopPetPose {
+    public static func pose(_ state: DesktopPetState, now: Date, scale: Double = 1) -> DesktopPetPose {
         let elapsed = max(0, now.timeIntervalSince(state.since))
         let frame = Int(elapsed * fps)
         let left = state.facingLeft
@@ -498,8 +500,8 @@ public enum DesktopPetBrain {
         case .curl:
             pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(1), facingLeft: left)
         case .walk:
-            pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(walkFrame(x: state.x)),
-                                  lift: bobHeight * abs(sin(state.x * .pi / strideLength)), facingLeft: left)
+            pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(walkFrame(x: state.x, scale: scale)),
+                                  facingLeft: left)
         case .jump:
             let t = min(1, elapsed / jumpDuration)
             let index = t < 0.2 ? 0 : (t < 0.8 ? 1 : 2)
