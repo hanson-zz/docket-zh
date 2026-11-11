@@ -136,7 +136,7 @@ final class DesktopPetEdgeTests: XCTestCase {
         let lane: ClosedRange<Double> = 100...800
         let state = DesktopPetBrain.placed(at: 300, style: .curl, now: t0)
         guard case .curl = state.activity else { return XCTFail("贴边平时趴着") }
-        XCTAssertEqual(DesktopPetBrain.pose(state, now: t0).image, "pet-sprite-sleep-2", "趴着那一帧")
+        XCTAssertEqual(DesktopPetBrain.pose(state, now: t0).image, "pet-sprite-lie-1", "趴着那套帧")
         XCTAssertFalse(DesktopPetBrain.isMoving(state, now: t0), "趴着不开显示刷新")
 
         // 依次掷出：探头、伸懒腰、挪几步、打哈欠。
@@ -164,7 +164,7 @@ final class DesktopPetEdgeTests: XCTestCase {
                                           style: .curl, random: { 0.5 })
         guard case .sleep = asleep.activity else { return XCTFail("3 分钟没操作睡觉") }
         let pose = DesktopPetBrain.pose(asleep, now: t0.addingTimeInterval(8))
-        XCTAssertEqual(pose.image, "pet-sprite-sleep-3", "团成一团")
+        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-sleep-"), "团成一团呼吸，实际 \(pose.image)")
         XCTAssertGreaterThan(pose.zzz, 0, "头顶 Zzz")
         XCTAssertEqual(DesktopPetBrain.tickRate(asleep), DesktopPetBrain.sleepingFPS, "睡着降帧")
         let awake = DesktopPetBrain.step(asleep, dt: 0.1, now: t0.addingTimeInterval(60), lane: 100...800,
@@ -209,7 +209,7 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertTrue(DesktopPetBrain.isMoving(dragged, now: t0))
         let a = DesktopPetBrain.pose(dragged, now: t0)
         let b = DesktopPetBrain.pose(dragged, now: t0.addingTimeInterval(0.1))
-        XCTAssertTrue(a.image.hasPrefix("pet-sprite-jump-"))
+        XCTAssertTrue(a.image.hasPrefix("pet-sprite-drag-"), "拎着后颈那套帧")
         XCTAssertNotEqual(a.image, b.image, "四脚乱蹬")
         XCTAssertNotEqual(DesktopPetBrain.pose(dragged, now: t0.addingTimeInterval(0.12)).wobble, 0, "晃")
         // 拖着时不睡、不被点。
@@ -250,12 +250,24 @@ final class DesktopPetEdgeTests: XCTestCase {
     func testBlinkAndStatics() {
         let idle = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(10)), since: t0)
         let images = Set((0..<100).map { DesktopPetBrain.pose(idle, now: t0.addingTimeInterval(Double($0) * 0.05)).image })
-        XCTAssertEqual(images, ["pet-panda-idle", "pet-panda-rest"], "坐着偶尔眨眼")
+        XCTAssertTrue(images.contains("pet-sprite-blink-1"), "坐着偶尔眨眼")
+        XCTAssertGreaterThan(images.filter { $0.hasPrefix("pet-sprite-sit-") }.count, 4, "坐着慢慢呼吸")
+        let looks = Set((0..<220).map { DesktopPetBrain.sittingImage(now: t0.addingTimeInterval(Double($0) * 0.05)) })
+        XCTAssertTrue(looks.contains("pet-sprite-lookup-4"), "每 11 秒抬头看一眼")
         XCTAssertFalse(DesktopPetBrain.isMoving(idle, now: t0))
         let droop = DesktopPetBrain.droop(idle, now: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(droop, now: t0).image, "pet-panda-hungry", "电量低蔫蔫的")
+        XCTAssertEqual(DesktopPetBrain.pose(droop, now: t0).image, "pet-sprite-droop-1", "电量低蔫蔫的")
         let yawn = DesktopPetState(x: 300, activity: .yawn(since: t0), since: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(yawn, now: t0).image, "pet-sprite-sleep-1")
+        XCTAssertEqual(DesktopPetBrain.pose(yawn, now: t0).image, "pet-sprite-yawn-1")
+        XCTAssertEqual(DesktopPetBrain.pose(yawn, now: t0.addingTimeInterval(DesktopPetBrain.yawnDuration * 0.99)).image,
+                       "pet-sprite-yawn-8")
+        let stretch = DesktopPetState(x: 300, activity: .stretch(since: t0), since: t0)
+        XCTAssertEqual(DesktopPetBrain.pose(stretch, now: t0.addingTimeInterval(0.8)).image, "pet-sprite-stretch-5")
+        let peek = DesktopPetState(x: 300, activity: .peek(until: t0.addingTimeInterval(3)), since: t0)
+        XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(1)).image, "pet-sprite-peek-4", "抬头停住")
+        XCTAssertEqual(DesktopPetBrain.pose(peek, now: t0.addingTimeInterval(2.9)).image, "pet-sprite-peek-6", "趴回去")
+        let dragged = DesktopPetState(x: 300, activity: .dragged(since: t0), since: t0)
+        XCTAssertTrue(DesktopPetBrain.pose(dragged, now: t0.addingTimeInterval(0.25)).image.hasPrefix("pet-sprite-drag-"))
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources/Pet")
         for name in ["pet-panda-idle", "pet-panda-rest", "pet-panda-cheer", "pet-panda-hungry"] {

@@ -83,15 +83,21 @@ public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
 // MARK: - 动作帧
 
 /// 一套动作帧：Resources/Pet/sprites/pet-sprite-<动作>-<1…n>.png，同一只小熊猫、
-/// 同一个比例（@2x，走路那张约 105px 高），都朝右；往左时整张左右翻过来。
+/// 同一个比例（@2x，四脚站着约 90px 高），都朝右；往左时整张左右翻过来。
+/// 除走路外都从同一张 768 画布裁出：脚底在图片底边、身体中线在图片正中，换动作时不跳。
+/// `climb` 是旧的直立跳跃帧，只给专注竹竿爬升用。
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
-    case walk, run, jump, carry, sleep
+    case walk, run, carry, jump, climb, sit, blink, lie, peek, drag, fallAsleep = "fallasleep", sleep,
+         yawn, stretch, cheer, droop, lookup
 
     public var frameCount: Int {
         switch self {
         case .walk: return 32
-        case .carry: return 4
-        default: return 3
+        case .run, .carry, .jump, .sit, .yawn, .stretch: return 8
+        case .lie, .peek, .drag, .fallAsleep, .cheer: return 6
+        case .sleep, .droop, .lookup: return 4
+        case .climb: return 3
+        case .blink: return 1
         }
     }
 
@@ -207,8 +213,8 @@ public struct DesktopPetState: Equatable, Sendable {
 /// 散步、发呆、睡觉、跳、坐、欢呼、蜷着、探头、伸懒腰、拖动、救回的规则。
 /// 所有随机都从外面传进来，测试可以定住。
 public enum DesktopPetBrain {
-    /// 动作帧率：每秒 12 帧。位置和缩放另外按显示刷新（60 帧）算，见 `isMoving`。
-    public static let fps: Double = 12
+    /// 跑、叼着跑的帧率：每秒 16 帧。位置和缩放另外按显示刷新（60 帧）算，见 `isMoving`。
+    public static let fps: Double = 16
     /// 静止时（坐着、趴着）的计时器：每秒 10 次，够看见眨眼。
     public static let restingFPS: Double = 10
     /// 睡着以后计时器放慢到每秒 2 次。
@@ -239,15 +245,13 @@ public enum DesktopPetBrain {
     /// 探头看一眼多久；鼠标在旁边时一直探着。
     public static let peekDuration: TimeInterval = 2.4
     public static let stretchDuration: TimeInterval = 1.6
-    public static let yawnDuration: TimeInterval = 1.4
+    public static let yawnDuration: TimeInterval = 1.6
     /// 落地压扁回弹多久。
     public static let landDuration: TimeInterval = 0.42
     /// 转身的短过渡多久。
     public static let turnDuration: TimeInterval = 0.16
     /// 电量低时蔫多久。
     public static let droopDuration: TimeInterval = 8
-    /// 静态图（发呆、坐、欢呼）显示多高。
-    public static let sittingHeight: Double = 62
     /// 四脚走路 32 帧一个循环，身体起伏画在帧里。帧跟着走过的路换，不跟时间换：
     /// 着地那只脚在图里每帧往后挪约 0.46 点（原图 4.8 像素 × 缩放），换帧距离和它一样，脚就钉在地上不打滑。
     /// 一个循环约 14.7 点。大小设置放大时步子跟着放大。
@@ -490,72 +494,68 @@ public enum DesktopPetBrain {
         let left = state.facingLeft
         var pose: DesktopPetPose
         switch state.activity {
-        case .idle, .sit, .peek:
-            pose = DesktopPetPose(image: blinking(now: now) ? "pet-panda-rest" : "pet-panda-idle",
-                                  facingLeft: left, height: sittingHeight)
+        case .idle, .sit:
+            pose = DesktopPetPose(image: sittingImage(now: now), facingLeft: left)
+        case .peek(let until):
+            // 趴着抬头看一眼：前 4 帧抬起来停在第 4 帧，快结束时用最后 2 帧趴回去。
+            let left2 = until.timeIntervalSince(now)
+            let index = left2 < 0.4 ? (left2 < 0.2 ? 5 : 4) : min(3, Int(elapsed / 0.15))
+            pose = DesktopPetPose(image: DesktopPetStrip.peek.imageName(index), facingLeft: left)
         case .cheer:
-            pose = DesktopPetPose(image: "pet-panda-cheer", height: sittingHeight + 4)
+            pose = DesktopPetPose(image: DesktopPetStrip.cheer.imageName(Int(elapsed * 8)))
         case .droop:
-            pose = DesktopPetPose(image: "pet-panda-hungry", height: sittingHeight - 2)
+            pose = DesktopPetPose(image: DesktopPetStrip.droop.imageName(Int(elapsed * 3)))
         case .curl:
-            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(1), facingLeft: left)
+            pose = DesktopPetPose(image: DesktopPetStrip.lie.imageName(Int(elapsed * 4)), facingLeft: left)
         case .walk:
             pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(walkFrame(x: state.x, scale: scale)),
                                   facingLeft: left)
         case .jump:
+            // 8 帧：坐、蹲、蓄力、蹬起、腾空、落地蹲、起身、坐。离地高度只在中间那段。
             let t = min(1, elapsed / jumpDuration)
-            let index = t < 0.2 ? 0 : (t < 0.8 ? 1 : 2)
+            let index = min(7, Int(t * 8))
             pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(index),
-                                  lift: jumpLift(t), facingLeft: left)
-            // 起跳前蹲一下、落地压一下。
-            let squash = t < 0.18 ? sin(t / 0.18 * .pi) : (t > 0.86 ? sin((t - 0.86) / 0.14 * .pi) : 0)
-            pose.scaleX = 1 + 0.08 * squash
-            pose.scaleY = 1 - 0.1 * squash
+                                  lift: jumpLift((t - 0.25) / 0.5), facingLeft: left)
         case .stretch(let since):
-            let t = min(1, now.timeIntervalSince(since) / stretchDuration)
-            if t < 0.45 {
-                // 前爪往前一伸、屁股撅起来：跳之前蹲下那一帧。
-                pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(0), facingLeft: left)
-                pose.scaleX = 1 + 0.06 * sin(t / 0.45 * .pi)
-            } else {
-                // 坐起来往上一抻。
-                pose = DesktopPetPose(image: "pet-panda-idle", facingLeft: left, height: sittingHeight)
-                pose.scaleY = 1 + 0.07 * sin((t - 0.45) / 0.55 * .pi)
-                pose.scaleX = 1 - 0.03 * sin((t - 0.45) / 0.55 * .pi)
-            }
-        case .yawn:
-            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(0), facingLeft: left,
-                                  height: sittingHeight + 8)
+            let t = min(0.999, now.timeIntervalSince(since) / stretchDuration)
+            pose = DesktopPetPose(image: DesktopPetStrip.stretch.imageName(Int(t * 8)), facingLeft: left)
+        case .yawn(let since):
+            let t = min(0.999, now.timeIntervalSince(since) / yawnDuration)
+            pose = DesktopPetPose(image: DesktopPetStrip.yawn.imageName(Int(t * 8)), facingLeft: left)
         case .sleep(let since):
+            // 先 6 帧趴下团起来（每帧 0.5 秒，睡着降到每秒 2 次也够），再 4 帧呼吸循环带 Zzz。
             let asleep = now.timeIntervalSince(since)
-            let index = asleep < 1.6 ? 0 : (asleep < 4 ? 1 : 2)
-            pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(index), facingLeft: left)
-            if index == 2 { pose.zzz = 1 + Int(asleep * 1.5) % 3 }
+            let step = Int(asleep / 0.5)
+            if step < DesktopPetStrip.fallAsleep.frameCount {
+                pose = DesktopPetPose(image: DesktopPetStrip.fallAsleep.imageName(step), facingLeft: left)
+            } else {
+                pose = DesktopPetPose(image: DesktopPetStrip.sleep.imageName(step), facingLeft: left)
+                pose.zzz = 1 + Int(asleep * 1.5) % 3
+            }
         case .dragged(let since):
-            // 四脚乱蹬：跳起来那两帧来回换，身子左右晃。
+            // 被拎着后颈：四脚乱蹬 6 帧，身子轻轻晃。
             let t = now.timeIntervalSince(since)
-            pose = DesktopPetPose(image: DesktopPetStrip.jump.imageName(1 + Int(t * 10) % 2), facingLeft: left)
-            pose.wobble = 7 * sin(t * 13)
+            pose = DesktopPetPose(image: DesktopPetStrip.drag.imageName(Int(t * 10)), facingLeft: left)
+            pose.wobble = 4 * sin(t * 9)
         case .land(let since):
             let t = min(1, now.timeIntervalSince(since) / landDuration)
-            pose = DesktopPetPose(image: "pet-panda-idle", facingLeft: left, height: sittingHeight)
+            pose = DesktopPetPose(image: DesktopPetStrip.sit.imageName(0), facingLeft: left)
             let squash = landSquash(t)
-            pose.scaleX = 1 + 0.14 * squash
-            pose.scaleY = 1 - 0.2 * squash
+            pose.scaleX = 1 + 0.1 * squash
+            pose.scaleY = 1 - 0.14 * squash
         case .rescue(let step):
             switch step {
             case .toTrash:
                 pose = DesktopPetPose(image: DesktopPetStrip.run.imageName(frame), facingLeft: left)
             case .pickUp(let since, _):
+                // 低头去叼（蹲下那一帧），叼起来站着。
                 let t = min(1, now.timeIntervalSince(since) / pickUpDuration)
-                let index = t < 0.4 ? 0 : (t < 0.75 ? 1 : 2)
-                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(index), facingLeft: left)
+                pose = DesktopPetPose(image: t < 0.5 ? DesktopPetStrip.jump.imageName(2)
+                                                     : DesktopPetStrip.carry.imageName(0), facingLeft: left)
             case .back:
-                // 叼着跑：第 4 帧，按跑过的路一颠一颠。
-                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(3),
-                                      lift: 3 * abs(sin(state.x * .pi / 18)), facingLeft: left)
+                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(frame), facingLeft: left)
             case .arrived:
-                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(2))
+                pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(0))
             }
         }
         // 刚掉头：横着从窄到宽弹开，像转了个身。
@@ -570,6 +570,19 @@ public enum DesktopPetBrain {
     public static func tickRate(_ state: DesktopPetState) -> Double {
         if case .sleep = state.activity { return sleepingFPS }
         return restingFPS
+    }
+
+    /// 坐着：8 帧慢慢呼吸（每秒 4 帧），偶尔眨眼；每 11 秒抬头看一眼（4 帧上去再下来，约 1.4 秒）。
+    /// 都按绝对时间算，不用存状态。
+    public static func sittingImage(now: Date) -> String {
+        let t = now.timeIntervalSinceReferenceDate
+        let look = t.truncatingRemainder(dividingBy: 11)
+        if look >= 0, look < 1.4 {
+            let path = [0, 1, 2, 3, 3, 3, 2, 1, 0]
+            return DesktopPetStrip.lookup.imageName(path[min(path.count - 1, Int(look / 1.4 * Double(path.count)))])
+        }
+        if blinking(now: now) { return DesktopPetStrip.blink.imageName(0) }
+        return DesktopPetStrip.sit.imageName(Int(t * 4))
     }
 
     /// 眨眼：每 4.3 秒闭一下眼，约 0.18 秒。按绝对时间算，不用存状态。

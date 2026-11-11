@@ -71,7 +71,8 @@ final class DesktopPetTests: XCTestCase {
         XCTAssertEqual(DesktopPetStrip.walk.imageName(32), "pet-sprite-walk-1")
         XCTAssertEqual(DesktopPetStrip.walk.imageName(31), "pet-sprite-walk-32")
         XCTAssertEqual(DesktopPetStrip.carry.imageName(3), "pet-sprite-carry-4")
-        XCTAssertEqual(DesktopPetStrip.sleep.imageName(-1), "pet-sprite-sleep-3")
+        XCTAssertEqual(DesktopPetStrip.sleep.imageName(-1), "pet-sprite-sleep-4")
+        XCTAssertEqual(DesktopPetStrip.fallAsleep.imageName(0), "pet-sprite-fallasleep-1")
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources/Pet/sprites")
         for strip in DesktopPetStrip.allCases {
@@ -119,8 +120,8 @@ final class DesktopPetTests: XCTestCase {
                                           userIdle: DesktopPetBrain.sleepAfter, focusing: false, random: { 0.5 })
         guard case .sleep = asleep.activity else { return XCTFail("没操作几分钟就睡") }
         XCTAssertEqual(DesktopPetBrain.tickRate(asleep), DesktopPetBrain.sleepingFPS)
-        XCTAssertEqual(DesktopPetBrain.pose(asleep, now: t0).image, "pet-sprite-sleep-1", "先打哈欠")
-        XCTAssertEqual(DesktopPetBrain.pose(asleep, now: t0.addingTimeInterval(10)).image, "pet-sprite-sleep-3")
+        XCTAssertEqual(DesktopPetBrain.pose(asleep, now: t0).image, "pet-sprite-fallasleep-1", "先慢慢趴下")
+        XCTAssertTrue(DesktopPetBrain.pose(asleep, now: t0.addingTimeInterval(10)).image.hasPrefix("pet-sprite-sleep-"))
         let awake = DesktopPetBrain.step(asleep, dt: 0.5, now: t0.addingTimeInterval(60), lane: lane,
                                          userIdle: 1, focusing: false, random: { 0.5 })
         guard case .idle = awake.activity else { return XCTFail("用户回来就醒") }
@@ -133,7 +134,8 @@ final class DesktopPetTests: XCTestCase {
         guard case .jump = jumping.activity else { return XCTFail("点一下跳") }
         let middle = DesktopPetBrain.pose(jumping, now: t0.addingTimeInterval(DesktopPetBrain.jumpDuration / 2))
         XCTAssertEqual(middle.lift, DesktopPetBrain.jumpHeight, accuracy: 0.01)
-        XCTAssertEqual(middle.image, "pet-sprite-jump-2")
+        XCTAssertEqual(middle.image, "pet-sprite-jump-5", "腾空那一帧")
+        XCTAssertEqual(DesktopPetBrain.pose(jumping, now: t0.addingTimeInterval(0.05)).lift, 0, "先蹲下蓄力，还没离地")
         XCTAssertEqual(DesktopPetBrain.jumpLift(0), 0)
         XCTAssertEqual(DesktopPetBrain.jumpLift(1), 0)
         // 跳着时不理会再点一下，也不被睡觉打断。
@@ -151,12 +153,12 @@ final class DesktopPetTests: XCTestCase {
         let sitting = DesktopPetBrain.step(state, dt: 0.1, now: t0, lane: lane, userIdle: 999,
                                            focusing: true, random: { 0.5 })
         XCTAssertEqual(sitting.activity, .sit, "专注时坐着，不睡也不走")
-        XCTAssertEqual(DesktopPetBrain.pose(sitting, now: t0).image, "pet-panda-idle")
+        XCTAssertTrue(DesktopPetBrain.pose(sitting, now: t0).image.hasPrefix("pet-sprite-"))
         let (later, _) = run(sitting, from: t0, seconds: 20, focusing: true)
         XCTAssertEqual(later.activity, .sit)
         XCTAssertEqual(later.x, sitting.x)
         let cheering = DesktopPetBrain.cheer(sitting, now: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(cheering, now: t0).image, "pet-panda-cheer")
+        XCTAssertEqual(DesktopPetBrain.pose(cheering, now: t0).image, "pet-sprite-cheer-1")
         let after = DesktopPetBrain.step(cheering, dt: 0.1, now: t0.addingTimeInterval(10), lane: lane,
                                          userIdle: 0, focusing: false, random: { 0.5 })
         guard case .idle = after.activity else { return XCTFail("欢呼完发呆") }
@@ -187,9 +189,10 @@ final class DesktopPetTests: XCTestCase {
 
     func testRescueCarryPoses() {
         let state = DesktopPetState(x: 300, activity: .rescue(.back(homeX: 200)), since: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(state, now: t0).image, "pet-sprite-carry-4")
+        XCTAssertEqual(DesktopPetBrain.pose(state, now: t0).image, "pet-sprite-carry-1")
         let picking = DesktopPetState(x: 300, activity: .rescue(.pickUp(since: t0, homeX: 200)), since: t0)
-        XCTAssertEqual(DesktopPetBrain.pose(picking, now: t0).image, "pet-sprite-carry-1")
+        XCTAssertEqual(DesktopPetBrain.pose(picking, now: t0).image, "pet-sprite-jump-3", "低头去叼")
+        XCTAssertEqual(DesktopPetBrain.pose(picking, now: t0.addingTimeInterval(0.8)).image, "pet-sprite-carry-1")
     }
 
     func testFreshTrashItemsOnly() {

@@ -519,7 +519,8 @@ final class DesktopPetController: NSObject {
             hideBar()
             if bubble.content?.isNews == true || bubble.content?.isZzz == true { setBubble(nil) }
         }
-        let hang = drawnSize.height * 0.62
+        // 拎起来那套帧头顶在图片上沿，指针捏在后颈。
+        let hang = drawnSize.height * 0.9
         dragFeet = CGPoint(x: point.x, y: point.y - hang)
         current = DesktopPetBrain.dragging(current, dx: Double(point.x - lastDragX), now: now)
         lastDragX = point.x

@@ -103,7 +103,7 @@ struct FocusBambooClimber: View {
                 .offset(y: -(Self.poleHeight - Self.cheerHeight + 4))
                 .accessibilityLabel(tr("小熊猫爬到顶，欢呼"))
         } else if event == .slide {
-            art(DesktopPetStrip.jump.imageName(2), height: Self.climberHeight)
+            art(DesktopPetStrip.climb.imageName(2), height: Self.climberHeight)
                 .padding(.trailing, 10)
                 .offset(y: -slideOffset)
                 .accessibilityLabel(tr("小熊猫滑下来了"))
@@ -112,7 +112,7 @@ struct FocusBambooClimber: View {
             let running = state.paused == nil
             // 走着时一秒颠一下，看着在爬。
             let bob: CGFloat = running && Int(now.timeIntervalSince1970) % 2 == 1 ? 2 : 0
-            art(DesktopPetStrip.jump.imageName(1), height: Self.climberHeight)
+            art(DesktopPetStrip.climb.imageName(1), height: Self.climberHeight)
                 .padding(.trailing, 10)
                 .offset(y: -(CGFloat(FocusPandaClimb.climbOffset(progress: progress, travel: Double(travel))) + bob))
                 .animation(.easeInOut(duration: 0.6), value: progress)
