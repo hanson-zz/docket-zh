@@ -13,7 +13,7 @@ import SwiftUI
 /// 停靠位置和位置写回设置。右键是菜单。
 ///
 /// 画面：小熊猫是一个 CALayer（图片、晃动、缩放、翻转都在图层上改，不经过 SwiftUI），
-/// 图一直正着画：屏幕上边缘拎着后颈吊着轻晃，左右边缘正着趴、身子一半藏在屏幕边外
+/// 图一直正着画：屏幕上边缘前爪抓着菜单栏下沿吊着轻晃，左右边缘正着趴、身子一半藏在屏幕边外
 /// （窗口不伸出那条边，伸出去的那块由视图裁掉），
 /// 位置和缩放在动的时候按显示刷新（`NSView.displayLink`，60 帧）算，窗口原点取整、
 /// 不足一点的部分放进图层位置，走得再慢也不一格一格跳；动作帧单独按 10~12 帧换。
@@ -511,7 +511,7 @@ final class DesktopPetController: NSObject {
         let side = (Self.windowSide * scale).rounded(.up)
         var originX = (center.x - side / 2).rounded(.down)
         var originY = (center.y - side / 2).rounded(.down)
-        // 吊着、探头时窗口不伸出那条边：伸出去的那块（左右边藏起来的半只、上边后颈那一撮）
+        // 吊着、探头时窗口不伸出那条边：伸出去的那块（左右边藏起来的半只、上边钟摆时翘过菜单栏下沿的爪尖）
         // 由视图裁掉，也就不会出现在相邻的显示器上。拖着时不裁。
         if !dragging {
             let edgeLine = CGFloat(track.base)
@@ -529,7 +529,7 @@ final class DesktopPetController: NSObject {
             panel.setFrameOrigin(origin)
         }
         // 窗口原点是整数点，剩下不足一点的放进图层位置，慢慢走也是平滑的。
-        // 图层绕 `anchor`（脚底，或拎着、吊着时的后颈）转和缩放。
+        // 图层绕 `anchor`（脚底；拎着时的后颈；吊着时前爪抓握线，即图顶）转和缩放。
         let pivot = CGPoint(x: feet.x, y: feet.y + tall * CGFloat(pose.anchor))
         let localPivot = CGPoint(x: pivot.x - originX, y: pivot.y - originY)
         view.draw(image: pose.image, size: size, anchor: pose.anchor, position: localPivot,
@@ -574,9 +574,9 @@ final class DesktopPetController: NSObject {
             hideBar()
             if bubble.content?.isNews == true || bubble.content?.isZzz == true { setBubble(nil) }
         }
-        // 拎起来那套帧头顶在图片上沿，指针捏在后颈（和吊在上边缘的挂点同一处）。
+        // 拎起来那套帧头顶在图片上沿，指针捏在后颈。
         let dragArt = DesktopPetArt.size(DesktopPetPose(image: DesktopPetStrip.drag.imageName(0)))
-        let hang = dragArt.height * CGFloat(settings.size.scale) * CGFloat(DesktopPetHang.anchor)
+        let hang = dragArt.height * CGFloat(settings.size.scale) * CGFloat(DesktopPetHang.scruff)
         dragFeet = CGPoint(x: point.x, y: point.y - hang)
         current = DesktopPetBrain.dragging(current, dx: Double(point.x - lastDragX), now: now)
         lastDragX = point.x
@@ -876,13 +876,13 @@ final class DesktopPetController: NSObject {
             bubbleCenter.y = rect.maxY + gap / 2 + size.height / 2
             if barAbove { bubbleCenter.y += barSize.height + gap }
         case .top where bubble.content?.isZzz == true && !barShown:
-            // 睡着吊着：Zzz 在脑袋那一侧的身子旁边，那边放不下就放另一边。
+            // 睡着吊着：Zzz 在脑袋旁边（吊挂帧的脑袋在图顶往下约四分之一处），那边放不下就放另一边。
             let right = rect.maxX + gap + size.width / 2
             let left = rect.minX - gap - size.width / 2
             let fitsRight = right + size.width / 2 <= visible.maxX
             let fitsLeft = left - size.width / 2 >= visible.minX
             bubbleCenter.x = drawnFlip ? (fitsLeft ? left : right) : (fitsRight ? right : left)
-            bubbleCenter.y = rect.maxY - rect.height * 0.3
+            bubbleCenter.y = rect.maxY - rect.height * 0.25
         case .top:
             bubbleCenter.y = rect.minY - gap / 2 - size.height / 2
             if barBelow { bubbleCenter.y -= barSize.height + gap }
@@ -1245,7 +1245,7 @@ final class DesktopPetSpriteView: NSView {
     private var lastDrawn: (image: String, size: CGSize, anchor: Double, position: CGPoint, rotation: Double,
                             scaleX: Double, scaleY: Double)?
 
-    /// `anchor` 是转动、缩放的那一点在图高的哪儿（0 脚底，拎着、吊着时是后颈），
+    /// `anchor` 是转动、缩放的那一点在图高的哪儿（0 脚底，拎着时是后颈，吊着时是图顶的前爪抓握线），
     /// `position` 是那一点在窗口里的位置。
     func draw(image: String, size: CGSize, anchor: Double, position: CGPoint, rotation: Double,
               scaleX: Double, scaleY: Double) {

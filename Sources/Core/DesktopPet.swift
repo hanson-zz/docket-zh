@@ -86,11 +86,12 @@ public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
 /// 同一个比例（@2x，四脚站着约 90px 高），都朝右；往左时整张左右翻过来。
 /// 除走路外都从同一张 768 画布裁出：脚底在图片底边、身体中线在图片正中，换动作时不跳。
 /// `climb` 是旧的直立跳跃帧，只给专注竹竿爬升用。
-/// `hang` 是吊在屏幕上边缘的那套，暂时借用拎起来的 drag 帧；以后有了专门画的
-/// pet-sprite-hang-N，把 `fileStem` 和 `frameCount` 改过来就换图了。
+/// `hang` 是吊在屏幕上边缘的那套：举着两只前爪抓住菜单栏下沿，身子和尾巴垂下来来回晃，
+/// 6 帧首尾相接；`hangSleep` 是吊着睡着闭眼呼吸的 2 帧。这两套从 768 画布按同一个框裁出：
+/// 前爪抓握线在图片上沿、两爪中点在图片正中，所以挂点是图顶（`DesktopPetHang.anchor`）。
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, carry, jump, climb, sit, blink, lie, peek, drag, fallAsleep = "fallasleep", sleep,
-         yawn, stretch, cheer, droop, lookup, hang
+         yawn, stretch, cheer, droop, lookup, hang, hangSleep = "hang-sleep"
 
     public var frameCount: Int {
         switch self {
@@ -99,17 +100,13 @@ public enum DesktopPetStrip: String, CaseIterable, Sendable {
         case .lie, .peek, .drag, .fallAsleep, .cheer, .hang: return 6
         case .sleep, .droop, .lookup: return 4
         case .climb: return 3
+        case .hangSleep: return 2
         case .blink: return 1
         }
     }
 
     /// 图片文件名里的动作那一段。
-    public var fileStem: String {
-        switch self {
-        case .hang: DesktopPetStrip.drag.rawValue
-        default: rawValue
-        }
-    }
+    public var fileStem: String { rawValue }
 
     /// 第几帧（从 0 数，超出时绕回）对应的图片名，不带扩展名。
     public func imageName(_ frame: Int) -> String {
@@ -137,7 +134,8 @@ public struct DesktopPetPose: Equatable, Sendable {
     public var wobble: Double
     /// 睡着时头顶的 Zzz：0 不显示，1…3 是几个 z。
     public var zzz: Int
-    /// 转动、定位的那一点在图高的哪儿：0 是脚底，拎着、吊着时是后颈（`DesktopPetHang.anchor`）。
+    /// 转动、定位的那一点在图高的哪儿：0 是脚底，拎着时是后颈（`DesktopPetHang.scruff`），
+    /// 吊在上边缘时是前爪抓握线、也就是图顶（`DesktopPetHang.anchor`）。
     public var anchor: Double
     /// 左右边探头时露出图宽的多少（0…1），其余藏在屏幕边外；别处是 1。
     public var reveal: Double
@@ -575,7 +573,7 @@ public enum DesktopPetBrain {
             let t = now.timeIntervalSince(since)
             pose = DesktopPetPose(image: DesktopPetStrip.drag.imageName(Int(t * 10)), facingLeft: left)
             pose.wobble = 4 * sin(t * 9)
-            pose.anchor = DesktopPetHang.anchor
+            pose.anchor = DesktopPetHang.scruff
         case .land(let since):
             let t = min(1, now.timeIntervalSince(since) / landDuration)
             pose = DesktopPetPose(image: DesktopPetStrip.sit.imageName(0), facingLeft: left)
@@ -616,24 +614,24 @@ public enum DesktopPetBrain {
         }
     }
 
-    /// 吊在上边缘：拎着后颈的帧慢放、只在幅度小的几帧里来回，整只绕后颈钟摆轻晃。
-    /// 鼠标靠近、被点、欢呼时正常速度蹬一下、晃大一点；横着挪时多晃一点；睡着更慢更小带 Zzz。
+    /// 吊在上边缘：前爪抓着菜单栏下沿，6 帧来回晃的循环（素材自带晃动），整只再绕爪子做小幅钟摆。
+    /// 鼠标靠近、被点、欢呼时帧速加快、晃大一点；横着挪时多晃一点；睡着换闭眼呼吸的 2 帧，更慢更小带 Zzz。
+    /// 帧号按绝对时间算，加快时只是往前多走几帧，换动作时不跳。
     static func hangPose(_ state: DesktopPetState, now: Date) -> DesktopPetPose {
         let elapsed = max(0, now.timeIntervalSince(state.since))
         let time = now.timeIntervalSinceReferenceDate
-        let calmIndex = DesktopPetHang.calmFrames[Int(time * DesktopPetHang.fps) % DesktopPetHang.calmFrames.count]
-        let calm = DesktopPetStrip.hang.imageName(calmIndex)
+        let extra = DesktopPetHang.alertFPS - DesktopPetHang.fps
+        let calm = DesktopPetStrip.hang.imageName(DesktopPetHang.frame(time: time))
         var pose = DesktopPetPose(image: calm, facingLeft: state.facingLeft, anchor: DesktopPetHang.anchor)
         let blend = DesktopPetHang.blend
         switch state.activity {
         case .peek:
-            if elapsed < DesktopPetHang.alertKick {
-                pose.image = DesktopPetStrip.hang.imageName(Int(elapsed * DesktopPetHang.alertFPS))
-            }
+            pose.image = DesktopPetStrip.hang.imageName(
+                DesktopPetHang.frame(time: time, boost: min(elapsed, DesktopPetHang.alertKick) * extra))
             pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend,
                                                  amplitude: DesktopPetHang.alertAmplitude)
         case .jump, .cheer:
-            pose.image = DesktopPetStrip.hang.imageName(Int(elapsed * DesktopPetHang.alertFPS))
+            pose.image = DesktopPetStrip.hang.imageName(DesktopPetHang.frame(time: time, boost: elapsed * extra))
             pose.wobble = DesktopPetHang.blended(time: time, elapsed: elapsed, over: blend / 2,
                                                  amplitude: DesktopPetHang.alertAmplitude + 1)
         case .walk:
@@ -641,7 +639,7 @@ public enum DesktopPetBrain {
                                                  amplitude: DesktopPetHang.walkAmplitude)
         case .sleep(let since):
             let asleep = max(0, now.timeIntervalSince(since))
-            pose.image = DesktopPetStrip.hang.imageName(0)
+            pose.image = DesktopPetStrip.hangSleep.imageName(Int(time * DesktopPetHang.sleepFPS))
             pose.wobble = DesktopPetHang.blended(time: time, elapsed: asleep, over: DesktopPetHang.sleepBlend,
                                                  amplitude: DesktopPetHang.sleepAmplitude,
                                                  period: DesktopPetHang.sleepPeriod)

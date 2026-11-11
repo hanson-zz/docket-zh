@@ -402,17 +402,22 @@ final class DesktopPetEdgeTests: XCTestCase {
     // MARK: 上边吊着
 
     func testHangPendulum() {
-        XCTAssertEqual(DesktopPetHang.anchor, 0.9, "挂点和拖起来捏的地方一样")
+        XCTAssertEqual(DesktopPetHang.anchor, 1, "挂点是图顶的前爪抓握线")
+        XCTAssertEqual(DesktopPetHang.scruff, 0.9, "拖起来仍捏后颈")
         let p = DesktopPetHang.period
         XCTAssertEqual(DesktopPetHang.swing(time: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(DesktopPetHang.swing(time: p / 4), DesktopPetHang.amplitude, accuracy: 0.0001, "最远 4°")
+        XCTAssertEqual(DesktopPetHang.swing(time: p / 4), DesktopPetHang.amplitude, accuracy: 0.0001, "最远 2.5°")
         XCTAssertEqual(DesktopPetHang.swing(time: p * 3 / 4), -DesktopPetHang.amplitude, accuracy: 0.0001)
         XCTAssertEqual(DesktopPetHang.swing(time: p), 0, accuracy: 0.0001, "一个周期回到中间")
-        XCTAssertEqual(DesktopPetHang.amplitude, 4)
+        XCTAssertEqual(DesktopPetHang.amplitude, 2.5)
+        XCTAssertEqual(DesktopPetHang.alertAmplitude, 5)
+        XCTAssertEqual(DesktopPetHang.sleepAmplitude, 1)
+        XCTAssertEqual(DesktopPetHang.fps, 6)
+        XCTAssertEqual(DesktopPetHang.sleepFPS, 1)
         XCTAssertEqual(DesktopPetHang.period, 2.6)
         // 混过去：刚进动作时和平时一样，混完是新的摆。
         let t = p / 4
-        XCTAssertEqual(DesktopPetHang.blended(time: t, elapsed: 0, over: 1, amplitude: 7), 4, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetHang.blended(time: t, elapsed: 0, over: 1, amplitude: 7), 2.5, accuracy: 0.0001)
         XCTAssertEqual(DesktopPetHang.blended(time: t, elapsed: 2, over: 1, amplitude: 7), 7, accuracy: 0.0001)
         XCTAssertEqual(DesktopPetHang.tickRate(sleeping: false), 30)
         XCTAssertLessThan(DesktopPetHang.tickRate(sleeping: true), 30)
@@ -428,16 +433,17 @@ final class DesktopPetEdgeTests: XCTestCase {
         let calm = DesktopPetBrain.placed(at: 300, style: .hang, now: t0)
         guard case .curl = calm.activity else { return XCTFail("吊着歇") }
         let pose = DesktopPetBrain.pose(calm, now: t0, style: .hang)
-        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-drag-"), "暂用拎起来的帧，实际 \(pose.image)")
+        XCTAssertTrue(pose.image.hasPrefix("pet-sprite-hang-"), "吊挂帧，实际 \(pose.image)")
+        XCTAssertFalse(pose.image.hasPrefix("pet-sprite-hang-sleep-"), "醒着不用闭眼帧")
         XCTAssertEqual(pose.anchor, DesktopPetHang.anchor)
         XCTAssertEqual(pose.reveal, 1)
         let calmMax = maxWobble(calm, from: t0, seconds: 3)
         XCTAssertLessThanOrEqual(calmMax, DesktopPetHang.amplitude + 0.0001)
-        XCTAssertGreaterThan(calmMax, 3.5, "确实在晃")
-        // 平时只在幅度小的几帧里慢慢换（每秒 4 帧）。
-        let images = Set((0..<40).map { DesktopPetBrain.pose(calm, now: t0.addingTimeInterval(Double($0) / 10),
+        XCTAssertGreaterThan(calmMax, 2.2, "确实在晃")
+        // 平时 6 帧循环每秒 6 帧，一秒里每帧都轮到。
+        let images = Set((0..<12).map { DesktopPetBrain.pose(calm, now: t0.addingTimeInterval(Double($0) / 12 + 0.01),
                                                               style: .hang).image })
-        XCTAssertEqual(images, Set(DesktopPetHang.calmFrames.map { DesktopPetStrip.hang.imageName($0) }))
+        XCTAssertEqual(images, Set((0..<6).map { DesktopPetStrip.hang.imageName($0) }))
 
         // 鼠标靠近：抬头蹬一下，晃大一点。
         let alert = DesktopPetBrain.step(calm, dt: 0.1, now: t0.addingTimeInterval(0.1), lane: 100...800,
@@ -450,8 +456,11 @@ final class DesktopPetEdgeTests: XCTestCase {
         let late = t0.addingTimeInterval(10)
         XCTAssertLessThanOrEqual(maxWobble(asleep, from: late, seconds: 5), DesktopPetHang.sleepAmplitude + 0.0001)
         XCTAssertGreaterThan(DesktopPetBrain.pose(asleep, now: late, style: .hang).zzz, 0)
-        XCTAssertTrue(DesktopPetBrain.pose(asleep, now: late, style: .hang).image.hasPrefix("pet-sprite-drag-"),
-                      "吊着睡，不团成一团")
+        XCTAssertTrue(DesktopPetBrain.pose(asleep, now: late, style: .hang).image.hasPrefix("pet-sprite-hang-sleep-"),
+                      "吊着闭眼睡，不团成一团")
+        let breaths = Set((0..<8).map { DesktopPetBrain.pose(asleep, now: late.addingTimeInterval(Double($0) / 2 + 0.01),
+                                                              style: .hang).image })
+        XCTAssertEqual(breaths, Set((0..<2).map { DesktopPetStrip.hangSleep.imageName($0) }), "闭眼呼吸 2 帧")
         // 横着挪：晃得比平时多。
         let walking = DesktopPetState(x: 300, activity: .walk(to: 340), since: t0)
         XCTAssertGreaterThan(maxWobble(walking, from: t0.addingTimeInterval(1), seconds: 3), calmMax + 1)

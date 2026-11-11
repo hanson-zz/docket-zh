@@ -10,7 +10,7 @@ public enum DesktopPetAnchor: String, Codable, CaseIterable, Sendable {
     /// 程序坞上沿：散步、发呆、睡觉（原来的样子）。
     case dock
     /// 屏幕下边缘：平时趴着，偶尔探头、伸懒腰、挪几步。
-    /// 上边缘（菜单栏下方）：拎着后颈吊在那里轻轻晃。
+    /// 上边缘（菜单栏下方）：前爪抓着菜单栏下沿吊在那里轻轻晃。
     /// 左、右边缘：正着趴或坐，身子一半藏在屏幕外，脸朝屏幕里，偶尔探出来看看。
     case left, right, top, bottom
     /// 随意：拖到哪停哪，坐在那里。
@@ -133,7 +133,7 @@ public struct DesktopPetTrack: Equatable, Sendable {
         return CGPoint(x: along, y: base + up.dy * lift)
     }
 
-    /// 上边缘吊着：挂点（后颈）在屏幕上的位置，就在可见区域上沿（菜单栏下方）。
+    /// 上边缘吊着：挂点（前爪抓握线）在屏幕上的位置，就在可见区域上沿（菜单栏下沿）。
     public func hangPoint(along: Double) -> CGPoint {
         CGPoint(x: along, y: base)
     }
@@ -216,30 +216,38 @@ public enum DesktopPetTracks {
 
 // MARK: - 上边吊着、左右边探头
 
-/// 上边缘吊着：挂点在后颈（图高 0.9 处，和拖起来时指针捏的地方一样），身体垂下来，
-/// 整只绕挂点做钟摆轻晃。都按绝对时间算，换动作时晃动接得上。
+/// 上边缘吊着：两只前爪抓住可见区域上沿（菜单栏下沿），爪尖就是图顶，身体和尾巴垂下来，
+/// 整只绕爪子做小幅钟摆（吊挂帧自己也在晃，所以摆得比拎着时小）。都按绝对时间算，换动作时晃动接得上。
 public enum DesktopPetHang {
-    /// 挂点在图高的哪儿（从脚底往上数）。拖起来时指针也捏在这里。
-    public static let anchor: Double = 0.9
-    /// 平时换帧慢：每秒 4 帧，只在幅度小的几帧里来回。
-    public static let fps: Double = 4
-    public static let calmFrames = [0, 1, 2, 1]
-    /// 抬头（鼠标靠近、被点）时按拖动的正常速度蹬 1 秒再回落。
-    public static let alertFPS: Double = 10
+    /// 挂点在图高的哪儿（从脚底往上数）：吊挂帧的前爪抓握线就在图片上沿。
+    public static let anchor: Double = 1
+    /// 拖起来时指针捏的后颈在拎起帧（drag）图高的哪儿。
+    public static let scruff: Double = 0.9
+    /// 平时 6 帧来回晃的循环每秒 6 帧（一秒晃一个来回）。
+    public static let fps: Double = 6
+    /// 鼠标靠近、被点时加快到每秒 12 帧，靠近时只快 1 秒再回落。
+    public static let alertFPS: Double = 12
     public static let alertKick: TimeInterval = 1
-    /// 钟摆：平时 ±4°、2.6 秒一个来回。
-    public static let amplitude: Double = 4
+    /// 睡着闭眼呼吸：2 帧，每秒 1 帧。
+    public static let sleepFPS: Double = 1
+    /// 钟摆：平时 ±2.5°、2.6 秒一个来回。
+    public static let amplitude: Double = 2.5
     public static let period: Double = 2.6
-    /// 鼠标靠近、被点、欢呼时晃大一点。
-    public static let alertAmplitude: Double = 7
+    /// 鼠标靠近、被点时晃大一点（欢呼再多 1°）。
+    public static let alertAmplitude: Double = 5
     /// 沿边横着挪的时候多晃一点。
-    public static let walkAmplitude: Double = 6
+    public static let walkAmplitude: Double = 4
     /// 睡着：更慢更小。
-    public static let sleepAmplitude: Double = 2
+    public static let sleepAmplitude: Double = 1
     public static let sleepPeriod: Double = 4.2
     /// 换幅度时 0.6 秒过渡；入睡 3 秒过渡。
     public static let blend: TimeInterval = 0.6
     public static let sleepBlend: TimeInterval = 3
+
+    /// 吊挂循环在 `time` 秒时是第几帧（从 0 数，`imageName` 自己绕回）；`boost` 是加快时多走的帧数。
+    public static func frame(time: Double, boost: Double = 0) -> Int {
+        Int((time * fps + boost).rounded(.down))
+    }
 
     /// 钟摆角度（度，顺时针为正）：`time` 秒时的正弦摆。
     public static func swing(time: Double, amplitude: Double = amplitude, period: Double = period) -> Double {
