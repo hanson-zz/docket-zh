@@ -103,6 +103,11 @@ final class DesktopPetController: NSObject {
     private var trashSource: DispatchSourceFileSystemObject?
     private var autoPutBack = true
 
+    // 状态助手：没站稳时排队的事、正在办的一趟、到了以后的「有待查看」。
+    private var assistQueue: [DesktopPetEvent] = []
+    private var errand: DesktopPetErrand?
+    private var review: DesktopPetReview?
+
     /// 窗口边长（中号）：放得下最宽的跑步帧压扁、拖着晃的时候。
     static let windowSide: CGFloat = 132
 
@@ -179,6 +184,9 @@ final class DesktopPetController: NSObject {
         dragging = false
         pressPoint = nil
         transit = nil
+        assistQueue = []
+        errand = nil
+        review = nil
         bubble.content = nil
         barVisibleUntil = nil
     }
@@ -404,29 +412,84 @@ final class DesktopPetController: NSObject {
         advance()
     }
 
-    func fileStored(at point: CGPoint) {
-        guard shown, !dragging, let track, track.style == .stroll, var current = state,
-              let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }),
-              screen.frame.contains(track.feet(along: current.x)) else { return }
-        switch current.activity {
-        case .rescue, .jump, .land, .dragged, .fileDelivery: return
-        default: break
-        }
+    // MARK: 状态助手
+
+    /// 码头里发生了一件事（第一版：文件暂存成功）：交给 `DesktopPetDirector` 决定怎么回应。
+    func handle(_ event: DesktopPetEvent) {
+        guard settings.enabled, shown, let track, let current = state else { return }
         let now = Date()
-        let goal = track.along(of: point)
-        guard abs(goal - current.x) >= 4 else {
-            state = DesktopPetBrain.cheer(current, now: now)
-            render(now: now)
-            updateClock(now: now)
+        let point: CGPoint? = if case .fileStored(_, _, _, let at) = event { at } else { nil }
+        let sameScreen = point.map { point in
+            if let trackScreen { return trackScreen.frame.contains(point) }
+            let feet = track.feet(along: current.x)
+            return NSScreen.screens.contains { $0.frame.contains(point) && $0.frame.contains(feet) }
+        } ?? false
+        let context = DesktopPetDirectorContext(now: now, settling: settling(current), track: track,
+                                                petX: current.x, sameScreen: sameScreen,
+                                                scale: settings.size.scale, recent: errand)
+        switch DesktopPetDirector.decide(event, context: context) {
+        case .ignore:
             return
+        case .queue:
+            assistQueue = DesktopPetDirector.enqueue(event, into: assistQueue)
+        case .deliver(let next, let goal):
+            errand = next
+            review = nil
+            var moving = current
+            if abs(goal - current.x) < 4 {
+                arrive(&moving, errand: next, now: now)
+            } else {
+                DesktopPetBrain.turn(&moving, left: goal < current.x, now: now)
+                moving.activity = .fileDelivery(to: goal)
+                moving.since = now
+            }
+            state = moving
+            lastStep = now
+        case .notice(let next, _):
+            errand = next
+            review = DesktopPetReview(next, now: now)
+            state = DesktopPetBrain.noticed(current, style: track.style, now: now)
+            sayStored(next.text, now: now)
         }
-        DesktopPetBrain.turn(&current, left: goal < current.x, now: now)
-        current.activity = .fileDelivery(to: goal)
-        current.since = now
-        state = current
-        lastStep = now
         render(now: now)
         updateClock(now: now)
+    }
+
+    /// 被拖着、正在落地、跳着、救回途中：先排队，站稳了再处理。
+    private func settling(_ current: DesktopPetState) -> Bool {
+        if dragging || transit != nil { return true }
+        switch current.activity {
+        case .dragged, .land, .jump, .rescue: return true
+        default: return false
+        }
+    }
+
+    /// 叼到卡片旁：放下坐好（专注陪着时照样坐着），进入「有待查看」，头顶说一句。
+    private func arrive(_ current: inout DesktopPetState, errand: DesktopPetErrand, now: Date) {
+        let next = DesktopPetReview(errand, now: now)
+        review = next
+        if current.activity != .sit {
+            current = DesktopPetBrain.waitingBeside(current, until: next.until, now: now)
+        }
+        sayStored(next.text, now: now)
+    }
+
+    private func sayStored(_ text: String, now: Date) {
+        guard settings.bubbles, QuickActions.shared.presentation == nil, bubble.content?.isRescue != true else { return }
+        setBubble(.news(text, until: now.addingTimeInterval(DesktopPetAssist.noticeBubble)))
+    }
+
+    /// 「有待查看」结束（被点、拖走、超时）。
+    private func endReview() {
+        review = nil
+        errand = nil
+    }
+
+    /// 有待查看时被点：打开那张文件暂存卡片的面板（扩展栏自动隐藏时先滑出来），新条目闪一下。
+    private func openReview(_ pending: DesktopPetReview) {
+        endReview()
+        FileShelfHighlight.shared.flash(pending.itemIDs, in: pending.widgetID)
+        WidgetPanelOpener.shared.open(pending.widgetID)
     }
 
     private func advance() {
@@ -443,10 +506,15 @@ final class DesktopPetController: NSObject {
         lastTimer = timer
         let focusing = companion && FocusPandaClimb.isActive(timer)
 
+        let wasDelivering: Bool = if case .fileDelivery = current.activity { true } else { false }
         current = DesktopPetBrain.step(current, dt: dt, now: now, lane: track.lane,
                                        userIdle: Self.userIdleSeconds(), focusing: focusing,
                                        style: track.style, attention: attention(track: track),
                                        random: { Double.random(in: 0...1) })
+        if wasDelivering, let errand {
+            if case .fileDelivery = current.activity {} else { arrive(&current, errand: errand, now: now) }
+        }
+        if let review, review.expired(at: now) { endReview() }
         state = current
         if DesktopPetBrain.awaitingPutBack(current) { putBack() }
         if let content = bubble.content, let until = content.until, now >= until { setBubble(nil) }
@@ -457,6 +525,11 @@ final class DesktopPetController: NSObject {
         }
         if barHovering, barPanel?.frame.contains(pointer) != true { barHover(nil, width: 0) }
         if let until = barVisibleUntil, now >= until, !barHovering, !petHovering { hideBar() }
+        if !assistQueue.isEmpty, !settling(current) {
+            let waiting = assistQueue
+            assistQueue = []
+            for event in waiting { handle(event) }
+        }
         render(now: now)
         updateClock(now: now)
     }
@@ -568,6 +641,8 @@ final class DesktopPetController: NSObject {
             guard Double(moved) >= DesktopPetSnap.dragThreshold else { return }
             dragging = true
             if case .rescue = current.activity { abandonRescue() }
+            // 拖走了：叼着的这一趟、有待查看都算结束。
+            endReview()
             // 抓着后颈提起来：脚在指针下面一点，拖起来那一下滑过去。
             transit = (drawnFeet, now, 0.14)
             current = DesktopPetBrain.grabbed(current, now: now)
@@ -588,11 +663,25 @@ final class DesktopPetController: NSObject {
     fileprivate func mouseUp(at point: CGPoint) {
         defer { pressPoint = nil }
         guard dragging else {
-            if pressPoint != nil { clicked() }
+            if pressPoint != nil { tapped() }
             return
         }
         dragging = false
         drop(at: dragFeet)
+    }
+
+    /// 单击：有待查看时打开刚暂存的那张卡片；否则同 `clicked`。
+    private func tapped() {
+        if let pending = review, let current = state {
+            let now = Date()
+            state = DesktopPetBrain.poked(current, now: now)
+            hideBar()
+            openReview(pending)
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
+        clicked()
     }
 
     /// 单击：跳一下，浮出快捷条。

@@ -610,6 +610,16 @@ public enum DesktopPetBrain {
         switch style {
         case .hang: return hangPose(state, now: now)
         case .side: return sidePose(state, now: now)
+        case .stroll, .sit:
+            // 站着、坐着的抬头看一眼（状态助手就地提示）：抬头 4 帧上去，停住，快结束时放下来。
+            if case .peek(let until) = state.activity {
+                let elapsed = max(0, now.timeIntervalSince(state.since))
+                let left = until.timeIntervalSince(now)
+                let up = min(3, Int(elapsed / 0.12))
+                let index = left < 0.36 ? max(0, min(up, Int(max(0, left) / 0.12))) : up
+                return DesktopPetPose(image: DesktopPetStrip.lookup.imageName(index), facingLeft: state.facingLeft)
+            }
+            return pose(state, now: now, scale: scale)
         default: return pose(state, now: now, scale: scale)
         }
     }

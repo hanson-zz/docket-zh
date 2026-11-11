@@ -2300,6 +2300,28 @@
         }
       }
     },
+    "已暂存 1 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stored 1 file"
+          }
+        }
+      }
+    },
+    "已暂存 %@ 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stored %@ files"
+          }
+        }
+      }
+    },
     "放回原处（%@ 项）" : {
       "extractionState" : "manual",
       "localizations" : {
