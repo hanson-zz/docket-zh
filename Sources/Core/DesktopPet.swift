@@ -91,13 +91,13 @@ public enum DesktopPetSize: String, Codable, CaseIterable, Sendable {
 /// 前爪抓握线在图片上沿、两爪中点在图片正中，所以挂点是图顶（`DesktopPetHang.anchor`）。
 public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, carry, jump, climb, sit, blink, lie, peek, drag, fallAsleep = "fallasleep", sleep,
-         yawn, stretch, cheer, droop, lookup, hang, hangSleep = "hang-sleep"
+         yawn, stretch, cheer, droop, lookup, hang, hangSleep = "hang-sleep", drop
 
     public var frameCount: Int {
         switch self {
         case .walk: return 32
         case .run, .carry, .jump, .sit, .yawn, .stretch: return 8
-        case .lie, .peek, .drag, .fallAsleep, .cheer, .hang: return 6
+        case .lie, .peek, .drag, .fallAsleep, .cheer, .hang, .drop: return 6
         case .sleep, .droop, .lookup: return 4
         case .climb: return 3
         case .hangSleep: return 2
@@ -166,6 +166,8 @@ public enum DesktopPetActivity: Equatable, Sendable {
     case walk(to: Double)
     case edgePause(until: Date)
     case fileDelivery(to: Double)
+    /// 叼到卡片旁：放下纸团坐好（drop 帧播一次），停在最后一帧（纸团在脚边）等到 `until`。
+    case putDown(until: Date)
     /// 睡觉（先打哈欠，再趴下，再团成一团）。
     case sleep(since: Date)
     /// 跳一下（被点、插上电源），之后回去歇着。
@@ -249,6 +251,9 @@ public enum DesktopPetBrain {
     public static let jumpHeight: Double = 26
     /// 叼起来那几帧多久。
     public static let pickUpDuration: TimeInterval = 0.9
+    /// 放下纸团（drop 6 帧）每秒几帧、播一次多久。
+    public static let dropFPS: Double = 8
+    public static var dropDuration: TimeInterval { Double(DesktopPetStrip.drop.frameCount) / dropFPS }
     /// 欢呼多久。
     public static let cheerDuration: TimeInterval = 2.5
     /// 发呆几秒（下限、上限）。
@@ -346,6 +351,12 @@ public enum DesktopPetBrain {
         switch next.activity {
         case .sit, .sleep:
             // 专注结束、或用户回来了：醒过来歇一会儿。
+            next.activity = rest(style, now: now, random: random)
+            next.since = now
+        case .putDown(let until):
+            // 放完纸团坐着等：鼠标靠近时转头看，到点才继续平时的样子。
+            if let attention, now.timeIntervalSince(next.since) >= dropDuration { face(&next, toward: attention, now: now) }
+            guard now >= until else { return next }
             next.activity = rest(style, now: now, random: random)
             next.since = now
         case .idle(let until):
@@ -532,6 +543,10 @@ public enum DesktopPetBrain {
             pose = DesktopPetPose(image: DesktopPetStrip.carry.imageName(frame), facingLeft: left)
         case .idle, .sit, .edgePause:
             pose = DesktopPetPose(image: sittingImage(now: now), facingLeft: left)
+        case .putDown:
+            pose = DesktopPetPose(image: DesktopPetStrip.drop.imageName(min(DesktopPetStrip.drop.frameCount - 1,
+                                                                            Int(elapsed * dropFPS))),
+                                  facingLeft: left)
         case .peek(let until):
             // 趴着抬头看一眼：前 4 帧抬起来停在第 4 帧，快结束时用最后 2 帧趴回去。
             let left2 = until.timeIntervalSince(now)

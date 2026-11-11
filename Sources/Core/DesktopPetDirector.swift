@@ -223,10 +223,10 @@ extension DesktopPetBrain {
         return next
     }
 
-    /// 叼到卡片旁：放下坐好，一直坐到「有待查看」结束。
+    /// 叼到卡片旁：放下纸团（drop 帧播一次）坐好，停在纸团在脚边那一帧，一直坐到「有待查看」结束。
     public static func waitingBeside(_ state: DesktopPetState, until: Date, now: Date) -> DesktopPetState {
         var next = state
-        next.activity = .idle(until: until)
+        next.activity = .putDown(until: until)
         next.since = now
         return next
     }

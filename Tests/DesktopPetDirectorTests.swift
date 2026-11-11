@@ -127,7 +127,18 @@ final class DesktopPetDirectorTests: XCTestCase {
         let waiting = DesktopPetBrain.waitingBeside(carrying, until: review.until, now: t0)
         let later = DesktopPetBrain.step(waiting, dt: 0.1, now: t0.addingTimeInterval(30), lane: 100...700,
                                          userIdle: 0, focusing: false, random: { 0.9 })
-        XCTAssertEqual(later.activity, .idle(until: review.until))
+        XCTAssertEqual(later.activity, .putDown(until: review.until))
         XCTAssertEqual(later.x, 300)
+
+        // 放下纸团：drop 6 帧约 8fps 播一次，之后停在纸团在脚边那一帧；到点回到平时的样子。
+        XCTAssertEqual(DesktopPetBrain.pose(waiting, now: t0).image, DesktopPetStrip.drop.imageName(0))
+        XCTAssertEqual(DesktopPetBrain.pose(waiting, now: t0.addingTimeInterval(0.3)).image,
+                       DesktopPetStrip.drop.imageName(2))
+        XCTAssertEqual(DesktopPetBrain.pose(waiting, now: t0.addingTimeInterval(20)).image,
+                       DesktopPetStrip.drop.imageName(5))
+        XCTAssertEqual(DesktopPetStrip.drop.frameCount, 6)
+        let done = DesktopPetBrain.step(waiting, dt: 0.1, now: review.until, lane: 100...700,
+                                        userIdle: 0, focusing: false, random: { 0.5 })
+        guard case .idle = done.activity else { return XCTFail("到点继续平时的样子") }
     }
 }
