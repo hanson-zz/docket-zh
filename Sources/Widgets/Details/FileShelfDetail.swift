@@ -22,6 +22,8 @@ struct FileShelfDetail: View {
     @State private var compressing = false
     @State private var notice: String?
     @State private var noticeID = 0
+    /// 小熊猫叼来的新条目，正在闪。
+    @State private var flashing: Set<String> = []
 
     private static let rowHeight: CGFloat = 40
     private static let rowGap: CGFloat = 4
@@ -80,7 +82,7 @@ struct FileShelfDetail: View {
         }
         .dropDestination(for: URL.self) { urls, _ in
             guard !context.isPreview else { return false }
-            return FileShelf.add(urls, to: instance)
+            return !FileShelf.add(urls, to: instance).isEmpty
         } isTargeted: { targeted = $0 }
         .onAppear {
             guard !context.isPreview else { return }
@@ -149,12 +151,27 @@ struct FileShelfDetail: View {
 
     private func list(_ entries: [FileShelf.Entry]) -> some View {
         let height = min(CGFloat(entries.count), Self.maxRows) * (Self.rowHeight + Self.rowGap) - Self.rowGap
-        return ScrollView {
-            LazyVStack(spacing: Self.rowGap) {
-                ForEach(entries) { entry in row(entry) }
+        return ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: Self.rowGap) {
+                    ForEach(entries) { entry in row(entry) }
+                }
+            }
+            .scrollIndicators(.never)
+            // 小熊猫叼来的新条目：滚到第一条，闪一下再淡掉。
+            .task(id: FileShelfHighlight.shared.token) {
+                guard !context.isPreview, let fresh = FileShelfHighlight.shared.take(for: instance.id) else { return }
+                let shown = Set(entries.map(\.id))
+                let paths = fresh.filter(shown.contains)
+                guard let first = paths.first else { return }
+                withAnimation(.snappy(duration: 0.3)) {
+                    proxy.scrollTo(first, anchor: .top)
+                    flashing = Set(paths)
+                }
+                try? await Task.sleep(for: .seconds(DesktopPetAssist.highlightDuration))
+                withAnimation(.easeOut(duration: 0.6)) { flashing = [] }
             }
         }
-        .scrollIndicators(.never)
         .frame(height: max(Self.rowHeight, height))
     }
 
@@ -208,6 +225,14 @@ struct FileShelfDetail: View {
                 .fill(on ? Color.panelSelected : Color.panelFill)
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(.panelStroke, lineWidth: 0.6))
+                .overlay {
+                    if flashing.contains(entry.id) {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(palette.accent.opacity(0.22))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(palette.accent, lineWidth: 1.5))
+                    }
+                }
         }
         .contentShape(.rect(cornerRadius: 10))
         .onTapGesture {

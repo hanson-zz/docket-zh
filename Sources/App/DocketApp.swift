@@ -113,6 +113,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FocusLogStore.shared.start()
         // 专注计时一轮到点后接休息、休息完回到专注，同样从启动起就看着。
         FocusCycleDriver.shared.start()
+        // 专注时放收音机收藏里的台：从每个布局的收音机小组件读收藏。
+        FocusAmbientDriver.shared.widgets = { [state] in state.allWidgets }
         // 倒计时、闹钟、快速待办和提醒事项到点：从启动起就看着每个布局里的这几种
         // 小组件，扩展栏隐藏、卡片不在当前布局也照样响、照样弹出卡片。
         TimedAlertDriver.shared.widgets = { [state] in state.allWidgets }
@@ -121,6 +123,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 并把小组件上打的勾、加的一杯合并回卡片。
         SystemWidgetSync.shared.widgets = { [state] in state.allWidgets }
         SystemWidgetSync.shared.start()
+        // 插上电源时的霓虹动画（Pro，设置里可关）：盯着电源变化，从电池切到接通电源时
+        // 在刘海那里播一次，没有电池的 Mac 上什么也不做。
+        BatteryNeonPlugController.shared.start()
         // 快速待办和系统提醒事项的双向同步（Pro），没有打开同步的卡片时什么也不做。
         TodoReminderSyncService.shared.start()
         // 久坐提醒的离开检测：锁屏、休眠或很久没碰键盘鼠标满设定时间，自动算一次
@@ -235,6 +240,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 不记录键入内容。青轴以外的款式和导入 Mechvibes 声音包是码头 Pro。
         TypingSoundController.shared.apply(state.state.typingSounds)
 
+        // 桌面宠物（默认关）：小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上、拖到任意位置；
+        // 废纸篓救回单独默认关。拖到新位置、右键菜单改的设置写回状态文件。
+        DesktopPetController.shared.shelfPosition = { [weak state] in state?.effectivePosition }
+        DesktopPetController.shared.onSettingsChange = { [weak state] next in state?.state.desktopPet = next }
+        DesktopPetController.shared.openSettings = { [weak state] in
+            guard let state else { return }
+            SettingsWindow.shared.show(app: state, tab: "Widgets")
+        }
+        DesktopPetController.shared.apply(state.state.desktopPet)
+
         // 钉在桌面：扩展栏的卡片拖到桌面或右键「钉在桌面」变成桌面卡片，在所有窗口之后。
         DesktopPinController.shared.start(app: state)
 
@@ -255,6 +270,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ShotHotKey.shared.apply(state.state.shotHotKeys)
 
         // ⌥Tab 按窗口切换：默认 ⌥Tab，要辅助功能权限，没给时不注册。平时只占这一个快捷键。
+        // 打开「用 ⌘Tab 打开」时接管系统 ⌘Tab；没接管时这里先还原一次（防上次崩溃没还原）。
         WindowSwitcherController.shared.apply(state.state.windowSwitcher)
 
         // Layout hotkeys. Registered now and again whenever a layout gains,
@@ -357,6 +373,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         IslandController.shared.shutdown()
         // 打字音效：撤掉键盘监听、停掉音频引擎。
         TypingSoundController.shared.shutdown()
+        // 窗口切换接管了 ⌘Tab 的话，还给系统。
+        WindowSwitcherController.shared.shutdown()
         // 今天累计的网络流量平时 15 秒一存，退出时补上最后几秒。
         NetworkMetrics.shared.flushToday()
     }

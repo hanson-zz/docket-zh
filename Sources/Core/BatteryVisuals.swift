@@ -1,9 +1,9 @@
 import Foundation
 
-/// The five 电池 looks, stored as the widget's `look`.
+/// The six 电池 looks, stored as the widget's `look`.
 ///
-/// 经典 and 液态 are free; 像素电池, 能量粒子 and 小熊猫抱电池 are Pro 专属
-/// appearances, like the Wi-Fi rings. Every look reads the same battery, so
+/// 经典 and 液态 are free; 像素电池, 能量粒子, 小熊猫抱电池 and 霓虹灯管 are
+/// Pro 专属 appearances, like the Wi-Fi rings. Every look reads the same battery, so
 /// a locked one never hides information: it draws as 经典 instead.
 ///
 /// A widget saved before looks existed has no `look` key and reads the
@@ -15,6 +15,8 @@ public enum BatteryLook: String, CaseIterable, Sendable {
     case pixel
     case particles
     case panda
+    /// 霓虹灯管：空心玻璃管数字按电量从下往上灌亮（`BatteryNeon`）。
+    case neon
 
     public static let key = "look"
     /// What an existing widget without the key reads.
@@ -29,13 +31,14 @@ public enum BatteryLook: String, CaseIterable, Sendable {
         case .pixel: tr("像素电池")
         case .particles: tr("能量粒子")
         case .panda: tr("小熊猫抱电池")
+        case .neon: tr("霓虹灯管")
         }
     }
 
     public var isSupporterOnly: Bool {
         switch self {
         case .classic, .liquid: false
-        case .pixel, .particles, .panda: true
+        case .pixel, .particles, .panda, .neon: true
         }
     }
 
@@ -134,6 +137,27 @@ public enum BatteryColorMap {
     /// The pulse's opacity factor at time `t` seconds: 0.55...1 over 2.4 s.
     public static func pulse(_ t: Double) -> Double {
         0.775 + 0.225 * cos(t * 2 * .pi / 2.4)
+    }
+}
+
+// MARK: - Charging state
+
+/// Whether the Mac battery is taking charge. `IOPSCopyPowerSourcesInfo`'s
+/// IsCharging can stay false on the adapter while System Settings says
+/// 正在充电 (seen on macOS 26 at 13% on a 65W adapter), so the
+/// AppleSmartBattery registry is the tie-breaker: its own IsCharging, or
+/// current flowing into the battery.
+public enum BatteryChargingState {
+    /// Milliamps into the battery below which it counts as trickle noise.
+    public static let minimumAmperage = 50
+
+    public static func isCharging(powerSourceSays: Bool, onPower: Bool, charged: Bool,
+                                  registryIsCharging: Bool?, amperage: Int?) -> Bool {
+        if powerSourceSays { return true }
+        guard onPower, !charged else { return false }
+        if registryIsCharging == true { return true }
+        if let amperage, amperage >= minimumAmperage { return true }
+        return false
     }
 }
 
@@ -248,6 +272,8 @@ public enum BatteryMotion {
                                        flourish: Bool, host: Host, reduceMotion: Bool) -> Double? {
         guard !reduceMotion, look != .classic else { return nil }
         if case .card(let visible) = host, !visible { return nil }
+        // 霓虹灯管平时是一张静止的图，只在插上电源（和充满）那一下从下往上灌一遍。
+        if look == .neon { return flourish ? maxFPS : nil }
         if flourish || charging { return maxFPS }
         if look == .liquid || pulsing { return idleFPS }
         return nil

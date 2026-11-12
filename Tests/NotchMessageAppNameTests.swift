@@ -63,7 +63,8 @@ final class NotchMessageAppNameTests: XCTestCase {
             XCTAssertEqual(found?.incoming.app, .wechat, label)
             XCTAssertEqual(found?.incoming.sender, "王姐", label)
             XCTAssertEqual(found?.incoming.preview, "今晚七点到店里对一下货", label)
-            XCTAssertEqual(found?.incoming.key, "id:\(uuid)", label)
+            XCTAssertEqual(found?.incoming.bannerID, uuid, label)
+            XCTAssertEqual(found?.incoming.key.hasPrefix("id:\(uuid)|wechat|王姐|"), true, label)
             XCTAssertEqual(found?.pressable, true, label)
         }
     }

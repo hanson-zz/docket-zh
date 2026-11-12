@@ -13,7 +13,8 @@ public enum SystemWidgetBridge {
         /// "zh-Hans" 或 "en"。
         public var language: String
         public var weather: SystemWidgetSnapshot.Weather?
-        /// 码头 Pro 已解锁：宠物角色、便签纸色、待办标签色按它显示。
+        /// 码头 Pro 已解锁：宠物角色、便签纸色、待办标签色按它显示，也写进快照的
+        /// `isPro`（电池小组件的霓虹灯管样式看它）。
         public var unlocked: Bool
         /// 宠物「热化了」（Mac 过热、CPU 很忙或外面太热）。
         public var melted: Bool
@@ -90,7 +91,7 @@ public enum SystemWidgetBridge {
         }
         return SystemWidgetSnapshot(language: live.language, clocks: clocks, weather: live.weather,
                                     anniversaries: anniversaries, todos: todos, waters: waters, pets: pets,
-                                    notes: notes, calcs: calcs, handled: live.handled)
+                                    notes: notes, calcs: calcs, isPro: live.unlocked, handled: live.handled)
     }
 
     static func clock(_ w: WidgetInstance, title: String) -> SystemWidgetSnapshot.ClockCard {

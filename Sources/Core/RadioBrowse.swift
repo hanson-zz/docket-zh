@@ -10,7 +10,7 @@ import Foundation
 /// 搜索框下面那排流派标签。Radio Browser 的标签多是英文，一个中文标签对应一组英文 tag，
 /// 分别查再合并（见 `RadioBrowse.merge`）。“热门”不是一个流派，是不选任何流派（nil）。
 public enum RadioGenre: String, CaseIterable, Identifiable, Sendable {
-    case news, music, pop, classical, jazz, rock, electronic, crosstalk, sports
+    case news, music, lofi, easy, pop, classical, jazz, rock, electronic, crosstalk, sports
 
     public var id: String { rawValue }
 
@@ -18,6 +18,8 @@ public enum RadioGenre: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .news: tr("新闻")
         case .music: tr("音乐")
+        case .lofi: "Lo-fi"
+        case .easy: tr("轻音乐")
         case .pop: tr("流行")
         case .classical: tr("古典")
         case .jazz: tr("爵士")
@@ -28,11 +30,13 @@ public enum RadioGenre: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// 查目录用的英文 tag（精确匹配），按顺序；2026-10-21 实查过这些 tag 下有台。
+    /// 查目录用的英文 tag（精确匹配），按顺序；2026-10-21 实查过这些 tag 下有台；lofi、轻音乐 2026-11-10 实查（lofi 61、lo-fi 28、easy listening 331、relax 206、chillout 384）。
     public var tags: [String] {
         switch self {
         case .news: ["news"]
         case .music: ["music"]
+        case .lofi: ["lofi", "lo-fi"]
+        case .easy: ["easy listening", "relax", "chillout"]
         case .pop: ["pop"]
         case .classical: ["classical"]
         case .jazz: ["jazz"]
@@ -41,6 +45,31 @@ public enum RadioGenre: String, CaseIterable, Identifiable, Sendable {
         case .crosstalk: ["crosstalk", "storytelling", "comedy"]
         case .sports: ["sports", "sport"]
         }
+    }
+
+    /// 流派第一页最前面固定放的几个台（目录里搜不到或排得靠后，但实测好听好用的）。
+    /// 2026-11-10 实测都是 HTTPS、302 后回 audio/mpeg。
+    public var pinned: [RadioListing] {
+        switch self {
+        case .lofi:
+            [
+                RadioListing(station: RadioStation(id: "pin-reyfm-lofi", name: "REYFM #LOFI",
+                                                   url: "https://listen.reyfm.de/lofi_320kbps.mp3",
+                                                   codec: "MP3", bitrate: 320),
+                             place: tr("德国")),
+                RadioListing(station: RadioStation(id: "pin-fluxfm-chillhop", name: "FluxFM ChillHop",
+                                                   url: "https://streams.fluxfm.de/Chillhop/mp3-320",
+                                                   codec: "MP3", bitrate: 320),
+                             place: tr("德国")),
+            ]
+        default: []
+        }
+    }
+
+    /// 某次找台第一页开头先放的固定台：只在选了流派、没搜名字、没限国家时放。
+    public static func pinned(for search: RadioSearch, page: Int) -> [RadioListing] {
+        guard page == 0, let genre = search.genre, search.name.isEmpty, search.country == nil else { return [] }
+        return genre.pinned
     }
 
     /// 再点一下选中的那个就取消，回到“热门”。

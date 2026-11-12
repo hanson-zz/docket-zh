@@ -57,6 +57,19 @@ final class SystemWidgetTests: XCTestCase {
         XCTAssertNil(store.loadSnapshot())
     }
 
+    func testProStateIsCarriedAndOldSnapshotsReadAsLocked() throws {
+        XCTAssertEqual(SystemWidgetBridge.snapshot(from: [], live: .init(unlocked: true)).isPro, true)
+        XCTAssertEqual(SystemWidgetBridge.snapshot(from: [], live: .init(unlocked: false)).isPro, false)
+        // 加这个键以前写的快照：照样读得出来，isPro 为 nil（扩展按没解锁画）。
+        var old = try JSONSerialization.jsonObject(
+            with: SystemWidgetStore.encoder().encode(sample(now: .now))) as! [String: Any]
+        old.removeValue(forKey: "isPro")
+        let data = try JSONSerialization.data(withJSONObject: old)
+        let decoded = try SystemWidgetStore.decoder().decode(SystemWidgetSnapshot.self, from: data)
+        XCTAssertNil(decoded.isPro)
+        XCTAssertEqual(decoded.todos, sample(now: .now).todos)
+    }
+
     func testDaysToATargetAreSigned() {
         let today = date(2026, 10, 27, 23)
         XCTAssertEqual(SystemWidgetSnapshot.days(to: "2026-10-30", from: today, calendar: calendar), 3)

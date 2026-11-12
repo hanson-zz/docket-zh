@@ -35,7 +35,7 @@ enum BatteryGaugeCenter: Equatable {
     case percent(CGFloat)
 }
 
-/// The four animated 电池 looks (液态, 像素电池, 能量粒子, 小熊猫抱电池)
+/// The animated 电池 looks (液态, 像素电池, 能量粒子, 小熊猫抱电池, 霓虹灯管)
 /// in a square of `diameter`. 经典 is not drawn here: the tile keeps its own
 /// rings for it, untouched.
 ///
@@ -118,6 +118,7 @@ struct BatteryGauge: View {
             } else {
                 liquid(frame)
             }
+        case .neon: neon(frame)
         case .liquid, .classic: liquid(frame)
         }
     }
@@ -282,6 +283,30 @@ struct BatteryGauge: View {
     private var isPercentCenter: Bool {
         if case .percent = center { return true }
         return false
+    }
+
+    // MARK: 霓虹灯管
+
+    /// 霓虹灯管：电量数字本身就是仪表，中间不再放设备图标或另一个百分比。平时是
+    /// 静止的一张图；插上电源那一下（`plugProgress`）从空灌到当前电量。颜色按电量
+    /// 分四档（`BatteryNeon`），「外观 ▸ 颜色」选了颜色时换成主题色，低电量报警仍是红。
+    private func neon(_ frame: Frame) -> some View {
+        let percent = percentValue
+        let level = state.present ? BatteryNeon.fillFraction(percent: percent) : 0
+        let sweep = plugProgress(frame).map { 1 - pow(1 - $0, 2) } ?? 1
+        let text = state.present ? "\(percent)" : "-"
+        let size = diameter * (text.count >= 3 ? 0.42 : 0.6)
+        return BatteryNeonDigits(text: text, percent: percent, fraction: level * sweep, fontSize: size,
+                                 showsPercentSign: false, glow: state.present ? 1 : 0, tint: neonTint)
+            .frame(width: diameter, height: diameter)
+            .overlay(alignment: .bottomTrailing) { cornerBolt(frame) }
+    }
+
+    /// 选了主题色时的灯管颜色；低电量报警和没选颜色时 nil（按电量四档）。
+    private var neonTint: BatteryNeon.RGB? {
+        guard let theme, !BatteryTheme.warns(level: state.level, charging: state.charging, present: state.present)
+        else { return nil }
+        return BatteryNeon.RGB(theme.red, theme.green, theme.blue)
     }
 
     // MARK: 液态

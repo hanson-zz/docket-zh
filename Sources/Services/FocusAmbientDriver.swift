@@ -30,11 +30,14 @@ final class FocusSessionStore {
     }
 }
 
-/// 开始专注自动放环境音，休息时（开着“休息时声音停下”）、暂停、重置时停。
+/// 开始专注自动放环境音（或收音机收藏里选的一个台），休息时（开着“休息时声音停下”）、
+/// 暂停、重置时停。开始约 1.5 秒淡入，停下约 0.8 秒淡出（`AudioFade`）。
 ///
-/// 和环境音小组件共用一个 `AmbientPlayer`。只管自己放起来的声音：环境音小组件已经在放
-/// 用户自己的组合时不去抢；专注中用户手动停了或换了组合，这一轮也不再放回来，
-/// 停的时候也不碰。专注计时每秒走一次 `sync`（见 `FocusCycleDriver`），面板上一按也马上走一次。
+/// 和环境音小组件共用一个 `AmbientPlayer`，和收音机小组件共用一个 `RadioPlayer`。
+/// 只管自己放起来的声音：环境音小组件已经在放用户自己的组合、收音机正在放用户点的
+/// 别的台时不去抢；专注中用户手动停了或换了，这一轮也不再放回来，停的时候也不碰
+/// （电台的规则见 `FocusPlayback`）。专注计时每秒走一次 `sync`（见 `FocusCycleDriver`），
+/// 面板上一按也马上走一次。
 @MainActor
 final class FocusAmbientDriver {
     static let shared = FocusAmbientDriver()
@@ -44,15 +47,26 @@ final class FocusAmbientDriver {
     /// 这一轮用户接管了（手动停或换了组合），等专注停下再说。
     private var yielded = false
     private var volume: Int = FocusAmbient.defaultVolume
+    /// 电台这一路自己放起来的、让没让给用户。
+    private var radio = FocusPlayback()
+
+    /// 每个布局里的小组件，读收音机的收藏用（启动时接上）。
+    var widgets: () -> [WidgetInstance] = { [] }
 
     private init() {}
 
+    /// 所有收音机小组件收藏的台，专注计时面板的「收音机收藏」一组。
+    func radioFavourites() -> [RadioStation] {
+        FocusRadio.favourites(widgets().filter { $0.kind == .radio }.map(\.config))
+    }
+
     func sync(_ state: TimerState, now: Date = .now) {
+        syncRadio(state, now: now)
         let player = AmbientPlayer.shared
         let wanted = FocusAmbient.wanted(state, now: now)
         let level = FocusAmbient.clampVolume(state.ambientVolume)
         guard let wanted else {
-            if let started, player.isPlaying, player.sounds == [started] { player.stop() }
+            if let started, player.isPlaying, player.sounds == [started] { player.stop(fadingOut: AudioFade.fadeOut) }
             started = nil
             yielded = false
             return
@@ -77,13 +91,33 @@ final class FocusAmbientDriver {
             yielded = true
             return
         }
-        player.play(sounds: [wanted], volume: Double(level))
+        player.play(sounds: [wanted], volume: Double(level), fadeIn: AudioFade.fadeIn)
         if player.isPlaying {
             started = wanted
             volume = level
         } else {
             // 声音设备起不来：这一轮不再每秒重试。
             yielded = true
+        }
+    }
+
+    /// 选的是收音机收藏里的台：和环境音一样的时机放、停，每台的音量按台记住（没记过用面板音量）。
+    private func syncRadio(_ state: TimerState, now: Date) {
+        let player = RadioPlayer.shared
+        // 先不读收藏看该不该放，不该放时不必每秒翻一遍所有小组件。
+        var wanted = FocusRadio.wanted(state, now: now)
+        if wanted != nil { wanted = FocusRadio.wanted(state, now: now, favourites: radioFavourites()) }
+        let playing = player.isPlaying ? player.station?.id : nil
+        switch radio.step(wanted: wanted?.id, playing: playing) {
+        case .none:
+            break
+        case .stop:
+            player.stop()
+        case .start, .switchTo:
+            guard let wanted else { return }
+            player.play(wanted, volume: Double(FocusAmbient.clampVolume(state.ambientVolume)))
+            // 地址不对放不起来：这一轮不再每秒重试。
+            if !player.isPlaying { radio.failed() }
         }
     }
 }

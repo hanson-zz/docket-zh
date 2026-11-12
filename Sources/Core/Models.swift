@@ -1208,6 +1208,9 @@ public struct PersistedState: Codable, Sendable {
     /// 打字音效：总开关（默认关）、选的款式、相对音量、导入的 Mechvibes 声音包。
     /// 青轴以外的款式和导入是码头 Pro，见 `TypingSoundSettings`。
     public var typingSounds = TypingSoundSettings()
+    /// 桌面宠物：贴在程序坞上沿的小熊猫（默认关）和废纸篓救回（单独默认关），
+    /// 见 `DesktopPetSettings`。
+    public var desktopPet = DesktopPetSettings()
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1245,6 +1248,7 @@ public struct PersistedState: Codable, Sendable {
         inputSource = (try? c.decodeIfPresent(InputSourceSettings.self, forKey: .inputSource)) ?? InputSourceSettings()
         desktopPins = (try? c.decodeIfPresent(DesktopPinSettings.self, forKey: .desktopPins)) ?? DesktopPinSettings()
         typingSounds = (try? c.decodeIfPresent(TypingSoundSettings.self, forKey: .typingSounds)) ?? TypingSoundSettings()
+        desktopPet = (try? c.decodeIfPresent(DesktopPetSettings.self, forKey: .desktopPet)) ?? DesktopPetSettings()
     }
 
     public init() {}

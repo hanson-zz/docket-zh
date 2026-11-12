@@ -318,24 +318,53 @@ final class BatteryMetrics {
                   let capacity = description[kIOPSMaxCapacityKey as String] as? Int, capacity > 0
             else { continue }
             let onPower = description[kIOPSPowerSourceStateKey as String] as? String == kIOPSACPowerValue
+            let charged = description[kIOPSIsChargedKey as String] as? Bool ?? false
+            let powerSourceSays = description[kIOPSIsChargingKey as String] as? Bool ?? false
+            // Only ask the registry when the power source API says no on
+            // the adapter: that is the case it gets wrong.
+            let registry: (isCharging: Bool?, amperage: Int?) =
+                (!powerSourceSays && onPower && !charged) ? smartBatteryCharging() : (nil, nil)
+            let charging = BatteryChargingState.isCharging(powerSourceSays: powerSourceSays, onPower: onPower,
+                                                           charged: charged,
+                                                           registryIsCharging: registry.isCharging,
+                                                           amperage: registry.amperage)
             let device = BatteryDevice(
                 id: BatteryDeviceKind.mac.rawValue,
                 kind: .mac,
                 level: min(Double(current) / Double(capacity), 1),
-                charging: description[kIOPSIsChargingKey as String] as? Bool ?? false,
+                charging: charging,
                 present: true,
                 onPower: onPower
             )
             var power = MacPower()
             power.minutesToFull = description[kIOPSTimeToFullChargeKey as String] as? Int
             power.minutesToEmpty = description[kIOPSTimeToEmptyKey as String] as? Int
-            power.charged = description[kIOPSIsChargedKey as String] as? Bool ?? false
+            power.charged = charged
             if onPower, let adapter = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any] {
                 power.watts = adapter[kIOPSPowerAdapterWattsKey as String] as? Int
             }
             return (device, power)
         }
         return nil  // desktop Mac, or the API gave us nothing
+    }
+
+    /// AppleSmartBattery's own IsCharging and the current into the battery
+    /// in mA (InstantAmperage, else Amperage; negative while discharging).
+    private static func smartBatteryCharging() -> (isCharging: Bool?, amperage: Int?) {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard service != 0 else { return (nil, nil) }
+        defer { IOObjectRelease(service) }
+        func value(_ key: String) -> Any? {
+            IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue()
+        }
+        func milliamps(_ key: String) -> Int? {
+            guard let number = value(key) as? NSNumber else { return nil }
+            // The registry stores these as unsigned 64-bit; reinterpret.
+            return Int(truncatingIfNeeded: number.int64Value)
+        }
+        let isCharging = (value("IsCharging") as? NSNumber)?.boolValue
+        let amperage = milliamps("InstantAmperage") ?? milliamps("Amperage")
+        return (isCharging, amperage)
     }
 
     // MARK: - Accessories

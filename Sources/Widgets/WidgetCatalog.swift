@@ -1147,7 +1147,8 @@ public enum WidgetCatalog {
         case .mail: return CGSize(width: 160, height: 62)
         case .recorder: return CGSize(width: 168, height: 62)
         case .bookmarks: return CGSize(width: Bookmark.tileWidth(count: cfg.strings("links").count), height: 62)
-        case .appSwitcher: return CGSize(width: 220, height: 62)
+        // 应用切换器 v2：7 格（图标 30、格 34、间距 2）加两边内边距。
+        case .appSwitcher: return CGSize(width: 270, height: 62)
         case .wallpaper: return CGSize(width: 176, height: 62)
         case .microphone: return CGSize(width: 184, height: 62)
         case .gauges:

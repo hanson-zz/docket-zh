@@ -109,6 +109,20 @@ public enum DockAppIcons {
         return SquareLayout(side: side, x: x, y: y, width: width, height: height)
     }
 
+    /// 大图先按 2、4、8 倍抽样再缩成缩略图的倍数：抽样后长边仍不小于 `target`。
+    ///
+    /// ImageIO 对 JPEG、HEIF、TIFF、PNG 支持边解码边抽样，几万像素的大 PNG 不用先把整张
+    /// 原图解进内存。宽或高不是正数时是 1（不抽样）。
+    public static func subsampleFactor(pixelWidth: Int, pixelHeight: Int, target: Int = storedPixels) -> Int {
+        guard pixelWidth > 0, pixelHeight > 0, target > 0 else { return 1 }
+        let longest = max(pixelWidth, pixelHeight)
+        var factor = 1
+        for candidate in [2, 4, 8] where longest / candidate >= target {
+            factor = candidate
+        }
+        return factor
+    }
+
     // MARK: 清理
 
     /// 所有布局里（包括分组里）放着的 App 的 bundle id，转小写。
@@ -153,5 +167,31 @@ public enum DockAppIcons {
     public static func orphanFiles(onDisk names: [String], map: [String: String]) -> Set<String> {
         let used = Set(map.values)
         return Set(names.filter { isOwnFileName($0) && !used.contains($0) })
+    }
+}
+
+/// 更换和恢复图标的先后：每个 App 只认最后一次操作。
+///
+/// 选图、拖图要在后台解码几百毫秒，写盘也是异步的。「恢复默认」后马上又换一张，或者
+/// 连着换两张，先开始的那次可能后完成。每次操作开始时领一张票，做完时票已经不是这个
+/// App 最新的一张，就什么都不改（不写映射、不换内存里的图），这样最后一次操作生效。
+public struct DockAppIconTickets: Sendable {
+    private var latest: [String: Int] = [:]
+    private var counter = 0
+
+    public init() {}
+
+    /// 这个 App 开始一次新操作（更换、恢复默认、从备份恢复），之前没做完的都作废。
+    /// bundle id 不分大小写。
+    public mutating func begin(_ bundleID: String) -> Int {
+        counter += 1
+        if let key = DockAppIcons.mapKey(bundleID) { latest[key] = counter }
+        return counter
+    }
+
+    /// 这张票还是不是这个 App 最新的一张。
+    public func isCurrent(_ ticket: Int, for bundleID: String) -> Bool {
+        guard let key = DockAppIcons.mapKey(bundleID) else { return false }
+        return latest[key] == ticket
     }
 }

@@ -55,8 +55,13 @@ final class AmbientPlayer {
         isPlaying ? pause() : play(sounds: sounds, levels: levels, volume: volume)
     }
 
-    func play(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
+    /// `fadeIn` 给了就整体淡入（专注驱动用 `AudioFade.fadeIn`）：淡出途中再播放从当时的
+    /// 音量往回升，不先掉到 0；没给就照旧直接响（各个声音自己约 0.3 秒滑上来）。
+    func play(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double,
+              fadeIn: Double? = nil) {
         guard !sounds.isEmpty else { return }
+        // 还在淡出、引擎没放掉：接着用，从现在的音量升回去。
+        let resuming = stopTask != nil && engine?.isRunning == true
         stopTask?.cancel()
         stopTask = nil
         self.sounds = sounds
@@ -69,6 +74,12 @@ final class AmbientPlayer {
         box.update { synth in
             synth.setVolume(volume / 100)
             synth.setSounds(sounds, levels: levels)
+            if let fadeIn {
+                if !resuming { synth.setFade(0) }
+                synth.fade(to: 1, over: fadeIn)
+            } else {
+                synth.setFade(1)
+            }
         }
         startedAt = .now
         isPlaying = true
@@ -83,6 +94,28 @@ final class AmbientPlayer {
         pause(immediate: true)
         elapsed = 0
         MediaSessionCoordinator.shared.end(.ambient)
+    }
+
+    /// 淡出 `seconds` 秒再停（专注驱动用 `AudioFade.fadeOut`），之后和 `stop()` 一样放掉引擎。
+    /// 淡出途中再 `play` 会接上。
+    func stop(fadingOut seconds: Double) {
+        guard isPlaying, seconds > 0 else { stop(); return }
+        elapsed = 0
+        startedAt = nil
+        isPlaying = false
+        stopAt = nil
+        box.update { $0.fade(to: 0, over: seconds) }
+        ticker?.invalidate()
+        ticker = nil
+        MediaSessionCoordinator.shared.end(.ambient)
+        stopTask?.cancel()
+        stopTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(Int(seconds * 1000) + 120))
+            guard !Task.isCancelled else { return }
+            self?.box.update { $0.setFade(1) }
+            self?.tearDown()
+            self?.stopTask = nil
+        }
     }
 
     func pause(immediate: Bool = false) {

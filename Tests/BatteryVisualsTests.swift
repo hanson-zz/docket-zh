@@ -9,12 +9,15 @@ final class BatteryVisualsTests: XCTestCase {
         XCTAssertTrue(BatteryLook.pixel.isSupporterOnly)
         XCTAssertTrue(BatteryLook.particles.isSupporterOnly)
         XCTAssertTrue(BatteryLook.panda.isSupporterOnly)
+        XCTAssertTrue(BatteryLook.neon.isSupporterOnly)
+        XCTAssertEqual(BatteryLook.shown("neon", unlocked: false), .classic)
+        XCTAssertEqual(BatteryLook.shown("neon", unlocked: true), .neon)
 
         XCTAssertEqual(BatteryLook.shown("pixel", unlocked: false), .classic)
         XCTAssertEqual(BatteryLook.shown("pixel", unlocked: true), .pixel)
         XCTAssertEqual(BatteryLook.shown("liquid", unlocked: false), .liquid)
         XCTAssertEqual(BatteryLook.shown("nonsense", unlocked: true), .classic)
-        XCTAssertEqual(BatteryLook.allCases.map(\.title), ["经典", "液态", "像素电池", "能量粒子", "小熊猫抱电池"])
+        XCTAssertEqual(BatteryLook.allCases.map(\.title), ["经典", "液态", "像素电池", "能量粒子", "小熊猫抱电池", "霓虹灯管"])
     }
 
     func testOldWidgetsKeepClassicAndNewOnesAreLiquid() {

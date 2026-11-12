@@ -31,6 +31,9 @@ public struct SystemWidgetSnapshot: Codable, Equatable, Sendable {
     public var pets: [PetCard]
     public var notes: [NoteCard]
     public var calcs: [CalcCard]
+    /// 码头 Pro 已解锁（或试用中），由主 App 写。系统小组件的 Pro 样式（电池的霓虹灯管）
+    /// 看它；旧快照里没有这个键，读出来是 nil，按没解锁算。
+    public var isPro: Bool?
     /// 已经合并进真实数据的动作 id，最近的在后面，最多 `handledLimit` 条。
     public var handled: [String]
 
@@ -39,7 +42,7 @@ public struct SystemWidgetSnapshot: Codable, Equatable, Sendable {
     public init(language: String = "zh-Hans", clocks: [ClockCard] = [], weather: Weather? = nil,
                 anniversaries: [AnniversaryCard] = [], todos: [TodoCard] = [], waters: [WaterCard] = [],
                 pets: [PetCard] = [], notes: [NoteCard] = [], calcs: [CalcCard] = [],
-                handled: [String] = []) {
+                isPro: Bool? = nil, handled: [String] = []) {
         self.version = Self.currentVersion
         self.language = language
         self.clocks = clocks
@@ -50,6 +53,7 @@ public struct SystemWidgetSnapshot: Codable, Equatable, Sendable {
         self.pets = pets
         self.notes = notes
         self.calcs = calcs
+        self.isPro = isPro
         self.handled = handled
     }
 

@@ -25,6 +25,9 @@ final class NotchMessageController {
     let model = NotchMessageModel()
     private let watcher = NotchBannerWatcher()
     private var dedupe = NotchMessageDeduper()
+    /// 同一条横幅就地换字（微信连着来消息）：按横幅标识记最后的内容，判断是新的一条、
+    /// 空壳填上了字、还是换得太快要等一下再读。
+    private var revisions = NotchBannerRevisions()
     /// 消息对应的系统横幅元素，点「打开」时替用户点一下它定位到聊天。
     private var banners: [UUID: BannerBox] = [:]
     /// 设置里「卡片弹出后关掉系统横幅」打开时，等卡片展开再关的横幅。
@@ -151,6 +154,7 @@ final class NotchMessageController {
             let key = item.incoming.key
             if priming {
                 dedupe.remember(key, now: now)
+                revisions.record(item.incoming, messageID: nil, now: now)
                 continue
             }
             // 设置里「发一条测试通知」读回来的：不看 App 开关和前台 App，弹一张不能回复的卡。
@@ -162,16 +166,47 @@ final class NotchMessageController {
                 testArrived = !model.replying
                 continue
             }
-            guard dedupe.isNew(key, now: now), settings.isOn(item.incoming.app) else { continue }
+            switch revisions.decide(item.incoming, now: now) {
+            case .unchanged:
+                dedupe.remember(key, now: now)
+                continue
+            case .settle(let delay):
+                // 离上次换字不到 300ms，字可能还在填：等一下再读一遍，不记、不弹。
+                watcher.rescan(after: delay)
+                continue
+            case .refine(let id):
+                // 刚弹的那条横幅内容这才填上：顶替那条，不多弹一条。
+                dedupe.remember(key, now: now)
+                revisions.record(item.incoming, messageID: id, now: now)
+                model.inbox.refine(id, sender: item.incoming.sender, preview: item.incoming.preview)
+                continue
+            case .updated:
+                // 同一条横幅换了字（微信连着来消息）：是新的一条，记下但不问去重。
+                dedupe.remember(key, now: now)
+            case .fresh:
+                guard dedupe.isNew(key, now: now) else {
+                    revisions.record(item.incoming, messageID: nil, now: now)
+                    continue
+                }
+            }
+            guard settings.isOn(item.incoming.app) else {
+                revisions.record(item.incoming, messageID: nil, now: now)
+                continue
+            }
             NotchMessageStatus.shared.sawMessage(at: now)
             // 正在看这个 App：不另外弹。
-            if let front, NotchMessageApp.match(bundleID: front) == item.incoming.app { continue }
+            if let front, NotchMessageApp.match(bundleID: front) == item.incoming.app {
+                revisions.record(item.incoming, messageID: nil, now: now)
+                continue
+            }
             let message = NotchMessage(item.incoming, date: now)
+            revisions.record(item.incoming, messageID: message.id, now: now)
             model.inbox.receive(message, makeCurrent: !model.replying)
             if let element = item.element { banners[message.id] = BannerBox(element: element) }
             if settings.closeSystemBanner, let close = item.close { pendingClose[message.id] = close }
             fresh = true
         }
+        // 只是顶替了内容时：卡片跟着 inbox 重画，不用重新摆。
         guard fresh else { return }
         let alive = Set(model.inbox.messages.map(\.id))
         banners = banners.filter { alive.contains($0.key) }

@@ -50,6 +50,9 @@ enum DockAppIconPicker {
         switch result {
         case .success:
             return true
+        case .failure(.superseded):
+            // 之后又换了一张或恢复了默认，以那次为准，这次不提示。
+            return false
         case .failure(.unreadable):
             showError(tr("读不出这张图片。换一张 PNG、JPG、HEIC 或 ICNS 试试，边长至少 16 像素。"))
         case .failure(.writeFailed):

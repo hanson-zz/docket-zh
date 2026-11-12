@@ -12,7 +12,16 @@ import SwiftUI
 /// - 没开始搜索时 W 关窗口、M 最小化、Q 退出 App，列表原地刷新。
 /// - 没屏幕录制权限时卡片画 App 大图标，不弹授权；没辅助功能权限时不注册快捷键，设置里提示。
 ///
-/// 平时只注册一个 Carbon 快捷键；按键监听、读窗口、截图都只在弹出时发生。
+/// - 打开「用 ⌘Tab 打开窗口切换器」（默认关）时关掉系统的 ⌘Tab、⌘⇧Tab（`SystemCommandTab`），
+///   另外注册这两个：按住 ⌘ 连按 Tab 前进、加 ⇧ 后退，松开 ⌘ 切过去，Esc 取消；⌘` 不动。
+///   和 ⌥Tab 共存。没辅助功能权限时不接管；关开关、退出、收到 SIGTERM / SIGINT 时还原，
+///   启动时没在接管也还原一次（上次崩溃没还原的）。
+///
+/// - 移动选中时，选中窗口按它在屏幕上的真实位置和大小显示一张全尺寸预览（`WindowSwitcherBigPreview`），
+///   停 150ms 再出；最小化、隐藏、别的桌面上的窗口和没屏幕录制权限时不出。设置里可关。
+/// - 卡片样式三选一：缩略图、图标、标题列表（布局在 Core 的 `WindowSwitcherLayout`）。
+///
+/// 平时只注册 Carbon 快捷键；按键监听、读窗口、截图都只在弹出时发生。
 /// 排序、过滤、分组、搜索、选中移动、按键含义和布局在 Core（`WindowSwitcher`、
 /// `WindowSwitcherSearch`、`WindowSwitcherLayout`）。
 @MainActor
@@ -24,9 +33,17 @@ final class WindowSwitcherController {
     private var settings = WindowSwitcherSettings()
     private var phase: Phase = .idle
     private var trigger = WindowSwitcherSettings.defaultHotKey
+    /// 这次是 ⌘⇧Tab 这类带 ⇧ 的快捷键打开的：选中最后一个。
+    private var openedBackward = false
+    /// 第一次 `apply`（启动时）还没做过。
+    private var launched = false
     let model = WindowSwitcherModel()
 
     private var panel: WindowSwitcherPanel?
+    private let bigPreview = WindowSwitcherBigPreview()
+    private var previewTask: Task<Void, Never>?
+    /// 这次打开截过的全尺寸预览，键是 `Entry.key`。收起就清掉。
+    private var bigShots: [String: CGImage] = [:]
     private var hosting: FirstMouseHostingView<WindowSwitcherView>?
 
     /// 这次打开读到的窗口，键是 `Entry.id`。
@@ -49,7 +66,7 @@ final class WindowSwitcherController {
     private var icons: [pid_t: NSImage] = [:]
 
     private init() {
-        WindowSwitcherHotKey.shared.onPress = { WindowSwitcherController.shared.pressed() }
+        WindowSwitcherHotKey.shared.onPress = { WindowSwitcherController.shared.pressed($0) }
         SwitcherEventTap.shared.handler = { type, event in
             WindowSwitcherController.shared.handle(type, event)
         }
@@ -64,14 +81,29 @@ final class WindowSwitcherController {
 
     func apply(_ settings: WindowSwitcherSettings) {
         self.settings = settings
+        if !launched {
+            launched = true
+            // 上次崩溃可能把系统 ⌘Tab 关着没还原：这次不接管就先还原。
+            if !settings.takesOverCommandTab(trusted: AXIsProcessTrusted()) {
+                SystemCommandTab.restoreAtLaunch()
+            }
+        }
         refresh()
     }
 
     /// 辅助功能权限可能刚在系统设置里打开或关掉：码头回到前台、设置页出现时再看一眼。
     func refresh() {
-        let combo = AXIsProcessTrusted() ? settings.registrableHotKey : nil
-        WindowSwitcherHotKey.shared.apply(combo)
-        if combo != nil {
+        let trusted = AXIsProcessTrusted()
+        var effective = settings
+        if settings.takesOverCommandTab(trusted: trusted) {
+            // 系统不让关（找不到开关）时不注册 ⌘Tab，系统的照常用。
+            if !SystemCommandTab.takeOver() { effective.commandTab = false }
+        } else {
+            SystemCommandTab.release()
+        }
+        let combos = effective.hotKeys(trusted: trusted)
+        WindowSwitcherHotKey.shared.apply(combos)
+        if !combos.isEmpty {
             AppRecency.shared.start()
         } else {
             AppRecency.shared.stop()
@@ -79,22 +111,33 @@ final class WindowSwitcherController {
         }
     }
 
+    /// 退出前：收起，还原系统 ⌘Tab。
+    func shutdown() {
+        if phase != .idle { finish() }
+        WindowSwitcherHotKey.shared.apply([])
+        SystemCommandTab.release()
+    }
+
     // MARK: 弹出
 
-    private func pressed() {
+    private func pressed(_ combo: KeyCombo) {
+        let backward = WindowSwitcherSettings.opensBackward(combo)
         guard phase == .idle else {
-            move(by: 1)
+            move(by: backward ? -1 : 1)
             return
         }
-        guard AXIsProcessTrusted(), let combo = settings.registrableHotKey else {
+        // 权限刚被收回：重新决定注册什么，接管着的 ⌘Tab 也还给系统。
+        guard AXIsProcessTrusted(), settings.hotKeys(trusted: true).contains(combo) else {
             refresh()
             return
         }
         trigger = combo
+        openedBackward = backward
         // 弹出期间快捷键交给事件监听，Carbon 那边先放开，免得 Tab 被收两次。
         WindowSwitcherHotKey.shared.pause()
         guard SwitcherEventTap.shared.start() else {
             WindowSwitcherHotKey.shared.unpause()
+            refresh()
             return
         }
         phase = .loading
@@ -121,7 +164,8 @@ final class WindowSwitcherController {
         let firstIsFront = arranged.first.map { $0.zOrder == 0 && $0.pid == frontPID } ?? false
         model.frontKey = firstIsFront ? arranged.first?.key : nil
         model.setEntries(arranged)
-        let start = WindowSwitcher.initialSelection(count: arranged.count, firstIsFront: firstIsFront)
+        let start = WindowSwitcher.initialSelection(count: arranged.count, firstIsFront: firstIsFront,
+                                                    backward: openedBackward)
         model.selection = WindowSwitcher.step(start, by: pendingSteps, count: arranged.count)
         loadIcons()
 
@@ -135,6 +179,7 @@ final class WindowSwitcherController {
         show()
         loadShots()
         touch()
+        selectionChanged()
     }
 
     private func show() {
@@ -156,7 +201,8 @@ final class WindowSwitcherController {
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
         model.backingScale = screen?.backingScaleFactor ?? 2
-        model.layout = WindowSwitcherLayout.layout(count: model.visible.count, visible: visible.size)
+        model.layout = WindowSwitcherLayout.layout(count: model.visible.count, visible: visible.size,
+                                                   style: settings.style)
         let size = model.layout.panelSize
         let origin = WindowSwitcherLayout.origin(size: size, visible: visible)
         panel.setFrame(CGRect(origin: origin, size: size), display: true)
@@ -170,6 +216,10 @@ final class WindowSwitcherController {
         captureTask = nil
         refreshTask?.cancel()
         refreshTask = nil
+        previewTask?.cancel()
+        previewTask = nil
+        bigPreview.hide(immediately: true)
+        bigShots = [:]
         idleTimer?.invalidate()
         idleTimer = nil
         SwitcherEventTap.shared.stop()
@@ -220,7 +270,8 @@ final class WindowSwitcherController {
             let characters = NSEvent(cgEvent: event)?.charactersIgnoringModifiers ?? ""
             let action = WindowSwitcher.action(keyCode: code, characters: characters,
                                                modifiers: SwitcherEventTap.modifiers(event.flags),
-                                               triggerKey: trigger.keyCode, searching: model.searching)
+                                               triggerKey: trigger.keyCode, searching: model.searching,
+                                               holding: trigger.modifiers & ~KeyCombo.Modifier.shift)
             if phase == .loading {
                 switch action {
                 case .next, .right: pendingSteps += 1
@@ -259,9 +310,11 @@ final class WindowSwitcherController {
         case .down:
             model.selection = WindowSwitcher.vertical(model.selection, rows: 1,
                                                       columns: model.layout.columns, count: count)
+            selectionChanged()
         case .up:
             model.selection = WindowSwitcher.vertical(model.selection, rows: -1,
                                                       columns: model.layout.columns, count: count)
+            selectionChanged()
         case .commit: commit()
         case .cancel: finish()
         case .closeWindow:
@@ -297,6 +350,46 @@ final class WindowSwitcherController {
             return
         }
         model.selection = WindowSwitcher.step(model.selection, by: delta, count: model.visible.count)
+        selectionChanged()
+    }
+
+    // MARK: 全尺寸预览
+
+    /// 选中变了：先收起旧的预览，停一下（快速连按不闪）再截选中的窗口、放到它原来的位置。
+    private func selectionChanged() {
+        previewTask?.cancel()
+        previewTask = nil
+        guard phase == .open, let entry = model.selected, let item = items[entry.id],
+              WindowSwitcherPreview.shows(entry, enabled: settings.largePreview, canCapture: model.canCapture),
+              let primary = NSScreen.screens.first
+        else {
+            bigPreview.hide()
+            return
+        }
+        if bigPreview.showingKey == entry.key { return }
+        bigPreview.hide()
+        let frame = WindowSwitcherPreview.appKitFrame(item.frame, primaryHeight: primary.frame.height)
+        let scale = NSScreen.screens.first { $0.frame.intersects(frame) }?.backingScaleFactor ?? model.backingScale
+        let request = WindowShotRequest(key: entry.id, pid: entry.pid, title: entry.title, frame: item.frame,
+                                        pixelSize: WindowSwitcherPreview.pixelSize(window: item.frame.size,
+                                                                                   scale: scale),
+                                        windowID: item.windowID)
+        let key = entry.key
+        let session = model.session
+        previewTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(WindowSwitcherPreview.delay))
+            let me = WindowSwitcherController.shared
+            guard !Task.isCancelled else { return }
+            var image = me.bigShots[key]
+            if image == nil {
+                image = await WindowShots.capture([request])[request.key]?.image
+            }
+            // 截不到就不显示；截的时候选中又变了、收起了也不显示。
+            guard !Task.isCancelled, me.phase == .open, me.model.session == session,
+                  me.model.selected?.key == key, let image else { return }
+            me.bigShots[key] = image
+            me.bigPreview.show(image, frame: frame, key: key, below: me.panel)
+        }
     }
 
     private var selectedItem: WindowCatalog.Item? {
@@ -307,6 +400,7 @@ final class WindowSwitcherController {
     private func relayout() {
         guard phase == .open else { return }
         place()
+        selectionChanged()
     }
 
     /// 关窗口、最小化、退出之后给 App 一点时间，再原地重读一遍，选中留在原来的位置。
@@ -337,6 +431,7 @@ final class WindowSwitcherController {
         loadIcons()
         place()
         loadShots()
+        selectionChanged()
     }
 
     /// 开着超过 30 秒没碰任何键就收起，免得事件监听一直挂着。
@@ -368,7 +463,8 @@ final class WindowSwitcherController {
     private func loadShots() {
         captureTask?.cancel()
         model.canCapture = WindowPreviewSource.canCapture
-        guard model.canCapture else { return }
+        // 图标、标题列表样式用不到缩略图，不截。
+        guard model.canCapture, settings.style.showsThumbnails else { return }
         let keys = Set(model.all.map(\.key))
         shots = shots.filter { keys.contains($0.key) }
         for entry in model.all {
@@ -382,7 +478,7 @@ final class WindowSwitcherController {
         }
         let rest = model.all.filter { !queue.contains($0) }
         queue += rest
-        let box = WindowSwitcherLayout.thumbnailSize(scale: 1)
+        let box = WindowSwitcherLayout.thumbnailSize(scale: 1, style: .thumbnails)
         let scale = model.backingScale
         let requests: [WindowShotRequest] = queue.compactMap { entry in
             guard !entry.dimmed, let item = items[entry.id] else { return nil }

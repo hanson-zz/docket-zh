@@ -17,7 +17,8 @@ struct DivinationArchiveView: View {
 
     private static let width = CGFloat(Divination.panelContentWidth)
     private static let cell = (CGFloat(Divination.panelContentWidth) / 7).rounded(.down)
-    private var calendar: Calendar { WeekAgenda.calendar }
+    /// 签历的日子和每日一签同一个日历（北京时间，周一开头），今天的格子和签对得上。
+    private var calendar: Calendar { Divination.monthCalendar }
     private var config: WidgetConfig { instance.config }
     private var shownMonth: Date { month ?? MonthGrid.monthStart(context.now, calendar: calendar) }
     private var today: String { Divination.dayKey(context.now, calendar: calendar) }

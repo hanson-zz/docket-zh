@@ -5,7 +5,8 @@ import SwiftUI
 /// 时间轴（每个完整的番茄一段，正在做的淡一点，白线是现在）和近七天统计，这两样
 /// 收在“今天”一段里（没解锁时近七天统计换成折叠外的一行 Pro 提示），默认收起，标题行写今天专注了多久。点“设置”在面板里
 /// 直接调专注、短休息、长休息、几轮一组，点最近的任务名沿用，选开始专注时放的
-/// 环境音、音量，休息时声音停不停、提不提醒起身。
+/// 环境音、音量，休息时声音停不停、提不提醒起身。专注进行中进度环右边有一根竹竿，
+/// 小熊猫按进度往上爬（码头 Pro），见 `FocusBambooClimber`。
 ///
 /// 计时器全应用只有一个，所有操作都写 `TimerStateProvider.shared.state`，和卡片一样：
 /// 暂停存下剩余的秒数，继续从屏幕上的数字接着走。番茄段见 `FocusDay`，环境音联动见
@@ -94,6 +95,13 @@ struct FocusTimerDetail: View {
             taskField
             ring(state, left: left, total: total)
                 .frame(maxWidth: .infinity)
+                // 专注进行中，进度环右边一根竹竿，小熊猫按进度往上爬（码头 Pro，
+                // 免费是一只静态的小熊猫），见 `FocusBambooClimber`。
+                .overlay(alignment: .trailing) {
+                    FocusBambooClimber(state: state, now: now,
+                                       unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked),
+                                       isPreview: context.isPreview)
+                }
             HStack(spacing: 8) {
                 bigButton(primaryTitle(state, left: left), solid: true) { togglePrimary() }
                 let untouched = state.deadline == nil && state.paused == nil && state.duration == nil
@@ -246,9 +254,11 @@ struct FocusTimerDetail: View {
 
     // MARK: 环境音
 
-    /// 环境音一行：选的声音（点一下去设置里换）、音量、“换”轮到下一种。
+    /// 环境音一行：选的声音或电台（点一下去设置里换）、音量、“换”轮到下一种。
     private func ambientRow(_ state: TimerState) -> some View {
-        let sound = FocusAmbient.sound(state)
+        let station = chosenStation(state)
+        let sound: AmbientSound? = station == nil ? FocusAmbient.sound(state) : nil
+        let off = sound == nil && station == nil
         let label = Text(tr("环境音"))
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.panelPrimary)
@@ -257,16 +267,19 @@ struct FocusTimerDetail: View {
             commitDraft()
             editing = true
         } label: {
-            Text(sound?.title ?? tr("不播放"))
+            // 电台名可能很长：最多 120pt，放不下省略结尾。
+            Text(station?.name ?? sound?.title ?? tr("不播放"))
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(sound == nil ? Color.panelSecondary : accent.panelReadable)
+                .foregroundStyle(off ? Color.panelSecondary : accent.panelReadable)
                 .lineLimit(1)
-                .fixedSize()
+                .truncationMode(.tail)
+                .fixedSize(horizontal: station == nil, vertical: false)
+                .frame(maxWidth: station == nil ? nil : 120)
                 .padding(.horizontal, 12)
                 .frame(height: 28)
                 .background {
-                    Capsule().fill(sound == nil ? Color.panelFill : accent.opacity(0.2))
-                        .overlay(Capsule().strokeBorder(sound == nil ? Color.panelStroke : accent.opacity(0.8),
+                    Capsule().fill(off ? Color.panelFill : accent.opacity(0.2))
+                        .overlay(Capsule().strokeBorder(off ? Color.panelStroke : accent.opacity(0.8),
                                                         lineWidth: 0.8))
                 }
                 .contentShape(Capsule())
@@ -277,11 +290,12 @@ struct FocusTimerDetail: View {
         let volume = Slider(value: volumeBinding(state), in: 0...100)
             .controlSize(.small)
             .tint(accent)
-            .disabled(sound == nil || context.isPreview)
+            .disabled(off || context.isPreview)
             .accessibilityLabel(tr("环境音音量"))
             .frame(minWidth: 44, idealWidth: 44, maxWidth: .infinity)
         let next = Button {
-            update { $0.ambient = FocusAmbient.next(after: $0.ambient).rawValue }
+            let favourites = radioFavourites
+            update { $0.ambient = FocusRadio.next(after: $0.ambient, favourites: favourites) }
         } label: {
             Text(tr("换"))
                 .font(.system(size: 13, weight: .semibold))
@@ -320,10 +334,32 @@ struct FocusTimerDetail: View {
         .glassPane(cornerRadius: 12)
     }
 
+    /// 选的是电台时调的是这个台记住的音量（`RadioVolumeMemory`，和收音机面板共用），
+    /// 没记过时显示环境音音量。
     private func volumeBinding(_ state: TimerState) -> Binding<Double> {
-        Binding(
-            get: { Double(FocusAmbient.clampVolume(state.ambientVolume)) },
+        let fallback = Double(FocusAmbient.clampVolume(state.ambientVolume))
+        if let station = chosenStation(state) {
+            return Binding(
+                get: { RadioPlayer.shared.volume(for: station, fallback: fallback) },
+                set: { value in
+                    guard !context.isPreview else { return }
+                    RadioPlayer.shared.remember(value.rounded(), for: station)
+                })
+        }
+        return Binding(
+            get: { fallback },
             set: { value in update { $0.ambientVolume = FocusAmbient.clampVolume(Int(value.rounded())) } })
+    }
+
+    /// 选的电台，没选电台是 nil。没选电台时不去翻收藏。
+    private func chosenStation(_ state: TimerState) -> RadioStation? {
+        guard state.ambient.hasPrefix(FocusRadio.prefix) else { return nil }
+        return FocusRadio.station(state.ambient, favourites: radioFavourites)
+    }
+
+    /// 收音机小组件里收藏的台（所有布局合在一起）；小组件库示例里用自带的几个台。
+    private var radioFavourites: [RadioStation] {
+        context.isPreview ? Array(RadioDial.presets.prefix(4)) : FocusAmbientDriver.shared.radioFavourites()
     }
 
     // MARK: 今天
@@ -419,6 +455,7 @@ struct FocusTimerDetail: View {
 
             sectionLabel(tr("开始专注时播放"))
             soundGrid(state)
+            radioChoices(state)
             HStack(spacing: 10) {
                 Text(tr("音量"))
                     .font(.system(size: 13, weight: .semibold))
@@ -573,9 +610,11 @@ struct FocusTimerDetail: View {
     private func soundGrid(_ state: TimerState) -> some View {
         let choices: [AmbientSound?] = AmbientSound.allCases.map { Optional($0) } + [nil]
         let selected = FocusAmbient.sound(state)
+        // 选的是电台时“不播放”不高亮。
+        let radio = state.ambient.hasPrefix(FocusRadio.prefix)
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
             ForEach(Array(choices.enumerated()), id: \.offset) { _, sound in
-                let chosen = sound == selected
+                let chosen = sound == selected && !(sound == nil && radio)
                 Button {
                     update { $0.ambient = sound?.rawValue ?? "" }
                 } label: {
@@ -602,6 +641,69 @@ struct FocusTimerDetail: View {
                 .accessibilityAddTraits(chosen ? [.isSelected] : [])
             }
         }
+    }
+
+    /// 「收音机收藏」一组：收音机小组件里收藏的台，一排胶囊，多了左右滑。选了台，开始专注时
+    /// 自动播这个台。一个都没收藏时写一行提示。
+    private func radioChoices(_ state: TimerState) -> some View {
+        let favourites = radioFavourites
+        return VStack(alignment: .leading, spacing: 8) {
+            sectionLabel(tr("收音机收藏"))
+            if favourites.isEmpty {
+                Text(tr("去收音机收藏几个台"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(.panelStroke, style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
+                    }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(favourites) { station in
+                            radioChip(station, chosen: FocusRadio.isChosen(station, raw: state.ambient))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func radioChip(_ station: RadioStation, chosen: Bool) -> some View {
+        Button {
+            update { $0.ambient = FocusRadio.raw(for: station) }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "radio")
+                    .font(.system(size: 13, weight: .semibold))
+                Text(station.name)
+                    .font(.system(size: 13, weight: chosen ? .bold : .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .foregroundStyle(chosen ? ink : Color.panelPrimary)
+            .padding(.horizontal, 11)
+            .frame(maxWidth: 170)
+            .frame(height: 36)
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(chosen ? accent : Color.panelFill)
+                    .overlay {
+                        if !chosen {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(.panelStroke, lineWidth: 0.6)
+                        }
+                    }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .help(station.name)
+        .accessibilityAddTraits(chosen ? [.isSelected] : [])
     }
 
     private func toggleRow(_ label: String, isOn: Bool, set: @escaping (Bool) -> Void) -> some View {

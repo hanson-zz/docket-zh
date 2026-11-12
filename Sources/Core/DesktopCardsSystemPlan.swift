@@ -104,15 +104,16 @@ public enum DesktopSystemCards {
 
     // MARK: 应用切换器
 
-    /// 小号 3×3 个 36 的图标，中号两排六列 44 的图标，大号一行一个 App（图标、名字、
-    /// 当前 / 没开），最多 7 行。放不下时最后一格（大号是最后一行）写「+N」。
+    /// 应用切换器 v2（效果图 design/app-switcher-v2.py）：小号 3×3（图标 32、格 42），
+    /// 中号两排六列（图标 40、格 48）下面一行名字，大号五列两排（图标 46、格 58）下面
+    /// 名字行和窗口缩略图。放不下时最后一格写「+N」（小号第 9 格、中号第 12 格、大号第 10 格）。
     public static func appGrid(count: Int, size: DesktopPinSize) -> Grid {
         let total = max(0, count)
         guard total > 0 else { return .empty }
         switch size {
         case .small: return clipped(total, columns: 3, rows: 3, caption: false)
         case .medium: return clipped(total, columns: 6, rows: 2, caption: false)
-        case .large: return clipped(total, columns: 1, rows: 7, caption: true)
+        case .large: return clipped(total, columns: 5, rows: 2, caption: false)
         }
     }
 

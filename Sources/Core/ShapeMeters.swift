@@ -39,11 +39,11 @@ public enum ShapeMeters {
     }
 
     /// 电池格用哪种外观画电池形状：经典是实心的一截，液态是一截水；像素电池、
-    /// 能量粒子、小熊猫抱电池照旧画它们自己的。认不出的值按经典。
+    /// 能量粒子、小熊猫抱电池、霓虹灯管照旧画它们自己的。认不出的值按经典。
     public static func drawsCell(look raw: String) -> Bool {
         switch BatteryLook(rawValue: raw) ?? .classic {
         case .classic, .liquid: true
-        case .pixel, .particles, .panda: false
+        case .pixel, .particles, .panda, .neon: false
         }
     }
 

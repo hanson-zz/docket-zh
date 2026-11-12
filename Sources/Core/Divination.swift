@@ -486,7 +486,7 @@ public enum DivinationPage: String, CaseIterable, Sendable {
 /// 今天抽到的签、起卦记录、解忧书翻过的页、停在哪页和静音开关都在卡片配置里
 /// （不在设置页列出：这些键不放进目录的默认值）。扩展栏卡片、面板和桌面卡片读写同一份。
 public enum Divination {
-    /// 抽签那天（本地日期 yyyy-MM-dd）。
+    /// 抽签那天（北京时间日期 yyyy-MM-dd，见 `Divination.calendar`）。
     public static let stickDayKey = "stickDay"
     /// 那天抽到观音灵签的第几支（下标 0...99）。换签库以前用的键是 `legacyStickKey`（原创 60 支的下标），
     /// 新版不读它，所以升级当天已经抽过旧签的，今天可以再抽一支观音灵签，不会把旧下标当成新签显示。
@@ -511,8 +511,26 @@ public enum Divination {
 
     // MARK: 日期
 
-    /// 本地日期 yyyy-MM-dd（按传入的日历和时区，第二天零点换签）。
-    public static func dayKey(_ date: Date, calendar: Calendar = .current) -> String {
+    /// 每日一签、签历、签卡和本周寄语共用的日历：公历，固定北京时间（Asia/Shanghai，
+    /// 和黄历 `ChineseAlmanac`、农历 `ChineseCalendar` 同一个时区）。黄历是农历语义，
+    /// 按北京时间算；签也跟着按北京时间换，Mac 设在别的时区时两边不再差一天，
+    /// 一个北京日内签不变（北京时间零点换签）。
+    public static var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = ChineseCalendar.zone
+        return calendar
+    }
+
+    /// 签历月历用：同上，周一开头（和 `WeekAgenda.calendar` 的周规则一样，只是时区固定北京）。
+    public static var monthCalendar: Calendar {
+        var calendar = Divination.calendar
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        return calendar
+    }
+
+    /// 日期 yyyy-MM-dd（按传入的日历和时区，默认北京时间，那天零点换签）。
+    public static func dayKey(_ date: Date, calendar: Calendar = Divination.calendar) -> String {
         let c = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
@@ -542,7 +560,7 @@ public enum Divination {
     // MARK: 每日一签
 
     /// 今天抽过就返回那支的下标，没抽过（或存的是别的日子）返回 nil。
-    public static func todayStick(_ config: WidgetConfig, now: Date, calendar: Calendar = .current) -> Int? {
+    public static func todayStick(_ config: WidgetConfig, now: Date, calendar: Calendar = Divination.calendar) -> Int? {
         guard config.string(stickDayKey) == dayKey(now, calendar: calendar) else { return nil }
         let index = config.int(stickKey, default: -1)
         return FortuneStick.all.indices.contains(index) ? index : nil
@@ -560,7 +578,7 @@ public enum Divination {
     /// 摇一摇：今天抽过就还是那支；没抽过用给定的随机数抽一支并记下今天。
     @discardableResult
     public static func drawStick<G: RandomNumberGenerator>(in config: inout WidgetConfig, now: Date,
-                                                          calendar: Calendar = .current,
+                                                          calendar: Calendar = Divination.calendar,
                                                           using rng: inout G) -> Draw {
         if let index = todayStick(config, now: now, calendar: calendar) { return Draw(index: index, isNew: false) }
         let index = drawIndex(using: &rng)
@@ -576,7 +594,7 @@ public enum Divination {
     /// 否则是卡片 id。
     @discardableResult
     public static func drawStick(in config: inout WidgetConfig, now: Date, salt: String,
-                                 calendar: Calendar = .current) -> Draw {
+                                 calendar: Calendar = Divination.calendar) -> Draw {
         let salt = stickSalt(config, cardSalt: salt)
         var rng = MineRandom(seed: stableHash("\(dayKey(now, calendar: calendar))|\(salt)"))
         return drawStick(in: &config, now: now, calendar: calendar, using: &rng)

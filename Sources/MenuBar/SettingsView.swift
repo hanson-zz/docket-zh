@@ -56,6 +56,16 @@ struct SettingsView: View {
     var onShowOnboarding: () -> Void = {}
     /// 小组件管理里打开“未添加”的开关：和小组件库的“添加”一样放到当前扩展栏末尾。
     var onAddWidget: (WidgetInstance) -> Void = { _ in }
+    /// 「扩展栏上的项目」列表排序：拖到另一项上、上移下移、移到最前最后。
+    var onMoveItem: (UUID, UUID) -> Void = { _, _ in }
+    var onStepItem: (UUID, Int) -> Void = { _, _ in }
+    var onEdgeItem: (UUID, Bool) -> Void = { _, _ in }
+    /// 拖动经过的那一项，画一条插入线。
+    @State private var dropTargetID: UUID?
+    @State private var draggingID: UUID?
+    /// 导出诊断信息：正在打包时按钮变灰；导出后在按钮下面说一行结果。
+    @State private var exportingDiagnostics = false
+    @State private var diagnosticsNote: String?
 
     /// Which tab is showing, held outside the view.
     ///
@@ -299,7 +309,7 @@ struct SettingsView: View {
             } header: {
                 Text("备份")
             } footer: {
-                Text("备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
+                Text("备份包含你的布局、其中的项目、小组件设置和程序坞自定义图标，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
@@ -584,11 +594,15 @@ struct SettingsView: View {
 
             NotchMessageSettingsSection(settings: $state.notchMessage)
 
+            Section("电池") {
+                BatteryNeonPlugToggle()
+            }
+
             Section {
                 LabeledContent {
                     Button("重新显示", action: onShowOnboarding)
                 } label: {
-                    subtitled(tr("重新显示新手引导"), tr("再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。"))
+                    subtitled(tr("重新显示新手引导"), tr("再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限，再由小熊猫介绍三个常用功能。只会追加小组件，不会删除已有的。"))
                 }
             } header: {
                 Text("新手引导")
@@ -602,6 +616,23 @@ struct SettingsView: View {
                     get: { state.checkForUpdates == true },
                     set: { state.checkForUpdates = $0 }))
                     .help("码头每天向 GitHub 查询一次最新版本号，如果有更新版本，会在菜单栏项中提示你。不会自动安装任何内容，也不会发送其他任何信息。")
+            }
+
+            // 导出诊断信息：出问题时打一个 zip 发给开发者，放在“关于”上面。
+            Section {
+                LabeledContent {
+                    Button("导出诊断信息…", action: exportDiagnostics)
+                        .disabled(exportingDiagnostics)
+                } label: {
+                    subtitled(tr("导出诊断信息"), tr("打包版本、设置摘要、最近 24 小时的日志和崩溃报告，不含激活码、邮箱和密钥。"))
+                }
+                if let diagnosticsNote {
+                    Text(diagnosticsNote)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("诊断")
             }
 
             // About, folded in. A whole section in the sidebar for an icon and
@@ -1075,6 +1106,23 @@ struct SettingsView: View {
 
     /// A control's label with one line of explanation under it, the way
     /// System Settings does it, in place of a tooltip nobody hovers for.
+    private func exportDiagnostics() {
+        exportingDiagnostics = true
+        diagnosticsNote = nil
+        let snapshot = state
+        Task { @MainActor in
+            defer { exportingDiagnostics = false }
+            do {
+                if try await DiagnosticsExporter.run(state: snapshot) != nil {
+                    diagnosticsNote = tr("已导出，可以把这个文件发给开发者。")
+                }
+            } catch {
+                DockLog.error(.diagnostics, "export failed: \(error)")
+                diagnosticsNote = tr("导出失败，请稍后再试。")
+            }
+        }
+    }
+
     private func subtitled(_ title: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
@@ -1116,9 +1164,8 @@ struct SettingsView: View {
     /// there was no way to see what was pinned without going and looking, and
     /// no way to remove something you could not reach.
     ///
-    /// Reordering stays on the shelf, where dragging is the obvious gesture
-    /// and already works. This is for seeing the list and taking things off
-    /// it.
+    /// 11-03 起这里也能排序：上下拖动行，或右键上移、下移、移到最前最后，
+    /// 和在扩展栏上拖动写的是同一份项目顺序。
     @ViewBuilder private var itemList: some View {
         let items = activeItems
         Section {
@@ -1179,6 +1226,11 @@ struct SettingsView: View {
             } else {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     HStack(spacing: 9) {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.tertiary)
+                            .frame(width: 16)
+                            .help("拖动排序")
                         icon(for: item)
                             .frame(width: 20, height: 20)
                         Text(item.displayName)
@@ -1196,16 +1248,64 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                         .help("从扩展栏移除")
                     }
+                    .contentShape(Rectangle())
+                    .overlay(alignment: dropEdge(for: item.id, in: items)) {
+                        if dropTargetID == item.id, draggingID != item.id {
+                            Capsule()
+                                .fill(Color.accentColor)
+                                .frame(height: 2)
+                                .offset(y: dropEdge(for: item.id, in: items) == .top ? -6 : 6)
+                        }
+                    }
+                    .draggable(item.id.uuidString) {
+                        HStack(spacing: 8) {
+                            icon(for: item).frame(width: 20, height: 20)
+                            Text(item.displayName).lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.regularMaterial, in: Capsule())
+                        .onAppear { draggingID = item.id }
+                    }
+                    .dropDestination(for: String.self) { payload, _ in
+                        defer { dropTargetID = nil; draggingID = nil }
+                        guard let raw = payload.first, let moving = UUID(uuidString: raw),
+                              moving != item.id else { return false }
+                        onMoveItem(moving, item.id)
+                        return true
+                    } isTargeted: { inside in
+                        if inside { dropTargetID = item.id }
+                        else if dropTargetID == item.id { dropTargetID = nil }
+                    }
+                    .contextMenu {
+                        Button("上移") { onStepItem(item.id, -1) }
+                            .disabled(index == 0)
+                        Button("下移") { onStepItem(item.id, 1) }
+                            .disabled(index == items.count - 1)
+                        Divider()
+                        Button("移到最前") { onEdgeItem(item.id, true) }
+                            .disabled(index == 0)
+                        Button("移到最后") { onEdgeItem(item.id, false) }
+                            .disabled(index == items.count - 1)
+                    }
                     .staggered(index)
                 }
             }
         } header: {
             Text("扩展栏上的项目")
         } footer: {
-            Text("在扩展栏上直接拖动即可重新排序，点按末端的 + 可添加项目。")
+            Text("上下拖动列表里的项目即可调整顺序，右键可上移、下移；在扩展栏上直接拖动也行，点按末端的 + 可添加项目。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
+    }
+
+    /// 插入线画在目标项的上沿还是下沿：被拖的那项原来在它上面，落下后排在它后面，线画在下沿。
+    private func dropEdge(for target: UUID, in items: [DockItem]) -> Alignment {
+        guard let moving = draggingID,
+              let from = items.firstIndex(where: { $0.id == moving }),
+              let to = items.firstIndex(where: { $0.id == target }) else { return .top }
+        return from < to ? .bottom : .top
     }
 
     @ViewBuilder private func icon(for item: DockItem) -> some View {
@@ -1245,6 +1345,9 @@ struct SettingsView: View {
 
             // 钉在桌面：扩展栏卡片拖到桌面变成桌面卡片。
             DesktopPinSettingsSection(state: $state)
+
+            // 桌面宠物：小熊猫贴在程序坞上沿，和电子宠物、喝水的角色放在同一页。
+            DesktopPetSettingsSection(settings: $state.desktopPet)
 
             // Only when there is one to configure. These are settings for a
             // widget, and showing them to somebody whose shelf has no Focus
@@ -1720,6 +1823,7 @@ final class ShortcutKeyRecorder {
         ShotHotKey.shared.suspend()
         MicMuteHotKey.shared.suspend()
         WindowSwitcherHotKey.shared.suspend()
+        DesktopPetHotKey.shared.suspend()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event, commit)
             // Swallowed, or the key would also reach whatever has focus.
@@ -1739,6 +1843,7 @@ final class ShortcutKeyRecorder {
         ShotHotKey.shared.resume()
         MicMuteHotKey.shared.resume()
         WindowSwitcherHotKey.shared.resume()
+        DesktopPetHotKey.shared.resume()
     }
 
     private func handle(_ event: NSEvent, _ commit: (KeyCombo?) -> Void) {

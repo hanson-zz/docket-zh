@@ -1716,14 +1716,33 @@ private struct DeskTrashCard: View {
 // MARK: - 应用切换器
 
 /// 和扩展栏卡片同一份列表（固定的在前、按所选排序、隐藏的不列，`AppSwitcherList.tile`）。
-/// 点一下切过去，没开的启动。小号 3×3 图标，中号两排六列，大号一行一个 App。
+/// 点一下切过去，没开的启动，「+N」打开面板。应用切换器 v2（效果图 design/app-switcher-v2.py）：
+/// - 小号 3×3（图标 32、格 42）：当前的 App 垫中性浅色高亮块，开着的下面小点，没开的半透明，
+///   满了第 9 格「+N」，悬停提示名字。
+/// - 中号两排六列（图标 40、格 48），没有标题行；网格下面一行名字（「Safari 浏览器　当前 · 3 个窗口」），
+///   悬停时换成悬停的 App；固定的右上角小图钉。
+/// - 大号：标题行、五列两排（图标 46、格 58，第 10 格「+N」）、居中的名字行，下面一排 3 张
+///   窗口缩略图（96×76），点一张跳到那个窗口，第一张垫浅色块。看的是悬停的 App，没悬停时是当前的。
+/// 窗口数和窗口只在换了看的 App 时读一次（悬停停 0.22 秒才读），缩略图走 `AppWindowThumbnails` 的缓存。
 private struct DeskAppSwitcherCard: View {
     var widget: WidgetInstance
     var size: DesktopPinSize
 
-    @Environment(\.panelTint) private var panelTint
     private var catalog: AppCatalog { AppCatalog.shared }
-    private var accent: Color { panelTint.accent(or: Color(hex: "#A7B4FF")) }
+
+    @State private var hovered: String?
+    @State private var windows: [AppWindows.Window] = []
+    /// `windows` 是哪个 App 的；和正在看的不一样时不写窗口数。
+    @State private var loadedFor: String?
+    @State private var trusted = false
+    @State private var canCapture = false
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporter = false
+
+    /// 没解锁时卡片盖着小锁（`proLocked`），不读窗口、不截图。
+    private var locked: Bool {
+        ProLicenseGate.needsLockOverlay(widget, unlocked: licenseUnlocked || supporter)
+    }
 
     struct Entry: Identifiable {
         var item: AppSwitcherItem
@@ -1746,139 +1765,189 @@ private struct DeskAppSwitcherCard: View {
         }
     }
 
+    /// 格子尺寸：图标、格（高亮块）、行距。
+    private var metrics: (icon: CGFloat, plate: CGFloat, rowSpacing: CGFloat) {
+        switch size {
+        case .small: (32, 42, 3)
+        case .medium: (40, 48, 2)
+        case .large: (46, 58, 4)
+        }
+    }
+
     var body: some View {
         let all = apps
         let grid = DesktopSystemCards.appGrid(count: all.count, size: size)
         let shown = Array(all.prefix(grid.shown))
-        VStack(alignment: .leading, spacing: 8) {
-            if size != .small {
-                HStack {
+        let focus = focusApp(in: all)
+        VStack(alignment: .leading, spacing: 0) {
+            if size == .large {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(verbatim: tr("应用切换器"))
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(Color.panelPrimary)
+                        .layoutPriority(1)
                     Spacer(minLength: 0)
-                    Text(verbatim: tr("\(catalog.running.count) 个在运行"))
+                    Text(verbatim: tr("运行中 \(catalog.running.count) 个"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.panelSecondary)
                 }
                 .lineLimit(1)
+                .padding(.bottom, 10)
             }
             if all.isEmpty {
                 Text(verbatim: catalog.running.isEmpty ? tr("没有正在运行的应用") : tr("正在运行的应用都隐藏了"))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.panelSecondary)
+                    .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if size == .large {
-                VStack(spacing: 4) {
-                    ForEach(shown) { row($0.item, pinned: $0.pinned) }
-                    if grid.overflow > 0 { moreRow(grid.overflow) }
+            } else {
+                iconGrid(shown, grid: grid)
+                if size != .small, let focus {
+                    nameLine(focus)
+                        .padding(.top, size == .medium ? 8 : 10)
+                }
+                if size == .large, let focus {
+                    strip(focus)
+                        .frame(height: 104, alignment: .top)
+                        .padding(.top, 12)
                 }
                 Spacer(minLength: 0)
-            } else {
-                let side: CGFloat = size == .small ? 36 : 40
-                Grid(horizontalSpacing: 6, verticalSpacing: size == .small ? 6 : 8) {
-                    ForEach(0..<grid.rows, id: \.self) { r in
-                        GridRow {
-                            ForEach(0..<grid.columns, id: \.self) { c in
-                                let index = r * grid.columns + c
-                                if index < shown.count {
-                                    icon(shown[index].item, side: side)
-                                } else if index == shown.count, grid.overflow > 0 {
-                                    more(grid.overflow, side: side)
-                                } else {
-                                    Color.clear.frame(width: side, height: side)
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .padding(DesktopCardsSystem.inset(size))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .task(id: "\(focus?.id ?? "")|\(focus?.isRunning ?? false)|\(hovered == nil)|\(locked)") {
+            await load(focus)
+        }
     }
 
-    private func open(_ app: AppSwitcherItem) {
-        catalog.open(WidgetTarget.app(bundleID: app.id))
-    }
+    // MARK: 网格
 
-    private func icon(_ app: AppSwitcherItem, side: CGFloat) -> some View {
-        Button { open(app) } label: {
-            AppSwitcherIcon(app: app, size: side)
-                .opacity(app.isRunning ? 1 : 0.45)
-                .overlay(alignment: .bottom) {
-                    if app.isActive {
-                        Circle().fill(Color.panelPrimary).frame(width: 4, height: 4).offset(y: 5)
+    /// 每行格子之间平分余下的宽（效果图的 space-between），空位留空。
+    private func iconGrid(_ shown: [Entry], grid: DesktopSystemCards.Grid) -> some View {
+        let m = metrics
+        return VStack(spacing: m.rowSpacing) {
+            ForEach(0..<grid.rows, id: \.self) { r in
+                HStack(spacing: 0) {
+                    ForEach(0..<grid.columns, id: \.self) { c in
+                        let index = r * grid.columns + c
+                        Group {
+                            if index < shown.count {
+                                icon(shown[index], m: m)
+                            } else if index == shown.count, grid.overflow > 0 {
+                                more(grid.overflow, m: m)
+                            } else {
+                                Color.clear.frame(width: m.plate, height: m.plate)
+                            }
+                        }
+                        if c < grid.columns - 1 { Spacer(minLength: 0) }
                     }
                 }
-                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func icon(_ entry: Entry, m: (icon: CGFloat, plate: CGFloat, rowSpacing: CGFloat)) -> some View {
+        let app = entry.item
+        return Button { open(app) } label: {
+            AppSwitcherIcon(app: app, size: m.icon, plate: m.plate, selected: app.isActive,
+                            hovered: hovered == app.id, dot: app.isRunning,
+                            pinned: size != .small && entry.pinned, dimsWhenOff: true)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .onHover { inside in
+            if inside {
+                hovered = app.id
+            } else if hovered == app.id {
+                hovered = nil
+            }
+        }
         .help(app.isRunning ? app.name : tr("\(app.name)（没开，点了启动）"))
         .accessibilityLabel(app.isActive ? tr("\(app.name)（当前）")
                             : app.isRunning ? app.name : tr("\(app.name)，没开，点按启动"))
     }
 
-    private func more(_ count: Int, side: CGFloat) -> some View {
+    private func more(_ count: Int, m: (icon: CGFloat, plate: CGFloat, rowSpacing: CGFloat)) -> some View {
         Button { DesktopCardsSystem.openPanel(widget) } label: {
-            Text(verbatim: "+\(count)")
-                .font(.system(size: 13, weight: .bold))
-                .monospacedDigit()
-                .foregroundStyle(Color.panelSecondary)
-                .frame(width: side, height: side)
-                .background(Circle().fill(Color.panelSelected))
-                .frame(maxWidth: .infinity)
+            AppSwitcherMore(count: count, size: m.icon)
+                .frame(width: m.plate, height: m.plate)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .help(tr("还有 \(count) 个，打开面板"))
     }
 
-    private func row(_ app: AppSwitcherItem, pinned: Bool) -> some View {
-        Button { open(app) } label: {
-            HStack(spacing: 10) {
-                AppSwitcherIcon(app: app, size: 26)
-                    .opacity(app.isRunning ? 1 : 0.45)
-                Text(verbatim: app.name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(app.isRunning ? Color.panelPrimary : Color.panelSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                if pinned {
-                    Image(systemName: "pin.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.panelTertiary)
-                }
-                if app.isActive {
-                    Text(verbatim: tr("当前"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(accent.panelReadable)
-                } else if !app.isRunning {
-                    Text(verbatim: tr("没开"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.panelSecondary)
-                }
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 36)
-            .deskBlock(radius: 10, accent: app.isActive ? accent : nil)
-        }
-        .buttonStyle(.plain)
-        .help(app.isRunning ? app.name : tr("\(app.name)（没开，点了启动）"))
+    // MARK: 名字行和窗口
+
+    /// 正在看的 App：悬停的，没悬停时是当前的（当前的不在列表里时是第一个）。
+    private func focusApp(in all: [Entry]) -> AppSwitcherItem? {
+        if let hovered, let hit = all.first(where: { $0.id == hovered }) { return hit.item }
+        return (all.first(where: { $0.item.isActive }) ?? all.first)?.item
     }
 
-    private func moreRow(_ count: Int) -> some View {
-        Button { DesktopCardsSystem.openPanel(widget) } label: {
-            Text(verbatim: tr("还有 \(count) 个，打开面板"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.panelSecondary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 30)
-                .deskBlock(radius: 10)
+    private func nameLine(_ app: AppSwitcherItem) -> some View {
+        let count: Int? = loadedFor == app.id && trusted && app.isRunning ? windows.count : nil
+        let status = AppSwitcherLayout.status(isActive: app.isActive, isRunning: app.isRunning, windows: count)
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if size == .large { Spacer(minLength: 0) }
+            Text(verbatim: app.name)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Color.panelPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            if !status.isEmpty {
+                Text(verbatim: status)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
+        .help(app.name)
+    }
+
+    @ViewBuilder
+    private func strip(_ app: AppSwitcherItem) -> some View {
+        if !app.isRunning {
+            Text(verbatim: tr("还没打开，点图标启动"))
+                .font(.system(size: 13))
+                .foregroundStyle(Color.panelSecondary)
+                .frame(maxWidth: .infinity, minHeight: 60)
+        } else if loadedFor == app.id, !locked {
+            AppSwitcherWindowStrip(app: app, windows: windows, trusted: trusted, canCapture: canCapture,
+                                   style: .card, width: 308) { window in
+                AppWindows.focus(window, bundleID: app.id)
+            }
+        } else {
+            Color.clear
+        }
+    }
+
+    /// 换了看的 App 时读一次窗口：中号只要窗口数，大号要缩略图用的窗口。悬停的先等 0.22 秒，
+    /// 鼠标划过一排图标时不挨个读。
+    private func load(_ focus: AppSwitcherItem?) async {
+        guard size != .small, !locked, let focus else { return }
+        guard focus.isRunning else {
+            windows = []
+            loadedFor = focus.id
+            return
+        }
+        if hovered != nil {
+            try? await Task.sleep(for: .milliseconds(220))
+            if Task.isCancelled { return }
+        }
+        trusted = AppWindows.isTrusted
+        canCapture = AppWindows.canCapture
+        windows = size == .large ? AppWindows.thumbnailWindows(bundleID: focus.id)
+                                 : AppWindows.windows(bundleID: focus.id)
+        loadedFor = focus.id
+    }
+
+    private func open(_ app: AppSwitcherItem) {
+        catalog.open(WidgetTarget.app(bundleID: app.id))
     }
 }
 

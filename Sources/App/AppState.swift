@@ -72,6 +72,9 @@ public final class AppState {
             if state.typingSounds != oldValue.typingSounds {
                 TypingSoundController.shared.apply(state.typingSounds)
             }
+            if state.desktopPet != oldValue.desktopPet {
+                DesktopPetController.shared.apply(state.desktopPet)
+            }
             // 钉在桌面：设置或卡片变了重摆窗口；布局里的小组件变了也看一眼，删掉的小组件
             // （撕掉的便签那张）跟着取消钉。
             if state.desktopPins != oldValue.desktopPins
@@ -604,6 +607,35 @@ public final class AppState {
         let moved = items.remove(at: source)
         items.insert(moved, at: clamped)
         state.profiles[index].items = items
+    }
+
+    /// 设置里「扩展栏上的项目」列表拖动排序：把 `id` 挪到 `target` 所在的位置
+    /// （往下拖落在它后面，往上拖落在它前面）。镜像程序坞 App 时先接管，和在扩展栏上拖一样。
+    public func moveItem(_ id: UUID, onto target: UUID) {
+        guard id != target else { return }
+        if mirroringApps { adoptSystemApps() }
+        guard let profile = state.customDock.profileID, let index = index(of: profile) else { return }
+        let items = state.profiles[index].items
+        guard let from = items.firstIndex(where: { $0.id == id }),
+              let to = items.firstIndex(where: { $0.id == target }) else { return }
+        moveItem(from: from, to: to, in: profile)
+    }
+
+    /// 同上，按步数挪（-1 上移、+1 下移），或挪到最前、最后。
+    public func moveItem(_ id: UUID, toEdge first: Bool) {
+        if mirroringApps { adoptSystemApps() }
+        guard let profile = state.customDock.profileID, let index = index(of: profile) else { return }
+        let items = state.profiles[index].items
+        guard let from = items.firstIndex(where: { $0.id == id }) else { return }
+        moveItem(from: from, to: first ? 0 : items.count - 1, in: profile)
+    }
+
+    public func moveItem(_ id: UUID, by step: Int) {
+        if mirroringApps { adoptSystemApps() }
+        guard let profile = state.customDock.profileID, let index = index(of: profile) else { return }
+        let items = state.profiles[index].items
+        guard let from = items.firstIndex(where: { $0.id == id }) else { return }
+        moveItem(from: from, to: from + step, in: profile)
     }
 
     public func updateWidget(_ instance: WidgetInstance, in profileID: UUID? = nil) {

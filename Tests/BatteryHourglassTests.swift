@@ -15,6 +15,7 @@ final class BatteryHourglassTests: XCTestCase {
         XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.pixel.rawValue))
         XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.particles.rawValue))
         XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.panda.rawValue))
+        XCTAssertFalse(BatteryHourglass.drawsHourglass(look: BatteryLook.neon.rawValue))
     }
 
     func testUnknownLookReadsAsClassic() {

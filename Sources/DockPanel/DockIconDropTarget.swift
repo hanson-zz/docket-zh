@@ -126,6 +126,10 @@ struct DockIconDropPayload {
     }
 
     /// 没有文件时的图片数据（浏览器、预览拖来的）。松手时同步读，拖放结束后剪贴板就换了。
+    ///
+    /// 只拿原始的编码数据，交给后台的 ImageIO 出缩略图；不在主线程用 `NSImage` 把整张图
+    /// 解码再转成 TIFF（超大图会先吃掉几百 MB 内存）。常见格式都没有时，取剪贴板上第一个
+    /// 是图片的类型。
     static func imageData() -> Data? {
         let pasteboard = NSPasteboard(name: .drag)
         for type in [NSPasteboard.PasteboardType.png, .tiff,
@@ -133,7 +137,12 @@ struct DockIconDropPayload {
                      NSPasteboard.PasteboardType(UTType.heic.identifier)] {
             if let data = pasteboard.data(forType: type), !data.isEmpty { return data }
         }
-        return NSImage(pasteboard: pasteboard)?.tiffRepresentation
+        for type in pasteboard.types ?? [] {
+            guard UTType(type.rawValue)?.conforms(to: .image) == true,
+                  let data = pasteboard.data(forType: type), !data.isEmpty else { continue }
+            return data
+        }
+        return nil
     }
 }
 

@@ -3,6 +3,8 @@ import Foundation
 // 导入 Mechvibes 声音包（码头 Pro）：用户选一个 .zip 或文件夹，读 config.json，确认每个用到的
 // 声音文件都在、都解得开，再把 config.json 和这些文件拷到
 // Application Support/<bundle id>/TypingSoundPacks/<id>/。不内置下载、不联网。
+// .zip 解压前先读中央目录（TypingSoundPackLimits）：条目数、单个文件、总大小、路径和符号链接
+// 不合格就不解；解压时再盯着实际写出来的大小，超了就停掉 ditto（防止条目头写的大小是假的）。
 
 enum TypingSoundPackStore {
     /// 导入失败的原因，直接给用户看。
@@ -50,6 +52,7 @@ enum TypingSoundPackStore {
                                                        directoryHint: .isDirectory)
             try fm.createDirectory(at: temp, withIntermediateDirectories: true)
             cleanup = temp
+            try checkZip(source)
             try unzip(source, to: temp)
             root = temp
         }
@@ -77,6 +80,11 @@ enum TypingSoundPackStore {
             guard resolved.hasPrefix(rootPath + "/"), fm.fileExists(atPath: resolved) else {
                 throw ImportError(message: tr("声音包里缺少文件：\(file)"))
             }
+            // 文件夹导入没经过 zip 检查，这里对每个用到的文件再卡一次大小。
+            let bytes = (try? URL(fileURLWithPath: resolved).resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            guard UInt64(max(0, bytes)) <= TypingSoundPackLimits.maxEntryBytes else {
+                throw ImportError(message: TypingSoundPackLimits.Failure.entryTooLarge(file).message)
+            }
             do {
                 let whole = try TypingSoundDecoder.decode(url)
                 let frames = Int(whole.frameLength)
@@ -87,8 +95,12 @@ enum TypingSoundPackStore {
             } catch TypingSoundDecoder.Failure.tooLong(_) {
                 throw ImportError(message: tr("\(file) 太长（超过 3 分钟），不像按键声音。"))
             } catch {
+                // OGG（Vorbis）系统多半解不开：明确说是格式问题，不让用户以为包坏了。
+                if TypingSoundAudioFormat.isOgg(fileName: file, header: header(of: url)) {
+                    throw ImportError(message: TypingSoundAudioFormat.oggUnsupportedMessage)
+                }
                 let ext = (file as NSString).pathExtension.lowercased()
-                if ext == "ogg" || ext == "flac" {
+                if ext == "flac" {
                     throw ImportError(message: tr("这台 Mac 解不开 \(file)（.\(ext) 格式）。可以先用音频软件转成 wav 或 m4a，改好 config.json 里的文件名再导入。"))
                 }
                 throw ImportError(message: tr("解不开 \(file)，文件可能坏了或格式不支持。"))
@@ -140,7 +152,23 @@ enum TypingSoundPackStore {
 
     // MARK: 解压和找 config.json
 
-    /// 用系统自带的 ditto 解压（访达「解压」用的同一个）。
+    /// 解压前读 zip 的中央目录，条目数、大小、路径、符号链接有一项不合格就不解。
+    private static func checkZip(_ zip: URL) throws {
+        let data: Data
+        do {
+            data = try Data(contentsOf: zip, options: .alwaysMapped)
+        } catch {
+            throw ImportError(message: tr("解压失败，压缩包可能坏了。"))
+        }
+        do {
+            try TypingSoundPackLimits.check(zip: data)
+        } catch let failure as TypingSoundPackLimits.Failure {
+            throw ImportError(message: failure.message)
+        }
+    }
+
+    /// 用系统自带的 ditto 解压（访达「解压」用的同一个）。条目头里的大小可能是假的，
+    /// 解压时每 0.1 秒量一下已经写出来多少，超过总上限就停掉 ditto。
     private static func unzip(_ zip: URL, to destination: URL) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
@@ -152,8 +180,40 @@ enum TypingSoundPackStore {
         } catch {
             throw ImportError(message: tr("解压失败。"))
         }
+        let limit = TypingSoundPackLimits.maxTotalBytes
+        while process.isRunning {
+            Thread.sleep(forTimeInterval: 0.1)
+            if extractedBytes(in: destination) > limit {
+                process.terminate()
+                process.waitUntilExit()
+                throw ImportError(message: TypingSoundPackLimits.Failure.totalTooLarge.message)
+            }
+        }
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw ImportError(message: tr("解压失败，压缩包可能坏了。")) }
+        guard extractedBytes(in: destination) <= limit else {
+            throw ImportError(message: TypingSoundPackLimits.Failure.totalTooLarge.message)
+        }
+    }
+
+    /// 一个文件夹里所有文件加起来多少字节（不跟符号链接）。
+    private static func extractedBytes(in folder: URL) -> UInt64 {
+        guard let enumerator = FileManager.default.enumerator(
+            at: folder, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey], options: []) else { return 0 }
+        var total: UInt64 = 0
+        for case let url as URL in enumerator {
+            guard let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]),
+                  values.isRegularFile == true else { continue }
+            total += UInt64(max(0, values.fileSize ?? 0))
+        }
+        return total
+    }
+
+    /// 文件开头几个字节，认格式用；读不了时空。
+    private static func header(of url: URL) -> Data {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return Data() }
+        defer { try? handle.close() }
+        return (try? handle.read(upToCount: TypingSoundAudioFormat.headerLength)) ?? Data()
     }
 
     /// config.json 在顶层或往下三层以内（zip 里常多包一层文件夹），跳过 __MACOSX。

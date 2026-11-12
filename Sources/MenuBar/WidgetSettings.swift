@@ -63,6 +63,9 @@ struct WidgetSettingsSections: View {
                 }
                 if pair.instance.kind == .battery {
                     batteryAlertSection(pair.instance)
+                    Section("插电动画") {
+                        BatteryNeonPlugToggle()
+                    }
                 }
                 if pair.instance.kind == .aiUsage {
                     CodexSoundSettings(instance: pair.instance) { change in write(pair.instance, change) }

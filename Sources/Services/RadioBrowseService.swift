@@ -29,7 +29,8 @@ enum RadioBrowseService {
             return collected.sorted { $0.0 < $1.0 }
         }
         guard !Task.isCancelled, !answers.isEmpty else { return nil }
-        let merged = RadioBrowse.merge(shown, batches: answers.map(\.1))
+        let start = shown.isEmpty ? RadioGenre.pinned(for: search, page: page) : shown
+        let merged = RadioBrowse.merge(start, batches: answers.map(\.1))
         return (merged, RadioBrowse.hasMore(rowsPerTag: answers.map(\.2), size: limit))
     }
 

@@ -51,7 +51,15 @@ struct FileShelfTile: View {
                 targeted = inside
                 dragged = count
             },
-            receive: { urls in _ = FileShelf.add(urls, to: instance) }))
+            receive: { _ in },
+            receiveAt: { urls, point in
+                let added = FileShelf.add(urls, to: instance)
+                guard !added.isEmpty else { return }
+                DesktopPetController.shared.handle(.fileStored(count: added.count, widgetID: instance.id,
+                                                               newItemIDs: added, at: point))
+            }))
+        // 文件拖到小熊猫身上时它叼到这张卡片旁：登记卡片在屏幕上的位置。
+        .background(DesktopPetCardSpot(id: instance.id, enabled: !context.isPreview))
         // 自动移出：现在看一次，再睡到下一个条目到期（最多一小时）再看。
         .task(id: sweepKey) {
             guard !context.isPreview else { return }
@@ -152,12 +160,14 @@ enum FileShelf {
         }
     }
 
+    /// 放进来，返回新条目的标识（清单里的路径，去重、按拖进来的顺序）；没有可放的返回空。
     @discardableResult
-    static func add(_ urls: [URL], to instance: WidgetInstance) -> Bool {
-        let incoming = urls.filter(\.isFileURL).map(\.path)
-        guard !incoming.isEmpty else { return false }
+    static func add(_ urls: [URL], to instance: WidgetInstance) -> [String] {
+        var seen = Set<String>()
+        let incoming = urls.filter(\.isFileURL).map(\.path).filter { !$0.isEmpty && seen.insert($0).inserted }
+        guard !incoming.isEmpty else { return [] }
         edit(instance) { FileShelfList.adding(incoming, to: $0, now: Date()) }
-        return true
+        return incoming
     }
 
     static func remove(_ url: URL, from instance: WidgetInstance) {
@@ -204,5 +214,36 @@ enum FileShelf {
                                          expiry: FileShelfList.expiry(current.config), now: now)
         guard result.changed else { return }
         WidgetWriter.write(current) { FileShelfList.write(result.kept, into: &$0) }
+        // 离开电脑时到期移出的，小熊猫记下，回来时说一句（平时不演）。
+        if !result.removed.isEmpty {
+            DesktopPetController.shared.handle(.shelfExpired(count: result.removed.count, widgetID: instance.id))
+        }
+    }
+}
+
+/// 小熊猫叼来文件以后被点：打开文件暂存面板时要定位、闪一下的新条目。
+/// 面板出现时取走（只闪一次），没取走的下次再放会被换掉。
+@MainActor @Observable
+final class FileShelfHighlight {
+    static let shared = FileShelfHighlight()
+
+    private var widgetID: UUID?
+    private var paths: [String] = []
+    /// 每闪一次加一，已经开着的面板据此再闪。
+    private(set) var token = 0
+
+    private init() {}
+
+    func flash(_ paths: [String], in widget: UUID) {
+        widgetID = widget
+        self.paths = paths
+        token += 1
+    }
+
+    /// 这张卡片有要闪的新条目就取走（最新放进来的在前）。
+    func take(for widget: UUID) -> [String]? {
+        guard widgetID == widget, !paths.isEmpty else { return nil }
+        defer { widgetID = nil; paths = [] }
+        return paths
     }
 }

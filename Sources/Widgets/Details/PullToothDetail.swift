@@ -35,7 +35,7 @@ struct PullToothDetail: View {
                          showsOuch: true)
                     .frame(width: CGFloat(Self.layout.width), height: CGFloat(Self.layout.height))
                     .frame(maxWidth: .infinity)
-                Text(tr("点一颗牙拔下来，拔到疼牙河马就合嘴；其余的牙都拔光就赢"))
+                Text(tr("点一颗牙拔下来，拔到疼牙小熊猫就合嘴；其余的牙都拔光就赢"))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.panelTertiary)
                     .multilineTextAlignment(.center)

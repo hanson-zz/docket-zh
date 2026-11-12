@@ -508,9 +508,14 @@ struct ShellTossScene: View {
         let phase = toss.phase(at: t)
         let pose = toss.pose(at: t, tossed: tossed)
         let crouch = CGFloat(m.crouch), jump = CGFloat(m.jump), land = CGFloat(m.land), squash = CGFloat(m.squash)
-        let sx = (1 + 0.05 * crouch) * (1 - 0.04 * jump) * (1 + 0.06 * land) * (1 + 0.06 * squash)
-        let sy = (1 - 0.08 * crouch) * (1 + 0.06 * jump) * (1 - 0.1 * land) * (1 - 0.08 * squash)
-        let lift = CGFloat(layout.jumpHeight) * jump + CGFloat(layout.holdLift) * CGFloat(m.hold)
+        // 动画停下（t 落到 99）后不再按挤压值缩放：弹簧那拍收尾时值可能没回到 0，小熊猫会一直被压扁或拉长。
+        // 动着时也夹在小范围里，变形只是一点点挤压回弹。
+        let resting = t >= toss.total
+        let sx = resting ? 1 : min(1.12, max(0.92, (1 + 0.05 * crouch) * (1 - 0.04 * jump) * (1 + 0.06 * land)
+                                                   * (1 + 0.06 * squash)))
+        let sy = resting ? 1 : min(1.08, max(0.86, (1 - 0.08 * crouch) * (1 + 0.06 * jump) * (1 - 0.1 * land)
+                                                   * (1 - 0.08 * squash)))
+        let lift = resting ? 0 : CGFloat(layout.jumpHeight) * jump + CGFloat(layout.holdLift) * CGFloat(m.hold)
         let center = layout.coinsCenter
         let sparkleCenter = CGPoint(x: CGFloat(center.x), y: CGFloat(center.y) - coin * 0.4)
         let sparkleRadius = DivinationArt.sparkleRadius(center: (Double(sparkleCenter.x), Double(sparkleCenter.y)),

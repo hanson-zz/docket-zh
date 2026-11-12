@@ -2179,6 +2179,809 @@
         }
       }
     },
+    "专注陪伴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Buddy"
+          }
+        }
+      }
+    },
+    "刚拖进废纸篓的文件或文件夹（10 秒内），小熊猫跑过去叼回来，放回原处。清空废纸篓不受影响。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you drag a file or folder to the Trash, the red panda runs over within 10 seconds, carries it back and puts it back where it was. Emptying the Trash is never affected."
+          }
+        }
+      }
+    },
+    "完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Disk Access: to see what just went into the Trash and where it came from. Automation, allowing Dockling to control Finder: so Finder can put the files back. macOS asks the first time. Without Automation, the red panda only carries the files back and offers a Put Back button."
+          }
+        }
+      }
+    },
+    "小熊猫滑下来了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda slid down"
+          }
+        }
+      }
+    },
+    "小熊猫爬到 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda has climbed %@%%"
+          }
+        }
+      }
+    },
+    "小熊猫爬到顶，欢呼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda reached the top and cheers"
+          }
+        }
+      }
+    },
+    "小熊猫爬竹竿陪你专注是码头 Pro 专属。点一下购买、输入激活码或开始试用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda climbing the bamboo while you focus is part of Dockling Pro. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
+    "废纸篓救回" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash Rescue"
+          }
+        }
+      }
+    },
+    "废纸篓救回需要两项权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trash Rescue needs two permissions"
+          }
+        }
+      }
+    },
+    "打开并去授权" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On and Grant Access"
+          }
+        }
+      }
+    },
+    "把小熊猫叼回来的文件放回原来的位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put the files the red panda carried back where they came from"
+          }
+        }
+      }
+    },
+    "已暂存 1 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stored 1 file"
+          }
+        }
+      }
+    },
+    "已暂存 %@ 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stored %@ files"
+          }
+        }
+      }
+    },
+    "专注完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus done"
+          }
+        }
+      }
+    },
+    "离开时专注结束了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus ended while you were away"
+          }
+        }
+      }
+    },
+    "暂存里有 1 个新文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 new file on the shelf"
+          }
+        }
+      }
+    },
+    "暂存里有 %@ 个新文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ new files on the shelf"
+          }
+        }
+      }
+    },
+    "暂存里有 1 个文件到期移出了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 shelf file expired"
+          }
+        }
+      }
+    },
+    "暂存里有 %@ 个文件到期移出了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ shelf files expired"
+          }
+        }
+      }
+    },
+    "起来活动一下吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to stretch"
+          }
+        }
+      }
+    },
+    "先在扩展栏添加文件暂存" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a File Shelf to the shelf first"
+          }
+        }
+      }
+    },
+    "下载好了：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded: %@"
+          }
+        }
+      }
+    },
+    "下载好了 %@ 个文件" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded %@ files"
+          }
+        }
+      }
+    },
+    "放回原处（%@ 项）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put Back (%@ items)"
+          }
+        }
+      }
+    },
+    "桌面宠物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Pet"
+          }
+        }
+      }
+    },
+    "桌面宠物小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop pet red panda"
+          }
+        }
+      }
+    },
+    "程序坞上沿" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top of the Dock"
+          }
+        }
+      }
+    },
+    "屏幕左边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕右边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕上边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top edge of the screen"
+          }
+        }
+      }
+    },
+    "屏幕下边缘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom edge of the screen"
+          }
+        }
+      }
+    },
+    "随意（拖到哪停哪）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anywhere (stays where you drop it)"
+          }
+        }
+      }
+    },
+    "开始专注 · %@ 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus started · %@ min"
+          }
+        }
+      }
+    },
+    "专注还剩 5 分钟" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutes of focus left"
+          }
+        }
+      }
+    },
+    "专注完成，休息一下吧" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus done, take a break"
+          }
+        }
+      }
+    },
+    "正在播放 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now playing · %@"
+          }
+        }
+      }
+    },
+    "充电中 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charging · %@%%"
+          }
+        }
+      }
+    },
+    "拔掉电源了 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unplugged · %@%%"
+          }
+        }
+      }
+    },
+    "充满了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fully charged"
+          }
+        }
+      }
+    },
+    "电量低 · %@%%，记得充电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery low · %@%%, plug in soon"
+          }
+        }
+      }
+    },
+    "新建快速待办" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New quick to-do"
+          }
+        }
+      }
+    },
+    "暂停专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause focus"
+          }
+        }
+      }
+    },
+    "开始专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start focus"
+          }
+        }
+      }
+    },
+    "播放收音机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play radio"
+          }
+        }
+      }
+    },
+    "展开码头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Dockling"
+          }
+        }
+      }
+    },
+    "隐藏桌面宠物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Desktop Pet"
+          }
+        }
+      }
+    },
+    "停靠位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resting Spot"
+          }
+        }
+      }
+    },
+    "回到程序坞" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the Dock"
+          }
+        }
+      }
+    },
+    "桌面宠物设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Pet Settings…"
+          }
+        }
+      }
+    },
+    "小熊猫快捷条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red panda quick bar"
+          }
+        }
+      }
+    },
+    "小熊猫睡着了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The red panda is asleep"
+          }
+        }
+      }
+    },
+    "小熊猫贴在程序坞上沿散步，或者蜷在屏幕边上。点它跳一下并浮出快捷条，按住可以拖到别处，右键有更多选项。把文件拖到它身上就放进文件暂存。全屏 App 时不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A red panda strolls along the top of the Dock or curls up on a screen edge. Click it to make it hop and show a quick bar, hold to drag it elsewhere, and right-click for more options. Drop files on it to put them on the File Shelf. Hidden while an app is full screen."
+          }
+        }
+      }
+    },
+    "头顶气泡" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech Bubbles"
+          }
+        }
+      }
+    },
+    "专注开始、还剩 5 分钟和完成，收音机播放的台，插电、充满和低电量，喝水提醒到点时，小熊猫头顶说一句，几秒后消失。同一类 30 秒内只说一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When focus starts, has 5 minutes left or ends, when the radio starts a station, when you plug in, finish charging or run low, and when a water reminder is due, a short bubble appears above the red panda for a few seconds. Each kind shows at most once every 30 seconds."
+          }
+        }
+      }
+    },
+    "活动提醒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stretch Reminder"
+          }
+        }
+      }
+    },
+    "连续打字约 50 分钟，小熊猫伸个懒腰，提醒你起来活动一下。中间停下超过 5 分钟或离开电脑就重新计时，专注计时进行中不提醒。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After about 50 minutes of continuous typing, the red panda stretches to remind you to get up and move. A pause of more than 5 minutes or stepping away restarts the count, and there are no reminders during a focus session."
+          }
+        }
+      }
+    },
+    "下载完成提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Alerts"
+          }
+        }
+      }
+    },
+    "下载文件夹里有文件下好时，小熊猫叼着纸团过来说一声，单击它在访达中显示。第一次可能要允许码头访问下载文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a file finishes downloading to your Downloads folder, the red panda brings over a paper ball and tells you; click it to show the file in Finder. The first time, macOS may ask to let Dockling access the Downloads folder."
+          }
+        }
+      }
+    },
+    "唤出小熊猫" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summon the Red Panda"
+          }
+        }
+      }
+    },
+    "默认不设。按下时小熊猫跳一下并浮出快捷条（新建快速待办、专注、收音机、展开码头）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not set by default. Press it to make the red panda hop and show its quick bar (new quick to-do, focus, radio, open Dockling)."
+          }
+        }
+      }
+    },
+    "在程序坞上沿散步、发呆；程序坞自动隐藏或在侧边时先蜷在屏幕下边缘。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strolls and idles on top of the Dock. While the Dock is hidden or on a side, it curls up on the bottom edge instead."
+          }
+        }
+      }
+    },
+    "平时趴在边上，偶尔探头、伸懒腰、沿边挪几步，不挡菜单栏和程序坞。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies along the edge, now and then peeking out, stretching or shuffling a few steps, without covering the menu bar or the Dock."
+          }
+        }
+      }
+    },
+    "平时趴在菜单栏下方，偶尔探头、伸懒腰、沿边挪几步。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies just below the menu bar, now and then peeking out, stretching or shuffling a few steps."
+          }
+        }
+      }
+    },
+    "平时趴在屏幕底边，偶尔探头、伸懒腰、沿边挪几步。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lies along the bottom of the screen, now and then peeking out, stretching or shuffling a few steps."
+          }
+        }
+      }
+    },
+    "拖到哪就坐在哪，记住位置。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sits wherever you drop it and remembers the spot."
+          }
+        }
+      }
+    },
+    "开着专注计时时小熊猫坐着陪你，完成一轮会欢呼（码头 Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While the Focus Timer runs the red panda sits with you and cheers when a round ends (Dockling Pro)."
+          }
+        }
+      }
+    },
+    "用 ⌘Tab 打开窗口切换器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use ⌘Tab to open the window switcher"
+          }
+        }
+      }
+    },
+    "打开后系统的 ⌘Tab 由码头接管，关掉或退出码头会自动还原。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When on, Dockling takes over the system ⌘Tab. Turning this off or quitting Dockling restores it."
+          }
+        }
+      }
+    },
+    "直接打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On"
+          }
+        }
+      }
+    },
+    "缩略图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thumbnails"
+          }
+        }
+      }
+    },
+    "标题列表" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title list"
+          }
+        }
+      }
+    },
+    "显示选中窗口的大预览" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show a large preview of the selected window"
+          }
+        }
+      }
+    },
+    "在窗口原来的位置显示一张全尺寸预览，需要屏幕录制权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a full-size preview where the window sits on screen. Needs Screen Recording permission."
+          }
+        }
+      }
+    },
     "⌘Tab 是系统切换 App 的快捷键，建议换一个。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2560,6 +3363,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tune to %@"
+          }
+        }
+      }
+    },
+    "切到前台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring to Front"
           }
         }
       }
@@ -3334,6 +4148,28 @@
         }
       }
     },
+    "当前 · %@ 个窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current · %@ windows"
+          }
+        }
+      }
+    },
+    "当前 · 没有窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current · No windows"
+          }
+        }
+      }
+    },
     "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4012,6 +4848,17 @@
         }
       }
     },
+    "没有窗口" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No windows"
+          }
+        }
+      }
+    },
     "没能接管音量和亮度键，暂时照常只读取，系统的提示也会出现。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4118,6 +4965,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aries"
+          }
+        }
+      }
+    },
+    "看缩略图需要「屏幕录制」权限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thumbnails need Screen Recording"
           }
         }
       }
@@ -4353,6 +5211,28 @@
         }
       }
     },
+    "跳到窗口：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to window: %@"
+          }
+        }
+      }
+    },
+    "运行中 %@ 个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ running"
+          }
+        }
+      }
+    },
     "运行码头时由码头调节音量和亮度，只显示码头的提示，系统自带的不再出现。只对上面打开了的提示生效，需要辅助功能权限。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4360,6 +5240,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While Dockling is running, it changes volume and brightness itself and shows only its own HUD, so the system's no longer appears. Applies only to the HUDs turned on above. Requires Accessibility permission."
+          }
+        }
+      }
+    },
+    "还没打开，点图标启动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not open. Click the icon to launch."
           }
         }
       }
@@ -5097,6 +5988,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Silver"
+          }
+        }
+      }
+    },
+    "需要完全磁盘访问权限才看得见废纸篓" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Disk Access is needed to see the Trash"
           }
         }
       }
@@ -5936,6 +6838,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Another Quick To-do card is already syncing, so this one doesn't"
+          }
+        }
+      }
+    },
+    "另外恢复了 %@ 个程序坞自定义图标。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also restored %@ custom app icons."
           }
         }
       }
@@ -14468,13 +15381,13 @@
         }
       }
     },
-    "保存你的布局、其中的项目以及小组件设置。" : {
+    "保存你的布局、其中的项目、小组件设置和程序坞自定义图标。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save your layouts, their items and widget settings."
+            "value" : "Save your layouts, their items, widget settings and custom app icons."
           }
         }
       }
@@ -16195,13 +17108,13 @@
         }
       }
     },
-    "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限。只会追加小组件，不会删除已有的。" : {
+    "再走一遍首次启动时的引导：选扩展栏位置、按用途添加小组件、检查权限，再由小熊猫介绍三个常用功能。只会追加小组件，不会删除已有的。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Walk through the first-launch guide again: shelf position, widgets by use, permissions. It only adds widgets and never removes existing ones."
+            "value" : "Walk through the first-launch guide again: shelf position, widgets by use, permissions, then the red panda shows three handy features. It only adds widgets and never removes existing ones."
           }
         }
       }
@@ -22420,6 +23333,17 @@
         }
       }
     },
+    "上下拖动列表里的项目即可调整顺序，右键可上移、下移；在扩展栏上直接拖动也行，点按末端的 + 可添加项目。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag items in this list up or down to reorder them, or right-click to move one up or down. You can also drag directly on the shelf. Click + at the end to add items."
+          }
+        }
+      }
+    },
     "在旁边显示" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23036,13 +23960,13 @@
         }
       }
     },
-    "备份包含你的布局、其中的项目以及小组件设置，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。" : {
+    "备份包含你的布局、其中的项目、小组件设置和程序坞自定义图标，但不包含它们指向的应用或文件。恢复时会添加到现有内容中，而不是替换现有内容。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A backup holds your layouts, their items and widget settings, not the apps or files they point to. Restoring adds to what you have rather than replacing it."
+            "value" : "A backup holds your layouts, their items, widget settings and custom app icons, not the apps or files they point to. Restoring adds to what you have rather than replacing it."
           }
         }
       }
@@ -31914,6 +32838,28 @@
         }
       }
     },
+    "收音机收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radio favorites"
+          }
+        }
+      }
+    },
+    "去收音机收藏几个台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite a few stations in Radio"
+          }
+        }
+      }
+    },
     "换个国名试试，比如“日本”或“Japan”。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33560,6 +34506,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Old Draft.key"
+          }
+        }
+      }
+    },
+    "早" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morning"
           }
         }
       }
@@ -45182,6 +46139,16 @@
         }
       }
     },
+    "轻音乐" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Easy Listening"
+          }
+        }
+      }
+    },
     "牛奶" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46986,6 +47953,105 @@
         }
       }
     },
+    "小熊猫带你认识 %@/3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red panda tour %@/3"
+          }
+        }
+      }
+    },
+    "⌘Tab 应用切换器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Tab app switcher"
+          }
+        }
+      }
+    },
+    "把文件拖到扩展栏的文件暂存卡片上，先放着，要用时再拖出来。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files onto the File Shelf card on your shelf. They wait there until you drag them out."
+          }
+        }
+      }
+    },
+    "点一下专注计时卡片开始专注，到点我提醒你歇一会儿。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the Focus Timer card to start focusing. I'll let you know when it's time for a break."
+          }
+        }
+      }
+    },
+    "按 ⌘Tab 看到所有窗口，挑一个直接切过去。默认关着，在设置里打开。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press ⌘Tab to see every window and jump straight to one. It's off by default, turn it on in Settings."
+          }
+        }
+      }
+    },
+    "打开设置 ▸ 快捷键" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings ▸ Shortcuts"
+          }
+        }
+      }
+    },
+    "把文件拖到文件暂存卡片上" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag files onto the File Shelf card"
+          }
+        }
+      }
+    },
+    "专注计时的进度环" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus Timer progress ring"
+          }
+        }
+      }
+    },
+    "按 ⌘Tab 在窗口之间切换" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press ⌘Tab to switch between windows"
+          }
+        }
+      }
+    },
     "码头布局" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47719,6 +48785,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Top"
+          }
+        }
+      }
+    },
+    "移到最后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move to End"
           }
         }
       }
@@ -56852,6 +57929,83 @@
         }
       }
     },
+    "诊断" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics"
+          }
+        }
+      }
+    },
+    "导出诊断信息…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Diagnostics…"
+          }
+        }
+      }
+    },
+    "导出诊断信息" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export diagnostics"
+          }
+        }
+      }
+    },
+    "打包版本、设置摘要、最近 24 小时的日志和崩溃报告，不含激活码、邮箱和密钥。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bundles the version, a settings summary, the last 24 hours of logs and crash reports. No license codes, email addresses or keys."
+          }
+        }
+      }
+    },
+    "诊断信息不含激活码、邮箱和密钥。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics never include license codes, email addresses or keys."
+          }
+        }
+      }
+    },
+    "已导出，可以把这个文件发给开发者。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported. You can send this file to the developer."
+          }
+        }
+      }
+    },
+    "导出失败，请稍后再试。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export failed. Please try again later."
+          }
+        }
+      }
+    },
     "重新读取剪贴板" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -62823,7 +63977,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On-device transcription, no internet"
+            "value" : "Transcribed on this Mac, offline"
           }
         }
       }
@@ -66757,13 +67911,13 @@
         }
       }
     },
-    "河马圆圆" : {
+    "小熊猫圆圆" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Momo the Hippo"
+            "value" : "Momo the Red Panda"
           }
         }
       }
@@ -66867,13 +68021,13 @@
         }
       }
     },
-    "河马圆圆，%@" : {
+    "小熊猫圆圆，%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Momo the Hippo, %@"
+            "value" : "Momo the Red Panda, %@"
           }
         }
       }
@@ -66911,13 +68065,13 @@
         }
       }
     },
-    "点一颗牙拔下来，拔到疼牙河马就合嘴；其余的牙都拔光就赢" : {
+    "点一颗牙拔下来，拔到疼牙小熊猫就合嘴；其余的牙都拔光就赢" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Click a tooth to pull it. Pull the sore one and the hippo snaps shut; pull all the others to win"
+            "value" : "Click a tooth to pull it. Pull the sore one and the red panda snaps shut; pull all the others to win"
           }
         }
       }
@@ -68387,13 +69541,13 @@
         }
       }
     },
-    "不支持 .%@ 格式，请用 wav、ogg、mp3、flac 或 m4a。" : {
+    "不支持 .%@ 格式，请用 wav、mp3、m4a 或 flac。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The .%@ format is not supported. Use wav, ogg, mp3, flac or m4a."
+            "value" : "The .%@ format is not supported. Use wav, mp3, m4a or flac."
           }
         }
       }
@@ -68559,6 +69713,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The archive could not be unzipped. It may be damaged."
+          }
+        }
+      }
+    },
+    "压缩包里的文件太多（超过 1000 个），不像声音包。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive has too many files (over 1,000). This does not look like a sound pack."
+          }
+        }
+      }
+    },
+    "%@ 超过 20 MB，不像按键声音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is over 20 MB, which is too large for a key sound."
+          }
+        }
+      }
+    },
+    "压缩包解压后超过 200 MB，为了安全没有导入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive unzips to more than 200 MB, so it was not imported for safety."
+          }
+        }
+      }
+    },
+    "压缩包里有不安全的路径：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive contains an unsafe path: %@"
+          }
+        }
+      }
+    },
+    "压缩包里有符号链接（%@），为了安全没有导入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive contains a symbolic link (%@), so it was not imported for safety."
+          }
+        }
+      }
+    },
+    "此音效包使用 OGG 格式，暂不支持，请用 WAV/MP3 版本。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This sound pack uses the OGG format, which is not supported yet. Please use the WAV/MP3 version."
           }
         }
       }
@@ -68805,13 +70025,13 @@
         }
       }
     },
-    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤；打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包" : {
+    "快速开关的截图识字、二维码、演示模式、只锁键盘、低电量模式；刘海里的 AI 对话；消息灵动岛（信息、WhatsApp、微信的消息卡，信息可在刘海里回复）；按 App 自动切换输入法；电池充电上限；系统活动超阈值提醒；邮件多账户筛选；录音本机转文字、裁剪和编辑；截图翻译（译文盖在截图上）和贴图；麦克风使用记录保留 30 天；壁纸按早中晚和日出日落自动换；加密货币到价提醒；「算」的汇率完整版（多币种、收藏、固定、记录、小键盘）和卡片轮播收藏；扩展栏悬停显示窗口预览；从小组件库新建应用分组和文件夹分组；程序坞里的 App 换显示图标；快速待办与提醒事项双向同步；快速待办的重复待办（每天、每周、工作日）；钉在桌面不限张数和大号卡片；卜卦每日一签的签历和收藏、签卡分享图、签筒和铜钱皮肤；打字音效青轴以外的 6 款声音和导入 Mechvibes 声音包；专注计时的小熊猫爬竹竿陪伴" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins; the six Typing Sounds beyond Blue switch, and importing Mechvibes sound packs"
+            "value" : "Quick Toggles' Text from Screen, QR Code, Presenting, Lock Keyboard and Low Power Mode; the AI chat in the notch; Message Island (message cards for Messages, WhatsApp and WeChat, with replies to Messages from the notch); per-app input source switching; the battery charge limit; System Activity threshold alerts; Mail account filter; on-device transcription, trimming and editing in Recorder; screenshot translation laid over the screenshot, and pinned screenshots; 30 days of microphone usage history; wallpaper that changes by time of day or with sunrise and sunset; Crypto price alerts; Calc's Full currency page (multi-currency list, favourites, pinning, history and keypad) and rotating favourites; window previews on hover in the shelf; new app groups and folder groups from the widget library; custom icons for apps in the dock; two-way sync between Quick To-do and Reminders; repeating to-dos in Quick To-do (daily, weekly, workdays); unlimited desktop cards and the large card size; the Fortune daily stick's log and favorites, share cards, and stick tube and coin skins; the six Typing Sounds beyond Blue switch, and importing Mechvibes sound packs; the red panda that climbs bamboo beside the Focus Timer"
           }
         }
       }
@@ -68823,6 +70043,160 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every key's time range in config.json lies outside the length of its sound file."
+          }
+        }
+      }
+    },
+    "霓虹灯管" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon tube"
+          }
+        }
+      }
+    },
+    "霓虹灯管（Pro）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon tube (Pro)"
+          }
+        }
+      }
+    },
+    "选电池小组件的样式：经典或霓虹灯管" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the battery widget's style: Classic or Neon tube"
+          }
+        }
+      }
+    },
+    "电量、是否在充电、还能用多久。右键「编辑小组件」可换成霓虹灯管样式（Pro）。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge level, charging state and time left. Right-click and choose Edit Widget to switch to the Neon tube style (Pro)."
+          }
+        }
+      }
+    },
+    "%@充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@"
+          }
+        }
+      }
+    },
+    "还能用 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "未接电源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not plugged in"
+          }
+        }
+      }
+    },
+    "插电动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plug-in animation"
+          }
+        }
+      }
+    },
+    "插电时霓虹动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neon animation when plugging in"
+          }
+        }
+      }
+    },
+    "接上电源时，一滴光从刘海落下，把屏幕上方的霓虹电量数字从下往上灌亮，约 2.5 秒；之后刘海旁留一个电量小胶囊，几秒后淡出。全屏、屏幕共享、演示模式时不播，30 秒内反复插拔只播一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you plug in, a drop of light falls from the notch and fills a neon battery number near the top of the screen from the bottom up, for about 2.5 seconds; a small charge capsule then stays beside the notch for a few seconds before fading. It does not play in full screen, during screen sharing or in Presenting mode, and plugging in again within 30 seconds plays it only once."
+          }
+        }
+      }
+    },
+    "%@ 小时 %@ 分充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@h %@m"
+          }
+        }
+      }
+    },
+    "%@ 分钟后充满" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full in %@ min"
+          }
+        }
+      }
+    },
+    "数字 Wi-Fi；像素电池、能量粒子、小熊猫抱电池、霓虹灯管；插电时的霓虹动画" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numbers Wi-Fi; Pixel battery, Energy particles, Red panda hug, Neon tube; the neon plug-in animation"
+          }
+        }
+      }
+    },
+    "像素、粒子、小熊猫、霓虹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pixel, particles, red panda, neon"
           }
         }
       }

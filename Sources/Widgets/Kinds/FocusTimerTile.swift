@@ -164,6 +164,8 @@ struct FocusTimerTile: View {
                 }
             }
         }
+        // 专注完成时小熊猫朝这张卡片看一眼：登记卡片在屏幕上的位置。
+        .background(DesktopPetCardSpot(id: instance.id, enabled: !context.isPreview))
     }
 
     /// Only ever as big as itself: the card's own click has to reach the shelf,

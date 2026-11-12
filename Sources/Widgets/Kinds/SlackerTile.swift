@@ -42,8 +42,10 @@ private struct SlackerTileBody: View, Equatable {
     var body: some View {
         let settings = SlackerClock.Settings(config: config)
         let reading = SlackerClock.reading(now: now, settings: settings, known: known)
-        let look = SlackerLook(config: config, art: reading.art)
-        WidgetSurface(fill: look.background, image: look.image, scrim: look.image == nil ? 0 : 0.18) {
+        // 扩展栏上和其他小组件一样走液态玻璃底、跟面板字色；自选的底色、背景图和字色
+        // 只在点开后的面板大表盘里用，不然一块纯色卡片在码头上很突兀。
+        let look = SlackerLook(config: config, art: reading.art).plain()
+        WidgetSurface {
             ZStack {
                 if SlackerClock.look(config) == .liquid {
                     SlackerWater(phase: reading.phase, level: SlackerClock.waterLevel(reading.phase, settings: settings),
@@ -177,10 +179,10 @@ struct SlackerCellView: View {
         .frame(width: metrics.cellWidth, height: metrics.cellHeight)
         .background {
             RoundedRectangle(cornerRadius: metrics.cellHeight * 0.26, style: .continuous)
-                .fill(.white.opacity(0.18))
+                .fill(look.isPlain ? Color.panelFill : .white.opacity(0.18))
                 .overlay {
                     RoundedRectangle(cornerRadius: metrics.cellHeight * 0.26, style: .continuous)
-                        .strokeBorder(.white.opacity(0.28), lineWidth: 0.5)
+                        .strokeBorder(look.isPlain ? Color.panelStroke : .white.opacity(0.28), lineWidth: 0.5)
                 }
         }
     }
@@ -276,12 +278,22 @@ struct SlackerLook {
     var image: NSImage?
     var text: Color
     var fontChoice: SlackerClock.FontChoice
+    /// 扩展栏卡片用：不画自己的底色，字和小格跟面板配色走，浅色深色都看得清。
+    var isPlain = false
 
     init(config: WidgetConfig, art: SlackerClock.Art) {
         background = Color(hex: SlackerClock.backgroundHex(config, art: art))
         image = SlackerClock.backgroundImagePath(config).flatMap(SlackerArt.background)
         text = Color(hex: SlackerClock.textHex(config))
         fontChoice = SlackerClock.font(config)
+    }
+
+    func plain() -> SlackerLook {
+        var copy = self
+        copy.isPlain = true
+        copy.image = nil
+        copy.text = .panelPrimary
+        return copy
     }
 
     func font(size: CGFloat, weight: Font.Weight) -> Font {
@@ -400,5 +412,19 @@ enum SlackerSamples {
     /// 截到整分钟。
     static func minute(_ date: Date) -> Date {
         Date(timeIntervalSinceReferenceDate: (date.timeIntervalSinceReferenceDate / 60).rounded(.down) * 60)
+    }
+}
+
+/// 纯色底上的一层玻璃光：顶上一抹亮、底下略压暗，让整块颜色读起来像玻璃里的颜色，
+/// 不再是一块平涂的色块，和旁边的液态玻璃卡片放在一起不突兀。
+struct SlackerSheen: View {
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.06), .black.opacity(0.10)],
+                                 startPoint: .top, endPoint: .bottom))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }

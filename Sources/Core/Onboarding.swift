@@ -62,8 +62,10 @@ public enum OnboardingUse: String, CaseIterable, Sendable, Hashable {
 }
 
 /// 新手引导的步骤，顺序即进度条的顺序。
+///
+/// 布置好以后，小熊猫用三步各讲一个好用的功能：文件暂存、专注计时、⌘Tab 应用切换器。
 public enum OnboardingStep: Int, CaseIterable, Sendable {
-    case welcome, position, uses, permissions, building, done
+    case welcome, position, uses, permissions, building, fileShelf, focus, switcher, done
 
     /// 分段进度条点亮到第几段（从 1 开始）。
     public var filledSegments: Int { rawValue + 1 }
@@ -71,8 +73,14 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
     public var previous: OnboardingStep? { OnboardingStep(rawValue: rawValue - 1) }
     public var next: OnboardingStep? { OnboardingStep(rawValue: rawValue + 1) }
 
+    /// 小熊猫讲解功能的三步。
+    public var isFeatureTip: Bool { self == .fileShelf || self == .focus || self == .switcher }
+
     /// 布置中和完成两步不能返回：布局已经生成，返回只会让人以为能撤销。
-    public var canGoBack: Bool { previous != nil && self != .building && self != .done }
+    /// 讲解的第一步也不能退回“布置中”；讲解之间可以来回翻。
+    public var canGoBack: Bool {
+        previous != nil && self != .building && self != .done && self != .fileShelf
+    }
 }
 
 /// 新手引导的纯逻辑：什么时候弹、选了什么就放什么、需要哪些权限。

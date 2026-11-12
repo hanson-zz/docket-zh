@@ -170,8 +170,8 @@ public enum RadioPlaylist {
 
 /// 试连一条地址时，看回来的头几百字节算不算音频。
 public enum RadioProbe {
-    /// 添加电台时试连等多久。
-    public static let addTimeout: Double = 5
+    /// 添加电台时试连等多久。国外电台从国内连常要五六秒，留到 8 秒。
+    public static let addTimeout: Double = 8
     /// 收藏检查时每条地址等多久。
     public static let checkTimeout: Double = 8
     /// 收藏检查同时连几条。

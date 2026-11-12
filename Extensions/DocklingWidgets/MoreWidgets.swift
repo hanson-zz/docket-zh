@@ -236,37 +236,56 @@ struct BatteryEntry: TimelineEntry {
     let date: Date
     let words: Words
     let reading: BatteryReading?
+    /// 右键「编辑小组件」里选的样式。
+    var style: BatteryWidgetStyle = .classic
+    /// 码头 Pro 已解锁（快照里主 App 写的 `isPro`；小组件库里的预览照样画霓虹）。
+    var isPro = false
+
+    /// 真正画霓虹灯管：选了它、而且解锁了。
+    var showsNeon: Bool { style == .neon && isPro }
+    /// 选了霓虹灯管但没解锁：画经典，右上角带 Pro 角标。
+    var showsProBadge: Bool { style == .neon && !isPro }
 }
 
-struct BatteryProvider: TimelineProvider {
+struct BatteryProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> BatteryEntry {
         BatteryEntry(date: .now, words: Words(lang: Shared.language(nil)),
                      reading: BatteryReading(percent: 76, charging: false, plugged: false, minutes: 312))
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (BatteryEntry) -> Void) {
-        completion(entry())
+    func snapshot(for configuration: BatteryConfigIntent, in context: Context) async -> BatteryEntry {
+        entry(configuration, preview: context.isPreview)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<BatteryEntry>) -> Void) {
-        completion(Timeline(entries: [entry()], policy: .after(.now.addingTimeInterval(10 * 60))))
+    func timeline(for configuration: BatteryConfigIntent, in context: Context) async -> Timeline<BatteryEntry> {
+        Timeline(entries: [entry(configuration, preview: false)], policy: .after(.now.addingTimeInterval(10 * 60)))
     }
 
-    private func entry() -> BatteryEntry {
-        BatteryEntry(date: .now, words: Words(lang: Shared.language(Shared.snapshot())), reading: BatteryReading.read())
+    private func entry(_ configuration: BatteryConfigIntent, preview: Bool) -> BatteryEntry {
+        let snapshot = Shared.snapshot()
+        return BatteryEntry(date: .now, words: Words(lang: Shared.language(snapshot)), reading: BatteryReading.read(),
+                            style: configuration.style, isPro: preview || snapshot?.isPro == true)
     }
 }
 
 struct BatteryWidgetView: View {
     var entry: BatteryEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var scheme
 
     private var words: Words { entry.words }
 
     var body: some View {
         Group {
             if let reading = entry.reading {
-                content(reading)
+                if entry.showsNeon {
+                    neon(reading)
+                } else {
+                    content(reading)
+                        .overlay(alignment: .topTrailing) {
+                            if entry.showsProBadge { WidgetProBadge() }
+                        }
+                }
             } else {
                 EmptyHint(words: words, line: words("这台 Mac 没有电池"))
             }
@@ -285,10 +304,14 @@ struct BatteryWidgetView: View {
         return words("使用电池")
     }
 
+    private func duration(_ minutes: Int?) -> String? {
+        guard let time = BatteryNeon.hoursMinutes(minutes) else { return nil }
+        return time.hours > 0 ? words("%@ 小时 %@ 分", "\(time.hours)", "\(time.minutes)")
+                              : words("%@ 分钟", "\(time.minutes)")
+    }
+
     private func remaining(_ reading: BatteryReading) -> String? {
-        guard let minutes = reading.minutes else { return nil }
-        let time = minutes >= 60 ? words("%@ 小时 %@ 分", "\(minutes / 60)", "\(minutes % 60)")
-                                 : words("%@ 分钟", "\(minutes)")
+        guard let time = duration(reading.minutes) else { return nil }
         return reading.charging ? words("%@ 后充满", time) : words("剩余 %@", time)
     }
 
@@ -326,15 +349,148 @@ struct BatteryWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
+
+    // MARK: 霓虹灯管（Pro）
+
+    private var dark: Bool { scheme == .dark }
+
+    private func neonColor(_ reading: BatteryReading) -> Color {
+        BatteryNeon.color(percent: reading.percent, dark: dark).neonColor
+    }
+
+    /// 大标题：充电中 / 已充满 / 已接通电源 / 使用电池。
+    private func neonTitle(_ reading: BatteryReading) -> String {
+        if reading.charging { return words("充电中") }
+        if reading.plugged { return reading.percent >= 95 ? words("已充满") : words("已接通电源") }
+        return words("使用电池")
+    }
+
+    /// 时间那一句：「1 小时 12 分充满」/「还能用 3 小时 20 分」，系统还在估算时没有。
+    private func neonTime(_ reading: BatteryReading) -> String? {
+        guard let time = duration(reading.minutes) else { return nil }
+        if reading.charging { return words("%@充满", time) }
+        return reading.plugged ? nil : words("还能用 %@", time)
+    }
+
+    private func neonCaption(_ reading: BatteryReading) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: reading.charging ? "bolt.fill" : "battery.75percent")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(neonColor(reading))
+                .widgetAccentable()
+            Text(verbatim: words("电池"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func neonDigits(_ reading: BatteryReading, size: CGFloat) -> some View {
+        BatteryNeonDigits(text: "\(reading.percent)", percent: reading.percent,
+                          fraction: BatteryNeon.fillFraction(percent: reading.percent),
+                          fontSize: reading.percent >= 100 ? size * 0.8 : size)
+            .background {
+                // 数字后面一团很淡的同色光，像灯管把玻璃照亮了一点。
+                Ellipse()
+                    .fill(neonColor(reading).opacity(dark ? 0.16 : 0.1))
+                    .blur(radius: size * 0.35)
+            }
+    }
+
+    @ViewBuilder
+    private func neon(_ reading: BatteryReading) -> some View {
+        if family == .systemSmall {
+            VStack(alignment: .leading, spacing: 2) {
+                neonCaption(reading)
+                Spacer(minLength: 0)
+                neonDigits(reading, size: 60)
+                    .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
+                Text(verbatim: [neonTitle(reading), neonTime(reading)].compactMap { $0 }.joined(separator: " · "))
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: 12) {
+                neonDigits(reading, size: 74)
+                    .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: 4) {
+                    neonCaption(reading)
+                    Spacer(minLength: 0)
+                    Text(verbatim: neonTitle(reading))
+                        .font(.system(size: 22, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    if let time = neonTime(reading) {
+                        Text(verbatim: time)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                    }
+                    Spacer(minLength: 0)
+                    neonBar(reading)
+                    HStack(spacing: 6) {
+                        Text(verbatim: reading.plugged ? words("已接通电源") : words("未接电源"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        Text(verbatim: "\(reading.percent)%")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    /// 电量条：灰玻璃槽里一截同色的灯管，带一点光。
+    private func neonBar(_ reading: BatteryReading) -> some View {
+        let color = neonColor(reading)
+        let core = BatteryNeon.core(BatteryNeon.color(percent: reading.percent, dark: dark), dark: dark).neonColor
+        return GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(.quaternary)
+                Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+                Capsule().fill(color)
+                    .overlay(alignment: .top) {
+                        Capsule().fill(core.opacity(0.9)).frame(height: 2).padding(.horizontal, 4).padding(.top, 2)
+                    }
+                    .frame(width: max(10, proxy.size.width * BatteryNeon.fillFraction(percent: reading.percent)))
+                    .shadow(color: color.opacity(dark ? 0.7 : 0.4), radius: 4)
+                    .widgetAccentable()
+            }
+        }
+        .frame(height: 9)
+    }
+}
+
+/// 小组件上的 Pro 角标（扩展里没有主 App 的 ProBadge）：小熊猫橙的小胶囊，13pt。
+struct WidgetProBadge: View {
+    var body: some View {
+        Text(verbatim: "Pro")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Look.panda))
+            .fixedSize()
+            .accessibilityLabel(Text(verbatim: "Pro"))
+    }
 }
 
 struct BatteryWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: SystemWidgetStore.kindPrefix + "battery", provider: BatteryProvider()) { entry in
+        AppIntentConfiguration(kind: SystemWidgetStore.kindPrefix + "battery", intent: BatteryConfigIntent.self,
+                               provider: BatteryProvider()) { entry in
             BatteryWidgetView(entry: entry)
         }
         .configurationDisplayName("码头 · 电池")
-        .description("电量、是否在充电、还能用多久。")
+        .description("电量、是否在充电、还能用多久。右键「编辑小组件」可换成霓虹灯管样式（Pro）。")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

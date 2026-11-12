@@ -115,8 +115,8 @@ final class ProUnlockCelebrationTests: XCTestCase {
             XCTAssertTrue(all.contains(item), "\(item) 不在 Pro 清单里")
         }
         XCTAssertEqual(ProUnlockHighlights.overflowCount(), expected - 5)
-        // 今天的清单：14 种小组件（Codex 用量改成精版是 Pro）、5 个工具、12 个设置（含截图翻译、贴图、消息灵动岛、输入法规则、桌面卡片、上下翻页、换 App 图标、打字音效）、14 类外观样式（含 Codex 精版），减去 5 个。
-        XCTAssertEqual(ProUnlockHighlights.overflowCount(), 40)
+        // 今天的清单：14 种小组件（Codex 用量改成精版是 Pro）、5 个工具、13 个设置（含截图翻译、贴图、消息灵动岛、输入法规则、桌面卡片、上下翻页、换 App 图标、打字音效、专注陪伴）、14 类外观样式（含 Codex 精版），减去 5 个。
+        XCTAssertEqual(ProUnlockHighlights.overflowCount(), 41)
         XCTAssertEqual(ProUnlockHighlights.overflowCount(total: 3, shown: 5), 0)
         XCTAssertEqual(ProUnlockHighlights.overflowCount(total: 7, shown: -1), 7)
     }
