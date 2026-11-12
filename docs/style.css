@@ -290,3 +290,9 @@ footer .flinks a{text-decoration:none}
 .cmp th .betatag{margin-left:2px;font-size:10px}
 .cmp .cell-t{display:block;font-size:12px;font-weight:600;line-height:1.35;color:var(--fg)}
 @media (max-width:820px){.feat-grid{grid-template-columns:1fr}.feat.wide{grid-template-columns:1fr}}
+
+/* Keep the real shelf visible beside the download decision. */
+.hero img.icon{width:80px;height:80px}
+.hero .req-line a{margin-inline-start:8px;font-size:14px}
+.hero .demo-frame{aspect-ratio:auto;padding:44px 24px 24px}
+@media (max-width:820px){.hero .demo-frame{padding:38px 12px 14px}}
