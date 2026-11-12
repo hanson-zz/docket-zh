@@ -352,6 +352,7 @@ public enum DesktopPetNews: Equatable, Sendable {
     case focusDone
     case radio(String)
     case plugged(percent: Int)
+    case unplugged(percent: Int)
     case charged
     case lowBattery(percent: Int)
     case water
@@ -362,6 +363,7 @@ public enum DesktopPetNews: Equatable, Sendable {
         case .focusStarted, .focusFiveLeft, .focusDone: "focus"
         case .radio: "radio"
         case .plugged, .charged: "power"
+        case .unplugged: "unplug"
         case .lowBattery: "low"
         case .water: "water"
         }
@@ -374,6 +376,7 @@ public enum DesktopPetNews: Equatable, Sendable {
         case .focusDone: tr("专注完成，休息一下吧")
         case .radio(let name): tr("正在播放 · \(name)")
         case .plugged(let percent): tr("充电中 · \(percent)%")
+        case .unplugged(let percent): tr("拔掉电源了 · \(percent)%")
         case .charged: tr("充满了")
         case .lowBattery(let percent): tr("电量低 · \(percent)%，记得充电")
         case .water: tr("该喝水啦")
@@ -415,7 +418,8 @@ public enum DesktopPetNewsDesk {
         return nil
     }
 
-    /// 电池两次读数之间：插上电、充满、掉到低电量。第一次读（`old` 是 nil）什么都不说。
+    /// 电池两次读数之间：插上电、拔掉电、充满、掉到低电量。第一次读（`old` 是 nil）什么都不说。
+    /// 拔电时已经是低电量就只说低电量。
     public static func battery(from old: DesktopPetPower?, to new: DesktopPetPower) -> DesktopPetNews? {
         guard let old else { return nil }
         if new.onPower, !old.onPower { return .plugged(percent: new.percent) }
@@ -423,6 +427,7 @@ public enum DesktopPetNewsDesk {
         if !new.onPower, new.percent <= lowBattery, old.onPower || old.percent > lowBattery {
             return .lowBattery(percent: new.percent)
         }
+        if !new.onPower, old.onPower { return .unplugged(percent: new.percent) }
         return nil
     }
 

@@ -1135,6 +1135,8 @@ final class DesktopPetController: NSObject {
             switch news {
             case .plugged:
                 current = DesktopPetBrain.plugged(current, toward: notchAlong(), now: now)
+            case .unplugged:
+                current = DesktopPetBrain.noticed(current, style: track?.style ?? .stroll, now: now)
             case .lowBattery:
                 current = DesktopPetBrain.droop(current, now: now)
             case .charged, .focusDone:
@@ -1186,6 +1188,7 @@ final class DesktopPetController: NSObject {
             announce(news)
         }
         if let power, let news = DesktopPetNewsDesk.battery(from: lastPower, to: power) {
+            DockLog.notice(.pet, "power news \(news.kind) \(power.percent)% shown=\(shown) bubbles=\(settings.bubbles)")
             announce(news)
         }
     }

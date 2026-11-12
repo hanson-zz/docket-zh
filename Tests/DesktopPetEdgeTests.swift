@@ -339,6 +339,12 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertEqual(DesktopPetNewsDesk.battery(from: DesktopPetPower(onPower: true, percent: 15),
                                                   to: DesktopPetPower(onPower: false, percent: 15)),
                        .lowBattery(percent: 15), "拔掉电源时已经低电量")
+        XCTAssertEqual(DesktopPetNewsDesk.battery(from: DesktopPetPower(onPower: true, percent: 80),
+                                                  to: DesktopPetPower(onPower: false, percent: 80)),
+                       .unplugged(percent: 80))
+        XCTAssertEqual(DesktopPetNews.unplugged(percent: 80).text, "拔掉电源了 · 80%")
+        XCTAssertNotEqual(DesktopPetNews.unplugged(percent: 80).kind, DesktopPetNews.plugged(percent: 80).kind,
+                          "插上和拔掉各算各的，来回插拔都有反应")
         XCTAssertNil(DesktopPetNewsDesk.battery(from: DesktopPetPower(onPower: false, percent: 18),
                                                 to: DesktopPetPower(onPower: false, percent: 17)), "只说一次")
     }

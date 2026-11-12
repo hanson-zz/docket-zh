@@ -2586,6 +2586,17 @@
         }
       }
     },
+    "拔掉电源了 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unplugged · %@%%"
+          }
+        }
+      }
+    },
     "充满了" : {
       "extractionState" : "manual",
       "localizations" : {
