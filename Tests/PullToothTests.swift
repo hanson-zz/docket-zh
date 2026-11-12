@@ -285,7 +285,7 @@ final class PullToothTests: XCTestCase {
         game.pull(3, now: 1)
         XCTAssertEqual(PullTooth.statusLine(game), "啊呜！拔到疼牙了")
         XCTAssertEqual(PullTooth.recordLine(best: 9, wins: 2), "最高 9 颗 · 赢 2 局")
-        XCTAssertEqual(PullTooth.animalName, "河马圆圆")
+        XCTAssertEqual(PullTooth.animalName, "小熊猫圆圆")
     }
 
     // MARK: 颜色
@@ -313,7 +313,8 @@ final class PullToothTests: XCTestCase {
             XCTAssertLessThanOrEqual(hit.maxX, layout.width + 0.001, "第 \(index) 颗点击区不出右边")
             XCTAssertLessThanOrEqual(hit.maxY, layout.height)
         }
-        XCTAssertGreaterThanOrEqual(layout.smallestHitSide, 24, "面板里每颗牙的点击区至少 24pt")
+        XCTAssertGreaterThanOrEqual(layout.smallestHitSide, 14, "面板里每颗牙的点击区至少 14pt 宽")
+        XCTAssertGreaterThanOrEqual(layout.hit(6).height, 24, "点击区够高")
     }
 
     func testTeethSitInsideTheirHitAreasWithoutOverlap() {
@@ -352,6 +353,23 @@ final class PullToothTests: XCTestCase {
         // 合嘴时上半边往下移，上牙最低处仍在河马框里。
         XCTAssertLessThanOrEqual(layout.tooth(0).maxY + layout.closeTravel, layout.height)
         XCTAssertGreaterThan(layout.closeTravel, 0)
+    }
+
+    func testMouthCropZoomsIn() {
+        // 小号、中号桌面卡片只画嘴附近：同样宽，牙大一倍，点击区仍在框里。
+        let full = ToothLayout(width: 136), mouth = ToothLayout(width: 136, crop: .mouth)
+        XCTAssertEqual(mouth.pitch(upper: false), full.pitch(upper: false) * 2, accuracy: 0.0001)
+        for i in 0..<12 {
+            let hit = mouth.hit(i)
+            XCTAssertGreaterThanOrEqual(hit.x, 0)
+            XCTAssertGreaterThanOrEqual(hit.y, 0)
+            XCTAssertLessThanOrEqual(hit.maxX, mouth.width + 0.001)
+            XCTAssertLessThanOrEqual(hit.maxY, mouth.height + 0.001)
+        }
+        XCTAssertEqual(mouth.artSide, 272, accuracy: 0.0001)
+        XCTAssertEqual(mouth.artOrigin.x, -68, accuracy: 0.0001)
+        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .small).crop, .mouth)
+        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .large).crop, .full)
     }
 
     func testFitting() {

@@ -150,7 +150,7 @@ enum ToothSoundPlayer {
 
 // MARK: - 颜色
 
-/// 河马是固定的角色配色（浅色、深色玻璃上都一样），不铺背景、不发光；只有大数字用强调色。
+/// 牙和小熊猫是固定的角色配色（浅色、深色玻璃上都一样），不铺背景、不发光；只有大数字用强调色。
 enum ToothStyle {
     static let body = Color(hex: "#B9A8E6")
     static let bodyShade = Color(hex: "#A592DA")
@@ -167,6 +167,8 @@ enum ToothStyle {
     static let nostril = Color(hex: "#8A76C8")
     static let cheek = Color(hex: "#F58FB0")
     static let ouch = Color(hex: "#E5484D")
+    /// 拔掉的牙在牙床上留下的坑。
+    static let pit = Color(hex: "#B83A55").opacity(0.55)
 
     /// 大数字：浅色玻璃上压深到 4.5:1 以上，深色玻璃上提亮（Core 的 PullTooth.accent*）。
     static var accent: Color {
@@ -183,11 +185,13 @@ enum ToothStyle {
     static var ouchText: Color { Color(hex: "#E5484D").panelReadable }
 }
 
-// MARK: - 河马
+// MARK: - 小熊猫
 
-/// 张着大嘴的小河马「圆圆」，全用代码画，按 `ToothLayout` 的比例摆。能点时上面盖一层透明的
-/// AppKit 点击层（面板、桌面卡片没在前台时第一下也算数），按 `ToothLayout.hitIndex` 认是哪颗牙。
-/// 拔到疼牙时上半边往下合嘴再抖两下；「减少动态效果」打开时直接换成合嘴，不抖、不飞。
+/// 张着大嘴的小熊猫「圆圆」：身子是用户画的素材（tooth-panda-*.png，正方形），嘴里的牙用代码画，
+/// 按 `ToothLayout` 的比例摆；`.mouth` 只画嘴附近那一块。能点时上面盖一层透明的 AppKit 点击层
+/// （面板、桌面卡片没在前台时第一下也算数），按 `ToothLayout.hitIndex` 认是哪颗牙。
+/// 平时张嘴；鼠标停在一颗牙上时闭眼忍着；拔到疼牙换成合嘴含泪那张再抖两下；赢了换成欢呼那张。
+/// 「减少动态效果」打开时直接换图，不抖、不飞。
 struct HippoArt: View {
     var game: ToothGame
     var layout: ToothLayout
@@ -203,19 +207,28 @@ struct HippoArt: View {
     private var W: CGFloat { CGFloat(layout.width) }
     private func u(_ fraction: Double) -> CGFloat { CGFloat(layout.value(fraction)) }
 
+    private var artName: String {
+        switch game.status {
+        case .bitten: "tooth-panda-bite"
+        case .won: "tooth-panda-cheer"
+        case .ready, .playing:
+            hovered != nil && interactive ? "tooth-panda-open-2" : "tooth-panda-open-1"
+        }
+    }
+
     var body: some View {
-        let drop = closed ? CGFloat(layout.closeTravel) : 0
         let amplitude = W * 0.025
         ZStack(alignment: .topLeading) {
-            lowerJaw
-            mouth(drop: drop)
-            lowerTeeth
-            upperHalf
-                .offset(y: drop)
+            art
+            if game.status == .ready || game.status == .playing {
+                ForEach(0..<PullTooth.toothCount, id: \.self) { index in
+                    toothSlot(index, upper: index < PullTooth.perRow)
+                }
+            }
             if showsOuch && closed { ouchBubble }
         }
         .frame(width: W, height: CGFloat(layout.height), alignment: .topLeading)
-        .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.62), value: closed)
+        .clipped()
         .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: game.pulled)
         .keyframeAnimator(initialValue: 0.0, trigger: shakeTrigger) { view, x in
             view.offset(x: CGFloat(x) * amplitude)
@@ -241,7 +254,8 @@ struct HippoArt: View {
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):
-                        hovered = layout.hitIndex(x: Double(point.x), y: Double(point.y))
+                        let index = layout.hitIndex(x: Double(point.x), y: Double(point.y))
+                        hovered = index.flatMap { game.isInMouth($0) ? $0 : nil }
                     case .ended:
                         hovered = nil
                     }
@@ -249,7 +263,7 @@ struct HippoArt: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tr("河马圆圆，\(PullTooth.statusLine(game))"))
+        .accessibilityLabel(tr("小熊猫圆圆，\(PullTooth.statusLine(game))"))
         .accessibilityValue(tr("这局已拔 \(game.pulledCount) 颗"))
         .accessibilityAction(named: Text(tr("拔一颗牙"))) {
             guard interactive, !game.isOver,
@@ -264,136 +278,16 @@ struct HippoArt: View {
         return game.endedAt ?? 1
     }
 
-    // MARK: 下巴和嘴里
-
-    private var lowerJaw: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: u(0.15), style: .continuous)
-                .fill(ToothStyle.body)
-                .overlay {
-                    RoundedRectangle(cornerRadius: u(0.15), style: .continuous)
-                        .strokeBorder(ToothStyle.edge, lineWidth: line)
-                }
-                .frame(width: u(0.84), height: u(0.32))
-                .offset(x: u(0.08), y: u(0.50))
-            // 腮红。
-            ForEach([0.09, 0.79], id: \.self) { x in
-                Ellipse()
-                    .fill(ToothStyle.cheek.opacity(0.55))
-                    .frame(width: u(0.12), height: u(0.045))
-                    .offset(x: u(x), y: u(0.765))
-            }
-        }
-    }
-
-    private func mouth(drop: CGFloat) -> some View {
-        let top = u(0.38) + drop
-        let bottom = u(0.765)
-        return ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: u(0.1), style: .continuous)
-                .fill(ToothStyle.mouth)
-                .frame(width: u(0.70), height: max(u(0.04), bottom - top))
-                .offset(x: u(0.15), y: top)
-            Ellipse()
-                .fill(ToothStyle.tongue)
-                .frame(width: u(0.40), height: u(0.10))
-                .offset(x: u(0.30), y: u(0.64))
-                .opacity(closed ? 0 : 1)
-            // 下牙床。
-            Capsule()
-                .fill(ToothStyle.gum)
-                .frame(width: u(0.64), height: u(0.06))
-                .offset(x: u(0.18), y: u(0.685))
-        }
-    }
-
-    private var lowerTeeth: some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(PullTooth.perRow..<PullTooth.toothCount, id: \.self) { index in
-                toothSlot(index, upper: false)
-            }
-        }
-    }
-
-    // MARK: 上半边（合嘴时一起往下）
-
-    private var upperHalf: some View {
-        ZStack(alignment: .topLeading) {
-            // 耳朵。
-            ForEach([0.17, 0.70], id: \.self) { x in
-                Ellipse()
-                    .fill(ToothStyle.body)
-                    .overlay { Ellipse().strokeBorder(ToothStyle.edge, lineWidth: line) }
-                    .overlay {
-                        Ellipse().fill(ToothStyle.earInner)
-                            .frame(width: u(0.07), height: u(0.055))
-                    }
-                    .frame(width: u(0.13), height: u(0.11))
-                    .offset(x: u(x), y: u(0.02))
-            }
-            // 头：上牙床和鼻子。
-            RoundedRectangle(cornerRadius: u(0.17), style: .continuous)
-                .fill(ToothStyle.body)
-                .overlay {
-                    RoundedRectangle(cornerRadius: u(0.17), style: .continuous)
-                        .strokeBorder(ToothStyle.edge, lineWidth: line)
-                }
-                .frame(width: u(0.92), height: u(0.34))
-                .offset(x: u(0.04), y: u(0.08))
-            // 头顶两个眼包。
-            ForEach([0.255, 0.575], id: \.self) { x in
-                Circle()
-                    .fill(ToothStyle.body)
-                    .overlay {
-                        Circle().trim(from: 0.5, to: 1).stroke(ToothStyle.edge, lineWidth: line)
-                    }
-                    .frame(width: u(0.17), height: u(0.17))
-                    .offset(x: u(x), y: u(0.035))
-            }
-            eyes
-            // 鼻孔。
-            ForEach([0.365, 0.565], id: \.self) { x in
-                Ellipse()
-                    .fill(ToothStyle.nostril)
-                    .frame(width: u(0.07), height: u(0.045))
-                    .offset(x: u(x), y: u(0.24))
-            }
-            // 上牙床。
-            Capsule()
-                .fill(ToothStyle.gum)
-                .frame(width: u(0.66), height: u(0.06))
-                .offset(x: u(0.17), y: u(0.385))
-            ForEach(0..<PullTooth.perRow, id: \.self) { index in
-                toothSlot(index, upper: true)
-            }
-        }
-    }
-
-    @ViewBuilder private var eyes: some View {
-        let size = u(0.075)
-        ForEach([0.34, 0.66], id: \.self) { cx in
-            Group {
-                switch game.status {
-                case .bitten:
-                    // 用力合嘴：眯成「> <」。
-                    SquintEye(left: cx < 0.5)
-                        .stroke(ToothStyle.eye, style: StrokeStyle(lineWidth: max(1.2, u(0.016)), lineCap: .round,
-                                                                   lineJoin: .round))
-                case .won:
-                    // 笑眯眯：弯弯的眼。
-                    HappyEye()
-                        .stroke(ToothStyle.eye, style: StrokeStyle(lineWidth: max(1.2, u(0.016)), lineCap: .round))
-                case .ready, .playing:
-                    Circle().fill(ToothStyle.eye)
-                        .overlay(alignment: .topTrailing) {
-                            Circle().fill(Color.white)
-                                .frame(width: size * 0.36, height: size * 0.36)
-                                .offset(x: -size * 0.12, y: size * 0.12)
-                        }
-                }
-            }
-            .frame(width: size, height: size)
-            .offset(x: u(cx) - size / 2, y: u(0.12) - size / 2)
+    /// 整张素材按 `layout.artSide` 画，`.mouth` 时往左上挪，框外的裁掉。
+    @ViewBuilder private var art: some View {
+        let side = CGFloat(layout.artSide)
+        let origin = layout.artOrigin
+        if let image = ToothArtImages.image(artName) {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: side, height: side)
+                .offset(x: CGFloat(origin.x), y: CGFloat(origin.y))
         }
     }
 
@@ -406,17 +300,18 @@ struct HippoArt: View {
         let pullTransition: AnyTransition = reduceMotion
             ? AnyTransition.opacity
             : AnyTransition.asymmetric(insertion: AnyTransition.scale(scale: 0.6).combined(with: .opacity),
-                                       removal: AnyTransition.offset(y: upper ? u(0.08) : -u(0.08))
+                                       removal: AnyTransition.offset(y: upper ? CGFloat(layout.closeTravel)
+                                                                              : -CGFloat(layout.closeTravel))
                                            .combined(with: .opacity)
                                            .combined(with: .scale(scale: 1.25)))
         ZStack(alignment: .topLeading) {
-            // 拔掉的地方留一个小坑。
+            // 拔掉的地方在牙床上留一个小坑。
             if !game.isInMouth(index) {
                 Ellipse()
-                    .fill(ToothStyle.mouth.opacity(0.55))
-                    .frame(width: CGFloat(box.width) * 0.6, height: u(0.022))
+                    .fill(ToothStyle.pit)
+                    .frame(width: CGFloat(box.width) * 0.6, height: max(2, u(0.018)))
                     .offset(x: CGFloat(box.x + box.width * 0.2),
-                            y: upper ? u(0.41) : u(0.69))
+                            y: upper ? CGFloat(box.y) + u(0.004) : CGFloat(box.maxY) - u(0.022))
             }
             if game.isInMouth(index) {
                 ToothShape(upper: upper)
@@ -429,15 +324,16 @@ struct HippoArt: View {
                                 .foregroundStyle(ToothStyle.ouch)
                         }
                     }
+                    .shadow(color: .black.opacity(0.12), radius: max(0.5, u(0.006)), y: upper ? 1 : -1)
                     .frame(width: CGFloat(box.width), height: CGFloat(box.height))
                     .offset(x: CGFloat(box.x),
-                            y: CGFloat(box.y) + (lifted ? (upper ? u(0.012) : -u(0.012)) : 0))
+                            y: CGFloat(box.y) + (lifted ? (upper ? u(0.01) : -u(0.01)) : 0))
                     .transition(pullTransition)
             }
         }
     }
 
-    private var line: CGFloat { max(0.5, u(0.006)) }
+    private var line: CGFloat { max(0.5, u(0.005)) }
 
     // MARK: 啊呜
 
@@ -454,6 +350,20 @@ struct HippoArt: View {
             .transition(reduceMotion
                         ? AnyTransition.opacity
                         : AnyTransition.scale(scale: 0.5, anchor: .bottomLeading).combined(with: .opacity))
+    }
+}
+
+/// 拔牙小熊猫的四张素材，读一次存着。
+@MainActor
+enum ToothArtImages {
+    private static var cache: [String: NSImage] = [:]
+
+    static func image(_ name: String) -> NSImage? {
+        if let hit = cache[name] { return hit }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        cache[name] = image
+        return image
     }
 }
 

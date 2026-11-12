@@ -67911,13 +67911,13 @@
         }
       }
     },
-    "河马圆圆" : {
+    "小熊猫圆圆" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Momo the Hippo"
+            "value" : "Momo the Red Panda"
           }
         }
       }
@@ -68021,13 +68021,13 @@
         }
       }
     },
-    "河马圆圆，%@" : {
+    "小熊猫圆圆，%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Momo the Hippo, %@"
+            "value" : "Momo the Red Panda, %@"
           }
         }
       }
@@ -68065,13 +68065,13 @@
         }
       }
     },
-    "点一颗牙拔下来，拔到疼牙河马就合嘴；其余的牙都拔光就赢" : {
+    "点一颗牙拔下来，拔到疼牙小熊猫就合嘴；其余的牙都拔光就赢" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Click a tooth to pull it. Pull the sore one and the hippo snaps shut; pull all the others to win"
+            "value" : "Click a tooth to pull it. Pull the sore one and the red panda snaps shut; pull all the others to win"
           }
         }
       }
