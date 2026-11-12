@@ -154,6 +154,8 @@ public struct DesktopPetPose: Equatable, Sendable {
     public var anchor: Double
     /// 左右边探头时露出图宽的多少（0…1），其余藏在屏幕边外；别处是 1。
     public var reveal: Double
+    /// 身边的草丛（屏幕下边缘、程序坞上待着时），nil 是没有。见 `DesktopPetGrass`。
+    public var grass: DesktopPetGrass? = nil
 
     public init(image: String, lift: Double = 0, facingLeft: Bool = false, height: Double? = nil,
                 scaleX: Double = 1, scaleY: Double = 1, wobble: Double = 0, zzz: Int = 0,
@@ -684,8 +686,15 @@ public enum DesktopPetBrain {
         case .side: return hugPose(state, now: now, edge: edge)
         case .stroll, .sit:
             // 停在程序坞上或随意放的一点：待着时画正面（frontPose），走、跑、叼、跳、拎还是侧面。
-            if let front = frontPose(state, now: now) { return front }
+            // 程序坞上待着时脚边一小丛草。
+            if var front = frontPose(state, now: now) {
+                if style == .stroll { front.grass = .mini }
+                return front
+            }
             return pose(state, now: now, scale: scale)
+        case .curl:
+            // 屏幕下边缘：藏在草里，见 `grassPose`。
+            return grassPose(state, now: now, scale: scale)
         default: return pose(state, now: now, scale: scale)
         }
     }

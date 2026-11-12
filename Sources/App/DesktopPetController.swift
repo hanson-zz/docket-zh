@@ -860,6 +860,8 @@ final class DesktopPetController: NSObject {
             case .side where track.edge == .left: originX = max(originX, edgeLine.rounded(.up))
             case .side where track.edge == .right: originX = min(originX, edgeLine.rounded(.down) - side)
             case .hang: originY = min(originY, edgeLine.rounded(.down) - side)
+            // 下边缘藏在草里：沉下去的那截不伸出屏幕底边。
+            case .curl: originY = max(originY, edgeLine.rounded(.up))
             default: break
             }
         }
@@ -875,6 +877,14 @@ final class DesktopPetController: NSObject {
         let localPivot = CGPoint(x: pivot.x - originX, y: pivot.y - originY)
         view.draw(image: pose.image, size: size, anchor: pose.anchor, position: localPivot,
                   rotation: pose.wobble, scaleX: pose.scaleX * (flip ? -1 : 1), scaleY: pose.scaleY)
+        // 草丛：草根贴在没沉、没跳时脚底那条线上，横向以小熊猫为中。拖着时没有。
+        if let grass = pose.grass, !dragging, !track.edge.vertical {
+            let root = CGPoint(x: feet.x - originX, y: feet.y - CGFloat(pose.lift) * scale - originY)
+            view.drawGrass(front: grass.frontImage(time: now.timeIntervalSinceReferenceDate), back: grass.backImage,
+                           root: root, scale: scale)
+        } else {
+            view.drawGrass(front: nil, back: nil, root: .zero, scale: scale)
+        }
 
         let window = CGRect(origin: origin, size: CGSize(width: side, height: side))
         let body = CGRect(x: feet.x - wide / 2, y: feet.y, width: wide, height: tall)
@@ -1681,6 +1691,12 @@ final class DesktopPetController: NSObject {
 final class DesktopPetSpriteView: NSView {
     private let sprite = CALayer()
     private var imageName = ""
+    /// 草丛前后两层（见 `DesktopPetGrass`）：后层在小熊猫身后，前层挡在身前。
+    private let grassBack = CALayer()
+    private let grassFront = CALayer()
+    private var grassNames: (front: String?, back: String?) = (nil, nil)
+    private var grassRoot: CGPoint = .zero
+    private var grassScale: CGFloat = 0
     private var tracking: NSTrackingArea?
 
     override init(frame: NSRect) {
@@ -1696,7 +1712,15 @@ final class DesktopPetSpriteView: NSView {
         sprite.shadowOpacity = 0.18
         sprite.shadowRadius = 2
         sprite.shadowOffset = CGSize(width: 0, height: -1)
+        for grass in [grassBack, grassFront] {
+            grass.anchorPoint = CGPoint(x: 0.5, y: 0)
+            grass.contentsGravity = .resize
+            grass.minificationFilter = .linear
+            grass.opacity = 0
+        }
+        layer?.addSublayer(grassBack)
         layer?.addSublayer(sprite)
+        layer?.addSublayer(grassFront)
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
         setAccessibilityLabel(tr("桌面宠物小熊猫"))
@@ -1714,6 +1738,34 @@ final class DesktopPetSpriteView: NSView {
     override func viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
         sprite.contentsScale = window?.backingScaleFactor ?? 2
+        grassBack.contentsScale = sprite.contentsScale
+        grassFront.contentsScale = sprite.contentsScale
+    }
+
+    /// 画草丛。`root` 是草根中点在窗口里的位置；名字给 nil 就淡出那一层。画面没变不提交。
+    func drawGrass(front: String?, back: String?, root: CGPoint, scale: CGFloat) {
+        if grassNames.front == front, grassNames.back == back, grassRoot == root, grassScale == scale { return }
+        let fadeFront = (grassNames.front == nil) != (front == nil)
+        let fadeBack = (grassNames.back == nil) != (back == nil)
+        grassNames = (front, back)
+        grassRoot = root
+        grassScale = scale
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (layer, name) in [(grassFront, front), (grassBack, back)] {
+            guard let name, let image = DesktopPetArt.image(name), let cg = DesktopPetArt.cgImage(name) else { continue }
+            layer.contents = cg
+            layer.bounds = CGRect(x: 0, y: 0, width: image.size.width * scale, height: image.size.height * scale)
+            layer.position = root
+        }
+        CATransaction.commit()
+        // 出现、消失淡入淡出，走开时草不是一下没了。
+        for (layer, name, fade) in [(grassFront, front, fadeFront), (grassBack, back, fadeBack)] where fade {
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.25)
+            layer.opacity = name == nil ? 0 : 1
+            CATransaction.commit()
+        }
     }
 
     /// 上一次画的参数：静止时慢计时器每秒 10 次来画，画面没变就不提交图层，省得窗口服务器白白重合成。
