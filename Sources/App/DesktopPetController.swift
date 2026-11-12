@@ -1188,7 +1188,7 @@ final class DesktopPetController: NSObject {
             announce(news)
         }
         if let power, let news = DesktopPetNewsDesk.battery(from: lastPower, to: power) {
-            DockLog.notice(.pet, "power news \(news.kind) \(power.percent)% shown=\(shown) bubbles=\(settings.bubbles)")
+            DockLog.notice(.pet, "power news \(news.kind) \(power.percent)% shown=\(shown) bubbles=\(settings.bubbles) presenting=\(QuickActions.shared.presentation != nil)")
             announce(news)
         }
     }
