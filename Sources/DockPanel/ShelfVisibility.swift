@@ -35,6 +35,8 @@ final class ShelfPresence {
     var reveal: @MainActor () -> Void = {}
     /// 滑出来时窗口的位置。
     var revealedFrame: @MainActor () -> CGRect? = { nil }
+    /// 窗口里玻璃条外头给放大和弹跳留的空白有多厚（下边的扩展栏在玻璃条上方）。
+    var headroom: CGFloat = 0
 
     private init() {}
 }

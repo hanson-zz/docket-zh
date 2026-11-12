@@ -13,6 +13,8 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
     private var revealed = true
     private var hideWorkItem: DispatchWorkItem?
+    /// 看是否正拖着东西（文件等）。见 FileDragWatch。
+    private var fileDrag = FileDragWatch()
     /// True while any menu of ours is open.
     ///
     /// A context menu draws *above* the shelf, so reaching for an item takes
@@ -699,6 +701,16 @@ final class DockPanelController: NSObject, NSWindowDelegate {
 
         // Never while a menu of ours is up - see `menuIsOpen`.
         if menuIsOpen {
+            hideWorkItem?.cancel()
+            hideWorkItem = nil
+            return
+        }
+
+        // 从访达等处拖着文件过来时扩展栏不收：指针经过系统程序坞的弹出区或
+        // 稍微出界，原来都会让扩展栏缩回去，文件就放不进暂存。松手后照常。
+        // 每轮都读，左键松开时才记得住新的基准。
+        let draggingFile = fileDrag.isActive()
+        if revealed, draggingFile {
             hideWorkItem?.cancel()
             hideWorkItem = nil
             return

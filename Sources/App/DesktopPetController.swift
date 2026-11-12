@@ -325,7 +325,13 @@ final class DesktopPetController: NSObject {
                                                     atBottom: dock.position == .bottom, autoHide: dock.autoHide)
         let presence = ShelfPresence.shared
         let shelfShown = presence.isShown()
-        let shelf = DesktopPetPlacement.Shelf(frame: shelfShown ? presence.revealedFrame() : nil,
+        // 窗口顶上留给图标放大和弹跳的空白要去掉，小熊猫才踩在玻璃条上。
+        var shelfFrame = shelfShown ? presence.revealedFrame() : nil
+        if var frame = shelfFrame, shelfPosition() == .bottom {
+            frame.size.height = max(0, frame.height - presence.headroom)
+            shelfFrame = frame
+        }
+        let shelf = DesktopPetPlacement.Shelf(frame: shelfFrame,
                                               atBottom: shelfPosition() == .bottom,
                                               tucked: shelfShown && presence.isTuckedAway())
         perch = DesktopPetPlacement.perch(system: system, shelf: shelf, fullScreen: false)
