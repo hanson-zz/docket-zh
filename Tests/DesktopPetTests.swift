@@ -82,7 +82,9 @@ final class DesktopPetTests: XCTestCase {
         XCTAssertEqual(DesktopPetStrip.hugOut.imageName(5), "pet-sprite-hug-out-6")
         XCTAssertEqual(DesktopPetStrip.hugSleepR.imageName(1), "pet-sprite-hug-sleep-r-2")
         XCTAssertEqual(DesktopPetStrip.hugClimbR.frameCount, 4)
-        XCTAssertEqual(DesktopPetStrip.allCases.count, 28)
+        XCTAssertEqual(DesktopPetStrip.allCases.count, 34)
+        XCTAssertEqual(DesktopPetStrip.frontSit.frameCount, 4)
+        XCTAssertEqual(DesktopPetStrip.frontWave.frameCount, 2)
         let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Resources/Pet/sprites")
         for strip in DesktopPetStrip.allCases {

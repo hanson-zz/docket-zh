@@ -84,7 +84,7 @@ final class DesktopPetDirectorTests: XCTestCase {
         let sitting = DesktopPetState(x: 300, activity: .idle(until: t0.addingTimeInterval(9)), since: t0)
         let looking = DesktopPetBrain.noticed(sitting, style: .stroll, now: t0)
         XCTAssertEqual(DesktopPetBrain.pose(looking, now: t0.addingTimeInterval(0.5), style: .stroll).image,
-                       DesktopPetStrip.lookup.imageName(3), "站着的抬头看")
+                       DesktopPetStrip.frontWave.imageName(1), "程序坞上正面举爪招呼")
     }
 
     func testMergesStoresWithinThreeSeconds() {
@@ -184,14 +184,17 @@ final class DesktopPetDirectorTests: XCTestCase {
         let party = DesktopPetBrain.celebrate(sitting, toward: 600, until: review.until, now: t0)
         XCTAssertFalse(party.facingLeft, "转向计时器那边")
         XCTAssertEqual(party.activity, .celebrate(since: t0, until: review.until))
-        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(0.5), style: .stroll).image,
-                       DesktopPetStrip.lookup.imageName(3), "先抬头看")
+        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(0.5)).image,
+                       DesktopPetStrip.lookup.imageName(3), "侧面先抬头看")
         let look = DesktopPetAssist.focusLook
-        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(look + 0.01), style: .stroll).image,
+        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(look + 0.01)).image,
                        DesktopPetStrip.cheer.imageName(0), "再欢呼")
-        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(look + DesktopPetAssist.cheerOnce - 0.01),
-                                            style: .stroll).image,
+        XCTAssertEqual(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(look + DesktopPetAssist.cheerOnce - 0.01)).image,
                        DesktopPetStrip.cheer.imageName(5), "cheer 只播一遍")
+        XCTAssertTrue(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(0.5), style: .stroll).image
+            .hasPrefix("pet-sprite-front-wave-"), "程序坞上正面挥手")
+        XCTAssertTrue(DesktopPetBrain.pose(party, now: t0.addingTimeInterval(look + DesktopPetAssist.cheerOnce + 0.1),
+                                           style: .stroll).image.hasPrefix("pet-sprite-front-sit-"), "挥完坐着")
         XCTAssertEqual(DesktopPetAssist.cheerOnce, 6.0 / 8, accuracy: 0.0001)
         let mid = DesktopPetBrain.step(party, dt: 0.1, now: t0.addingTimeInterval(0.5), lane: 100...700,
                                        userIdle: 999, focusing: false, random: { 0.5 })
@@ -298,8 +301,8 @@ final class DesktopPetDirectorTests: XCTestCase {
         let asleep = DesktopPetState(x: 300, activity: .sleep(since: t0), since: t0)
         let woke = DesktopPetBrain.wokeUp(asleep, style: .stroll, now: t0.addingTimeInterval(600))
         XCTAssertEqual(woke.activity, .peek(until: t0.addingTimeInterval(600 + DesktopPetBrain.peekDuration)))
-        XCTAssertEqual(DesktopPetBrain.pose(woke, now: t0.addingTimeInterval(601), style: .stroll).image,
-                       DesktopPetStrip.lookup.imageName(3), "抬头探看")
+        XCTAssertTrue(DesktopPetBrain.pose(woke, now: t0.addingTimeInterval(601), style: .stroll).image
+            .hasPrefix("pet-sprite-front-wave-"), "醒来正面招呼")
         let still = DesktopPetBrain.step(woke, dt: 0.1, now: t0.addingTimeInterval(600.5), lane: 100...700,
                                          userIdle: 0, focusing: false, random: { 0.5 })
         guard case .peek = still.activity else { return XCTFail("探看完再说") }

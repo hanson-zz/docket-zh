@@ -103,16 +103,19 @@ public enum DesktopPetStrip: String, CaseIterable, Sendable {
     case walk, run, carry, jump, climb, sit, blink, lie, peek, drag, fallAsleep = "fallasleep", sleep,
          yawn, stretch, cheer, droop, lookup, hang, hangSleep = "hang-sleep", drop,
          hug, hugOut = "hug-out", hugSleep = "hug-sleep", hugClimb = "hug-climb",
-         hugR = "hug-r", hugOutR = "hug-out-r", hugSleepR = "hug-sleep-r", hugClimbR = "hug-climb-r"
+         hugR = "hug-r", hugOutR = "hug-out-r", hugSleepR = "hug-sleep-r", hugClimbR = "hug-climb-r",
+         frontSit = "front-sit", frontLie = "front-lie", frontSleep = "front-sleep", frontYawn = "front-yawn",
+         frontStretch = "front-stretch", frontWave = "front-wave"
 
     public var frameCount: Int {
         switch self {
         case .walk: return 32
         case .run, .carry, .jump, .sit, .yawn, .stretch: return 8
         case .lie, .peek, .drag, .fallAsleep, .cheer, .hang, .drop, .hugOut, .hugOutR: return 6
-        case .sleep, .droop, .lookup, .hug, .hugR, .hugClimb, .hugClimbR: return 4
+        case .sleep, .droop, .lookup, .hug, .hugR, .hugClimb, .hugClimbR,
+             .frontSit, .frontLie, .frontYawn, .frontStretch: return 4
         case .climb: return 3
-        case .hangSleep, .hugSleep, .hugSleepR: return 2
+        case .hangSleep, .hugSleep, .hugSleepR, .frontSleep, .frontWave: return 2
         case .blink: return 1
         }
     }
@@ -680,17 +683,59 @@ public enum DesktopPetBrain {
         case .hang: return hangPose(state, now: now)
         case .side: return hugPose(state, now: now, edge: edge)
         case .stroll, .sit:
-            // 站着、坐着的抬头看一眼（状态助手就地提示）：抬头 4 帧上去，停住，快结束时放下来。
-            if case .peek(let until) = state.activity {
-                let elapsed = max(0, now.timeIntervalSince(state.since))
-                let left = until.timeIntervalSince(now)
-                let up = min(3, Int(elapsed / 0.12))
-                let index = left < 0.36 ? max(0, min(up, Int(max(0, left) / 0.12))) : up
-                return DesktopPetPose(image: DesktopPetStrip.lookup.imageName(index), facingLeft: state.facingLeft)
-            }
+            // 停在程序坞上或随意放的一点：待着时画正面（frontPose），走、跑、叼、跳、拎还是侧面。
+            if let front = frontPose(state, now: now) { return front }
             return pose(state, now: now, scale: scale)
         default: return pose(state, now: now, scale: scale)
         }
+    }
+
+    /// 程序坞上待着的正面帧：坐（呼吸、眨眼、抖耳）、趴（呼吸、眨眼、抬眼）、睡、哈欠、伸懒腰、挥手。
+    /// 正面不左右翻。走、跑、叼、跳、被拎、落地、放纸团等有方向的动作返回 nil，按侧面画。
+    static func frontPose(_ state: DesktopPetState, now: Date) -> DesktopPetPose? {
+        let elapsed = max(0, now.timeIntervalSince(state.since))
+        let time = now.timeIntervalSinceReferenceDate
+        switch state.activity {
+        case .idle, .sit, .edgePause:
+            return DesktopPetPose(image: DesktopPetStrip.frontSit.imageName(DesktopPetHug.idleFrame(time: time)))
+        case .curl:
+            return DesktopPetPose(image: DesktopPetStrip.frontLie.imageName(DesktopPetHug.idleFrame(time: time)))
+        case .peek(let until):
+            // 抬头看一眼（状态助手就地提示）：举爪招呼，快结束时放下。
+            let left = until.timeIntervalSince(now)
+            let frame = left < 0.3 ? DesktopPetStrip.frontSit.imageName(0)
+                                   : DesktopPetStrip.frontWave.imageName(Int(elapsed * 3))
+            return DesktopPetPose(image: frame)
+        case .cheer:
+            return DesktopPetPose(image: DesktopPetStrip.frontWave.imageName(Int(elapsed * 4)))
+        case .celebrate:
+            // 专注完成：挥手的时长和侧面的「抬头 + 欢呼一遍」一样，之后坐着。
+            if elapsed < DesktopPetAssist.focusLook + DesktopPetAssist.cheerOnce {
+                return DesktopPetPose(image: DesktopPetStrip.frontWave.imageName(Int(elapsed * 4)))
+            }
+            return DesktopPetPose(image: DesktopPetStrip.frontSit.imageName(DesktopPetHug.idleFrame(time: time)))
+        case .stretch(let since):
+            let t = min(0.999, now.timeIntervalSince(since) / stretchDuration)
+            return DesktopPetPose(image: DesktopPetStrip.frontStretch.imageName(frontArc(t)))
+        case .yawn(let since):
+            let t = min(0.999, now.timeIntervalSince(since) / yawnDuration)
+            return DesktopPetPose(image: DesktopPetStrip.frontYawn.imageName(frontArc(t)))
+        case .sleep(let since):
+            // 先趴下闭眼一会儿，再团起来呼吸带 Zzz。
+            let asleep = max(0, now.timeIntervalSince(since))
+            if asleep < 1.5 { return DesktopPetPose(image: DesktopPetStrip.frontLie.imageName(2)) }
+            var pose = DesktopPetPose(image: DesktopPetStrip.frontSleep.imageName(Int(asleep)))
+            pose.zzz = 1 + Int(asleep * 1.5) % 3
+            return pose
+        default:
+            return nil
+        }
+    }
+
+    /// 4 帧一来一回：0…1 走 0、1、2、3、3、2、1、0。
+    static func frontArc(_ t: Double) -> Int {
+        let path = [0, 1, 2, 3, 3, 2, 1, 0]
+        return path[min(path.count - 1, max(0, Int(t * Double(path.count))))]
     }
 
     /// 吊在上边缘：前爪抓着菜单栏下沿，6 帧来回晃的循环（素材自带晃动），整只再绕爪子做小幅钟摆。

@@ -216,8 +216,10 @@ final class DesktopPetHugTests: XCTestCase {
         XCTAssertTrue(mood.passedBy(distance: 50, speed: 300, now: t0.addingTimeInterval(20)))
         let lying = DesktopPetState(x: 300, activity: .curl(until: t0.addingTimeInterval(9)), since: t0)
         let look = DesktopPetBrain.glanced(lying, now: t0)
-        XCTAssertTrue(DesktopPetBrain.pose(look, now: t0.addingTimeInterval(0.5), style: .stroll).image
+        XCTAssertTrue(DesktopPetBrain.pose(look, now: t0.addingTimeInterval(0.5)).image
             .hasPrefix("pet-sprite-lookup-"))
+        XCTAssertTrue(DesktopPetBrain.pose(look, now: t0.addingTimeInterval(0.5), style: .stroll).image
+            .hasPrefix("pet-sprite-front-"), "程序坞上正面")
         let walking = DesktopPetState(x: 300, activity: .walk(to: 400), since: t0)
         XCTAssertEqual(DesktopPetBrain.glanced(walking, now: t0), walking, "走着不打断")
     }

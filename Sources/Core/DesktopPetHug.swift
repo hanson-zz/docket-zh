@@ -5,14 +5,14 @@ import Foundation
 
 // MARK: - 抱树
 
-/// 左右边缘抱着屏幕边：图正着画，原图里屏幕边那条线对齐屏幕边，线外的身子在屏幕外（窗口裁掉），
-/// 平时只露头和两只前爪。左右各一套专门画的帧（右边不翻转）。
+/// 左右边缘抱树：每帧画着一截竖着的树干，树干外缘贴着屏幕边，小熊猫在树干里侧脸朝屏幕边抱着。
+/// 左边是用户画的那套，右边整套左右镜像（素材是正脸，镜像看不出）。
 public enum DesktopPetHug {
     /// 左套（hug、hug-out、hug-sleep、hug-climb）屏幕边那条线在图宽的哪儿（从左数）：
-    /// 原图 x≈300，768 画布缩放 0.344 后整套统一裁切框 61…174。
-    public static let leftEdgeLine: Double = 0.3735
-    /// 右套（hug-r …）：原图 x≈468，裁切框 89…212。
-    public static let rightEdgeLine: Double = 0.5853
+    /// 裁切框左端就是树干外缘（原图 x=190），整张图都在屏幕里。
+    public static let leftEdgeLine: Double = 0
+    /// 右套（hug-r …）是左套镜像，树干外缘在图右端。
+    public static let rightEdgeLine: Double = 1
 
     /// 屏幕里露出图宽的多少：左边是线右边那块，右边是线左边那块。
     public static func inside(_ edge: DesktopPetEdge) -> Double {
