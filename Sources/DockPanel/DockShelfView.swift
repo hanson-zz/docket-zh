@@ -497,6 +497,10 @@ struct DockShelfView: View {
                 // Headroom for magnified icons to grow into. It is invisible,
                 // so it must not eat clicks aimed at the desktop behind it.
                 .allowsHitTesting(false)
+                // 桌宠站在扩展栏上要踩玻璃条本身，不是窗口顶上这段留白。
+                .onChange(of: crossHeadroom, initial: true) { _, room in
+                    ShelfPresence.shared.headroom = room
+                }
             shelf(solved)
         }
         // A white or black plate, or glass leaned one way, pins the ink to
