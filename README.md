@@ -4,7 +4,7 @@
 
 # 码头 Dockling
 
-### 免费、开源的 macOS 程序坞扩展栏，简体中文界面。
+### 免费下载、可升级 Pro 的 macOS 程序坞扩展栏，带小熊猫桌宠，简体中文界面。
 
 **官网：[docket.shiduo.app](https://docket.shiduo.app)** · 简体中文 | [English](README.en.md)
 

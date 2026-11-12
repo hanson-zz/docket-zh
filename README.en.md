@@ -4,7 +4,7 @@
 
 # Dockling 码头
 
-### A free, open source Dock shelf for macOS, in English and Simplified Chinese.
+### A free Dock shelf for macOS with an optional Pro upgrade and a red panda desktop pet, in English and Simplified Chinese.
 
 **Website: [docket.shiduo.app](https://docket.shiduo.app)** · [简体中文](README.md) | English
 
