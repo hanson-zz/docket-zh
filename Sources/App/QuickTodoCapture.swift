@@ -151,12 +151,12 @@ struct QuickTodoCaptureView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "circle")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.panelSecondary)
+            Image(systemName: model.hasTarget ? "circle" : "checklist")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.panelPrimary.opacity(0.75))
             TextField("", text: $model.text,
                       prompt: Text(model.hasTarget ? tr("记一条待办") : tr("先在扩展栏上添加一个快速待办"))
-                        .foregroundStyle(Color.panelTertiary))
+                        .foregroundStyle(model.hasTarget ? Color.panelTertiary : Color.panelSecondary))
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
                 .foregroundStyle(Color.panelPrimary)
@@ -164,10 +164,13 @@ struct QuickTodoCaptureView: View {
                 .disabled(!model.hasTarget)
                 .onSubmit { submit(model.text) }
             Text(model.hasTarget ? tr("回车记下") : tr("按 Esc 关闭"))
-                .font(.system(size: 13))
-                .foregroundStyle(Color.panelTertiary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.panelSecondary)
                 .lineLimit(1)
                 .fixedSize()
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.panelPrimary.opacity(scheme == .dark ? 0.12 : 0.07)))
         }
         .padding(.horizontal, 18)
         .frame(width: Self.size.width, height: Self.size.height)
@@ -175,10 +178,17 @@ struct QuickTodoCaptureView: View {
             if reduceTransparency {
                 shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
             } else {
-                Color.clear.glassEffect(.regular, in: shape)
+                // 只有玻璃时在浅色网页上几乎看不见：底下垫一层半透明底色，
+                // 再加描边，让输入条从任何背景里跳出来。
+                shape.fill(scheme == .dark ? Color.black.opacity(0.38) : Color.white.opacity(0.62))
+                    .glassEffect(.regular, in: shape)
             }
         }
         .clipShape(shape)
+        .overlay {
+            shape.strokeBorder(scheme == .dark ? Color.white.opacity(0.22) : Color.black.opacity(0.14),
+                               lineWidth: 1)
+        }
         .onAppear { focused = true }
         .onChange(of: model.session) { focused = true }
         .accessibilityElement(children: .contain)
