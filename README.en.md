@@ -36,6 +36,10 @@ The interface is in **English and Simplified Chinese** and follows the system la
 
 Dockling is an unofficial fork of [Docket](https://github.com/nparashar150/dockset) (MIT) that has grown into its own app.
 
+## In development (next version)
+
+- 🏝️ **Notch Island** (Pro): download progress, the focus countdown, the radio and a plug-in notice grow as a black island out of both sides of the notch, a second activity splits off as a small round island, and hovering expands a frosted glass card to pause, change station or set the volume; screens without a notch get the same shape centered at the top. Not yet verified on a physical Mac.
+
 ## New in v1.0
 
 - 🐼 **Red panda desktop pet**: lives on any screen edge; drop files on it to stash them, it fetches new downloads and cheers when a focus session ends

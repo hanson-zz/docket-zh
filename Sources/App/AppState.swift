@@ -66,6 +66,9 @@ public final class AppState {
             if state.notchMessage != oldValue.notchMessage {
                 NotchMessageController.shared.apply(state.notchMessage)
             }
+            if state.notchIsland != oldValue.notchIsland {
+                NotchIslandController.shared.apply(state.notchIsland)
+            }
             if state.inputSource != oldValue.inputSource {
                 InputSourceController.shared.apply(state.inputSource)
             }

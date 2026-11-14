@@ -232,6 +232,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 消息在刘海下展开成卡片。没解锁或没打开时什么都不做。
         NotchMessageController.shared.apply(state.state.notchMessage)
 
+        // 刘海小岛（码头 Pro，默认关）：下载、专注倒计时、收音机、插电从刘海两侧长出的
+        // 黑色小岛。没解锁或没打开时什么都不看。
+        NotchIslandController.shared.apply(state.state.notchIsland)
+
         // 输入法自动切换（默认关）：切到某个 App 时按规则换输入法，从刘海落下提示。
         // 按 App 规则是码头 Pro，总开关和其余设置免费。
         InputSourceController.shared.apply(state.state.inputSource)

@@ -68,8 +68,11 @@ final class BatteryNeonPlugController {
         let current = Self.read()
         let previous = last
         last = current?.source
-        guard let current, BatteryNeon.isPlugIn(from: previous, to: current.source),
-              let screen = Self.targetScreen() else { return }
+        guard let current, BatteryNeon.isPlugIn(from: previous, to: current.source) else { return }
+        // 刘海小岛的插电提示：霓虹动画播了就由动画的电量胶囊代替，小岛先让开。
+        var played = false
+        defer { NotchIslandController.shared.pluggedIn(percent: current.percent, plugAnimation: played) }
+        guard let screen = Self.targetScreen() else { return }
         let now = Date()
         let context = BatteryNeon.PlugContext(
             enabled: BatteryNeon.plugAnimationEnabled(stored: UserDefaults.standard.object(forKey: BatteryNeon.plugAnimationKey)),
@@ -81,9 +84,11 @@ final class BatteryNeonPlugController {
             sharing: Self.screenShared(),
             presenting: QuickActions.shared.presentation != nil,
             notchBusy: NotchMessageOccupancy.shared.cardExpanded || AINotchController.shared.isOpen
-                || ReminderPopupCenter.shared.isShowing || IslandOccupancy.shared.frame != nil)
+                || ReminderPopupCenter.shared.isShowing || IslandOccupancy.shared.frame != nil
+                || NotchIslandOccupancy.shared.expanded)
         guard BatteryNeon.plugDecision(context, gate: gate, at: now) == .play else { return }
         gate.recordPlay(at: now)
+        played = true
         play(current, on: screen)
     }
 

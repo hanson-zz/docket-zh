@@ -115,6 +115,11 @@ final class NotchMessageController {
             forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         })
+        // 刘海小岛出现或收起：收起态的耳朵让给小岛，小岛收起后回来。
+        workspaceObservers.append(NotificationCenter.default.addObserver(
+            forName: NotchIslandOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        })
         workspaceObservers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -478,6 +483,10 @@ final class NotchMessageController {
 
     private func showIndicator(_ described: AINotchScreen, windows: [NotchForeignWindow]) {
         guard !model.expanded else { return hideIndicators() }
+        // 刘海小岛正显示在这块屏幕上：耳朵和胶囊都在刘海两边，先让给小岛（未读照旧记着）。
+        if let island = NotchIslandOccupancy.shared.frame, island.intersects(described.frame) {
+            return hideIndicators()
+        }
         let apps = model.inbox.unreadCounts.count
         guard apps > 0 else { return hideIndicators() }
         let position: NotchMessagePosition = forcedCapsule ? .capsule : settings.position

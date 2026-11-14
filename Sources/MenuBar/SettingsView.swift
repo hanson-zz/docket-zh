@@ -592,7 +592,7 @@ struct SettingsView: View {
 
             islandSection
 
-            NotchMessageSettingsSection(settings: $state.notchMessage)
+            NotchMessageSettingsSection(settings: $state.notchMessage, island: $state.notchIsland)
 
             Section("电池") {
                 BatteryNeonPlugToggle()

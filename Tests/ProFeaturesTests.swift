@@ -458,7 +458,7 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertEqual(ProFeatures.menuTitle("霓虹", isPro: true), "霓虹（Pro 专属）")
         XCTAssertEqual(ProFeatures.menuTitle("标准", isPro: false), "标准")
         XCTAssertEqual(Set(ProFeatures.Setting.allCases), [.aiNotch, .chargeLimit, .windowPreview, .shelfGroups,
-                                                              .shotTranslate, .shotPin, .notchMessage,
+                                                              .shotTranslate, .shotPin, .notchMessage, .notchIsland,
                                                               .inputSourceRules, .desktopPins, .verticalPaging,
                                                               .dockAppIcons, .typingSounds, .focusPanda])
     }

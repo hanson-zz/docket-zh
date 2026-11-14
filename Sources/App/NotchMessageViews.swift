@@ -328,7 +328,7 @@ private struct NotchMessageCard: View {
 // MARK: - 零件
 
 /// 液态玻璃底，系统「降低透明度」时换成实心底（同 AI 刘海对话面板）。
-private struct NotchMessageGlass<S: Shape>: View {
+struct NotchMessageGlass<S: Shape>: View {
     var shape: S
 
     @Environment(\.colorScheme) private var scheme
@@ -344,7 +344,7 @@ private struct NotchMessageGlass<S: Shape>: View {
 }
 
 /// 刘海下那条黑色过渡：顶边是和刘海一样的纯黑，往下淡到透明。
-private struct NotchMessageBlend: View {
+struct NotchMessageBlend: View {
     var body: some View {
         LinearGradient(stops: [
             .init(color: .black, location: 0),

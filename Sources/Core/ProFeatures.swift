@@ -47,6 +47,8 @@ import Foundation
 ///   `ProLicenseGate.canUseCryptoAlerts`。加密货币行情本身 2026-10-20 起免费。
 /// - 消息灵动岛（信息、WhatsApp、微信的消息卡，`NotchMessageSettings`），见
 ///   `ProLicenseGate.notchMessageActive`。
+/// - 刘海小岛（下载、专注倒计时、收音机、插电，`NotchIslandSettings`），见
+///   `ProLicenseGate.notchIslandActive`。
 /// - 输入法自动切换的「按 App 规则」（`InputSourceSettings.rules`），见
 ///   `ProLicenseGate.inputSourceRulesActive`。总开关、没有规则的 App 用默认输入法或记住
 ///   上次、切换提示免费。
@@ -170,6 +172,9 @@ public enum ProFeatures {
         /// 设置 ▸ 通用「消息灵动岛」：信息、WhatsApp、微信的通知在刘海下展开成消息卡，
         /// 信息可在刘海里快速回复，见 `NotchMessageSettings`、`ProLicenseGate.notchMessageActive`。
         case notchMessage
+        /// 设置 ▸ 通用「刘海小岛」：下载、专注倒计时、收音机、插电从刘海两侧长出的黑色小岛，
+        /// 悬停展开成液态玻璃卡片，见 `NotchIslandSettings`、`ProLicenseGate.notchIslandActive`。
+        case notchIsland
         /// 设置 ▸ 输入法的「按 App 规则」：切到某个 App 时换成它自己的输入法。总开关、
         /// 默认输入法 / 记住上次、切换提示免费，见 `InputSourceSettings`、
         /// `ProLicenseGate.inputSourceRulesActive`。

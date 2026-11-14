@@ -277,6 +277,7 @@ public enum ProUnlockHighlights {
         case .setting(.shotTranslate): tr("截图翻译")
         case .setting(.shotPin): tr("截图贴图")
         case .setting(.notchMessage): tr("消息灵动岛")
+        case .setting(.notchIsland): tr("刘海小岛")
         case .setting(.inputSourceRules): tr("输入法规则")
         case .setting(.desktopPins): tr("桌面卡片")
         case .setting(.verticalPaging): tr("上下翻页")
@@ -302,6 +303,7 @@ public enum ProUnlockHighlights {
         case .setting(.shotTranslate): "translate"
         case .setting(.shotPin): "pin.fill"
         case .setting(.notchMessage): "message.fill"
+        case .setting(.notchIsland): "capsule.fill"
         case .setting(.inputSourceRules): "keyboard"
         case .setting(.desktopPins): "pin.square.fill"
         case .setting(.verticalPaging): "arrow.up.arrow.down"

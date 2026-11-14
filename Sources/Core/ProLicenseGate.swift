@@ -47,6 +47,8 @@ import Foundation
 ///   试用时自动回来，见 `canUseCryptoAlerts`。
 /// - 消息灵动岛：设置里开关旁是 Pro 胶囊，没解锁时打开开关弹付费墙；已经打开的
 ///   不观察横幅、不弹卡片，设置不改写，解锁或试用时自动回来，见 `notchMessageActive`。
+/// - 刘海小岛：同消息灵动岛，开关旁是 Pro 胶囊，没解锁时打开开关弹付费墙；已经打开的
+///   不显示小岛、不看下载文件夹，设置不改写，解锁或试用时自动回来，见 `notchIslandActive`。
 /// - 输入法自动切换的按 App 规则：规则区盖模糊遮罩和小锁，「解锁码头 Pro」弹付费墙，
 ///   不改配置；已有的规则不生效（那些 App 按没有规则处理），解锁或试用时自动回来，见
 ///   `inputSourceRulesActive`。
@@ -388,6 +390,12 @@ public enum ProLicenseGate {
     /// 开关和选的 App、位置照旧存着，解锁或试用后自动恢复。
     public static func notchMessageActive(_ settings: NotchMessageSettings, unlocked: Bool) -> Bool {
         settings.enabled && !settings.apps.isEmpty && canUse(.notchMessage, unlocked: unlocked)
+    }
+
+    /// 刘海小岛在不在生效：设置里打开、至少勾了一种活动，且 Pro 已解锁。没解锁时不显示、
+    /// 不看下载文件夹，开关和勾选照旧存着，解锁或试用后自动恢复。
+    public static func notchIslandActive(_ settings: NotchIslandSettings, unlocked: Bool) -> Bool {
+        settings.enabled && !settings.kinds.isEmpty && canUse(.notchIsland, unlocked: unlocked)
     }
 
     // MARK: 输入法自动切换

@@ -9,8 +9,11 @@ import SwiftUI
 /// 哪几个 App、位置（自动让位 / 刘海下方 / 刘海旁小胶囊）、几秒后收起和「卡片弹出后关掉
 /// 系统横幅」（默认关），底下写清楚它是
 /// 怎么拿到消息的、什么时候拿不到。
+///
+/// 同一组里还有「刘海小岛」（`NotchIslandSettingsRows`），两样都是从刘海长出来的 Pro 功能。
 struct NotchMessageSettingsSection: View {
     @Binding var settings: NotchMessageSettings
+    @Binding var island: NotchIslandSettings
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -84,8 +87,10 @@ struct NotchMessageSettingsSection: View {
                     }
                 }
             }
+
+            NotchIslandSettingsRows(settings: $island)
         } header: {
-            Text(tr("消息灵动岛"))
+            Text(tr("消息灵动岛与刘海小岛"))
         } footer: {
             Text(tr("码头通过「\(NotchMessageDiagnosis.permissionName(osMajor: NotchMessageStatus.osMajor))」权限读取系统通知横幅（不是通知权限），只读，不拦截、不修改系统通知。系统横幅和消息卡会同时出现：把这些 App 的通知样式改成「无」可以去掉重复，但横幅不出现时码头也收不到；专注模式、勿扰、全屏演示或屏幕共享时横幅不出现，同样收不到。全屏 App 和演示时不弹卡片。信息的回复用自动化（AppleScript）发送，第一次发送时 macOS 会问是否允许码头控制「信息」。"))
                 .font(.system(size: 13))

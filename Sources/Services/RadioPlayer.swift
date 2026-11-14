@@ -207,22 +207,39 @@ final class RadioPlayer {
         case .pause: pause()
         case .stop: stop()
         case .station(let delta):
-            // 优先按小组件当前保存的收藏换台，并把 index 写回去。
-            if let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio {
-                let list = RadioDial.stations(instance.config)
-                guard !list.isEmpty else { return }
-                let current = list.firstIndex { item in station.map(item.matches) ?? false }
-                    ?? RadioDial.index(instance.config, count: list.count)
-                let next = delta > 0 ? RadioDial.next(current, count: list.count) : RadioDial.previous(current, count: list.count)
-                RadioRemote.tune(instance, to: next, play: true)
-                return
-            }
-            guard !playlist.isEmpty else { return }
-            let current = playlist.firstIndex { item in station.map(item.matches) ?? false } ?? 0
-            let next = delta > 0 ? RadioDial.next(current, count: playlist.count) : RadioDial.previous(current, count: playlist.count)
-            play(playlist[next], volume: volume)
+            switchStation(by: delta)
         case .position: break
         }
+    }
+
+    /// 换到上一台或下一台（媒体键、刘海小岛的「下一台」）。
+    func switchStation(by delta: Int) {
+        // 优先按小组件当前保存的收藏换台，并把 index 写回去。
+        if let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio {
+            let list = RadioDial.stations(instance.config)
+            guard !list.isEmpty else { return }
+            let current = list.firstIndex { item in station.map(item.matches) ?? false }
+                ?? RadioDial.index(instance.config, count: list.count)
+            let next = delta > 0 ? RadioDial.next(current, count: list.count) : RadioDial.previous(current, count: list.count)
+            RadioRemote.tune(instance, to: next, play: true)
+            return
+        }
+        guard !playlist.isEmpty else { return }
+        let current = playlist.firstIndex { item in station.map(item.matches) ?? false } ?? 0
+        let next = delta > 0 ? RadioDial.next(current, count: playlist.count) : RadioDial.previous(current, count: playlist.count)
+        play(playlist[next], volume: volume)
+    }
+
+    /// 现在的音量 0...100（刘海小岛的音量条读它；不随渐弱变）。
+    var currentVolume: Double { volume }
+
+    /// 能不能换台：收藏或播放列表里不止一台。
+    var canSwitchStation: Bool { playlist.count > 1 || owner != nil }
+
+    /// 暂停后接着放刚才那一台（刘海小岛的播放钮）。
+    func resume() {
+        guard let station else { return }
+        play(station, volume: volume)
     }
 
     private func publishSession() {

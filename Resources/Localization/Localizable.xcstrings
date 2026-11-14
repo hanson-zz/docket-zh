@@ -2014,6 +2014,28 @@
         }
       }
     },
+    "%@已暂停，还剩 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ paused, %@ left"
+          }
+        }
+      }
+    },
+    "%@还剩 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %@ left"
+          }
+        }
+      }
+    },
     "%@：点或拖音量条调音量，点图标静音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2179,6 +2201,61 @@
         }
       }
     },
+    "「下载」文件夹里有文件正在下载时显示进度，下好后打勾。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows progress while a file is downloading into Downloads, then a check mark when it is done."
+          }
+        }
+      }
+    },
+    "一种活动都没勾选时小岛不会出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With no activity selected, the island never appears."
+          }
+        }
+      }
+    },
+    "下载、专注倒计时、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While something downloads, a focus timer runs, the radio plays or the power is plugged in, a black island grows out of both sides of the notch and blends into it. When two things happen at once, the second becomes a small round island on the right. Hover over it to expand a card where you can pause, change station or set the volume. Screens without a notch show the same shape centered at the top. Hidden for full screen apps, Presentation Mode and while a message card is open."
+          }
+        }
+      }
+    },
+    "下载完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download complete"
+          }
+        }
+      }
+    },
+    "专注计时在跑或暂停时，在刘海下方显示剩余时间。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the time left under the notch while the focus timer is running or paused."
+          }
+        }
+      }
+    },
     "专注陪伴" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2186,6 +2263,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus Buddy"
+          }
+        }
+      }
+    },
+    "充电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charging"
+          }
+        }
+      }
+    },
+    "刘海小岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch Island"
           }
         }
       }
@@ -2256,6 +2355,28 @@
         }
       }
     },
+    "已存到「下载」" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to Downloads"
+          }
+        }
+      }
+    },
+    "已接通电源，电量 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugged in, battery at %@"
+          }
+        }
+      }
+    },
     "废纸篓救回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2274,6 +2395,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trash Rescue needs two permissions"
+          }
+        }
+      }
+    },
+    "打开下载文件夹" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Downloads"
           }
         }
       }
@@ -2333,6 +2465,72 @@
         }
       }
     },
+    "插上电源时显示闪电和电量，约 4 秒后收起。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a bolt and the battery level when you plug in, then tucks away after about 4 seconds."
+          }
+        }
+      }
+    },
+    "收音机已暂停 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radio paused: %@"
+          }
+        }
+      }
+    },
+    "收音机正在播放 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radio playing: %@"
+          }
+        }
+      }
+    },
+    "收音机正在播放时显示音波，悬停可暂停、换台、调音量。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a sound wave while the radio plays. Hover to pause, change station or set the volume."
+          }
+        }
+      }
+    },
+    "正在下载，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading, %@"
+          }
+        }
+      }
+    },
+    "消息灵动岛与刘海小岛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Island and Notch Island"
+          }
+        }
+      }
+    },
     "离开时专注结束了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2384,6 +2582,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ shelf files expired"
+          }
+        }
+      }
+    },
+    "计时器" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer"
           }
         }
       }
@@ -2516,6 +2725,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bottom edge of the screen"
+          }
+        }
+      }
+    },
+    "进度未知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress unknown"
           }
         }
       }

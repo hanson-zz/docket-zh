@@ -65,6 +65,10 @@ final class AINotchController {
         observers.append(center.addObserver(forName: NotchMessageOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.layout() }
         })
+        // 刘海小岛盖在刘海上时入口让位，小岛收起后回来。
+        observers.append(center.addObserver(forName: NotchIslandOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.layout() }
+        })
         let workspace = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             workspaceObservers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
@@ -102,11 +106,13 @@ final class AINotchController {
     private func layout() {
         let wanted = settings.enabled ? AINotchLayout.screens(described, mainOnly: settings.mainScreenOnly) : []
         let island = IslandOccupancy.shared.frame
+        let notchIsland = NotchIslandOccupancy.shared.frame
         let messageCard = NotchMessageOccupancy.shared.frame
         var placed: [UInt32: (AINotchEntry, Bool)] = [:]
         for screen in wanted {
             guard let entry = AINotchLayout.entry(for: screen, shiduoRunning: shiduoRunning) else { continue }
-            let islandHere = island.map { $0.intersects(screen.frame) } ?? false
+            let islandHere = (island.map { $0.intersects(screen.frame) } ?? false)
+                || (notchIsland.map { $0.intersects(screen.frame) } ?? false)
             let cardHere = messageCard.map { $0.intersects(screen.frame) } ?? false
             placed[screen.id] = (entry, NotchMessagePriority.aiEntryVisible(enabled: settings.enabled,
                                                                             islandShowing: islandHere,
