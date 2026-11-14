@@ -12,21 +12,21 @@ final class NotchIslandTests: XCTestCase {
         let settings = NotchIslandSettings()
         XCTAssertFalse(settings.enabled)
         XCTAssertEqual(settings.kinds, NotchIslandKind.allCases)
-        XCTAssertEqual(NotchIslandKind.allCases, [.charging, .download, .timer, .radio], "顺序就是优先级")
+        XCTAssertEqual(NotchIslandKind.allCases, [.charging, .download, .timer, .meeting, .radio], "顺序就是优先级")
         XCTAssertEqual(Set(NotchIslandKind.settingsOrder), Set(NotchIslandKind.allCases))
-        XCTAssertEqual(NotchIslandKind.settingsOrder.count, 4)
+        XCTAssertEqual(NotchIslandKind.settingsOrder.count, 5)
     }
 
     func testSetKeepsFixedOrder() {
         var settings = NotchIslandSettings()
         settings.set(.download, false)
         settings.set(.charging, false)
-        XCTAssertEqual(settings.kinds, [.timer, .radio])
+        XCTAssertEqual(settings.kinds, [.timer, .meeting, .radio])
         settings.set(.charging, true)
         settings.set(.download, true)
-        XCTAssertEqual(settings.kinds, [.charging, .download, .timer, .radio])
+        XCTAssertEqual(settings.kinds, [.charging, .download, .timer, .meeting, .radio])
         settings.set(.radio, true)
-        XCTAssertEqual(settings.kinds.count, 4, "重复打开不重复存")
+        XCTAssertEqual(settings.kinds.count, 5, "重复打开不重复存")
     }
 
     func testSettingsDecodeLeniently() throws {
@@ -39,7 +39,15 @@ final class NotchIslandTests: XCTestCase {
         let future = Data(#"{"enabled":true,"kinds":["radio","weather","timer"]}"#.utf8)
         let decoded = try JSONDecoder().decode(NotchIslandSettings.self, from: future)
         XCTAssertTrue(decoded.enabled)
-        XCTAssertEqual(decoded.kinds, [.timer, .radio], "认不出的活动丢掉，其余按固定顺序")
+        XCTAssertEqual(decoded.kinds, [.timer, .meeting, .radio],
+                       "认不出的活动丢掉，其余按固定顺序；老文件没见过的会议默认勾上")
+
+        // 用户自己取消勾选会议后存的（带 known）：读回来仍是关着的。
+        var noMeeting = NotchIslandSettings()
+        noMeeting.set(.meeting, false)
+        let saved = try JSONDecoder().decode(NotchIslandSettings.self, from: JSONEncoder().encode(noMeeting))
+        XCTAssertFalse(saved.isOn(.meeting))
+        XCTAssertEqual(saved, noMeeting)
 
         let empty = try JSONDecoder().decode(NotchIslandSettings.self, from: Data("{}".utf8))
         XCTAssertEqual(empty, NotchIslandSettings())
@@ -129,6 +137,7 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertFalse(NotchIslandGate.visible(.init(active: true, fullscreen: true)), "全屏 App")
         XCTAssertFalse(NotchIslandGate.visible(.init(active: true, messageCard: true)), "消息卡弹出时让位")
         XCTAssertFalse(NotchIslandGate.visible(.init(active: true, plugAnimation: true)), "插电动画播放时让开")
+        XCTAssertFalse(NotchIslandGate.visible(.init(active: true, levelFlash: true)), "音量、亮度胶囊闪着时先收起")
     }
 
     // MARK: 下载
@@ -205,11 +214,131 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertEqual(NotchIslandTimer.activity(state, now: now),
                        .timer(deadline: nil, pausedLeft: 300, total: 1500, focus: true))
         state.phase = .rest
-        if case .timer(_, _, _, let focus)? = NotchIslandTimer.activity(state, now: now) {
+        if case .timer(_, _, _, let focus, let source, _)? = NotchIslandTimer.activity(state, now: now) {
+            XCTAssertEqual(source, .focus)
             XCTAssertFalse(focus)
         } else {
             XCTFail("休息暂停中也显示")
         }
+    }
+
+    // MARK: 倒计时卡片
+
+    private let widgetID = UUID(uuidString: "6F1C2B8A-0000-4000-8000-000000000001")!
+
+    func testCountdownCardTimersBecomeActivities() {
+        var config = WidgetConfig(["duration": .number(300), "name": .string("泡面")])
+        XCTAssertTrue(NotchIslandTimer.countdowns(widget: widgetID, config: config, now: now).isEmpty, "没开始不显示")
+
+        CountdownList.store(CountdownList.starting(CountdownList.main(config), duration: 300, now: now), in: &config)
+        let tea = CountdownList.adding(name: "泡茶", duration: 120, to: &config, now: now)!
+        let list = NotchIslandTimer.countdowns(widget: widgetID, config: config, now: now.addingTimeInterval(10))
+        XCTAssertEqual(list.count, 2)
+        XCTAssertEqual(list[0], .timer(deadline: now.addingTimeInterval(300), pausedLeft: nil, total: 300, focus: true,
+                                       source: .countdown(widget: widgetID, timer: CountdownList.mainID), name: "泡面"))
+        XCTAssertEqual(list[1], .timer(deadline: now.addingTimeInterval(120), pausedLeft: nil, total: 120, focus: true,
+                                       source: .countdown(widget: widgetID, timer: tea.id), name: "泡茶"))
+
+        // 到点在响的不上小岛（有弹出卡片）。
+        let later = NotchIslandTimer.countdowns(widget: widgetID, config: config, now: now.addingTimeInterval(200))
+        XCTAssertEqual(later.count, 1)
+
+        // 暂停的也显示，带剩下的秒数。
+        CountdownList.update(tea.id, in: &config) { $0 = CountdownList.pausing($0, now: self.now.addingTimeInterval(20)) }
+        let paused = NotchIslandTimer.countdowns(widget: widgetID, config: config, now: now.addingTimeInterval(500))
+        XCTAssertEqual(paused, [.timer(deadline: nil, pausedLeft: 100, total: 120, focus: true,
+                                       source: .countdown(widget: widgetID, timer: tea.id), name: "泡茶")])
+    }
+
+    func testEarliestEndingTimerWins() {
+        let focus = NotchIslandActivity.timer(deadline: now.addingTimeInterval(900), pausedLeft: nil, total: 1500,
+                                              focus: true)
+        let soon = NotchIslandActivity.timer(deadline: now.addingTimeInterval(120), pausedLeft: nil, total: 300,
+                                             focus: true, source: .countdown(widget: widgetID, timer: "t1"),
+                                             name: "泡茶")
+        let paused = NotchIslandActivity.timer(deadline: nil, pausedLeft: 30, total: 300, focus: true,
+                                               source: .countdown(widget: widgetID, timer: "main"))
+        let settings = NotchIslandSettings()
+        XCTAssertEqual(NotchIslandStack.ordered([focus, soon, radio], settings: settings), [soon, radio],
+                       "专注计时和倒计时都在跑：取最先结束的")
+        XCTAssertEqual(NotchIslandStack.ordered([soon, focus], settings: settings), [soon], "先后顺序不影响")
+        XCTAssertEqual(NotchIslandStack.ordered([paused, focus], settings: settings), [focus],
+                       "在跑的比暂停的先结束（暂停的不会自己结束）")
+        let morePaused = NotchIslandActivity.timer(deadline: nil, pausedLeft: 200, total: 1500, focus: true)
+        XCTAssertEqual(NotchIslandStack.ordered([morePaused, paused], settings: settings), [paused],
+                       "都暂停时剩得少的")
+        XCTAssertTrue(NotchIslandTimer.endsBefore(soon, focus))
+        XCTAssertFalse(NotchIslandTimer.endsBefore(focus, focus), "一样时留先来的")
+        XCTAssertFalse(NotchIslandTimer.endsBefore(radio, focus))
+    }
+
+    func testCountdownToggleAndEndTargetOneTimer() {
+        let running = CountdownList.starting(CountdownTimer(id: "t1", name: "泡茶", duration: 120), duration: 120,
+                                             now: now)
+        let paused = NotchIslandTimer.toggled(running, now: now.addingTimeInterval(20))
+        XCTAssertNil(paused.deadline)
+        XCTAssertEqual(paused.paused ?? -1, 100, accuracy: 0.001)
+        let resumed = NotchIslandTimer.toggled(paused, now: now.addingTimeInterval(60))
+        XCTAssertNil(resumed.paused)
+        XCTAssertEqual(resumed.deadline ?? -1, now.addingTimeInterval(160).timeIntervalSince1970, accuracy: 0.001)
+        let idle = CountdownTimer(id: "t2", duration: 60)
+        XCTAssertEqual(NotchIslandTimer.toggled(idle, now: now), idle, "没开始的不动")
+
+        // 写回卡片配置时只动那一个。
+        var config = WidgetConfig(["duration": .number(300)])
+        CountdownList.store(CountdownList.starting(CountdownList.main(config), duration: 300, now: now), in: &config)
+        CountdownList.store(running, in: &config)
+        CountdownList.update("t1", in: &config) { $0 = NotchIslandTimer.toggled($0, now: self.now.addingTimeInterval(20)) }
+        XCTAssertNotNil(CountdownList.main(config).deadline, "第一个照旧在跑")
+        XCTAssertNotNil(CountdownList.timer("t1", in: config)?.paused)
+        CountdownList.update("t1", in: &config) { $0 = CountdownList.stopping($0) }
+        XCTAssertEqual(CountdownList.phase(CountdownList.timer("t1", in: config)!, now: now), .idle)
+        XCTAssertNotNil(CountdownList.main(config).deadline)
+    }
+
+    // MARK: 会议和灵动提示胶囊
+
+    func testMeetingSitsBetweenTimerAndRadio() {
+        let meeting = NotchIslandActivity.meeting(title: "周会", start: now.addingTimeInterval(240))
+        XCTAssertEqual(meeting.kind, .meeting)
+        XCTAssertTrue(NotchIslandKind.timer.priority < NotchIslandKind.meeting.priority)
+        XCTAssertTrue(NotchIslandKind.meeting.priority < NotchIslandKind.radio.priority)
+        let settings = NotchIslandSettings()
+        XCTAssertEqual(NotchIslandStack.form([radio, meeting], settings: settings, hovering: false),
+                       .split(meeting, radio))
+        XCTAssertEqual(NotchIslandStack.form([radio, meeting, timer], settings: settings, hovering: false),
+                       .split(timer, meeting))
+    }
+
+    func testCapsuleHandsMeetingToIsland() {
+        let start = now.addingTimeInterval(240)
+        let meeting = IslandContent.meeting(title: "周会", start: start)
+        let volume = IslandContent.volume(level: 0.5, muted: false)
+        XCTAssertEqual(NotchIslandCapsule.content(flash: nil, meeting: meeting, islandShown: false), meeting,
+                       "小岛不在时胶囊照旧倒数")
+        XCTAssertNil(NotchIslandCapsule.content(flash: nil, meeting: meeting, islandShown: true),
+                     "小岛显示着：会议交给小岛，不另起胶囊")
+        XCTAssertEqual(NotchIslandCapsule.content(flash: volume, meeting: meeting, islandShown: true), volume,
+                       "音量一闪照常（小岛这时收起）")
+        XCTAssertEqual(NotchIslandCapsule.meetingActivity(meeting), .meeting(title: "周会", start: start))
+        XCTAssertNil(NotchIslandCapsule.meetingActivity(volume))
+        XCTAssertNil(NotchIslandCapsule.meetingActivity(nil))
+    }
+
+    func testMeetingText() {
+        XCTAssertEqual(NotchIslandText.meetingShort(secondsUntil: 241), "5 分")
+        XCTAssertEqual(NotchIslandText.meetingShort(secondsUntil: 20), "1 分", "不到一分钟向上取整")
+        XCTAssertEqual(NotchIslandText.meetingShort(secondsUntil: 0), "现在")
+        XCTAssertEqual(NotchIslandText.meetingShort(secondsUntil: -30), "现在")
+        let spoken = NotchIslandText.spoken(.meeting(title: "周会", start: now.addingTimeInterval(240)), now: now)
+        XCTAssertTrue(spoken.contains("周会"))
+        let countdown = NotchIslandActivity.timer(deadline: now.addingTimeInterval(65), pausedLeft: nil, total: 120,
+                                                  focus: true, source: .countdown(widget: widgetID, timer: "t1"),
+                                                  name: "泡茶")
+        XCTAssertTrue(NotchIslandText.spoken(countdown, now: now).contains("泡茶"))
+        let unnamed = NotchIslandActivity.timer(deadline: nil, pausedLeft: 65, total: 120, focus: true,
+                                                source: .countdown(widget: widgetID, timer: "main"))
+        XCTAssertTrue(NotchIslandText.spoken(unnamed, now: now).contains("倒计时"))
     }
 
     func testTimerToggleAndEnd() {
@@ -279,7 +408,8 @@ final class NotchIslandTests: XCTestCase {
     func testBodyGrowsFromBothSidesOfTheNotch() {
         let geometry = NotchIslandLayout.geometry(screen: notched)
         let notch = NotchIslandLayout.notch(geometry)
-        for activity in [radio, download, charging, timer] {
+        for activity in [radio, download, charging, timer,
+                         NotchIslandActivity.meeting(title: "周会", start: now.addingTimeInterval(240))] {
             let body = NotchIslandLayout.body(geometry, activity)
             XCTAssertEqual(body.minY, 0, "顶边贴住屏幕顶边，和刘海连成一体")
             XCTAssertTrue(body.contains(notch), "\(activity) 的主岛盖住整段刘海")

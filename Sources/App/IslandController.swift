@@ -12,6 +12,9 @@ import SwiftUI
 /// still appears. With 替代系统音量和亮度提示 on (and Accessibility granted)
 /// it takes the volume and brightness keys itself through `MediaKeyTap`, so
 /// only this capsule shows; without the permission it falls back to reading.
+///
+/// 和刘海小岛（`NotchIslandController`）不叠在一起：音量、亮度一闪时告诉小岛先收起；
+/// 小岛显示着时会议倒计时交给小岛，胶囊不另起（`NotchIslandCapsule`）。
 @MainActor
 final class IslandController {
     static let shared = IslandController()
@@ -38,6 +41,10 @@ final class IslandController {
     private var hideGeneration = 0
     private var screenObserver: NSObjectProtocol?
     private var messageObserver: NSObjectProtocol?
+    private var notchIslandObserver: NSObjectProtocol?
+
+    /// 现在要倒数的会议（会议倒计时关着时 nil）。刘海小岛显示着时由小岛来画。
+    var meeting: IslandContent? { model.meeting }
 
     /// 消息灵动岛的卡片展开时小胶囊让位（音量、亮度只闪一下，会议倒计时等卡片收起后
     /// 回来），见 `NotchMessagePriority.islandYields`。
@@ -48,6 +55,17 @@ final class IslandController {
             MainActor.assumeIsolated {
                 self?.model.yielded = NotchMessagePriority.islandYields(
                     cardExpanded: NotchMessageOccupancy.shared.cardExpanded)
+            }
+        }
+        // 刘海小岛出现、收起：会议倒计时在胶囊和小岛之间交接。
+        notchIslandObserver = NotificationCenter.default.addObserver(
+            forName: NotchIslandOccupancy.didChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let shown = NotchIslandOccupancy.shared.frame != nil
+                guard shown != self.model.notchIslandShown else { return }
+                self.sync()
             }
         }
     }
@@ -79,12 +97,16 @@ final class IslandController {
         } else {
             meetingTimer?.invalidate()
             meetingTimer = nil
-            model.meeting = nil
+            if model.meeting != nil {
+                model.meeting = nil
+                NotchIslandController.shared.meetingChanged()
+            }
         }
 
         if !next.anyEnabled {
             model.flash = nil
             model.meeting = nil
+            NotchIslandController.shared.levelFlashChanged(false)
         }
         updateKeyTap()
         sync()
@@ -263,6 +285,7 @@ final class IslandController {
         let content = next.map { IslandContent.meeting(title: $0.title, start: $0.start) }
         if content != model.meeting {
             model.meeting = content
+            NotchIslandController.shared.meetingChanged()
             sync()
         }
     }
@@ -273,11 +296,15 @@ final class IslandController {
         flashGeneration += 1
         let generation = flashGeneration
         model.flash = content
+        // 小岛先收起，胶囊再出来（小岛不在时什么都不做）。
+        NotchIslandController.shared.levelFlashChanged(true)
         sync()
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(IslandContent.flashDuration))
             guard let self, self.flashGeneration == generation else { return }
             self.model.flash = nil
+            // 小岛先回来，会议倒计时这时就归小岛，胶囊不会闪一下会议再收起。
+            NotchIslandController.shared.levelFlashChanged(false)
             self.sync()
         }
     }
@@ -290,6 +317,7 @@ final class IslandController {
     /// finished leaving, so a top shelf can step aside first and come back
     /// only once the capsule is gone.
     private func sync() {
+        model.notchIslandShown = NotchIslandOccupancy.shared.frame != nil
         if model.content != nil {
             hideGeneration += 1
             let appearing = panel?.isVisible != true
@@ -425,8 +453,12 @@ final class IslandModel {
     var held = false
     /// 消息灵动岛的卡片正展开着：胶囊先不画，卡片收起后回来。
     var yielded = false
+    /// 刘海小岛正显示着：会议倒计时交给小岛，胶囊只闪音量、亮度。
+    var notchIslandShown = false
 
-    var content: IslandContent? { IslandContent.resolve(flash: flash, meeting: meeting) }
+    var content: IslandContent? {
+        NotchIslandCapsule.content(flash: flash, meeting: meeting, islandShown: notchIslandShown)
+    }
     var shown: IslandContent? { held || yielded ? nil : content }
 }
 

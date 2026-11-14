@@ -2212,6 +2212,17 @@
         }
       }
     },
+    "「灵动提示」的会议倒计时打开时，会议快开始时在刘海旁显示还有几分钟，不再另起一个胶囊。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With the meeting countdown in Live Alerts turned on, shows the minutes left beside the notch as a meeting approaches, instead of a separate capsule."
+          }
+        }
+      }
+    },
     "一种活动都没勾选时小岛不会出现。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2223,13 +2234,13 @@
         }
       }
     },
-    "下载、专注倒计时、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示。" : {
+    "下载、专注计时和倒计时卡片、快开始的会议、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示，音量、亮度提示出现时先收起。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While something downloads, a focus timer runs, the radio plays or the power is plugged in, a black island grows out of both sides of the notch and blends into it. When two things happen at once, the second becomes a small round island on the right. Hover over it to expand a card where you can pause, change station or set the volume. Screens without a notch show the same shape centered at the top. Hidden for full screen apps, Presentation Mode and while a message card is open."
+            "value" : "While something downloads, the focus timer or a countdown card runs, a meeting is about to start, the radio plays or the power is plugged in, a black island grows out of both sides of the notch and blends into it. When two things happen at once, the second becomes a small round island on the right. Hover over it to expand a card where you can pause, change station or set the volume. Screens without a notch show the same shape centered at the top. Hidden for full screen apps, Presentation Mode and while a message card is open, and tucked away while the volume or brightness hint shows."
           }
         }
       }
@@ -2245,13 +2256,13 @@
         }
       }
     },
-    "专注计时在跑或暂停时，在刘海下方显示剩余时间。" : {
+    "专注计时或倒计时卡片在跑或暂停时，在刘海下方显示剩余时间；同时有几个时显示最先结束的。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shows the time left under the notch while the focus timer is running or paused."
+            "value" : "Shows the time left under the notch while the focus timer or a countdown card is running or paused. When several run at once, the one that ends first is shown."
           }
         }
       }
@@ -2263,6 +2274,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus Buddy"
+          }
+        }
+      }
+    },
+    "会议" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meeting"
           }
         }
       }
@@ -2417,6 +2439,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turn On and Grant Access"
+          }
+        }
+      }
+    },
+    "打开日历" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Calendar"
           }
         }
       }

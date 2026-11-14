@@ -38,7 +38,7 @@ Dockling is an unofficial fork of [Docket](https://github.com/nparashar150/docks
 
 ## In development (next version)
 
-- 🏝️ **Notch Island** (Pro): download progress, the focus countdown, the radio and a plug-in notice grow as a black island out of both sides of the notch, a second activity splits off as a small round island, and hovering expands a frosted glass card to pause, change station or set the volume; screens without a notch get the same shape centered at the top. Not yet verified on a physical Mac.
+- 🏝️ **Notch Island** (Pro): download progress, the focus countdown, the radio and a plug-in notice grow as a black island out of both sides of the notch, a second activity splits off as a small round island, and hovering expands a frosted glass card to pause, change station or set the volume; screens without a notch get the same shape centered at the top. Countdown card timers show there too (the one ending first when several run, with pause and end acting on that one), the meeting countdown joins the island right after timers, and the island tucks away while the volume or brightness hint shows, so it no longer overlaps the Live Alerts capsule. Not yet verified on a physical Mac.
 
 ## New in v1.0
 

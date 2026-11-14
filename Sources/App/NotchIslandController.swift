@@ -8,7 +8,10 @@ import SwiftUI
 /// 活动来源都是现成的：
 /// - 下载：下载完成监视 `DesktopPetDownloadsWatcher`（和小熊猫共用，各有各的回调），
 ///   顺带读「下载」里未完成文件的进度（`DownloadProgress`），拿不到进度只转圈；
-/// - 计时器：专注计时 `TimerStateProvider`；
+/// - 计时器：专注计时 `TimerStateProvider`，以及每个布局里每张倒计时卡片在跑或暂停的
+///   计时器（`TimedAlertDriver.widgets`，`NotchIslandTimer.countdowns`）；同时几个时留
+///   最先结束的那个（`NotchIslandStack.ordered`）；
+/// - 会议：「灵动提示」的会议倒计时找到的那一个（`IslandController.meeting`）；
 /// - 收音机：`RadioPlayer`；
 /// - 插电：插电霓虹动画 `BatteryNeonPlugController` 看到插上电源时叫 `pluggedIn`。
 ///
@@ -17,7 +20,8 @@ import SwiftUI
 ///
 /// 和码头自己的刘海内容：消息灵动岛的卡片展开时小岛让位；小岛显示时消息的耳朵和
 /// AI 刘海入口让给小岛（`NotchIslandOccupancy`）；插电霓虹动画播放时小岛先让开；
-/// 演示模式和全屏 App 时不显示。
+/// 「灵动提示」的音量、亮度胶囊闪着时小岛先收起，会议倒计时胶囊在小岛显示时交给
+/// 小岛（`NotchIslandCapsule`）；演示模式和全屏 App 时不显示。
 @MainActor
 final class NotchIslandController {
     static let shared = NotchIslandController()
@@ -34,6 +38,8 @@ final class NotchIslandController {
     /// 在小岛上按了暂停的收音机，留一会儿方便继续。
     private var radioHold: (station: String, until: Date)?
     private var plugAnimationUntil: Date?
+    /// 「灵动提示」的音量、亮度胶囊正闪着。
+    private var levelFlash = false
 
     /// 指针在小岛（或展开的卡片）上，以及停够了要展开。
     private var pointerInside = false
@@ -191,6 +197,20 @@ final class NotchIslandController {
         refresh()
     }
 
+    /// 「灵动提示」的音量、亮度胶囊出现、消失时叫这里：闪着时小岛先收起。
+    func levelFlashChanged(_ on: Bool) {
+        guard on != levelFlash else { return }
+        levelFlash = on
+        guard active else { return }
+        refresh()
+    }
+
+    /// 「灵动提示」的会议倒计时换了一个（或没了）时叫这里，不用等下一秒。
+    func meetingChanged() {
+        guard active, settings.isOn(.meeting) else { return }
+        refresh()
+    }
+
     // MARK: 判断现在画什么
 
     /// 带刘海的那块屏幕；没有就是带菜单栏的主屏（模拟刘海）。
@@ -209,7 +229,15 @@ final class NotchIslandController {
         }
         downloads.tick(now: now)
         if let download = downloads.activity(now: now) { list.append(download) }
-        if let timer = NotchIslandTimer.activity(TimerStateProvider.shared.state, now: now) { list.append(timer) }
+        if settings.isOn(.timer) {
+            if let timer = NotchIslandTimer.activity(TimerStateProvider.shared.state, now: now) { list.append(timer) }
+            for widget in TimedAlertDriver.shared.widgets() where widget.kind == .countdown {
+                list += NotchIslandTimer.countdowns(widget: widget.id, config: widget.config, now: now)
+            }
+        }
+        if settings.isOn(.meeting), let meeting = NotchIslandCapsule.meetingActivity(IslandController.shared.meeting) {
+            list.append(meeting)
+        }
         let radio = RadioPlayer.shared
         if radio.isPlaying, let station = radio.station {
             radioHold = nil
@@ -243,7 +271,8 @@ final class NotchIslandController {
             presenting: QuickActions.shared.presentation != nil,
             fullscreen: fullscreen,
             messageCard: NotchMessageOccupancy.shared.cardExpanded,
-            plugAnimation: plugAnimationUntil != nil)
+            plugAnimation: plugAnimationUntil != nil,
+            levelFlash: levelFlash)
         guard NotchIslandGate.visible(context) else { return hide(animated: true) }
         guard let form = NotchIslandStack.form(ordered, hovering: wantsExpanded) else { return hide(animated: true) }
         show(form, on: screen)
@@ -415,14 +444,32 @@ final class NotchIslandController {
             radio.switchStation(by: 1)
         case .radioVolume(let level):
             radio.setVolume(level)
-        case .timerToggle:
+        case .timerToggle(.focus):
             commitTimer(NotchIslandTimer.toggled(TimerStateProvider.shared.state, now: Date()))
-        case .timerEnd:
+        case .timerEnd(.focus):
             commitTimer(NotchIslandTimer.ended(TimerStateProvider.shared.state))
+        case .timerToggle(.countdown(let widget, let timer)):
+            let now = Date()
+            writeCountdown(widget, timer: timer) { NotchIslandTimer.toggled($0, now: now) }
+        case .timerEnd(.countdown(let widget, let timer)):
+            writeCountdown(widget, timer: timer) { CountdownList.stopping($0) }
         case .openDownloads:
             DesktopPetDownloadsWatcher.reveal([])
+        case .openCalendar:
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
+                NSWorkspace.shared.open(url)
+            }
         }
         refresh()
+    }
+
+    /// 改倒计时卡片里的那一个计时器（卡片可能在文件夹或别的布局里，从 `WidgetWriter` 走）。
+    private func writeCountdown(_ widget: UUID, timer: String,
+                                _ change: (CountdownTimer) -> CountdownTimer) {
+        guard let instance = WidgetWriter.current(widget) else { return }
+        WidgetWriter.write(instance) { config in
+            CountdownList.update(timer, in: &config) { $0 = change($0) }
+        }
     }
 
     private func commitTimer(_ state: TimerState) {
@@ -435,8 +482,11 @@ final class NotchIslandController {
 enum NotchIslandAction: Equatable {
     case radioToggle, radioNext
     case radioVolume(Double)
-    case timerToggle, timerEnd
+    /// 作用到卡片上显示的那一个计时器。
+    case timerToggle(NotchIslandTimerSource)
+    case timerEnd(NotchIslandTimerSource)
     case openDownloads
+    case openCalendar
 }
 
 /// 小岛占的地方，给 AI 刘海入口、消息灵动岛的耳朵和插电动画让位用。变了发 `didChange`。

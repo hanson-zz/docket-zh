@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// 锁定方式同消息灵动岛：没解锁时开关旁边是 Pro 胶囊，打开开关只弹付费墙、不改配置；
 /// 关掉不拦。解锁前已经打开的照旧存着，只是不显示，解锁或试用后自动恢复。打开后可以
-/// 勾选显示哪几种活动（下载、计时器、收音机、充电）。
+/// 勾选显示哪几种活动（下载、计时器、会议、收音机、充电）。
 struct NotchIslandSettingsRows: View {
     @Binding var settings: NotchIslandSettings
 
@@ -34,7 +34,7 @@ struct NotchIslandSettingsRows: View {
                             .help(ProFeatures.help)
                     }
                 }
-                Text(tr("下载、专注倒计时、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示。"))
+                Text(tr("下载、专注计时和倒计时卡片、快开始的会议、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示，音量、亮度提示出现时先收起。"))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

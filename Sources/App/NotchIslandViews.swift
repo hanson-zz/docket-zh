@@ -179,6 +179,10 @@ private struct NotchIslandBody: View {
                 .foregroundStyle(NotchIslandPalette.onBlack)
         case .timer:
             EmptyView()
+        case .meeting:
+            Image(systemName: "calendar")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(NotchIslandPalette.onBlack)
         case .radio:
             Image(systemName: "radio.fill")
                 .font(.system(size: 13, weight: .semibold))
@@ -216,6 +220,15 @@ private struct NotchIslandBody: View {
             }
         case .timer:
             EmptyView()
+        case .meeting(_, let start):
+            TimelineView(.periodic(from: .now, by: 1)) { tick in
+                Text(verbatim: NotchIslandText.meetingShort(secondsUntil: start.timeIntervalSince(tick.date)))
+                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText(countsDown: true))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
         case .radio(_, let playing):
             NotchIslandWave(playing: playing, tint: NotchIslandPalette.onBlack)
                 .frame(width: 20, height: 14)
@@ -223,7 +236,7 @@ private struct NotchIslandBody: View {
     }
 
     @ViewBuilder private var chin: some View {
-        if case .timer(let deadline, let pausedLeft, _, _) = activity {
+        if case .timer(let deadline, let pausedLeft, _, _, _, _) = activity {
             TimelineView(.periodic(from: .now, by: 1)) { tick in
                 HStack(spacing: 5) {
                     if pausedLeft != nil {
@@ -275,13 +288,17 @@ private struct NotchIslandBubble: View {
                                 track: .white.opacity(0.18), lineWidth: 2.5)
                     .padding(7)
             }
-        case .timer(let deadline, let pausedLeft, let total, _):
+        case .timer(let deadline, let pausedLeft, let total, _, _, _):
             TimelineView(.periodic(from: .now, by: 1)) { tick in
                 let left = NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)
                 NotchIslandRing(fraction: NotchIslandTimer.elapsedFraction(remaining: left, total: total),
                                 tint: NotchIslandPalette.onBlack, track: .white.opacity(0.18), lineWidth: 2.5)
                     .padding(7)
             }
+        case .meeting:
+            Image(systemName: "calendar")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(NotchIslandPalette.onBlack)
         case .radio(_, let playing):
             NotchIslandWave(playing: playing, tint: NotchIslandPalette.onBlack)
                 .padding(8)
@@ -441,8 +458,11 @@ private struct NotchIslandCard: View {
         switch primary {
         case .radio(let station, _):
             NotchIslandRadioCard(model: model, fallbackStation: station)
-        case .timer(let deadline, let pausedLeft, let total, _):
-            NotchIslandTimerCard(model: model, deadline: deadline, pausedLeft: pausedLeft, total: total)
+        case .timer(let deadline, let pausedLeft, let total, let focus, let source, let name):
+            NotchIslandTimerCard(model: model, deadline: deadline, pausedLeft: pausedLeft, total: total,
+                                 focus: focus, source: source, name: name)
+        case .meeting(let title, let start):
+            NotchIslandMeetingCard(model: model, title: title, start: start)
         case .download(let fraction, let done):
             NotchIslandDownloadCard(model: model, fraction: fraction, done: done)
         case .charging(let percent):
@@ -598,15 +618,25 @@ private struct NotchIslandTimerCard: View {
     var deadline: Date?
     var pausedLeft: TimeInterval?
     var total: TimeInterval
+    var focus: Bool
+    var source: NotchIslandTimerSource
+    var name: String
 
     @Environment(\.colorScheme) private var scheme
 
+    /// 专注计时写第几轮、专注还是休息；倒计时写「泡面 · 共 3 分钟」。
+    private var caption: String {
+        switch source {
+        case .focus: FocusCycle.caption(TimerStateProvider.shared.state)
+        case .countdown: CountdownRun.runningCaption(name: name, duration: total)
+        }
+    }
+
     var body: some View {
-        let state = TimerStateProvider.shared.state
         TimelineView(.periodic(from: .now, by: 1)) { tick in
             let left = NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)
             VStack(alignment: .leading, spacing: 10) {
-                Text(verbatim: FocusCycle.caption(state))
+                Text(verbatim: caption)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
@@ -619,10 +649,10 @@ private struct NotchIslandTimerCard: View {
                         .minimumScaleFactor(0.8)
                     Spacer(minLength: 6)
                     NotchIslandCapsuleButton(title: pausedLeft != nil ? tr("继续") : tr("暂停"), solid: true) {
-                        model.act?(.timerToggle)
+                        model.act?(.timerToggle(source))
                     }
                     NotchIslandCapsuleButton(title: tr("结束"), solid: false) {
-                        model.act?(.timerEnd)
+                        model.act?(.timerEnd(source))
                     }
                 }
                 GeometryReader { proxy in
@@ -639,7 +669,8 @@ private struct NotchIslandTimerCard: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityValue(NotchIslandText.spoken(
-                .timer(deadline: deadline, pausedLeft: pausedLeft, total: total, focus: state.phase == .focus),
+                .timer(deadline: deadline, pausedLeft: pausedLeft, total: total, focus: focus,
+                       source: source, name: name),
                 now: tick.date))
         }
     }
@@ -684,6 +715,55 @@ private struct NotchIslandDownloadCard: View {
         if done { return tr("已存到「下载」") }
         guard let fraction else { return tr("进度未知") }
         return NotchIslandText.percent(fraction)
+    }
+}
+
+/// 快开始的会议：标题、还有几分钟、几点开始，和打开日历的按钮。
+private struct NotchIslandMeetingCard: View {
+    var model: NotchIslandModel
+    var title: String
+    var start: Date
+
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { tick in
+            HStack(alignment: .center, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.panelFill)
+                    Image(systemName: "calendar")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(NotchIslandPalette.accent(scheme))
+                }
+                .frame(width: 48, height: 48)
+                .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(verbatim: displayTitle)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(verbatim: "\(IslandCountdown.text(secondsUntil: start.timeIntervalSince(tick.date))) · "
+                        + start.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 13).monospacedDigit())
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .contentTransition(.numericText(countsDown: true))
+                }
+                Spacer(minLength: 6)
+                NotchIslandCapsuleButton(title: tr("打开日历"), solid: false) {
+                    model.act?(.openCalendar)
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityValue(NotchIslandText.spoken(.meeting(title: title, start: start), now: tick.date))
+        }
+    }
+
+    private var displayTitle: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? tr("新日程") : trimmed
     }
 }
 
@@ -750,6 +830,7 @@ private struct NotchIslandSecondaryRow: View {
         case .charging: "bolt.fill"
         case .download(_, let done): done ? "checkmark.circle.fill" : "arrow.down.circle"
         case .timer: "timer"
+        case .meeting: "calendar"
         case .radio: "radio.fill"
         }
     }
