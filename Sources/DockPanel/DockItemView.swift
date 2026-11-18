@@ -13,6 +13,9 @@ struct DockItemView: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var spacerHovered = false
+    @State private var livePointer: CGPoint?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("liveIcons.enabled") private var liveIconsEnabled = true
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -52,6 +55,29 @@ struct DockItemView: View {
         ZStack {
             icon
                 .frame(width: geo.icon, height: geo.icon)
+                .overlay(alignment: .bottomTrailing) {
+                    if liveIconsEnabled, case .app(_, let bundleID, _) = item,
+                       bundleID == "com.apple.finder", livePointer != nil {
+                        LiveFinderCompanion(side: geo.icon, pointer: livePointer)
+                            .offset(x: geo.icon * 0.025, y: geo.icon * 0.025)
+                            .transition(.opacity)
+                    }
+                }
+                .overlay {
+                    if liveIconsEnabled && !reduceMotion,
+                       case .app(_, let bundleID, _) = item,
+                       bundleID == "com.google.Chrome" {
+                        LiveChromeLaunchRing(side: geo.icon, running: isRunning)
+                    }
+                }
+                .onContinuousHover { phase in
+                    guard liveIconsEnabled, case .app(_, let bundleID, _) = item,
+                          bundleID == "com.apple.finder" else { return }
+                    switch phase {
+                    case .active(let point): livePointer = point
+                    case .ended: livePointer = nil
+                    }
+                }
                 // Bottom shelves sit the icon slightly high so the running dot
                 // has room underneath without enlarging the tile; top shelves
                 // mirror it, the dot going above, by the screen edge.
