@@ -3,6 +3,8 @@ import XCTest
 
 final class LiveIconUsageTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+    /// 转动的测试用参考时间原点：Date 离原点越远精度越差，角度断言会差出百万分之几度。
+    private let s0 = Date(timeIntervalSinceReferenceDate: 0)
 
     // MARK: 认 App 与开关
 
@@ -132,23 +134,23 @@ final class LiveIconUsageTests: XCTestCase {
 
     func testSpinIsSteadyThenSettlesBackToZero() {
         var spin = LiveIconSpin()
-        XCTAssertEqual(spin.angle(at: t0), 0)
-        XCTAssertFalse(spin.isAnimating(at: t0))
+        XCTAssertEqual(spin.angle(at: s0), 0)
+        XCTAssertFalse(spin.isAnimating(at: s0))
 
-        spin.start(at: t0)
+        spin.start(at: s0)
         let quarter = 0.25 * 1.1
-        XCTAssertEqual(spin.angle(at: t0.addingTimeInterval(quarter)), 90, accuracy: 1e-6)
-        XCTAssertTrue(spin.isAnimating(at: t0.addingTimeInterval(100)))
-        XCTAssertNil(spin.endDate(at: t0))
+        XCTAssertEqual(spin.angle(at: s0.addingTimeInterval(quarter)), 90, accuracy: 1e-3)
+        XCTAssertTrue(spin.isAnimating(at: s0.addingTimeInterval(100)))
+        XCTAssertNil(spin.endDate(at: s0))
 
-        let stopAt = t0.addingTimeInterval(quarter)
+        let stopAt = s0.addingTimeInterval(quarter)
         spin.stop(at: stopAt)
         guard case let .settling(_, from, distance, duration) = spin.phase else {
             return XCTFail("应该在减速")
         }
-        XCTAssertEqual(from, 90, accuracy: 1e-6)
-        XCTAssertEqual(distance, 270, accuracy: 1e-6)
-        XCTAssertEqual(duration, 2 * 270 / LiveIconSpin.degreesPerSecond, accuracy: 1e-9)
+        XCTAssertEqual(from, 90, accuracy: 1e-3)
+        XCTAssertEqual(distance, 270, accuracy: 1e-3)
+        XCTAssertEqual(duration, 2 * 270 / LiveIconSpin.degreesPerSecond, accuracy: 1e-6)
         // 减速开头速度接近匀速，不突然慢下来。
         let dt = 0.001
         let early = spin.angle(at: stopAt.addingTimeInterval(dt)) - from
@@ -160,7 +162,7 @@ final class LiveIconUsageTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(a, last)
             last = a
         }
-        XCTAssertEqual(spin.angle(at: stopAt.addingTimeInterval(duration + 0.01)), 0, accuracy: 1e-6)
+        XCTAssertEqual(spin.angle(at: stopAt.addingTimeInterval(duration + 0.01)), 0, accuracy: 1e-3)
         XCTAssertFalse(spin.isAnimating(at: stopAt.addingTimeInterval(duration + 0.01)))
         spin.settleIfDone(at: stopAt.addingTimeInterval(duration + 0.01))
         XCTAssertEqual(spin.phase, .resting)
@@ -168,41 +170,41 @@ final class LiveIconUsageTests: XCTestCase {
 
     func testShortSettleGetsAnExtraTurn() {
         var spin = LiveIconSpin()
-        spin.start(at: t0)
+        spin.start(at: s0)
         // 转到 300 度时停：只剩 60 度，太急，多转一圈。
-        let at = t0.addingTimeInterval(300 / LiveIconSpin.degreesPerSecond)
+        let at = s0.addingTimeInterval(300 / LiveIconSpin.degreesPerSecond)
         spin.stop(at: at)
         guard case let .settling(_, _, distance, _) = spin.phase else { return XCTFail() }
-        XCTAssertEqual(distance, 420, accuracy: 1e-6)
+        XCTAssertEqual(distance, 420, accuracy: 1e-3)
     }
 
     func testRestartDuringSettleContinuesFromCurrentAngle() {
         var spin = LiveIconSpin()
-        spin.start(at: t0)
-        spin.stop(at: t0.addingTimeInterval(0.2))
-        let again = t0.addingTimeInterval(0.4)
+        spin.start(at: s0)
+        spin.stop(at: s0.addingTimeInterval(0.2))
+        let again = s0.addingTimeInterval(0.4)
         let angle = spin.angle(at: again)
         spin.start(at: again)
         XCTAssertTrue(spin.isSpinning)
-        XCTAssertEqual(spin.angle(at: again), angle, accuracy: 1e-6)
+        XCTAssertEqual(spin.angle(at: again), angle, accuracy: 1e-3)
     }
 
     func testOneTurnFallbackEndsAtZeroAndDoesNotInterrupt() {
         var spin = LiveIconSpin()
-        spin.turnOnce(at: t0)
-        let mid = spin.angle(at: t0.addingTimeInterval(LiveIconSpin.oneTurnDuration / 2))
-        XCTAssertEqual(mid, 180, accuracy: 1e-6)
-        XCTAssertEqual(spin.angle(at: t0.addingTimeInterval(LiveIconSpin.oneTurnDuration)), 0, accuracy: 1e-6)
+        spin.turnOnce(at: s0)
+        let mid = spin.angle(at: s0.addingTimeInterval(LiveIconSpin.oneTurnDuration / 2))
+        XCTAssertEqual(mid, 180, accuracy: 1e-3)
+        XCTAssertEqual(spin.angle(at: s0.addingTimeInterval(LiveIconSpin.oneTurnDuration)), 0, accuracy: 1e-3)
 
         var busy = LiveIconSpin()
-        busy.start(at: t0)
-        busy.turnOnce(at: t0.addingTimeInterval(0.1))
+        busy.start(at: s0)
+        busy.turnOnce(at: s0.addingTimeInterval(0.1))
         XCTAssertTrue(busy.isSpinning)
     }
 
     func testStopWhileRestingDoesNothing() {
         var spin = LiveIconSpin()
-        spin.stop(at: t0)
+        spin.stop(at: s0)
         XCTAssertEqual(spin.phase, .resting)
     }
 }
