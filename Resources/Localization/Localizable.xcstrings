@@ -2256,6 +2256,17 @@
         }
       }
     },
+    "专注结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus ends"
+          }
+        }
+      }
+    },
     "专注计时或倒计时卡片在跑或暂停时，在刘海下方显示剩余时间；同时有几个时显示最先结束的。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2274,6 +2285,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus Buddy"
+          }
+        }
+      }
+    },
+    "乒" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ping"
+          }
+        }
+      }
+    },
+    "今天完成的番茄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomodoros finished today"
+          }
+        }
+      }
+    },
+    "休息结束" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Break over"
           }
         }
       }
@@ -2300,6 +2344,28 @@
         }
       }
     },
+    "八爪鱼" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Octopus"
+          }
+        }
+      }
+    },
+    "准备好开始下一轮专注了吗？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready for the next focus session?"
+          }
+        }
+      }
+    },
     "刘海小岛" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2318,6 +2384,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When you drag a file or folder to the Trash, the red panda runs over within 10 seconds, carries it back and puts it back where it was. Emptying the Trash is never affected."
+          }
+        }
+      }
+    },
+    "叮" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tink"
+          }
+        }
+      }
+    },
+    "吉祥物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mascot"
+          }
+        }
+      }
+    },
+    "吹气" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blow"
+          }
+        }
+      }
+    },
+    "呼噜" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purr"
+          }
+        }
+      }
+    },
+    "啵" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop"
           }
         }
       }
@@ -2373,6 +2494,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The red panda climbing the bamboo while you focus is part of Dockling Pro. Click to buy, enter a license key or start a trial."
+          }
+        }
+      }
+    },
+    "左右拖动调整专注时长（5 到 90 分钟）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag left or right to set the focus length (5 to 90 minutes)"
+          }
+        }
+      }
+    },
+    "左右拖动调整，5 分钟一档" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to adjust, 5 minutes a step"
+          }
+        }
+      }
+    },
+    "已专注 %@ 分钟，起来活动一下，休息 %@ 分钟。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focused for %@ minutes. Get up and move around, take a %@ minute break."
           }
         }
       }
@@ -2509,6 +2663,17 @@
         }
       }
     },
+    "摩尔斯" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morse"
+          }
+        }
+      }
+    },
     "收音机已暂停 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2542,6 +2707,17 @@
         }
       }
     },
+    "放克" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funk"
+          }
+        }
+      }
+    },
     "正在下载，%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2560,6 +2736,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Message Island and Notch Island"
+          }
+        }
+      }
+    },
+    "潜水艇" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submarine"
+          }
+        }
+      }
+    },
+    "瓶子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottle"
           }
         }
       }
@@ -2619,6 +2817,39 @@
         }
       }
     },
+    "结束提示音" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End sounds"
+          }
+        }
+      }
+    },
+    "结束时发通知" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notify when a session ends"
+          }
+        }
+      }
+    },
+    "英雄" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hero"
+          }
+        }
+      }
+    },
     "计时器" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2626,6 +2857,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timer"
+          }
+        }
+      }
+    },
+    "试听%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview %@"
           }
         }
       }
@@ -2762,6 +3004,28 @@
         }
       }
     },
+    "跳到休息，这一轮不算完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip to the break, this session does not count"
+          }
+        }
+      }
+    },
+    "跳回专注" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip back to focus"
+          }
+        }
+      }
+    },
     "进度未知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2769,6 +3033,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Progress unknown"
+          }
+        }
+      }
+    },
+    "连响" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat"
           }
         }
       }

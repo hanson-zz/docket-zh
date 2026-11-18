@@ -598,11 +598,18 @@ public enum NotchIslandLayout {
         screen.notch?.midX ?? screen.frame.midX
     }
 
+    /// 专注计时在小岛上：左边吉祥物多宽，右边剩余时间多宽（放得下「1:02:03」）。
+    public static let focusMascotWing: CGFloat = 44
+    public static let focusClockWing: CGFloat = 70
+
     /// 一个活动在 compact 形态下左右两侧各多宽，以及刘海下面要不要一条显示剩余时间。
+    /// 专注计时左边放吉祥物、右边放剩余时间，不要下面那一条；倒计时卡片的计时器照旧
+    /// 在刘海下方一条。
     public static func wings(_ activity: NotchIslandActivity) -> (left: CGFloat, right: CGFloat, chin: CGFloat) {
         switch activity {
         case .charging: return (left: 40, right: 62, chin: 0)
         case .download(_, let done): return (left: 40, right: done ? 40 : 76, chin: 0)
+        case .timer(_, _, _, _, .focus, _): return (left: focusMascotWing, right: focusClockWing, chin: 0)
         case .timer: return (left: 14, right: 14, chin: chinHeight)
         case .meeting: return (left: 40, right: 56, chin: 0)
         case .radio: return (left: 40, right: 44, chin: 0)

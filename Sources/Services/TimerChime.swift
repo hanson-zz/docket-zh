@@ -79,9 +79,10 @@ final class FocusCycleDriver {
         provider.state = next
         // 专注到点接休息：按“休息时声音停下”停掉或接着放环境音。
         FocusAmbientDriver.shared.sync(next, now: now)
-        // 合盖很久回来的不响，只有刚到点的才提醒。
+        // 合盖很久回来的不响，只有刚到点的才提醒：响选好的提示音（可连响几次），
+        // 再发一条本机通知（面板设置里可关）。
         if state.alerts, !stale, now.timeIntervalSince(state.deadline ?? now) < 60 {
-            TimerChime.play(.focus)
+            FocusEndAlert.ring(ended: state, next: next)
         }
     }
 }

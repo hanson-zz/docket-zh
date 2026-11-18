@@ -416,8 +416,16 @@ final class NotchIslandTests: XCTestCase {
             XCTAssertLessThan(body.minX, notch.minX)
             XCTAssertGreaterThan(body.maxX, notch.maxX)
         }
-        XCTAssertEqual(NotchIslandLayout.body(geometry, timer).height, 32 + NotchIslandLayout.chinHeight,
-                       "计时器在刘海下方多一条显示剩余时间")
+        let countdown = NotchIslandActivity.timer(deadline: now.addingTimeInterval(120), pausedLeft: nil, total: 300,
+                                                  focus: true, source: .countdown(widget: widgetID, timer: "main"))
+        XCTAssertEqual(NotchIslandLayout.body(geometry, countdown).height, 32 + NotchIslandLayout.chinHeight,
+                       "倒计时卡片的计时器在刘海下方多一条显示剩余时间")
+        XCTAssertEqual(NotchIslandLayout.body(geometry, timer).height, 32,
+                       "专注计时左边吉祥物、右边剩余时间，不要下面那一条")
+        let wings = NotchIslandLayout.wings(timer)
+        XCTAssertEqual(wings.left, NotchIslandLayout.focusMascotWing)
+        XCTAssertEqual(wings.right, NotchIslandLayout.focusClockWing)
+        XCTAssertEqual(wings.chin, 0)
         XCTAssertEqual(NotchIslandLayout.body(geometry, radio).height, 32)
     }
 

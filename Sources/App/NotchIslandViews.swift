@@ -177,6 +177,13 @@ private struct NotchIslandBody: View {
             Image(systemName: done ? "arrow.down.circle.fill" : "arrow.down.to.line")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(NotchIslandPalette.onBlack)
+        case .timer(_, _, _, _, .focus, _):
+            // 专注计时：左边是选好的吉祥物（专注中、暂停、休息、刚完成各一种样子）。
+            TimelineView(.periodic(from: .now, by: 1)) { tick in
+                let state = TimerStateProvider.shared.state
+                FocusMascotImage(mascot: FocusMascot.of(state), state: FocusMascotState.of(state, now: tick.date),
+                                 height: max(18, geometry.notchHeight - 6))
+            }
         case .timer:
             EmptyView()
         case .meeting:
@@ -217,6 +224,26 @@ private struct NotchIslandBody: View {
                                     track: .white.opacity(0.18), lineWidth: 2.5)
                         .frame(width: 16, height: 16)
                 }
+            }
+        case .timer(let deadline, let pausedLeft, _, _, .focus, _):
+            // 专注计时：右边是剩余时间，暂停时前面一个暂停号、字淡一点。
+            TimelineView(.periodic(from: .now, by: 1)) { tick in
+                HStack(spacing: 3) {
+                    if pausedLeft != nil {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(NotchIslandPalette.onBlack)
+                            .accessibilityHidden(true)
+                    }
+                    Text(verbatim: NotchIslandText.clock(
+                        NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(pausedLeft == nil ? NotchIslandPalette.onBlack : .white.opacity(0.7))
+                        .contentTransition(.numericText(countsDown: true))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .fixedSize()
             }
         case .timer:
             EmptyView()

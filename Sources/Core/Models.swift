@@ -1309,6 +1309,15 @@ public struct TimerState: Codable, Hashable, Sendable {
     public var ambientVolume: Int = 55
     /// 休息时环境音停下，回到专注再放。
     public var quietOnBreak: Bool = true
+    /// 专注面板和刘海小岛上的吉祥物（`FocusMascot` 的 rawValue），空是默认的小熊猫。
+    public var mascot: String = ""
+    /// 专注结束、休息结束时响的系统声音（`FocusEndSound`），空是默认，`none` 是不响。
+    public var focusEndSound: String = ""
+    public var restEndSound: String = ""
+    /// 提示音连响几次，1...5。
+    public var soundRepeats: Int = 1
+    /// 一个环节结束时发一条本机通知。
+    public var notifyEnd: Bool = true
 
     /// Decodes field by field, so an unknown or missing key is a default and
     /// not a thrown error.
@@ -1339,6 +1348,11 @@ public struct TimerState: Codable, Hashable, Sendable {
         ambient = try c.decodeIfPresent(String.self, forKey: .ambient) ?? ""
         ambientVolume = try c.decodeIfPresent(Int.self, forKey: .ambientVolume) ?? 55
         quietOnBreak = try c.decodeIfPresent(Bool.self, forKey: .quietOnBreak) ?? true
+        mascot = try c.decodeIfPresent(String.self, forKey: .mascot) ?? ""
+        focusEndSound = try c.decodeIfPresent(String.self, forKey: .focusEndSound) ?? ""
+        restEndSound = try c.decodeIfPresent(String.self, forKey: .restEndSound) ?? ""
+        soundRepeats = try c.decodeIfPresent(Int.self, forKey: .soundRepeats) ?? 1
+        notifyEnd = try c.decodeIfPresent(Bool.self, forKey: .notifyEnd) ?? true
     }
 
     public init() {}

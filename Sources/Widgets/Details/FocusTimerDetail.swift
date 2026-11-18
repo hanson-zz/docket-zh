@@ -8,6 +8,11 @@ import SwiftUI
 /// 环境音、音量，休息时声音停不停、提不提醒起身。专注进行中进度环右边有一根竹竿，
 /// 小熊猫按进度往上爬（码头 Pro），见 `FocusBambooClimber`。
 ///
+/// 从拾掇搬来的：进度环左下角是选好的吉祥物（六只，各有等开始、专注中、休息、刚完成
+/// 四种样子，见 `FocusMascot`；选小熊猫时专注进行中照旧爬竹竿）；专注没开始时左右拖
+/// 剩余时间的大数字按 5 分钟一档调时长（`FocusScrub`）；“跳过”直接进下一段；设置里
+/// 选吉祥物、专注结束和休息结束的系统提示音（可试听、可连响几次、可不响）、结束时发不发通知。
+///
 /// 计时器全应用只有一个，所有操作都写 `TimerStateProvider.shared.state`，和卡片一样：
 /// 暂停存下剩余的秒数，继续从屏幕上的数字接着走。番茄段见 `FocusDay`，环境音联动见
 /// `FocusAmbientDriver`。近七天统计是 Pro，没解锁时只看今天，换成一行 Pro 提示。
@@ -19,6 +24,8 @@ struct FocusTimerDetail: View {
 
     @State private var editing = false
     @State private var draft = ""
+    /// 正在拖大数字调时长：标题下一行换成提示。
+    @State private var scrubbing = false
     @FocusState private var taskFocused: Bool
 
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
@@ -86,7 +93,8 @@ struct FocusTimerDetail: View {
         let left = Self.remaining(in: state, total: total, now: now)
         // 竖向间距 14→12、圆环 158→150：免费用户多出一行 Pro 提示，面板仍在 560 以内。
         return VStack(alignment: .leading, spacing: 12) {
-            header(title: tr("专注计时"), subtitle: FocusDay.status(state, now: now)) {
+            header(title: tr("专注计时"),
+                   subtitle: scrubbing ? tr("左右拖动调整，5 分钟一档") : FocusDay.status(state, now: now)) {
                 pillButton(tr("设置"), solid: false) {
                     commitDraft()
                     editing = true
@@ -97,10 +105,16 @@ struct FocusTimerDetail: View {
                 .frame(maxWidth: .infinity)
                 // 专注进行中，进度环右边一根竹竿，小熊猫按进度往上爬（码头 Pro，
                 // 免费是一只静态的小熊猫），见 `FocusBambooClimber`。
+                // 选的不是小熊猫时没有竹竿，吉祥物的状态图放在左下角。
                 .overlay(alignment: .trailing) {
-                    FocusBambooClimber(state: state, now: now,
-                                       unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked),
-                                       isPreview: context.isPreview)
+                    if mascot(state).climbsBamboo {
+                        FocusBambooClimber(state: state, now: now,
+                                           unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked),
+                                           isPreview: context.isPreview)
+                    }
+                }
+                .overlay(alignment: .bottomLeading) {
+                    mascotStill(state, now: now)
                 }
             HStack(spacing: 8) {
                 bigButton(primaryTitle(state, left: left), solid: true) { togglePrimary() }
@@ -108,6 +122,8 @@ struct FocusTimerDetail: View {
                 bigButton(tr("重置"), solid: false) { reset() }
                     .disabled(untouched)
                     .opacity(untouched ? 0.4 : 1)
+                bigButton(tr("跳过"), solid: false) { skip() }
+                    .help(state.phase == .focus ? tr("跳到休息，这一轮不算完成") : tr("跳回专注"))
             }
             ambientRow(state)
             today(state, now: now)
@@ -192,6 +208,11 @@ struct FocusTimerDetail: View {
                     .rollingValue(Int(left.rounded(.up)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                    // 专注没开始时左右拖这串数字调时长，5 分钟一档。
+                    .modifier(FocusScrubbable(enabled: FocusScrub.canScrub(state) && !context.isPreview,
+                                              minutes: state.work, active: $scrubbing) { minutes in
+                        update { $0 = FocusScrub.applying(minutes, to: $0) }
+                    })
                 Text(tr("共 \(Int((total / 60).rounded())) 分钟"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
@@ -380,6 +401,18 @@ struct FocusTimerDetail: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 8)
+                if !done.isEmpty {
+                    Label {
+                        Text(verbatim: "\(done.count)")
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill")
+                    }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent.panelReadable)
+                        .monospacedDigit()
+                        .help(tr("今天完成的番茄"))
+                        .accessibilityLabel(tr("今天完成 \(done.count) 个番茄"))
+                }
                 Text(FocusDay.focusedText(minutes: minutes))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(minutes > 0 ? accent.panelReadable : Color.panelSecondary)
@@ -468,7 +501,40 @@ struct FocusTimerDetail: View {
             }
             toggleRow(tr("休息时声音停下"), isOn: state.quietOnBreak) { value in update { $0.quietOnBreak = value } }
             toggleRow(tr("休息时提醒起身"), isOn: state.standUp) { value in update { $0.standUp = value } }
+
+            sectionLabel(tr("吉祥物"))
+            FocusMascotPicker(selected: mascot(state), accent: accent, disabled: context.isPreview) { choice in
+                update { $0.mascot = choice.rawValue }
+            }
+
+            sectionLabel(tr("结束提示音"))
+            endSounds(state)
+            toggleRow(tr("结束时发通知"), isOn: state.notifyEnd) { value in update { $0.notifyEnd = value } }
         }
+    }
+
+    /// 专注结束、休息结束各选一种系统声音，连响几次。
+    private func endSounds(_ state: TimerState) -> some View {
+        let repeats = FocusEndSound.repeats(state)
+        return VStack(spacing: 0) {
+            FocusSoundRow(title: tr("专注结束"), selection: FocusEndSound.focusEnd(state), repeats: repeats,
+                          accent: accent, disabled: context.isPreview) { name in
+                update { $0.focusEndSound = name }
+            }
+            divider
+            FocusSoundRow(title: tr("休息结束"), selection: FocusEndSound.restEnd(state), repeats: repeats,
+                          accent: accent, disabled: context.isPreview) { name in
+                update { $0.restEndSound = name }
+            }
+            divider
+            stepperRow(tr("连响"), text: tr("\(repeats) 次"),
+                       minus: { $0.soundRepeats = FocusEndSound.clampRepeats(FocusEndSound.repeats($0) - 1) },
+                       plus: { $0.soundRepeats = FocusEndSound.clampRepeats(FocusEndSound.repeats($0) + 1) },
+                       canMinus: repeats > FocusEndSound.repeatsRange.lowerBound,
+                       canPlus: repeats < FocusEndSound.repeatsRange.upperBound)
+        }
+        .padding(.vertical, 2)
+        .glassPane(cornerRadius: 12)
     }
 
     /// 专注、短休息、长休息和几轮一组，一行一个加减。
@@ -754,6 +820,28 @@ struct FocusTimerDetail: View {
             }
         }
         commit(state)
+    }
+
+    /// 跳过这一段：专注跳到休息（不算完成），休息跳回专注，都停在开始前。
+    private func skip() {
+        guard !context.isPreview else { return }
+        commitDraft()
+        commit(FocusCycle.skipped(TimerStateProvider.shared.state))
+    }
+
+    // MARK: 吉祥物
+
+    private func mascot(_ state: TimerState) -> FocusMascot { FocusMascot.of(state) }
+
+    /// 进度环左下角的吉祥物状态图；小熊猫在竹竿上时不再另画一只。
+    @ViewBuilder
+    private func mascotStill(_ state: TimerState, now: Date) -> some View {
+        let chosen = mascot(state)
+        if FocusMascotDisplay.showsStill(chosen, state: state, now: now,
+                                         unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked)) {
+            FocusMascotImage(mascot: chosen, state: FocusMascotState.of(state, now: now), height: 62)
+                .allowsHitTesting(false)
+        }
     }
 
     /// 连钉住的长度一起清掉，重置后用设置里现在的时长。
