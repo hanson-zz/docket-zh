@@ -18516,6 +18516,28 @@
         }
       }
     },
+    "动态图标" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live icons"
+          }
+        }
+      }
+    },
+    "鼠标停在访达上冒出一张跟着看你的小脸，Chrome 启动时图标转一圈。系统开了减弱动态效果时不转。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over Finder and a little face pops up and follows your pointer; Chrome's icon spins once while it launches. No spinning when Reduce Motion is on."
+          }
+        }
+      }
+    },
     "所有 App" : {
       "extractionState" : "manual",
       "localizations" : {

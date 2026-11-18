@@ -1197,6 +1197,8 @@ struct SettingsView: View {
                 }
                 // 悬停正在运行的 App 弹窗口预览（Pro），默认关。
                 WindowPreviewSettingRow(enabled: $state.customDock.hoverWindowPreview)
+                // 访达小脸、Chrome 启动转圈，默认关。
+                LiveIconsSettingRow()
                 Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
                 if state.customDock.showTrash {
                     Toggle("废纸篓图标上显示苍蝇", isOn: $state.customDock.showTrashFlies)
