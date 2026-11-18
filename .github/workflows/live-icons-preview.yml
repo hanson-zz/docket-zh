@@ -1,0 +1,53 @@
+name: Live Icons Preview
+
+on:
+  push:
+    branches:
+      - feat/live-icons-foundation
+    paths:
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Resources/**'
+      - 'project.yml'
+      - '.github/workflows/live-icons-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: brew install --quiet xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build preview app
+        run: |
+          xcodebuild \
+            -project Docket.xcodeproj \
+            -scheme Docket \
+            -configuration Debug \
+            -derivedDataPath "$GITHUB_WORKSPACE/build" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            ENABLE_HARDENED_RUNTIME=NO \
+            build
+      - name: Package preview
+        run: |
+          mkdir -p dist
+          test -d build/Build/Products/Debug/Dockling.app
+          ditto -c -k --keepParent build/Build/Products/Debug/Dockling.app dist/Dockling-Live-Icons-Preview.zip
+          shasum -a 256 dist/Dockling-Live-Icons-Preview.zip > dist/SHA256.txt
+      - name: Upload installable preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dockling-Live-Icons-Preview
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
