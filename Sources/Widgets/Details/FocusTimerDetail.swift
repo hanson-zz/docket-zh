@@ -503,8 +503,13 @@ struct FocusTimerDetail: View {
             toggleRow(tr("休息时提醒起身"), isOn: state.standUp) { value in update { $0.standUp = value } }
 
             sectionLabel(tr("吉祥物"))
-            FocusMascotPicker(selected: mascot(state), accent: accent, disabled: context.isPreview) { choice in
-                update { $0.mascot = choice.rawValue }
+            FocusMascotPicker(selected: mascot(state), accent: accent, disabled: context.isPreview,
+                              unlocked: licenseUnlocked) { choice in
+                if choice.requiresPro && !licenseUnlocked {
+                    PaywallWindow.shared.show()
+                } else {
+                    update { $0.mascot = choice.rawValue }
+                }
             }
 
             sectionLabel(tr("结束提示音"))
@@ -831,7 +836,7 @@ struct FocusTimerDetail: View {
 
     // MARK: 吉祥物
 
-    private func mascot(_ state: TimerState) -> FocusMascot { FocusMascot.of(state) }
+    private func mascot(_ state: TimerState) -> FocusMascot { FocusMascot.of(state, unlocked: licenseUnlocked) }
 
     /// 进度环左下角的吉祥物状态图；小熊猫在竹竿上时不再另画一只。
     @ViewBuilder

@@ -56,6 +56,7 @@ final class NotchIslandController {
 
     private var fullscreen = false
     private var lastFullscreenCheck = Date.distantPast
+    private var shiduoShelf = false
     private var ticker: Timer?
     private var observers: [NSObjectProtocol] = []
     private var lastUnlocked = ProAccess.isUnlocked
@@ -258,6 +259,13 @@ final class NotchIslandController {
         let ordered = NotchIslandStack.ordered(activities(now: now), settings: settings)
         guard !ordered.isEmpty else { return hide(animated: true) }
 
+        // 拾掇在跑时每次都看一眼它的暂存架开没开（每秒一次），没在跑不扫窗口。
+        if AINotchController.checkShiduo() {
+            shiduoShelf = NotchIslandShiduoYield.shelfOpen(
+                NotchWindowScanner.windows(), screen: AINotchController.describe(screen, isMain: true))
+        } else {
+            shiduoShelf = false
+        }
         if now.timeIntervalSince(lastFullscreenCheck) >= 2 {
             lastFullscreenCheck = now
             fullscreen = NotchFullscreen.isFullscreen(
@@ -272,7 +280,8 @@ final class NotchIslandController {
             fullscreen: fullscreen,
             messageCard: NotchMessageOccupancy.shared.cardExpanded,
             plugAnimation: plugAnimationUntil != nil,
-            levelFlash: levelFlash)
+            levelFlash: levelFlash,
+            shiduoShelf: shiduoShelf)
         guard NotchIslandGate.visible(context) else { return hide(animated: true) }
         guard let form = NotchIslandStack.form(ordered, hovering: wantsExpanded) else { return hide(animated: true) }
         show(form, on: screen)

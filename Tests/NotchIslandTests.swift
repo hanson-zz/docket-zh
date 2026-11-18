@@ -492,4 +492,20 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertEqual(NotchIslandTiming.chargeLinger, 4)
         XCTAssertEqual(NotchIslandTiming.downloadDoneLinger, 2)
     }
+
+    func testYieldsToShiduoShelf() {
+        let screen = AINotchScreen(id: 1, frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+                                   notch: CGRect(x: 656, y: 950, width: 200, height: 32),
+                                   menuBarHeight: 32, isMain: true)
+        let shelf = NotchForeignWindow(ownerName: "拾掇", bundleID: AIShiduo.bundleID,
+                                       frame: CGRect(x: 556, y: 760, width: 400, height: 222))
+        XCTAssertTrue(NotchIslandShiduoYield.shelfOpen([shelf], screen: screen))
+        let hint = NotchForeignWindow(ownerName: "Shiduo", frame: CGRect(x: 656, y: 930, width: 200, height: 40))
+        XCTAssertFalse(NotchIslandShiduoYield.shelfOpen([hint], screen: screen), "矮提示条不算")
+        let other = NotchForeignWindow(ownerName: "NotchNook", frame: shelf.frame)
+        XCTAssertFalse(NotchIslandShiduoYield.shelfOpen([other], screen: screen), "只认拾掇")
+        let far = NotchForeignWindow(ownerName: "拾掇", frame: CGRect(x: 0, y: 100, width: 300, height: 300))
+        XCTAssertFalse(NotchIslandShiduoYield.shelfOpen([far], screen: screen), "不在刘海附近")
+        XCTAssertFalse(NotchIslandGate.visible(.init(active: true, shiduoShelf: true)))
+    }
 }

@@ -220,22 +220,51 @@ public enum NotchIslandGate {
         /// 「灵动提示」的音量或亮度胶囊正闪着（刘海正下方）：小岛先收起，胶囊消失后回来，
         /// 两个不叠在一起。
         public var levelFlash: Bool
+        /// 拾掇的刘海暂存架正展开着（`NotchIslandShiduoYield`）：小岛让开，收起后回来。
+        public var shiduoShelf: Bool
 
         public init(active: Bool, presenting: Bool = false, fullscreen: Bool = false,
-                    messageCard: Bool = false, plugAnimation: Bool = false, levelFlash: Bool = false) {
+                    messageCard: Bool = false, plugAnimation: Bool = false, levelFlash: Bool = false,
+                    shiduoShelf: Bool = false) {
             self.active = active
             self.presenting = presenting
             self.fullscreen = fullscreen
             self.messageCard = messageCard
             self.plugAnimation = plugAnimation
             self.levelFlash = levelFlash
+            self.shiduoShelf = shiduoShelf
         }
     }
 
     /// 小岛现在能不能出现（有没有活动另算）。
     public static func visible(_ context: Context) -> Bool {
         context.active && !context.presenting && !context.fullscreen && !context.messageCard
-            && !context.plugAnimation && !context.levelFlash
+            && !context.plugAnimation && !context.levelFlash && !context.shiduoShelf
+    }
+}
+
+// MARK: - 给拾掇的暂存架让位
+
+/// 拾掇（姊妹 App）保留自己的刘海暂存架。码头小岛不和它抢：刘海附近有拾掇的窗口、
+/// 顶边贴着菜单栏（离屏幕顶不超过 `topSlack`）、高度超过 `minHeight`，就当暂存架
+/// 正展开，小岛先收起，暂存架收起后小岛回来。拾掇的小提示条（矮的）不算。
+public enum NotchIslandShiduoYield {
+    public static let topSlack: CGFloat = 60
+    public static let minHeight: CGFloat = 60
+    public static let columnHalfWidth: CGFloat = 360
+
+    public static func shelfOpen(_ windows: [NotchForeignWindow], screen: AINotchScreen) -> Bool {
+        let centre = screen.notch?.midX ?? screen.frame.midX
+        let column = CGRect(x: centre - columnHalfWidth, y: screen.frame.minY,
+                            width: columnHalfWidth * 2, height: screen.frame.height)
+        return windows.contains { window in
+            window.alpha > 0.05
+                && NotchNeighbors.shiduo.matches(ownerName: window.ownerName, bundleID: window.bundleID)
+                && window.frame.height >= minHeight
+                && window.frame.intersects(column)
+                && window.frame.intersects(screen.frame)
+                && screen.frame.maxY - window.frame.maxY <= topSlack
+        }
     }
 }
 

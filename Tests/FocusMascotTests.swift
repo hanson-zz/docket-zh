@@ -195,4 +195,13 @@ final class FocusMascotTests: XCTestCase {
         XCTAssertEqual(old.soundRepeats, 1)
         XCTAssertTrue(old.notifyEnd)
     }
+
+    func testMascotProLock() {
+        var state = TimerState()
+        state.mascot = FocusMascot.otter.rawValue
+        XCTAssertEqual(FocusMascot.of(state, unlocked: false), .panda, "没解锁显示小熊猫")
+        XCTAssertEqual(FocusMascot.of(state, unlocked: true), .otter)
+        XCTAssertFalse(FocusMascot.panda.requiresPro)
+        XCTAssertEqual(FocusMascot.allCases.filter(\.requiresPro).count, 5)
+    }
 }

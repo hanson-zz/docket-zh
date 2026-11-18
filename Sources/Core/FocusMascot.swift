@@ -20,6 +20,15 @@ public enum FocusMascot: String, CaseIterable, Sendable {
 
     public static func of(_ state: TimerState) -> FocusMascot { from(state.mascot) }
 
+    /// 小熊猫免费，其余五只是码头 Pro。
+    public var requiresPro: Bool { self != .panda }
+
+    /// 实际显示哪只：没解锁时选了 Pro 吉祥物也显示小熊猫（存的选择不动，解锁后自动回来）。
+    public static func of(_ state: TimerState, unlocked: Bool) -> FocusMascot {
+        let chosen = of(state)
+        return chosen.requiresPro && !unlocked ? fallback : chosen
+    }
+
     /// 资源里的图名（不带扩展名）。
     public func imageName(_ state: FocusMascotState) -> String {
         "focus-mascot-\(rawValue)-\(state.rawValue)"

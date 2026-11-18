@@ -125,11 +125,13 @@ struct FocusScrubbable: ViewModifier {
 
 // MARK: - 设置里的吉祥物和提示音
 
-/// 六只吉祥物，三列两行，点一下换。
+/// 六只吉祥物，三列两行，点一下换。小熊猫免费，其余五只是 Pro：没解锁时右上角带小皇冠，
+/// 点一下弹付费墙。
 struct FocusMascotPicker: View {
     var selected: FocusMascot
     var accent: Color
     var disabled: Bool
+    var unlocked: Bool = true
     var pick: (FocusMascot) -> Void
 
     var body: some View {
@@ -148,6 +150,15 @@ struct FocusMascotPicker: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
+                    .overlay(alignment: .topTrailing) {
+                        if mascot.requiresPro && !unlocked {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color(red: 0.85, green: 0.62, blue: 0.12))
+                                .padding(5)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .background {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(chosen ? accent.opacity(0.18) : Color.panelFill)

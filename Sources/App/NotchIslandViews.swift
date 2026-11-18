@@ -181,7 +181,7 @@ private struct NotchIslandBody: View {
             // 专注计时：左边是选好的吉祥物（专注中、暂停、休息、刚完成各一种样子）。
             TimelineView(.periodic(from: .now, by: 1)) { tick in
                 let state = TimerStateProvider.shared.state
-                FocusMascotImage(mascot: FocusMascot.of(state), state: FocusMascotState.of(state, now: tick.date),
+                FocusMascotImage(mascot: FocusMascot.of(state, unlocked: ProAccess.isUnlocked), state: FocusMascotState.of(state, now: tick.date),
                                  height: max(18, geometry.notchHeight - 6))
             }
         case .timer:
