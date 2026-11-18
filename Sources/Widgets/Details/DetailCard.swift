@@ -113,7 +113,10 @@ struct PanelGlassSurface: View {
         } else if reduceTransparency {
             shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
         } else {
-            Color.clear
+            // 只有玻璃时，系统会按身后内容自动变深：浅色外观下卡片在深色壁纸或窗口上
+            // 变成深色玻璃，深色字就看不清。底下垫一层跟外观走的半透明底色，玻璃颜色
+            // 和字色始终一致（同快速待办输入条）。
+            shape.fill(scheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.62))
                 .glassEffect(.regular, in: shape)
         }
     }
