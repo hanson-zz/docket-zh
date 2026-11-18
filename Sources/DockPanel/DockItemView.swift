@@ -59,7 +59,7 @@ struct DockItemView: View {
                     if liveIconsEnabled, case .app(_, let bundleID, _) = item,
                        bundleID == "com.apple.finder", livePointer != nil {
                         LiveFinderCompanion(side: geo.icon, pointer: livePointer)
-                            .offset(x: geo.icon * 0.025, y: geo.icon * 0.025)
+                            .offset(x: geo.icon * 0.12, y: geo.icon * 0.08)
                             .transition(.opacity)
                     }
                 }
