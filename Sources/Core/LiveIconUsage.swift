@@ -1,0 +1,293 @@
+import Foundation
+
+// 动态图标第二版的纯逻辑：哪个 App 用哪种动态、开关怎么叠、Codex 水位读多少、
+// 流光什么时候亮、Chrome 图标怎么转和怎么缓停、多久问一次 Chrome、画多快。
+// 不碰 AppKit、不碰 CodexService，全部能在测试里跑。
+
+/// 动态图标认得的 App。
+public enum LiveIconApp: Equatable, Sendable {
+    case finder
+    case chrome
+    /// ChatGPT 和 Codex 桌面 App 共用一种画法：水位加流光。
+    case openAI
+
+    public static let finderBundleID = "com.apple.finder"
+    public static let chromeBundleID = "com.google.Chrome"
+    public static let chatGPTBundleID = "com.openai.chat"
+    /// Codex 桌面 App 的 bundle id 取自仓库里 CodexTerminal.codexApps，
+    /// 尚未在真机安装包上核对过（未验证）。
+    public static let codexBundleIDs = ["com.openai.codex"]
+
+    public init?(bundleID: String) {
+        switch bundleID {
+        case Self.finderBundleID: self = .finder
+        case Self.chromeBundleID: self = .chrome
+        case Self.chatGPTBundleID: self = .openAI
+        default:
+            guard Self.codexBundleIDs.contains(bundleID) else { return nil }
+            self = .openAI
+        }
+    }
+}
+
+/// 设置 ▸ 扩展栏的总开关和三个子开关。总开关默认关，子开关默认开。
+public struct LiveIconToggles: Equatable, Sendable {
+    public static let masterKey = "liveIcons.enabled"
+    public static let finderKey = "liveIcons.finder"
+    public static let chromeKey = "liveIcons.chrome"
+    public static let openAIKey = "liveIcons.ai"
+    /// 水位右下角的百分比小字，默认不显示。
+    public static let percentKey = "liveIcons.aiPercent"
+
+    public var master: Bool
+    public var finder: Bool
+    public var chrome: Bool
+    public var openAI: Bool
+
+    public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, openAI: Bool = true) {
+        self.master = master
+        self.finder = finder
+        self.chrome = chrome
+        self.openAI = openAI
+    }
+
+    public func isOn(_ app: LiveIconApp) -> Bool {
+        guard master else { return false }
+        switch app {
+        case .finder: return finder
+        case .chrome: return chrome
+        case .openAI: return openAI
+        }
+    }
+}
+
+/// ChatGPT / Codex 图标里的水位和流光。
+public enum LiveIconUsage {
+    /// 5 小时额度已用比例（0...1）。没有报告、报告过期、没有主窗口或数值不对时是 nil，
+    /// 即「未知」，图标里不画水位，绝不拿猜的数顶上。
+    public static func level(primaryUsed: Double?, fetchedAt: Date?, now: Date,
+                             staleAfter: TimeInterval = 30 * 60) -> Double? {
+        guard let used = primaryUsed, used.isFinite, let fetchedAt else { return nil }
+        guard now.timeIntervalSince(fetchedAt) <= staleAfter else { return nil }
+        return min(1, max(0, used))
+    }
+
+    /// 流光只在 Codex 真在干活时绕圈：工作中，或者一轮做到一半停下来等你批准。
+    /// 空闲和刚做完都不亮。
+    public static func isWorking(_ activity: CodexActivity) -> Bool {
+        switch activity {
+        case .working, .waiting: return true
+        case .idle, .done: return false
+        }
+    }
+
+    /// 右下角的百分比小字，四舍五入到整数。
+    public static func percentText(_ level: Double) -> String {
+        guard level.isFinite else { return "" }
+        return "\(Int((min(1, max(0, level)) * 100).rounded()))%"
+    }
+
+    /// 液面在内容区里的高度（从底往上，0...1）。用了一点点也露一条水线，
+    /// 用满也留一线不顶到圆角最上沿，看起来还是「水」。
+    public static func surfaceFraction(_ level: Double) -> Double {
+        guard level.isFinite else { return 0 }
+        let l = min(1, max(0, level))
+        return 0.04 + l * 0.90
+    }
+}
+
+/// macOS 图标的绘制区域：内容区约占边长 80%，居中；圆角约为内容边长的 22.37%。
+public enum LiveIconGeometry {
+    public static let contentFraction = 0.805
+    public static let cornerFraction = 0.2237
+
+    /// 边长为 side 的图标格里，内容区的边长和圆角半径。
+    public static func content(side: Double) -> (inset: Double, length: Double, corner: Double) {
+        let s = max(0, side)
+        let length = s * contentFraction
+        return ((s - length) / 2, length, length * cornerFraction)
+    }
+}
+
+/// 动画节奏：一个图标一条 TimelineView，没东西动时暂停，不另起定时器。
+public enum LiveIconMotion {
+    public enum Kind: Equatable, Sendable {
+        /// Chrome 图标转动，要顺。
+        case spin
+        /// 流光绕边，比水面快一点。
+        case flow
+        /// 只有水面轻轻晃。
+        case water
+    }
+
+    /// 两帧之间至少隔多久。低电量模式明显降频；减弱动态效果时不该走到这里（直接静态）。
+    public static func frameInterval(_ kind: Kind, lowPower: Bool) -> Double {
+        switch (kind, lowPower) {
+        case (.spin, false): return 1.0 / 60
+        case (.flow, false): return 1.0 / 30
+        case (.water, false): return 1.0 / 20
+        case (.spin, true): return 1.0 / 24
+        case (.flow, true), (.water, true): return 1.0 / 10
+        }
+    }
+
+    /// 问 Chrome 当前标签页在不在加载的间隔：Chrome 在前台 0.5 秒，
+    /// 在后台或低电量 1.5 秒，连着读不到时再放慢到 5 秒。
+    public static func chromePollInterval(chromeFrontmost: Bool, lowPower: Bool, failures: Int = 0) -> Double {
+        if failures > 0 { return 5 }
+        return chromeFrontmost && !lowPower ? 0.5 : 1.5
+    }
+}
+
+/// 问 Chrome「front window 的 active tab 在不在 loading」的结果。
+public enum LiveChromeReading: Equatable, Sendable {
+    case loading
+    case idle
+    /// 用户拒绝了自动化权限（-1743），或系统还没问过（-1744）。
+    case denied
+    /// 别的原因读不到（没装 Chrome、脚本出错）。
+    case failed
+
+    public init(loading: Bool?, errorCode: Int?) {
+        if let errorCode {
+            self = (errorCode == -1743 || errorCode == -1744) ? .denied : .failed
+        } else if let loading {
+            self = loading ? .loading : .idle
+        } else {
+            self = .failed
+        }
+    }
+}
+
+/// Chrome 读数是否可信：连着读到才转图标；拒绝或读不到时退回启动转一圈，绝不显示假进度。
+public struct LiveChromeAvailability: Equatable, Sendable {
+    public enum Status: Equatable, Sendable { case unknown, available, unavailable }
+
+    public private(set) var status: Status = .unknown
+    public private(set) var failures = 0
+    /// 拒绝之后不再问，免得每秒白跑一个必失败的脚本。
+    public private(set) var stopped = false
+    public static let failureLimit = 3
+
+    public init() {}
+
+    /// 记下一次读数，返回这次之后图标该不该转。
+    @discardableResult
+    public mutating func record(_ reading: LiveChromeReading) -> Bool {
+        switch reading {
+        case .loading, .idle:
+            status = .available
+            failures = 0
+            return reading == .loading
+        case .denied:
+            status = .unavailable
+            stopped = true
+            return false
+        case .failed:
+            failures += 1
+            if failures >= Self.failureLimit { status = .unavailable }
+            return false
+        }
+    }
+
+    /// 重新开始（开关重开、Chrome 重新启动）。
+    public mutating func reset() { self = LiveChromeAvailability() }
+}
+
+/// Chrome 图标本身的转动：加载时匀速转，停下时用缓动减速回到原角度，
+/// 退回方案是启动那一下转一圈。角度单位是度，只在 0..<360 里存，时间由调用方给。
+public struct LiveIconSpin: Equatable, Sendable {
+    /// 匀速：一圈约 1.1 秒。
+    public static let degreesPerSecond = 360.0 / 1.1
+    /// 减速至少再转这么多度，太短会像急刹。
+    public static let minimumSettle = 120.0
+    /// 启动转一圈用的时长。
+    public static let oneTurnDuration = 0.9
+
+    public enum Phase: Equatable, Sendable {
+        case resting
+        case spinning(since: Date, from: Double)
+        /// 二次缓出：起始角速度等于匀速，结束时为 0，正好停在 360 的整数倍。
+        case settling(since: Date, from: Double, distance: Double, duration: Double)
+        /// 慢起慢停转满一圈。
+        case oneTurn(since: Date, from: Double)
+    }
+
+    public private(set) var phase: Phase = .resting
+
+    public init() {}
+
+    public var isSpinning: Bool {
+        if case .spinning = phase { return true }
+        return false
+    }
+
+    /// 当前角度（0..<360）。
+    public func angle(at now: Date) -> Double {
+        switch phase {
+        case .resting:
+            return 0
+        case let .spinning(since, from):
+            return Self.wrap(from + Self.degreesPerSecond * max(0, now.timeIntervalSince(since)))
+        case let .settling(since, from, distance, duration):
+            let u = min(1, max(0, now.timeIntervalSince(since) / max(duration, 0.001)))
+            let eased = 1 - (1 - u) * (1 - u)
+            return Self.wrap(from + distance * eased)
+        case let .oneTurn(since, from):
+            let u = min(1, max(0, now.timeIntervalSince(since) / Self.oneTurnDuration))
+            let eased = u < 0.5 ? 2 * u * u : 1 - pow(-2 * u + 2, 2) / 2
+            return Self.wrap(from + (360 - from) * eased)
+        }
+    }
+
+    /// 动画什么时候结束；匀速转时没有结束时间（nil），静止时是 since 之前。
+    public func endDate(at now: Date) -> Date? {
+        switch phase {
+        case .resting: return now
+        case .spinning: return nil
+        case let .settling(since, _, _, duration): return since.addingTimeInterval(duration)
+        case let .oneTurn(since, _): return since.addingTimeInterval(Self.oneTurnDuration)
+        }
+    }
+
+    public func isAnimating(at now: Date) -> Bool {
+        guard let end = endDate(at: now) else { return true }
+        return end > now
+    }
+
+    /// 开始匀速转，从当前角度接着转，不跳。
+    public mutating func start(at now: Date) {
+        if isSpinning { return }
+        let from = isAnimating(at: now) ? angle(at: now) : 0
+        phase = .spinning(since: now, from: from)
+    }
+
+    /// 加载完：减速停到下一个 360 的整数倍（原角度）。
+    public mutating func stop(at now: Date) {
+        guard isSpinning else { return }
+        let from = angle(at: now)
+        var distance = 360 - from
+        if distance < Self.minimumSettle { distance += 360 }
+        // 二次缓出的初速度是 2·distance/duration，令它等于匀速，衔接不顿。
+        let duration = 2 * distance / Self.degreesPerSecond
+        phase = .settling(since: now, from: from, distance: distance, duration: duration)
+    }
+
+    /// 退回方案：启动那一下转一圈。正在转或正在减速时不打断。
+    public mutating func turnOnce(at now: Date) {
+        guard !isAnimating(at: now) else { return }
+        phase = .oneTurn(since: now, from: 0)
+    }
+
+    /// 结束后归位，角度回到 0。
+    public mutating func settleIfDone(at now: Date) {
+        if !isAnimating(at: now) { phase = .resting }
+    }
+
+    static func wrap(_ degrees: Double) -> Double {
+        guard degrees.isFinite else { return 0 }
+        let r = degrees.truncatingRemainder(dividingBy: 360)
+        let v = r < 0 ? r + 360 : r
+        return v >= 359.9999 ? 0 : v
+    }
+}

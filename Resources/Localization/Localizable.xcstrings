@@ -18802,13 +18802,79 @@
         }
       }
     },
-    "鼠标停在访达上冒出一张跟着看你的小脸，Chrome 启动时图标转一圈。系统开了减弱动态效果时不转。" : {
+    "让扩展栏上几个 App 的图标本身动起来，只在有事发生时动。系统开了减弱动态效果时不转、不流动，低电量模式下放慢。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hover over Finder and a little face pops up and follows your pointer; Chrome's icon spins once while it launches. No spinning when Reduce Motion is on."
+            "value" : "Brings a few app icons on the shelf to life, moving only when something is happening. With Reduce Motion on nothing spins or flows, and Low Power Mode slows things down."
+          }
+        }
+      }
+    },
+    "鼠标停在访达上冒出一张跟着指针看的小脸。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over Finder and a little face pops up and follows your pointer."
+          }
+        }
+      }
+    },
+    "Chrome" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chrome"
+          }
+        }
+      }
+    },
+    "当前标签页在加载时 Chrome 图标匀速转，加载完慢慢停回原位。需要允许码头控制 Chrome；不允许时只在启动那一下转一圈。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chrome's icon spins steadily while the current tab loads and eases back to rest when it finishes. Needs permission for Dockling to control Chrome; without it the icon only spins once as Chrome launches."
+          }
+        }
+      }
+    },
+    "ChatGPT/Codex" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ChatGPT/Codex"
+          }
+        }
+      }
+    },
+    "图标里的水位是 Codex 5 小时额度已用多少，没有数据时不画；Codex 正在干活时一道白光沿图标边缘绕圈。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The water level inside the icon shows how much of the Codex 5-hour limit is used, and is hidden when there is no data; while Codex is working, a soft white light travels around the icon's edge."
+          }
+        }
+      }
+    },
+    "水位旁显示百分比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show percentage by the water level"
           }
         }
       }

@@ -15,7 +15,12 @@ struct DockItemView: View {
     @State private var spacerHovered = false
     @State private var livePointer: CGPoint?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("liveIcons.enabled") private var liveIconsEnabled = false
+    // 动态图标：总开关默认关，访达、Chrome、ChatGPT/Codex 三个子开关默认开。
+    @AppStorage(LiveIconToggles.masterKey) private var liveIconsEnabled = false
+    @AppStorage(LiveIconToggles.finderKey) private var liveFinder = true
+    @AppStorage(LiveIconToggles.chromeKey) private var liveChrome = true
+    @AppStorage(LiveIconToggles.openAIKey) private var liveOpenAI = true
+    @AppStorage(LiveIconToggles.percentKey) private var liveOpenAIPercent = false
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -50,29 +55,54 @@ struct DockItemView: View {
                                              itemGap: Geometry.chrome(scale: scale, itemGap: itemGap).itemGap))
     }
 
+    /// 这个格子是哪个动态图标 App；不是 App 或不认得时是 nil。
+    private var liveApp: LiveIconApp? {
+        guard case .app(_, let bundleID, _) = item else { return nil }
+        return LiveIconApp(bundleID: bundleID)
+    }
+
+    private var liveToggles: LiveIconToggles {
+        LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, openAI: liveOpenAI)
+    }
+
+    private func liveOn(_ app: LiveIconApp) -> Bool {
+        liveApp == app && liveToggles.isOn(app)
+    }
+
+    /// Chrome 的图标本身转（只给 Chrome 格子挂，别的格子不多一层）。
+    @ViewBuilder
+    private var liveIcon: some View {
+        if liveApp == .chrome {
+            icon
+                .frame(width: geo.icon, height: geo.icon)
+                .modifier(LiveChromeSpin(active: liveOn(.chrome) && !reduceMotion, isRunning: isRunning))
+        } else {
+            icon
+                .frame(width: geo.icon, height: geo.icon)
+        }
+    }
+
     @ViewBuilder
     private var tile: some View {
         ZStack {
-            icon
-                .frame(width: geo.icon, height: geo.icon)
+            liveIcon
+                .overlay {
+                    if liveOn(.openAI) {
+                        LiveOpenAIOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
+                    }
+                }
                 .overlay(alignment: .bottomTrailing) {
-                    if liveIconsEnabled, case .app(_, let bundleID, _) = item,
-                       bundleID == "com.apple.finder", livePointer != nil {
+                    if liveOn(.finder), livePointer != nil {
                         LiveFinderCompanion(side: geo.icon, pointer: livePointer)
                             .offset(x: geo.icon * 0.12, y: geo.icon * 0.08)
                             .transition(.opacity)
                     }
                 }
-                .overlay {
-                    if liveIconsEnabled && !reduceMotion,
-                       case .app(_, let bundleID, _) = item,
-                       bundleID == "com.google.Chrome" {
-                        LiveChromeLaunchRing(side: geo.icon, running: isRunning)
-                    }
-                }
                 .onContinuousHover { phase in
-                    guard liveIconsEnabled, case .app(_, let bundleID, _) = item,
-                          bundleID == "com.apple.finder" else { return }
+                    guard liveOn(.finder) else {
+                        if livePointer != nil { livePointer = nil }
+                        return
+                    }
                     switch phase {
                     case .active(let point): livePointer = point
                     case .ended: livePointer = nil

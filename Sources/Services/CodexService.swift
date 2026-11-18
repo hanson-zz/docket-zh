@@ -79,6 +79,11 @@ final class CodexService {
     @ObservationIgnored private var statsLoading = false
     @ObservationIgnored private var statsAt: Date?
     @ObservationIgnored private var statsCache: [String: CodexStatsCacheEntry] = [:]
+    /// 有 Codex 小组件或详情面板配置过这个服务。只有动态图标在用时（没人配置过），
+    /// 读额度和会话不弹通知、不响，免得开个动态图标就冒出没要过的提醒。
+    @ObservationIgnored private var configuredByWidget = false
+    /// 会话监视是被动态图标拉起来的，还没有小组件要它。
+    @ObservationIgnored private var quietActivity = false
 
     private static let cacheKey = "codex.lastReport"
     static let proxyKey = "codex.proxy"
@@ -99,6 +104,7 @@ final class CodexService {
     /// The widget's own options. Several widgets share one service; the last
     /// one drawn wins, which only matters if two disagree.
     func configure(_ config: WidgetConfig) {
+        configuredByWidget = true
         notifyQuota = config.bool("notify", default: true)
         notifyDone = config.bool("notifyDone", default: true)
         alertFirst = config.int("alertAt", default: 80)
@@ -173,7 +179,12 @@ final class CodexService {
             blockedUntil = nil
             problem = nil
             email = mail
-            alertIfNeeded(fresh)
+            if configuredByWidget {
+                alertIfNeeded(fresh)
+            } else {
+                // 只有动态图标在读：记下当前用量当基线，不发通知。
+                for w in fresh.ringWindows { lastAlerted[w.id] = w.usedFraction }
+            }
             report = fresh
             if let data = try? JSONEncoder().encode(fresh) {
                 UserDefaults.standard.set(data, forKey: Self.cacheKey)
@@ -304,8 +315,13 @@ final class CodexService {
     // MARK: Activity
 
     /// Starts watching the session log, once.
-    func startActivity() {
+    ///
+    /// `quiet` 是动态图标用的：只为了知道 Codex 在不在干活，不发「做完了」「等你确认」
+    /// 的通知。之后有小组件再来要（quiet 为假）时，通知照常恢复。
+    func startActivity(quiet: Bool = false) {
+        if !quiet { quietActivity = false }
         guard activityTimer == nil else { return }
+        quietActivity = quiet
         scanActivity()
         let timer = Timer(timeInterval: 3, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.scanActivity() }
@@ -341,6 +357,7 @@ final class CodexService {
 
     /// 一个会话进入等你确认或做完一轮：按横幅开关和声音设置发一条系统通知。
     private func remind(_ event: CodexChime.Event, session: CodexSession?) {
+        guard !quietActivity else { return }
         let delivery = CodexChime.delivery(event, banner: notifyDone, settings: chime)
         let now = Date.now
         guard delivery.post, gate.allow("\(session?.id ?? "-").\(event.rawValue)", at: now) else { return }
