@@ -1,57 +1,164 @@
 import SwiftUI
+import AppKit
 
-/// An opt-in visual accent for Finder in Dockling's shelf, not a replacement for Finder's artwork.
-/// 小脸要一眼看得出：占图标一半大，眼白加黑眼珠跟着指针转，冒出时弹一下。
-struct LiveFinderCompanion: View {
+// MARK: - 访达：整张换成小熊猫
+
+/// 小熊猫访达的三张图（@1x 128、@2x 256，放在 Resources/LiveIcons）。读一次存着；
+/// 缺图时是 nil，程序坞照常画系统的访达图标。
+@MainActor
+enum LiveFinderPandaArt {
+    static let base = Bundle.main.image(forResource: "finder-panda-base")
+    static let blink = Bundle.main.image(forResource: "finder-panda-blink")
+    static let pupil = Bundle.main.image(forResource: "finder-panda-pupil")
+
+    static var available: Bool { base != nil && blink != nil && pupil != nil }
+}
+
+/// 程序坞里的访达图标整张换成小熊猫访达：两颗瞳孔跟着鼠标指针看，指针停下 3 秒后慢慢回正，
+/// 每隔 3 到 7 秒眨一下眼（偶尔连眨两下）。指针用 NSEvent.mouseLocation 轮询，不要辅助功能权限；
+/// 指针没动、眼睛停稳时 TimelineView 暂停、轮询放慢。减弱动态效果时瞳孔居中、不眨眼、不轮询。
+/// 访达复制、移动文件时没有可靠的系统信号，所以不画「专心」表情。
+struct LiveFinderPanda: View {
     var side: CGFloat
-    var pointer: CGPoint?
 
-    @State private var popped = false
-
-    private var face: CGFloat { side * 0.5 }
-
-    private var pupilOffset: CGSize {
-        guard let pointer else { return .zero }
-        let x = max(-1, min(1, (pointer.x / max(side, 1) - 0.5) * 2))
-        let y = max(-1, min(1, (pointer.y / max(side, 1) - 0.5) * 2))
-        return CGSize(width: x * face * 0.07, height: y * face * 0.07)
-    }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var gaze = LiveFinderGazeBox()
+    @State private var anchor = LiveScreenAnchor()
+    @State private var animating = false
+    @State private var blinking = false
 
     var body: some View {
-        ZStack {
-            Circle().fill(.regularMaterial)
-            Circle().fill(Color(red: 1.0, green: 0.84, blue: 0.45).opacity(0.55))
-            Circle().strokeBorder(.white.opacity(0.85), lineWidth: max(1, face * 0.04))
-            HStack(spacing: face * 0.1) {
-                eye
-                eye
+        Group {
+            if reduceMotion {
+                face(blink: false, left: .zero, right: .zero)
+            } else {
+                TimelineView(.animation(minimumInterval: LiveFinderMotion.frameInterval(
+                    lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled), paused: !animating)) { context in
+                    let eyes = gaze.frame(at: context.date)
+                    face(blink: blinking, left: eyes.left, right: eyes.right)
+                }
             }
-            .offset(y: -face * 0.08)
-            Capsule()
-                .fill(Color.black.opacity(0.8))
-                .frame(width: face * 0.26, height: max(1.5, face * 0.06))
-                .offset(y: face * 0.24)
         }
-        .frame(width: face, height: face)
-        .shadow(color: .black.opacity(0.35), radius: face * 0.08, y: face * 0.03)
-        .scaleEffect(popped ? 1 : 0.4, anchor: .bottomTrailing)
-        .animation(.spring(response: 0.28, dampingFraction: 0.55), value: popped)
-        .onAppear { popped = true }
-        .onDisappear { popped = false }
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
+        .frame(width: side, height: side)
+        .background(LiveScreenAnchorView(anchor: anchor).allowsHitTesting(false))
+        .task(id: reduceMotion) { await followPointer() }
+        .task(id: reduceMotion) { await blinkNowAndThen() }
     }
 
-    private var eye: some View {
-        ZStack {
-            Circle().fill(.white)
-            Circle()
-                .fill(Color.black.opacity(0.85))
-                .frame(width: face * 0.13, height: face * 0.13)
-                .offset(pupilOffset)
+    private func face(blink: Bool, left: LiveFinderFace.Point, right: LiveFinderFace.Point) -> some View {
+        let k = side / CGFloat(LiveFinderFace.canvas)
+        let d = CGFloat(LiveFinderFace.pupilCrop) * k
+        return Image(nsImage: (blink ? LiveFinderPandaArt.blink : LiveFinderPandaArt.base) ?? NSImage())
+            .resizable()
+            .interpolation(.high)
+            .frame(width: side, height: side)
+            .overlay {
+                if !blink, let pupil = LiveFinderPandaArt.pupil {
+                    ZStack {
+                        ForEach(0..<2, id: \.self) { i in
+                            let eye = i == 0 ? LiveFinderFace.leftEye : LiveFinderFace.rightEye
+                            let o = i == 0 ? left : right
+                            Image(nsImage: pupil)
+                                .resizable()
+                                .interpolation(.high)
+                                .frame(width: d, height: d)
+                                .position(x: CGFloat(eye.x + o.x) * k, y: CGFloat(eye.y + o.y) * k)
+                        }
+                    }
+                    .frame(width: side, height: side)
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// 轮询指针：动了就让 TimelineView 跑，停稳了就暂停；指针几秒没动时问得更慢。
+    private func followPointer() async {
+        gaze.reset()
+        animating = false
+        guard !reduceMotion else { return }
+        while !Task.isCancelled {
+            let now = Date()
+            if let frame = anchor.screenFrame {
+                gaze.observe(pointer: NSEvent.mouseLocation, iconFrame: frame, at: now)
+            }
+            let settled = gaze.isSettled(at: now)
+            if settled, animating {
+                animating = false
+                gaze.pause()
+            } else if !settled, !animating {
+                animating = true
+            }
+            let interval = LiveFinderMotion.pollInterval(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                                                         active: !settled || !gaze.isIdle(at: now))
+            try? await Task.sleep(for: .seconds(interval))
         }
-        .frame(width: face * 0.26, height: face * 0.26)
-        .overlay(Circle().strokeBorder(Color.black.opacity(0.25), lineWidth: max(0.5, face * 0.015)))
+        animating = false
+    }
+
+    /// 每隔 3 到 7 秒眨一下，偶尔连眨两下；闭眼时不画瞳孔。
+    private func blinkNowAndThen() async {
+        blinking = false
+        guard !reduceMotion else { return }
+        var rng = SystemRandomNumberGenerator()
+        while !Task.isCancelled {
+            let plan = LiveFinderBlink.next(using: &rng)
+            try? await Task.sleep(for: .seconds(plan.wait))
+            for (i, closed) in plan.closed.enumerated() {
+                guard !Task.isCancelled else { break }
+                if i > 0 { try? await Task.sleep(for: .seconds(plan.gap)) }
+                blinking = true
+                try? await Task.sleep(for: .seconds(closed))
+                blinking = false
+            }
+        }
+        blinking = false
+    }
+}
+
+/// 弹簧状态放在引用里：TimelineView 每帧往前走一步，不触发视图重算。
+@MainActor
+final class LiveFinderGazeBox {
+    private var gaze = LiveFinderGaze()
+
+    func frame(at now: Date) -> (left: LiveFinderFace.Point, right: LiveFinderFace.Point) { gaze.step(at: now) }
+    func observe(pointer: CGPoint, iconFrame: CGRect, at now: Date) {
+        gaze.observe(pointer: pointer, iconFrame: iconFrame, at: now)
+    }
+    func isSettled(at now: Date) -> Bool { gaze.isSettled(at: now) }
+    func isIdle(at now: Date) -> Bool { gaze.isIdle(at: now) }
+    func pause() { gaze.pause() }
+    func reset() { gaze.reset() }
+}
+
+/// 图标格在屏幕上的矩形（y 向上），用来算眼睛和指针的相对位置。
+@MainActor
+final class LiveScreenAnchor {
+    weak var view: NSView?
+
+    var screenFrame: CGRect? {
+        guard let view, let window = view.window else { return nil }
+        let frame = window.convertToScreen(view.convert(view.bounds, to: nil))
+        return frame.width > 0 && frame.height > 0 ? frame : nil
+    }
+}
+
+/// 垫在图标后面的空 NSView，只为拿到它在屏幕上的位置；不接任何点击和拖动。
+struct LiveScreenAnchorView: NSViewRepresentable {
+    let anchor: LiveScreenAnchor
+
+    final class PassThroughView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = PassThroughView()
+        anchor.view = view
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        anchor.view = nsView
     }
 }
 

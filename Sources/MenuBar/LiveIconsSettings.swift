@@ -20,7 +20,7 @@ struct LiveIconsSettingRow: View {
         }
         if enabled {
             Group {
-                sub($finder, tr("访达"), tr("鼠标停在访达上冒出一张跟着指针看的小脸。"))
+                sub($finder, tr("访达"), tr("访达图标整张换成小熊猫：两颗眼珠跟着鼠标指针看，指针停下几秒后慢慢回正，隔几秒眨一下眼。"))
                 sub($chrome, tr("Chrome"),
                     tr("当前标签页在加载时 Chrome 图标匀速转，加载完慢慢停回原位。需要允许码头控制 Chrome；不允许时只在启动那一下转一圈。"))
                 sub($openAI, tr("ChatGPT/Codex"),

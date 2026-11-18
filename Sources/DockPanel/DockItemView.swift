@@ -13,7 +13,6 @@ struct DockItemView: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var spacerHovered = false
-    @State private var livePointer: CGPoint?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // 动态图标：总开关默认关，访达、Chrome、ChatGPT/Codex 三个子开关默认开。
     @AppStorage(LiveIconToggles.masterKey) private var liveIconsEnabled = false
@@ -69,10 +68,13 @@ struct DockItemView: View {
         liveApp == app && liveToggles.isOn(app)
     }
 
-    /// Chrome 的图标本身转（只给 Chrome 格子挂，别的格子不多一层）。
+    /// Chrome 的图标本身转（只给 Chrome 格子挂，别的格子不多一层）；
+    /// 访达的图标整张换成小熊猫访达（缺图时照常画系统图标）。
     @ViewBuilder
     private var liveIcon: some View {
-        if liveApp == .chrome {
+        if liveOn(.finder), LiveFinderPandaArt.available {
+            LiveFinderPanda(side: geo.icon)
+        } else if liveApp == .chrome {
             icon
                 .frame(width: geo.icon, height: geo.icon)
                 .modifier(LiveChromeSpin(active: liveOn(.chrome) && !reduceMotion, isRunning: isRunning))
@@ -89,23 +91,6 @@ struct DockItemView: View {
                 .overlay {
                     if liveOn(.openAI) {
                         LiveOpenAIOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
-                    }
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if liveOn(.finder), livePointer != nil {
-                        LiveFinderCompanion(side: geo.icon, pointer: livePointer)
-                            .offset(x: geo.icon * 0.12, y: geo.icon * 0.08)
-                            .transition(.opacity)
-                    }
-                }
-                .onContinuousHover { phase in
-                    guard liveOn(.finder) else {
-                        if livePointer != nil { livePointer = nil }
-                        return
-                    }
-                    switch phase {
-                    case .active(let point): livePointer = point
-                    case .ended: livePointer = nil
                     }
                 }
                 // Bottom shelves sit the icon slightly high so the running dot

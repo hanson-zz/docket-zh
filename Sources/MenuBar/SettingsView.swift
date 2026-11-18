@@ -1197,7 +1197,7 @@ struct SettingsView: View {
                 }
                 // 悬停正在运行的 App 弹窗口预览（Pro），默认关。
                 WindowPreviewSettingRow(enabled: $state.customDock.hoverWindowPreview)
-                // 动态图标：访达小脸、Chrome 加载时图标转、ChatGPT/Codex 额度水位，默认关。
+                // 动态图标：小熊猫访达、Chrome 加载时图标转、ChatGPT/Codex 额度水位，默认关。
                 LiveIconsSettingRow()
                 Toggle("显示废纸篓", isOn: $state.customDock.showTrash)
                 if state.customDock.showTrash {

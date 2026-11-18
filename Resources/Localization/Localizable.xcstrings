@@ -18813,13 +18813,13 @@
         }
       }
     },
-    "鼠标停在访达上冒出一张跟着指针看的小脸。" : {
+    "访达图标整张换成小熊猫：两颗眼珠跟着鼠标指针看，指针停下几秒后慢慢回正，隔几秒眨一下眼。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hover over Finder and a little face pops up and follows your pointer."
+            "value" : "Finder's icon becomes a red panda whose eyes follow your pointer, drift back to center a few seconds after it stops, and blink now and then."
           }
         }
       }
