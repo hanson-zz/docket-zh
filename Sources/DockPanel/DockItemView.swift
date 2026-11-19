@@ -19,6 +19,7 @@ struct DockItemView: View {
     @AppStorage(LiveIconToggles.finderKey) private var liveFinder = true
     @AppStorage(LiveIconToggles.chromeKey) private var liveChrome = true
     @AppStorage(LiveIconToggles.openAIKey) private var liveOpenAI = true
+    @AppStorage(LiveIconToggles.claudeKey) private var liveClaude = true
     @AppStorage(LiveIconToggles.percentKey) private var liveOpenAIPercent = false
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
@@ -61,7 +62,8 @@ struct DockItemView: View {
     }
 
     private var liveToggles: LiveIconToggles {
-        LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, openAI: liveOpenAI)
+        LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, openAI: liveOpenAI,
+                        claude: liveClaude)
     }
 
     private func liveOn(_ app: LiveIconApp) -> Bool {
@@ -91,6 +93,8 @@ struct DockItemView: View {
                 .overlay {
                     if liveOn(.openAI) {
                         LiveOpenAIOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
+                    } else if liveOn(.claude) {
+                        LiveClaudeOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
                     }
                 }
                 // Bottom shelves sit the icon slightly high so the running dot

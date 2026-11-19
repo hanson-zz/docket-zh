@@ -244,43 +244,82 @@ struct LiveChromeSpin: ViewModifier {
     }
 }
 
-// MARK: - ChatGPT / Codex：水位与流光
+// MARK: - ChatGPT / Codex / Claude：额度水位与流光
 
-/// 画在 ChatGPT、Codex 图标内部：Codex 5 小时额度已用多少就有多高的一层半透明「水」，
-/// 水面轻轻晃，裁剪在图标的圆角方形里；Codex 正在干活时一道柔和白光沿圆角方形边缘绕圈。
+/// 画在 ChatGPT、Codex 图标内部：Codex 剩余额度有多少就有多高的一层半透明「水」
+/// （5 小时和每周里更紧的那个，见 `LiveIconUsage.quota`），水面轻轻晃，裁剪在图标的
+/// 圆角方形里；Codex 正在干活时一道柔和白光沿圆角方形边缘绕圈。
 /// 没有数据或数据过期时不画水（未知），不拿猜的数顶上。
 struct LiveOpenAIOverlay: View {
     var side: CGFloat
     var showPercent: Bool
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     private var codex: CodexService { .shared }
 
     var body: some View {
         let report = codex.report
-        let used = report?.primary?.usedFraction
-        let fetchedAt = report?.fetchedAt
         let working = LiveIconUsage.isWorking(codex.activity)
+        LiveQuotaWater(side: side, showPercent: showPercent, report: report, working: working)
+            .task {
+                // 只为动态图标拉起时不发通知、不响；有 Codex 小组件时它照常提醒。
+                codex.startActivity(quiet: true)
+                while !Task.isCancelled {
+                    codex.refresh()
+                    try? await Task.sleep(for: .seconds(CodexService.interval))
+                }
+            }
+    }
+}
+
+/// 画在 Claude 图标内部：读本机 Claude 命令行已登录账号的剩余额度，画法和 Codex 的水位一样。
+/// 没有「正在干活」的可靠信号，所以不画流光。没有凭据或数据时不画水。
+/// 只有这个视图挂在扩展栏的 Claude 格子上（开关开着）时才轮询。
+struct LiveClaudeOverlay: View {
+    var side: CGFloat
+    var showPercent: Bool
+
+    private var claude: ClaudeUsageService { .shared }
+
+    var body: some View {
+        LiveQuotaWater(side: side, showPercent: showPercent, report: claude.report, working: false)
+            .task {
+                while !Task.isCancelled {
+                    claude.refresh()
+                    try? await Task.sleep(for: .seconds(ClaudeUsageService.interval))
+                }
+            }
+    }
+}
+
+/// 水位（剩余额度）加可选的流光和百分比小字，Codex 和 Claude 共用。
+// TODO: 悬停显示重置倒计时（LiveIconUsage.resetCountdown）、大字百分比，等效果图。
+struct LiveQuotaWater: View {
+    var side: CGFloat
+    var showPercent: Bool
+    var report: CodexUsageReport?
+    var working: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         let interval = LiveIconMotion.frameInterval(working ? .flow : .water, lowPower: lowPower)
         // 没水可画也不在干活时，TimelineView 暂停，不空转。
-        let idle = LiveIconUsage.level(primaryUsed: used, fetchedAt: fetchedAt, now: .now) == nil && !working
+        let idle = LiveIconUsage.quota(report, now: .now) == nil && !working
 
         Group {
             if reduceMotion {
                 // 减弱动态效果：水位静止，流光换成一圈不动的淡光；每分钟看一次数据有没有过期。
                 TimelineView(.everyMinute) { context in
-                    let level = LiveIconUsage.level(primaryUsed: used, fetchedAt: fetchedAt, now: context.date)
-                    canvas(level: level, working: working, time: nil)
+                    let level = LiveIconUsage.quota(report, now: context.date)?.remaining
+                    canvas(level: level, time: nil)
                         .overlay(alignment: .bottomTrailing) { percent(level) }
                 }
             } else {
                 TimelineView(.animation(minimumInterval: interval,
                                         paused: idle)) { context in
-                    let level = LiveIconUsage.level(primaryUsed: used, fetchedAt: fetchedAt, now: context.date)
-                    canvas(level: level, working: working,
-                           time: context.date.timeIntervalSinceReferenceDate)
+                    let level = LiveIconUsage.quota(report, now: context.date)?.remaining
+                    canvas(level: level, time: context.date.timeIntervalSinceReferenceDate)
                         .overlay(alignment: .bottomTrailing) { percent(level) }
                 }
             }
@@ -288,16 +327,9 @@ struct LiveOpenAIOverlay: View {
         .frame(width: side, height: side)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .task {
-            // 只为动态图标拉起时不发通知、不响；有 Codex 小组件时它照常提醒。
-            codex.startActivity(quiet: true)
-            while !Task.isCancelled {
-                codex.refresh()
-                try? await Task.sleep(for: .seconds(CodexService.interval))
-            }
-        }
     }
 
+    /// 右下角的百分比小字：剩余额度。
     @ViewBuilder
     private func percent(_ level: Double?) -> some View {
         if showPercent, let level {
@@ -311,7 +343,7 @@ struct LiveOpenAIOverlay: View {
         }
     }
 
-    private func canvas(level: Double?, working: Bool, time: Double?) -> some View {
+    private func canvas(level: Double?, time: Double?) -> some View {
         Canvas { context, size in
             let g = LiveIconGeometry.content(side: Double(min(size.width, size.height)))
             let rect = CGRect(x: g.inset, y: g.inset, width: g.length, height: g.length)
@@ -324,7 +356,6 @@ struct LiveOpenAIOverlay: View {
             }
         }
     }
-
 }
 
 /// 水位和流光的画法，只用传进来的数，不碰视图状态。

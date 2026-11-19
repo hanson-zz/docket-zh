@@ -13,6 +13,7 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertEqual(LiveIconApp(bundleID: "com.google.Chrome"), .chrome)
         XCTAssertEqual(LiveIconApp(bundleID: "com.openai.chat"), .openAI)
         XCTAssertEqual(LiveIconApp(bundleID: "com.openai.codex"), .openAI)
+        XCTAssertEqual(LiveIconApp(bundleID: "com.anthropic.claudefordesktop"), .claude)
         XCTAssertNil(LiveIconApp(bundleID: "com.apple.Safari"))
         XCTAssertNil(LiveIconApp(bundleID: "com.google.Chrome.canary"))
     }
@@ -22,31 +23,111 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertFalse(off.isOn(.finder))
         XCTAssertFalse(off.isOn(.chrome))
         XCTAssertFalse(off.isOn(.openAI))
+        XCTAssertFalse(off.isOn(.claude))
 
         let on = LiveIconToggles(master: true)
         XCTAssertTrue(on.isOn(.finder))
         XCTAssertTrue(on.isOn(.chrome))
         XCTAssertTrue(on.isOn(.openAI))
+        XCTAssertTrue(on.isOn(.claude))
 
         let noChrome = LiveIconToggles(master: true, chrome: false)
         XCTAssertTrue(noChrome.isOn(.finder))
         XCTAssertFalse(noChrome.isOn(.chrome))
         XCTAssertTrue(noChrome.isOn(.openAI))
+
+        let noClaude = LiveIconToggles(master: true, claude: false)
+        XCTAssertFalse(noClaude.isOn(.claude))
+        XCTAssertTrue(noClaude.isOn(.openAI))
     }
 
     // MARK: 水位
 
-    func testLevelIsUnknownWithoutFreshData() {
-        XCTAssertNil(LiveIconUsage.level(primaryUsed: nil, fetchedAt: t0, now: t0))
-        XCTAssertNil(LiveIconUsage.level(primaryUsed: 0.4, fetchedAt: nil, now: t0))
-        XCTAssertNil(LiveIconUsage.level(primaryUsed: .nan, fetchedAt: t0, now: t0))
-        XCTAssertNil(LiveIconUsage.level(primaryUsed: 0.4, fetchedAt: t0, now: t0.addingTimeInterval(31 * 60)))
-        XCTAssertEqual(LiveIconUsage.level(primaryUsed: 0.4, fetchedAt: t0, now: t0.addingTimeInterval(29 * 60)), 0.4)
+    private func window(_ id: String, used: Double, resetsIn: TimeInterval? = 3600) -> CodexLimitWindow {
+        CodexLimitWindow(id: id, label: id, usedFraction: used,
+                         resetsAt: resetsIn.map { t0.addingTimeInterval($0) })
     }
 
-    func testLevelClamps() {
-        XCTAssertEqual(LiveIconUsage.level(primaryUsed: 1.4, fetchedAt: t0, now: t0), 1)
-        XCTAssertEqual(LiveIconUsage.level(primaryUsed: -0.2, fetchedAt: t0, now: t0), 0)
+    func testQuotaIsUnknownWithoutFreshData() {
+        let w = window("primary", used: 0.4)
+        XCTAssertNil(LiveIconUsage.quota(session: nil, weekly: nil, fetchedAt: t0, now: t0))
+        XCTAssertNil(LiveIconUsage.quota(session: w, weekly: nil, fetchedAt: nil, now: t0))
+        XCTAssertNil(LiveIconUsage.quota(session: w, weekly: nil, fetchedAt: t0, now: t0.addingTimeInterval(31 * 60)))
+        XCTAssertNil(LiveIconUsage.quota(nil, now: t0))
+        var bad = w
+        bad.usedFraction = .nan
+        XCTAssertNil(LiveIconUsage.quota(session: bad, weekly: nil, fetchedAt: t0, now: t0))
+    }
+
+    func testQuotaIsRemainingNotUsed() {
+        let q = LiveIconUsage.quota(session: window("primary", used: 0.4), weekly: nil,
+                                    fetchedAt: t0, now: t0.addingTimeInterval(29 * 60))
+        XCTAssertEqual(q?.remaining ?? -1, 0.6, accuracy: 1e-9)
+        XCTAssertEqual(q?.window, .session)
+        XCTAssertEqual(q?.resetsAt, t0.addingTimeInterval(3600))
+    }
+
+    func testQuotaPicksTheTighterWindow() {
+        let session = window("primary", used: 0.3, resetsIn: 3600)
+        let weekly = window("secondary", used: 0.9, resetsIn: 3 * 86_400)
+        let q = LiveIconUsage.quota(session: session, weekly: weekly, fetchedAt: t0, now: t0)
+        XCTAssertEqual(q?.window, .weekly)
+        XCTAssertEqual(q?.remaining ?? -1, 0.1, accuracy: 1e-9)
+        XCTAssertEqual(q?.resetsAt, t0.addingTimeInterval(3 * 86_400))
+
+        let looser = window("secondary", used: 0.1, resetsIn: 3 * 86_400)
+        XCTAssertEqual(LiveIconUsage.quota(session: session, weekly: looser, fetchedAt: t0, now: t0)?.window, .session)
+        // 一样紧时取 5 小时窗口。
+        let tie = window("secondary", used: 0.3, resetsIn: 3 * 86_400)
+        XCTAssertEqual(LiveIconUsage.quota(session: session, weekly: tie, fetchedAt: t0, now: t0)?.window, .session)
+    }
+
+    func testQuotaFallsBackWhenOneWindowIsMissingOrPastReset() {
+        let weekly = window("secondary", used: 0.5, resetsIn: 86_400)
+        XCTAssertEqual(LiveIconUsage.quota(session: nil, weekly: weekly, fetchedAt: t0, now: t0)?.window, .weekly)
+        // 5 小时窗口更紧，但重置时间已经过了：读数是上一轮的，只看每周。
+        let stale = window("primary", used: 0.95, resetsIn: -60)
+        let q = LiveIconUsage.quota(session: stale, weekly: weekly, fetchedAt: t0, now: t0)
+        XCTAssertEqual(q?.window, .weekly)
+        XCTAssertEqual(q?.remaining ?? -1, 0.5, accuracy: 1e-9)
+        XCTAssertNil(LiveIconUsage.quota(session: stale, weekly: nil, fetchedAt: t0, now: t0))
+        // 没有重置时间的窗口照常用。
+        let open = window("primary", used: 0.2, resetsIn: nil)
+        XCTAssertEqual(LiveIconUsage.quota(session: open, weekly: nil, fetchedAt: t0, now: t0)?.remaining ?? -1,
+                       0.8, accuracy: 1e-9)
+    }
+
+    func testQuotaFromReport() {
+        let report = CodexUsageReport(windows: [window("primary", used: 0.25), window("secondary", used: 0.5,
+                                                                                     resetsIn: 86_400)],
+                                      fetchedAt: t0)
+        let q = LiveIconUsage.quota(report, now: t0)
+        XCTAssertEqual(q?.window, .weekly)
+        XCTAssertEqual(q?.remaining ?? -1, 0.5, accuracy: 1e-9)
+    }
+
+    func testQuotaClamps() {
+        XCTAssertEqual(LiveQuota(remaining: 1.4, window: .session, resetsAt: nil).remaining, 1)
+        XCTAssertEqual(LiveQuota(remaining: -0.2, window: .session, resetsAt: nil).remaining, 0)
+        XCTAssertEqual(LiveIconUsage.quota(session: window("primary", used: 1.4), weekly: nil,
+                                           fetchedAt: t0, now: t0)?.remaining, 0)
+    }
+
+    func testResetCountdown() {
+        XCTAssertEqual(LiveIconUsage.resetCountdown(42 * 60 + 30), "42m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(59), "0m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(3600), "1h 0m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(19 * 3600 + 20), "19h 0m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(23 * 3600 + 59 * 60), "23h 59m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(86_400), "1d 0h")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(86_400 + 18 * 3600 + 600), "1d 18h")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(-5), "0m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(.nan), "0m")
+        XCTAssertEqual(LiveIconUsage.resetCountdown(.infinity), "0m")
+
+        let q = LiveQuota(remaining: 0.5, window: .session, resetsAt: t0.addingTimeInterval(19 * 3600))
+        XCTAssertEqual(LiveIconUsage.resetCountdown(q, now: t0), "19h 0m")
+        XCTAssertNil(LiveIconUsage.resetCountdown(LiveQuota(remaining: 0.5, window: .session, resetsAt: nil), now: t0))
     }
 
     func testSurfaceStaysInsideContent() {

@@ -1,6 +1,6 @@
 import Foundation
 
-// 动态图标第二版的纯逻辑：哪个 App 用哪种动态、开关怎么叠、Codex 水位读多少、
+// 动态图标第二版的纯逻辑：哪个 App 用哪种动态、开关怎么叠、AI 额度水位读多少、
 // 流光什么时候亮、Chrome 图标怎么转和怎么缓停、多久问一次 Chrome、画多快。
 // 不碰 AppKit、不碰 CodexService，全部能在测试里跑。
 
@@ -10,6 +10,8 @@ public enum LiveIconApp: Equatable, Sendable {
     case chrome
     /// ChatGPT 和 Codex 桌面 App 共用一种画法：水位加流光。
     case openAI
+    /// Claude 桌面 App：只有水位，没有流光（没有可靠的「正在干活」信号）。
+    case claude
 
     public static let finderBundleID = "com.apple.finder"
     public static let chromeBundleID = "com.google.Chrome"
@@ -17,12 +19,15 @@ public enum LiveIconApp: Equatable, Sendable {
     /// Codex 桌面 App 的 bundle id 取自仓库里 CodexTerminal.codexApps，
     /// 尚未在真机安装包上核对过（未验证）。
     public static let codexBundleIDs = ["com.openai.codex"]
+    /// Claude 桌面 App 的 bundle id，取自公开资料，尚未在真机安装包上核对过（未验证）。
+    public static let claudeBundleID = "com.anthropic.claudefordesktop"
 
     public init?(bundleID: String) {
         switch bundleID {
         case Self.finderBundleID: self = .finder
         case Self.chromeBundleID: self = .chrome
         case Self.chatGPTBundleID: self = .openAI
+        case Self.claudeBundleID: self = .claude
         default:
             guard Self.codexBundleIDs.contains(bundleID) else { return nil }
             self = .openAI
@@ -30,12 +35,13 @@ public enum LiveIconApp: Equatable, Sendable {
     }
 }
 
-/// 设置 ▸ 扩展栏的总开关和三个子开关。总开关默认关，子开关默认开。
+/// 设置 ▸ 扩展栏的总开关和四个子开关。总开关默认关，子开关默认开。
 public struct LiveIconToggles: Equatable, Sendable {
     public static let masterKey = "liveIcons.enabled"
     public static let finderKey = "liveIcons.finder"
     public static let chromeKey = "liveIcons.chrome"
     public static let openAIKey = "liveIcons.ai"
+    public static let claudeKey = "liveIcons.claude"
     /// 水位右下角的百分比小字，默认不显示。
     public static let percentKey = "liveIcons.aiPercent"
 
@@ -43,12 +49,15 @@ public struct LiveIconToggles: Equatable, Sendable {
     public var finder: Bool
     public var chrome: Bool
     public var openAI: Bool
+    public var claude: Bool
 
-    public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, openAI: Bool = true) {
+    public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, openAI: Bool = true,
+                claude: Bool = true) {
         self.master = master
         self.finder = finder
         self.chrome = chrome
         self.openAI = openAI
+        self.claude = claude
     }
 
     public func isOn(_ app: LiveIconApp) -> Bool {
@@ -57,19 +66,79 @@ public struct LiveIconToggles: Equatable, Sendable {
         case .finder: return finder
         case .chrome: return chrome
         case .openAI: return openAI
+        case .claude: return claude
         }
     }
 }
 
-/// ChatGPT / Codex 图标里的水位和流光。
+/// AI 图标里的水位读的是哪个额度窗口。
+public enum LiveQuotaWindow: Equatable, Sendable {
+    /// 5 小时窗口。
+    case session
+    /// 每周窗口。
+    case weekly
+}
+
+/// 水位要画的额度：还剩多少、来自哪个窗口、什么时候重置。
+public struct LiveQuota: Equatable, Sendable {
+    /// 剩余比例，0...1。
+    public var remaining: Double
+    public var window: LiveQuotaWindow
+    public var resetsAt: Date?
+
+    public init(remaining: Double, window: LiveQuotaWindow, resetsAt: Date?) {
+        self.remaining = min(1, max(0, remaining))
+        self.window = window
+        self.resetsAt = resetsAt
+    }
+}
+
+/// ChatGPT / Codex 和 Claude 图标里的水位和流光。
 public enum LiveIconUsage {
-    /// 5 小时额度已用比例（0...1）。没有报告、报告过期、没有主窗口或数值不对时是 nil，
+    /// 水位 = 剩余额度（1 - 已用）：水越少越接近用完，像油箱。
+    ///
+    /// 5 小时和每周两个窗口取更紧的那个（剩余更少的）：哪个先卡住你，就看哪个。
+    /// 某个窗口缺失、数值不对，或者它的重置时间已经过了（读数是上一轮的，不再可信），
+    /// 就只看另一个；两个都用不了、报告没有或已过期（默认 30 分钟）时是 nil，
     /// 即「未知」，图标里不画水位，绝不拿猜的数顶上。
-    public static func level(primaryUsed: Double?, fetchedAt: Date?, now: Date,
-                             staleAfter: TimeInterval = 30 * 60) -> Double? {
-        guard let used = primaryUsed, used.isFinite, let fetchedAt else { return nil }
-        guard now.timeIntervalSince(fetchedAt) <= staleAfter else { return nil }
-        return min(1, max(0, used))
+    /// 剩余一样多时取 5 小时窗口（它先重置，倒计时更有用）。
+    public static func quota(session: CodexLimitWindow?, weekly: CodexLimitWindow?,
+                             fetchedAt: Date?, now: Date,
+                             staleAfter: TimeInterval = 30 * 60) -> LiveQuota? {
+        guard let fetchedAt, now.timeIntervalSince(fetchedAt) <= staleAfter else { return nil }
+        func usable(_ w: CodexLimitWindow?, _ kind: LiveQuotaWindow) -> LiveQuota? {
+            guard let w, w.usedFraction.isFinite else { return nil }
+            if let resets = w.resetsAt, resets <= now { return nil }
+            return LiveQuota(remaining: 1 - w.usedFraction, window: kind, resetsAt: w.resetsAt)
+        }
+        let candidates = [usable(session, .session), usable(weekly, .weekly)].compactMap { $0 }
+        return candidates.min { $0.remaining < $1.remaining }
+    }
+
+    /// 报告里的 5 小时和每周窗口（Codex、Claude 共用一种报告）。
+    public static func quota(_ report: CodexUsageReport?, now: Date,
+                             staleAfter: TimeInterval = 30 * 60) -> LiveQuota? {
+        guard let report else { return nil }
+        return quota(session: report.primary, weekly: report.weekly,
+                     fetchedAt: report.fetchedAt, now: now, staleAfter: staleAfter)
+    }
+
+    /// 重置倒计时，中英文同一种写法，只用 ASCII：不到 1 小时「42m」，
+    /// 不到 1 天「19h 0m」，再长「1d 18h」。分钟向下取整，还剩不到 1 分钟时是「0m」；
+    /// 已经过了或数值不对时也是「0m」。
+    // TODO: 悬停显示倒计时、大字百分比等效果图定了再接到图标上。
+    public static func resetCountdown(_ seconds: TimeInterval) -> String {
+        guard seconds.isFinite, seconds > 0 else { return "0m" }
+        let s = Int(min(seconds, 9_999 * 86_400))
+        let minutes = s / 60, hours = s / 3600, days = s / 86_400
+        if hours < 1 { return "\(minutes)m" }
+        if days < 1 { return "\(hours)h \(minutes % 60)m" }
+        return "\(days)d \(hours % 24)h"
+    }
+
+    /// 离 resetsAt 还有多久的倒计时文字；没有重置时间时是 nil。
+    public static func resetCountdown(_ quota: LiveQuota, now: Date) -> String? {
+        quota.resetsAt.map { resetCountdown($0.timeIntervalSince(now)) }
     }
 
     /// 流光只在 Codex 真在干活时绕圈：工作中，或者一轮做到一半停下来等你批准。
@@ -81,14 +150,14 @@ public enum LiveIconUsage {
         }
     }
 
-    /// 右下角的百分比小字，四舍五入到整数。
+    /// 右下角的百分比小字（显示剩余），四舍五入到整数。
     public static func percentText(_ level: Double) -> String {
         guard level.isFinite else { return "" }
         return "\(Int((min(1, max(0, level)) * 100).rounded()))%"
     }
 
-    /// 液面在内容区里的高度（从底往上，0...1）。用了一点点也露一条水线，
-    /// 用满也留一线不顶到圆角最上沿，看起来还是「水」。
+    /// 液面在内容区里的高度（从底往上，0...1），level 是剩余比例。几乎用完也露一条水线，
+    /// 满额也留一线不顶到圆角最上沿，看起来还是「水」。
     public static func surfaceFraction(_ level: Double) -> Double {
         guard level.isFinite else { return 0 }
         let l = min(1, max(0, level))

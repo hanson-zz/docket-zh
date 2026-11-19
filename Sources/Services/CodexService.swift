@@ -205,7 +205,8 @@ final class CodexService {
         }
     }
 
-    private static func session() -> URLSession {
+    /// 带上用户填的代理；Claude 额度水位（ClaudeUsageService）也用它。
+    static func session() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 15
         config.requestCachePolicy = .reloadIgnoringLocalCacheData

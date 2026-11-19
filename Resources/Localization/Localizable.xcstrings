@@ -18890,24 +18890,46 @@
         }
       }
     },
-    "图标里的水位是 Codex 5 小时额度已用多少，没有数据时不画；Codex 正在干活时一道白光沿图标边缘绕圈。" : {
+    "图标里的水位是 Codex 还剩多少额度，取 5 小时和每周里更紧的那个，没有数据时不画；Codex 正在干活时一道白光沿图标边缘绕圈。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The water level inside the icon shows how much of the Codex 5-hour limit is used, and is hidden when there is no data; while Codex is working, a soft white light travels around the icon's edge."
+            "value" : "The water level inside the icon shows how much of your Codex limit is left, using whichever of the 5-hour and weekly limits is tighter, and is hidden when there is no data; while Codex is working, a soft white light travels around the icon's edge."
           }
         }
       }
     },
-    "水位旁显示百分比" : {
+    "Claude" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show percentage by the water level"
+            "value" : "Claude"
+          }
+        }
+      }
+    },
+    "图标里的水位是 Claude 还剩多少额度，取 5 小时和每周里更紧的那个。读本机 Claude 命令行已登录的账号，只读不上传，令牌只发给 Anthropic；没登录时不画。第一次读取时 macOS 可能弹框问是否允许码头使用钥匙串里的这一项。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The water level inside the icon shows how much of your Claude limit is left, using whichever of the 5-hour and weekly limits is tighter. It reads the account the Claude command-line tool is signed in to on this Mac, read-only with nothing uploaded, and the token goes only to Anthropic; nothing is drawn when you are not signed in. The first time it reads, macOS may ask whether Dockling may use this keychain item."
+          }
+        }
+      }
+    },
+    "水位旁显示剩余百分比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show remaining percentage by the water level"
           }
         }
       }
