@@ -55,7 +55,7 @@ struct PerfectDayDetail: View {
         let items = today
         let shownMonth = month
         let got = PerfectDay.leavesSoFar(all, month: shownMonth, today: context.now)
-        return DetailCard(forceDark: true) {
+        return DetailCard {
             BasketForestBackdrop(bambooHeight: 92)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
@@ -92,7 +92,7 @@ struct PerfectDayDetail: View {
                     Text("小熊猫的竹篮")
                         .font(.system(size: 13, weight: .semibold))
                         .tracking(0.8)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.panelSecondary)
                     // 三环样式的面板点「本月竹篮和徽章」过来的：给一条回三环的路。
                     if showBasket, TodayRings.isRings(instance.config) {
                         Button { showBasket = false } label: {
@@ -102,10 +102,10 @@ struct PerfectDayDetail: View {
                                 Text(tr("返回三环"))
                                     .font(.system(size: 13, weight: .semibold))
                             }
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.panelPrimary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .background(Capsule().fill(.white.opacity(0.14)))
+                            .background(Capsule().fill(.panelSelected))
                             .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -122,7 +122,7 @@ struct PerfectDayDetail: View {
                     .help("上个月")
                     Text(PerfectDay.panelMonthTitle(month))
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.panelPrimary)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -142,13 +142,13 @@ struct PerfectDayDetail: View {
                                 .font(.system(size: 13, weight: .semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Capsule().fill(.white.opacity(0.14)))
+                                .background(Capsule().fill(.panelSelected))
                         }
                         .padding(.leading, 4)
                     }
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             }
             Spacer(minLength: 0)
             // 这一行在 ScrollView 里，ScrollView 会按自己的边界裁切内容：以前用
@@ -173,7 +173,7 @@ struct PerfectDayDetail: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("今天")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                 HStack(spacing: 8) {
                     ForEach(items) { item in todayCard(item) }
                 }
@@ -184,10 +184,10 @@ struct PerfectDayDetail: View {
     private func todayCard(_ item: PerfectDayProgress) -> some View {
         let tint = Color(hex: item.item.hex)
         return VStack(spacing: 5) {
-            PerfectItemRing(progress: item, size: 28, track: .white)
+            PerfectItemRing(progress: item, size: 28, track: Color.panelPrimary)
             Text(item.item.title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.panelPrimary)
             if let fix = PerfectDay.fix(for: item) {
                 Button { open(fix, for: item.item) } label: {
                     Text(fix.title)
@@ -204,7 +204,7 @@ struct PerfectDayDetail: View {
             } else {
                 Text(item.detail)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.panelSecondary)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -237,7 +237,7 @@ struct PerfectDayDetail: View {
                 BambooBasket(leaves: got == 0 ? [] : leaves, width: 150, emptyText: nil, heapAtRim: true)
                 Text(PerfectDay.basketCaption(leaves: got))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .fixedSize()
             }
@@ -256,10 +256,10 @@ struct PerfectDayDetail: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(line.tier.title)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.95))
+                            .foregroundStyle(.panelPrimary)
                         Text(line.condition)
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.55))
+                            .foregroundStyle(.panelTertiary)
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -267,7 +267,7 @@ struct PerfectDayDetail: View {
                     Text("×\(count)")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(count == 0 ? Color.white.opacity(0.3) : Color(hex: line.tier.hexes.light))
+                        .foregroundStyle(count == 0 ? Color.panelQuaternary : Color(hex: line.tier.hexes.light).panelReadable)
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -278,11 +278,11 @@ struct PerfectDayDetail: View {
     private func statusLine(_ all: [PerfectDayRecord], month: Date) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Rectangle()
-                .fill(.white.opacity(0.08))
+                .fill(.panelSeparator)
                 .frame(height: 1)
             Text(PerfectDay.shareStatus(all, month: month, today: context.now))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
@@ -307,7 +307,7 @@ struct PerfectDayDetail: View {
             if let notice {
                 Text(notice)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.panelSecondary)
                     .frame(maxWidth: .infinity)
                     .transition(.opacity)
             }
@@ -316,7 +316,7 @@ struct PerfectDayDetail: View {
                     Text(tr("徽章 \(unlocked) / \(statuses.count)"))
                         .monospacedDigit()
                 }
-                .buttonStyle(BasketBarButtonStyle(fill: .white.opacity(0.1), stroke: .white.opacity(0.12)))
+                .buttonStyle(BasketBarButtonStyle(fill: .panelFill, stroke: .panelStroke))
                 .popover(isPresented: $showBadges, arrowEdge: .top) {
                     badgePopover(statuses)
                 }
@@ -324,9 +324,9 @@ struct PerfectDayDetail: View {
                     Text(blocked ?? (monthsBack == 0 ? tr("分享这个月") : tr("分享这个月的竹篮")))
                 }
                 .buttonStyle(BasketBarButtonStyle(fill: blocked == nil ? panelTint.accent(or: Color(hex: Self.shareHex))
-                                                                         : .white.opacity(0.05),
-                                                  stroke: .white.opacity(blocked == nil ? 0 : 0.1),
-                                                  ink: blocked == nil ? panelTint.ink(or: .white) : .white,
+                                                                         : .panelFill,
+                                                  stroke: blocked == nil ? Color.clear : .panelSeparator,
+                                                  ink: blocked == nil ? panelTint.ink(or: .white) : .panelPrimary,
                                                   dimmed: blocked != nil))
                 .background(ShareAnchor(box: anchor))
                 .disabled(context.isPreview || blocked != nil)
@@ -343,10 +343,10 @@ struct PerfectDayDetail: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(blocked == nil ? 0.85 : 0.35))
+                        .foregroundStyle(blocked == nil ? Color.panelPrimary : Color.panelQuaternary)
                         .frame(width: 34, height: 32)
-                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.white.opacity(0.1)))
-                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.white.opacity(0.12)))
+                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(.panelFill))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.panelStroke))
                         .contentShape(Rectangle())
                 }
                 .menuStyle(.button)
@@ -367,12 +367,12 @@ struct PerfectDayDetail: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text(tr("徽章 \(statuses.filter(\.unlocked).count) / \(statuses.count)"))
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 ForEach(PerfectBadges.grouped(statuses)) { group in
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(group.category.title) \(group.statuses.filter(\.unlocked).count)/\(group.statuses.count)")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.panelSecondary)
                         badgeGrid(group.statuses)
                     }
                 }
@@ -382,9 +382,8 @@ struct PerfectDayDetail: View {
         }
         .scrollIndicators(.automatic)
         .frame(width: 380, height: 520)
-        .background(LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
-                                   startPoint: .top, endPoint: .bottom))
-        .environment(\.colorScheme, .dark)
+        // 跟面板一样随浅色/深色：深色是竹林深绿，浅色只留一层很淡的竹绿。
+        .background { BasketForestBackdrop(showsBamboo: false) }
     }
 
     private func badgeGrid(_ statuses: [PerfectBadgeStatus]) -> some View {
@@ -395,12 +394,12 @@ struct PerfectDayDetail: View {
                     PerfectBadgeMedal(status: status, size: 54)
                     Text(status.shownTitle)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(status.isLit ? 1 : 0.6))
+                        .foregroundStyle(status.isLit ? Color.panelPrimary : Color.panelSecondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(badgeLine(status))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.panelTertiary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -428,10 +427,10 @@ struct PerfectDayDetail: View {
         VStack(alignment: .leading, spacing: 3) {
             Text("怎么算")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
             Text(PerfectDay.rules(focusGoal: context.isPreview ? FocusLog.defaultGoal : center.focusGoal()))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.panelTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -500,8 +499,8 @@ struct PerfectDayDetail: View {
 private struct BasketBarButtonStyle: ButtonStyle {
     var fill: Color
     var stroke: Color = .clear
-    /// 字色：主题色按钮按亮度选深色或白色（`PanelTint.ink`），其余是白字。
-    var ink: Color = .white
+    /// 字色：主题色按钮按亮度选深色或白色（`PanelTint.ink`），其余跟面板深浅（深色白字、浅色深字）。
+    var ink: Color = .panelPrimary
     var dimmed = false
 
     func makeBody(configuration: Configuration) -> some View {
@@ -520,20 +519,32 @@ private struct BasketBarButtonStyle: ButtonStyle {
 
 // MARK: - Shared with the share card
 
-/// 竹林深绿底：上浅下深，右上角一点小熊猫橙的暖光，竹子贴在右上角页边。
-/// 面板和分享图共用。
+/// 竹林底：右上角一点小熊猫橙的暖光，竹子贴在右上角页边。面板、徽章弹层和分享图共用。
+/// 深色是上浅下深的竹林深绿；浅色不铺深底，液态玻璃上只留一层很淡的竹绿。
+/// 分享图外面套了 `.environment(\.colorScheme, .dark)`，所以分享出去的图始终是深绿。
 struct BasketForestBackdrop: View {
     var bambooHeight: CGFloat = 118
+    var showsBamboo = true
+
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        let light = scheme == .light
         ZStack(alignment: .topTrailing) {
-            LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
-                           startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Color(hex: "#C0502A").opacity(0.22), .clear],
+            if light {
+                LinearGradient(colors: [Color(hex: "#3FA34D").opacity(0.12), Color(hex: "#3FA34D").opacity(0.03)],
+                               startPoint: .top, endPoint: .bottom)
+            } else {
+                LinearGradient(colors: [Color(hex: "#1F3A26"), Color(hex: "#101C15")],
+                               startPoint: .top, endPoint: .bottom)
+            }
+            RadialGradient(colors: [Color(hex: "#C0502A").opacity(light ? 0.12 : 0.22), .clear],
                            center: .topTrailing, startRadius: 0, endRadius: 360)
-            BambooStalks(height: bambooHeight)
-                .opacity(0.16)
-                .padding(.trailing, 10)
+            if showsBamboo {
+                BambooStalks(height: bambooHeight)
+                    .opacity(light ? 0.22 : 0.16)
+                    .padding(.trailing, 10)
+            }
         }
     }
 }
@@ -552,7 +563,7 @@ struct BasketPanda: View {
                 .frame(height: height)
                 .accessibilityHidden(true)
         } else {
-            LeafGlyph(tier: cheer ? .gold : nil, size: height * 0.7, emptyInk: .white)
+            LeafGlyph(tier: cheer ? .gold : nil, size: height * 0.7, emptyInk: Color.panelPrimary)
         }
     }
 }

@@ -495,6 +495,8 @@ struct PerfectCalendarGrid: View {
     var leafSize: CGFloat = 22
     /// 分享图和面板的画法：还没到的日子只写日期不画叶，今天没收到时画一片
     /// 淡虚线叶，字号略大。false 是原来每天都画叶的样子。
+    /// 字和空叶轮廓用面板语义色：面板跟浅色/深色走，分享图固定深色（解析成白）；
+    /// 今天那格压在实心竹绿胶囊上，保持白字。
     var shareStyle = false
 
     private var dateSize: CGFloat { shareStyle ? 11.5 : 10 }
@@ -506,7 +508,7 @@ struct PerfectCalendarGrid: View {
                 ForEach(Array(weekdays.enumerated()), id: \.offset) { _, name in
                     Text(name)
                         .font(.system(size: shareStyle ? 11 : 10, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(Color.panelTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -533,7 +535,7 @@ struct PerfectCalendarGrid: View {
                 Text("\(day.day)")
                     .font(.system(size: dateSize, weight: day.isToday ? .bold : (shareStyle ? .semibold : .regular)))
                     .monospacedDigit()
-                    .foregroundStyle(day.isToday ? Color.white : .white.opacity(dateOpacity(day)))
+                    .foregroundStyle(day.isToday ? Color.white : Color.panelPrimary.opacity(dateOpacity(day)))
                     .padding(.horizontal, shareStyle ? 7 : 5)
                     .padding(.vertical, shareStyle && day.isToday ? 1 : 0)
                     .background {
@@ -542,15 +544,15 @@ struct PerfectCalendarGrid: View {
                 if shareStyle {
                     switch day.phase {
                     case .past:
-                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: Color.panelPrimary)
                     case .today:
-                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                        LeafGlyph(tier: day.tier, size: leafSize, emptyInk: Color.panelPrimary)
                             .opacity(day.tier == nil ? 0.45 : 1)
                     case .future:
                         Color.clear.frame(width: leafSize, height: leafSize)
                     }
                 } else {
-                    LeafGlyph(tier: day.tier, size: leafSize, emptyInk: .white)
+                    LeafGlyph(tier: day.tier, size: leafSize, emptyInk: Color.panelPrimary)
                         .opacity(day.isFuture ? 0.35 : 1)
                 }
             }

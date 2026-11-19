@@ -7,8 +7,9 @@ import AppKit
 // 现在卡片是 macOS 26 的液态玻璃，跟着设置里的「跟随系统 / 浅色 / 深色」
 // （AppAppearance → NSApp.appearance → 环境里的 colorScheme）走，白字落在浅色玻璃上
 // 就看不见了。下面这些颜色都是动态色：深色外观下等于原来的白，浅色外观下换成深字。
-// 例外面板用 `DetailCard(forceDark: true)` 或 `.panelForceDark()`，环境变成深色，
-// 这些颜色自动回到原来的白，所以替换后例外面板长得和以前一样。
+// 所有面板（含收音机、相框、壁纸、完美一天）默认跟外观走；只有只适合深色的设计
+// （收音机复古皮肤和烟晶、设备风表盘）用 `DetailCard(forceDark: true)` 或 `.panelForceDark()`，
+// 环境变成深色，这些颜色自动回到原来的白，所以替换后这些例外长得和以前一样。
 //
 // 旧写法 → 新写法（其他子任务照表机械替换，只看透明度，不用自己挑）
 //
@@ -52,11 +53,11 @@ import AppKit
 //
 // 不要换的：
 //   实心主题色按钮上的白字（底是实心色，不是玻璃）保持 .white。
-//   照片、封面、插画上的字和黑胶囊保持原样（例外面板）。
+//   照片、封面、插画、壁纸缩略图上的字和黑胶囊保持白字（底是图片，不是玻璃）。
 //
 // 去掉强制深色：
 //   .environment(\.colorScheme, .dark) / .colorScheme(.dark) → 删掉；
-//   确实要保持暗色的例外面板 → DetailCard(forceDark: true) { ... } 或 .panelForceDark()
+//   确实只适合深色的设计（不是默认）→ DetailCard(forceDark: true) { ... } 或 .panelForceDark()
 //
 // 判断当前是不是浅色：@Environment(\.colorScheme) private var scheme，scheme == .light。
 
@@ -217,7 +218,7 @@ private struct PanelLiftModifier: ViewModifier {
 // MARK: - 保持暗色的开关
 
 extension EnvironmentValues {
-    /// 面板卡片要不要保持原来的暗色石墨（收音机、相框、壁纸这类例外）。
+    /// 面板卡片要不要保持原来的暗色石墨（收音机复古皮肤和烟晶、设备风表盘这类只适合深色的例外）。
     @Entry var panelForcedDark: Bool = false
 }
 

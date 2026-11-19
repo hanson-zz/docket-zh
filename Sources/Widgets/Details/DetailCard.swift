@@ -13,7 +13,9 @@ import SwiftUI
 /// 液态玻璃：卡片底是 macOS 26 的系统 `glassEffect`，跟着设置里的
 /// 「跟随系统 / 浅色 / 深色」走（AppAppearance 设到 NSApp.appearance，环境里的
 /// colorScheme 跟着变），不再强制深色。内容的颜色用 PanelColors.swift 里的语义色。
-/// 收音机、相框、壁纸这类例外传 `forceDark: true`（或外面套 `.panelForceDark()`），
+/// 收音机、相框、壁纸、完美一天也一样默认跟外观走（浅色外观是浅色玻璃深色字），
+/// 用户再到面板底部的「外观」里自己改。只有确实只适合深色的设计（收音机的复古皮肤和
+/// 烟晶、点阵液晶这类设备风表盘）才传 `forceDark: true`（或外面套 `.panelForceDark()`），
 /// 卡片换回原来的石墨实心底，内容固定深色。系统「降低透明度」时玻璃换成实心底。
 extension EnvironmentValues {
     /// 面板画在钉在桌面的卡片里，见 `DetailCard.flat`。

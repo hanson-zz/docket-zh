@@ -47,8 +47,9 @@ struct PhotoFrameDetail: View {
         PhotoAlbum(config: current.config, wide: current.config.string("layout", default: "standard") == "wide")
     }
 
+    /// 面板跟浅色/深色外观走；压在照片上的字和黑胶囊保持白字（底是照片不是玻璃）。
     var body: some View {
-        DetailCard(forceDark: true) {
+        DetailCard {
             MeshBackdrop(color: Color(hex: Self.accentHex))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
@@ -126,7 +127,7 @@ struct PhotoFrameDetail: View {
             upcoming(album: album, order: order, lookup: lookup, now: now)
             Text(verbatim: tr("点照片在预览里打开 · 拖出去就能用"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
         } else {
             emptyContent(album: album)
@@ -162,7 +163,8 @@ struct PhotoFrameDetail: View {
             .accessibilityAddTraits(.isButton)
     }
 
-    /// 大图左下的小胶囊：几分钟后换下一张，暂停时写“已暂停”。
+    /// 大图左下的小胶囊：几分钟后换下一张，暂停时写“已暂停”。压在照片上，
+    /// 不跟面板深浅走，固定黑胶囊白字。
     @ViewBuilder
     private func badge(album: PhotoAlbum, count: Int, item: PhotoAlbum.Item) -> some View {
         let text: String? = {
@@ -362,7 +364,7 @@ struct PhotoFrameDetail: View {
             if let notice {
                 Text(verbatim: notice)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
             }
         }
 
@@ -378,7 +380,7 @@ struct PhotoFrameDetail: View {
         if PhotoRotation.choiceIndex(album.interval) == nil {
             Text(verbatim: tr("现在是每 \(PhotoRotation.intervalTitle(album.interval)) 换一张"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
 
         AlbumToggleRow(label: tr("随机顺序"), isOn: album.shuffle, accent: accent) { on in
@@ -406,11 +408,11 @@ struct PhotoFrameDetail: View {
                         .underline()
                 }
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.panelSecondary)
             } else if memories.access == .granted, memories.memories.isEmpty {
                 Text(verbatim: tr("今天没有往年的照片，先放文件夹"))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         }
     }
@@ -430,17 +432,17 @@ struct PhotoFrameDetail: View {
             HStack(spacing: 10) {
                 Image(systemName: "folder.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(accent.opacity(0.9))
+                    .foregroundStyle(accent.panelGraphic.opacity(0.9))
                     .frame(width: 24)
                 Text(verbatim: PhotoAlbum.folderName(path))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(on ? 1 : 0.6))
+                    .foregroundStyle(on ? .panelPrimary : .panelSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .layoutPriority(1)
                 Text(verbatim: count)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
                     .monospacedDigit()
                 Spacer(minLength: 0)
@@ -467,22 +469,22 @@ struct PhotoFrameDetail: View {
             HStack(spacing: 10) {
                 Image(systemName: "plus")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.panelSecondary)
                     .frame(width: 24)
                 Text(verbatim: tr("添加文件夹…"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.86))
+                    .foregroundStyle(.panelPrimary)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 14)
             .frame(height: 44)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.white.opacity(0.03))
+                    .fill(.panelFill)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(0.3), style: StrokeStyle(lineWidth: 1.2, dash: [5, 4]))
+                    .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1.2, dash: [5, 4]))
             }
             .contentShape(.rect)
         }
@@ -496,12 +498,12 @@ struct PhotoFrameDetail: View {
         let lookup = album.lookup
         let right: String? = ids.isEmpty ? nil : tr("全部恢复")
         let action: (() -> Void)? = ids.isEmpty ? nil : { restoreAll() }
-        AlbumSection(label: tr("已排除 \(ids.count) 张"), right: right, rightColor: accent, rightAction: action)
+        AlbumSection(label: tr("已排除 \(ids.count) 张"), right: right, rightColor: accent.panelReadable, rightAction: action)
             .padding(.top, 6)
         if ids.isEmpty {
             Text(verbatim: tr("浏览时悬停在照片上点“排除”，就不再轮到它"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         } else {
             let rows = (ids.count + 4) / 5
@@ -516,7 +518,7 @@ struct PhotoFrameDetail: View {
             .frame(height: rows > 1 ? 2 * 44 + 6 : 44)
             Text(verbatim: tr("点右上角恢复这张"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
         }
     }
 

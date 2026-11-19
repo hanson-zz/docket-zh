@@ -50,8 +50,9 @@ struct WallpaperDetail: View {
     private var allScreens: Bool { config.bool("allScreens", default: true) }
     private var favorites: [String] { WallpaperSchedule.favorites(config) }
 
+    /// 面板跟浅色/深色外观走；压在壁纸缩略图上的字、星星和黑胶囊保持白字（底是图片不是玻璃）。
     var body: some View {
-        DetailCard(forceDark: true) {
+        DetailCard {
             MeshBackdrop(color: Color(hex: Self.accentHex))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
@@ -131,7 +132,7 @@ struct WallpaperDetail: View {
         if let error = wallpaper.lastError {
             Text(verbatim: error)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.panelSecondary)
         }
     }
 
@@ -153,11 +154,11 @@ struct WallpaperDetail: View {
                 FileThumb(url: url, pixels: 720)
                     .id(url)
             } else {
-                Color.white.opacity(0.06)
+                Color.panelFill
                     .overlay {
                         Image(systemName: "photo.on.rectangle")
                             .font(.system(size: 22))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.panelTertiary)
                     }
             }
         }
@@ -172,14 +173,16 @@ struct WallpaperDetail: View {
                 .frame(height: 24)
                 .background(Capsule().fill(.black.opacity(0.45)))
                 .padding(10)
+                // 压在壁纸上：固定黑胶囊白字，不跟面板深浅走。
+                .environment(\.colorScheme, .dark)
         }
         .overlay(alignment: .topTrailing) {
             if let url = wallpaper.current, !context.isPreview {
                 starButton(url.path, size: 28)
                     .padding(10)
+                    .environment(\.colorScheme, .dark)
             }
         }
-        .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(wallpaper.current.map { tr("当前壁纸：\($0.lastPathComponent)") } ?? tr("当前壁纸"))
     }
@@ -210,7 +213,7 @@ struct WallpaperDetail: View {
             Spacer(minLength: 0)
             Text(verbatim: notice ?? tr("点星星收藏"))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
         }
         .padding(.top, 4)
@@ -220,13 +223,13 @@ struct WallpaperDetail: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(.system(size: 13, weight: on ? .bold : .semibold))
-                .foregroundStyle(on ? ink : .white.opacity(0.9))
+                .foregroundStyle(on ? ink : .panelPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .frame(height: 30)
-                .background(Capsule().fill(on ? accent : .white.opacity(0.08)))
-                .overlay(Capsule().strokeBorder(.white.opacity(on ? 0 : 0.16), lineWidth: 0.6))
+                .background(Capsule().fill(on ? accent : .panelFill))
+                .overlay(Capsule().strokeBorder(on ? Color.clear : .panelStroke, lineWidth: 0.6))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -327,7 +330,7 @@ struct WallpaperDetail: View {
         if !unlocked {
             Text(verbatim: tr("按时间自动换是码头 Pro 功能，解锁后到点自己换。"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         AlbumToggleRow(label: tr("按时间自动换"), isOn: autoOn, accent: accent) { on in
@@ -356,7 +359,7 @@ struct WallpaperDetail: View {
         if source == .favorites, favorites.isEmpty {
             Text(verbatim: tr("还没有收藏，到点不会换。先在浏览里点星星收藏几张"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.62))
+                .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
 
@@ -378,12 +381,12 @@ struct WallpaperDetail: View {
         HStack(spacing: 10) {
             Image(systemName: Self.symbol(slot))
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.panelPrimary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(verbatim: slot.title)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.panelPrimary)
                 timeChip(slot, minutes: minutes, bySun: bySun)
             }
             Spacer(minLength: 0)
@@ -412,14 +415,14 @@ struct WallpaperDetail: View {
             if bySun {
                 Text(verbatim: slot == .morning ? tr("日出") : tr("日落"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.panelSecondary)
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.panelPrimary)
         .padding(.horizontal, 8)
         .frame(height: 22)
-        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.white.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(.white.opacity(0.2), lineWidth: 0.6))
+        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(.panelFill))
+        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(.panelQuaternary, lineWidth: 0.6))
         if bySun {
             chip.help(tr("跟着日出日落走时按天气定位的城市算"))
         } else {
@@ -464,7 +467,7 @@ struct WallpaperDetail: View {
                 Text(verbatim: tr("收藏随机"))
                     .font(.system(size: 13, weight: .medium))
             }
-            .foregroundStyle(.white.opacity(0.75))
+            .foregroundStyle(.panelSecondary)
             .frame(width: 92, height: 46)
             .glassPane(cornerRadius: 7)
         } else {
@@ -481,11 +484,11 @@ struct WallpaperDetail: View {
                     } else {
                         Text(verbatim: path.isEmpty ? tr("用当前") : tr("找不到了"))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.75))
+                            .foregroundStyle(.panelSecondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background {
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .strokeBorder(.white.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                                    .strokeBorder(.panelQuaternary, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                             }
                     }
                 }
