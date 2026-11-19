@@ -36,7 +36,6 @@ struct FocusTimerDetail: View {
     static let focusInk = Color(hex: "#331002")
     private static let restGreen = Color(hex: "#5BD98A")
     private static let gold = Color(hex: "#F5C451")
-    private static let base = Color(hex: "#1D1D21")
 
     private var accent: Color { panelTint.accent(or: Self.focusOrange) }
     private var ink: Color { panelTint.ink(or: Self.focusInk) }
@@ -69,11 +68,10 @@ struct FocusTimerDetail: View {
     private func content(now: Date) -> some View {
         let state = timerState(now: now)
         return DetailCard {
-            ZStack {
-                Self.base
-                RadialGradient(colors: [accent.opacity(0.13), .clear], center: .topTrailing,
-                               startRadius: 0, endRadius: 220)
-            }
+            // 液态玻璃跟随浅色/深色：从拾掇搬来时漏了原来的实心石墨底（#1D1D21），
+            // 浅色外观下整块深底深字。去掉，只留角上一抹主题色（同其他面板）。
+            RadialGradient(colors: [accent.opacity(0.13), .clear], center: .topTrailing,
+                           startRadius: 0, endRadius: 220)
         } content: {
             Group {
                 if editing {
